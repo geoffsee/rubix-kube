@@ -1,0 +1,187 @@
+{
+  "capture_directory": "/tmp/rubix-config-api-oracles-20260927-r4",
+  "durable_sha256": {
+    "Capture.Dockerfile": "a12b5e673658a9396d3ae7978b4526c4ade2cd8174a7a31411085bea9b5ebb4a",
+    "README.md": "de468e191246e18b9319992e790b241c171be13b1b68468d5df90d8b28b4b260",
+    "api_capture_test.go": "7800b44538d20f5378234c7a9cd9770dc51b26e7b66dbdde7a6fe822012e7075",
+    "capture-receipt.json": "6b5201cd8483b05211c60b3400be9957bf720f5d843d569c41c739e1f705de9d",
+    "capture.py": "752aeb798fe2113216735209f1ac3911f50295faaff950bbac604084bfcb6a18",
+    "config.json": "f71e045a1317753738eb44965ae6ffbb83c886d904e06cc5f3b6b66e09302800",
+    "configapi.json": "e850eaa89e1b0a2caee30a2c92ee049b948470f8e9d0f658d55ad1fb1576f51e",
+    "evidence/config.log": "0c8bf0d44a7a5f5d908ba1389477771ebfe04f041d5cbeb694718ddb789c3f53",
+    "evidence/configapi.log": "19f7f4006a6ce8299c037d99ee0dbee9f335ffa72d561545704d501e770e620d",
+    "file_capture_test.go": "dfa167a48fe3befb4516269fe0d9011cba155b1afc73677ebafd04b56d884cda",
+    "test_config_api.py": "1e08bbaf4f298be690aefb60ef581a67ad9cb37e9d8a69e5f1048531eda4a1c1",
+    "verify.py": "c8f8062930f63030eaaed907cbfa73f9a736dec0ba7fc8902ed980d0c8a6d9e8"
+  },
+  "reference_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "schema": 1,
+  "scope": "Actual config.Write and Unix HTTP configapi, no full-node lifecycle",
+  "sources": [
+    {
+      "path": "go.mod",
+      "sha256": "7f0f9dabc79c121b3bfb5d09e6c79d31350be33a0a8aa70eba2cfd1c9becda87",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.mod"
+    },
+    {
+      "path": "go.sum",
+      "sha256": "d38d48d99df8e324a6b7a08f972cdbc93e50198f92928092b2d965c84b5c54ea",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.sum"
+    },
+    {
+      "path": "internal/config/defaults.go",
+      "sha256": "902db154b17cd88d24f18b4f9aeb87d286470b5113c18b1f2066d20ab596a24b",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/defaults.go"
+    },
+    {
+      "path": "internal/config/defaults_test.go",
+      "sha256": "9cb92234810b331c27ee64900b22660fa611a2d13dfb66d45af2b7b72af2548a",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/defaults_test.go"
+    },
+    {
+      "path": "internal/config/describe.go",
+      "sha256": "80cc260011c6cb62f532a9df6eae1953f4bbffcf98878757664dd70b16ae95b6",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/describe.go"
+    },
+    {
+      "path": "internal/config/describe_test.go",
+      "sha256": "5cba3e83bfa190b7cde5e3cbf522ed93ab2290947644bb1c854733f1ace81841",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/describe_test.go"
+    },
+    {
+      "path": "internal/config/docs_test.go",
+      "sha256": "041bf9cfa27ac86d7d9ca7057c83e881e973a391c8ac61f8f0744614dfde7d03",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/docs_test.go"
+    },
+    {
+      "path": "internal/config/embedded.go",
+      "sha256": "1466fdcd701ea6fe8a5da77db5e8320977e9b50e4b13cf3e7042681058ac84e0",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/embedded.go"
+    },
+    {
+      "path": "internal/config/embedded_test.go",
+      "sha256": "5fe1beae780db11454374de2e52a7f13dd276c38b5c1259cd0d82496e8fee720",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/embedded_test.go"
+    },
+    {
+      "path": "internal/config/file.go",
+      "sha256": "9a9af1ea2d94ff1fa1f2306f868721fb88f2e4b1d0d3fa286879b18de61749de",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/file.go"
+    },
+    {
+      "path": "internal/config/file_test.go",
+      "sha256": "e61dfafea42bb422833057ee88d4eab241207ec5aabc8ba07661583c2d931cd3",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/file_test.go"
+    },
+    {
+      "path": "internal/config/file_umask_test.go",
+      "sha256": "fd8dd2d95d2315df40bf62e9948fbb8da9740f48897876cb28f2d9499d83c361",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/file_umask_test.go"
+    },
+    {
+      "path": "internal/config/image_test.go",
+      "sha256": "e6c258ee4a45b05cd7c65638d3ae2a647bc29778d03ec01980966796d4038f3b",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/image_test.go"
+    },
+    {
+      "path": "internal/config/loader.go",
+      "sha256": "0d4fb3b8780400fd07dffbaee9ced14fd46fdb801f82869b9623b1692f81ba8f",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/loader.go"
+    },
+    {
+      "path": "internal/config/loader_test.go",
+      "sha256": "28906f75303e8aff286cb18208a21393a96011c94c84a1fe90ebd2f3f3f62132",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/loader_test.go"
+    },
+    {
+      "path": "internal/config/registry.go",
+      "sha256": "bd03078025b503a8d16610692dbbb195ad8170a4d2efd37371062931ad8d4bbc",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/registry.go"
+    },
+    {
+      "path": "internal/config/registry_test.go",
+      "sha256": "aea8c9253b262dbcb177fdb67a9efe05cf4b357fd9e64a000278877138f870f3",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/registry_test.go"
+    },
+    {
+      "path": "internal/config/validate.go",
+      "sha256": "cd8bbc27f9a88bc148033bed7597e65c47d118d53e657d9767658e7707aae1b4",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/validate.go"
+    },
+    {
+      "path": "internal/config/validate_test.go",
+      "sha256": "bd67ee640324551d9598e4a5b8ca9a1422b8b14bb15ac11a894e58fa783ad574",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/validate_test.go"
+    },
+    {
+      "path": "pkg/components/configapi/client.go",
+      "sha256": "8b40a4fa482516ca0fe4af50e313298761ec4b755036bde5bb5090c22d196e4e",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/client.go"
+    },
+    {
+      "path": "pkg/components/configapi/handlers.go",
+      "sha256": "29a53ef2aa24a8fe2cddcb21944d4fb24ed5ead87a5d677b9d961acc47188f5d",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/handlers.go"
+    },
+    {
+      "path": "pkg/components/configapi/handlers_test.go",
+      "sha256": "93afe18d7acfcf7ab112a63b138c14ba471117689e66fb346188ba15e59786f6",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/handlers_test.go"
+    },
+    {
+      "path": "pkg/components/configapi/logging.go",
+      "sha256": "b05b5a494e2f908f30336cd80b2536d54c47afd56ab52b2d7d639c577d08fa1c",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/logging.go"
+    },
+    {
+      "path": "pkg/components/configapi/logging_test.go",
+      "sha256": "25858bf0f0e4287b089fc0ea6a4e60ad30128444602851b4602a7656c8f5a87d",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/logging_test.go"
+    },
+    {
+      "path": "pkg/components/configapi/server.go",
+      "sha256": "6657195748496fa2ba3e27e118ac9a0e65d2a6a6a331704c5a93b9856d624938",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/server.go"
+    },
+    {
+      "path": "pkg/components/configapi/server_test.go",
+      "sha256": "903583858931ffb71c9995b696c195a6bb081d0da7a977c27f6b62b5755799b6",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/server_test.go"
+    },
+    {
+      "path": "pkg/components/configapi/service.go",
+      "sha256": "0314bf250b2b28212795665833556cdaa6acca9a99042776a8b547a786e449b7",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/service.go"
+    },
+    {
+      "path": "pkg/components/configapi/umask_unix_test.go",
+      "sha256": "d70a5dee477d437ab395b8d0d104de078ead10dca737c14616828b5d996302a9",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/configapi/umask_unix_test.go"
+    },
+    {
+      "path": "types/config.go",
+      "sha256": "e59764b93fd6689f091e79a17a633d94e910ebc23ae7db375734e212211ce4fa",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/config.go"
+    },
+    {
+      "path": "types/const.go",
+      "sha256": "f60c550e2f40060a51b0ec45a0da0bb7c5add84a30e06570517c87588f55d52d",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/const.go"
+    },
+    {
+      "path": "types/const_test.go",
+      "sha256": "0d10e498eebb2145be393f5e382c5aeeb28d31414298c74cad9250cd1e34b7da",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/const_test.go"
+    },
+    {
+      "path": "types/types.go",
+      "sha256": "5af0870971322424fcb8ba24ccf4399b23bfcaa3e6c0a8e0ed95fc12f8d1d4ab",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/types.go"
+    },
+    {
+      "path": "types/var.go",
+      "sha256": "239e6613f489f238ca6726b19eea6f8086df3efc1315cf8d3cac55be808e153a",
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/var.go"
+    }
+  ]
+}

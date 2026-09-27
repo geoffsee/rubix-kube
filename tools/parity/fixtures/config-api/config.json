@@ -1,0 +1,17 @@
+[
+  {
+    "backup_matches_first": true,
+    "backup_mode": "0400",
+    "failed_write_preserves_original": true,
+    "failed_write_rejected": true,
+    "first": "api:\n  enabled: false\n  socketPath: \"\"\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: fixture-synthetic-key\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+    "ordinary_backup_mode": "0600",
+    "preexisting_backup_mode": "0644",
+    "remaining_entries": [
+      "config.yaml",
+      "config.yaml.bak"
+    ],
+    "second": "api:\n  enabled: false\n  socketPath: \"\"\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1400\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: fixture-synthetic-key\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+    "target_mode": "0600"
+  }
+]
