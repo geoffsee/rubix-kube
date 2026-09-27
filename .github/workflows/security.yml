@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   merge_group:
   schedule:
     - cron: '23 5 * * 1'
@@ -13,12 +14,24 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Metadata edits must not cancel active or queued validation of the same revision.
+  group: >-
+    ${{ github.workflow }}-${{ github.ref }}-${{
+      github.event_name == 'pull_request' && github.event.action == 'edited'
+      && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+      && 'metadata' || 'validation' }}
   cancel-in-progress: true
 
 jobs:
   security:
-    name: Security
+    # Skipped required checks count as passing. Use a separate name for metadata-only events.
+    name: >-
+      ${{ github.event_name == 'pull_request' && github.event.action == 'edited'
+        && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+        && 'Metadata edit (Security)' || 'Security' }}
+    if: >-
+      github.event_name != 'pull_request' || github.event.action != 'edited'
+      || github.event.changes.base || !(github.event.changes.title || github.event.changes.body)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   merge_group:
   workflow_dispatch:
 
@@ -11,7 +12,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Metadata edits must not cancel active or queued validation of the same revision.
+  group: >-
+    ${{ github.workflow }}-${{ github.ref }}-${{
+      github.event_name == 'pull_request' && github.event.action == 'edited'
+      && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+      && 'metadata' || 'validation' }}
   cancel-in-progress: true
 
 env:
@@ -19,7 +25,14 @@ env:
 
 jobs:
   format:
-    name: Format
+    # Skipped required checks count as passing. Use separate names for metadata-only events.
+    name: >-
+      ${{ github.event_name == 'pull_request' && github.event.action == 'edited'
+        && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+        && 'Metadata edit (Format)' || 'Format' }}
+    if: >-
+      github.event_name != 'pull_request' || github.event.action != 'edited'
+      || github.event.changes.base || !(github.event.changes.title || github.event.changes.body)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -30,7 +43,13 @@ jobs:
       - run: cargo fmt-check
 
   lint:
-    name: Clippy
+    name: >-
+      ${{ github.event_name == 'pull_request' && github.event.action == 'edited'
+        && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+        && 'Metadata edit (Clippy)' || 'Clippy' }}
+    if: >-
+      github.event_name != 'pull_request' || github.event.action != 'edited'
+      || github.event.changes.base || !(github.event.changes.title || github.event.changes.body)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -43,7 +62,14 @@ jobs:
       - run: cargo lint
 
   test:
-    name: Tests (${{ matrix.profile }})
+    name: >-
+      ${{ github.event_name == 'pull_request' && github.event.action == 'edited'
+        && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+        && 'Metadata edit (Tests)'
+        || format('Tests ({0})', matrix.profile) }}
+    if: >-
+      github.event_name != 'pull_request' || github.event.action != 'edited'
+      || github.event.changes.base || !(github.event.changes.title || github.event.changes.body)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
@@ -86,7 +112,13 @@ jobs:
           PY
 
   dependencies:
-    name: Dependencies
+    name: >-
+      ${{ github.event_name == 'pull_request' && github.event.action == 'edited'
+        && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
+        && 'Metadata edit (Dependencies)' || 'Dependencies' }}
+    if: >-
+      github.event_name != 'pull_request' || github.event.action != 'edited'
+      || github.event.changes.base || !(github.event.changes.title || github.event.changes.body)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
