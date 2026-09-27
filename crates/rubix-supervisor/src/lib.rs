@@ -4,3 +4,6 @@ mod coordinator;
 mod model;
 pub use coordinator::Supervisor;
 pub use model::*;
+
+#[cfg(unix)]
+pub mod signals;

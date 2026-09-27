@@ -1,0 +1,9 @@
+63b067c5cf4420da232a36dcf4ef9b8915765f574ea787a33bf49844a8046a95  /out/signals.test
+
+running 2 tests
+test signal_child ... ignored, invoked only by the owned-subprocess qualification test
+RUBIX_QUALIFICATION repetitions=20 full_partial_signal_cases=160 worker_failure_cases=20 all_children_reaped=true
+test real_unix_signals_and_worker_failure_in_owned_subprocesses ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 17.05s
+

@@ -9,7 +9,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time"] }
+tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "signal"] }
 
 [dev-dependencies]
 tokio = { version = "=1.53.1", features = ["test-util"] }
