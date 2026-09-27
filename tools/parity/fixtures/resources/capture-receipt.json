@@ -1,0 +1,41 @@
+{
+  "builder": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+  "capture_driver_sha256": "4e9ab35635e777d2f8893dcf28197a50b25913eb216f21d901743fb0f90e5a8f",
+  "cleanup_errors": [],
+  "harness_sha256": {
+    "pki/pki_capture_test.go": "0ebf68176d2d1cf67fb9f3062fb6d36a3c91b2c8549c95dd5f9510379eae1805",
+    "resources/Capture.Dockerfile": "8f0674992d3905c42cb1fc0b7907992b5fe069c9c6fae30963e4a6675779c3ff",
+    "resources/coredns_capture_test.go": "20ce79c78bd3b54ac0cf835b5864ade93d44a95da88b7ff9e98b493b2411abe8",
+    "resources/d2k_capture_test.go": "1c67db9f371fd9e8b32f0be8aae5882d613377baa59e97304adccacef1ffff1b",
+    "resources/localpath_capture_test.go": "4bbe5b715e48c8c08509bc5134ebbaf9e96cadcffa9411567fe865aee2706b44",
+    "resources/portainer_capture_test.go": "43dea256e7602c8be8da315b8ea9eab366b706de1f154079c012d10c914b2e6c"
+  },
+  "image_id": "sha256:0d7aa59290c985c18cbc60933b689a11b7db99652848724a8592b71d0387412f",
+  "reference_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "runs": {
+    "coredns": {
+      "exit_code": 0,
+      "stdout_sha256": "8629c36be94773f9de41668c122df2fbaf251654455c8c0df38b0e0ff8982bda"
+    },
+    "d2k": {
+      "exit_code": 0,
+      "stdout_sha256": "9410b88be7be0934d337b81a8ef05664593ac28692fe088aad8895167a451acd"
+    },
+    "localpath": {
+      "exit_code": 0,
+      "stdout_sha256": "2c2a92a0ec41ec09224389b829d0cfb96167991491a55e777daec37d43d5b115"
+    },
+    "pki": {
+      "exit_code": 0,
+      "stdout_sha256": "18967348e2774a94295a4b204b18b899c70427679b9abd2e796dfb78c6804280"
+    },
+    "portainer": {
+      "exit_code": 0,
+      "stdout_sha256": "a2e8b5dd44c82cce57a89b5f79438014ac9ffdc5695f1349a808b080cd7cf1c1"
+    }
+  },
+  "schema": 1,
+  "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec"
+}
