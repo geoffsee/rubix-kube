@@ -1,0 +1,65 @@
+{
+  "platform": "darwin-arm64",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "commands": [
+    {
+      "command": "python3 tools/upstream/upstream.py generate-cri --cache-dir <prepared-cache> --output-dir <temporary-a>",
+      "exit_code": 0,
+      "receipt": {
+        "cargo_lock_sha256": "646f8c0d96b5018d4e79e5fa4ceb9adcd4439873f19c12c0429294baa4b2b363",
+        "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+        "generator_sha256": "5ee4bcf98b5c0c8e907a01133071bfded83e0a3280513d42ec9d7f24db79e65d",
+        "input_manifest_sha256": "673b9cad7da8aaa867b5b0d5878e3ca8dad3168322e8493f705ee6a3fc7f99aa",
+        "mode": "generate",
+        "output_bytes": 178603,
+        "output_sha256": "cd0e32f1168232c195f29714b9bed6580e551781a0d17d11db9b07a79375c9cd",
+        "platform": "darwin-arm64",
+        "rpc_count": 35,
+        "schema_version": 1,
+        "source_sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5"
+      }
+    },
+    {
+      "command": "python3 tools/upstream/upstream.py generate-cri --cache-dir <prepared-cache> --output-dir <temporary-b>",
+      "exit_code": 0,
+      "receipt": {
+        "cargo_lock_sha256": "646f8c0d96b5018d4e79e5fa4ceb9adcd4439873f19c12c0429294baa4b2b363",
+        "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+        "generator_sha256": "5ee4bcf98b5c0c8e907a01133071bfded83e0a3280513d42ec9d7f24db79e65d",
+        "input_manifest_sha256": "673b9cad7da8aaa867b5b0d5878e3ca8dad3168322e8493f705ee6a3fc7f99aa",
+        "mode": "generate",
+        "output_bytes": 178603,
+        "output_sha256": "cd0e32f1168232c195f29714b9bed6580e551781a0d17d11db9b07a79375c9cd",
+        "platform": "darwin-arm64",
+        "rpc_count": 35,
+        "schema_version": 1,
+        "source_sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5"
+      }
+    }
+  ],
+  "two_output_directories_identical": true,
+  "drift_negative": {
+    "exit_code": 1,
+    "committed_output_preserved": true,
+    "message": "generated output drift"
+  },
+  "spoofed_compiler_negative": {
+    "exit_code": 1,
+    "message": "length or SHA-256 mismatch"
+  },
+  "committed_output_check": {
+    "cargo_lock_sha256": "646f8c0d96b5018d4e79e5fa4ceb9adcd4439873f19c12c0429294baa4b2b363",
+    "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+    "generator_sha256": "5ee4bcf98b5c0c8e907a01133071bfded83e0a3280513d42ec9d7f24db79e65d",
+    "input_manifest_sha256": "673b9cad7da8aaa867b5b0d5878e3ca8dad3168322e8493f705ee6a3fc7f99aa",
+    "mode": "check",
+    "output_bytes": 178603,
+    "output_sha256": "cd0e32f1168232c195f29714b9bed6580e551781a0d17d11db9b07a79375c9cd",
+    "platform": "darwin-arm64",
+    "rpc_count": 35,
+    "schema_version": 1,
+    "source_sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5"
+  },
+  "python_test_count": 17,
+  "scope": "translation/reproducibility and input failure checks, not CRI runtime parity"
+}

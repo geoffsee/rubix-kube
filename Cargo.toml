@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*"]
+members = ["crates/*", "tools/upstream"]
 default-members = ["crates/rubix-kube"]
 
 [workspace.package]
