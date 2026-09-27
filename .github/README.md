@@ -117,3 +117,21 @@ settings consistent with the allowed squash/rebase methods and disable merge com
 
 If the default branch is renamed, update the workflow `push.branches` filters; the rulesets
 and cache-write policy follow the repository's default branch automatically.
+
+## Upstream and fixture gates
+
+The debug test job explicitly prepares verified upstream inputs, builds the maintenance
+generator, compares committed CRI/containerd clients, checks published Kubernetes binding
+provenance, and compares independent official schema/protocol inventories. These operations
+are CI checks and explicit refresh commands; ordinary Rust builds still consume committed
+clients. Python regressions run afterward, so prepared-parser integration tests execute.
+
+Prepared inputs have a manifest/OS/architecture cache key. Every restored byte is reverified;
+only successful default-branch push jobs save caches. Cold caches download the same pinned
+inputs. Cargo dependencies are fetched explicitly before the offline metadata provenance
+check. No cached test result replaces validation of the current revision.
+
+Real privileged VM and baseline capture commands remain explicit developer integrations.
+Their frozen observations and deliberate mutation regressions run in CI; those checks do not
+claim fresh node parity. Official executable defaults, feature gates and full lifecycle
+qualification retain their separate acceptance requirements.
