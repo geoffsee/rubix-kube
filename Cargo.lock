@@ -684,6 +684,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rubix-supervisor"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "rubix-upstream-codegen"
 version = "0.1.0"
 dependencies = [
