@@ -678,6 +678,10 @@ dependencies = [
 [[package]]
 name = "rubix-kube"
 version = "0.1.0"
+dependencies = [
+ "rubix-config",
+ "serde_json",
+]
 
 [[package]]
 name = "rubix-upstream-codegen"
