@@ -1,0 +1,1129 @@
+{
+  "deliberate_changed_expectation": {
+    "result": {
+      "schema_version": 1,
+      "status": "failed",
+      "cases": [
+        {
+          "id": "default-document",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "000.stdout",
+          "stderr_file": "000.stderr",
+          "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.06635537499096245
+        }
+      ],
+      "unsupported_capabilities": [
+        "privileged-runtime",
+        "cluster-lifecycle",
+        "conformance"
+      ],
+      "environment": {
+        "system": "Linux",
+        "architecture": "aarch64",
+        "kernel": "7.0.12-linuxkit",
+        "driver_uid": 0,
+        "artifact_uid": 65532
+      },
+      "driver_sha256": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
+      "artifact": {
+        "schema_version": 1,
+        "kind": "go",
+        "binary": "kubesolo",
+        "sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
+        "version": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+        "source": {
+          "repository": "https://github.com/portainer/kubesolo",
+          "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d"
+        },
+        "build": {
+          "variant": "external_deps",
+          "toolchain": "go1.26.5",
+          "cgo": true,
+          "dockerfile_sha256": "a5f48fafe987e290a0f690c9de642b0e16bdecd325ac5b370755147d2d1df84c",
+          "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec"
+        }
+      },
+      "suite_id": "config-deliberate-mismatch",
+      "suite_sha256": "edbfd5111a510ee8d446441e440a7bc9730b510f2cb58fd1dea305770c1fee68"
+    },
+    "runner": {
+      "schema_version": 1,
+      "exit_code": 1,
+      "errors": [],
+      "source_sha256": {
+        "run.py": "b81a0fb298d762c4feee7d6e6b7be2f61aaa029a404c1e179329469153333f3d",
+        "driver.py": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
+        "Dockerfile": "40ce30dcbcda0dbf0e8953c7552197b7b60b5838569b54c2d11d5072ea6b2882",
+        "suite": "edbfd5111a510ee8d446441e440a7bc9730b510f2cb58fd1dea305770c1fee68",
+        "artifact_descriptor": "8116cd99591c295d0253d265bc0dde3063c7ccce321600dc6cbd01431bd33bef"
+      },
+      "owned_container": "rubix-parity-5dcdcb52509d435aa0adf5cc321be516",
+      "owned_image": "rubix-parity-5dcdcb52509d435aa0adf5cc321be516:test",
+      "owned_volume": "rubix-parity-5dcdcb52509d435aa0adf5cc321be516-evidence"
+    },
+    "verified_cleanup": {
+      "container": true,
+      "image": true,
+      "volume": true
+    },
+    "observations": {
+      "default-document": {
+        "exit_code": 0,
+        "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr": ""
+      }
+    }
+  },
+  "actual_rust_placeholder": {
+    "result": {
+      "schema_version": 1,
+      "status": "failed",
+      "cases": [
+        {
+          "id": "default-document",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "000.stdout",
+          "stderr_file": "000.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0037666660064132884
+        },
+        {
+          "id": "missing-explicit-file-keeps-defaults",
+          "argv": [
+            "--print-config",
+            "--config=/tmp/rubix-does-not-exist.yaml"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "001.stdout",
+          "stderr_file": "001.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0031342500005848706
+        },
+        {
+          "id": "missing-environment-file-keeps-defaults",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "002.stdout",
+          "stderr_file": "002.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003270708999480121
+        },
+        {
+          "id": "deprecated-full-is-no-op",
+          "argv": [
+            "--print-config",
+            "--full"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation",
+            "stderr missing 'deprecated and has no effect'"
+          ],
+          "stdout_file": "003.stdout",
+          "stderr_file": "003.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.008111333008855581
+        },
+        {
+          "id": "deprecated-full-environment-is-no-op",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation",
+            "stderr missing 'deprecated and has no effect'"
+          ],
+          "stdout_file": "004.stdout",
+          "stderr_file": "004.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003380374997504987
+        },
+        {
+          "id": "file-partial-retains-other-defaults",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "005.stdout",
+          "stderr_file": "005.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0032536670041736215
+        },
+        {
+          "id": "file-explicit-zero-and-false",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing '  mtu: 0\\n'",
+            "stdout missing '  loadBalancer:\\n    enabled: false\\n'",
+            "stdout missing '  localPath:\\n    enabled: false\\n'"
+          ],
+          "stdout_file": "006.stdout",
+          "stderr_file": "006.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0032428329868707806
+        },
+        {
+          "id": "environment-over-file",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "007.stdout",
+          "stderr_file": "007.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0040825000032782555
+        },
+        {
+          "id": "flag-over-environment-and-file",
+          "argv": [
+            "--print-config",
+            "--mtu=1500",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "008.stdout",
+          "stderr_file": "008.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003641874995082617
+        },
+        {
+          "id": "flag-over-environment",
+          "argv": [
+            "--print-config",
+            "--path=/srv/flag"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "009.stdout",
+          "stderr_file": "009.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0033028749894583598
+        },
+        {
+          "id": "environment-false-over-file-true",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing '  localPath:\\n    enabled: false\\n'"
+          ],
+          "stdout_file": "010.stdout",
+          "stderr_file": "010.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003528333007125184
+        },
+        {
+          "id": "environment-zero-over-file",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "011.stdout",
+          "stderr_file": "011.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003245749991037883
+        },
+        {
+          "id": "environment-empty-clears-file-value",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "012.stdout",
+          "stderr_file": "012.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0027582500042626634
+        },
+        {
+          "id": "flag-false-over-environment-true",
+          "argv": [
+            "--print-config",
+            "--no-local-storage"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing '  localPath:\\n    enabled: false\\n'"
+          ],
+          "stdout_file": "013.stdout",
+          "stderr_file": "013.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.007836292003048584
+        },
+        {
+          "id": "flag-zero-over-environment",
+          "argv": [
+            "--print-config",
+            "--mtu=0"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "014.stdout",
+          "stderr_file": "014.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.007026999999652617
+        },
+        {
+          "id": "flag-empty-clears-environment",
+          "argv": [
+            "--print-config",
+            "--node-ip="
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "015.stdout",
+          "stderr_file": "015.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0032807079987833276
+        },
+        {
+          "id": "container-mode-explicit-false",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: \"\"\\n'"
+          ],
+          "stdout_file": "016.stdout",
+          "stderr_file": "016.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.002812999999150634
+        },
+        {
+          "id": "container-mode-explicit-true",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing 'runtime:\\n  containerMode: true\\n  endpoint: \"\"\\n'"
+          ],
+          "stdout_file": "017.stdout",
+          "stderr_file": "017.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0025976659962907434
+        },
+        {
+          "id": "all-document-settings-round-trip",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing 'api:\\n  enabled: true\\n  socketPath: /run/fixture.sock\\n'",
+            "stdout missing 'd2k:\\n  enabled: true\\n  namespace: fixture-d2k\\n'",
+            "stdout missing '    extraSANs:\\n    - example.invalid\\n    - 192.0.2.11\\n    startupTimeoutSeconds: 123\\n'",
+            "stdout missing '    systemReserved:\\n      memory: 128Mi\\n'",
+            "stdout missing '  nodeName: fixture-node\\n'",
+            "stdout missing 'logging:\\n  debug: true\\n  pprof: true\\n'",
+            "stdout missing 'metrics:\\n  bindAddress: 127.0.0.1:9205\\n  enabled: true\\n'",
+            "stdout missing 'network:\\n  disableIPv6: true\\n  loadBalancer:\\n    enabled: true\\n    ip: 192.0.2.20\\n  mtu: 1400\\n  nodeIP: 192.0.2.10\\n'",
+            "stdout missing 'path: /srv/fixture\\n'",
+            "stdout missing 'portainer:\\n  async: true\\n  edgeID: fixture-id\\n  edgeKey: synthetic-fixture-key\\n  image: docker.io/portainer/agent:fixture\\n'",
+            "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: unix:///run/crio/crio.sock\\n'",
+            "stdout missing 'storage:\\n  dbWALRepair: true\\n  localPath:\\n    enabled: false\\n    sharedPath: /srv/volumes\\n'"
+          ],
+          "stdout_file": "018.stdout",
+          "stderr_file": "018.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.009582915998180397
+        },
+        {
+          "id": "all-environment-settings",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing 'api:\\n  enabled: true\\n  socketPath: /run/fixture.sock\\n'",
+            "stdout missing 'd2k:\\n  enabled: true\\n  namespace: fixture-d2k\\n'",
+            "stdout missing '    extraSANs:\\n    - example.invalid\\n    - 192.0.2.11\\n    startupTimeoutSeconds: 123\\n'",
+            "stdout missing '    systemReserved:\\n      memory: 128Mi\\n'",
+            "stdout missing '  nodeName: fixture-node\\n'",
+            "stdout missing 'logging:\\n  debug: true\\n  pprof: true\\n'",
+            "stdout missing 'metrics:\\n  bindAddress: 127.0.0.1:9205\\n  enabled: true\\n'",
+            "stdout missing 'network:\\n  disableIPv6: true\\n  loadBalancer:\\n    enabled: true\\n    ip: 192.0.2.20\\n  mtu: 1400\\n  nodeIP: 192.0.2.10\\n'",
+            "stdout missing 'path: /srv/fixture\\n'",
+            "stdout missing 'portainer:\\n  async: true\\n  edgeID: fixture-id\\n  edgeKey: synthetic-fixture-key\\n  image: docker.io/portainer/agent:fixture\\n'",
+            "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: unix:///run/crio/crio.sock\\n'",
+            "stdout missing 'storage:\\n  dbWALRepair: true\\n  localPath:\\n    enabled: false\\n    sharedPath: /srv/volumes\\n'"
+          ],
+          "stdout_file": "019.stdout",
+          "stderr_file": "019.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0030791659955866635
+        },
+        {
+          "id": "all-legacy-flags",
+          "argv": [
+            "--print-config",
+            "--path=/srv/fixture",
+            "--debug",
+            "--pprof-server",
+            "--node-ip=192.0.2.10",
+            "--mtu=1400",
+            "--disable-ipv6",
+            "--load-balancer",
+            "--load-balancer-ip=192.0.2.20",
+            "--container-runtime-endpoint=unix:///run/crio/crio.sock",
+            "--no-container-mode",
+            "--apiserver-extra-sans= example.invalid, ,192.0.2.11,",
+            "--startup-timeout=123",
+            "--cpu-manager-policy=none",
+            "--system-reserved=memory=128Mi",
+            "--no-local-storage",
+            "--local-storage-shared-path=/srv/volumes",
+            "--db-wal-repair",
+            "--portainer-edge-id=fixture-id",
+            "--portainer-edge-key=synthetic-fixture-key",
+            "--portainer-edge-async",
+            "--portainer-edge-image=portainer/agent:fixture",
+            "--d2k",
+            "--d2k-namespace=fixture-d2k",
+            "--metrics-server",
+            "--metrics-bind-address=127.0.0.1:9205"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing 'api:\\n  enabled: true\\n  socketPath: /run/fixture.sock\\n'",
+            "stdout missing 'd2k:\\n  enabled: true\\n  namespace: fixture-d2k\\n'",
+            "stdout missing '    extraSANs:\\n    - example.invalid\\n    - 192.0.2.11\\n    startupTimeoutSeconds: 123\\n'",
+            "stdout missing '    systemReserved:\\n      memory: 128Mi\\n'",
+            "stdout missing '  nodeName: fixture-node\\n'",
+            "stdout missing 'logging:\\n  debug: true\\n  pprof: true\\n'",
+            "stdout missing 'metrics:\\n  bindAddress: 127.0.0.1:9205\\n  enabled: true\\n'",
+            "stdout missing 'network:\\n  disableIPv6: true\\n  loadBalancer:\\n    enabled: true\\n    ip: 192.0.2.20\\n  mtu: 1400\\n  nodeIP: 192.0.2.10\\n'",
+            "stdout missing 'path: /srv/fixture\\n'",
+            "stdout missing 'portainer:\\n  async: true\\n  edgeID: fixture-id\\n  edgeKey: synthetic-fixture-key\\n  image: docker.io/portainer/agent:fixture\\n'",
+            "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: unix:///run/crio/crio.sock\\n'",
+            "stdout missing 'storage:\\n  dbWALRepair: true\\n  localPath:\\n    enabled: false\\n    sharedPath: /srv/volumes\\n'"
+          ],
+          "stdout_file": "020.stdout",
+          "stderr_file": "020.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003533374998369254
+        },
+        {
+          "id": "explicit-empty-sans-removes-list",
+          "argv": [
+            "--print-config",
+            "--apiserver-extra-sans=",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "021.stdout",
+          "stderr_file": "021.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.005166791990632191
+        },
+        {
+          "id": "missing-schema-warns-and-keeps-defaults",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation",
+            "stderr missing 'does not declare an apiVersion; assuming kubesolo.io/v1alpha1'"
+          ],
+          "stdout_file": "022.stdout",
+          "stderr_file": "022.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.005478708000737242
+        },
+        {
+          "id": "wrong-kind-is-warning",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout missing 'kind: Other\\n'",
+            "stderr missing 'KubeSolo only has Config, and read the file as one'"
+          ],
+          "stdout_file": "023.stdout",
+          "stderr_file": "023.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.00413579199812375
+        },
+        {
+          "id": "unknown-field-is-warning",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation",
+            "stderr missing 'contains settings this version of KubeSolo does not recognise'"
+          ],
+          "stdout_file": "024.stdout",
+          "stderr_file": "024.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.007548833993496373
+        },
+        {
+          "id": "duplicate-field-warns-last-value-wins",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation",
+            "stderr missing 'contains settings this version of KubeSolo does not recognise'"
+          ],
+          "stdout_file": "025.stdout",
+          "stderr_file": "025.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.002962540995213203
+        },
+        {
+          "id": "unsupported-schema-is-fatal",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'does not understand (expected kubesolo.io/v1alpha1)'"
+          ],
+          "stdout_file": "026.stdout",
+          "stderr_file": "026.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.002979416007292457
+        },
+        {
+          "id": "malformed-yaml-is-fatal",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'error converting YAML to JSON'"
+          ],
+          "stdout_file": "027.stdout",
+          "stderr_file": "027.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0029020829970249906
+        },
+        {
+          "id": "wrong-field-type-is-fatal",
+          "argv": [
+            "--print-config",
+            "--config",
+            "{fixture:config.yaml}"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'cannot unmarshal string'"
+          ],
+          "stdout_file": "028.stdout",
+          "stderr_file": "028.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0033567079954082146
+        },
+        {
+          "id": "directory-config-is-fatal",
+          "argv": [
+            "--print-config",
+            "--config=/tmp"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'is a directory'"
+          ],
+          "stdout_file": "029.stdout",
+          "stderr_file": "029.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003376624998054467
+        },
+        {
+          "id": "unknown-flag-is-fatal",
+          "argv": [
+            "--not-a-real-flag"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing \"unknown long flag '--not-a-real-flag'\""
+          ],
+          "stdout_file": "030.stdout",
+          "stderr_file": "030.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003303833000245504
+        },
+        {
+          "id": "boolean-equals-syntax-is-rejected",
+          "argv": [
+            "--print-config",
+            "--local-storage=false"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'unexpected false'"
+          ],
+          "stdout_file": "031.stdout",
+          "stderr_file": "031.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0048279999900842085
+        },
+        {
+          "id": "unexpected-positional-is-fatal",
+          "argv": [
+            "unexpected-command"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'unexpected unexpected-command'"
+          ],
+          "stdout_file": "032.stdout",
+          "stderr_file": "032.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.00561766600003466
+        },
+        {
+          "id": "invalid-boolean-environment-is-fatal",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'not-a-bool'"
+          ],
+          "stdout_file": "033.stdout",
+          "stderr_file": "033.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003623625001637265
+        },
+        {
+          "id": "invalid-integer-environment-is-fatal",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'not-an-integer'"
+          ],
+          "stdout_file": "034.stdout",
+          "stderr_file": "034.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0033673330035526305
+        },
+        {
+          "id": "invalid-runtime-endpoint-is-fatal",
+          "argv": [
+            "--print-config",
+            "--container-runtime-endpoint=tcp://127.0.0.1:1234"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'expected an absolute socket path or a unix:// URL'"
+          ],
+          "stdout_file": "035.stdout",
+          "stderr_file": "035.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0031786670006113127
+        },
+        {
+          "id": "invalid-image-reference-is-fatal",
+          "argv": [
+            "--print-config",
+            "--portainer-edge-image=INVALID IMAGE"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'invalid image reference'"
+          ],
+          "stdout_file": "036.stdout",
+          "stderr_file": "036.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.008662916996399872
+        },
+        {
+          "id": "cpu-policy-unknown-is-fatal",
+          "argv": [
+            "--print-config",
+            "--cpu-manager-policy=unknown"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'must be none or static'"
+          ],
+          "stdout_file": "037.stdout",
+          "stderr_file": "037.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.00302195901167579
+        },
+        {
+          "id": "cpu-static-container-mode-is-fatal",
+          "argv": [
+            "--print-config",
+            "--cpu-manager-policy=static",
+            "--container-mode"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'is not supported in container mode'"
+          ],
+          "stdout_file": "038.stdout",
+          "stderr_file": "038.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0032482920069014654
+        },
+        {
+          "id": "cpu-options-require-static",
+          "argv": [
+            "--print-config",
+            "--cpu-manager-policy-options=full-pcpus-only=true"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'require --cpu-manager-policy=static'"
+          ],
+          "stdout_file": "039.stdout",
+          "stderr_file": "039.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0030824169953120872
+        },
+        {
+          "id": "reserved-cpus-require-static",
+          "argv": [
+            "--print-config",
+            "--reserved-cpus=0"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'require --cpu-manager-policy=static'"
+          ],
+          "stdout_file": "040.stdout",
+          "stderr_file": "040.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0030764999974053353
+        },
+        {
+          "id": "malformed-map-is-fatal",
+          "argv": [
+            "--print-config",
+            "--system-reserved=memory"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'expected key=value pairs'"
+          ],
+          "stdout_file": "041.stdout",
+          "stderr_file": "041.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0036340420047054067
+        },
+        {
+          "id": "unsupported-reservation-resource-is-fatal",
+          "argv": [
+            "--print-config",
+            "--system-reserved=unknown=1"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'unsupported --system-reserved resource'"
+          ],
+          "stdout_file": "042.stdout",
+          "stderr_file": "042.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003042333002667874
+        },
+        {
+          "id": "d2k-requires-load-balancer",
+          "argv": [
+            "--print-config",
+            "--d2k",
+            "--no-load-balancer"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'd2k.enabled requires network.loadBalancer.enabled'"
+          ],
+          "stdout_file": "043.stdout",
+          "stderr_file": "043.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.0022439169988501817
+        },
+        {
+          "id": "too-long-api-socket-is-fatal",
+          "argv": [
+            "--print-config"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "exit 0, expected 1",
+            "stdout differs from exact expectation",
+            "stderr missing 'exceeds the 107-byte limit'"
+          ],
+          "stdout_file": "044.stdout",
+          "stderr_file": "044.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.004289709002478048
+        },
+        {
+          "id": "low-mtu-is-warning",
+          "argv": [
+            "--print-config",
+            "--mtu=1200"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation",
+            "stderr missing 'below the IPv6 minimum of 1280'"
+          ],
+          "stdout_file": "045.stdout",
+          "stderr_file": "045.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003098125001997687
+        },
+        {
+          "id": "short-image-is-normalized",
+          "argv": [
+            "--print-config",
+            "--portainer-edge-image=busybox"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "stdout differs from exact expectation"
+          ],
+          "stdout_file": "046.stdout",
+          "stderr_file": "046.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003037750007933937
+        },
+        {
+          "id": "version-bypasses-invalid-runtime-config",
+          "argv": [
+            "--version"
+          ],
+          "status": "failed",
+          "exit_code": 0,
+          "failures": [
+            "combined missing 'version'"
+          ],
+          "stdout_file": "047.stdout",
+          "stderr_file": "047.stderr",
+          "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "owned_process_group_absent": true,
+          "duration_seconds": 0.003323291995911859
+        }
+      ],
+      "unsupported_capabilities": [
+        "privileged-runtime",
+        "cluster-lifecycle",
+        "conformance"
+      ],
+      "environment": {
+        "system": "Linux",
+        "architecture": "aarch64",
+        "kernel": "7.0.12-linuxkit",
+        "driver_uid": 0,
+        "artifact_uid": 65532
+      },
+      "driver_sha256": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
+      "artifact": {
+        "schema_version": 1,
+        "kind": "rust",
+        "binary": "rubix-kube",
+        "sha256": "c2e9471f7903a46b1cf4e670a870b801e7129632219705233123be6dccc5d122",
+        "version": "0.1.0",
+        "source": {
+          "repository": "https://github.com/geoffsee/rubix-kube",
+          "revision": "fa5e4ce8092849efd7e95b70c2e3c7ed1fc2208d"
+        },
+        "build": {
+          "toolchain": "rustc 1.97.1",
+          "image": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
+          "source_archive_sha256": "7c7048bbee1537ddd05f354f423f086dd5cf73fcaf6777622c949d32b9110ed7",
+          "profile": "release",
+          "target": "aarch64-unknown-linux-gnu"
+        }
+      },
+      "suite_id": "config-command-baseline-v1",
+      "suite_sha256": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2"
+    },
+    "runner": {
+      "schema_version": 1,
+      "exit_code": 1,
+      "errors": [],
+      "source_sha256": {
+        "run.py": "b81a0fb298d762c4feee7d6e6b7be2f61aaa029a404c1e179329469153333f3d",
+        "driver.py": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
+        "Dockerfile": "40ce30dcbcda0dbf0e8953c7552197b7b60b5838569b54c2d11d5072ea6b2882",
+        "suite": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2",
+        "artifact_descriptor": "6d18cf16f50adb886c7893d858f845f4a78d9bc5b574e58441c1f406134cf937"
+      },
+      "owned_container": "rubix-parity-bc068840c6aa479faa6f9c3d6ba5090c",
+      "owned_image": "rubix-parity-bc068840c6aa479faa6f9c3d6ba5090c:test",
+      "owned_volume": "rubix-parity-bc068840c6aa479faa6f9c3d6ba5090c-evidence"
+    },
+    "verified_cleanup": {
+      "container": true,
+      "image": true,
+      "volume": true
+    }
+  },
+  "mutation": "default-document stdout expectation changed only storage.localPath.enabled true to false",
+  "commands": [
+    "python3 tools/parity/run.py --artifact <reference>/artifact.json --suite <copy-with-storage-default-false>.json --output <new-negative-output>",
+    "python3 tools/parity/run.py --artifact <actual-rust-placeholder>/artifact.json --suite tools/parity/fixtures/config-command.json --output <new-rust-negative-output>"
+  ]
+}
