@@ -355,3 +355,17 @@ fn explicit_empty_path_and_unicode_spacing_preserve_raw_go_values() {
         assert_eq!(decode(&printed).unwrap().config, expected_config, "{id}");
     }
 }
+
+#[test]
+fn raw_input_debug_omits_secret_values() {
+    let secret = "synthetic-sensitive-input-key";
+    let flags = ExplicitFlags(BTreeMap::from([(
+        "portainer-edge-key".into(),
+        secret.into(),
+    )]));
+    let environment = BTreeMap::from([("KUBESOLO_PORTAINER_EDGE_KEY".into(), secret.into())]);
+    let parsed = parse_environment(&environment).unwrap();
+    assert!(!format!("{flags:?}").contains(secret));
+    assert!(!format!("{parsed:?}").contains(secret));
+    assert!(format!("{flags:?}").contains("portainer-edge-key"));
+}
