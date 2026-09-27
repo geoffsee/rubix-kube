@@ -5,6 +5,7 @@ import json
 from unittest import mock
 from pathlib import Path
 import tempfile
+import shlex
 import unittest
 
 spec = importlib.util.spec_from_file_location("vm_adapter", Path(__file__).with_name("run.py"))
@@ -66,6 +67,26 @@ class VMContractTests(unittest.TestCase):
             self.assertTrue(any("injected cleanup failure" in error for error in result["errors"]))
             self.assertFalse(result["owned_temporary_directory_removed"])
             self.assertTrue(private.exists())
+
+    def test_vm_uses_shared_fixture_paths_without_inline_interpolation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            case = {"id": "file-config", "files": {"config.yaml": "kind: Config\n"},
+                    "argv": ["--config", "{fixture:config.yaml}", "literal={fixture:config.yaml}"],
+                    "expect": {"exit_code": 0}}
+            adapter.DRIVER.validate_files(case)
+            commands = []
+            def command(label, argv, **kwargs):
+                commands.append(shlex.split(argv[-1]))
+                (output / f"{label}.stdout").write_bytes(b"")
+                (output / f"{label}.stderr").write_bytes(b"")
+                return 0, "", ""
+            report = {"cases": []}
+            adapter.run_cases([case], command, ["ssh-fixture"], output, report)
+            self.assertIn("/fixtures/000/config.yaml", commands[0])
+            self.assertIn("literal={fixture:config.yaml}", commands[0])
+            self.assertNotIn("{fixture:config.yaml}", commands[0])
+            self.assertEqual(report["cases"][0]["status"], "passed")
 
     def test_dangling_cache_symlink_does_not_write_external_target(self):
         with tempfile.TemporaryDirectory() as temporary:

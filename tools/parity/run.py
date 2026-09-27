@@ -13,6 +13,8 @@ import subprocess
 import tempfile
 import uuid
 
+from driver import stage_files, validate_files
+
 BASE = "python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d"
 
 
@@ -30,12 +32,16 @@ def validate(artifact, suite):
     if len(suite["cases"]) > 64:
         raise ValueError("a suite may contain at most 64 cases")
     seen = set()
+    fixture_bytes = 0
     for case in suite["cases"]:
         if case.get("id") in seen or not isinstance(case.get("id"), str):
             raise ValueError("case IDs must be unique strings")
         seen.add(case["id"])
         if not isinstance(case.get("argv"), list) or not all(isinstance(v, str) for v in case["argv"]):
             raise ValueError("case argv must be an array of strings")
+        fixture_bytes += validate_files(case)
+        if fixture_bytes > 1024 * 1024:
+            raise ValueError("suite fixture payload exceeds 1 MiB")
         if not isinstance(case.get("expect", {}).get("exit_code"), int):
             raise ValueError("each case requires an expected integer exit code")
         if not 0 < case.get("timeout_seconds", 30) <= 120:
@@ -137,6 +143,7 @@ def main():
             raise ValueError("artifact digest does not match binary")
         with tempfile.TemporaryDirectory(prefix="rubix-parity-context-") as temporary:
             context = Path(temporary)
+            stage_files(suite["cases"], context / "fixtures")
             shutil.copyfile(binary, context / "executable")
             (context / "executable").chmod(0o755)
             shutil.copyfile(source / "driver.py", context / "driver.py")
@@ -144,6 +151,7 @@ def main():
             shutil.copyfile(args.suite, context / "suite.json")
             (context / "Dockerfile").write_text(
                 f"FROM {BASE}\nWORKDIR /artifact\nCOPY executable driver.py artifact.json suite.json ./\n"
+                "COPY fixtures /fixtures\n"
                 "RUN mkdir /evidence && chmod 0700 /evidence\n"
                 'ENTRYPOINT ["python", "/artifact/driver.py"]\n')
             hashes["Dockerfile"] = hashlib.sha256((context / "Dockerfile").read_bytes()).hexdigest()
