@@ -4,3 +4,6 @@ mod coordinator;
 mod model;
 pub use coordinator::Supervisor;
 pub use model::*;
+
+mod diagnostics;
+pub use diagnostics::{ComponentDiagnostic, LifecycleObserver, LifecycleSnapshot, ObserverClosed};
