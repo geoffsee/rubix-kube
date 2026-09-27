@@ -24,3 +24,12 @@ pub use layers::{
 
 mod render;
 pub use render::render_effective_yaml;
+
+mod persistence;
+pub use persistence::{
+    CleanupFailure, PersistenceError, PersistenceSource, PersistenceStage, WriteOutcome,
+    write_document,
+};
+
+mod describe;
+pub use describe::{SettingDescriptor, describe_settings};
