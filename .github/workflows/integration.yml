@@ -6,6 +6,7 @@ on:
     paths:
       - 'tools/api-json/**'
       - 'tools/defaults/**'
+      - 'tools/resolved-defaults/**'
       - 'tools/integration/**'
       - 'tools/upstream/**'
       - 'Cargo.toml'
@@ -18,6 +19,7 @@ on:
     paths:
       - 'tools/api-json/**'
       - 'tools/defaults/**'
+      - 'tools/resolved-defaults/**'
       - 'tools/integration/**'
       - 'tools/upstream/**'
       - 'Cargo.toml'
@@ -87,6 +89,15 @@ jobs:
           python3 tools/defaults/verify.py "$CAPTURE_DIRECTORY/run0.json"
           python3 tools/defaults/verify.py "$CAPTURE_DIRECTORY/apiserver0.json" \
             --expected tools/defaults/apiserver.expected.json
+      - name: Extract actual API-server completed options twice
+        env:
+          CAPTURE_DIRECTORY: ${{ runner.temp }}/resolved-defaults
+        run: |
+          python3 tools/resolved-defaults/capture.py \
+            --source-archive target/default-inputs/source.tar.gz \
+            --go-archive target/default-inputs/go.tar.gz \
+            --output "$CAPTURE_DIRECTORY"
+          python3 tools/resolved-defaults/verify.py "$CAPTURE_DIRECTORY/run0.json"
       - name: Save verified source archives
         if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.archives.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -98,7 +109,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: official-defaults-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/official-defaults/
+          path: |
+            ${{ runner.temp }}/official-defaults/
+            ${{ runner.temp }}/resolved-defaults/
           if-no-files-found: warn
           retention-days: 14
 
