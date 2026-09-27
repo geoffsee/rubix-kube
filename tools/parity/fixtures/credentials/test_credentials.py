@@ -58,6 +58,8 @@ class Credentials(unittest.TestCase):
    self.assertEqual(subprocess.run(command,capture_output=True).returncode,0)
    (root/'kubelet.json').write_text(json.dumps(verify.expected('apiserver')))
    self.assertNotEqual(subprocess.run(command,capture_output=True).returncode,0)
+   (root/'kubelet.json').write_text(json.dumps(verify.expected('kubelet')))
+   self.assertEqual(subprocess.run(command,capture_output=True).returncode,0)
    (root/'apiserver.json').write_text(json.dumps(verify.expected('kubelet')))
    self.assertNotEqual(subprocess.run(command,capture_output=True).returncode,0)
    (root/'kubelet.json').write_text(json.dumps(verify.expected('kubelet')))
