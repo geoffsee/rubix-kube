@@ -4,6 +4,7 @@ import argparse
 import gzip
 import hashlib
 import io
+import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -155,12 +156,30 @@ def build_report(before, after, before_hashes=None, after_hashes=None):
             'changes': categorized}
 
 
+def include_resolved(report, before_directory, after_directory):
+    """Add explicitly selected completed-option captures to the adoption review."""
+    path = Path(__file__).resolve().parents[1] / 'resolved-defaults' / 'report.py'
+    spec = importlib.util.spec_from_file_location('resolved_options_report', path)
+    adapter = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(adapter)
+    resolved = adapter.build_report(adapter.load_snapshot(before_directory),
+                                    adapter.load_snapshot(after_directory))
+    report['changes'].update(resolved['changes'])
+    for side in ('before', 'after'):
+        report['source_pins'][side]['resolved'] = resolved['source_pins'][side]
+        report['snapshot_sha256'][side].update(
+            {'resolved/' + name: digest for name, digest in resolved['snapshot_sha256'][side].items()})
+    report['change_count'] += resolved['change_count']
+    report['removal_count'] += resolved['removal_count']
+    report['status'] = 'changed' if report['change_count'] else 'unchanged'
+    return report
+
+
 def markdown(report):
     lines = ['# Upstream adoption review', '',
              f"Status: **{report['status']}**; {report['change_count']} changes; {report['removal_count']} removals.", '',
              '## Source pins', '', '```json', json.dumps(report['source_pins'], sort_keys=True, indent=2), '```']
-    for category in CATEGORIES:
-        items = report['changes'][category]
+    for category, items in report['changes'].items():
         lines += ['', '## ' + category.replace('_', ' ').capitalize(), '']
         if not items:
             lines.append('No changes.')
@@ -177,11 +196,17 @@ def main(argv=None):
     parser.add_argument('--before', type=Path, required=True)
     parser.add_argument('--after', type=Path, required=True)
     parser.add_argument('--format', choices=('json', 'markdown'), default='json')
+    parser.add_argument('--before-resolved', type=Path)
+    parser.add_argument('--after-resolved', type=Path)
     args = parser.parse_args(argv)
     try:
+        if (args.before_resolved is None) != (args.after_resolved is None):
+            raise ValueError('both resolved snapshot directories are required')
         before, old_hashes = load_snapshot(args.before)
         after, new_hashes = load_snapshot(args.after)
         report = build_report(before, after, old_hashes, new_hashes)
+        if args.before_resolved is not None:
+            include_resolved(report, args.before_resolved, args.after_resolved)
         print(json.dumps(report, indent=2, sort_keys=True) if args.format == 'json' else markdown(report), end='\n' if args.format == 'json' else '')
         return 1 if report['change_count'] else 0
     except (OSError, EOFError, ValueError, KeyError, TypeError, RecursionError) as error:
