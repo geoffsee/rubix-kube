@@ -31,3 +31,5 @@ Rust image `rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401
 This is partial E02.01 startup infrastructure. It does not close the issue, establish
 configuration/manifests/certificates/lifecycle fixture coverage, or qualify a distribution.
 The privileged VM adapter is separate work. E02.02 owns independent comprehensive oracles.
+
+Go build-info is gzip-compressed to preserve its original tab-separated bytes.
