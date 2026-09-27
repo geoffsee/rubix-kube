@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 root = Path(__file__).resolve().parent.parent
-for directory in sorted({path.parent for path in (root / "tools").glob("*/test_*.py")}):
+for directory in sorted({path.parent for path in (root / "tools").rglob("test_*.py")}):
     subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", str(directory), "-p", "test_*.py"],
         cwd=root,
