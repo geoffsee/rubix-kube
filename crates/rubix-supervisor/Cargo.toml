@@ -1,0 +1,15 @@
+[package]
+name = "rubix-supervisor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time"] }
+
+[dev-dependencies]
+tokio = { version = "=1.53.1", features = ["test-util"] }
