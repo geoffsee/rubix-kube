@@ -288,7 +288,11 @@ fn integer_scalar(clean: &str) -> Option<Value> {
     None
 }
 
-fn scalar(text: &str, style: ScalarStyle, tag: Option<&Tag>) -> Result<Value, ConfigError> {
+pub(crate) fn scalar(
+    text: &str,
+    style: ScalarStyle,
+    tag: Option<&Tag>,
+) -> Result<Value, ConfigError> {
     let explicit = tag
         .filter(|t| t.handle == "tag:yaml.org,2002:" || t.handle == "!!")
         .map(|t| t.suffix.as_str());
