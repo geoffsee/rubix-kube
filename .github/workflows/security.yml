@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # Revalidate after a base change; stable required check names also survive metadata edits.
+    types: [opened, synchronize, reopened, edited]
   merge_group:
   schedule:
     - cron: '23 5 * * 1'
