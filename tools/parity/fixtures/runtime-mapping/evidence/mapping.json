@@ -1,0 +1,1351 @@
+[
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "Cert": "/var/lib/kubesolo/pki/apiserver/apiserver.crt",
+        "Key": "/var/lib/kubesolo/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/var/lib/kubesolo/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "Cert": "/var/lib/kubesolo/pki/admin/admin.crt",
+        "Key": "/var/lib/kubesolo/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/var/lib/kubesolo/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "Key": "/var/lib/kubesolo/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "/var/lib/kubesolo/containerd/containerd",
+      "ContainerdCNIConfigDir": "/var/lib/kubesolo/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/var/lib/kubesolo/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/var/lib/kubesolo/containerd/cni",
+      "ContainerdCNIPluginsDir": "/var/lib/kubesolo/containerd/cni/plugins",
+      "ContainerdConfigFile": "/var/lib/kubesolo/containerd/config.toml",
+      "ContainerdDir": "/var/lib/kubesolo/containerd",
+      "ContainerdImagesDir": "/var/lib/kubesolo/containerd/images",
+      "ContainerdRegistryConfigDir": "/var/lib/kubesolo/containerd/registry",
+      "ContainerdRootDir": "/var/lib/kubesolo/containerd/root",
+      "ContainerdShimBinaryFile": "/var/lib/kubesolo/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/var/lib/kubesolo/containerd/containerd.sock",
+      "ContainerdStateDir": "/var/lib/kubesolo/containerd/state",
+      "ControllerDir": "/var/lib/kubesolo/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "Cert": "/var/lib/kubesolo/pki/controller-manager/controller-manager.crt",
+        "Key": "/var/lib/kubesolo/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/var/lib/kubesolo/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/var/lib/kubesolo/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "ClientCert": "/var/lib/kubesolo/pki/d2k/client.crt",
+        "ClientKey": "/var/lib/kubesolo/pki/d2k/client.key",
+        "ServerCert": "/var/lib/kubesolo/pki/d2k/server.crt",
+        "ServerKey": "/var/lib/kubesolo/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/var/lib/kubesolo/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "/var/lib/kubesolo/kine/db",
+      "KineSocketFile": "/var/lib/kubesolo/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "Cert": "/var/lib/kubesolo/pki/kubelet/kubelet.crt",
+        "Key": "/var/lib/kubesolo/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/var/lib/kubesolo/kubelet/config",
+      "KubeletConfigFile": "/var/lib/kubesolo/kubelet/config/config.yaml",
+      "KubeletDir": "/var/lib/kubesolo/kubelet",
+      "KubeletKubeConfigFile": "/var/lib/kubesolo/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/var/lib/kubesolo/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "/var/lib/kubesolo/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/var/lib/kubesolo/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "/var/lib/kubesolo/pki/apiserver",
+      "PKIAdminDir": "/var/lib/kubesolo/pki/admin",
+      "PKICADir": "/var/lib/kubesolo/pki/ca",
+      "PKIControllerDir": "/var/lib/kubesolo/pki/controller-manager",
+      "PKIDir": "/var/lib/kubesolo/pki",
+      "PKIKubeletDir": "/var/lib/kubesolo/pki/kubelet",
+      "PKIRequestHeaderDir": "/var/lib/kubesolo/pki/request-header",
+      "PKIWebhookDir": "/var/lib/kubesolo/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "/var/lib/kubesolo/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/var/lib/kubesolo/pki/request-header/request-header-ca.crt",
+        "CAKey": "/var/lib/kubesolo/pki/request-header/request-header-ca.key",
+        "ClientCert": "/var/lib/kubesolo/pki/request-header/request-header-client.crt",
+        "ClientKey": "/var/lib/kubesolo/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///var/lib/kubesolo/containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "/var/lib/kubesolo/containerd/containerd.sock",
+      "SandboxImageFile": "/var/lib/kubesolo/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/var/lib/kubesolo/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "/var/lib/kubesolo/pki/ca/ca.crt",
+        "Cert": "/var/lib/kubesolo/pki/webhook/webhook.crt",
+        "Key": "/var/lib/kubesolo/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/var/lib/kubesolo/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "",
+      "hostname": "fixture-node",
+      "id": "default",
+      "node_name": "",
+      "path": "/var/lib/kubesolo"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/state/pki/ca/ca.crt",
+        "Cert": "/fixture/state/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/state/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/state/apiserver",
+      "APIServerExtraSANs": [
+        "fixture.example",
+        "192.0.2.55"
+      ],
+      "AdminCerts": {
+        "CACert": "/fixture/state/pki/ca/ca.crt",
+        "Cert": "/fixture/state/pki/admin/admin.crt",
+        "Key": "/fixture/state/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/state/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/state/pki/ca/ca.crt",
+        "Key": "/fixture/state/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "static",
+        "policyOptions": {
+          "full-pcpus-only": "true"
+        },
+        "reservedCPUs": "0-1"
+      },
+      "ContainerMode": true,
+      "ContainerdBinaryFile": "/fixture/state/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/state/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/state/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/state/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/state/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/state/containerd/config.toml",
+      "ContainerdDir": "/fixture/state/containerd",
+      "ContainerdImagesDir": "/fixture/state/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/state/containerd/registry",
+      "ContainerdRootDir": "/fixture/state/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/state/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/state/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/state/containerd/state",
+      "ControllerDir": "/fixture/state/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/state/pki/ca/ca.crt",
+        "Cert": "/fixture/state/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/state/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/state/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/state/containerd/crun",
+      "D2K": true,
+      "D2KCerts": {
+        "CACert": "/fixture/state/pki/ca/ca.crt",
+        "ClientCert": "/fixture/state/pki/d2k/client.crt",
+        "ClientKey": "/fixture/state/pki/d2k/client.key",
+        "ServerCert": "/fixture/state/pki/d2k/server.crt",
+        "ServerKey": "/fixture/state/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/state/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "fixture-d2k",
+      "DisableIPv6": true,
+      "IsPortainerEdge": true,
+      "KineDir": "/fixture/state/kine/db",
+      "KineSocketFile": "/fixture/state/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/state/pki/ca/ca.crt",
+        "Cert": "/fixture/state/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/state/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/state/kubelet/config",
+      "KubeletConfigFile": "/fixture/state/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/state/kubelet",
+      "KubeletKubeConfigFile": "/fixture/state/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/state/kubelet/volumeplugins",
+      "LoadBalancer": false,
+      "LoadBalancerIP": "2001:db8::11",
+      "LocalPathProvisionerImageFile": "/fixture/state/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/state/local-path-storage",
+      "LocalStorage": false,
+      "MTU": 1280,
+      "MTUSpecified": true,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:19105",
+        "enabled": true
+      },
+      "NodeIP": "2001:db8::10",
+      "NodeIPSpecified": true,
+      "NodeName": "talos-cp-1",
+      "PKIAPIServerDir": "/fixture/state/pki/apiserver",
+      "PKIAdminDir": "/fixture/state/pki/admin",
+      "PKICADir": "/fixture/state/pki/ca",
+      "PKIControllerDir": "/fixture/state/pki/controller-manager",
+      "PKIDir": "/fixture/state/pki",
+      "PKIKubeletDir": "/fixture/state/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/state/pki/request-header",
+      "PKIWebhookDir": "/fixture/state/pki/webhook",
+      "PortainerEdgeImage": "fixture.invalid/agent:custom",
+      "PortainerEdgeImageFile": "/fixture/state/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/state/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/state/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/state/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/state/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///fixture/state/containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "/fixture/state/containerd/containerd.sock",
+      "SandboxImageFile": "/fixture/state/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/state/pki/apiserver/service-account.key",
+      "SystemReserved": {
+        "cpu": "200m",
+        "memory": "128Mi"
+      },
+      "WebhookCerts": {
+        "CACert": "/fixture/state/pki/ca/ca.crt",
+        "Cert": "/fixture/state/pki/webhook/webhook.crt",
+        "Key": "/fixture/state/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/state/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": true,
+      "endpoint": "",
+      "hostname": "unused",
+      "id": "custom",
+      "node_name": "  Talos-CP-1  ",
+      "path": "/fixture/a/../state//"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "pki/ca/ca.crt",
+        "Cert": "pki/apiserver/apiserver.crt",
+        "Key": "pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "pki/ca/ca.crt",
+        "Cert": "pki/admin/admin.crt",
+        "Key": "pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "pki/ca/ca.crt",
+        "Key": "pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "containerd/containerd",
+      "ContainerdCNIConfigDir": "containerd/cni/conf",
+      "ContainerdCNIConfigFile": "containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "containerd/cni",
+      "ContainerdCNIPluginsDir": "containerd/cni/plugins",
+      "ContainerdConfigFile": "containerd/config.toml",
+      "ContainerdDir": "containerd",
+      "ContainerdImagesDir": "containerd/images",
+      "ContainerdRegistryConfigDir": "containerd/registry",
+      "ContainerdRootDir": "containerd/root",
+      "ContainerdShimBinaryFile": "containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "containerd/containerd.sock",
+      "ContainerdStateDir": "containerd/state",
+      "ControllerDir": "controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "pki/ca/ca.crt",
+        "Cert": "pki/controller-manager/controller-manager.crt",
+        "Key": "pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "pki/ca/ca.crt",
+        "ClientCert": "pki/d2k/client.crt",
+        "ClientKey": "pki/d2k/client.key",
+        "ServerCert": "pki/d2k/server.crt",
+        "ServerKey": "pki/d2k/server.key"
+      },
+      "D2KImageFile": "containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "kine/db",
+      "KineSocketFile": "kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "pki/ca/ca.crt",
+        "Cert": "pki/kubelet/kubelet.crt",
+        "Key": "pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "kubelet/config",
+      "KubeletConfigFile": "kubelet/config/config.yaml",
+      "KubeletDir": "kubelet",
+      "KubeletKubeConfigFile": "pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "pki/apiserver",
+      "PKIAdminDir": "pki/admin",
+      "PKICADir": "pki/ca",
+      "PKIControllerDir": "pki/controller-manager",
+      "PKIDir": "pki",
+      "PKIKubeletDir": "pki/kubelet",
+      "PKIRequestHeaderDir": "pki/request-header",
+      "PKIWebhookDir": "pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "pki/request-header/request-header-ca.crt",
+        "CAKey": "pki/request-header/request-header-ca.key",
+        "ClientCert": "pki/request-header/request-header-client.crt",
+        "ClientKey": "pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix://containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "containerd/containerd.sock",
+      "SandboxImageFile": "containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "pki/ca/ca.crt",
+        "Cert": "pki/webhook/webhook.crt",
+        "Key": "pki/webhook/webhook.key"
+      },
+      "WebhookDir": "pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "",
+      "hostname": "fixture-node",
+      "id": "empty-path",
+      "node_name": "",
+      "path": ""
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "state/pki/ca/ca.crt",
+        "Cert": "state/pki/apiserver/apiserver.crt",
+        "Key": "state/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "state/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "state/pki/ca/ca.crt",
+        "Cert": "state/pki/admin/admin.crt",
+        "Key": "state/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "state/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "state/pki/ca/ca.crt",
+        "Key": "state/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "state/containerd/containerd",
+      "ContainerdCNIConfigDir": "state/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "state/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "state/containerd/cni",
+      "ContainerdCNIPluginsDir": "state/containerd/cni/plugins",
+      "ContainerdConfigFile": "state/containerd/config.toml",
+      "ContainerdDir": "state/containerd",
+      "ContainerdImagesDir": "state/containerd/images",
+      "ContainerdRegistryConfigDir": "state/containerd/registry",
+      "ContainerdRootDir": "state/containerd/root",
+      "ContainerdShimBinaryFile": "state/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "state/containerd/containerd.sock",
+      "ContainerdStateDir": "state/containerd/state",
+      "ControllerDir": "state/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "state/pki/ca/ca.crt",
+        "Cert": "state/pki/controller-manager/controller-manager.crt",
+        "Key": "state/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "state/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "state/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "state/pki/ca/ca.crt",
+        "ClientCert": "state/pki/d2k/client.crt",
+        "ClientKey": "state/pki/d2k/client.key",
+        "ServerCert": "state/pki/d2k/server.crt",
+        "ServerKey": "state/pki/d2k/server.key"
+      },
+      "D2KImageFile": "state/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "state/kine/db",
+      "KineSocketFile": "state/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "state/pki/ca/ca.crt",
+        "Cert": "state/pki/kubelet/kubelet.crt",
+        "Key": "state/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "state/kubelet/config",
+      "KubeletConfigFile": "state/kubelet/config/config.yaml",
+      "KubeletDir": "state/kubelet",
+      "KubeletKubeConfigFile": "state/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "state/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "state/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "state/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "state/pki/apiserver",
+      "PKIAdminDir": "state/pki/admin",
+      "PKICADir": "state/pki/ca",
+      "PKIControllerDir": "state/pki/controller-manager",
+      "PKIDir": "state/pki",
+      "PKIKubeletDir": "state/pki/kubelet",
+      "PKIRequestHeaderDir": "state/pki/request-header",
+      "PKIWebhookDir": "state/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "state/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "state/pki/request-header/request-header-ca.crt",
+        "CAKey": "state/pki/request-header/request-header-ca.key",
+        "ClientCert": "state/pki/request-header/request-header-client.crt",
+        "ClientKey": "state/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix://state/containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "state/containerd/containerd.sock",
+      "SandboxImageFile": "state/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "state/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "state/pki/ca/ca.crt",
+        "Cert": "state/pki/webhook/webhook.crt",
+        "Key": "state/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "state/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "",
+      "hostname": "fixture-node",
+      "id": "relative-path",
+      "node_name": "",
+      "path": "relative/../state"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/admin/admin.crt",
+        "Key": "/fixture/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/pki/ca/ca.crt",
+        "Key": "/fixture/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "/fixture/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/containerd/config.toml",
+      "ContainerdDir": "/fixture/containerd",
+      "ContainerdImagesDir": "/fixture/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/containerd/registry",
+      "ContainerdRootDir": "/fixture/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/containerd/state",
+      "ControllerDir": "/fixture/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "ClientCert": "/fixture/pki/d2k/client.crt",
+        "ClientKey": "/fixture/pki/d2k/client.key",
+        "ServerCert": "/fixture/pki/d2k/server.crt",
+        "ServerKey": "/fixture/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "/fixture/kine/db",
+      "KineSocketFile": "/fixture/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/kubelet/config",
+      "KubeletConfigFile": "/fixture/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/kubelet",
+      "KubeletKubeConfigFile": "/fixture/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "/fixture/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": " MIXED-Host ",
+      "PKIAPIServerDir": "/fixture/pki/apiserver",
+      "PKIAdminDir": "/fixture/pki/admin",
+      "PKICADir": "/fixture/pki/ca",
+      "PKIControllerDir": "/fixture/pki/controller-manager",
+      "PKIDir": "/fixture/pki",
+      "PKIKubeletDir": "/fixture/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/pki/request-header",
+      "PKIWebhookDir": "/fixture/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "/fixture/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///fixture/containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "/fixture/containerd/containerd.sock",
+      "SandboxImageFile": "/fixture/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/webhook/webhook.crt",
+        "Key": "/fixture/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "",
+      "hostname": " MIXED-Host ",
+      "id": "raw-hostname",
+      "node_name": " ",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/admin/admin.crt",
+        "Key": "/fixture/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/pki/ca/ca.crt",
+        "Key": "/fixture/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "/fixture/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/containerd/config.toml",
+      "ContainerdDir": "/fixture/containerd",
+      "ContainerdImagesDir": "/fixture/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/containerd/registry",
+      "ContainerdRootDir": "/fixture/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/containerd/state",
+      "ControllerDir": "/fixture/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "ClientCert": "/fixture/pki/d2k/client.crt",
+        "ClientKey": "/fixture/pki/d2k/client.key",
+        "ServerCert": "/fixture/pki/d2k/server.crt",
+        "ServerKey": "/fixture/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "/fixture/kine/db",
+      "KineSocketFile": "/fixture/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/kubelet/config",
+      "KubeletConfigFile": "/fixture/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/kubelet",
+      "KubeletKubeConfigFile": "/fixture/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "/fixture/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "",
+      "PKIAPIServerDir": "/fixture/pki/apiserver",
+      "PKIAdminDir": "/fixture/pki/admin",
+      "PKICADir": "/fixture/pki/ca",
+      "PKIControllerDir": "/fixture/pki/controller-manager",
+      "PKIDir": "/fixture/pki",
+      "PKIKubeletDir": "/fixture/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/pki/request-header",
+      "PKIWebhookDir": "/fixture/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "/fixture/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///fixture/containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "/fixture/containerd/containerd.sock",
+      "SandboxImageFile": "/fixture/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/webhook/webhook.crt",
+        "Key": "/fixture/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "",
+      "hostname": "",
+      "id": "empty-hostname",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/apiserver",
+      "APIServerExtraSANs": [
+        "fixture.example",
+        "192.0.2.55"
+      ],
+      "AdminCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/admin/admin.crt",
+        "Key": "/fixture/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/pki/ca/ca.crt",
+        "Key": "/fixture/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "static",
+        "policyOptions": {
+          "full-pcpus-only": "true"
+        },
+        "reservedCPUs": "0-1"
+      },
+      "ContainerMode": true,
+      "ContainerdBinaryFile": "/fixture/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/containerd/config.toml",
+      "ContainerdDir": "/fixture/containerd",
+      "ContainerdImagesDir": "/fixture/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/containerd/registry",
+      "ContainerdRootDir": "/fixture/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/containerd/state",
+      "ControllerDir": "/fixture/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/containerd/crun",
+      "D2K": true,
+      "D2KCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "ClientCert": "/fixture/pki/d2k/client.crt",
+        "ClientKey": "/fixture/pki/d2k/client.key",
+        "ServerCert": "/fixture/pki/d2k/server.crt",
+        "ServerKey": "/fixture/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "fixture-d2k",
+      "DisableIPv6": true,
+      "IsPortainerEdge": true,
+      "KineDir": "/fixture/kine/db",
+      "KineSocketFile": "/fixture/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/kubelet/config",
+      "KubeletConfigFile": "/fixture/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/kubelet",
+      "KubeletKubeConfigFile": "/fixture/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/kubelet/volumeplugins",
+      "LoadBalancer": false,
+      "LoadBalancerIP": "2001:db8::11",
+      "LocalPathProvisionerImageFile": "/fixture/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/local-path-storage",
+      "LocalStorage": false,
+      "MTU": 1280,
+      "MTUSpecified": true,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:19105",
+        "enabled": true
+      },
+      "NodeIP": "2001:db8::10",
+      "NodeIPSpecified": true,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "/fixture/pki/apiserver",
+      "PKIAdminDir": "/fixture/pki/admin",
+      "PKICADir": "/fixture/pki/ca",
+      "PKIControllerDir": "/fixture/pki/controller-manager",
+      "PKIDir": "/fixture/pki",
+      "PKIKubeletDir": "/fixture/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/pki/request-header",
+      "PKIWebhookDir": "/fixture/pki/webhook",
+      "PortainerEdgeImage": "fixture.invalid/agent:custom",
+      "PortainerEdgeImageFile": "/fixture/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///run/crio/crio.sock",
+      "RuntimeExternal": true,
+      "RuntimeSocketPath": "/run/crio/crio.sock",
+      "SandboxImageFile": "/fixture/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/pki/apiserver/service-account.key",
+      "SystemReserved": {
+        "cpu": "200m",
+        "memory": "128Mi"
+      },
+      "WebhookCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/webhook/webhook.crt",
+        "Key": "/fixture/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": true,
+      "endpoint": "  /run/crio/crio.sock  ",
+      "hostname": "fixture-node",
+      "id": "external-path",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": true,
+      "SocketPath": "/run/crio/crio.sock",
+      "URL": "unix:///run/crio/crio.sock"
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/admin/admin.crt",
+        "Key": "/fixture/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/pki/ca/ca.crt",
+        "Key": "/fixture/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "/fixture/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/containerd/config.toml",
+      "ContainerdDir": "/fixture/containerd",
+      "ContainerdImagesDir": "/fixture/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/containerd/registry",
+      "ContainerdRootDir": "/fixture/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/containerd/state",
+      "ControllerDir": "/fixture/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "ClientCert": "/fixture/pki/d2k/client.crt",
+        "ClientKey": "/fixture/pki/d2k/client.key",
+        "ServerCert": "/fixture/pki/d2k/server.crt",
+        "ServerKey": "/fixture/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "/fixture/kine/db",
+      "KineSocketFile": "/fixture/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/kubelet/config",
+      "KubeletConfigFile": "/fixture/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/kubelet",
+      "KubeletKubeConfigFile": "/fixture/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "/fixture/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "/fixture/pki/apiserver",
+      "PKIAdminDir": "/fixture/pki/admin",
+      "PKICADir": "/fixture/pki/ca",
+      "PKIControllerDir": "/fixture/pki/controller-manager",
+      "PKIDir": "/fixture/pki",
+      "PKIKubeletDir": "/fixture/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/pki/request-header",
+      "PKIWebhookDir": "/fixture/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "/fixture/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///run/a/../runtime.sock",
+      "RuntimeExternal": true,
+      "RuntimeSocketPath": "/run/a/../runtime.sock",
+      "SandboxImageFile": "/fixture/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/webhook/webhook.crt",
+        "Key": "/fixture/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "unix:///run/a/../runtime.sock",
+      "hostname": "fixture-node",
+      "id": "external-url",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": true,
+      "SocketPath": "/run/a/../runtime.sock",
+      "URL": "unix:///run/a/../runtime.sock"
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/admin/admin.crt",
+        "Key": "/fixture/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/pki/ca/ca.crt",
+        "Key": "/fixture/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "/fixture/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/containerd/config.toml",
+      "ContainerdDir": "/fixture/containerd",
+      "ContainerdImagesDir": "/fixture/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/containerd/registry",
+      "ContainerdRootDir": "/fixture/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/containerd/state",
+      "ControllerDir": "/fixture/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "ClientCert": "/fixture/pki/d2k/client.crt",
+        "ClientKey": "/fixture/pki/d2k/client.key",
+        "ServerCert": "/fixture/pki/d2k/server.crt",
+        "ServerKey": "/fixture/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "/fixture/kine/db",
+      "KineSocketFile": "/fixture/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/kubelet/config",
+      "KubeletConfigFile": "/fixture/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/kubelet",
+      "KubeletKubeConfigFile": "/fixture/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "/fixture/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "/fixture/pki/apiserver",
+      "PKIAdminDir": "/fixture/pki/admin",
+      "PKICADir": "/fixture/pki/ca",
+      "PKIControllerDir": "/fixture/pki/controller-manager",
+      "PKIDir": "/fixture/pki",
+      "PKIKubeletDir": "/fixture/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/pki/request-header",
+      "PKIWebhookDir": "/fixture/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "/fixture/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///fixture/containerd/containerd.sock",
+      "RuntimeExternal": false,
+      "RuntimeSocketPath": "/fixture/containerd/containerd.sock",
+      "SandboxImageFile": "/fixture/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/webhook/webhook.crt",
+        "Key": "/fixture/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": " \t ",
+      "hostname": "fixture-node",
+      "id": "whitespace-endpoint",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": null,
+    "error": "invalid container runtime endpoint \"run/runtime.sock\": expected an absolute socket path or a unix:// URL, for example unix:///run/crio/crio.sock",
+    "input": {
+      "changed": false,
+      "endpoint": "run/runtime.sock",
+      "hostname": "fixture-node",
+      "id": "relative-endpoint",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": null,
+    "error": "invalid container runtime endpoint \"tcp://127.0.0.1:1234\": expected an absolute socket path or a unix:// URL, for example unix:///run/crio/crio.sock",
+    "input": {
+      "changed": false,
+      "endpoint": "tcp://127.0.0.1:1234",
+      "hostname": "fixture-node",
+      "id": "non-unix-endpoint",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": null,
+    "error": "invalid container runtime endpoint \"unix://localhost/run/runtime.sock\": expected an absolute socket path or a unix:// URL, for example unix:///run/crio/crio.sock",
+    "input": {
+      "changed": false,
+      "endpoint": "unix://localhost/run/runtime.sock",
+      "hostname": "fixture-node",
+      "id": "unix-host-endpoint",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": false,
+      "SocketPath": "",
+      "URL": ""
+    }
+  },
+  {
+    "embedded": {
+      "APIServerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/apiserver/apiserver.crt",
+        "Key": "/fixture/pki/apiserver/apiserver.key"
+      },
+      "APIServerDir": "/fixture/apiserver",
+      "APIServerExtraSANs": null,
+      "AdminCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/admin/admin.crt",
+        "Key": "/fixture/pki/admin/admin.key"
+      },
+      "AdminKubeconfigFile": "/fixture/pki/admin/admin.kubeconfig",
+      "CACerts": {
+        "Cert": "/fixture/pki/ca/ca.crt",
+        "Key": "/fixture/pki/ca/ca.key"
+      },
+      "CPUManager": {
+        "policy": "none",
+        "reservedCPUs": ""
+      },
+      "ContainerMode": false,
+      "ContainerdBinaryFile": "/fixture/containerd/containerd",
+      "ContainerdCNIConfigDir": "/fixture/containerd/cni/conf",
+      "ContainerdCNIConfigFile": "/fixture/containerd/cni/conf/10-bridge.conflist",
+      "ContainerdCNIDir": "/fixture/containerd/cni",
+      "ContainerdCNIPluginsDir": "/fixture/containerd/cni/plugins",
+      "ContainerdConfigFile": "/fixture/containerd/config.toml",
+      "ContainerdDir": "/fixture/containerd",
+      "ContainerdImagesDir": "/fixture/containerd/images",
+      "ContainerdRegistryConfigDir": "/fixture/containerd/registry",
+      "ContainerdRootDir": "/fixture/containerd/root",
+      "ContainerdShimBinaryFile": "/fixture/containerd/containerd-shim-runc-v2",
+      "ContainerdSocketFile": "/fixture/containerd/containerd.sock",
+      "ContainerdStateDir": "/fixture/containerd/state",
+      "ControllerDir": "/fixture/controller-manager/config",
+      "ControllerManagerCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/controller-manager/controller-manager.crt",
+        "Key": "/fixture/pki/controller-manager/controller-manager.key"
+      },
+      "CorednsImageFile": "/fixture/containerd/images/coredns.tar.gz",
+      "CrunBinaryFile": "/fixture/containerd/crun",
+      "D2K": false,
+      "D2KCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "ClientCert": "/fixture/pki/d2k/client.crt",
+        "ClientKey": "/fixture/pki/d2k/client.key",
+        "ServerCert": "/fixture/pki/d2k/server.crt",
+        "ServerKey": "/fixture/pki/d2k/server.key"
+      },
+      "D2KImageFile": "/fixture/containerd/images/d2k.tar.gz",
+      "D2KNamespace": "d2k",
+      "DisableIPv6": false,
+      "IsPortainerEdge": false,
+      "KineDir": "/fixture/kine/db",
+      "KineSocketFile": "/fixture/kine/db/socket",
+      "KubeletCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/kubelet/kubelet.crt",
+        "Key": "/fixture/pki/kubelet/kubelet.key"
+      },
+      "KubeletConfigDir": "/fixture/kubelet/config",
+      "KubeletConfigFile": "/fixture/kubelet/config/config.yaml",
+      "KubeletDir": "/fixture/kubelet",
+      "KubeletKubeConfigFile": "/fixture/pki/kubelet/kubelet.kubeconfig",
+      "KubeletPluginsDir": "/fixture/kubelet/volumeplugins",
+      "LoadBalancer": true,
+      "LoadBalancerIP": "192.0.2.11",
+      "LocalPathProvisionerImageFile": "/fixture/containerd/images/local-path-provisioner.tar.gz",
+      "LocalPathStorageDir": "/fixture/local-path-storage",
+      "LocalStorage": true,
+      "MTU": 1450,
+      "MTUSpecified": false,
+      "Metrics": {
+        "bindAddress": "127.0.0.1:9105",
+        "enabled": false
+      },
+      "NodeIP": "192.0.2.10",
+      "NodeIPSpecified": false,
+      "NodeName": "fixture-node",
+      "PKIAPIServerDir": "/fixture/pki/apiserver",
+      "PKIAdminDir": "/fixture/pki/admin",
+      "PKICADir": "/fixture/pki/ca",
+      "PKIControllerDir": "/fixture/pki/controller-manager",
+      "PKIDir": "/fixture/pki",
+      "PKIKubeletDir": "/fixture/pki/kubelet",
+      "PKIRequestHeaderDir": "/fixture/pki/request-header",
+      "PKIWebhookDir": "/fixture/pki/webhook",
+      "PortainerEdgeImage": "docker.io/portainer/agent:lts",
+      "PortainerEdgeImageFile": "/fixture/containerd/images/portainer-agent.tar.gz",
+      "RequestHeaderCerts": {
+        "CACert": "/fixture/pki/request-header/request-header-ca.crt",
+        "CAKey": "/fixture/pki/request-header/request-header-ca.key",
+        "ClientCert": "/fixture/pki/request-header/request-header-client.crt",
+        "ClientKey": "/fixture/pki/request-header/request-header-client.key"
+      },
+      "RuntimeCgroupDriver": "",
+      "RuntimeEndpoint": "unix:///",
+      "RuntimeExternal": true,
+      "RuntimeSocketPath": "/",
+      "SandboxImageFile": "/fixture/containerd/images/pause.tar.gz",
+      "ServiceAccountKeyFile": "/fixture/pki/apiserver/service-account.key",
+      "SystemReserved": null,
+      "WebhookCerts": {
+        "CACert": "/fixture/pki/ca/ca.crt",
+        "Cert": "/fixture/pki/webhook/webhook.crt",
+        "Key": "/fixture/pki/webhook/webhook.key"
+      },
+      "WebhookDir": "/fixture/pki/webhook"
+    },
+    "error": "",
+    "input": {
+      "changed": false,
+      "endpoint": "unix:///",
+      "hostname": "fixture-node",
+      "id": "root-endpoint",
+      "node_name": "",
+      "path": "/fixture"
+    },
+    "resolved": {
+      "External": true,
+      "SocketPath": "/",
+      "URL": "unix:///"
+    }
+  }
+]
