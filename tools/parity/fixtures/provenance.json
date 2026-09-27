@@ -1,0 +1,486 @@
+{
+  "schema_version": 1,
+  "baseline_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "scope": "E02.02 node configuration and command slice; remaining domains documented in README.md",
+  "suite_sha256": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2",
+  "sources": {
+    "cmd/kubesolo/main.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/cmd/kubesolo/main.go",
+      "sha256": "4edb9fad55740a09cd4a69ba848d750dfa4134f549f05ea3d50ab3c0a515dece"
+    },
+    "internal/config/cpumanager/cpumanager.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/cpumanager/cpumanager.go",
+      "sha256": "f356a1bc77afe13ceb8a7e3e85e366890882831721b73f1aed496110a040920d"
+    },
+    "internal/config/defaults.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/defaults.go",
+      "sha256": "902db154b17cd88d24f18b4f9aeb87d286470b5113c18b1f2066d20ab596a24b"
+    },
+    "internal/config/defaults_test.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/defaults_test.go",
+      "sha256": "9cb92234810b331c27ee64900b22660fa611a2d13dfb66d45af2b7b72af2548a"
+    },
+    "internal/config/file.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/file.go",
+      "sha256": "9a9af1ea2d94ff1fa1f2306f868721fb88f2e4b1d0d3fa286879b18de61749de"
+    },
+    "internal/config/flags/flags.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/flags/flags.go",
+      "sha256": "31f6c1cc47da66cc7a436b984c847b5b4b29266be3c495d660d610c1c0154e40"
+    },
+    "internal/config/loader.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/loader.go",
+      "sha256": "0d4fb3b8780400fd07dffbaee9ced14fd46fdb801f82869b9623b1692f81ba8f"
+    },
+    "internal/config/registry.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/registry.go",
+      "sha256": "bd03078025b503a8d16610692dbbb195ad8170a4d2efd37371062931ad8d4bbc"
+    },
+    "internal/config/validate.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/validate.go",
+      "sha256": "cd8bbc27f9a88bc148033bed7597e65c47d118d53e657d9767658e7707aae1b4"
+    },
+    "internal/runtime/cri/endpoint.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/runtime/cri/endpoint.go",
+      "sha256": "674d313f66acf284a87ef56b0edc5947dd0828f2ed8a64fbba20bc27ed61fef1"
+    },
+    "types/config.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/config.go",
+      "sha256": "e59764b93fd6689f091e79a17a633d94e910ebc23ae7db375734e212211ce4fa"
+    },
+    "types/const.go": {
+      "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/const.go",
+      "sha256": "f60c550e2f40060a51b0ec45a0da0bb7c5add84a30e06570517c87588f55d52d"
+    }
+  },
+  "cases": {
+    "default-document": {
+      "sources": [
+        "internal/config/defaults.go"
+      ]
+    },
+    "missing-explicit-file-keeps-defaults": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "missing-environment-file-keeps-defaults": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "deprecated-full-is-no-op": {
+      "sources": [
+        "cmd/kubesolo/main.go"
+      ]
+    },
+    "deprecated-full-environment-is-no-op": {
+      "sources": [
+        "cmd/kubesolo/main.go"
+      ]
+    },
+    "file-partial-retains-other-defaults": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "file-explicit-zero-and-false": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "environment-over-file": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "flag-over-environment-and-file": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "flag-over-environment": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "environment-false-over-file-true": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "environment-zero-over-file": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "environment-empty-clears-file-value": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "flag-false-over-environment-true": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "flag-zero-over-environment": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "flag-empty-clears-environment": {
+      "sources": [
+        "internal/config/loader.go"
+      ]
+    },
+    "container-mode-explicit-false": {
+      "sources": [
+        "internal/config/defaults_test.go"
+      ]
+    },
+    "container-mode-explicit-true": {
+      "sources": [
+        "internal/config/defaults_test.go"
+      ]
+    },
+    "all-document-settings-round-trip": {
+      "sources": [
+        "types/config.go",
+        "internal/config/validate.go"
+      ]
+    },
+    "all-environment-settings": {
+      "sources": [
+        "internal/config/registry.go"
+      ]
+    },
+    "all-legacy-flags": {
+      "sources": [
+        "internal/config/flags/flags.go",
+        "internal/config/registry.go"
+      ]
+    },
+    "explicit-empty-sans-removes-list": {
+      "sources": [
+        "internal/config/registry.go"
+      ]
+    },
+    "missing-schema-warns-and-keeps-defaults": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "wrong-kind-is-warning": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "unknown-field-is-warning": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "duplicate-field-warns-last-value-wins": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "unsupported-schema-is-fatal": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "malformed-yaml-is-fatal": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "wrong-field-type-is-fatal": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "directory-config-is-fatal": {
+      "sources": [
+        "internal/config/file.go"
+      ]
+    },
+    "unknown-flag-is-fatal": {
+      "sources": [
+        "internal/config/flags/flags.go"
+      ]
+    },
+    "boolean-equals-syntax-is-rejected": {
+      "sources": [
+        "internal/config/flags/flags.go"
+      ]
+    },
+    "unexpected-positional-is-fatal": {
+      "sources": [
+        "internal/config/flags/flags.go"
+      ]
+    },
+    "invalid-boolean-environment-is-fatal": {
+      "sources": [
+        "internal/config/registry.go"
+      ]
+    },
+    "invalid-integer-environment-is-fatal": {
+      "sources": [
+        "internal/config/registry.go"
+      ]
+    },
+    "invalid-runtime-endpoint-is-fatal": {
+      "sources": [
+        "internal/runtime/cri/endpoint.go"
+      ]
+    },
+    "invalid-image-reference-is-fatal": {
+      "sources": [
+        "internal/config/validate.go"
+      ]
+    },
+    "cpu-policy-unknown-is-fatal": {
+      "sources": [
+        "internal/config/cpumanager/cpumanager.go"
+      ]
+    },
+    "cpu-static-container-mode-is-fatal": {
+      "sources": [
+        "internal/config/validate.go"
+      ]
+    },
+    "cpu-options-require-static": {
+      "sources": [
+        "internal/config/cpumanager/cpumanager.go"
+      ]
+    },
+    "reserved-cpus-require-static": {
+      "sources": [
+        "internal/config/cpumanager/cpumanager.go"
+      ]
+    },
+    "malformed-map-is-fatal": {
+      "sources": [
+        "internal/config/registry.go"
+      ]
+    },
+    "unsupported-reservation-resource-is-fatal": {
+      "sources": [
+        "internal/config/cpumanager/cpumanager.go"
+      ]
+    },
+    "d2k-requires-load-balancer": {
+      "sources": [
+        "internal/config/validate.go"
+      ]
+    },
+    "too-long-api-socket-is-fatal": {
+      "sources": [
+        "internal/config/validate.go"
+      ]
+    },
+    "low-mtu-is-warning": {
+      "sources": [
+        "internal/config/validate.go"
+      ]
+    },
+    "short-image-is-normalized": {
+      "sources": [
+        "internal/config/validate.go"
+      ]
+    },
+    "version-bypasses-invalid-runtime-config": {
+      "sources": [
+        "cmd/kubesolo/main.go"
+      ]
+    }
+  },
+  "registered_field_cases": {
+    "path": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "logging.debug": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "logging.pprof": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "network.nodeIP": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "network.mtu": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "network.disableIPv6": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "network.loadBalancer.enabled": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "network.loadBalancer.ip": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "runtime.endpoint": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "runtime.containerMode": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "kubernetes.nodeName": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings"
+    ],
+    "kubernetes.apiServer.extraSANs": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "kubernetes.apiServer.startupTimeoutSeconds": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "kubernetes.kubelet.cpuManager.policy": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags",
+      "cpu-policy-unknown-is-fatal",
+      "cpu-static-container-mode-is-fatal"
+    ],
+    "kubernetes.kubelet.cpuManager.policyOptions": [
+      "default-document",
+      "cpu-options-require-static"
+    ],
+    "kubernetes.kubelet.cpuManager.reservedCPUs": [
+      "default-document",
+      "reserved-cpus-require-static"
+    ],
+    "kubernetes.kubelet.systemReserved": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "storage.localPath.enabled": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "storage.localPath.sharedPath": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "storage.dbWALRepair": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "portainer.edgeID": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "portainer.edgeKey": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "portainer.async": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "portainer.image": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "d2k.enabled": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "d2k.namespace": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "metrics.enabled": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "metrics.bindAddress": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings",
+      "all-legacy-flags"
+    ],
+    "api.enabled": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings"
+    ],
+    "api.socketPath": [
+      "default-document",
+      "all-document-settings-round-trip",
+      "all-environment-settings"
+    ]
+  },
+  "capture": {
+    "date": "2026-09-27",
+    "reference_artifact_sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
+    "command": "python3 tools/parity/run.py --artifact <source-built-reference>/artifact.json --suite tools/parity/fixtures/config-command.json --output <new-output-directory>",
+    "executed_runner_checkout": "/tmp/rubix-fixture-worktree-20260927",
+    "actual_output_directory": "/tmp/rubix-config-command-20260927-r1",
+    "normalization": "none; raw outputs retained; timestamped stderr compared by literal diagnostic fragments",
+    "default_document_independent_source": "internal/config/defaults.go plus internal/config/loader.go derive()"
+  }
+}
