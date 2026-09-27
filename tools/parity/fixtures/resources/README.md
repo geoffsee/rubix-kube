@@ -45,8 +45,10 @@ they must fail the independent checks. A future Rust builder should emit this
 object envelope and pass both full fixture equality and semantic checks; no Rust
 implementation is claimed here.
 
-Remaining E02.02 work includes other manifest families (webhooks, kubelet/runtime
-configuration, kubeconfigs and service-account credentials), live API admission,
-full node restart/shutdown and workload lifecycle. Existing configuration-command
-fixtures remain unchanged. Resource ownership follows E11–E20; fixture maintenance
-belongs to E02. This slice does not close #36.
+Related foundation captures now cover [webhooks](../webhooks/README.md),
+[kubelet/runtime configuration](../node-config/README.md), and
+[kubeconfigs and service-account credentials](../credentials/README.md).
+Live API admission, full node restart/shutdown and workload lifecycle remain later
+component integration and release qualification. Resource ownership follows E11–E20;
+fixture maintenance belongs to E02. See the [coverage ledger](../README.md#foundation-coverage-and-later-qualification)
+for the distinction between foundation evidence and complete distribution parity.

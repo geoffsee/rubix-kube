@@ -66,14 +66,28 @@ cluster startup. Each runner capture verifies cleanup of its own container, imag
 volume. The frozen records are historical observations, not a substitute for running a new
 candidate through the suite.
 
-## Remaining E02.02 scope
+## Foundation coverage and later qualification
 
-This slice does not close E02.02 or parent E02. Generated Kubernetes resources/manifests, certificates
-and trust persistence, atomic config writing/backup/permissions, config API editing/ETags, management
-CLI lifecycle commands, derived runtime paths, and live restart/cleanup state still need independent
-fixtures. Network/IP/hostname discovery and architecture-sensitive CPU/D2K rules also need explicit
-host variants. These stay with E02 characterization and their E03–E26 domain owners; the VM adapter
-makes disposable host scenarios possible but does not by itself supply those assertions.
+The configuration suite is one part of the independent E02.02 foundation. The
+following captures execute the pinned Go source or executable and retain source
+identity, capture procedure, raw observations and changed-behavior negatives:
+
+| Domain | Independent evidence |
+| --- | --- |
+| Defaults, input precedence and errors | This 51-case suite and [startup parser](cli-startup/README.md) |
+| Generated manifests and admission behavior | [Resources](resources/README.md) and [webhooks](webhooks/README.md) |
+| Certificates, trust and credential persistence | [PKI](pki/README.md) and [credentials](credentials/README.md) |
+| Stored documents and configuration API state | [Config API](config-api/README.md) and [writer links](config-write-links/README.md) |
+| Runtime configuration and checkpoint state | [Node configuration](node-config/README.md) |
+
+These cover the foundation's behavior domains without claiming full distribution
+qualification. Later component owners must consume the oracles and add their
+integration variants: live admission/workloads, host network discovery, managed and
+external runtime behavior, supervision failures, installer/reset behavior, full node
+restart/shutdown, and supported architecture/platform matrices. Derived runtime
+mapping is an additional focused consumer oracle, not a prerequisite invented for
+closing this fixture slice. Parent E02 stays open until its own integration evidence
+is satisfied; fixture coverage alone is not Rust parity or release qualification.
 
 The exact deliberately altered suite is retained as
 [evidence/deliberate-mismatch-suite.json](evidence/deliberate-mismatch-suite.json); run

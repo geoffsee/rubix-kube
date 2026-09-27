@@ -1,14 +1,14 @@
 {
   "capture_directory": "/tmp/rubix-resource-pki-oracles-20260927-r5",
   "durable_sha256": {
-    "pki/README.md": "d0f296d447f529d0ed3f0524fee0691b4b649a79f781b2be767c1412194982ea",
+    "pki/README.md": "470b116f476a3b7ad5951583a947dc6d80ad7ff205e6492074f025060915c05e",
     "pki/evidence/pki.log": "55063db880ab482918bc6955824f509d27d8af65c2a0332ddb8f032889ee9680",
     "pki/expected.json": "c7bc06d11c5d03521950f2006395ff8318b317e4315126bf47f8c3bca80fe153",
     "pki/pki_capture_test.go": "979a3c120af8c9d4a99909e90e4773c07070cc1901256ca44cd45380c6b31b72",
     "pki/test_pki.py": "3aaf8f766a4ef1da9b406288dce94377810d6dbdc0964d7f777aa49618ef5607",
     "pki/verify.py": "645dc824150c7950236e1f6bfa67cf01296e010e26e213c79dbd8dacacaaad52",
     "resources/Capture.Dockerfile": "8f0674992d3905c42cb1fc0b7907992b5fe069c9c6fae30963e4a6675779c3ff",
-    "resources/README.md": "73f9f1f32a090a33ea442167da902c4bd818231682f0ded94dfc9f314b43c493",
+    "resources/README.md": "b44d0858eba80fa157545b537b6a243e17d195c761ce6209f45f896ca7fce92b",
     "resources/capture-receipt.json": "6dc2977b525b67d5a7da09cb8d4cac907bd5ab42b7dadf4d151811f1da652554",
     "resources/capture.py": "4e9ab35635e777d2f8893dcf28197a50b25913eb216f21d901743fb0f90e5a8f",
     "resources/coredns_capture_test.go": "20ce79c78bd3b54ac0cf835b5864ade93d44a95da88b7ff9e98b493b2411abe8",

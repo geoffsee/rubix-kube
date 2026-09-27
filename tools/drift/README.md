@@ -53,11 +53,15 @@ prepared-parser regression freshly parses changed field numbers/types and RPC na
 streaming and verifies drift despite fresh parser outputs. That integration test reports
 an explicit skip if the compiler cache was not prepared; CI must prepare it first.
 
-Scope is official CRI/containerd plus all OpenAPI definitions. API operations outside definitions,
-independently executed Go default extraction and
-feature-gate tables are remaining work. Schema defaults are retained but are not a
-substitute for executable Go defaulting behavior. This gate does not close E02.04 or
-establish live protocol, cluster, conformance or Rust parity.
+The source inventory covers official CRI/containerd plus all OpenAPI definitions;
+API operations outside definitions remain outside this inventory. Independent
+[executed Go default and feature-gate extraction](../defaults/README.md), actual
+[resolved API options](../resolved-defaults/README.md), and the combined report below
+provide complementary evidence. Schema defaults do not substitute for executable Go
+defaulting behavior. CI prepares inputs before freshness/drift checks and recursively
+runs repository fixture mutation tests; disposable integration separately exercises
+actual defaults, option completion, and API/Kine/Rust JSON consumers. These gates do
+not establish full cluster, conformance or distribution parity.
 
 ## Combined upstream adoption report
 
