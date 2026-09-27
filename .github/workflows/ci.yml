@@ -87,9 +87,33 @@ jobs:
               print("No workspace targets enable doctests.")
           PY
 
+      - name: Restore prepared upstream inputs
+        if: matrix.profile == 'debug'
+        id: upstream-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/upstream
+          key: upstream-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/upstream/inputs.json') }}
+      - name: Verify generated clients and independent source inventories
+        if: matrix.profile == 'debug'
+        run: |
+          python3 tools/upstream/upstream.py fetch
+          cargo fetch --locked
+          cargo build -p rubix-upstream-codegen --locked
+          python3 tools/upstream/upstream.py verify
+          python3 tools/upstream/upstream.py check-cri
+          python3 tools/upstream/upstream.py check-containerd
+          python3 tools/upstream/upstream.py check-kubernetes-bindings
+          python3 tools/drift/drift.py check
       - name: Test repository Python tooling
         if: matrix.profile == 'debug'
         run: python3 .github/test-python.py
+      - name: Save verified upstream inputs
+        if: matrix.profile == 'debug' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.upstream-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/upstream
+          key: ${{ steps.upstream-cache.outputs.cache-primary-key }}
 
   dependencies:
     name: Dependencies
