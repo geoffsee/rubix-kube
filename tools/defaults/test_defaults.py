@@ -17,6 +17,18 @@ class DefaultTests(unittest.TestCase):
     def test_real_official_output_satisfies_independent_assertions(self):
         verify.verify(self.value)
 
+    def test_omitted_generated_cloud_defaults_are_rejected(self):
+        self.value['cases']['zero']['controller']['KubeCloudShared']['NodeMonitorPeriod']='0s'
+        with self.assertRaisesRegex(ValueError,'nested cloud'):verify.verify(self.value)
+
+    def test_missing_reserved_memory_generated_rounding_is_rejected(self):
+        self.value['cases']['explicit']['kubelet']['reservedMemory'][0]['limits']['memory']='1000100u'
+        with self.assertRaisesRegex(ValueError,'ResourceList'):verify.verify(self.value)
+
+    def test_nested_explicit_false_is_not_overwritten(self):
+        self.value['cases']['explicit']['controller']['KubeCloudShared']['ConfigureCloudRoutes']=True
+        with self.assertRaisesRegex(ValueError,'explicit cloud'):verify.verify(self.value)
+
     def test_changed_default_is_rejected(self):
         self.value['cases']['zero']['kubelet']['authentication']['anonymous']['enabled']=True
         with self.assertRaises(ValueError):verify.verify(self.value)

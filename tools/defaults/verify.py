@@ -44,6 +44,13 @@ def verify(value):
     require(explicit['kubelet']['port']==10260 and explicit['kubelet']['readOnlyPort']==1234,'explicit ports lost')
     require(explicit['proxy']['bindAddress']=='192.0.2.9' and explicit['proxy']['clientConnection']['qps']==17,'explicit proxy values lost')
     require(explicit['controller']['Generic']['ClientConnection']['qps']==19,'explicit controller QPS lost')
+    cloud=c['KubeCloudShared']
+    require(cloud['NodeMonitorPeriod']=='5s' and cloud['RouteReconciliationPeriod']=='10s','nested cloud duration defaults')
+    require(cloud['ClusterName']=='kubernetes' and cloud['ConfigureCloudRoutes'] is True,'nested cloud identity/routes defaults')
+    configured=explicit['controller']['KubeCloudShared']
+    require(configured['ClusterName']=='fixture-cluster' and configured['ConfigureCloudRoutes'] is False,'nested explicit cloud values lost')
+    require(configured['NodeMonitorPeriod']=='7s' and configured['RouteReconciliationPeriod']=='10s','nested explicit/default cloud durations')
+    require(explicit['kubelet']['reservedMemory']==[{'numaNode':0,'limits':{'memory':'1001m'}}],'generated ResourceList milli rounding skipped')
     gates=value['registered_feature_gates']
     # Independently reviewed pkg/features/kube_features.go versioned entries.
     require(gates['RotateKubeletServerCertificate']['enabled'] is True,'rotation gate default')

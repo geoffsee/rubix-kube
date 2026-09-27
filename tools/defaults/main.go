@@ -4,6 +4,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/version"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	controller "k8s.io/kube-controller-manager/config/v1alpha1"
@@ -15,6 +18,7 @@ import (
 	proxydefaults "k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
 	"os"
 	"runtime"
+	"time"
 )
 
 func main() {
@@ -33,14 +37,18 @@ func main() {
 			k.Port = 10260
 			k.ReadOnlyPort = 1234
 			k.EnableServer = new(bool)
+			k.ReservedMemory = []kubelet.MemoryReservation{{NumaNode: 0, Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("1.0001")}}}
 			p.BindAddress = "192.0.2.9"
 			p.ClientConnection.QPS = 17
 			c.Generic.ClientConnection.QPS = 19
 			c.Generic.Controllers = []string{"fixture"}
+			c.KubeCloudShared.ClusterName = "fixture-cluster"
+			c.KubeCloudShared.ConfigureCloudRoutes = new(bool)
+			c.KubeCloudShared.NodeMonitorPeriod = metav1.Duration{Duration: 7 * time.Second}
 		}
-		kubeletdefaults.SetDefaults_KubeletConfiguration(k)
-		proxydefaults.SetDefaults_KubeProxyConfiguration(p)
-		controllerdefaults.SetDefaults_KubeControllerManagerConfiguration(c)
+		kubeletdefaults.SetObjectDefaults_KubeletConfiguration(k)
+		proxydefaults.SetObjectDefaults_KubeProxyConfiguration(p)
+		controllerdefaults.SetObjectDefaults_KubeControllerManagerConfiguration(c)
 		cases[name] = map[string]interface{}{"kubelet": k, "proxy": p, "controller": c}
 	}
 	gates := map[string]interface{}{}

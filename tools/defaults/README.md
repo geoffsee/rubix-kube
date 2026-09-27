@@ -45,8 +45,8 @@ Checks never refresh expected output automatically; changed defaults, gate histo
 removals require a reviewed compatibility decision.
 
 The six cases are zero and explicit inputs for kubelet, kube-proxy and controller-manager.
-Actual functions are `SetDefaults_KubeletConfiguration`, `SetDefaults_KubeProxyConfiguration`
-and `SetDefaults_KubeControllerManagerConfiguration`. Explicit cases preserve a false
+Actual functions are `SetObjectDefaults_KubeletConfiguration`, `SetObjectDefaults_KubeProxyConfiguration`
+and `SetObjectDefaults_KubeControllerManagerConfiguration`. Explicit cases preserve a false
 pointer, custom ports, client QPS and controller selection. The registered gate inventory
 comes from `DefaultMutableFeatureGate.GetAllVersioned()` after importing `pkg/features`
 and the component default packages: 215 registered gates, their versioned default/lock/stage/
@@ -67,8 +67,17 @@ These outputs do not qualify a live cluster or close E02.03/E02.04 on their own.
 schema/protocol drift remains the complementary `tools/drift` gate.
 
 The durable `evidence/` receipt binds the final executed sources to output SHA-256
-`60c8c2f3c7b74c860ae82ac8e2e38df76cf226a9eab3f0df20a1250bd8ac556d`.
+`d936b24ca4fe4e789e92980ae70b9cbf5ba56231548f151b3a0022e85b75fe8e`.
 Both executions passed independent and exact comparisons; all owned resources were removed.
-Seventy top-level/staging module files are hashed in `evidence/modules.sha256`. Eleven
+Seventy top-level/staging module files are hashed in `evidence/modules.sha256`. Fourteen
 local tests include recursive boolean-versus-integer drift, malformed JSON refusal,
 bounded output and receipt preservation when all Docker cleanup/inspection calls fail.
+
+Generated default dispatch is required and executed. The controller dispatch defaults
+`KubeCloudShared` (5s node monitor, 10s route reconciliation, cluster name `kubernetes`,
+cloud routes true); explicit cluster name, 7s period and false routes remain unchanged.
+The kubelet dispatch walks `ReservedMemory` resource lists: the explicit `1.0001` memory
+quantity rounds upward to milli precision (`1001m`) through official core defaulting.
+This small quantity is a focused defaulting input, not a validated runtime memory budget.
+Earlier direct-setter captures omitted these nested defaults and are superseded by the
+corrected dispatch capture. Negative tests specifically reject bypassed nested dispatch.
