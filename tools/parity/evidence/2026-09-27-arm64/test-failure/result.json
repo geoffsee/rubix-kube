@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "cases": [
+    {
+      "id": "version-exits-without-bootstrap",
+      "argv": [
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "000.stdout",
+      "stderr_file": "000.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "17c63e04265e363ce520bc0eea8cd9f0fdb97b7795252924aa443ba7c0ee5617",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06844379199901596
+    },
+    {
+      "id": "print-config-exits-without-bootstrap",
+      "argv": [
+        "--print-config"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "001.stdout",
+      "stderr_file": "001.stderr",
+      "stdout_sha256": "38657bdbb6e7eb5913e7998ab4ae40eb231a5d411e4deae3bf5dbbe0e491862e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06555195899272803
+    }
+  ],
+  "unsupported_capabilities": [
+    "privileged-runtime",
+    "cluster-lifecycle",
+    "conformance"
+  ],
+  "environment": {
+    "system": "Linux",
+    "architecture": "aarch64",
+    "kernel": "7.0.12-linuxkit",
+    "driver_uid": 0,
+    "artifact_uid": 65532
+  },
+  "driver_sha256": "a19723ccf46a41c4d5ed8ead5fe8d8a38846224ee7f103089cfbe9bf5cd642a6",
+  "artifact": {
+    "schema_version": 1,
+    "kind": "go",
+    "binary": "kubesolo",
+    "sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
+    "version": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+    "source": {
+      "repository": "https://github.com/portainer/kubesolo",
+      "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d"
+    },
+    "build": {
+      "variant": "external_deps",
+      "toolchain": "go1.26.5",
+      "cgo": true,
+      "dockerfile_sha256": "a5f48fafe987e290a0f690c9de642b0e16bdecd325ac5b370755147d2d1df84c",
+      "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec"
+    }
+  },
+  "suite_id": "startup-contract-v1",
+  "suite_sha256": "65ea98647246bdfb457ffa10bcb4bf7dacae99ca4cbd6d4d1387394e49437d67",
+  "error": "intentional test failure after diagnostic capture",
+  "traceback": "Traceback (most recent call last):\n  File \"/artifact/driver.py\", line 144, in main\n    raise RuntimeError(\"intentional test failure after diagnostic capture\")\nRuntimeError: intentional test failure after diagnostic capture\n"
+}
