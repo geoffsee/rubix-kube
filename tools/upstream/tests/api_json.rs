@@ -11,14 +11,38 @@ use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
+fn input_document(name: &str, frozen: &str) -> Value {
+    if let Some(directory) = std::env::var_os("RUBIX_API_JSON_CAPTURE_DIR") {
+        let path = std::path::PathBuf::from(directory).join(name);
+        let raw = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+            panic!(
+                "explicit RUBIX_API_JSON_CAPTURE_DIR input {}: {error}",
+                path.display()
+            )
+        });
+        serde_json::from_str(&raw).unwrap_or_else(|error| {
+            panic!(
+                "invalid explicit API capture JSON {}: {error}",
+                path.display()
+            )
+        })
+    } else {
+        serde_json::from_str(frozen).expect("valid frozen API capture JSON")
+    }
+}
+
 fn fixtures() -> Value {
-    serde_json::from_str(include_str!("../../api-json/fixtures.json"))
-        .expect("valid frozen fixtures")
+    input_document(
+        "fixtures.json",
+        include_str!("../../api-json/fixtures.json"),
+    )
 }
 
 fn capture() -> Value {
-    serde_json::from_str(include_str!("../../api-json/evidence/result.json"))
-        .expect("valid actual API capture")
+    input_document(
+        "result.json",
+        include_str!("../../api-json/evidence/result.json"),
+    )
 }
 
 fn observation(capture: &Value, name: &str) -> Value {
