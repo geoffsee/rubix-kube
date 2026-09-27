@@ -1,0 +1,23 @@
+{
+  "fixture_sha256": {
+    "evidence/build.log": "f0600ffd3e8a4fdb6938cbc827b59e0df656e6ba2262edca82a44a911f37c6fc",
+    "evidence/receipt.json": "77fc720ac79ca369dfb7101dc5d64b1601864d5289eeaf244a6c61c2a9551817",
+    "evidence/webhook-0.log": "6b099f4d6ca0d64ba0e1d5d40647d85449f7f5d7443681477abed5a8a47eb0af",
+    "evidence/webhook-1.log": "bf20be17d6a78685efae9866b19e81bfb05082e052172ff9cca35a63d432063e",
+    "evidence/webhook.json": "72f9a1240d6d5c2d46021a906d01dacb30d90ed9db828de1cf7ca5bf28fc084b",
+    "test_webhooks.py": "1516b2210f01ae2f608f8ede08c5e5a6321d788143420c8f5a312f9ef41d758a",
+    "verify.py": "2cc27e67ec811343f7f4869f627b2a25ad363ee2096ca0b1708f52993394b51e"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_sha256": {
+    "go.mod": "7f0f9dabc79c121b3bfb5d09e6c79d31350be33a0a8aa70eba2cfd1c9becda87",
+    "go.sum": "d38d48d99df8e324a6b7a08f972cdbc93e50198f92928092b2d965c84b5c54ea",
+    "pkg/kubernetes/webhook/config.go": "760745875e29aa1d7869d37495222d1b6b64d243ead7319bbe5c49c37c1d73d1",
+    "pkg/kubernetes/webhook/executor.go": "079447f5318bbd595eb25f07dda31efce5d0fd1160bb26c7e17582e9ee70816e",
+    "pkg/kubernetes/webhook/loadbalancer.go": "a1a4d5f31e833b71ab7fef6bc74a4c3896948b42c2d28cb4f63a07a32c857cb7",
+    "pkg/kubernetes/webhook/loadbalancer_test.go": "eb90956f7f45f7ca9c659e66423e0e38bc47f5a7caf51594d42c3a48e247539c",
+    "pkg/kubernetes/webhook/patch.go": "d2a9578bc5064e0f777252903eb7c3ffd71d1e3b3709671d5d02413e1e4ca0cb",
+    "pkg/kubernetes/webhook/service.go": "66ce590e3ee6733429561e75fc312e01c978b79475acba0ff7f240f7e318a7d7",
+    "pkg/kubernetes/webhook/webhooks.go": "5c11428d552724881fe0f26ebc7ae7d70a0709f04e07b8b6f1829cfa8b48b432"
+  }
+}
