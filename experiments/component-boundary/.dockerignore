@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!inputs.json
+!fetch.py
+!spike.py

@@ -1,0 +1,206 @@
+{
+  "status": "passed",
+  "checks": [
+    "locked kube-apiserver digest verified at runtime",
+    "locked kine digest verified at runtime",
+    "unauthenticated request rejected",
+    "authenticated identity without RBAC permission rejected",
+    "authenticated create succeeded",
+    "authenticated read succeeded",
+    "authenticated update succeeded",
+    "SQLite database persisted after shutdown",
+    "SQLite integrity check passed",
+    "independent SQLite query found persisted API object",
+    "same updated object survived component restart",
+    "update acknowledged before abrupt datastore termination",
+    "intentional datastore SIGKILL observed",
+    "fault-injected datastore process group is absent",
+    "existing API process recovered after datastore-only restart",
+    "acknowledged update survived abrupt datastore restart",
+    "authenticated delete succeeded",
+    "deleted object is absent",
+    "deletion survived second component restart",
+    "all owned component processes reaped"
+  ],
+  "measurements": [
+    {
+      "cycle": 1,
+      "readiness_seconds": 2.233455376001075,
+      "component_process_count": 2,
+      "components": [
+        {
+          "name": "kine",
+          "pid": 15,
+          "VmHWM_kib": 51844,
+          "VmRSS_kib": 51640
+        },
+        {
+          "name": "kube-apiserver",
+          "pid": 27,
+          "VmHWM_kib": 253716,
+          "VmRSS_kib": 253716
+        }
+      ],
+      "component_rss_sum_kib": 305356
+    },
+    {
+      "cycle": 2,
+      "readiness_seconds": 1.7283805850020144,
+      "component_process_count": 2,
+      "components": [
+        {
+          "name": "kine",
+          "pid": 57,
+          "VmHWM_kib": 53860,
+          "VmRSS_kib": 53860
+        },
+        {
+          "name": "kube-apiserver",
+          "pid": 71,
+          "VmHWM_kib": 253872,
+          "VmRSS_kib": 253872
+        }
+      ],
+      "component_rss_sum_kib": 307732
+    },
+    {
+      "cycle": "datastore-recovery",
+      "readiness_seconds": 8.07760487899941,
+      "component_process_count": 2,
+      "components": [
+        {
+          "name": "kube-apiserver",
+          "pid": 71,
+          "VmHWM_kib": 254212,
+          "VmRSS_kib": 254212
+        },
+        {
+          "name": "kine",
+          "pid": 98,
+          "VmHWM_kib": 46904,
+          "VmRSS_kib": 46904
+        }
+      ],
+      "component_rss_sum_kib": 301116
+    },
+    {
+      "cycle": 4,
+      "readiness_seconds": 2.23439758499444,
+      "component_process_count": 2,
+      "components": [
+        {
+          "name": "kine",
+          "pid": 118,
+          "VmHWM_kib": 54468,
+          "VmRSS_kib": 54236
+        },
+        {
+          "name": "kube-apiserver",
+          "pid": 131,
+          "VmHWM_kib": 249492,
+          "VmRSS_kib": 249492
+        }
+      ],
+      "component_rss_sum_kib": 303728
+    }
+  ],
+  "shutdowns": [
+    {
+      "component": "kube-apiserver",
+      "pid": 27,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kine",
+      "pid": 15,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kine",
+      "pid": 57,
+      "exit_code": -9,
+      "injected_failure": "SIGKILL",
+      "owned_group_remained": false
+    },
+    {
+      "component": "kube-apiserver",
+      "pid": 71,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kine",
+      "pid": 98,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kube-apiserver",
+      "pid": 131,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kine",
+      "pid": 118,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    }
+  ],
+  "inputs": {
+    "kubernetes_version": "v1.35.7",
+    "kine_version": "v0.16.3",
+    "base_image": "python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d",
+    "checksum_sources": [
+      "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver.sha256",
+      "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver.sha256",
+      "https://api.github.com/repos/k3s-io/kine/releases/tags/v0.16.3"
+    ],
+    "artifacts": {
+      "arm64": {
+        "kube-apiserver": {
+          "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver",
+          "sha256": "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"
+        },
+        "kine": {
+          "url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-arm64",
+          "sha256": "ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8"
+        }
+      },
+      "amd64": {
+        "kube-apiserver": {
+          "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver",
+          "sha256": "0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8"
+        },
+        "kine": {
+          "url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-amd64",
+          "sha256": "1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976"
+        }
+      }
+    }
+  },
+  "architecture": "arm64",
+  "kernel": "7.0.12-linuxkit",
+  "started_at_unix": 1790543971.8605075,
+  "fixture": "unprivileged isolated Docker container; no runtime or workloads",
+  "spike_sha256": "78e150f677ed1bb4344dd964442360816eca190dff3e38e99501ee579e490c1f",
+  "datastore_outage": {
+    "http_status": 500,
+    "body": "[+]ping ok\n[+]log ok\n[-]etcd failed: reason withheld\n[-]etcd-readiness failed: reason withheld\n[+]informer-sync ok\n[+]poststarthook/start-apiserver-admission-initializer ok\n[+]poststarthook/generic-apiserver-start-informers ok\n[+]poststarthook/priority-and-fairness-config-consumer ok\n[+]poststarthook/priority-and-fairness-filter ok\n[+]poststarthook/storage-object-count-tracker-hook ok\n[+]poststarthook/start-apiextensions-informers ok\n[+]poststarthook/start-apiextensions-controllers ok\n[+]poststarthook/crd-informer-synced ok\n[+]poststarthook/start-system-namespaces-controller ok\n[+]poststarthook/start-cluster-authentication-info-controller ok\n[+]poststarthook/start-kube-apiserver-identity-lease-controller ok\n[+]poststarthook/start-kube-apiserver-identity-lease-garbage-collector ok\n[+]poststarthook/start-legacy-token-tracking-controller ok\n[+]poststarthook/start-service-ip-repair-controllers ok\n[+]poststarthook/rbac/bootstrap-roles ok\n[+]poststarthook/scheduling/bootstrap-system-priority-classes ok\n[+]poststarthook/priority-and-fairness-config-producer ok\n[+]poststarthook/bootstrap-controller ok\n[+]poststarthook/start-kubernetes-service-cidr-controller ok\n[+]poststarthook/start-kube-aggregator-informers ok\n[+]poststarthook/apiservice-status-local-available-controller ok\n[+]poststarthook/apiservice-status-remote-available-controller ok\n[+]poststarthook/apiservice-registration-controller ok\n[+]poststarthook/apiservice-discovery-controller ok\n[+]poststarthook/kube-apiserver-autoregistration ok\n[+]autoregister-completion ok\n[+]poststarthook/apiservice-openapi-controller ok\n[+]poststarthook/apiservice-openapiv3-controller ok\n[+]shutdown ok\nreadyz check failed\n"
+  },
+  "finished_at_unix": 1790543990.715157
+}

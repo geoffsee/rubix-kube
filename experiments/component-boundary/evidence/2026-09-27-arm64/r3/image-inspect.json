@@ -1,0 +1,61 @@
+[
+    {
+        "Id": "sha256:1ab1a80ef30e80d38e2bac25a840a3265e409a0ce6512e96eaa694a69123cbe2",
+        "RepoTags": [
+            "rubix-boundary-spike:28424d141802479db0d85f847590f79a"
+        ],
+        "RepoDigests": [
+            "rubix-boundary-spike@sha256:1ab1a80ef30e80d38e2bac25a840a3265e409a0ce6512e96eaa694a69123cbe2"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-27T21:19:31.007849334Z",
+        "Config": {
+            "User": "65532:65532",
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.13.7",
+                "PYTHON_SHA256=5462f9099dfd30e238def83c71d91897d8caa5ff6ebc7a50f14d4802cdaaa79a"
+            ],
+            "Entrypoint": [
+                "python",
+                "/experiment/spike.py"
+            ],
+            "WorkingDir": "/experiment"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 85750279,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:3e5d01a55aea2c9ea64c3cfef2bb870df4b01c7e206103a970d4c3dc6caed96b",
+                "sha256:2c6c0c508929946b6c35e513c8efcc2d4fb0e36037b2a1faedca5a2cdc142996",
+                "sha256:0677890d6b927ca890ebaa71cf1ad98f72ac7db91e9b42226e0696516850b0b0",
+                "sha256:f8c782297126895043f9916a4eb9470bdbfe898935f32478d42ff271160d16f5",
+                "sha256:8776438136b4390eda75c3eb5f7a8facb6c71e200120f5a148bcd3c58c122911",
+                "sha256:cffcd7dc4421663dccb7a6d01c080f618513960469d71e9c1a80c317e8ebc172",
+                "sha256:7e3d02314af1d1d31b917fa358b76f38dcd4b462f996db0917c27d517e681e31",
+                "sha256:8ded92e2358a99e84b030c1a34736f784e004e595a4c670de5842259f5b76b40",
+                "sha256:0ffb448f64237eca0efcebf4350c8745ab9bc562b2e28729b19597071f6248b2",
+                "sha256:6525ee1bef47f8cae0d5feec07a48575454041ea67d537b4e7b532ddebe8e500"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-27T21:19:31.062579709Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:1ab1a80ef30e80d38e2bac25a840a3265e409a0ce6512e96eaa694a69123cbe2",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "5mgzajkfn8ge2fdr039try8z1",
+                    "CreatedAt": "2026-09-27T21:19:31.462132334Z"
+                }
+            ]
+        }
+    }
+]
