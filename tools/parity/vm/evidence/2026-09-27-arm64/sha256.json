@@ -1,0 +1,12 @@
+{
+  "go/diagnostics.tar.gz": "04bd4cde0cd91a6ba73b82a22501d68b7695f9137938a28bb3f532b76786cf00",
+  "go/result.json": "657d4fc0f05ee8798a6a435c1cd63afdd5d0d51d570ca0dee43bb7a0afe08a61",
+  "privileged/diagnostics.tar.gz": "851a765cc1eae45efd11cc70b1b08b9c7eba4831e7b83dbd51ee1f252bf877f7",
+  "privileged/result.json": "1335f5fc1668fa728ec2694f7989d500b6e1c240fb5c37ffe6ff337c607aaeed",
+  "rust/diagnostics.tar.gz": "cb20dd06fb8f5aea1892a24127d34587b61f3e7f40acc31acc752bdbe9edad4b",
+  "rust/result.json": "9978a166577633cb36f3b5476762e27ebb370851a6bcbeb1029b0d896fb966bd",
+  "setup-failure/diagnostics.tar.gz": "59f893f0719b4bc6f7582dabfa6ae983f6b36def092766a326e19cf168e374c6",
+  "setup-failure/result.json": "6f4f4e72afaea8efe973e4731303c194f88d8ca2e81787543757880ec08deb53",
+  "test-failure/diagnostics.tar.gz": "0694b360a7ec890773caffc0fdfba55d434734b3af823547727ef265dcf4557c",
+  "test-failure/result.json": "9fcf737c2254852eefbbf3bd225142ae62496eb6f9bc9740e5175643238d4966"
+}
