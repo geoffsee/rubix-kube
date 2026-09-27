@@ -9,8 +9,8 @@ global lock, external-writer exclusion, or compare-and-swap guarantee is provide
 The source reference is KubeSolo
 [`internal/config/file.go`](https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/config/file.go).
 The independent baseline filesystem observations are in
-[`config-api`](../../../tools/parity/fixtures/config-api/README.md) and
-[`config-write-links`](../../../tools/parity/fixtures/config-write-links/README.md).
+[`config-api`](../../tools/parity/fixtures/config-api/README.md) and
+[`config-write-links`](../../tools/parity/fixtures/config-write-links/README.md).
 API and direct CLI callers retain their own validation and immutable-field policies.
 
 The writer clones the input, fills only empty schema metadata, and renders before
