@@ -2,3 +2,14 @@
 *.rs.bk
 .DS_Store
 /.idea/
+*.py
+*.log
+run*.json
+provenance.json
+*.sha256
+negative-controls.json
+*.tar.gz
+*.json
+*.json.gz
+*.stdout
+*.stderr
