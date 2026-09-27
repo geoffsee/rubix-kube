@@ -5,7 +5,9 @@ edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
-[dependencies]
-
 [lints]
 workspace = true
+
+[dependencies]
+rubix-config = { version = "=0.1.0", path = "../rubix-config" }
+serde_json = "=1.0.151"
