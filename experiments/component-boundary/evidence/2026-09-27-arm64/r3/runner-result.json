@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "errors": [],
+  "owned_container": "rubix-boundary-spike-3df883799a3b4f3bac2f3585246e6ebd",
+  "owned_image": "rubix-boundary-spike:28424d141802479db0d85f847590f79a",
+  "source_sha256": {
+    "Dockerfile": "769632f0bf6aa29767274d6b90b8677ac30fc98cc260621bd11a19c46f313532",
+    ".dockerignore": "d6d812cf80df7da0a56759b916af0aa2daeb8258050ba95e79ae6b2daedf12b0",
+    "inputs.json": "0d65ce5d8e240168d53484480d0219e9f70cf224560428f2542955a1df370e00",
+    "fetch.py": "60d24571c8f2b1695e05761a05ea1066483f24e9dee6c814047b7412d9774426",
+    "spike.py": "78e150f677ed1bb4344dd964442360816eca190dff3e38e99501ee579e490c1f",
+    "run.py": "6d0527391f4f47f0005c88fad15efa1085457968fa01253bc15ab9e66c375b3c"
+  }
+}

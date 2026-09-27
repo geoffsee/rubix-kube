@@ -1,0 +1,6 @@
+{
+  "exit_code": 1,
+  "errors": [],
+  "owned_container": "rubix-boundary-spike-6fc07e5ddd234749bfeded3f899f8813",
+  "owned_image": "rubix-boundary-spike:408f01396ede481aa9e9339bce42e073"
+}

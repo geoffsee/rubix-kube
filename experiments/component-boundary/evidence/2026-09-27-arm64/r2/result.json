@@ -1,0 +1,133 @@
+{
+  "status": "failed",
+  "checks": [
+    "locked kube-apiserver digest verified at runtime",
+    "locked kine digest verified at runtime",
+    "unauthenticated request rejected",
+    "authenticated identity without RBAC permission rejected",
+    "authenticated create succeeded",
+    "authenticated read succeeded",
+    "authenticated update succeeded",
+    "SQLite database persisted after shutdown",
+    "SQLite integrity check passed",
+    "independent SQLite query found persisted API object",
+    "same updated object survived component restart",
+    "update acknowledged before abrupt datastore termination",
+    "intentional datastore SIGKILL observed",
+    "fault-injected datastore process group is absent"
+  ],
+  "measurements": [
+    {
+      "cycle": 1,
+      "readiness_seconds": 2.228639168009977,
+      "component_process_count": 2,
+      "components": [
+        {
+          "name": "kine",
+          "pid": 15,
+          "VmHWM_kib": 51732,
+          "VmRSS_kib": 51732
+        },
+        {
+          "name": "kube-apiserver",
+          "pid": 27,
+          "VmHWM_kib": 247780,
+          "VmRSS_kib": 247780
+        }
+      ],
+      "component_rss_sum_kib": 299512
+    },
+    {
+      "cycle": 2,
+      "readiness_seconds": 2.224609333992703,
+      "component_process_count": 2,
+      "components": [
+        {
+          "name": "kine",
+          "pid": 56,
+          "VmHWM_kib": 56084,
+          "VmRSS_kib": 55860
+        },
+        {
+          "name": "kube-apiserver",
+          "pid": 67,
+          "VmHWM_kib": 258012,
+          "VmRSS_kib": 258012
+        }
+      ],
+      "component_rss_sum_kib": 313872
+    }
+  ],
+  "shutdowns": [
+    {
+      "component": "kube-apiserver",
+      "pid": 27,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kine",
+      "pid": 15,
+      "exit_code": 0,
+      "forced": false,
+      "owned_group_remained": false,
+      "error": null
+    },
+    {
+      "component": "kine",
+      "pid": 56,
+      "exit_code": -9,
+      "injected_failure": "SIGKILL",
+      "owned_group_remained": false
+    },
+    {
+      "component": "kube-apiserver",
+      "pid": 67,
+      "exit_code": -9,
+      "forced": true,
+      "owned_group_remained": false,
+      "error": null
+    }
+  ],
+  "inputs": {
+    "kubernetes_version": "v1.35.7",
+    "kine_version": "v0.16.3",
+    "base_image": "python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d",
+    "checksum_sources": [
+      "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver.sha256",
+      "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver.sha256",
+      "https://api.github.com/repos/k3s-io/kine/releases/tags/v0.16.3"
+    ],
+    "artifacts": {
+      "arm64": {
+        "kube-apiserver": {
+          "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver",
+          "sha256": "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"
+        },
+        "kine": {
+          "url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-arm64",
+          "sha256": "ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8"
+        }
+      },
+      "amd64": {
+        "kube-apiserver": {
+          "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver",
+          "sha256": "0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8"
+        },
+        "kine": {
+          "url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-amd64",
+          "sha256": "1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976"
+        }
+      }
+    }
+  },
+  "architecture": "arm64",
+  "kernel": "7.0.12-linuxkit",
+  "started_at_unix": 1790543863.7115538,
+  "fixture": "unprivileged isolated Docker container; no runtime or workloads",
+  "error": "unclean owned-process shutdown: ['kube-apiserver']",
+  "traceback": "Traceback (most recent call last):\n  File \"/experiment/spike.py\", line 277, in <module>\n    run()\n    ~~~^^\n  File \"/experiment/spike.py\", line 261, in run\n    shutdown()\n    ~~~~~~~~^^\n  File \"/experiment/spike.py\", line 197, in shutdown\n    raise RuntimeError(f\"unclean owned-process shutdown: {failures}\")\nRuntimeError: unclean owned-process shutdown: ['kube-apiserver']\n",
+  "finished_at_unix": 1790543900.1461735
+}
