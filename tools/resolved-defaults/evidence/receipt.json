@@ -1,0 +1,86 @@
+{
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-resolved-916f22ad19094d5580a23201501266cc-0",
+    "rubix-resolved-916f22ad19094d5580a23201501266cc-1"
+  ],
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "identical_repeats": true,
+  "image_inspect": [
+    {
+      "Architecture": "arm64",
+      "Comment": "buildkit.dockerfile.v0",
+      "Config": {
+        "Entrypoint": [
+          "/out/extract"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "User": "65532:65532",
+        "WorkingDir": "/"
+      },
+      "Created": "2026-09-27T22:33:35.148139002Z",
+      "Descriptor": {
+        "digest": "sha256:ec2f7f9c4840b6c87256021037128f9a486551bcad5ffabf926c5870c4b6b6a4",
+        "mediaType": "application/vnd.oci.image.index.v1+json",
+        "size": 855
+      },
+      "Id": "sha256:ec2f7f9c4840b6c87256021037128f9a486551bcad5ffabf926c5870c4b6b6a4",
+      "Identity": {
+        "Build": [
+          {
+            "CreatedAt": "2026-09-27T22:33:36.867709795Z",
+            "Ref": "zr1kt51nxgnc2ej3rwxbz2eag"
+          }
+        ]
+      },
+      "Metadata": {
+        "LastTagTime": "2026-09-27T22:33:36.661796336Z"
+      },
+      "Os": "linux",
+      "RepoDigests": [
+        "rubix-resolved-916f22ad19094d5580a23201501266cc@sha256:ec2f7f9c4840b6c87256021037128f9a486551bcad5ffabf926c5870c4b6b6a4"
+      ],
+      "RepoTags": [
+        "rubix-resolved-916f22ad19094d5580a23201501266cc:latest"
+      ],
+      "RootFS": {
+        "Layers": [
+          "sha256:7b28fdf2c151abbe0901c21707360ba87e285155df01bf75eed46d12bb41d161"
+        ],
+        "Type": "layers"
+      },
+      "Size": 36451571
+    }
+  ],
+  "inputs": {
+    "go": {
+      "bytes": 63811405,
+      "platform": "linux/arm64",
+      "sha256": "211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0",
+      "url": "https://go.dev/dl/go1.26.8.linux-arm64.tar.gz",
+      "version": "go1.26.8"
+    },
+    "schema_version": 1,
+    "source": {
+      "bytes": 39205522,
+      "revision": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+      "sha256": "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592",
+      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/96cb9ab4201d88ce5e549fde047a686171838fdb"
+    }
+  },
+  "output_sha256": {
+    "run0.json": "f54d3a15ce5dd572068160e23192bfcfb152d98f90ac89c05ca3bee7c4484a80",
+    "run1.json": "f54d3a15ce5dd572068160e23192bfcfb152d98f90ac89c05ca3bee7c4484a80"
+  },
+  "remaining_containers": [],
+  "remaining_images": [],
+  "source_sha256": {
+    "Dockerfile": "1444f424e1dc549c2eaa97c368e19de3e0ba9ba776b6ec4857027df7a8c35b59",
+    "capture.py": "ea1a838ce0ece7f106f7522152b8fcc0304f2acdb0e66f2a70b75ce7d6e7c134",
+    "inputs.json": "1b118607ea7d1b26a0051249ac127b924f066b77cc3d68fcaa764644a0f962ce",
+    "main.go": "b153df0978b9dd443defb03c3fad3f454ec1545c9a034c634a9beb0ca2e27389"
+  }
+}
