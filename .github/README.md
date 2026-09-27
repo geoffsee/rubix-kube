@@ -11,10 +11,10 @@ are optional to support solo development; automated checks remain mandatory.
 CI runs independent jobs in parallel and cancels superseded runs. Pull requests run on
 every change, including workflow-only changes; branch pushes run only on `main` to avoid
 duplicate PR runs. PR base changes also run validation, including PRs targeting another stack
-branch. Title/body-only edits produce separately named skipped checks without allocating runners;
-their concurrency group cannot cancel actual validation or replace its required check results.
-Unknown edited-event payloads run validation. Merge-group events are supported if a merge queue
-is introduced later.
+branch. All PR edits, including title/body edits, run validation with the same required check
+names. During rollout, metadata-only skipped suites left native stack merges reporting missing
+checks despite earlier successful runs. Full validation avoids that ambiguity; caches and
+cancellation limit repeated work. Merge-group events are supported if a merge queue is introduced.
 Both test profiles include all targets and doctests. Commands use the committed lockfile
 and toolchain rather than a moving Rust channel.
 
@@ -58,8 +58,10 @@ then mark only ready layers for review. Consult the installed gh-stack skill and
 merge scope and recovery. Verify stack state after synchronization; an aborted sync can exit zero.
 
 Before landing a prefix, verify its exact stack/PR membership and all six check results for each
-layer's current head and base. Default-branch protections do not automatically protect intermediate
-branches. Retargeting and rebasing require fresh validation; tests on an earlier base are insufficient.
+layer's current head and base. Native GitHub stacks enforce the trunk's protections on every layer,
+as described in the [stack rules](https://docs.github.com/en/pull-requests/reference/stacked-pull-requests).
+Retargeting and rebasing require fresh validation; tests on an earlier base are insufficient.
+Manage native PR bases through stack operations; GitHub rejects manual `gh pr edit --base` changes.
 Use `gh stack merge <verified-target-number> --yes --squash` for agent-managed stacks. Explicit
 squash is the default convention; repository policy also permits rebase merging. Never bypass rules.
 Reconcile the remaining stack after landing and close issues only when their complete acceptance
