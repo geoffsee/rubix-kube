@@ -687,6 +687,7 @@ dependencies = [
 name = "rubix-supervisor"
 version = "0.1.0"
 dependencies = [
+ "rustix",
  "tokio",
 ]
 
