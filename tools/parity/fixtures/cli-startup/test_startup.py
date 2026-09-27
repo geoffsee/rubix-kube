@@ -1,8 +1,18 @@
 import copy,hashlib,json,os,pathlib,shutil,subprocess,sys,tempfile,unittest
 from unittest import mock
-import verify
+import verify,capture
 HERE=pathlib.Path(__file__).resolve().parent
 class Startup(unittest.TestCase):
+ def test_capture_rejects_changed_selected_runner_or_driver_before_execution(self):
+  runner=HERE.parents[3]/'tools/parity/run.py'
+  self.assertEqual(capture.check_runner(runner),runner.resolve())
+  with tempfile.TemporaryDirectory() as d:
+   root=pathlib.Path(d)
+   for name in ('run.py','driver.py'):shutil.copyfile(runner.parent/name,root/name)
+   for name in ('run.py','driver.py'):
+    original=(root/name).read_bytes();(root/name).write_bytes(original+b'\n# altered\n')
+    with self.subTest(name=name),self.assertRaises(ValueError):capture.check_runner(root/'run.py')
+    (root/name).write_bytes(original)
  def test_current_baseline_captures_match(self):
   for name in ('r3','r4'):verify.verify(HERE/'evidence'/name)
  def test_hashbound_current_suite_and_harness(self):
