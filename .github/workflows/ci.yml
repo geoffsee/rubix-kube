@@ -87,6 +87,10 @@ jobs:
               print("No workspace targets enable doctests.")
           PY
 
+      - name: Test repository Python tooling
+        if: matrix.profile == 'debug'
+        run: python3 .github/test-python.py
+
   dependencies:
     name: Dependencies
     runs-on: ubuntu-24.04

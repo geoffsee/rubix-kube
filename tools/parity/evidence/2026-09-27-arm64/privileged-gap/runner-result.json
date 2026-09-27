@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "exit_code": 2,
+  "errors": [],
+  "source_sha256": {
+    "run.py": "a5c90e48a3c9b948091f2af004fee3de4d3f9f289ff0c567403d97cddcf9fcfe",
+    "driver.py": "a19723ccf46a41c4d5ed8ead5fe8d8a38846224ee7f103089cfbe9bf5cd642a6",
+    "Dockerfile": "800760ece2fed82a9868c0d70deeb09f73cecb1c82a0b24351fb528508581b00",
+    "suite": "40620474252d6a0876b1c49ffaa71ad86e5e064c3954968d155c88ef360f5069",
+    "artifact_descriptor": "8116cd99591c295d0253d265bc0dde3063c7ccce321600dc6cbd01431bd33bef"
+  },
+  "owned_container": "rubix-parity-d1888f8affb24e1686ffab6cc42a0813",
+  "owned_image": "rubix-parity-d1888f8affb24e1686ffab6cc42a0813:test",
+  "owned_volume": "rubix-parity-d1888f8affb24e1686ffab6cc42a0813-evidence"
+}

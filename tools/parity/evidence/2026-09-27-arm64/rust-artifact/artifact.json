@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kind": "rust",
+  "binary": "rubix-kube",
+  "sha256": "c2e9471f7903a46b1cf4e670a870b801e7129632219705233123be6dccc5d122",
+  "version": "0.1.0",
+  "source": {
+    "repository": "https://github.com/geoffsee/rubix-kube",
+    "revision": "fa5e4ce8092849efd7e95b70c2e3c7ed1fc2208d"
+  },
+  "build": {
+    "toolchain": "rustc 1.97.1",
+    "image": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
+    "source_archive_sha256": "7c7048bbee1537ddd05f354f423f086dd5cf73fcaf6777622c949d32b9110ed7",
+    "profile": "release",
+    "target": "aarch64-unknown-linux-gnu"
+  }
+}

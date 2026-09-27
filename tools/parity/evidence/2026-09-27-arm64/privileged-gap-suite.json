@@ -1,0 +1,1 @@
+{"schema_version": 1, "id": "privileged-gap-contract-check", "cases": [{"id": "version-exits-without-bootstrap", "argv": ["--version"], "expect": {"exit_code": 0, "combined_contains": ["version"]}, "privilege": "privileged"}]}
