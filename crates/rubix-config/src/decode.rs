@@ -237,6 +237,57 @@ impl<'a> Tree<'a> {
     }
 }
 
+fn integer_scalar(clean: &str) -> Option<Value> {
+    let (negative, digits) = if let Some(v) = clean.strip_prefix('-') {
+        (true, v)
+    } else {
+        (false, clean.strip_prefix('+').unwrap_or(clean))
+    };
+    let radix = if let Some(body) = digits
+        .strip_prefix("0x")
+        .or_else(|| digits.strip_prefix("0X"))
+    {
+        Some((16, body))
+    } else if let Some(body) = digits
+        .strip_prefix("0b")
+        .or_else(|| digits.strip_prefix("0B"))
+    {
+        Some((2, body))
+    } else if let Some(body) = digits
+        .strip_prefix("0o")
+        .or_else(|| digits.strip_prefix("0O"))
+    {
+        Some((8, body))
+    } else if digits.len() > 1 && digits.starts_with('0') {
+        Some((8, &digits[1..]))
+    } else {
+        Some((10, digits))
+    };
+    if let Some((base, body)) = radix
+        && !body.starts_with(['+', '-'])
+        && let Ok(integer) = i128::from_str_radix(body, base)
+        && let Some(integer) = (if negative {
+            integer.checked_neg()
+        } else {
+            Some(integer)
+        })
+    {
+        if let Ok(value) = i64::try_from(integer) {
+            return Some(Value::Number(value.into()));
+        }
+        if let Ok(value) = u64::try_from(integer) {
+            return Some(Value::Number(value.into()));
+        }
+    }
+    // go-yaml's legacy lowercase binary fallback permits a sign after 0b.
+    if let Some(body) = clean.strip_prefix("0b")
+        && let Ok(value) = i64::from_str_radix(body, 2)
+    {
+        return Some(Value::Number(value.into()));
+    }
+    None
+}
+
 fn scalar(text: &str, style: ScalarStyle, tag: Option<&Tag>) -> Result<Value, ConfigError> {
     let explicit = tag
         .filter(|t| t.handle == "tag:yaml.org,2002:" || t.handle == "!!")
@@ -265,33 +316,9 @@ fn scalar(text: &str, style: ScalarStyle, tag: Option<&Tag>) -> Result<Value, Co
         return Ok(Value::Bool(false));
     }
     let clean = text.replace('_', "");
-    let (negative, digits) = if let Some(v) = clean.strip_prefix('-') {
-        (true, v)
-    } else {
-        (false, clean.strip_prefix('+').unwrap_or(&clean))
-    };
-    let radix = if let Some(body) = digits.strip_prefix("0x") {
-        Some((16, body))
-    } else if let Some(body) = digits.strip_prefix("0b") {
-        Some((2, body))
-    } else if let Some(body) = digits.strip_prefix("0o") {
-        Some((8, body))
-    } else if digits.len() > 1 && digits.starts_with('0') {
-        Some((8, &digits[1..]))
-    } else {
-        Some((10, digits))
-    };
     if explicit.is_none_or(|t| matches!(t, "int" | "float")) {
-        if let Some((base, body)) = radix
-            && let Ok(integer) = i128::from_str_radix(body, base)
-        {
-            let integer = if negative { -integer } else { integer };
-            if let Ok(value) = i64::try_from(integer) {
-                return Ok(Value::Number(value.into()));
-            }
-            if let Ok(value) = u64::try_from(integer) {
-                return Ok(Value::Number(value.into()));
-            }
+        if let Some(value) = integer_scalar(&clean) {
+            return Ok(value);
         }
         if let Ok(number) = clean.parse::<f64>() {
             if let Some(value) = Number::from_f64(number) {

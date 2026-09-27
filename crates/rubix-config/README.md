@@ -55,7 +55,7 @@ physical NEL/LS/PS line breaks through the iterator/BufferedInput entry point; s
 [the patch rationale](../../third_party/saphyr-parser/RUBIX-COMPATIBILITY.md).
 It adds no dependency or ban exception; original decode/alias limits remain.
 
-Two explicit policy decisions differ from the baseline:
+Three explicit policy decisions differ from the baseline:
 
 * `DecodeLimits::default()` imposes 1 MiB input, 128 expanded nesting levels and
   100,000 cumulative allocated nodes and 4 MiB cumulative scalar/tag bytes.
@@ -67,6 +67,15 @@ Two explicit policy decisions differ from the baseline:
   `systemReserved.cpu: 1e1000` through an overflowing `Quantity.MilliValue` count;
   Rust rejects the overreservation. The raw Go observation and regression retain
   this explicit safety deviation instead of reproducing integer overflow.
+
+* Runtime conversion trims and lowercases the selected configured/discovered node
+  name and rejects an empty result. The baseline lowercases OS discovery upstream
+  of conversion and does not reject an empty successful hostname. The Rust probe
+  boundary requires usable discovery facts instead of returning an empty node name.
+
+Debug formatting redacts the Portainer edge key, including nested configuration
+and runtime settings. Explicit serialization and requested effective configuration
+output retain the value; callers must not use those as diagnostic log payloads.
 
 Tests consume durable Go artifact captures (all-field and failure configuration
 fixtures plus fresh scalar/alias/merge probes), check every field independently,

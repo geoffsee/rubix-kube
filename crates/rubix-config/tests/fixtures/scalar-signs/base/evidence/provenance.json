@@ -1,0 +1,16 @@
+{
+  "harness_sha256": {
+    "Dockerfile": "98ff4fda89eb2f1becb03d53ff31af17e4bd4d21063031b02e3dd2199c8aa5d3",
+    "run.py": "0e86f568411ea7be688c46726ba9c1f47b69843903350aaeb2d68d3f36517e8e",
+    "scalar_capture_test.go": "cc5f8606acde80841c5f6d94e5f421358321668cb6e44cf8f77fa1436c7fce83"
+  },
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "source_sha256": {
+    "go.mod": "7f0f9dabc79c121b3bfb5d09e6c79d31350be33a0a8aa70eba2cfd1c9becda87",
+    "go.sum": "d38d48d99df8e324a6b7a08f972cdbc93e50198f92928092b2d965c84b5c54ea",
+    "internal/config/defaults.go": "902db154b17cd88d24f18b4f9aeb87d286470b5113c18b1f2066d20ab596a24b",
+    "internal/config/file.go": "9a9af1ea2d94ff1fa1f2306f868721fb88f2e4b1d0d3fa286879b18de61749de"
+  }
+}
