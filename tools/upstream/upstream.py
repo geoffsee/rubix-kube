@@ -13,6 +13,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import tarfile
 import urllib.request
 import zipfile
 
@@ -301,7 +302,7 @@ def generate(inputs, cache, selected, generator, output, check=False, alternate_
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["fetch", "verify", "generate-cri", "check-cri",
-                                            "generate-containerd", "check-containerd"])
+                                            "generate-containerd", "check-containerd", "check-kubernetes-bindings"])
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "target/upstream")
     parser.add_argument("--platform", default=host_platform())
     parser.add_argument("--protoc", type=Path, help="optional compiler, must match the locked binary digest")
@@ -314,6 +315,9 @@ def main(argv=None):
         if args.command == "fetch":
             fetch(inputs, cache, args.platform)
             result = {"status": "prepared", "platform": args.platform}
+        elif args.command == "check-kubernetes-bindings":
+            import kubernetes
+            result = kubernetes.check(sys.modules[__name__], inputs, cache, ROOT)
         elif args.command == "verify":
             verify(inputs, cache, args.platform, args.protoc)
             result = {"status": "verified", "platform": args.platform}
@@ -326,7 +330,7 @@ def main(argv=None):
         result["input_manifest_sha256"] = digest(MANIFEST.read_bytes())
         print(json.dumps(result, sort_keys=True))
         return 0
-    except (InputError, OSError, ValueError, KeyError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
+    except (InputError, OSError, ValueError, KeyError, zipfile.BadZipFile, tarfile.TarError, subprocess.SubprocessError) as error:
         print(f"upstream: {error}", file=sys.stderr)
         return 1
 
