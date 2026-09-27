@@ -1,9 +1,9 @@
-# Prepared upstream inputs and CRI generation
+# Prepared upstream inputs and runtime client generation
 
-This first E02.03 layer implements explicit preparation and offline CRI generation from the
-[accepted input contract](../../docs/architecture/upstream-inputs.md). It does not implement a
-container runtime or complete E02.03: direct containerd clients and the remaining published API
-provenance checks follow separately. Independent drift/default/behavior oracles belong to E02.04.
+These E02.03 layers implement explicit preparation and offline CRI/containerd client generation
+from the [accepted input contract](../../docs/architecture/upstream-inputs.md). They do not implement
+a container runtime or complete E02.03: the remaining published Kubernetes API provenance checks
+follow separately. Independent drift/default/behavior oracles belong to E02.04.
 
 Python 3.10+ handles HTTPS, SHA-256, ZIP inspection and atomic cache writes using the standard
 library. The small Rust maintenance binary generates code using exact prost/tonic versions in
@@ -22,15 +22,19 @@ cargo build -p rubix-upstream-codegen --locked
 python3 tools/upstream/upstream.py verify
 python3 tools/upstream/upstream.py generate-cri
 python3 tools/upstream/upstream.py check-cri
+python3 tools/upstream/upstream.py generate-containerd
+python3 tools/upstream/upstream.py check-containerd
 python3 -m unittest discover -s tools/upstream -p 'test_*.py'
 cargo test -p rubix-cri --locked
+cargo test -p rubix-containerd-api --locked
 ```
 
 The default cache is `target/upstream`. `--cache-dir` chooses another cache.
 `--platform` can prepare locked Linux amd64/arm64 or Darwin arm64 compiler artifacts;
 generation requires the current host platform. Other hosts fail explicitly until their
 compiler artifacts are reviewed and added. `--generator` selects an explicitly built generator;
-`--output-dir` selects the generated directory (default `crates/rubix-cri/src/generated`).
+`--output-dir` selects the generated directory (default `crates/rubix-cri/src/generated` for CRI,
+`crates/rubix-containerd-api/src/generated` for containerd).
 An optional `--protoc` binary must match the selected archive's **binary digest and length**;
 matching `--version` alone is insufficient. Version is also checked before generation.
 The compiler version probe has a 10-second deadline and generation a 120-second deadline.
@@ -42,6 +46,33 @@ a temporary directory, compares bytes and file inventory, and fails without chan
 output. Save the receipt with validation evidence. Generation uses `BTreeMap` protobuf maps,
 clients enabled, servers disabled, and no Cargo rebuild notices. All RPC routes from the source
 must appear in the output, including the streaming events method.
+
+`generate-containerd`/`check-containerd` use the same verification and deadlines for thirteen
+generated files: eleven service packages, shared containerd types and task types. Every expected
+output and method route must be present. All generated files are prepared and validated before
+destination writes; each file replacement is atomic. All existing destinations must be regular files before
+publication begins. This is not a whole-directory crash transaction: an interruption during
+publication can leave a mixture of old and new files, which the next check rejects. Generation refuses unrelated files in the
+selected output directory, and check mode never writes to that directory. Receipts include a
+per-source and per-output hash map; CRI receipts retain their original single-file fields.
+
+Containerd inputs come from the own-upstream `api/v1.10.0` module at commit
+`8b34ce391bd114e080892cccfa956ef3807c207c`, reconciled with server v2.2.5. The ten contracted
+services are containers, content, diff, events, images, leases, namespaces, snapshots, tasks and
+transfer. Version is included for the runtime's handshake. Its additional schema was separately
+fetched at the same API commit and verified byte-identical to the pinned v2.2.5 server file.
+The manifest pins all seventeen protocol files: eleven services and six recursive local imports.
+The five Google well-known imports come from the locked protoc archive. Preparation reconstructs
+the upstream `github.com/containerd/containerd/api/` import paths, rejects duplicate import names,
+and checks the complete import closure before invoking the compiler. Compiler implicit include
+paths cannot hide a missing prepared import.
+
+Content provides streaming archive-byte upload, images hold descriptors/metadata, leases bound
+temporary content retention, and namespaces scope managed-runtime state. These generated RPCs
+are building blocks; transaction semantics, namespace metadata, cancellation, archive validation,
+image import and cleanup still belong to E09. Generic `Any` transfer payloads do not establish
+an implemented high-level transfer workflow. External CRI mode remains independent and must not
+adopt the host runtime's namespaces/content.
 
 ## Preparation and ownership
 
@@ -97,5 +128,15 @@ generator versions or compiler hashes require a reviewed upstream-adoption chang
 The [Darwin arm64 execution record](evidence/2026-09-27-darwin-arm64.json) records two real
 generation runs with identical output, a deliberately stale output rejected without modification,
 and a compiler that prints the expected version rejected because its bytes are not trusted.
-Focused Rust Clippy, three independent wire tests and 17 Python preparation tests passed locally.
+The first-layer record includes focused Rust Clippy, three independent CRI wire tests and seventeen
+Python preparation tests. Containerd adds import-closure and method-coverage negatives plus wire
+fixtures for commit bytes, unknown actions, field-mask presence and the actual STAT protobuf zero.
 Linux compiler archives are pinned and inspected; execution on Linux remains a separate check.
+
+The [containerd Darwin arm64 execution record](evidence/2026-09-27-containerd-darwin-arm64.json)
+records two identical generations of thirteen files containing all sixty-five RPC routes from the
+eleven selected services. A deliberately stale output and a missing transitive import both fail
+without changing committed output. The expanded suite passes twenty-three preparation tests and
+four independent containerd wire tests; focused Clippy passes for the generator and bindings.
+Existing CRI output remains byte-identical. These checks establish provenance, reproducibility and
+bounded wire behavior, not live containerd interoperability or completed image-import workflows.

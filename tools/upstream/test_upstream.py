@@ -162,6 +162,105 @@ class PreparationTests(unittest.TestCase):
         # Parseable JSON remains useful to independent verification tooling.
         self.assertEqual(json.loads(upstream.MANIFEST.read_text())["schema_version"], 1)
 
+    def add_containerd_proto(self, name, content):
+        item = record(content, id=f"containerd:{name}", target="containerd", proto_path=name)
+        self.inputs["sources"].append(item)
+        upstream.atomic_write(self.cache, upstream.blob_name(item), content)
+        return item
+
+    def test_missing_transitive_import_fails_before_any_staged_input_is_written(self):
+        self.prepare()
+        self.add_containerd_proto("example/service.proto", b'import "example/missing.proto";\n')
+        destination = self.root / "prepared"
+        with self.assertRaisesRegex(upstream.InputError, "missing locked protobuf import"):
+            upstream.prepare_containerd(self.inputs, self.cache, upstream.host_platform(), destination)
+        self.assertFalse(destination.exists())
+
+    def test_corrupted_transitive_import_is_rejected(self):
+        self.prepare()
+        self.add_containerd_proto("example/service.proto", b'import "example/types.proto";\n')
+        item = self.add_containerd_proto("example/types.proto", b'message Value {}\n')
+        (self.cache / upstream.blob_name(item)).write_bytes(b"corrupted import")
+        with self.assertRaisesRegex(upstream.InputError, "SHA-256 mismatch"):
+            upstream.prepare_containerd(self.inputs, self.cache, upstream.host_platform(), self.root / "prepared")
+
+    def test_duplicate_import_name_is_rejected_instead_of_shadowing_verified_source(self):
+        self.prepare()
+        self.add_containerd_proto("example/types.proto", b'message Original {}\n')
+        self.add_containerd_proto("example/types.proto", b'message Replacement {}\n')
+        with self.assertRaisesRegex(upstream.InputError, "duplicate protobuf import name"):
+            upstream.prepare_containerd(self.inputs, self.cache, upstream.host_platform(), self.root / "prepared")
+
+    def test_protocol_coverage_includes_streams_but_ignores_comments(self):
+        proto = b'''package containerd.services.content.v1;
+// service Fake { rpc Imaginary(Request) returns (Response); }
+service Content {
+  // rpc Invented(Request) returns (Response);
+  rpc Write(stream Request) returns (stream Response);
+  rpc Read(Request) returns (stream Response);
+}
+'''
+        self.assertEqual(upstream.protocol_routes(proto), [
+            b"/containerd.services.content.v1.Content/Write",
+            b"/containerd.services.content.v1.Content/Read",
+        ])
+
+    def test_missing_generated_rpc_fails_before_replacing_previous_output(self):
+        self.prepare()
+        proto = b'''package example;
+service Storage {
+  rpc Write(stream Request) returns (stream Response);
+}
+'''
+        self.add_containerd_proto("example/service.proto", proto)
+        self.inputs["containerd_output_files"] = ["example.rs"]
+        output = self.root / "output"
+        output.mkdir()
+        (output / "example.rs").write_bytes(b"previous valid generation")
+        generator = self.root / "generator"
+        generator.write_bytes(b"fixture generator")
+
+        def generate(arguments, **_kwargs):
+            generated = Path(arguments[-1])
+            generated.mkdir()
+            (generated / "example.rs").write_bytes(b"output without required Write RPC")
+
+        with mock.patch.object(upstream.subprocess, "check_output", return_value="libprotoc 36.2\n"):
+            with mock.patch.object(upstream.subprocess, "run", side_effect=generate):
+                with self.assertRaisesRegex(upstream.InputError, "missing RPC /example.Storage/Write"):
+                    upstream.generate(self.inputs, self.cache, upstream.host_platform(), generator, output,
+                                      target="containerd")
+        self.assertEqual((output / "example.rs").read_bytes(), b"previous valid generation")
+
+    def test_nonregular_later_destination_preserves_all_previous_outputs(self):
+        self.prepare()
+        self.add_containerd_proto("example/types.proto", b'package example; message Value {}')
+        self.inputs["containerd_output_files"] = ["a.rs", "b.rs", "z.rs"]
+        output = self.root / "output"
+        output.mkdir()
+        previous = {"a.rs": b"previous A", "b.rs": b"previous B"}
+        for name, content in previous.items():
+            (output / name).write_bytes(content)
+        (output / "z.rs").mkdir()
+        (output / "z.rs" / "retained").write_bytes(b"directory content")
+        generator = self.root / "generator"
+        generator.write_bytes(b"fixture generator")
+
+        def generate(arguments, **_kwargs):
+            generated = Path(arguments[-1])
+            generated.mkdir()
+            for name in self.inputs["containerd_output_files"]:
+                (generated / name).write_bytes(b"replacement")
+
+        with mock.patch.object(upstream.subprocess, "check_output", return_value="libprotoc 36.2\n"), \
+             mock.patch.object(upstream.subprocess, "run", side_effect=generate):
+            with self.assertRaisesRegex(upstream.InputError, "not a regular file"):
+                upstream.generate(self.inputs, self.cache, upstream.host_platform(), generator, output,
+                                  target="containerd")
+        for name, content in previous.items():
+            self.assertEqual((output / name).read_bytes(), content)
+        self.assertEqual((output / "z.rs" / "retained").read_bytes(), b"directory content")
+
     def test_generator_timeout_preserves_output_and_removes_partial_temporary_files(self):
         self.prepare()
         output = self.root / "output"

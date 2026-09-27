@@ -15,6 +15,193 @@
       "sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5",
       "bytes": 86323,
       "id": "cri"
+    },
+    {
+      "path": "api/services/containers/v1/containers.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/containers/v1/containers.proto",
+      "bytes": 6201,
+      "sha256": "a6cb02f4a422e35c0c3535954ebca50279fb1cecb841029c37eca4b8e50c6570",
+      "id": "containerd:api/services/containers/v1/containers.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/containers/v1/containers.proto",
+      "service": true,
+      "package": "containerd.services.containers.v1"
+    },
+    {
+      "path": "api/services/content/v1/content.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/content/v1/content.proto",
+      "bytes": 10657,
+      "sha256": "b91daba4649a0e8916d046660905c8a0c70c06d5ef27d23786d8d2b5e4a218a1",
+      "id": "containerd:api/services/content/v1/content.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/content/v1/content.proto",
+      "service": true,
+      "package": "containerd.services.content.v1"
+    },
+    {
+      "path": "api/services/diff/v1/diff.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/diff/v1/diff.proto",
+      "bytes": 3049,
+      "sha256": "62a7f0b1226fa4981b2e676aae070a242fea5a5820d6a56101fecf82fb1b1ea0",
+      "id": "containerd:api/services/diff/v1/diff.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/diff/v1/diff.proto",
+      "service": true,
+      "package": "containerd.services.diff.v1"
+    },
+    {
+      "path": "api/services/events/v1/events.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/events/v1/events.proto",
+      "bytes": 2088,
+      "sha256": "307fd39ae5f46b7f9cf55ef17966cd5174347c95c67f0c3c41eaf46b7b233210",
+      "id": "containerd:api/services/events/v1/events.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/events/v1/events.proto",
+      "service": true,
+      "package": "containerd.services.events.v1"
+    },
+    {
+      "path": "api/services/images/v1/images.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/images/v1/images.proto",
+      "bytes": 4419,
+      "sha256": "7b87546a92673ce0a04a75bf3146d4bd84886c4c159ba926293311c9252d9140",
+      "id": "containerd:api/services/images/v1/images.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/images/v1/images.proto",
+      "service": true,
+      "package": "containerd.services.images.v1"
+    },
+    {
+      "path": "api/services/leases/v1/leases.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/leases/v1/leases.proto",
+      "bytes": 3147,
+      "sha256": "0148dfbf87a9cabe67e6fe4550a1955c8f5fe1c2b4374515a68e4b5d0eb21713",
+      "id": "containerd:api/services/leases/v1/leases.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/leases/v1/leases.proto",
+      "service": true,
+      "package": "containerd.services.leases.v1"
+    },
+    {
+      "path": "api/services/namespaces/v1/namespace.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/namespaces/v1/namespace.proto",
+      "bytes": 3312,
+      "sha256": "dc18052397826a5d1e187985e5acd987cbfd404dfcf92f87a048fd585b776ba7",
+      "id": "containerd:api/services/namespaces/v1/namespace.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/namespaces/v1/namespace.proto",
+      "service": true,
+      "package": "containerd.services.namespaces.v1"
+    },
+    {
+      "path": "api/services/snapshots/v1/snapshots.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/snapshots/v1/snapshots.proto",
+      "bytes": 4573,
+      "sha256": "65fdabff266f082c88b51df1f6231da025ca41b5f95d718a50ea45a419c3580e",
+      "id": "containerd:api/services/snapshots/v1/snapshots.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/snapshots/v1/snapshots.proto",
+      "service": true,
+      "package": "containerd.services.snapshots.v1"
+    },
+    {
+      "path": "api/services/tasks/v1/tasks.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/tasks/v1/tasks.proto",
+      "bytes": 5194,
+      "sha256": "45eddb73447247b2e2b0923c5f8ffad4a9964e383c6f47ab7524320b9aced0e8",
+      "id": "containerd:api/services/tasks/v1/tasks.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/tasks/v1/tasks.proto",
+      "service": true,
+      "package": "containerd.services.tasks.v1"
+    },
+    {
+      "path": "api/services/transfer/v1/transfer.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/transfer/v1/transfer.proto",
+      "bytes": 1100,
+      "sha256": "f839a924be27e2993f91b8bd0885add2d8e6a2c9d28508c399743a4a8f4506ac",
+      "id": "containerd:api/services/transfer/v1/transfer.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/transfer/v1/transfer.proto",
+      "service": true,
+      "package": "containerd.services.transfer.v1"
+    },
+    {
+      "path": "api/services/version/v1/version.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/version/v1/version.proto",
+      "bytes": 982,
+      "sha256": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439",
+      "id": "containerd:api/services/version/v1/version.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/services/version/v1/version.proto",
+      "service": true,
+      "package": "containerd.services.version.v1"
+    },
+    {
+      "path": "api/types/descriptor.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/descriptor.proto",
+      "bytes": 1053,
+      "sha256": "b5d45974cb169e4d3cfaf2df9ed57ee5ade70677c92a4107eb44967bc6025368",
+      "id": "containerd:api/types/descriptor.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/types/descriptor.proto",
+      "service": false,
+      "package": "containerd.types"
+    },
+    {
+      "path": "api/types/event.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/event.proto",
+      "bytes": 1023,
+      "sha256": "af096bef57267dd10805ecc3cfcee9211e5ebbaab5d0829236c2b9e63a5a6d2e",
+      "id": "containerd:api/types/event.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/types/event.proto",
+      "service": false,
+      "package": "containerd.types"
+    },
+    {
+      "path": "api/types/fieldpath.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/fieldpath.proto",
+      "bytes": 1765,
+      "sha256": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf",
+      "id": "containerd:api/types/fieldpath.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/types/fieldpath.proto",
+      "service": false,
+      "package": "containerd.types"
+    },
+    {
+      "path": "api/types/metrics.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/metrics.proto",
+      "bytes": 880,
+      "sha256": "d759da1055afeda08f1debbe45114514af700db5dde0beaed7e6ff3c4e511711",
+      "id": "containerd:api/types/metrics.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/types/metrics.proto",
+      "service": false,
+      "package": "containerd.types"
+    },
+    {
+      "path": "api/types/mount.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/mount.proto",
+      "bytes": 1687,
+      "sha256": "610b81ec306307b7e1a3fe078f03ab7e6f10e1195ea67a0457685531dbadfb04",
+      "id": "containerd:api/types/mount.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/types/mount.proto",
+      "service": false,
+      "package": "containerd.types"
+    },
+    {
+      "path": "api/types/task/task.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/task/task.proto",
+      "bytes": 1303,
+      "sha256": "9986ea9de579506be970d551f7e11a128c12f87bc0df5bae77f56f89aa96bd16",
+      "id": "containerd:api/types/task/task.proto",
+      "target": "containerd",
+      "proto_path": "github.com/containerd/containerd/api/types/task/task.proto",
+      "service": false,
+      "package": "containerd.v1.types"
     }
   ],
   "protoc_archives": [
@@ -132,5 +319,20 @@
         }
       ]
     }
+  ],
+  "containerd_output_files": [
+    "containerd.services.containers.v1.rs",
+    "containerd.services.content.v1.rs",
+    "containerd.services.diff.v1.rs",
+    "containerd.services.events.v1.rs",
+    "containerd.services.images.v1.rs",
+    "containerd.services.leases.v1.rs",
+    "containerd.services.namespaces.v1.rs",
+    "containerd.services.snapshots.v1.rs",
+    "containerd.services.tasks.v1.rs",
+    "containerd.services.transfer.v1.rs",
+    "containerd.services.version.v1.rs",
+    "containerd.types.rs",
+    "containerd.v1.types.rs"
   ]
 }
