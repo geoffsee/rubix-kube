@@ -1,3 +1,4 @@
+use crate::diagnostics::{ComponentDiagnostic, LifecycleObserver, LifecycleSnapshot};
 use crate::model::{
     Adapter, AdapterContext, AdapterError, CleanupFailure, CleanupKind, ComponentFailure,
     ComponentKind, ComponentOutcome, ComponentSpec, ComponentState, FailureKind, FailurePolicy,
@@ -7,6 +8,7 @@ use crate::model::{
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt;
 use std::future::pending;
+use std::sync::Arc;
 use tokio::sync::{mpsc, watch};
 use tokio::task::{AbortHandle, Id, JoinError, JoinSet};
 use tokio::time::{Instant, sleep_until};
@@ -17,6 +19,7 @@ struct Slot {
     spec: ComponentSpec,
     adapter: Option<Box<dyn Adapter>>,
     state: ComponentState,
+    state_since: Instant,
     startup_deadline: Option<Instant>,
     cleanup_started: Option<Instant>,
     stop: Option<watch::Sender<StopPhase>>,
@@ -39,6 +42,7 @@ pub struct Supervisor {
     failures: Vec<ComponentFailure>,
     cleanup: Vec<CleanupFailure>,
     transitions: Vec<Transition>,
+    diagnostics: Option<watch::Sender<Arc<LifecycleSnapshot>>>,
 }
 impl fmt::Debug for Supervisor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -121,6 +125,7 @@ impl Supervisor {
                     spec: registration.spec,
                     adapter: Some(registration.adapter),
                     state: ComponentState::Pending,
+                    state_since: Instant::now(),
                     startup_deadline: None,
                     cleanup_started: None,
                     stop: None,
@@ -141,11 +146,57 @@ impl Supervisor {
             failures: Vec::new(),
             cleanup: Vec::new(),
             transitions: Vec::new(),
+            diagnostics: None,
         })
+    }
+    /// Opt into latest-state diagnostics. Repeated calls subscribe to the same publisher.
+    /// Consumers cannot backpressure publication or obtain a borrowed channel value.
+    pub fn with_observer(mut self) -> (Self, LifecycleObserver) {
+        let receiver = if let Some(sender) = &self.diagnostics {
+            sender.subscribe()
+        } else {
+            let (sender, receiver) = watch::channel(Arc::new(self.snapshot(false)));
+            self.diagnostics = Some(sender);
+            receiver
+        };
+        (self, LifecycleObserver { receiver })
+    }
+    fn snapshot(&self, finished: bool) -> LifecycleSnapshot {
+        LifecycleSnapshot {
+            published_at: Instant::now(),
+            components: self
+                .slots
+                .iter()
+                .map(|slot| ComponentDiagnostic {
+                    component: slot.spec.id.clone(),
+                    kind: slot.spec.kind,
+                    failure_policy: slot.spec.failure_policy,
+                    state: slot.state,
+                    state_since: slot.state_since,
+                    startup_deadline: slot.startup_deadline,
+                })
+                .collect(),
+            cause: self.cause.clone(),
+            failures: self.failures.clone(),
+            cleanup_failures: self.cleanup.clone(),
+            degraded: self.failures.iter().any(|failure| {
+                self.slots.iter().any(|slot| {
+                    slot.spec.id == failure.component
+                        && slot.spec.failure_policy == FailurePolicy::Degrade
+                })
+            }),
+            finished,
+        }
+    }
+    fn publish(&self, finished: bool) {
+        if let Some(sender) = &self.diagnostics {
+            sender.send_replace(Arc::new(self.snapshot(finished)));
+        }
     }
     fn transition(&mut self, index: usize, state: ComponentState) {
         if self.slots[index].state != state {
             self.slots[index].state = state;
+            self.slots[index].state_since = Instant::now();
             self.transitions.push(Transition {
                 component: self.slots[index].spec.id.clone(),
                 state,
@@ -465,6 +516,7 @@ impl Supervisor {
             {
                 break;
             }
+            self.publish(false);
             let deadline = self.next_deadline();
             tokio::select! {
                 biased;
@@ -476,6 +528,8 @@ impl Supervisor {
                 Some((index, at)) = self.ready_rx.recv() => { self.ready(index, at); }
             }
         }
+        self.cause.get_or_insert(StopCause::Finished);
+        self.publish(true);
         SupervisorReport {
             cause: self.cause.unwrap_or(StopCause::Finished),
             outcomes: self
