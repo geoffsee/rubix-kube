@@ -8,7 +8,7 @@ successful guest tmpfs mount/unmount, ACPI powerdown, QEMU exit0, absence of the
 process group and removal of the private overlay/keys/firmware directory.
 
 Reproduce using the adapter README command and the artifact manifests from
-`../../../../evidence/2026-09-27-arm64/`. Startup uses `tools/parity/startup.json`;
+`../../../evidence/2026-09-27-arm64/`. Startup uses `tools/parity/startup.json`;
 privileged uses `tools/parity/evidence/2026-09-27-arm64/privileged-gap-suite.json`.
 Fault runs add `--inject-failure setup` or `--inject-failure test`.
 
