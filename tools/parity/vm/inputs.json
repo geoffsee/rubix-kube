@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "image": {
+    "url": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/debian-12-genericcloud-arm64-20260923-2610.qcow2",
+    "sha512": "89a752d5c7d8e88bee39a57d88d496cca574f7d1e8df5df7a169825435f99feb11ed13ab27ec7bee96fe1584be4ff9479358fbca6cc859efa109f4aba18724c8",
+    "checksum_source": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/SHA512SUMS",
+    "distribution": "Debian 12 genericcloud arm64",
+    "build": "20260923-2610"
+  },
+  "seed_builder": {
+    "name": "pycdlib",
+    "version": "1.14.0",
+    "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
+    "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4"
+  }
+}
