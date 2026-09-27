@@ -22,6 +22,7 @@ import uuid
 
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
 
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -30,7 +31,8 @@ def load(name, path):
     return module
 
 BASE = load("parity_base", HERE.parent / "run.py")
-ASSESS = load("parity_assertions", HERE.parent / "driver.py").assess
+DRIVER = load("parity_assertions", HERE.parent / "driver.py")
+ASSESS = DRIVER.assess
 LIMIT = 256 * 1024
 
 
@@ -73,7 +75,8 @@ def run_cases(cases, command, ssh, output, report):
         environment = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME": "/root", "LANG": "C.UTF-8"}
         environment.update(case.get("env", {}))
         argv = ["env", "-i", *(f"{key}={value}" for key, value in environment.items()),
-                "timeout", "--signal=KILL", str(case.get("timeout_seconds", 30)), "/opt/rubix/artifact", *case["argv"]]
+                "timeout", "--signal=KILL", str(case.get("timeout_seconds", 30)), "/opt/rubix/artifact",
+                *DRIVER.fixture_argv(case, Path(f"/fixtures/{index:03d}"))]
         guest_uid = 0
         if case.get("privilege", "none") == "none":
             argv = ["runuser", "--user", "nobody", "--", *argv]
@@ -372,6 +375,12 @@ def main():
         _, observed_digest, _ = command("artifact-digest", [*ssh, "mkdir -p /opt/rubix && mv /tmp/artifact /opt/rubix/artifact && chmod 0755 /opt/rubix/artifact && sha256sum /opt/rubix/artifact"])
         if observed_digest.split()[0] != artifact["sha256"]:
             raise RuntimeError("guest artifact digest mismatch")
+        if any(case.get("files") for case in suite["cases"]):
+            DRIVER.stage_files(suite["cases"], private / "fixtures")
+            command("copy-fixtures", ["scp", *ssh_options, "-P", str(port), "-r",
+                                      str(private / "fixtures"), "root@127.0.0.1:/"], timeout=60)
+            command("protect-fixtures", [*ssh,
+                "chown -R 0:0 /fixtures && find /fixtures -type d -exec chmod 0555 {} + && find /fixtures -type f -exec chmod 0444 {} +"])
         run_cases(suite["cases"], command, ssh, args.output, report)
         if args.inject_failure == "test":
             raise RuntimeError("intentional test failure after case diagnostics")
