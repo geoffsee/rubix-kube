@@ -1,14 +1,14 @@
 [
     {
-        "Id": "sha256:b2682c88624a4a04af0a1959986c73bab9dead243f6f4fc439d2349dc8137ac4",
+        "Id": "sha256:46d7c45d8fe6f8124bd7b8d8150ef1084fa5cddbf201dcf14d07e59bc3d5fe02",
         "RepoTags": [
-            "rubix-api-json:081426d83bfa4baaaed83d9d3713a713"
+            "rubix-api-json:d444e6461fa2410e815dd308d9019804"
         ],
         "RepoDigests": [
-            "rubix-api-json@sha256:b2682c88624a4a04af0a1959986c73bab9dead243f6f4fc439d2349dc8137ac4"
+            "rubix-api-json@sha256:46d7c45d8fe6f8124bd7b8d8150ef1084fa5cddbf201dcf14d07e59bc3d5fe02"
         ],
         "Comment": "buildkit.dockerfile.v0",
-        "Created": "2026-09-27T22:06:09.981135338Z",
+        "Created": "2026-09-27T22:20:26.726680221Z",
         "Config": {
             "User": "65532:65532",
             "Env": [
@@ -25,7 +25,7 @@
         },
         "Architecture": "arm64",
         "Os": "linux",
-        "Size": 85752095,
+        "Size": 85752310,
         "RootFS": {
             "Type": "layers",
             "Layers": [
@@ -37,23 +37,23 @@
                 "sha256:ac29ea44eeed33a52490cd7512e697ad71c2ed53d6f4c4a1662f100a3cc089b7",
                 "sha256:2f267782681882eb90f1b60ec3f60f8f6e64328c9f9ba5b757520f25808ab9bd",
                 "sha256:045a942fab5104a9662350e71075f840933dc6ada31ca830abe955c9af009692",
-                "sha256:a77c01bbc4ce010f56737aa87bff2f88ed6398a94c28bbd87b14e35455151482",
-                "sha256:53947ae18c6d85f9157f62d8e85a250142beb58c3b06776160ad9060a51696f2"
+                "sha256:a0105ce6a4ba95d972db013e977664086f11d55c049d751fa3d4680cc7029d05",
+                "sha256:7b939ce5bd5e3ad3236f4f169efadcdc2e340fa975632019ad3bdec1eb15002c"
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-27T22:06:37.635213503Z"
+            "LastTagTime": "2026-09-27T22:21:22.36870476Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:b2682c88624a4a04af0a1959986c73bab9dead243f6f4fc439d2349dc8137ac4",
+            "digest": "sha256:46d7c45d8fe6f8124bd7b8d8150ef1084fa5cddbf201dcf14d07e59bc3d5fe02",
             "size": 856
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "xuifujs4o8hkjwlxyshcarinf",
-                    "CreatedAt": "2026-09-27T22:06:38.024710295Z"
+                    "Ref": "xgioflcmaq2uu9ohwzcji1g79",
+                    "CreatedAt": "2026-09-27T22:21:22.832511344Z"
                 }
             ]
         }

@@ -1,8 +1,8 @@
 {
   "exit_code": 0,
   "errors": [],
-  "owned_container": "rubix-api-json-fa76c6fce17e45508e7821a2bdb4be61",
-  "owned_image": "rubix-api-json:081426d83bfa4baaaed83d9d3713a713",
+  "owned_container": "rubix-api-json-bc55fe10dee24729a2fbdd5b9da0f3fd",
+  "owned_image": "rubix-api-json:d444e6461fa2410e815dd308d9019804",
   "source_sha256": {
     "Dockerfile": "9fb319776c9a0b5a47af58877730f8eb85b87d5bebf31b3343f517df4ee9e61c",
     ".dockerignore": "f3507eeefafa93039945c6b475b0fc7a81cdeafff32a2a48a14a606fc9658fa8",
@@ -10,7 +10,7 @@
     "fetch.py": "60d24571c8f2b1695e05761a05ea1066483f24e9dee6c814047b7412d9774426",
     "spike.py": "c0e339e4bb4d2b16601db819150292c845858cb30252f15f5b2f7108b0029032",
     "component.py": "4f434dfbb98a086ac505083d14606b81c3afcaf3b251f9b29e02fe18f78345d0",
-    "verify.py": "41159df35d0874a238e0d679d9062af4fc6b37f4eca29289988ff7b70b1489c0",
+    "verify.py": "a9280d0534558896d83caebc6d19ea1ac536ffb5d8d4f973d5c47a91871c5772",
     "run.py": "2406846275a7daf8f4042e5b16e8657c6bdc4e108ad19f2173d56addd2033dec"
   }
 }

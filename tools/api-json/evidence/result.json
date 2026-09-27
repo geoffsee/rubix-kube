@@ -41,29 +41,29 @@
   "measurements": [
     {
       "cycle": 1,
-      "readiness_seconds": 2.3650271670048824,
+      "readiness_seconds": 4.3492554599943105,
       "component_process_count": 2,
       "components": [
         {
           "name": "kine",
           "pid": 20,
-          "VmHWM_kib": 52556,
-          "VmRSS_kib": 52380
+          "VmHWM_kib": 51580,
+          "VmRSS_kib": 51528
         },
         {
           "name": "kube-apiserver",
-          "pid": 27,
-          "VmHWM_kib": 257012,
-          "VmRSS_kib": 253228
+          "pid": 28,
+          "VmHWM_kib": 249632,
+          "VmRSS_kib": 249632
         }
       ],
-      "component_rss_sum_kib": 305608
+      "component_rss_sum_kib": 301160
     }
   ],
   "shutdowns": [
     {
       "component": "kube-apiserver",
-      "pid": 27,
+      "pid": 28,
       "exit_code": 0,
       "forced": false,
       "owned_group_remained": false,
@@ -436,25 +436,25 @@
   "source_sha256": {
     "spike.py": "c0e339e4bb4d2b16601db819150292c845858cb30252f15f5b2f7108b0029032",
     "component.py": "4f434dfbb98a086ac505083d14606b81c3afcaf3b251f9b29e02fe18f78345d0",
-    "verify.py": "41159df35d0874a238e0d679d9062af4fc6b37f4eca29289988ff7b70b1489c0",
+    "verify.py": "a9280d0534558896d83caebc6d19ea1ac536ffb5d8d4f973d5c47a91871c5772",
     "inputs.json": "0d65ce5d8e240168d53484480d0219e9f70cf224560428f2542955a1df370e00"
   },
   "datastore_tls": [
     {
       "identity": "absent",
       "exit_code": 1,
-      "diagnostic": "Can't use SSL_get_servername\n20406DA6FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../ssl/record/rec_layer_s3.c:1602:SSL alert number 40\n"
+      "diagnostic": "Can't use SSL_get_servername\n20A04186FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../ssl/record/rec_layer_s3.c:1602:SSL alert number 40\n"
     },
     {
       "identity": "admin",
       "exit_code": 1,
-      "diagnostic": "Can't use SSL_get_servername\n2030C8AFFFFF0000:error:0A000418:SSL routines:ssl3_read_bytes:tlsv1 alert unknown ca:../ssl/record/rec_layer_s3.c:1602:SSL alert number 48\n"
+      "diagnostic": "Can't use SSL_get_servername\n2060EB85FFFF0000:error:0A000418:SSL routines:ssl3_read_bytes:tlsv1 alert unknown ca:../ssl/record/rec_layer_s3.c:1602:SSL alert number 48\n"
     }
   ],
   "raw_watch_lines": [
-    "{\"type\":\"ADDED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"99654ee0-9478-4e90-bf3a-0fcf9a58ea62\",\"resourceVersion\":\"212\",\"creationTimestamp\":\"2026-09-27T22:06:46Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:46Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"first\"}}}\n",
-    "{\"type\":\"MODIFIED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"99654ee0-9478-4e90-bf3a-0fcf9a58ea62\",\"resourceVersion\":\"213\",\"creationTimestamp\":\"2026-09-27T22:06:46Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:46Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n",
-    "{\"type\":\"DELETED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"99654ee0-9478-4e90-bf3a-0fcf9a58ea62\",\"resourceVersion\":\"214\",\"creationTimestamp\":\"2026-09-27T22:06:46Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:46Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n"
+    "{\"type\":\"ADDED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"459c27d6-80b4-477b-b309-692959562dc9\",\"resourceVersion\":\"212\",\"creationTimestamp\":\"2026-09-27T22:21:32Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:32Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"first\"}}}\n",
+    "{\"type\":\"MODIFIED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"459c27d6-80b4-477b-b309-692959562dc9\",\"resourceVersion\":\"213\",\"creationTimestamp\":\"2026-09-27T22:21:32Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:32Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n",
+    "{\"type\":\"DELETED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"459c27d6-80b4-477b-b309-692959562dc9\",\"resourceVersion\":\"214\",\"creationTimestamp\":\"2026-09-27T22:21:32Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:32Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n"
   ],
   "http": [
     {
@@ -506,15 +506,15 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"kind\":\"Namespace\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"serialization-fixture\",\"uid\":\"7c8f4e42-d4cf-4b0e-8ac5-c9e2f9ea28a6\",\"resourceVersion\":\"203\",\"creationTimestamp\":\"2026-09-27T22:06:42Z\",\"labels\":{\"kubernetes.io/metadata.name\":\"serialization-fixture\"},\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:42Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:metadata\":{\"f:labels\":{\".\":{},\"f:kubernetes.io/metadata.name\":{}}}}}]},\"spec\":{\"finalizers\":[\"kubernetes\"]},\"status\":{\"phase\":\"Active\"}}\n",
+      "raw_response": "{\"kind\":\"Namespace\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"serialization-fixture\",\"uid\":\"c6622474-bf92-42ac-a864-2337d5417706\",\"resourceVersion\":\"203\",\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"labels\":{\"kubernetes.io/metadata.name\":\"serialization-fixture\"},\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:metadata\":{\"f:labels\":{\".\":{},\"f:kubernetes.io/metadata.name\":{}}}}}]},\"spec\":{\"finalizers\":[\"kubernetes\"]},\"status\":{\"phase\":\"Active\"}}\n",
       "response": {
         "kind": "Namespace",
         "apiVersion": "v1",
         "metadata": {
           "name": "serialization-fixture",
-          "uid": "7c8f4e42-d4cf-4b0e-8ac5-c9e2f9ea28a6",
+          "uid": "c6622474-bf92-42ac-a864-2337d5417706",
           "resourceVersion": "203",
-          "creationTimestamp": "2026-09-27T22:06:42Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "labels": {
             "kubernetes.io/metadata.name": "serialization-fixture"
           },
@@ -523,7 +523,7 @@
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:42Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:metadata": {
@@ -558,16 +558,16 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"kind\":\"ServiceAccount\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"default\",\"namespace\":\"serialization-fixture\",\"uid\":\"9bdf0788-87a5-4810-9dc8-a8a74f145c4f\",\"resourceVersion\":\"204\",\"creationTimestamp\":\"2026-09-27T22:06:42Z\"}}\n",
+      "raw_response": "{\"kind\":\"ServiceAccount\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"default\",\"namespace\":\"serialization-fixture\",\"uid\":\"543b1b58-9891-4769-9908-5d892505dbd9\",\"resourceVersion\":\"204\",\"creationTimestamp\":\"2026-09-27T22:21:29Z\"}}\n",
       "response": {
         "kind": "ServiceAccount",
         "apiVersion": "v1",
         "metadata": {
           "name": "default",
           "namespace": "serialization-fixture",
-          "uid": "9bdf0788-87a5-4810-9dc8-a8a74f145c4f",
+          "uid": "543b1b58-9891-4769-9908-5d892505dbd9",
           "resourceVersion": "204",
-          "creationTimestamp": "2026-09-27T22:06:42Z"
+          "creationTimestamp": "2026-09-27T22:21:29Z"
         }
       }
     },
@@ -611,17 +611,17 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"kind\":\"Pod\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"quantities\",\"namespace\":\"serialization-fixture\",\"uid\":\"db10b333-f73a-408c-9afa-d8e9d778daab\",\"resourceVersion\":\"205\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:06:43Z\",\"labels\":{\"fixture\":\"json\"},\"annotations\":{\"example.test/text\":\"literal: null\"},\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:42Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\".\":{},\"f:example.test/text\":{}},\"f:labels\":{\".\":{},\"f:fixture\":{}}},\"f:spec\":{\"f:automountServiceAccountToken\":{},\"f:containers\":{\"k:{\\\"name\\\":\\\"main\\\"}\":{\".\":{},\"f:image\":{},\"f:imagePullPolicy\":{},\"f:name\":{},\"f:resources\":{\".\":{},\"f:limits\":{\".\":{},\"f:cpu\":{},\"f:memory\":{}},\"f:requests\":{\".\":{},\"f:cpu\":{},\"f:ephemeral-storage\":{},\"f:memory\":{}}},\"f:terminationMessagePath\":{},\"f:terminationMessagePolicy\":{}}},\"f:dnsPolicy\":{},\"f:enableServiceLinks\":{},\"f:restartPolicy\":{},\"f:schedulerName\":{},\"f:securityContext\":{},\"f:terminationGracePeriodSeconds\":{}}}}]},\"spec\":{\"containers\":[{\"name\":\"main\",\"image\":\"example.invalid/fixture:v1\",\"resources\":{\"limits\":{\"cpu\":\"1\",\"memory\":\"2Gi\"},\"requests\":{\"cpu\":\"500m\",\"ephemeral-storage\":\"1e3\",\"memory\":\"1536Mi\"}},\"terminationMessagePath\":\"/dev/termination-log\",\"terminationMessagePolicy\":\"File\",\"imagePullPolicy\":\"IfNotPresent\"}],\"restartPolicy\":\"Always\",\"terminationGracePeriodSeconds\":30,\"dnsPolicy\":\"ClusterFirst\",\"serviceAccountName\":\"default\",\"serviceAccount\":\"default\",\"automountServiceAccountToken\":false,\"securityContext\":{},\"schedulerName\":\"default-scheduler\",\"tolerations\":[{\"key\":\"node.kubernetes.io/not-ready\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300},{\"key\":\"node.kubernetes.io/unreachable\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300}],\"priority\":0,\"enableServiceLinks\":true,\"preemptionPolicy\":\"PreemptLowerPriority\"},\"status\":{\"phase\":\"Pending\",\"qosClass\":\"Burstable\"}}\n",
+      "raw_response": "{\"kind\":\"Pod\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"quantities\",\"namespace\":\"serialization-fixture\",\"uid\":\"994fe1ee-2452-4633-9f6e-cab0c1f22b4e\",\"resourceVersion\":\"205\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"labels\":{\"fixture\":\"json\"},\"annotations\":{\"example.test/text\":\"literal: null\"},\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\".\":{},\"f:example.test/text\":{}},\"f:labels\":{\".\":{},\"f:fixture\":{}}},\"f:spec\":{\"f:automountServiceAccountToken\":{},\"f:containers\":{\"k:{\\\"name\\\":\\\"main\\\"}\":{\".\":{},\"f:image\":{},\"f:imagePullPolicy\":{},\"f:name\":{},\"f:resources\":{\".\":{},\"f:limits\":{\".\":{},\"f:cpu\":{},\"f:memory\":{}},\"f:requests\":{\".\":{},\"f:cpu\":{},\"f:ephemeral-storage\":{},\"f:memory\":{}}},\"f:terminationMessagePath\":{},\"f:terminationMessagePolicy\":{}}},\"f:dnsPolicy\":{},\"f:enableServiceLinks\":{},\"f:restartPolicy\":{},\"f:schedulerName\":{},\"f:securityContext\":{},\"f:terminationGracePeriodSeconds\":{}}}}]},\"spec\":{\"containers\":[{\"name\":\"main\",\"image\":\"example.invalid/fixture:v1\",\"resources\":{\"limits\":{\"cpu\":\"1\",\"memory\":\"2Gi\"},\"requests\":{\"cpu\":\"500m\",\"ephemeral-storage\":\"1e3\",\"memory\":\"1536Mi\"}},\"terminationMessagePath\":\"/dev/termination-log\",\"terminationMessagePolicy\":\"File\",\"imagePullPolicy\":\"IfNotPresent\"}],\"restartPolicy\":\"Always\",\"terminationGracePeriodSeconds\":30,\"dnsPolicy\":\"ClusterFirst\",\"serviceAccountName\":\"default\",\"serviceAccount\":\"default\",\"automountServiceAccountToken\":false,\"securityContext\":{},\"schedulerName\":\"default-scheduler\",\"tolerations\":[{\"key\":\"node.kubernetes.io/not-ready\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300},{\"key\":\"node.kubernetes.io/unreachable\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300}],\"priority\":0,\"enableServiceLinks\":true,\"preemptionPolicy\":\"PreemptLowerPriority\"},\"status\":{\"phase\":\"Pending\",\"qosClass\":\"Burstable\"}}\n",
       "response": {
         "kind": "Pod",
         "apiVersion": "v1",
         "metadata": {
           "name": "quantities",
           "namespace": "serialization-fixture",
-          "uid": "db10b333-f73a-408c-9afa-d8e9d778daab",
+          "uid": "994fe1ee-2452-4633-9f6e-cab0c1f22b4e",
           "resourceVersion": "205",
           "generation": 1,
-          "creationTimestamp": "2026-09-27T22:06:43Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "labels": {
             "fixture": "json"
           },
@@ -633,7 +633,7 @@
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:42Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:metadata": {
@@ -742,17 +742,17 @@
       "path": "/api/v1/namespaces/serialization-fixture/pods/quantities",
       "request": null,
       "status": 200,
-      "raw_response": "{\"kind\":\"Pod\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"quantities\",\"namespace\":\"serialization-fixture\",\"uid\":\"db10b333-f73a-408c-9afa-d8e9d778daab\",\"resourceVersion\":\"205\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:06:43Z\",\"labels\":{\"fixture\":\"json\"},\"annotations\":{\"example.test/text\":\"literal: null\"},\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:42Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\".\":{},\"f:example.test/text\":{}},\"f:labels\":{\".\":{},\"f:fixture\":{}}},\"f:spec\":{\"f:automountServiceAccountToken\":{},\"f:containers\":{\"k:{\\\"name\\\":\\\"main\\\"}\":{\".\":{},\"f:image\":{},\"f:imagePullPolicy\":{},\"f:name\":{},\"f:resources\":{\".\":{},\"f:limits\":{\".\":{},\"f:cpu\":{},\"f:memory\":{}},\"f:requests\":{\".\":{},\"f:cpu\":{},\"f:ephemeral-storage\":{},\"f:memory\":{}}},\"f:terminationMessagePath\":{},\"f:terminationMessagePolicy\":{}}},\"f:dnsPolicy\":{},\"f:enableServiceLinks\":{},\"f:restartPolicy\":{},\"f:schedulerName\":{},\"f:securityContext\":{},\"f:terminationGracePeriodSeconds\":{}}}}]},\"spec\":{\"containers\":[{\"name\":\"main\",\"image\":\"example.invalid/fixture:v1\",\"resources\":{\"limits\":{\"cpu\":\"1\",\"memory\":\"2Gi\"},\"requests\":{\"cpu\":\"500m\",\"ephemeral-storage\":\"1e3\",\"memory\":\"1536Mi\"}},\"terminationMessagePath\":\"/dev/termination-log\",\"terminationMessagePolicy\":\"File\",\"imagePullPolicy\":\"IfNotPresent\"}],\"restartPolicy\":\"Always\",\"terminationGracePeriodSeconds\":30,\"dnsPolicy\":\"ClusterFirst\",\"serviceAccountName\":\"default\",\"serviceAccount\":\"default\",\"automountServiceAccountToken\":false,\"securityContext\":{},\"schedulerName\":\"default-scheduler\",\"tolerations\":[{\"key\":\"node.kubernetes.io/not-ready\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300},{\"key\":\"node.kubernetes.io/unreachable\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300}],\"priority\":0,\"enableServiceLinks\":true,\"preemptionPolicy\":\"PreemptLowerPriority\"},\"status\":{\"phase\":\"Pending\",\"qosClass\":\"Burstable\"}}\n",
+      "raw_response": "{\"kind\":\"Pod\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"quantities\",\"namespace\":\"serialization-fixture\",\"uid\":\"994fe1ee-2452-4633-9f6e-cab0c1f22b4e\",\"resourceVersion\":\"205\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"labels\":{\"fixture\":\"json\"},\"annotations\":{\"example.test/text\":\"literal: null\"},\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:metadata\":{\"f:annotations\":{\".\":{},\"f:example.test/text\":{}},\"f:labels\":{\".\":{},\"f:fixture\":{}}},\"f:spec\":{\"f:automountServiceAccountToken\":{},\"f:containers\":{\"k:{\\\"name\\\":\\\"main\\\"}\":{\".\":{},\"f:image\":{},\"f:imagePullPolicy\":{},\"f:name\":{},\"f:resources\":{\".\":{},\"f:limits\":{\".\":{},\"f:cpu\":{},\"f:memory\":{}},\"f:requests\":{\".\":{},\"f:cpu\":{},\"f:ephemeral-storage\":{},\"f:memory\":{}}},\"f:terminationMessagePath\":{},\"f:terminationMessagePolicy\":{}}},\"f:dnsPolicy\":{},\"f:enableServiceLinks\":{},\"f:restartPolicy\":{},\"f:schedulerName\":{},\"f:securityContext\":{},\"f:terminationGracePeriodSeconds\":{}}}}]},\"spec\":{\"containers\":[{\"name\":\"main\",\"image\":\"example.invalid/fixture:v1\",\"resources\":{\"limits\":{\"cpu\":\"1\",\"memory\":\"2Gi\"},\"requests\":{\"cpu\":\"500m\",\"ephemeral-storage\":\"1e3\",\"memory\":\"1536Mi\"}},\"terminationMessagePath\":\"/dev/termination-log\",\"terminationMessagePolicy\":\"File\",\"imagePullPolicy\":\"IfNotPresent\"}],\"restartPolicy\":\"Always\",\"terminationGracePeriodSeconds\":30,\"dnsPolicy\":\"ClusterFirst\",\"serviceAccountName\":\"default\",\"serviceAccount\":\"default\",\"automountServiceAccountToken\":false,\"securityContext\":{},\"schedulerName\":\"default-scheduler\",\"tolerations\":[{\"key\":\"node.kubernetes.io/not-ready\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300},{\"key\":\"node.kubernetes.io/unreachable\",\"operator\":\"Exists\",\"effect\":\"NoExecute\",\"tolerationSeconds\":300}],\"priority\":0,\"enableServiceLinks\":true,\"preemptionPolicy\":\"PreemptLowerPriority\"},\"status\":{\"phase\":\"Pending\",\"qosClass\":\"Burstable\"}}\n",
       "response": {
         "kind": "Pod",
         "apiVersion": "v1",
         "metadata": {
           "name": "quantities",
           "namespace": "serialization-fixture",
-          "uid": "db10b333-f73a-408c-9afa-d8e9d778daab",
+          "uid": "994fe1ee-2452-4633-9f6e-cab0c1f22b4e",
           "resourceVersion": "205",
           "generation": 1,
-          "creationTimestamp": "2026-09-27T22:06:43Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "labels": {
             "fixture": "json"
           },
@@ -764,7 +764,7 @@
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:42Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:metadata": {
@@ -898,22 +898,22 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"kind\":\"Service\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"ports\",\"namespace\":\"serialization-fixture\",\"uid\":\"29d12628-1679-4662-9de2-ec37869a4af1\",\"resourceVersion\":\"206\",\"creationTimestamp\":\"2026-09-27T22:06:43Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:43Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:clusterIP\":{},\"f:internalTrafficPolicy\":{},\"f:ports\":{\".\":{},\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}},\"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}}},\"f:selector\":{},\"f:sessionAffinity\":{},\"f:type\":{}}}}]},\"spec\":{\"ports\":[{\"name\":\"named\",\"protocol\":\"TCP\",\"port\":80,\"targetPort\":\"http\"},{\"name\":\"numeric\",\"protocol\":\"TCP\",\"port\":81,\"targetPort\":8080}],\"selector\":{\"fixture\":\"json\"},\"clusterIP\":\"None\",\"clusterIPs\":[\"None\"],\"type\":\"ClusterIP\",\"sessionAffinity\":\"None\",\"ipFamilies\":[\"IPv4\"],\"ipFamilyPolicy\":\"SingleStack\",\"internalTrafficPolicy\":\"Cluster\"},\"status\":{\"loadBalancer\":{}}}\n",
+      "raw_response": "{\"kind\":\"Service\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"ports\",\"namespace\":\"serialization-fixture\",\"uid\":\"9295a45b-b370-46cc-86c7-adb5e9ba3c39\",\"resourceVersion\":\"206\",\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:clusterIP\":{},\"f:internalTrafficPolicy\":{},\"f:ports\":{\".\":{},\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}},\"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}}},\"f:selector\":{},\"f:sessionAffinity\":{},\"f:type\":{}}}}]},\"spec\":{\"ports\":[{\"name\":\"named\",\"protocol\":\"TCP\",\"port\":80,\"targetPort\":\"http\"},{\"name\":\"numeric\",\"protocol\":\"TCP\",\"port\":81,\"targetPort\":8080}],\"selector\":{\"fixture\":\"json\"},\"clusterIP\":\"None\",\"clusterIPs\":[\"None\"],\"type\":\"ClusterIP\",\"sessionAffinity\":\"None\",\"ipFamilies\":[\"IPv4\"],\"ipFamilyPolicy\":\"SingleStack\",\"internalTrafficPolicy\":\"Cluster\"},\"status\":{\"loadBalancer\":{}}}\n",
       "response": {
         "kind": "Service",
         "apiVersion": "v1",
         "metadata": {
           "name": "ports",
           "namespace": "serialization-fixture",
-          "uid": "29d12628-1679-4662-9de2-ec37869a4af1",
+          "uid": "9295a45b-b370-46cc-86c7-adb5e9ba3c39",
           "resourceVersion": "206",
-          "creationTimestamp": "2026-09-27T22:06:43Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:43Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:spec": {
@@ -985,22 +985,22 @@
       "path": "/api/v1/namespaces/serialization-fixture/services/ports",
       "request": null,
       "status": 200,
-      "raw_response": "{\"kind\":\"Service\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"ports\",\"namespace\":\"serialization-fixture\",\"uid\":\"29d12628-1679-4662-9de2-ec37869a4af1\",\"resourceVersion\":\"206\",\"creationTimestamp\":\"2026-09-27T22:06:43Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:43Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:clusterIP\":{},\"f:internalTrafficPolicy\":{},\"f:ports\":{\".\":{},\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}},\"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}}},\"f:selector\":{},\"f:sessionAffinity\":{},\"f:type\":{}}}}]},\"spec\":{\"ports\":[{\"name\":\"named\",\"protocol\":\"TCP\",\"port\":80,\"targetPort\":\"http\"},{\"name\":\"numeric\",\"protocol\":\"TCP\",\"port\":81,\"targetPort\":8080}],\"selector\":{\"fixture\":\"json\"},\"clusterIP\":\"None\",\"clusterIPs\":[\"None\"],\"type\":\"ClusterIP\",\"sessionAffinity\":\"None\",\"ipFamilies\":[\"IPv4\"],\"ipFamilyPolicy\":\"SingleStack\",\"internalTrafficPolicy\":\"Cluster\"},\"status\":{\"loadBalancer\":{}}}\n",
+      "raw_response": "{\"kind\":\"Service\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"ports\",\"namespace\":\"serialization-fixture\",\"uid\":\"9295a45b-b370-46cc-86c7-adb5e9ba3c39\",\"resourceVersion\":\"206\",\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:clusterIP\":{},\"f:internalTrafficPolicy\":{},\"f:ports\":{\".\":{},\"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}},\"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\":{\".\":{},\"f:name\":{},\"f:port\":{},\"f:protocol\":{},\"f:targetPort\":{}}},\"f:selector\":{},\"f:sessionAffinity\":{},\"f:type\":{}}}}]},\"spec\":{\"ports\":[{\"name\":\"named\",\"protocol\":\"TCP\",\"port\":80,\"targetPort\":\"http\"},{\"name\":\"numeric\",\"protocol\":\"TCP\",\"port\":81,\"targetPort\":8080}],\"selector\":{\"fixture\":\"json\"},\"clusterIP\":\"None\",\"clusterIPs\":[\"None\"],\"type\":\"ClusterIP\",\"sessionAffinity\":\"None\",\"ipFamilies\":[\"IPv4\"],\"ipFamilyPolicy\":\"SingleStack\",\"internalTrafficPolicy\":\"Cluster\"},\"status\":{\"loadBalancer\":{}}}\n",
       "response": {
         "kind": "Service",
         "apiVersion": "v1",
         "metadata": {
           "name": "ports",
           "namespace": "serialization-fixture",
-          "uid": "29d12628-1679-4662-9de2-ec37869a4af1",
+          "uid": "9295a45b-b370-46cc-86c7-adb5e9ba3c39",
           "resourceVersion": "206",
-          "creationTimestamp": "2026-09-27T22:06:43Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:43Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:spec": {
@@ -1105,22 +1105,22 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"kind\":\"CustomResourceDefinition\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"metadata\":{\"name\":\"samples.fixture.rubix.test\",\"uid\":\"e7db0bf9-ff3f-41fd-b882-e4366d4b1edb\",\"resourceVersion\":\"207\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:06:43Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"time\":\"2026-09-27T22:06:43Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:conversion\":{\".\":{},\"f:strategy\":{}},\"f:group\":{},\"f:names\":{\"f:kind\":{},\"f:listKind\":{},\"f:plural\":{},\"f:singular\":{}},\"f:scope\":{},\"f:versions\":{}}}}]},\"spec\":{\"group\":\"fixture.rubix.test\",\"names\":{\"plural\":\"samples\",\"singular\":\"sample\",\"kind\":\"Sample\",\"listKind\":\"SampleList\"},\"scope\":\"Namespaced\",\"versions\":[{\"name\":\"v1\",\"served\":true,\"storage\":true,\"schema\":{\"openAPIV3Schema\":{\"type\":\"object\",\"properties\":{\"spec\":{\"type\":\"object\",\"x-kubernetes-preserve-unknown-fields\":true}}}}}],\"conversion\":{\"strategy\":\"None\"}},\"status\":{\"conditions\":null,\"acceptedNames\":{\"plural\":\"\",\"kind\":\"\"},\"storedVersions\":[\"v1\"]}}\n",
+      "raw_response": "{\"kind\":\"CustomResourceDefinition\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"metadata\":{\"name\":\"samples.fixture.rubix.test\",\"uid\":\"6562f3ad-decb-407c-8008-f8c90b3c6aad\",\"resourceVersion\":\"207\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:conversion\":{\".\":{},\"f:strategy\":{}},\"f:group\":{},\"f:names\":{\"f:kind\":{},\"f:listKind\":{},\"f:plural\":{},\"f:singular\":{}},\"f:scope\":{},\"f:versions\":{}}}}]},\"spec\":{\"group\":\"fixture.rubix.test\",\"names\":{\"plural\":\"samples\",\"singular\":\"sample\",\"kind\":\"Sample\",\"listKind\":\"SampleList\"},\"scope\":\"Namespaced\",\"versions\":[{\"name\":\"v1\",\"served\":true,\"storage\":true,\"schema\":{\"openAPIV3Schema\":{\"type\":\"object\",\"properties\":{\"spec\":{\"type\":\"object\",\"x-kubernetes-preserve-unknown-fields\":true}}}}}],\"conversion\":{\"strategy\":\"None\"}},\"status\":{\"conditions\":null,\"acceptedNames\":{\"plural\":\"\",\"kind\":\"\"},\"storedVersions\":[\"v1\"]}}\n",
       "response": {
         "kind": "CustomResourceDefinition",
         "apiVersion": "apiextensions.k8s.io/v1",
         "metadata": {
           "name": "samples.fixture.rubix.test",
-          "uid": "e7db0bf9-ff3f-41fd-b882-e4366d4b1edb",
+          "uid": "6562f3ad-decb-407c-8008-f8c90b3c6aad",
           "resourceVersion": "207",
           "generation": 1,
-          "creationTimestamp": "2026-09-27T22:06:43Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "apiextensions.k8s.io/v1",
-              "time": "2026-09-27T22:06:43Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:spec": {
@@ -1191,22 +1191,22 @@
       "path": "/apis/apiextensions.k8s.io/v1/customresourcedefinitions/samples.fixture.rubix.test",
       "request": null,
       "status": 200,
-      "raw_response": "{\"kind\":\"CustomResourceDefinition\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"metadata\":{\"name\":\"samples.fixture.rubix.test\",\"uid\":\"e7db0bf9-ff3f-41fd-b882-e4366d4b1edb\",\"resourceVersion\":\"210\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:06:43Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"time\":\"2026-09-27T22:06:43Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:conversion\":{\".\":{},\"f:strategy\":{}},\"f:group\":{},\"f:names\":{\"f:kind\":{},\"f:listKind\":{},\"f:plural\":{},\"f:singular\":{}},\"f:scope\":{},\"f:versions\":{}}}},{\"manager\":\"kube-apiserver\",\"operation\":\"Update\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"time\":\"2026-09-27T22:06:43Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:status\":{\"f:acceptedNames\":{\"f:kind\":{},\"f:listKind\":{},\"f:plural\":{},\"f:singular\":{}},\"f:conditions\":{\"k:{\\\"type\\\":\\\"Established\\\"}\":{\".\":{},\"f:lastTransitionTime\":{},\"f:message\":{},\"f:reason\":{},\"f:status\":{},\"f:type\":{}},\"k:{\\\"type\\\":\\\"NamesAccepted\\\"}\":{\".\":{},\"f:lastTransitionTime\":{},\"f:message\":{},\"f:reason\":{},\"f:status\":{},\"f:type\":{}}}}},\"subresource\":\"status\"}]},\"spec\":{\"group\":\"fixture.rubix.test\",\"names\":{\"plural\":\"samples\",\"singular\":\"sample\",\"kind\":\"Sample\",\"listKind\":\"SampleList\"},\"scope\":\"Namespaced\",\"versions\":[{\"name\":\"v1\",\"served\":true,\"storage\":true,\"schema\":{\"openAPIV3Schema\":{\"type\":\"object\",\"properties\":{\"spec\":{\"type\":\"object\",\"x-kubernetes-preserve-unknown-fields\":true}}}}}],\"conversion\":{\"strategy\":\"None\"}},\"status\":{\"conditions\":[{\"type\":\"NamesAccepted\",\"status\":\"True\",\"lastTransitionTime\":\"2026-09-27T22:06:43Z\",\"reason\":\"NoConflicts\",\"message\":\"no conflicts found\"},{\"type\":\"Established\",\"status\":\"True\",\"lastTransitionTime\":\"2026-09-27T22:06:43Z\",\"reason\":\"InitialNamesAccepted\",\"message\":\"the initial names have been accepted\"}],\"acceptedNames\":{\"plural\":\"samples\",\"singular\":\"sample\",\"kind\":\"Sample\",\"listKind\":\"SampleList\"},\"storedVersions\":[\"v1\"]}}\n",
+      "raw_response": "{\"kind\":\"CustomResourceDefinition\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"metadata\":{\"name\":\"samples.fixture.rubix.test\",\"uid\":\"6562f3ad-decb-407c-8008-f8c90b3c6aad\",\"resourceVersion\":\"210\",\"generation\":1,\"creationTimestamp\":\"2026-09-27T22:21:29Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\"f:conversion\":{\".\":{},\"f:strategy\":{}},\"f:group\":{},\"f:names\":{\"f:kind\":{},\"f:listKind\":{},\"f:plural\":{},\"f:singular\":{}},\"f:scope\":{},\"f:versions\":{}}}},{\"manager\":\"kube-apiserver\",\"operation\":\"Update\",\"apiVersion\":\"apiextensions.k8s.io/v1\",\"time\":\"2026-09-27T22:21:29Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:status\":{\"f:acceptedNames\":{\"f:kind\":{},\"f:listKind\":{},\"f:plural\":{},\"f:singular\":{}},\"f:conditions\":{\"k:{\\\"type\\\":\\\"Established\\\"}\":{\".\":{},\"f:lastTransitionTime\":{},\"f:message\":{},\"f:reason\":{},\"f:status\":{},\"f:type\":{}},\"k:{\\\"type\\\":\\\"NamesAccepted\\\"}\":{\".\":{},\"f:lastTransitionTime\":{},\"f:message\":{},\"f:reason\":{},\"f:status\":{},\"f:type\":{}}}}},\"subresource\":\"status\"}]},\"spec\":{\"group\":\"fixture.rubix.test\",\"names\":{\"plural\":\"samples\",\"singular\":\"sample\",\"kind\":\"Sample\",\"listKind\":\"SampleList\"},\"scope\":\"Namespaced\",\"versions\":[{\"name\":\"v1\",\"served\":true,\"storage\":true,\"schema\":{\"openAPIV3Schema\":{\"type\":\"object\",\"properties\":{\"spec\":{\"type\":\"object\",\"x-kubernetes-preserve-unknown-fields\":true}}}}}],\"conversion\":{\"strategy\":\"None\"}},\"status\":{\"conditions\":[{\"type\":\"NamesAccepted\",\"status\":\"True\",\"lastTransitionTime\":\"2026-09-27T22:21:29Z\",\"reason\":\"NoConflicts\",\"message\":\"no conflicts found\"},{\"type\":\"Established\",\"status\":\"True\",\"lastTransitionTime\":\"2026-09-27T22:21:29Z\",\"reason\":\"InitialNamesAccepted\",\"message\":\"the initial names have been accepted\"}],\"acceptedNames\":{\"plural\":\"samples\",\"singular\":\"sample\",\"kind\":\"Sample\",\"listKind\":\"SampleList\"},\"storedVersions\":[\"v1\"]}}\n",
       "response": {
         "kind": "CustomResourceDefinition",
         "apiVersion": "apiextensions.k8s.io/v1",
         "metadata": {
           "name": "samples.fixture.rubix.test",
-          "uid": "e7db0bf9-ff3f-41fd-b882-e4366d4b1edb",
+          "uid": "6562f3ad-decb-407c-8008-f8c90b3c6aad",
           "resourceVersion": "210",
           "generation": 1,
-          "creationTimestamp": "2026-09-27T22:06:43Z",
+          "creationTimestamp": "2026-09-27T22:21:29Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "apiextensions.k8s.io/v1",
-              "time": "2026-09-27T22:06:43Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:spec": {
@@ -1230,7 +1230,7 @@
               "manager": "kube-apiserver",
               "operation": "Update",
               "apiVersion": "apiextensions.k8s.io/v1",
-              "time": "2026-09-27T22:06:43Z",
+              "time": "2026-09-27T22:21:29Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:status": {
@@ -1300,14 +1300,14 @@
             {
               "type": "NamesAccepted",
               "status": "True",
-              "lastTransitionTime": "2026-09-27T22:06:43Z",
+              "lastTransitionTime": "2026-09-27T22:21:29Z",
               "reason": "NoConflicts",
               "message": "no conflicts found"
             },
             {
               "type": "Established",
               "status": "True",
-              "lastTransitionTime": "2026-09-27T22:06:43Z",
+              "lastTransitionTime": "2026-09-27T22:21:29Z",
               "reason": "InitialNamesAccepted",
               "message": "the initial names have been accepted"
             }
@@ -1356,12 +1356,12 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"apiVersion\":\"fixture.rubix.test/v1\",\"kind\":\"Sample\",\"metadata\":{\"creationTimestamp\":\"2026-09-27T22:06:45Z\",\"generation\":1,\"managedFields\":[{\"apiVersion\":\"fixture.rubix.test/v1\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\".\":{},\"f:unknown\":{\".\":{},\"f:bool\":{},\"f:decimal\":{},\"f:integer\":{},\"f:list\":{},\"f:metadata\":{\".\":{},\"f:uid\":{}},\"f:null\":{}}}},\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"time\":\"2026-09-27T22:06:45Z\"}],\"name\":\"arbitrary\",\"namespace\":\"serialization-fixture\",\"resourceVersion\":\"211\",\"uid\":\"82ccc6a1-b642-4b5b-beb5-8c19e96d72eb\"},\"spec\":{\"unknown\":{\"bool\":false,\"decimal\":1.25,\"integer\":17,\"list\":[null,true,\"7\",7,{\"nested\":\"value\"}],\"metadata\":{\"uid\":\"user-value\"},\"null\":null}}}\n",
+      "raw_response": "{\"apiVersion\":\"fixture.rubix.test/v1\",\"kind\":\"Sample\",\"metadata\":{\"creationTimestamp\":\"2026-09-27T22:21:31Z\",\"generation\":1,\"managedFields\":[{\"apiVersion\":\"fixture.rubix.test/v1\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\".\":{},\"f:unknown\":{\".\":{},\"f:bool\":{},\"f:decimal\":{},\"f:integer\":{},\"f:list\":{},\"f:metadata\":{\".\":{},\"f:uid\":{}},\"f:null\":{}}}},\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"time\":\"2026-09-27T22:21:31Z\"}],\"name\":\"arbitrary\",\"namespace\":\"serialization-fixture\",\"resourceVersion\":\"211\",\"uid\":\"54917139-0c39-41ad-bd23-5307a7686e1e\"},\"spec\":{\"unknown\":{\"bool\":false,\"decimal\":1.25,\"integer\":17,\"list\":[null,true,\"7\",7,{\"nested\":\"value\"}],\"metadata\":{\"uid\":\"user-value\"},\"null\":null}}}\n",
       "response": {
         "apiVersion": "fixture.rubix.test/v1",
         "kind": "Sample",
         "metadata": {
-          "creationTimestamp": "2026-09-27T22:06:45Z",
+          "creationTimestamp": "2026-09-27T22:21:31Z",
           "generation": 1,
           "managedFields": [
             {
@@ -1386,13 +1386,13 @@
               },
               "manager": "Python-urllib",
               "operation": "Update",
-              "time": "2026-09-27T22:06:45Z"
+              "time": "2026-09-27T22:21:31Z"
             }
           ],
           "name": "arbitrary",
           "namespace": "serialization-fixture",
           "resourceVersion": "211",
-          "uid": "82ccc6a1-b642-4b5b-beb5-8c19e96d72eb"
+          "uid": "54917139-0c39-41ad-bd23-5307a7686e1e"
         },
         "spec": {
           "unknown": {
@@ -1422,12 +1422,12 @@
       "path": "/apis/fixture.rubix.test/v1/namespaces/serialization-fixture/samples/arbitrary",
       "request": null,
       "status": 200,
-      "raw_response": "{\"apiVersion\":\"fixture.rubix.test/v1\",\"kind\":\"Sample\",\"metadata\":{\"creationTimestamp\":\"2026-09-27T22:06:45Z\",\"generation\":1,\"managedFields\":[{\"apiVersion\":\"fixture.rubix.test/v1\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\".\":{},\"f:unknown\":{\".\":{},\"f:bool\":{},\"f:decimal\":{},\"f:integer\":{},\"f:list\":{},\"f:metadata\":{\".\":{},\"f:uid\":{}},\"f:null\":{}}}},\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"time\":\"2026-09-27T22:06:45Z\"}],\"name\":\"arbitrary\",\"namespace\":\"serialization-fixture\",\"resourceVersion\":\"211\",\"uid\":\"82ccc6a1-b642-4b5b-beb5-8c19e96d72eb\"},\"spec\":{\"unknown\":{\"bool\":false,\"decimal\":1.25,\"integer\":17,\"list\":[null,true,\"7\",7,{\"nested\":\"value\"}],\"metadata\":{\"uid\":\"user-value\"},\"null\":null}}}\n",
+      "raw_response": "{\"apiVersion\":\"fixture.rubix.test/v1\",\"kind\":\"Sample\",\"metadata\":{\"creationTimestamp\":\"2026-09-27T22:21:31Z\",\"generation\":1,\"managedFields\":[{\"apiVersion\":\"fixture.rubix.test/v1\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:spec\":{\".\":{},\"f:unknown\":{\".\":{},\"f:bool\":{},\"f:decimal\":{},\"f:integer\":{},\"f:list\":{},\"f:metadata\":{\".\":{},\"f:uid\":{}},\"f:null\":{}}}},\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"time\":\"2026-09-27T22:21:31Z\"}],\"name\":\"arbitrary\",\"namespace\":\"serialization-fixture\",\"resourceVersion\":\"211\",\"uid\":\"54917139-0c39-41ad-bd23-5307a7686e1e\"},\"spec\":{\"unknown\":{\"bool\":false,\"decimal\":1.25,\"integer\":17,\"list\":[null,true,\"7\",7,{\"nested\":\"value\"}],\"metadata\":{\"uid\":\"user-value\"},\"null\":null}}}\n",
       "response": {
         "apiVersion": "fixture.rubix.test/v1",
         "kind": "Sample",
         "metadata": {
-          "creationTimestamp": "2026-09-27T22:06:45Z",
+          "creationTimestamp": "2026-09-27T22:21:31Z",
           "generation": 1,
           "managedFields": [
             {
@@ -1452,13 +1452,13 @@
               },
               "manager": "Python-urllib",
               "operation": "Update",
-              "time": "2026-09-27T22:06:45Z"
+              "time": "2026-09-27T22:21:31Z"
             }
           ],
           "name": "arbitrary",
           "namespace": "serialization-fixture",
           "resourceVersion": "211",
-          "uid": "82ccc6a1-b642-4b5b-beb5-8c19e96d72eb"
+          "uid": "54917139-0c39-41ad-bd23-5307a7686e1e"
         },
         "spec": {
           "unknown": {
@@ -1513,22 +1513,22 @@
         }
       },
       "status": 201,
-      "raw_response": "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"99654ee0-9478-4e90-bf3a-0fcf9a58ea62\",\"resourceVersion\":\"212\",\"creationTimestamp\":\"2026-09-27T22:06:46Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:46Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"first\"}}\n",
+      "raw_response": "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"459c27d6-80b4-477b-b309-692959562dc9\",\"resourceVersion\":\"212\",\"creationTimestamp\":\"2026-09-27T22:21:32Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:32Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"first\"}}\n",
       "response": {
         "kind": "ConfigMap",
         "apiVersion": "v1",
         "metadata": {
           "name": "watched",
           "namespace": "serialization-fixture",
-          "uid": "99654ee0-9478-4e90-bf3a-0fcf9a58ea62",
+          "uid": "459c27d6-80b4-477b-b309-692959562dc9",
           "resourceVersion": "212",
-          "creationTimestamp": "2026-09-27T22:06:46Z",
+          "creationTimestamp": "2026-09-27T22:21:32Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:46Z",
+              "time": "2026-09-27T22:21:32Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:data": {
@@ -1554,15 +1554,15 @@
         "metadata": {
           "name": "watched",
           "namespace": "serialization-fixture",
-          "uid": "99654ee0-9478-4e90-bf3a-0fcf9a58ea62",
+          "uid": "459c27d6-80b4-477b-b309-692959562dc9",
           "resourceVersion": "212",
-          "creationTimestamp": "2026-09-27T22:06:46Z",
+          "creationTimestamp": "2026-09-27T22:21:32Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:46Z",
+              "time": "2026-09-27T22:21:32Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:data": {
@@ -1578,22 +1578,22 @@
         }
       },
       "status": 200,
-      "raw_response": "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"99654ee0-9478-4e90-bf3a-0fcf9a58ea62\",\"resourceVersion\":\"213\",\"creationTimestamp\":\"2026-09-27T22:06:46Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:06:46Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}\n",
+      "raw_response": "{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"459c27d6-80b4-477b-b309-692959562dc9\",\"resourceVersion\":\"213\",\"creationTimestamp\":\"2026-09-27T22:21:32Z\",\"managedFields\":[{\"manager\":\"Python-urllib\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-27T22:21:32Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}\n",
       "response": {
         "kind": "ConfigMap",
         "apiVersion": "v1",
         "metadata": {
           "name": "watched",
           "namespace": "serialization-fixture",
-          "uid": "99654ee0-9478-4e90-bf3a-0fcf9a58ea62",
+          "uid": "459c27d6-80b4-477b-b309-692959562dc9",
           "resourceVersion": "213",
-          "creationTimestamp": "2026-09-27T22:06:46Z",
+          "creationTimestamp": "2026-09-27T22:21:32Z",
           "managedFields": [
             {
               "manager": "Python-urllib",
               "operation": "Update",
               "apiVersion": "v1",
-              "time": "2026-09-27T22:06:46Z",
+              "time": "2026-09-27T22:21:32Z",
               "fieldsType": "FieldsV1",
               "fieldsV1": {
                 "f:data": {
@@ -1615,7 +1615,7 @@
       "path": "/api/v1/namespaces/serialization-fixture/configmaps/watched",
       "request": null,
       "status": 200,
-      "raw_response": "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Success\",\"details\":{\"name\":\"watched\",\"kind\":\"configmaps\",\"uid\":\"99654ee0-9478-4e90-bf3a-0fcf9a58ea62\"}}\n",
+      "raw_response": "{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Success\",\"details\":{\"name\":\"watched\",\"kind\":\"configmaps\",\"uid\":\"459c27d6-80b4-477b-b309-692959562dc9\"}}\n",
       "response": {
         "kind": "Status",
         "apiVersion": "v1",
@@ -1624,7 +1624,7 @@
         "details": {
           "name": "watched",
           "kind": "configmaps",
-          "uid": "99654ee0-9478-4e90-bf3a-0fcf9a58ea62"
+          "uid": "459c27d6-80b4-477b-b309-692959562dc9"
         }
       }
     }
