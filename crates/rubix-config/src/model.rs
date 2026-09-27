@@ -100,7 +100,7 @@ pub struct LocalPath {
     pub shared_path: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Portainer {
     #[serde(rename = "edgeID")]
     pub edge_id: String,
@@ -109,6 +109,17 @@ pub struct Portainer {
     #[serde(rename = "async")]
     pub asynchronous: bool,
     pub image: String,
+}
+
+impl std::fmt::Debug for Portainer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Portainer")
+            .field("edge_id", &self.edge_id)
+            .field("edge_key", &"<redacted>")
+            .field("asynchronous", &self.asynchronous)
+            .field("image", &self.image)
+            .finish()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

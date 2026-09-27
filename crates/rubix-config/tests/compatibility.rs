@@ -367,3 +367,119 @@ fn comma_maps_and_image_names_match_independent_go_outputs() {
         );
     }
 }
+
+#[test]
+fn malformed_integer_signs_remain_strings_without_negation_overflow() {
+    for raw in [
+        "--5",
+        "++5",
+        "+-5",
+        "-+5",
+        "0x-10",
+        "-0b-1",
+        "--170141183460469231731687303715884105728",
+    ] {
+        let input = format!("network: {{nodeIP: {raw}}}");
+        assert_eq!(decode(&input).unwrap().config.network.node_ip, raw);
+        assert_eq!(
+            decode(&format!("network: {{mtu: {raw}}}"))
+                .unwrap_err()
+                .kind,
+            ErrorKind::Type
+        );
+        assert_eq!(
+            decode(&format!("network: {{mtu: !!int {raw}}}"))
+                .unwrap_err()
+                .kind,
+            ErrorKind::Type
+        );
+    }
+}
+
+#[test]
+fn debug_redacts_edge_key_without_changing_explicit_serialization() {
+    let secret = "synthetic-sensitive-edge-key";
+    let mut config = Config::default();
+    config.portainer.edge_id = "visible-id".into();
+    config.portainer.edge_key = secret.into();
+    let direct = format!("{:?}", config.portainer);
+    assert!(!direct.contains(secret));
+    assert!(direct.contains("visible-id"));
+    assert!(!format!("{config:?}").contains(secret));
+    assert_eq!(
+        serde_json::to_value(&config).unwrap()["portainer"]["edgeKey"],
+        secret
+    );
+    let runtime = config
+        .validate(&host())
+        .unwrap()
+        .into_runtime(RuntimeProbe {
+            hostname: "fixture".into(),
+            ..RuntimeProbe::default()
+        })
+        .unwrap();
+    assert!(!format!("{runtime:?}").contains(secret));
+}
+
+#[test]
+fn runtime_normalizes_fallback_hostname_and_rejects_missing_discovery() {
+    let validated = Config::default().validate(&host()).unwrap();
+    let runtime = validated
+        .clone()
+        .into_runtime(RuntimeProbe {
+            hostname: "  HOST-NAME  ".into(),
+            ..RuntimeProbe::default()
+        })
+        .unwrap();
+    assert_eq!(runtime.node_name, "host-name");
+    for hostname in ["", " "] {
+        let error = validated
+            .clone()
+            .into_runtime(RuntimeProbe {
+                hostname: hostname.into(),
+                ..RuntimeProbe::default()
+            })
+            .unwrap_err();
+        assert_eq!(error.path, "kubernetes.nodeName");
+    }
+    let mut explicit = Config::default();
+    explicit.kubernetes.node_name = " Configured ".into();
+    assert_eq!(
+        explicit
+            .validate(&host())
+            .unwrap()
+            .into_runtime(RuntimeProbe::default())
+            .unwrap()
+            .node_name,
+        "configured"
+    );
+}
+
+#[test]
+fn scalar_signs_and_radix_prefixes_match_captured_go_results() {
+    for fixture in [
+        include_str!("fixtures/scalar-signs/base/evidence/result.json"),
+        include_str!("fixtures/scalar-signs/extra/evidence/result.json"),
+    ] {
+        let cases: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        for (raw, expected) in cases.as_object().unwrap() {
+            let string = decode(&format!("d2k: {{namespace: {raw}}}")).unwrap();
+            assert_eq!(
+                string.config.d2k.namespace, expected["string"]["namespace"],
+                "{raw}"
+            );
+            for (case, tag) in [("integer", ""), ("explicit_integer", "!!int ")] {
+                let actual = decode(&format!("network: {{mtu: {tag}{raw}}}"));
+                if expected[case]["error"].as_str().unwrap().is_empty() {
+                    assert_eq!(
+                        actual.unwrap().config.network.mtu,
+                        expected[case]["mtu"].as_i64().unwrap(),
+                        "{raw}"
+                    );
+                } else {
+                    assert_eq!(actual.unwrap_err().kind, ErrorKind::Type, "{raw}");
+                }
+            }
+        }
+    }
+}

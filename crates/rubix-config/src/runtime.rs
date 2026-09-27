@@ -219,10 +219,17 @@ impl ValidatedConfig {
         let config = self.config;
         let node_name = config.kubernetes.node_name.trim().to_lowercase();
         let node_name = if node_name.is_empty() {
-            probe.hostname.clone()
+            probe.hostname.trim().to_lowercase()
         } else {
             node_name
         };
+        if node_name.is_empty() {
+            return Err(ConfigError {
+                kind: crate::ErrorKind::Type,
+                path: "kubernetes.nodeName".into(),
+                message: "node name and discovered hostname are empty".into(),
+            });
+        }
         let paths: BTreeMap<_, _> = PATHS
             .iter()
             .map(|(key, tail)| (*key, join(&config.path, tail)))
