@@ -46,6 +46,12 @@ class DefaultTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'provenance mismatch'):
                 verify.load_expected(changed,verify.verify_apiserver,'apiserver_expected_sha256')
 
+    def test_cli_selects_expected_fixture_for_each_capture_variant(self):
+        for name in ('expected.json','apiserver.expected.json'):
+            result=subprocess.run([sys.executable,str(HERE/'verify.py'),str(HERE/name)],capture_output=True,text=True,timeout=10)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(json.loads(result.stdout)['status'],'unchanged')
+
     def test_api_server_defaults_satisfy_independent_source_anchors(self):
         value=json.loads((HERE/'apiserver.expected.json').read_text())
         verify.verify_apiserver(value)
