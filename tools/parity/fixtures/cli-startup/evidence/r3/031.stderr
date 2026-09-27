@@ -1,0 +1,1 @@
+{"level":"fatal","error":"KUBESOLO_MTU: expected an integer, got \"invalid\"","time":"2026-09-27T22:41:45Z","message":"failed to create service. check the logs for more information. exiting..."}
