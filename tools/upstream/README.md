@@ -185,3 +185,10 @@ revision, feature aliases, duplicate package selection, checksum mismatch and sc
 The published binding gate checks the maintenance dependency declaration as well as
 its locked resolution: an exact version, disabled defaults and explicit `v1_35` are
 required even when a loosened manifest would retain the same current Cargo.lock.
+
+The [fresh-cache execution record](evidence/2026-09-27-clean-refresh-darwin-arm64.json)
+records two initially absent preparation directories, verified network fetches, and identical
+offline CRI/containerd generation checks against committed output in each. Published Kubernetes
+artifact checks also agree. Actual missing and corrupted CRI blobs fail clearly without a hidden
+refresh; the original bytes were restored after the negative probes. This complements the
+existing stale-output, archive integrity and import-closure regressions.
