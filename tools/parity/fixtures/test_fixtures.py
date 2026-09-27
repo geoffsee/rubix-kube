@@ -1,5 +1,6 @@
 """Compare the frozen independent Go capture and deliberately damaged behavior."""
 import copy
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -16,6 +17,36 @@ class IndependentFixtureTests(unittest.TestCase):
     def setUpClass(cls):
         cls.suite = json.loads((ROOT / "config-command.json").read_text())
         cls.capture = json.loads((ROOT / "evidence/go-reference.json").read_text())
+
+    def test_fixture_files_and_capture_bytes_match_recorded_provenance(self):
+        provenance = json.loads((ROOT / "provenance.json").read_text())
+        suite_digest = hashlib.sha256((ROOT / "config-command.json").read_bytes()).hexdigest()
+        self.assertEqual(provenance["suite_sha256"], suite_digest)
+        self.assertEqual(self.capture["result"]["suite_sha256"], suite_digest)
+        self.assertEqual((ROOT / "defaults.yaml").read_text(),
+                         self.capture["observations"]["default-document"]["stdout"])
+        for case in self.capture["result"]["cases"]:
+            observation = self.capture["observations"][case["id"]]
+            for stream in ("stdout", "stderr"):
+                self.assertEqual(hashlib.sha256(observation[stream].encode()).hexdigest(),
+                                 case[stream + "_sha256"])
+        self.assertEqual(self.capture["verified_cleanup"],
+                         {"container": True, "image": True, "volume": True})
+
+    def test_real_negative_controls_fail_with_preserved_identity_and_cleanup(self):
+        controls = json.loads((ROOT / "evidence/negative-controls.json").read_text())
+        mutated = (ROOT / "evidence/deliberate-mismatch-suite.json").read_bytes()
+        self.assertEqual(hashlib.sha256(mutated).hexdigest(),
+                         controls["deliberate_changed_expectation"]["result"]["suite_sha256"])
+        for name in ("deliberate_changed_expectation", "actual_rust_placeholder"):
+            record = controls[name]
+            self.assertEqual(record["result"]["status"], "failed")
+            self.assertTrue(all(case["status"] == "failed" for case in record["result"]["cases"]))
+            self.assertEqual(record["runner"]["exit_code"], 1)
+            self.assertEqual(record["runner"]["errors"], [])
+            self.assertEqual(record["verified_cleanup"],
+                             {"container": True, "image": True, "volume": True})
+        self.assertEqual(controls["actual_rust_placeholder"]["result"]["artifact"]["kind"], "rust")
 
     def test_frozen_reference_observations_satisfy_every_case(self):
         for case in self.suite["cases"]:

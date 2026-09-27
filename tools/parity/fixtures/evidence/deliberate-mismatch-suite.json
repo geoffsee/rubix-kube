@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "config-deliberate-mismatch",
+  "cases": [
+    {
+      "id": "default-document",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: false\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      }
+    }
+  ]
+}

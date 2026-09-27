@@ -74,3 +74,13 @@ CLI lifecycle commands, derived runtime paths, and live restart/cleanup state st
 fixtures. Network/IP/hostname discovery and architecture-sensitive CPU/D2K rules also need explicit
 host variants. These stay with E02 characterization and their E03–E26 domain owners; the VM adapter
 makes disposable host scenarios possible but does not by itself supply those assertions.
+
+The exact deliberately altered suite is retained as
+[evidence/deliberate-mismatch-suite.json](evidence/deliberate-mismatch-suite.json); run
+it with the reference artifact to reproduce the expected failure. Integrity regressions
+check suite/capture hashes, raw output digests, the default document, negative results
+and verified cleanup records. These checks protect stored evidence, not fresh parity.
+
+The same 48 cases also ran in two fresh Debian arm64 VMs: Go passed all cases;
+the real Rust placeholder failed all cases. [VM records](evidence/vm) retain source,
+suite and artifact identities, compressed diagnostics and verified guest cleanup.
