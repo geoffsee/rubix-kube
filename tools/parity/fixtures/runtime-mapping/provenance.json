@@ -1,0 +1,24 @@
+{
+  "capture_command": "python3 tools/parity/fixtures/runtime-mapping/capture.py --output /tmp/rubix-runtime-mapping-20260927-r3",
+  "fixture_sha256": {
+    "README.md": "bcbca224aac1b442e0659e3f6aaae2bfd485f5f6bffef08bab22575825c49ce2",
+    "evidence/build.log": "74d580ced9bc760c5cda8082e249cc83f5a56a9a98626adcdd8d14f6bacd7d22",
+    "evidence/mapping-0.log": "20ef21c21588e40f08a46f56f3950f4f48a23810eddaa8477d6ecea96d16f03d",
+    "evidence/mapping-1.log": "20ef21c21588e40f08a46f56f3950f4f48a23810eddaa8477d6ecea96d16f03d",
+    "evidence/mapping.json": "83e725dbe912dd1da59cff532ebc5186da3d3b49b21a205562d781e2982ef0ba",
+    "evidence/receipt.json": "702b409f62c87f86d231b0eef2be11cdfc90a998c828c21f5209cb9b278aecf4",
+    "test_runtime_mapping.py": "36c9335ea73f450636bccce85074680eaacdd9a43effa8263834f7fe9cbf2612"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_sha256": {
+    "go.mod": "7f0f9dabc79c121b3bfb5d09e6c79d31350be33a0a8aa70eba2cfd1c9becda87",
+    "go.sum": "d38d48d99df8e324a6b7a08f972cdbc93e50198f92928092b2d965c84b5c54ea",
+    "internal/config/defaults.go": "902db154b17cd88d24f18b4f9aeb87d286470b5113c18b1f2066d20ab596a24b",
+    "internal/config/embedded.go": "1466fdcd701ea6fe8a5da77db5e8320977e9b50e4b13cf3e7042681058ac84e0",
+    "internal/runtime/cri/endpoint.go": "674d313f66acf284a87ef56b0edc5947dd0828f2ed8a64fbba20bc27ed61fef1",
+    "types/config.go": "e59764b93fd6689f091e79a17a633d94e910ebc23ae7db375734e212211ce4fa",
+    "types/const.go": "f60c550e2f40060a51b0ec45a0da0bb7c5add84a30e06570517c87588f55d52d",
+    "types/types.go": "5af0870971322424fcb8ba24ccf4399b23bfcaa3e6c0a8e0ed95fc12f8d1d4ab",
+    "types/var.go": "239e6613f489f238ca6726b19eea6f8086df3efc1315cf8d3cac55be808e153a"
+  }
+}

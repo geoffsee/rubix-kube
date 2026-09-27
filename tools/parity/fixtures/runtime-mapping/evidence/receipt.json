@@ -1,0 +1,25 @@
+{
+  "builder": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-runtime-mapping-8a77c449a872465b996795e149e03f3f-mapping-0",
+    "rubix-runtime-mapping-8a77c449a872465b996795e149e03f3f-mapping-1"
+  ],
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "identical_repeats": true,
+  "image_id": "sha256:b664018666324488ec0bc38c60e2f917fc5338ca3d6db5f160bf3078519902ed",
+  "outputs": {
+    "mapping.json": "83e725dbe912dd1da59cff532ebc5186da3d3b49b21a205562d781e2982ef0ba"
+  },
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "source_sha256": {
+    "Capture.Dockerfile": "1235c81f25d3c12ce306896f3f30a412c78ead3b8bff4f25e3b222465f97a4a5",
+    "capture.py": "75d102e4cc649bfa3e29a516146dbd5bac5241acd8e6fc6f4670f439dd5969b4",
+    "mapping_capture_test.go": "2285f135ab8483883f7f3ac0d3bc06d8c9a88d06fa51183a5323a07d4c747365",
+    "verify.py": "eacec0103c29d8cea0bf4dd8d7bdfc95b580207a295aebc590d90c5dd8a3fe6b"
+  }
+}
