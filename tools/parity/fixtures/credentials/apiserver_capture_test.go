@@ -44,6 +44,8 @@ func TestRubixCapture(t *testing.T) {
 	checks["existing_corrupt_key_preserved"] = string(after) == "corrupt-synthetic"
 	s.serviceAccountKeyFile = filepath.Join(dir, "missing", "sa.key")
 	checks["missing_parent_fails"] = s.generateServiceAccountKey() != nil
+	must(os.WriteFile(s.adminKeyFile, []byte("SYNTHETIC-KEY"), 0600))
+	must(os.WriteFile(s.caFile, []byte("SYNTHETIC-CA"), 0600))
 	checks["missing_certificate_fails"] = s.generateKubeConfig() != nil
 	for path, data := range map[string]string{s.adminCertFile: "SYNTHETIC-CERT", s.adminKeyFile: "SYNTHETIC-KEY", s.caFile: "SYNTHETIC-CA"} {
 		must(os.WriteFile(path, []byte(data), 0600))
