@@ -1,0 +1,33 @@
+name: Set up pinned Rust
+description: Install the repository toolchain and optionally restore a job-specific dependency cache.
+inputs:
+  cache-key:
+    description: Separate compilation caches by job/profile; empty disables caching.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Install rust-toolchain.toml
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import subprocess
+        import tomllib
+        with open("rust-toolchain.toml", "rb") as source:
+            toolchain = tomllib.load(source)["toolchain"]
+        args = ["rustup", "toolchain", "install", toolchain["channel"],
+                "--profile", toolchain.get("profile", "minimal")]
+        for component in toolchain.get("components", []):
+            args.extend(["--component", component])
+        for target in toolchain.get("targets", []):
+            args.extend(["--target", target])
+        subprocess.run(args, check=True)
+        PY
+        rustc --version --verbose
+    - name: Restore Rust dependencies
+      if: inputs.cache-key != ''
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      with:
+        key: ${{ inputs.cache-key }}
+        save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
