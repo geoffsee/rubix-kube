@@ -361,7 +361,11 @@ impl Supervisor {
             let Some(began) = began else {
                 continue;
             };
-            if now >= began + SHUTDOWN_LIMIT && !self.slots[index].aborted {
+            if began
+                .checked_add(SHUTDOWN_LIMIT)
+                .is_none_or(|deadline| now >= deadline)
+                && !self.slots[index].aborted
+            {
                 self.slots[index].aborted = true;
                 if let Some(task) = &self.slots[index].task {
                     task.abort();
@@ -370,7 +374,9 @@ impl Supervisor {
                     component: self.slots[index].spec.id.clone(),
                     kind: CleanupKind::AbortedAtDeadline,
                 });
-            } else if now >= began + GRACE_PERIOD
+            } else if began
+                .checked_add(GRACE_PERIOD)
+                .is_none_or(|deadline| now >= deadline)
                 && self.slots[index]
                     .stop
                     .as_ref()
@@ -414,7 +420,7 @@ impl Supervisor {
                     (global, local) => global.or(local),
                 };
                 let cleanup = began.map(|at| {
-                    at + if slot
+                    let duration = if slot
                         .stop
                         .as_ref()
                         .is_some_and(|sender| *sender.borrow() == StopPhase::Force)
@@ -422,7 +428,8 @@ impl Supervisor {
                         SHUTDOWN_LIMIT
                     } else {
                         GRACE_PERIOD
-                    }
+                    };
+                    at.checked_add(duration).unwrap_or_else(Instant::now)
                 });
                 [start, cleanup].into_iter().flatten()
             })
@@ -490,5 +497,79 @@ async fn wait_deadline(deadline: Option<Instant>) {
         sleep_until(deadline).await;
     } else {
         pending::<()>().await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::stop_channel;
+
+    struct Stalled;
+    impl Adapter for Stalled {
+        fn run(self: Box<Self>, _context: AdapterContext) -> crate::AdapterFuture {
+            Box::pin(pending())
+        }
+    }
+
+    // Find a representable boundary with at most 64 checked additions. Do not move
+    // Tokio's clock: enormous virtual advances can overflow unrelated timer internals.
+    fn near_instant_limit() -> Instant {
+        let now = Instant::now();
+        let (mut low, mut high) = (0_u64, u64::MAX);
+        while low < high {
+            let middle = low + (high - low).div_ceil(2);
+            if now
+                .checked_add(std::time::Duration::from_secs(middle))
+                .is_some()
+            {
+                low = middle;
+            } else {
+                high = middle - 1;
+            }
+        }
+        now.checked_add(std::time::Duration::from_secs(low))
+            .unwrap()
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn overflowing_cleanup_deadlines_abort_without_losing_original_cause() {
+        let mut supervisor = Supervisor::new(vec![Registration::new(
+            ComponentSpec {
+                id: "owned".into(),
+                prerequisites: vec![],
+                kind: ComponentKind::LongRunning,
+                failure_policy: FailurePolicy::Fatal,
+                startup_timeout: std::time::Duration::from_secs(1),
+            },
+            Stalled,
+        )])
+        .unwrap();
+        supervisor.start_available();
+        let original = ComponentFailure {
+            component: "owned".into(),
+            kind: FailureKind::Adapter("original_failure"),
+        };
+        supervisor.failures.push(original.clone());
+        supervisor.begin_stop(StopCause::Fatal(original.clone()));
+        let boundary = near_instant_limit();
+        assert!(boundary.checked_add(GRACE_PERIOD).is_none());
+        assert!(boundary.checked_add(SHUTDOWN_LIMIT).is_none());
+        supervisor.stopping = Some(boundary);
+        assert_eq!(supervisor.next_deadline(), Some(Instant::now()));
+        supervisor.slots[0]
+            .stop
+            .as_ref()
+            .unwrap()
+            .send_replace(StopPhase::Force);
+        assert_eq!(supervisor.next_deadline(), Some(Instant::now()));
+        let (_stop, receiver) = stop_channel();
+        let report = supervisor.run(receiver).await;
+        assert_eq!(report.cause, StopCause::Fatal(original.clone()));
+        assert_eq!(report.failures, vec![original]);
+        assert!(report.cleanup_failures.iter().any(|failure| {
+            failure.component == "owned" && failure.kind == CleanupKind::AbortedAtDeadline
+        }));
+        assert_eq!(report.outcomes[0].state, ComponentState::Stopped);
     }
 }
