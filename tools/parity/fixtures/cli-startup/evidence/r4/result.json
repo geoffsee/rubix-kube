@@ -1,0 +1,658 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "cases": [
+    {
+      "id": "version-long",
+      "argv": [
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "000.stdout",
+      "stderr_file": "000.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "edc4230a4ca90ca2ff523594538c303c5005dbb9ce83604dcf65c74c7189844f",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.07187366700964049
+    },
+    {
+      "id": "version-short",
+      "argv": [
+        "-v"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "001.stdout",
+      "stderr_file": "001.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "edc4230a4ca90ca2ff523594538c303c5005dbb9ce83604dcf65c74c7189844f",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06540162500459701
+    },
+    {
+      "id": "version-invalid-bool-env",
+      "argv": [
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "002.stdout",
+      "stderr_file": "002.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "edc4230a4ca90ca2ff523594538c303c5005dbb9ce83604dcf65c74c7189844f",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06581170800200198
+    },
+    {
+      "id": "version-invalid-int-env",
+      "argv": [
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "003.stdout",
+      "stderr_file": "003.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "edc4230a4ca90ca2ff523594538c303c5005dbb9ce83604dcf65c74c7189844f",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06558312600827776
+    },
+    {
+      "id": "version-invalid-map-env",
+      "argv": [
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "004.stdout",
+      "stderr_file": "004.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6b21fce6639e6fac02ee959b46bda1ac91b0cd64ba644555fd20d64055551769",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06569608300924301
+    },
+    {
+      "id": "version-directory-file",
+      "argv": [
+        "--version",
+        "--config=/tmp"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "005.stdout",
+      "stderr_file": "005.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6b21fce6639e6fac02ee959b46bda1ac91b0cd64ba644555fd20d64055551769",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06572187499841675
+    },
+    {
+      "id": "version-before-full",
+      "argv": [
+        "--version",
+        "--full"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "006.stdout",
+      "stderr_file": "006.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6b21fce6639e6fac02ee959b46bda1ac91b0cd64ba644555fd20d64055551769",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.0655120420124149
+    },
+    {
+      "id": "version-invalid-explicit-int",
+      "argv": [
+        "--version",
+        "--mtu=invalid"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "007.stdout",
+      "stderr_file": "007.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "756f6aa2e0be21b8f531b1a6194932c96f743a0cd22b418904ab2b36ff2141ba",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06609329200000502
+    },
+    {
+      "id": "version-unknown-flag",
+      "argv": [
+        "--version",
+        "--unknown"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "008.stdout",
+      "stderr_file": "008.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "436d61f3144b3aca85debbe2feef15b090b89bbdeff3af2fd9aba6e8e8ef15ca",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.03410045900091063
+    },
+    {
+      "id": "unknown-before-version",
+      "argv": [
+        "--unknown",
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "009.stdout",
+      "stderr_file": "009.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "436d61f3144b3aca85debbe2feef15b090b89bbdeff3af2fd9aba6e8e8ef15ca",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.03399950001039542
+    },
+    {
+      "id": "help-long-name",
+      "argv": [
+        "--help"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "010.stdout",
+      "stderr_file": "010.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.03389237499504816
+    },
+    {
+      "id": "help-invalid-env",
+      "argv": [
+        "--help"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "011.stdout",
+      "stderr_file": "011.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06656295798893552
+    },
+    {
+      "id": "help-invalid-explicit-int",
+      "argv": [
+        "--help",
+        "--mtu=invalid"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "012.stdout",
+      "stderr_file": "012.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06668658299895469
+    },
+    {
+      "id": "help-unknown-flag",
+      "argv": [
+        "--help",
+        "--unknown"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "013.stdout",
+      "stderr_file": "013.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "436d61f3144b3aca85debbe2feef15b090b89bbdeff3af2fd9aba6e8e8ef15ca",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06859079199784901
+    },
+    {
+      "id": "short-h",
+      "argv": [
+        "-h"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "014.stdout",
+      "stderr_file": "014.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "37b70e721bf0af19cdcfb770e2b82bed5e803599c741a19e9f40502a3861743e",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06692550001025666
+    },
+    {
+      "id": "duplicate-bool",
+      "argv": [
+        "--print-config",
+        "--debug",
+        "--debug"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "015.stdout",
+      "stderr_file": "015.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "557166a2d51ccc2aa0f5a33104fc3fa99438b5203c80c97c894cf3a762d6a30d",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.0678868760005571
+    },
+    {
+      "id": "duplicate-positive-negative",
+      "argv": [
+        "--print-config",
+        "--debug",
+        "--no-debug"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "016.stdout",
+      "stderr_file": "016.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "557166a2d51ccc2aa0f5a33104fc3fa99438b5203c80c97c894cf3a762d6a30d",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.067869292004616
+    },
+    {
+      "id": "duplicate-version-alias",
+      "argv": [
+        "--version",
+        "-v"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "017.stdout",
+      "stderr_file": "017.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "7fce8d1cb091cebd592623e9b63a6d62b3085a0092123b22ca3dafd6fb5a2cab",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06623512500664219
+    },
+    {
+      "id": "duplicate-string",
+      "argv": [
+        "--print-config",
+        "--path=/one",
+        "--path=/two"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "018.stdout",
+      "stderr_file": "018.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ef22bf933b26d8130438779835c0d8f68e8761b6f6135df3e680f6c4c6106f2a",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06880920899857301
+    },
+    {
+      "id": "bool-equals-false",
+      "argv": [
+        "--print-config",
+        "--debug=false"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "019.stdout",
+      "stderr_file": "019.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "203d756f6546c74f70a39c27e3aec69f27ea24f43da3cfb6c4ba191d3e92fb6f",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06586929199693259
+    },
+    {
+      "id": "bool-equals-true",
+      "argv": [
+        "--print-config",
+        "--debug=true"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "020.stdout",
+      "stderr_file": "020.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "594e65e67b6076cbf28178cccff3fda1f785e3ab4675a7890923f61856c45563",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.0676047919987468
+    },
+    {
+      "id": "bool-following-false",
+      "argv": [
+        "--print-config",
+        "--debug",
+        "false"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "021.stdout",
+      "stderr_file": "021.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "203d756f6546c74f70a39c27e3aec69f27ea24f43da3cfb6c4ba191d3e92fb6f",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06819025000731926
+    },
+    {
+      "id": "bool-empty-equals",
+      "argv": [
+        "--print-config",
+        "--debug="
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "022.stdout",
+      "stderr_file": "022.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "db0e5e86b17f3fcd67ebb56b0f61df6ca6b071893c9c3d638cf4b44f78268033",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.0345977499964647
+    },
+    {
+      "id": "string-empty-argv",
+      "argv": [
+        "--print-config",
+        "--node-ip",
+        ""
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "023.stdout",
+      "stderr_file": "023.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.03341366600943729
+    },
+    {
+      "id": "string-empty-equals",
+      "argv": [
+        "--print-config",
+        "--node-ip="
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "024.stdout",
+      "stderr_file": "024.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.07068162500218023
+    },
+    {
+      "id": "integer-empty-equals",
+      "argv": [
+        "--print-config",
+        "--mtu="
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "025.stdout",
+      "stderr_file": "025.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "c779b636a1ffbadd452e9ac90e5e3c78cc92ecc1f0a9ae0eaa6a58df6dcef0ed",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06825220899190754
+    },
+    {
+      "id": "empty-positional",
+      "argv": [
+        "--print-config",
+        ""
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "026.stdout",
+      "stderr_file": "026.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "db0e5e86b17f3fcd67ebb56b0f61df6ca6b071893c9c3d638cf4b44f78268033",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.0686761669931002
+    },
+    {
+      "id": "delimiter-empty-tail",
+      "argv": [
+        "--print-config",
+        "--"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "027.stdout",
+      "stderr_file": "027.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06749800000397954
+    },
+    {
+      "id": "delimiter-flag-is-positional",
+      "argv": [
+        "--print-config",
+        "--",
+        "--version"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "028.stdout",
+      "stderr_file": "028.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ec2e0442d5e324023498f402b95ace64000a44260f46c76e41a92a5f538030ea",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06967837500269525
+    },
+    {
+      "id": "missing-argument",
+      "argv": [
+        "--print-config",
+        "--node-ip"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "029.stdout",
+      "stderr_file": "029.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "9ea3ca0adc7f6bfdd8d60eb769037e211c00a3a03fece212ecbfba99a2a8a884",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06764879199909046
+    },
+    {
+      "id": "invalid-env-overridden-boolean",
+      "argv": [
+        "--print-config",
+        "--debug"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "030.stdout",
+      "stderr_file": "030.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6352249b80d60cbed121f67666a8b5f44642387fbe86ff944d2078697d18c034",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06698974999017082
+    },
+    {
+      "id": "invalid-env-overridden-integer",
+      "argv": [
+        "--print-config",
+        "--mtu=1400"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "031.stdout",
+      "stderr_file": "031.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ac3064758e80f5d85a816ce0c09da076297a17662bf9953766eb76b75600650e",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.03440491699439008
+    },
+    {
+      "id": "directory-before-string-map-env",
+      "argv": [
+        "--print-config",
+        "--config=/tmp"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "032.stdout",
+      "stderr_file": "032.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "999cdb4a3a1ea8fd2b1994d3e3fc32d887fee514af2038aafc3e72c8d7dec53d",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06643320799048524
+    },
+    {
+      "id": "primitive-env-before-directory",
+      "argv": [
+        "--print-config",
+        "--config=/tmp"
+      ],
+      "status": "passed",
+      "exit_code": 1,
+      "failures": [],
+      "stdout_file": "033.stdout",
+      "stderr_file": "033.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "756f6aa2e0be21b8f531b1a6194932c96f743a0cd22b418904ab2b36ff2141ba",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06813437500386499
+    },
+    {
+      "id": "empty-full-env",
+      "argv": [
+        "--print-config"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "034.stdout",
+      "stderr_file": "034.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06765599999926053
+    },
+    {
+      "id": "empty-config-env",
+      "argv": [
+        "--print-config"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "035.stdout",
+      "stderr_file": "035.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06851174999610521
+    },
+    {
+      "id": "empty-config-equals",
+      "argv": [
+        "--print-config",
+        "--config="
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "036.stdout",
+      "stderr_file": "036.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06558862500241958
+    },
+    {
+      "id": "no-version-print",
+      "argv": [
+        "--no-version",
+        "--print-config"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "037.stdout",
+      "stderr_file": "037.stderr",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.07059320899134036
+    },
+    {
+      "id": "no-help",
+      "argv": [
+        "--no-help"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "stdout_file": "038.stdout",
+      "stderr_file": "038.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "owned_process_group_absent": true,
+      "duration_seconds": 0.06630529199901503
+    }
+  ],
+  "unsupported_capabilities": [
+    "privileged-runtime",
+    "cluster-lifecycle",
+    "conformance"
+  ],
+  "environment": {
+    "system": "Linux",
+    "architecture": "aarch64",
+    "kernel": "7.0.12-linuxkit",
+    "driver_uid": 0,
+    "artifact_uid": 65532
+  },
+  "driver_sha256": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
+  "artifact": {
+    "schema_version": 1,
+    "kind": "go",
+    "binary": "kubesolo",
+    "sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
+    "version": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+    "source": {
+      "repository": "https://github.com/portainer/kubesolo",
+      "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d"
+    },
+    "build": {
+      "variant": "external_deps",
+      "toolchain": "go1.26.5",
+      "cgo": true,
+      "dockerfile_sha256": "a5f48fafe987e290a0f690c9de642b0e16bdecd325ac5b370755147d2d1df84c",
+      "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec"
+    }
+  },
+  "suite_id": "cli-startup",
+  "suite_sha256": "ee47ffdca0e0de0725ac5fd1682683997cf90a2552b96614253195a943670c0c"
+}
