@@ -52,3 +52,32 @@ This gate retains the published binding's documented limits: typed initial CRD n
 conditions become omitted, quantities remain strings, typed built-ins discard unknown
 fields and dynamic JSON preserves arbitrary custom payloads. It is bounded serialization
 and protocol-boundary evidence, not universal API parity or cluster conformance.
+
+## Disposable CI jobs
+
+`.github/workflows/integration.yml` keeps live execution separate from the six established
+required checks. It runs on relevant pull-request and main changes, weekly, and by explicit
+workflow dispatch. Each job receives a fresh GitHub-hosted `ubuntu-24.04-arm` VM; see the
+[official runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+No existing machine, cluster, host device or host mount is a test fixture.
+
+The defaults job verifies the locked official source/Go archive lengths and SHA-256 hashes,
+then invokes the actual default extractors twice per variant. Each result must match the
+reviewed expected fixture. It runs the generated component dispatch and API constructor
+variant; later host-derived option completion is separate evidence. The API job starts the
+real isolated API/Kine pair, validates its fresh output and feeds it to Rust as described above.
+A cold cache follows the same verification path. The defaults archive cache and Rust cache
+save only after successful main-push execution; captures themselves are never cached.
+
+Both jobs upload their public capture directories even on failure, retain artifacts for 14 days,
+and use read-only repository permissions and commit-pinned actions. Generated keys and SQLite
+state remain inside the removed API container; the upload paths contain only public JSON,
+inspection metadata and component logs. The default extractor exports no key material.
+Network is needed for preparation/tool installation; component execution disables container
+networking. The Docker build cache remains runner-owned and disposable.
+
+Hosted Linux arm64 execution must pass before this workflow is considered integration verified.
+These jobs do not qualify other distribution targets, managed/external runtimes or a full node.
+Privileged VM lifecycle checks remain explicit local/manual disposable-environment work; the
+Darwin/HVF VM adapter is not silently replaced with a Linux host test. The existing required
+Format, Clippy, debug/release Tests, Dependencies and Security protections are unchanged.
