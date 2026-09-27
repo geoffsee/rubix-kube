@@ -67,3 +67,19 @@ prepared source before Docker runs, and cleanup failure reporting. Initial `r1`
 and `r2` successful local captures preceded deterministic set ordering and final
 format/runtime metadata changes; the committed receipt binds the final harness.
 Only Linux/arm64 extraction is evidenced here.
+
+## Disposable CI coverage
+
+The official-defaults job in `.github/workflows/integration.yml` also executes
+this completed-option capture twice on a fresh hosted Linux ARM64 runner and
+compares the complete output with the reviewed fixture. It reuses prepared
+archives, which this capture independently checks against its own pins; ordinary
+compilation still performs no upstream extraction. Inputs are cached, results
+are not. Failure stops the job, and both public capture directories are uploaded
+for 14 days, including failure diagnostics. Generated serving keys remain only
+in the isolated process memory. Constructor extraction and completed options
+are distinct steps; neither starts a server or proves startup validation.
+
+See `tools/drift/README.md` to include completed values and errors in an adoption
+report. Copy `run0.json` to `resolved.json` without changing its bytes and retain
+the matching receipt; the comparator checks both repeated-output digests.
