@@ -202,6 +202,24 @@
       "proto_path": "github.com/containerd/containerd/api/types/task/task.proto",
       "service": false,
       "package": "containerd.v1.types"
+    },
+    {
+      "id": "k8s-openapi-crate",
+      "url": "https://static.crates.io/crates/k8s-openapi/k8s-openapi-0.28.0.crate",
+      "bytes": 3603008,
+      "sha256": "d9c6922f6afe80418dd6019818af5d0d34584c371780ff09b9752370c25b4abb"
+    },
+    {
+      "id": "k8s-openapi-version-map",
+      "url": "https://raw.githubusercontent.com/Arnavion/k8s-openapi/b2c839b8b1828e9035ff8467cdac87756190aa4e/k8s-openapi-codegen/src/supported_version.rs",
+      "bytes": 8147,
+      "sha256": "de5cb0579f98672fbd590ae9f2bb7d89771425b2ef9d76b009d45c3f7271da57"
+    },
+    {
+      "id": "k8s-openapi-schema",
+      "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/v1.35.6/api/openapi-spec/swagger.json",
+      "bytes": 3846687,
+      "sha256": "483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446"
     }
   ],
   "protoc_archives": [
@@ -334,5 +352,12 @@
     "containerd.services.version.v1.rs",
     "containerd.types.rs",
     "containerd.v1.types.rs"
-  ]
+  ],
+  "kubernetes_bindings": {
+    "crate": "k8s-openapi",
+    "version": "0.28.0",
+    "feature": "v1_35",
+    "source_commit": "b2c839b8b1828e9035ff8467cdac87756190aa4e",
+    "schema_release": "v1.35.6"
+  }
 }
