@@ -165,7 +165,7 @@ pub const INPUT_BINDINGS: &[InputBinding] = &[
     },
 ];
 /// Only explicit argv values belong here. Duplicate argv handling is the adapter's responsibility.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct ExplicitFlags(pub BTreeMap<String, String>);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EnvironmentMode {
@@ -182,7 +182,7 @@ pub struct ResolvedConfig {
     pub validated: ValidatedConfig,
     pub warnings: Vec<ResolutionWarning>,
 }
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct ParsedEnvironment {
     values: Vec<(&'static str, Value)>,
 }
@@ -329,4 +329,24 @@ pub fn resolve_parsed_layers(
         validated,
         warnings,
     })
+}
+
+impl std::fmt::Debug for ExplicitFlags {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ExplicitFlags")
+            .field("names", &self.0.keys().collect::<Vec<_>>())
+            .finish()
+    }
+}
+impl std::fmt::Debug for ParsedEnvironment {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ParsedEnvironment")
+            .field(
+                "paths",
+                &self.values.iter().map(|(path, _)| path).collect::<Vec<_>>(),
+            )
+            .finish()
+    }
 }
