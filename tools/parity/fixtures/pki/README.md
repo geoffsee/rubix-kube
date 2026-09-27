@@ -41,7 +41,9 @@ trust-root preservation, mismatched healthy keys, missing SANs and weak file mod
 Verification also rejects invalid captures under Python optimization (`-O`).
 See the resource provenance for exact baseline, harness and capture hashes.
 
-This covers PKI file lifecycle only. Atomic interruption during issuance, missing
-or mismatched CA repair, service-account signing keys, kubeconfigs, certificate
-renewal scheduling and complete cluster lifecycle remain implementation/fixture
-gates; this capture does not qualify them or close E02.02.
+This captures PKI file lifecycle. [Credential fixtures](../credentials/README.md)
+separately cover service-account signing keys, kubeconfigs, reuse and failure cases.
+Atomic interruption during issuance, missing/mismatched CA repair, renewal scheduling
+and complete cluster lifecycle remain later component integration and qualification.
+See the [coverage ledger](../README.md#foundation-coverage-and-later-qualification);
+these observations do not establish complete distribution parity.
