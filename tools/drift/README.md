@@ -58,3 +58,68 @@ independently executed Go default extraction and
 feature-gate tables are remaining work. Schema defaults are retained but are not a
 substitute for executable Go defaulting behavior. This gate does not close E02.04 or
 establish live protocol, cluster, conformance or Rust parity.
+
+## Combined upstream adoption report
+
+`report.py` compares explicit before/after snapshots of the independent source inventory
+and executed Go defaults. It never runs a generator, fetches inputs, starts components,
+changes accepted fixtures, or treats newly generated Rust as its oracle. Each directory
+must contain all three files:
+
+| Snapshot file | Producer |
+| --- | --- |
+| `inventory.json.gz` | `drift.py extract`, schema version 2 (CRI, containerd and OpenAPI definitions) |
+| `defaults.json` | `tools/defaults/capture.py` base `run0.json`, schema version 1 |
+| `apiserver-defaults.json` | Same capture's `apiserver0.json`, schema version 1 |
+
+For a local review, first preserve the accepted snapshot in a new directory:
+
+```sh
+mkdir /tmp/adoption-before /tmp/adoption-after
+cp tools/drift/inventory.json.gz /tmp/adoption-before/inventory.json.gz
+cp tools/defaults/expected.json /tmp/adoption-before/defaults.json
+cp tools/defaults/apiserver.expected.json /tmp/adoption-before/apiserver-defaults.json
+```
+
+In the candidate worktree, prepare its proposed checksum-locked inputs explicitly with
+`python3 tools/upstream/upstream.py fetch --cache-dir target/upstream`. Then create a
+candidate source inventory at the new destination; this does not replace the accepted one:
+
+```sh
+python3 tools/drift/drift.py extract --cache-dir target/upstream \
+  --inventory /tmp/adoption-after/inventory.json.gz
+cp /tmp/candidate-default-capture/run0.json /tmp/adoption-after/defaults.json
+cp /tmp/candidate-default-capture/apiserver0.json /tmp/adoption-after/apiserver-defaults.json
+python3 tools/drift/report.py --before /tmp/adoption-before --after /tmp/adoption-after \
+  --format json > /tmp/adoption-report.json
+python3 tools/drift/report.py --before /tmp/adoption-before --after /tmp/adoption-after \
+  --format markdown > /tmp/adoption-report.md
+```
+
+The candidate defaults must come from a separately executed, source-pinned capture using
+`tools/defaults/capture.py`; see its README for explicit Go/source archive preparation.
+The reporter itself needs only Python and these local snapshots, with no compiler or
+prepared cache. Use distinct snapshot directories and review each producer's receipts;
+source pins here are reported claims from those inputs, not independent attestation that
+a newly supplied snapshot was produced by its claimed source. Comparing candidates does
+not authorize updating the accepted baseline or waive changed security/runtime behavior.
+
+Exit codes are **0** for no semantic changes, **1** for a reviewable change report, and
+**2** for missing, malformed or unsupported snapshots. A changed report is expected during
+an adoption review; shell automation should distinguish exit 1 from invalid input. JSON
+and Markdown output are deterministic and include both source/toolchain pins, snapshot
+SHA-256 digests, categorized changes and explicit removal counts. Categories cover API
+schema fields/keywords, protobuf fields and RPC signatures for both protocols, component
+defaults from both import graphs, API-server options, feature-gate histories/effective
+state, and remaining snapshot metadata. Unknown metadata changes are retained.
+
+Named protobuf files/messages/fields/services/methods align by their source names, so a
+removed field does not shift every later field's comparison. Reordering those named
+collections is semantically ignored; duplicate names and malformed named collections
+fail. Other arrays retain index order, including feature histories and schema arrays.
+Missing and explicit null values differ, and boolean/integer or other type changes are
+reported. Empty named collections preserve their presence separately from absent ones.
+Whole required snapshot domains missing from an input are invalid, not an unchanged report.
+Each file and expanded gzip inventory is limited to 32MiB; duplicate JSON keys, nonfinite
+constants and malformed gzip fail closed. The report covers the producers' documented
+scope and cannot establish runtime compatibility from a clean diff.
