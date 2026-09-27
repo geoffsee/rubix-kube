@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "cases": [
+    {
+      "id": "version-exits-without-bootstrap",
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13246641600562725,
+      "requested_privilege": "none",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "1f7f6c3d344a7715dff4298a503a0d8fd6ef86c3957a3d993459c30e688adc83"
+    },
+    {
+      "id": "print-config-exits-without-bootstrap",
+      "status": "passed",
+      "exit_code": 0,
+      "failures": [],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1291420830093557,
+      "requested_privilege": "none",
+      "stdout_sha256": "38657bdbb6e7eb5913e7998ab4ae40eb231a5d411e4deae3bf5dbbe0e491862e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "errors": [],
+  "adapter": "qemu-disposable-linux-vm",
+  "explicit_privilege_opt_in": true,
+  "unsupported_capabilities": [
+    "full-cluster-assets",
+    "release-platform-qualification"
+  ],
+  "source_sha256": {
+    "run.py": "b6715f3f498b132a813fd8811013b28f579b0db3f4d9db56fe2b9f7e175ff92b",
+    "inputs.json": "e53d1b0270d49891152e9bdf7171ac262869dc481b69f29435618ab9b66bb30d"
+  },
+  "shared_assertions_sha256": "a19723ccf46a41c4d5ed8ead5fe8d8a38846224ee7f103089cfbe9bf5cd642a6",
+  "shared_validation_sha256": "a5c90e48a3c9b948091f2af004fee3de4d3f9f289ff0c567403d97cddcf9fcfe",
+  "artifact": {
+    "schema_version": 1,
+    "kind": "go",
+    "binary": "kubesolo",
+    "sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
+    "version": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+    "source": {
+      "repository": "https://github.com/portainer/kubesolo",
+      "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d"
+    },
+    "build": {
+      "variant": "external_deps",
+      "toolchain": "go1.26.5",
+      "cgo": true,
+      "dockerfile_sha256": "a5f48fafe987e290a0f690c9de642b0e16bdecd325ac5b370755147d2d1df84c",
+      "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec"
+    }
+  },
+  "suite_id": "startup-contract-v1",
+  "suite_sha256": "65ea98647246bdfb457ffa10bcb4bf7dacae99ca4cbd6d4d1387394e49437d67",
+  "inputs": {
+    "schema_version": 1,
+    "image": {
+      "url": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/debian-12-genericcloud-arm64-20260923-2610.qcow2",
+      "sha512": "89a752d5c7d8e88bee39a57d88d496cca574f7d1e8df5df7a169825435f99feb11ed13ab27ec7bee96fe1584be4ff9479358fbca6cc859efa109f4aba18724c8",
+      "checksum_source": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/SHA512SUMS",
+      "distribution": "Debian 12 genericcloud arm64",
+      "build": "20260923-2610"
+    },
+    "seed_builder": {
+      "name": "pycdlib",
+      "version": "1.14.0",
+      "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
+      "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4"
+    }
+  },
+  "tools": {
+    "qemu-system-aarch64": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-system-aarch64",
+      "sha256": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e"
+    },
+    "qemu-img": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-img",
+      "sha256": "501293f57bfe5249a91d8ab8562e6fc04e4ae349c9d22b15ad50376d7df449a9"
+    },
+    "ssh": {
+      "path": "/usr/bin/ssh",
+      "sha256": "470f812f6e71ee4ca1b49c79f9c2982c054493e22502d4648bd010feb4b2a9b2"
+    },
+    "ssh-keygen": {
+      "path": "/usr/bin/ssh-keygen",
+      "sha256": "bddae9c4ea46fd903574ec6ff61eda75e133f940fa538f2adca80af474767596"
+    },
+    "scp": {
+      "path": "/usr/bin/scp",
+      "sha256": "c3694a6d96db06c0d994fbf7d8c5617b0064c73f97f4298d1b1432dfa7cc6aeb"
+    }
+  },
+  "firmware": {
+    "code_sha256": "47765fe344818cbc464b1c14ae658fb4b854f5c2ceffa982411731eb4865594d",
+    "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
+  },
+  "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n",
+  "owned_temporary_directory": "/tmp/rubix-vm-tam_zayc",
+  "ssh_forward": "127.0.0.1:61491",
+  "qemu_argv": [
+    "qemu-system-aarch64",
+    "-machine",
+    "virt,accel=hvf",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "2048",
+    "-display",
+    "none",
+    "-serial",
+    "stdio",
+    "-monitor",
+    "none",
+    "-qmp",
+    "unix:/tmp/rubix-vm-tam_zayc/qmp.sock,server=on,wait=off",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,file=/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
+    "-drive",
+    "if=pflash,format=raw,file=/tmp/rubix-vm-tam_zayc/vars.fd",
+    "-drive",
+    "if=virtio,format=qcow2,file=/tmp/rubix-vm-tam_zayc/disk.qcow2",
+    "-drive",
+    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-tam_zayc/seed.iso",
+    "-netdev",
+    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:61491-:22",
+    "-device",
+    "virtio-net-pci,netdev=n0"
+  ],
+  "owned_pid": 84497,
+  "ssh_readiness_seconds": 11.303558375002467,
+  "environment": "Linux rubix-parity 6.1.0-53-cloud-arm64 #1 SMP Debian 6.1.187-1 (2026-09-07) aarch64 GNU/Linux\nuid=0(root) gid=0(root) groups=0(root)\nPRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n0::/user.slice/user-0.slice/session-4.scope\n",
+  "privileged_mount_probe": "passed",
+  "shutdown": "acpi-powerdown",
+  "qemu_exit_code": 0,
+  "owned_process_group_absent": true,
+  "owned_temporary_directory_removed": true
+}

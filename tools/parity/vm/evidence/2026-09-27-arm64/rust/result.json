@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "cases": [
+    {
+      "id": "version-exits-without-bootstrap",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "combined missing 'version'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12203895900165662,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "print-config-exits-without-bootstrap",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'apiVersion: kubesolo.io/v1alpha1'",
+        "stdout missing 'kind: Config'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12804387501091696,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "errors": [],
+  "adapter": "qemu-disposable-linux-vm",
+  "explicit_privilege_opt_in": true,
+  "unsupported_capabilities": [
+    "full-cluster-assets",
+    "release-platform-qualification"
+  ],
+  "source_sha256": {
+    "run.py": "b6715f3f498b132a813fd8811013b28f579b0db3f4d9db56fe2b9f7e175ff92b",
+    "inputs.json": "e53d1b0270d49891152e9bdf7171ac262869dc481b69f29435618ab9b66bb30d"
+  },
+  "shared_assertions_sha256": "a19723ccf46a41c4d5ed8ead5fe8d8a38846224ee7f103089cfbe9bf5cd642a6",
+  "shared_validation_sha256": "a5c90e48a3c9b948091f2af004fee3de4d3f9f289ff0c567403d97cddcf9fcfe",
+  "artifact": {
+    "schema_version": 1,
+    "kind": "rust",
+    "binary": "rubix-kube",
+    "sha256": "c2e9471f7903a46b1cf4e670a870b801e7129632219705233123be6dccc5d122",
+    "version": "0.1.0",
+    "source": {
+      "repository": "https://github.com/geoffsee/rubix-kube",
+      "revision": "fa5e4ce8092849efd7e95b70c2e3c7ed1fc2208d"
+    },
+    "build": {
+      "toolchain": "rustc 1.97.1",
+      "image": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
+      "source_archive_sha256": "7c7048bbee1537ddd05f354f423f086dd5cf73fcaf6777622c949d32b9110ed7",
+      "profile": "release",
+      "target": "aarch64-unknown-linux-gnu"
+    }
+  },
+  "suite_id": "startup-contract-v1",
+  "suite_sha256": "65ea98647246bdfb457ffa10bcb4bf7dacae99ca4cbd6d4d1387394e49437d67",
+  "inputs": {
+    "schema_version": 1,
+    "image": {
+      "url": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/debian-12-genericcloud-arm64-20260923-2610.qcow2",
+      "sha512": "89a752d5c7d8e88bee39a57d88d496cca574f7d1e8df5df7a169825435f99feb11ed13ab27ec7bee96fe1584be4ff9479358fbca6cc859efa109f4aba18724c8",
+      "checksum_source": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/SHA512SUMS",
+      "distribution": "Debian 12 genericcloud arm64",
+      "build": "20260923-2610"
+    },
+    "seed_builder": {
+      "name": "pycdlib",
+      "version": "1.14.0",
+      "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
+      "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4"
+    }
+  },
+  "tools": {
+    "qemu-system-aarch64": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-system-aarch64",
+      "sha256": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e"
+    },
+    "qemu-img": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-img",
+      "sha256": "501293f57bfe5249a91d8ab8562e6fc04e4ae349c9d22b15ad50376d7df449a9"
+    },
+    "ssh": {
+      "path": "/usr/bin/ssh",
+      "sha256": "470f812f6e71ee4ca1b49c79f9c2982c054493e22502d4648bd010feb4b2a9b2"
+    },
+    "ssh-keygen": {
+      "path": "/usr/bin/ssh-keygen",
+      "sha256": "bddae9c4ea46fd903574ec6ff61eda75e133f940fa538f2adca80af474767596"
+    },
+    "scp": {
+      "path": "/usr/bin/scp",
+      "sha256": "c3694a6d96db06c0d994fbf7d8c5617b0064c73f97f4298d1b1432dfa7cc6aeb"
+    }
+  },
+  "firmware": {
+    "code_sha256": "47765fe344818cbc464b1c14ae658fb4b854f5c2ceffa982411731eb4865594d",
+    "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
+  },
+  "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n",
+  "owned_temporary_directory": "/tmp/rubix-vm-ujndfvt7",
+  "ssh_forward": "127.0.0.1:61546",
+  "qemu_argv": [
+    "qemu-system-aarch64",
+    "-machine",
+    "virt,accel=hvf",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "2048",
+    "-display",
+    "none",
+    "-serial",
+    "stdio",
+    "-monitor",
+    "none",
+    "-qmp",
+    "unix:/tmp/rubix-vm-ujndfvt7/qmp.sock,server=on,wait=off",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,file=/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
+    "-drive",
+    "if=pflash,format=raw,file=/tmp/rubix-vm-ujndfvt7/vars.fd",
+    "-drive",
+    "if=virtio,format=qcow2,file=/tmp/rubix-vm-ujndfvt7/disk.qcow2",
+    "-drive",
+    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-ujndfvt7/seed.iso",
+    "-netdev",
+    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:61546-:22",
+    "-device",
+    "virtio-net-pci,netdev=n0"
+  ],
+  "owned_pid": 84630,
+  "ssh_readiness_seconds": 11.25390399999742,
+  "environment": "Linux rubix-parity 6.1.0-53-cloud-arm64 #1 SMP Debian 6.1.187-1 (2026-09-07) aarch64 GNU/Linux\nuid=0(root) gid=0(root) groups=0(root)\nPRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n0::/user.slice/user-0.slice/session-4.scope\n",
+  "privileged_mount_probe": "passed",
+  "shutdown": "acpi-powerdown",
+  "qemu_exit_code": 0,
+  "owned_process_group_absent": true,
+  "owned_temporary_directory_removed": true
+}
