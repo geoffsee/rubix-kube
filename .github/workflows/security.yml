@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    # Revalidate after a base change; stable required check names also survive metadata edits.
     types: [opened, synchronize, reopened, edited]
   merge_group:
   schedule:
@@ -14,24 +15,12 @@ permissions:
   contents: read
 
 concurrency:
-  # Metadata edits must not cancel active or queued validation of the same revision.
-  group: >-
-    ${{ github.workflow }}-${{ github.ref }}-${{
-      github.event_name == 'pull_request' && github.event.action == 'edited'
-      && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
-      && 'metadata' || 'validation' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   security:
-    # Skipped required checks count as passing. Use a separate name for metadata-only events.
-    name: >-
-      ${{ github.event_name == 'pull_request' && github.event.action == 'edited'
-        && !github.event.changes.base && (github.event.changes.title || github.event.changes.body)
-        && 'Metadata edit (Security)' || 'Security' }}
-    if: >-
-      github.event_name != 'pull_request' || github.event.action != 'edited'
-      || github.event.changes.base || !(github.event.changes.title || github.event.changes.body)
+    name: Security
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
