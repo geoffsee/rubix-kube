@@ -1,6 +1,7 @@
 """Mutation evidence across independent schema, protocol, default and gate domains."""
 import copy
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -176,6 +177,41 @@ class ReportTests(unittest.TestCase):
             self.assertEqual({p: p.read_bytes() for p in saved}, saved)
             (after / 'defaults.json').unlink()
             self.assertEqual(subprocess.run(command, capture_output=True, timeout=10).returncode, 2)
+
+    def test_combined_resolved_report_tracks_changes_and_rejects_unbound_input(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before, after = root / 'before', root / 'after'
+            before.mkdir(); after.mkdir()
+            for directory in (before, after):
+                write_snapshot(directory, snapshot())
+                evidence = ROOT / 'tools/resolved-defaults/evidence'
+                (directory / 'resolved.json').write_bytes((evidence / 'run0.json').read_bytes())
+                (directory / 'receipt.json').write_bytes((evidence / 'receipt.json').read_bytes())
+            command = [sys.executable, '-O', str(HERE / 'report.py'),
+                       '--before', str(before), '--after', str(after)]
+            paired = ['--before-resolved', str(before), '--after-resolved', str(after)]
+            result = subprocess.run(command + paired, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('resolved_apiserver_options', json.loads(result.stdout)['changes'])
+            value = json.loads((after / 'resolved.json').read_bytes())
+            del value['cases']['default']['flags_after']['secure-port']
+            raw = json.dumps(value).encode()
+            (after / 'resolved.json').write_bytes(raw)
+            self.assertEqual(subprocess.run(command + paired, capture_output=True).returncode, 2)
+            receipt = json.loads((after / 'receipt.json').read_bytes())
+            for name in ('run0.json', 'run1.json'):
+                receipt['output_sha256'][name] = hashlib.sha256(raw).hexdigest()
+            (after / 'receipt.json').write_text(json.dumps(receipt))
+            result = subprocess.run(command + paired, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            report_value = json.loads(result.stdout)
+            self.assertEqual(report_value['removal_count'], 1)
+            self.assertEqual(report_value['changes']['resolved_apiserver_options'][0]['kind'], 'removed')
+            self.assertIn('resolved/resolved.json', report_value['snapshot_sha256']['after'])
+            result = subprocess.run(command + paired + ['--format', 'markdown'], capture_output=True, text=True)
+            self.assertIn('Resolved apiserver options', result.stdout)
+            self.assertEqual(subprocess.run(command + paired[:2], capture_output=True).returncode, 2)
 
     def test_current_official_snapshots_have_no_drift(self):
         current = {'source': report.strict_json(gzip.decompress((HERE / 'inventory.json.gz').read_bytes())),

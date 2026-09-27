@@ -123,3 +123,29 @@ Whole required snapshot domains missing from an input are invalid, not an unchan
 Each file and expanded gzip inventory is limited to 32MiB; duplicate JSON keys, nonfinite
 constants and malformed gzip fail closed. The report covers the producers' documented
 scope and cannot establish runtime compatibility from a clean diff.
+
+### Include completed API-server options
+
+Constructor flags and actual `Complete()` results remain separate report categories.
+For an adoption review, include both resolved captures explicitly:
+
+```sh
+python3 tools/drift/report.py --before /tmp/before --after /tmp/after \
+  --before-resolved /tmp/resolved-before --after-resolved /tmp/resolved-after \
+  --format markdown
+```
+
+Each resolved directory contains `resolved.json` copied byte-for-byte from capture
+`run0.json`, plus its `receipt.json`. The receipt must bind those bytes to both
+successful repeated runs, identify the official source and toolchain, and record
+successful cleanup. Both directory arguments are required together; missing or
+unbound selected evidence fails with exit 2. Omitting both retains the original
+constructor/schema report and does not claim completed-option coverage.
+
+Three additional categories show completed values/flags, completion errors, and
+resolved source/control metadata. Changed or removed defaults yield exit 1 even
+when constructor defaults stay unchanged. Success-to-error transitions appear as
+removal from one domain and addition to the other. The standalone comparator is
+`tools/resolved-defaults/report.py` with the same `--before`, `--after`, and
+`--format` arguments. These commands compare explicit snapshots without fetching,
+executing components, accepting a new baseline, or writing evidence.
