@@ -400,6 +400,14 @@
           "sha256": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf",
           "identical_to_server_v2_2_5": true,
           "server_sha256": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf"
+        },
+        {
+          "path": "api/services/version/v1/version.proto",
+          "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/version/v1/version.proto",
+          "bytes": 982,
+          "sha256": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439",
+          "identical_to_server_v2_2_5": true,
+          "server_sha256": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439"
         }
       ],
       "external_proto_imports": [
