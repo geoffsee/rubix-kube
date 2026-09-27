@@ -1,0 +1,53 @@
+{
+  "expected_sha256": "60c8c2f3c7b74c860ae82ac8e2e38df76cf226a9eab3f0df20a1250bd8ac556d",
+  "schema_version": 1,
+  "scope": "Three official component default functions and the feature gate registry of their import graph; Linux arm64 only",
+  "source_revision": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+  "sources": {
+    "go.mod": {
+      "bytes": 11776,
+      "sha256": "84b247340b44a32e0fe92928eb3fbcbcd6222fe9a2860de2956a87f5d83fb639",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/go.mod"
+    },
+    "go.sum": {
+      "bytes": 50475,
+      "sha256": "f9d7cf67649a4b080e0d6faa7bb530a558efb8cabc332e0a1b91e240ecfb101b",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/go.sum"
+    },
+    "go.work": {
+      "bytes": 1228,
+      "sha256": "e202a8874d8edfa7e18e676eac41e1c6e73d8f25fea3830b5625eed0eb110a64",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/go.work"
+    },
+    "pkg/controller/apis/config/v1alpha1/defaults.go": {
+      "bytes": 9160,
+      "sha256": "961579802ccf9a63c55812640c032cdd318482abc79539a1ecd0cdb2de390b97",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/controller/apis/config/v1alpha1/defaults.go"
+    },
+    "pkg/features/kube_features.go": {
+      "bytes": 102279,
+      "sha256": "252dd04ad4a7fd84cf3ddc677264bac530538737b3085b2970f8a843d0c4444d",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/features/kube_features.go"
+    },
+    "pkg/kubelet/apis/config/v1beta1/defaults.go": {
+      "bytes": 11278,
+      "sha256": "05bc15e81d660758a40a13c856e414589b62a10a7d5ceb4a31339e3e0edeca04",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/kubelet/apis/config/v1beta1/defaults.go"
+    },
+    "pkg/proxy/apis/config/v1alpha1/defaults.go": {
+      "bytes": 5325,
+      "sha256": "2ff8078e21af7ea895bb49630ca2754e1b5bd3b7fbb2dffb74c7ca398c5254d3",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/proxy/apis/config/v1alpha1/defaults.go"
+    },
+    "staging/src/k8s.io/component-base/featuregate/feature_gate.go": {
+      "bytes": 42332,
+      "sha256": "12671b4a577aeca50fc4efeab7487e4d49e1748e92ab3b30460f608077a5210a",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/staging/src/k8s.io/component-base/featuregate/feature_gate.go"
+    },
+    "vendor/modules.txt": {
+      "bytes": 49235,
+      "sha256": "fd9c7e089f18bfae42c17f048488f3c78d2379c8f7b43434c5de2961866b0ff0",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/vendor/modules.txt"
+    }
+  }
+}
