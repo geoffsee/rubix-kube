@@ -1,0 +1,33 @@
+{
+  "expected_sha256": {
+    "containerd": "05df8db9538b4fcdcaed9f102890a855b65227538b9a2be55a7d67506e3d7344",
+    "kubelet": "5e3876be5ea229c828901480e67c12dcd4a16cf1413da76d86d0f049e5f14f43"
+  },
+  "fixture_sha256": {
+    "evidence/build.log": "41dac95c44db37bcd36fdac36bf9b188c2aa9bee3f4b71c4282dab3a0a6db4c6",
+    "evidence/containerd-0.log": "9a6136a50b0edaa82a2d34fc11f4946e7534a642e0052f35c306f6084e618041",
+    "evidence/containerd-1.log": "9a6136a50b0edaa82a2d34fc11f4946e7534a642e0052f35c306f6084e618041",
+    "evidence/containerd.json": "05df8db9538b4fcdcaed9f102890a855b65227538b9a2be55a7d67506e3d7344",
+    "evidence/kubelet-0.log": "d9855217da5c21f356c1cec053bde68e2353cf87ee02884c8e4750bbe6b9306b",
+    "evidence/kubelet-1.log": "e3db40de48016a3a53d4b9fc02d8de48b1e9d4d1b7df8759386c335fe5e2b2dc",
+    "evidence/kubelet.json": "5e3876be5ea229c828901480e67c12dcd4a16cf1413da76d86d0f049e5f14f43",
+    "evidence/receipt.json": "9267efddf6e9ffe5db0f2e4fb9bb95ea24945a483155dcb7e516a617be87c3a7",
+    "expected/containerd.json": "05df8db9538b4fcdcaed9f102890a855b65227538b9a2be55a7d67506e3d7344",
+    "expected/kubelet.json": "5e3876be5ea229c828901480e67c12dcd4a16cf1413da76d86d0f049e5f14f43",
+    "test_node_config.py": "536578ff32da1a17274243d2bf96e519847ec8e1ffade759e2345d4415ed5b6a",
+    "verify.py": "23dac395f8603f7e7b893ddda1a11aa7db0f5ebba31b8f228832d61a274461c7"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_sha256": {
+    "go.mod": "7f0f9dabc79c121b3bfb5d09e6c79d31350be33a0a8aa70eba2cfd1c9becda87",
+    "go.sum": "d38d48d99df8e324a6b7a08f972cdbc93e50198f92928092b2d965c84b5c54ea",
+    "internal/runtime/filesystem/file.go": "a833e6d22007d5665507cd3ea51b302c65ed998509e743835a52802f88e8cb7a",
+    "internal/runtime/network/ip.go": "d5cbb184e6ca6c53205c8d1587e46fc00d7d117e21660e30ed292e982a636aa8",
+    "pkg/kubernetes/kubelet/args.go": "f005565b75ea2214f454c9f2ad3ffc0a45e206a67f2d381b7d6b61019a64c231",
+    "pkg/kubernetes/kubelet/config.go": "681bcd4597dd6d3b9ca15430f63310787c173814249844f3b622373112a08e47",
+    "pkg/kubernetes/kubelet/service.go": "812b9c4102e5d54189e1e45f5045bacf3cf527b19c0a60b348bb3e08986898fe",
+    "pkg/runtime/containerd/config.go": "33ff8d43c62a6c88b1d717769132958acc1060b1e3d80eadcc9b6033aab2244c",
+    "pkg/runtime/containerd/service.go": "45e94319cad1011e94160381eb3a1451f38815c52f0c3fcb5a4b90767b269754",
+    "types/const.go": "f60c550e2f40060a51b0ec45a0da0bb7c5add84a30e06570517c87588f55d52d"
+  }
+}

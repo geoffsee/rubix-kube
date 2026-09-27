@@ -1,0 +1,28 @@
+{
+  "builder": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-node-config-9bf51ceb88a44f3aa44668ba17765365-containerd-0",
+    "rubix-node-config-9bf51ceb88a44f3aa44668ba17765365-containerd-1",
+    "rubix-node-config-9bf51ceb88a44f3aa44668ba17765365-kubelet-0",
+    "rubix-node-config-9bf51ceb88a44f3aa44668ba17765365-kubelet-1"
+  ],
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "identical_repeats": true,
+  "image_id": "sha256:82fc77df3b6b8fa1c266bf69e3563aa690f13c93decd2aac00b1a325f8a3f6f6",
+  "outputs": {
+    "containerd.json": "05df8db9538b4fcdcaed9f102890a855b65227538b9a2be55a7d67506e3d7344",
+    "kubelet.json": "5e3876be5ea229c828901480e67c12dcd4a16cf1413da76d86d0f049e5f14f43"
+  },
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "source_sha256": {
+    "Capture.Dockerfile": "5e2d2350a6030483a87f6b9563d8c091e9cdb40623d04610f37ca43a6d207edb",
+    "capture.py": "6fa5d763a96caaceef09eefc241b4da4e1277c4cbc8a3bcf73898c373f26f52e",
+    "containerd_capture_test.go": "e9aa578db88e12d0b752e55dee86589545a0f24ba65d4294c00e45e69a159c6e",
+    "kubelet_capture_test.go": "a385727d1d1c7f73a4d8ee20295ba2e2c7607e893e06bfc47bf4db9ca68c6b14"
+  }
+}
