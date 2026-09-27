@@ -1,0 +1,30 @@
+{
+  "captured_utc": "2026-09-27T22:33:58.281872+00:00",
+  "expected_sha256": "f54d3a15ce5dd572068160e23192bfcfb152d98f90ac89c05ca3bee7c4484a80",
+  "files_sha256": {
+    "README.md": "0aee66e251d695d0047a5ce62a4889611afadaccb431b29e9082146a5655f875",
+    "evidence/build.log": "ce3300908101763e017bf5491392db6b5b9286103f781f212e694905e2c2f8cf",
+    "evidence/modules.sha256": "2c26476cd3648de791578994f01b2106919b0694142d9fd43f30a44d6bcca3a1",
+    "evidence/receipt.json": "6880bbe296562c265353865237544b3dbf57a41ba8b5deac8c889bedab9417e0",
+    "evidence/run0.log": "b4d79ca16500da3aa38e3125950a54548379d588c9eed430f3a841de17221c08",
+    "evidence/run1.log": "e973c63bb40e96b653731db245b3cb3f7111ae0ab81ded4939fedd185b214533",
+    "expected.json": "f54d3a15ce5dd572068160e23192bfcfb152d98f90ac89c05ca3bee7c4484a80",
+    "inputs.json": "1b118607ea7d1b26a0051249ac127b924f066b77cc3d68fcaa764644a0f962ce",
+    "source-anchors.json": "5320a6b67bed7e0759a3dcbe33b9afaa0f249203c2ca81084edda8693e6df193",
+    "test_resolved.py": "7a958507b50b47b18fb97c28fcb3ed549258cc0c347065ba6f21e7cd05db0828",
+    "verify.py": "ea8ac338e4006f71d501f6b4e6283c5456edd5b90859adf25e9a34bc92b31d24"
+  },
+  "independent_assertions": "verify.py derives selected completion results and exact errors from source-anchors.json; expected.json additionally freezes all172 flag values before/after on two successful cases.",
+  "normalization": [
+    "sort watch-cache entry set before flag serialization; no other value normalization"
+  ],
+  "private_material": "Ephemeral serving certificate generated only in memory; no certificate/key/token/callback contents serialized.",
+  "schema_version": 1,
+  "scope": "Six Complete() cases twice in independent unprivileged Linux/arm64 containers. No Validate/ApplyTo/Run, datastore access or cluster conformance.",
+  "source": {
+    "bytes": 39205522,
+    "revision": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+    "sha256": "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592",
+    "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/96cb9ab4201d88ce5e549fde047a686171838fdb"
+  }
+}

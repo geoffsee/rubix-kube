@@ -1,0 +1,50 @@
+{
+  "cmd/kube-apiserver/app/options/completion.go": {
+    "bytes": 4637,
+    "sha256": "d67ea1a9c62b7611a246c6dcd02a7a079e721ed85523222963e7eea021a923a2"
+  },
+  "cmd/kube-apiserver/app/options/options.go": {
+    "bytes": 6481,
+    "sha256": "9e32979637fe8dda762c6b9e1f9037be64bea68d9b254e453c01e85c8c276e31"
+  },
+  "pkg/controlplane/apiserver/options/options.go": {
+    "bytes": 19984,
+    "sha256": "968db6b8cdd9f5645a5c473bc5f9f5ddcb65ddb54e77a7e6dbf7e82619888573"
+  },
+  "pkg/kubeapiserver/default_storage_factory_builder.go": {
+    "bytes": 7810,
+    "sha256": "b59554219da8eded1efd661ce8a495bfb89236cdd11858855cdf0513efffab6b"
+  },
+  "pkg/kubeapiserver/options/authentication.go": {
+    "bytes": 38195,
+    "sha256": "8ccc0cd15519d9dbcfb92158269687be687ba28cb0511aa8156fb44ef93fe31f"
+  },
+  "pkg/kubeapiserver/options/authorization.go": {
+    "bytes": 12631,
+    "sha256": "ce372c77884e95307f75d95ac89950d1f8d3cba3015933c2146e807676a2a9c7"
+  },
+  "pkg/kubeapiserver/options/options.go": {
+    "bytes": 1159,
+    "sha256": "7fd4abef0ce40bc3f7aef4fd1d90ed22dfcd6d02fbc03c0d3040e850e6f38f70"
+  },
+  "pkg/kubeapiserver/options/serving.go": {
+    "bytes": 1289,
+    "sha256": "86ecf662917fc3a2d4c30259b9c21f041c93372c115f18984dcc71cdd33607e3"
+  },
+  "staging/src/k8s.io/apiserver/pkg/server/options/etcd.go": {
+    "bytes": 23057,
+    "sha256": "02419a351bca33622df70631c9c310d6feba31f061c9f46044eef38f4563b9db"
+  },
+  "staging/src/k8s.io/apiserver/pkg/server/options/server_run_options.go": {
+    "bytes": 21316,
+    "sha256": "c668ea2a48830be7a3631d9c47f52a938232fcffd2731dd5a5e64a93fe20532b"
+  },
+  "staging/src/k8s.io/apiserver/pkg/server/options/serving.go": {
+    "bytes": 16272,
+    "sha256": "28e9f87251e7dd8777cdbca263e628fb3ae68c1e36cf7ff541bc4f577d158d21"
+  },
+  "staging/src/k8s.io/apiserver/pkg/storage/storagebackend/config.go": {
+    "bytes": 4652,
+    "sha256": "f420a03e3a6c221dda0bb4ea11c96439be5770135d898166d640037261dfd8ed"
+  }
+}

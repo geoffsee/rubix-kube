@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "source": {
+    "revision": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+    "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/96cb9ab4201d88ce5e549fde047a686171838fdb",
+    "sha256": "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592",
+    "bytes": 39205522
+  },
+  "go": {
+    "version": "go1.26.8",
+    "platform": "linux/arm64",
+    "url": "https://go.dev/dl/go1.26.8.linux-arm64.tar.gz",
+    "sha256": "211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0",
+    "bytes": 63811405
+  }
+}
