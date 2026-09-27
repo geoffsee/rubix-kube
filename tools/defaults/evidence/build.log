@@ -1,0 +1,62 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [build 1/8] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.09kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 103.04MB 0.7s done
+#5 DONE 0.7s
+
+#6 [build 6/8] WORKDIR /src
+#6 CACHED
+
+#7 [build 3/8] RUN echo '211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0  /tmp/go.tar.gz' | sha256sum -c - && mkdir /toolchain && tar -xzf /tmp/go.tar.gz -C /toolchain
+#7 CACHED
+
+#8 [build 4/8] COPY source.tar.gz /tmp/source.tar.gz
+#8 CACHED
+
+#9 [build 5/8] RUN echo "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
+#9 CACHED
+
+#10 [build 6/8] WORKDIR /src
+#10 CACHED
+
+#11 [build 2/8] COPY go.tar.gz /tmp/go.tar.gz
+#11 CACHED
+
+#12 [build 7/8] COPY main.go /src/cmd/rubix-defaults/main.go
+#12 DONE 0.4s
+
+#13 [build 8/8] RUN go version && mkdir /out && go build -mod=vendor -p 2 -trimpath -o /out/extract ./cmd/rubix-defaults && sha256sum go.mod go.sum go.work vendor/modules.txt > /out/modules.sha256 && find staging -type f ( -name go.mod -o -name go.sum ) -print | sort | xargs sha256sum >> /out/modules.sha256
+#13 0.161 go version go1.26.8 linux/arm64
+#13 DONE 67.0s
+
+#14 [stage-1 1/1] COPY --from=build /out/ /out/
+#14 DONE 0.0s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 1.3s done
+#15 exporting manifest sha256:a784dc6b4e61cbf858a8e21bbd90e548479502715c047b60e240d3995f95e309 done
+#15 exporting config sha256:79fa64e96e6d463999152c063263208e3a4cd2a7a748736d69984436e913aba7 done
+#15 exporting attestation manifest sha256:36f340db56931de9ab8e12a440a1c363170e263f5d01e45c48ece45568da6982 done
+#15 exporting manifest list sha256:8e6b73bb10fd1a0f6409b182c9f7899a3047d334550823daaad1bb2f9d2fbab9 done
+#15 naming to docker.io/library/rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f:latest done
+#15 unpacking to docker.io/library/rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f:latest
+#15 unpacking to docker.io/library/rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f:latest 0.2s done
+#15 DONE 1.5s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/jkjvcgva3owa6l5oy7qth8gb5
