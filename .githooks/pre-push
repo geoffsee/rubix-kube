@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Lint, test, and dependency policy checks before commits leave this clone.
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+run() {
+    printf 'pre-push: %s\n' "$*"
+    "$@"
+}
+
+run cargo lint
+run cargo test-all --locked
+run cargo deny check
