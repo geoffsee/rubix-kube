@@ -76,21 +76,27 @@ def main():
             raise ValueError(f'{kind} input hash mismatch')
     args.output.mkdir(parents=True,exist_ok=False)
     tag='rubix-official-defaults-'+uuid.uuid4().hex
-    report={'inputs':inputs,'source_sha256':{name:digest(HERE/name) for name in ('capture.py','main.go','Dockerfile','inputs.json')},'image':tag,'containers':[],'errors':[],'cleanup_errors':[]}
+    report={'inputs':inputs,'source_sha256':{name:digest(HERE/name) for name in ('capture.py','main.go','apiserver.go','Dockerfile','inputs.json')},'image':tag,'containers':[],'errors':[],'cleanup_errors':[]}
     try:
         with tempfile.TemporaryDirectory(prefix='rubix-official-build-') as temporary:
             work=Path(temporary)
             shutil.copyfile(args.source_archive,work/'source.tar.gz');shutil.copyfile(args.go_archive,work/'go.tar.gz')
-            for name in ('main.go','Dockerfile'):shutil.copyfile(HERE/name,work/name)
+            for name in ('main.go','apiserver.go','Dockerfile'):shutil.copyfile(HERE/name,work/name)
             bounded(['docker','build','--network','none','--platform','linux/arm64','--tag',tag,'--build-arg','SOURCE_SHA256='+inputs['source']['sha256'],str(work)],args.output/'build.log',1800)
         report['image_inspect']=json.loads(subprocess.check_output(['docker','image','inspect',tag],timeout=30))
-        for index in range(2):
-            name=tag+'-'+str(index);report['containers'].append(name)
-            bounded(['docker','run','--name',name,'--network','none','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges','--memory','512m','--cpus','2','--pids-limit','64','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',tag],args.output/f'run{index}.json',60,2*1024*1024)
-        if (args.output/'run0.json').read_bytes()!=(args.output/'run1.json').read_bytes():
-            raise ValueError('nondeterministic extraction')
+        for variant,binary in [('run','extract'),('apiserver','extract-apiserver')]:
+            for index in range(2):
+                name=tag+'-'+variant+'-'+str(index);report['containers'].append(name)
+                bounded(['docker','run','--name',name,'--hostname','fixture-'+str(index),'--entrypoint','/out/'+binary,'--network','none','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges','--memory','512m','--cpus','2','--pids-limit','64','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',tag],args.output/f'{variant}{index}.json',60,2*1024*1024)
+            if (args.output/f'{variant}0.json').read_bytes()!=(args.output/f'{variant}1.json').read_bytes():
+                raise ValueError('nondeterministic extraction: '+variant)
         report['identical_repeats']=True
+        report['hostnames']=['fixture-0','fixture-1']
         report['output_sha256']=digest(args.output/'run0.json')
+        report['apiserver_output_sha256']=digest(args.output/'apiserver0.json')
+        base=json.loads((args.output/'run0.json').read_text())['registered_feature_gates']
+        api=json.loads((args.output/'apiserver0.json').read_text())['registered_feature_gates']
+        report['registry_difference']={'added':sorted(api.keys()-base.keys()),'removed':sorted(base.keys()-api.keys()),'changed':sorted(key for key in base.keys()&api.keys() if base[key]!=api[key])}
         # Only trusted build metadata from a scratch image, never private fixture state.
         subprocess.run(['docker','cp',report['containers'][0]+':/out/modules.sha256',str(args.output/'modules.sha256')],check=True,timeout=30)
     except Exception as error:
