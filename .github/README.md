@@ -1,6 +1,6 @@
 # CI and repository rules
 
-The default branch accepts squash-merged pull requests with passing `Format`, `Clippy`,
+The default branch accepts squash or rebase merges with passing `Format`, `Clippy`,
 `Tests (debug)`, `Tests (release)`, `Dependencies` and `Security` checks from GitHub Actions.
 The branch must be current with its base. Linear history, resolved review conversations,
 and protection against force-pushes/deletion apply without bypass actors. Human approvals
@@ -10,7 +10,11 @@ are optional to support solo development; automated checks remain mandatory.
 
 CI runs independent jobs in parallel and cancels superseded runs. Pull requests run on
 every change, including workflow-only changes; branch pushes run only on `main` to avoid
-duplicate PR runs. Merge-group events are supported if a merge queue is introduced later.
+duplicate PR runs. PR base changes also run validation, including PRs targeting another stack
+branch. All PR edits, including title/body edits, run validation with the same required check
+names. During rollout, metadata-only skipped suites left native stack merges reporting missing
+checks despite earlier successful runs. Full validation avoids that ambiguity; caches and
+cancellation limit repeated work. Merge-group events are supported if a merge queue is introduced.
 Both test profiles include all targets and doctests. Commands use the committed lockfile
 and toolchain rather than a moving Rust channel.
 
@@ -21,6 +25,50 @@ refreshed by cargo-deny rather than treated as a permanent cached result.
 
 External actions are pinned to commit SHAs, credentials are not persisted by checkout, and
 job permissions are minimal. Dependabot proposes weekly action-pin, Cargo and security-tool updates.
+
+## Stacked development
+
+Use [gh-stack](https://github.com/github/gh-stack) for short chains of dependent PRs rooted on
+`main`. Start with two to four layers, each buildable and tested. Keep independent work in separate
+stacks/worktrees; issue order alone does not establish a dependency. For example, startup,
+shutdown, and diagnostics form the E04 chain, while E03's precedence and persistence children
+both depend on decoding and can proceed independently.
+
+Give each stack one owner for branch operations. The coordinator owns issue transitions and final
+merges, and coordinates shared manifests, lockfiles, and generated inputs. Plan layer ownership
+before edits. Fix a lower-layer concern on that branch and rebase its descendants.
+
+```sh
+gh stack init --base main supervision/startup
+# Implement, test, stage the relevant files, and commit.
+gh stack add supervision/shutdown
+# Implement, test, stage the relevant files, and commit.
+gh stack submit --auto --remote origin
+gh stack view --json
+# After committing a change on its owning lower branch:
+gh stack rebase --upstack --remote origin
+gh stack push --remote origin
+# After landing a ready prefix:
+gh stack sync --remote origin
+```
+
+Use explicit branch names, `view --json`, and `submit --auto` for noninteractive operation.
+New PRs are drafts; update their generated descriptions with issue links, behavior, and evidence,
+then mark only ready layers for review. Consult the installed gh-stack skill and command help for
+merge scope and recovery. Verify stack state after synchronization; an aborted sync can exit zero.
+
+Before landing a prefix, verify its exact stack/PR membership and all six check results for each
+layer's current head and base. Native GitHub stacks enforce the trunk's protections on every layer,
+as described in the [stack rules](https://docs.github.com/en/pull-requests/reference/stacked-pull-requests).
+Retargeting and rebasing require fresh validation; tests on an earlier base are insufficient.
+Manage native PR bases through stack operations; GitHub rejects manual `gh pr edit --base` changes.
+Use `gh stack merge <verified-target-number> --yes --squash` for agent-managed stacks. Explicit
+squash is the default convention; repository policy also permits rebase merging. Never bypass rules.
+Reconcile the remaining stack after landing and close issues only when their complete acceptance
+criteria and dependencies have reached `main` with evidence.
+
+Keep dependency caches restricted to default-branch writes. Batch coherent edits before pushing
+to limit repeated validation across stack descendants. A cache hit does not replace current checks.
 
 ## Local security tools
 
@@ -64,7 +112,8 @@ gh api --method POST repos/geoffsee/rubix-kube/rulesets \
 
 For updates, list repository rulesets and use `PUT` on the existing ruleset ID instead of
 creating duplicates. Inspect the active branch rules after applying. Keep repository merge
-settings squash-only. `Security` is a normal required status check and needs no Code Security license.
+settings consistent with the allowed squash/rebase methods and disable merge commits.
+`Security` is a normal required status check and needs no Code Security license.
 
 If the default branch is renamed, update the workflow `push.branches` filters; the rulesets
 and cache-write policy follow the repository's default branch automatically.
