@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "kubernetes_source_commit": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+  "kine_source_commit": "7414fca1dc92b44d7ec6de82383ba614a86d2994",
+  "capture_commands": [
+    "python3 tools/api-json/run.py --output /tmp/rubix-api-json-20260927-r4",
+    "python3 tools/api-json/run.py --output /tmp/rubix-api-json-20260927-r5"
+  ],
+  "verified_cleanup": {
+    "r1": {
+      "container": true,
+      "image": true
+    },
+    "r2": {
+      "container": true,
+      "image": true
+    },
+    "r3": {
+      "container": true,
+      "image": true
+    },
+    "r4": {
+      "container": true,
+      "image": true
+    },
+    "r5": {
+      "container": true,
+      "image": true
+    }
+  },
+  "repeat_fixture_sha256": "265679daf614a1675e68d4d00d5791eb950b5d251a0e5a461e5fd31a43fab5c9",
+  "repeat_identical": true,
+  "durable_sha256": {
+    ".dockerignore": "f3507eeefafa93039945c6b475b0fc7a81cdeafff32a2a48a14a606fc9658fa8",
+    "Dockerfile": "9fb319776c9a0b5a47af58877730f8eb85b87d5bebf31b3343f517df4ee9e61c",
+    "README.md": "5e506d8955c04540740909162f9b8d44f26a87ef9388c2df6d7efbd34ed9c410",
+    "component.py": "4f434dfbb98a086ac505083d14606b81c3afcaf3b251f9b29e02fe18f78345d0",
+    "evidence/component-logs.tar.gz": "1a88ef392c0bc815d9d5184f4ff042a51e81f9c894811ec2d178126be2b392ab",
+    "evidence/container-inspect.json": "f456779e12a995808c4228c72402b34227c0c3e90e55ffb8768f48d2d7c4c1e5",
+    "evidence/image-inspect.json": "f4849a5513680bf2b5b7ba52fce7690ff661b446ac942f108e22ca5f215bfae3",
+    "evidence/preparation-failures.tar.gz": "a9a6813e32c56bf09297ea66540fd2807b6e35701078a0d6b030efa905947bd9",
+    "evidence/repeat-capture.tar.gz": "49e720efb3601bad105e26e398333db60d02df93ef79f2b526b573d18149b952",
+    "evidence/result.json": "753bc26e0652c31acb9faeca464e624f43b0b1f24581ccc2d13c19874aadf5aa",
+    "evidence/runner-result.json": "7a0ee21a4bbed451b58eead3f681eb2b5d1a351d54fbd415ae6b2497c14f4b80",
+    "fetch.py": "60d24571c8f2b1695e05761a05ea1066483f24e9dee6c814047b7412d9774426",
+    "fixtures.json": "265679daf614a1675e68d4d00d5791eb950b5d251a0e5a461e5fd31a43fab5c9",
+    "inputs.json": "0d65ce5d8e240168d53484480d0219e9f70cf224560428f2542955a1df370e00",
+    "run.py": "2406846275a7daf8f4042e5b16e8657c6bdc4e108ad19f2173d56addd2033dec",
+    "spike.py": "c0e339e4bb4d2b16601db819150292c845858cb30252f15f5b2f7108b0029032",
+    "test_api_json.py": "b191c5c4d4ea48ce4e526bc1bceceeb434315865779153dd8a5dbdf9a8758055",
+    "verify.py": "41159df35d0874a238e0d679d9062af4fc6b37f4eca29289988ff7b70b1489c0"
+  }
+}

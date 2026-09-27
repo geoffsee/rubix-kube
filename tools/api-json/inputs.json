@@ -1,0 +1,20 @@
+{
+  "kubernetes_version": "v1.35.7",
+  "kine_version": "v0.16.3",
+  "base_image": "python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d",
+  "checksum_sources": [
+    "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver.sha256",
+    "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver.sha256",
+    "https://api.github.com/repos/k3s-io/kine/releases/tags/v0.16.3"
+  ],
+  "artifacts": {
+    "arm64": {
+      "kube-apiserver": {"url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver", "sha256": "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"},
+      "kine": {"url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-arm64", "sha256": "ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8"}
+    },
+    "amd64": {
+      "kube-apiserver": {"url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver", "sha256": "0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8"},
+      "kine": {"url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-amd64", "sha256": "1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976"}
+    }
+  }
+}

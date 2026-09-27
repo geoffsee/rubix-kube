@@ -192,3 +192,6 @@ offline CRI/containerd generation checks against committed output in each. Publi
 artifact checks also agree. Actual missing and corrupted CRI blobs fail clearly without a hidden
 refresh; the original bytes were restored after the negative probes. This complements the
 existing stale-output, archive integrity and import-closure regressions.
+The [official API JSON consumer evidence](../api-json/CONSUMER.md) exercises the selected
+published types against real server responses and watch events. It records exact round trips
+and observed null/omission, unknown-field and quantity-string limitations explicitly.
