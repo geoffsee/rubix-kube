@@ -2,7 +2,7 @@
   "schema_version": 1,
   "baseline_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
   "scope": "E02.02 node configuration and command slice; remaining domains documented in README.md",
-  "suite_sha256": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2",
+  "suite_sha256": "eda33c98a52bbe0a0fc89a4f2218af934c0d926d69513ce66b031f8e4ee7c15e",
   "sources": {
     "cmd/kubesolo/main.go": {
       "url": "https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/cmd/kubesolo/main.go",
@@ -295,6 +295,26 @@
       "sources": [
         "cmd/kubesolo/main.go"
       ]
+    },
+    "environment-load-balancer-false": {
+      "sources": [
+        "internal/config/registry.go",
+        "internal/config/validate.go"
+      ]
+    },
+    "environment-cpu-policy-unknown-is-fatal": {
+      "sources": [
+        "internal/config/registry.go",
+        "internal/config/validate.go",
+        "internal/config/cpumanager/cpumanager.go"
+      ]
+    },
+    "file-cpu-policy-unknown-is-fatal": {
+      "sources": [
+        "internal/config/file.go",
+        "internal/config/validate.go",
+        "internal/config/cpumanager/cpumanager.go"
+      ]
     }
   },
   "registered_field_cases": {
@@ -338,7 +358,8 @@
       "default-document",
       "all-document-settings-round-trip",
       "all-environment-settings",
-      "all-legacy-flags"
+      "all-legacy-flags",
+      "environment-load-balancer-false"
     ],
     "network.loadBalancer.ip": [
       "default-document",
@@ -381,7 +402,9 @@
       "all-environment-settings",
       "all-legacy-flags",
       "cpu-policy-unknown-is-fatal",
-      "cpu-static-container-mode-is-fatal"
+      "cpu-static-container-mode-is-fatal",
+      "environment-cpu-policy-unknown-is-fatal",
+      "file-cpu-policy-unknown-is-fatal"
     ],
     "kubernetes.kubelet.cpuManager.policyOptions": [
       "default-document",
@@ -479,8 +502,23 @@
     "reference_artifact_sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
     "command": "python3 tools/parity/run.py --artifact <source-built-reference>/artifact.json --suite tools/parity/fixtures/config-command.json --output <new-output-directory>",
     "executed_runner_checkout": "/tmp/rubix-fixture-worktree-20260927",
-    "actual_output_directory": "/tmp/rubix-config-command-20260927-r1",
+    "actual_output_directory": "/tmp/rubix-config-command-20260927-r2",
     "normalization": "none; raw outputs retained; timestamped stderr compared by literal diagnostic fragments",
-    "default_document_independent_source": "internal/config/defaults.go plus internal/config/loader.go derive()"
+    "default_document_independent_source": "internal/config/defaults.go plus internal/config/loader.go derive()",
+    "case_count": 51,
+    "source_hashes_verified_against_read_only_checkout": true,
+    "input_sensitivity": "Each new input is removed or reset to valid none in the frozen negative suite; the actual Go reference then fails all three unchanged expectations."
+  },
+  "vm_capture": {
+    "case_count": 51,
+    "outputs": {
+      "go": "/tmp/rubix-config-command-vm-go-20260927-r2",
+      "rust": "/tmp/rubix-config-command-vm-rust-20260927-r2"
+    },
+    "commands": [
+      "python3 tools/parity/vm/run.py --allow-privileged-vm --artifact /tmp/rubix-parity-upstream-20260927/artifact.json --suite tools/parity/fixtures/config-command.json --output /tmp/rubix-config-command-vm-go-20260927-r2 --image-cache /tmp/rubix-vm-image-cache",
+      "python3 tools/parity/vm/run.py --allow-privileged-vm --artifact /tmp/rubix-parity-rust-20260927/artifact.json --suite tools/parity/fixtures/config-command.json --output /tmp/rubix-config-command-vm-rust-20260927-r2 --image-cache /tmp/rubix-vm-image-cache"
+    ],
+    "cleanup": "Both process groups absent and owned temporary directories removed; independently checked directories absent."
   }
 }
