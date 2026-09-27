@@ -1,0 +1,9 @@
+[profile.default]
+fail-fast = false
+status-level = "leak"
+final-status-level = "slow"
+
+[profile.ci]
+inherits = "default"
+fail-fast = false
+retries = 0
