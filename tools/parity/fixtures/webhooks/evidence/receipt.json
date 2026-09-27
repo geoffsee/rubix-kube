@@ -1,0 +1,24 @@
+{
+  "builder": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-webhooks-83f644b5e2bc4cff9c101682794271eb-webhook-0",
+    "rubix-webhooks-83f644b5e2bc4cff9c101682794271eb-webhook-1"
+  ],
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "identical_repeats": true,
+  "image_id": "sha256:9dd7c9e83aba29ee9f896f6250ebb51479b21fd265fde09416c6fb68af3c336b",
+  "outputs": {
+    "webhook.json": "72f9a1240d6d5c2d46021a906d01dacb30d90ed9db828de1cf7ca5bf28fc084b"
+  },
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "source_sha256": {
+    "Capture.Dockerfile": "00fc6686521b90b9438006dd5e47177552070bbea1419d6cf8827ec429800ea3",
+    "capture.py": "2cc799e74f7fb818589eb575e25aa2af43b89e4b8bff7a5162c545f5c2c60f14",
+    "webhook_capture_test.go": "93829bd3096363a6a8e648280dc47caff86c0907d00bc4a47ae4d2c360b32ad7"
+  }
+}
