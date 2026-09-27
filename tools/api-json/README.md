@@ -63,11 +63,11 @@ and watch event envelopes need appropriate generic wrappers. These fixtures do n
 unimplemented Rust parity, generated-tree reproduction, all Kubernetes resource coverage,
 credential lifecycle, power-loss durability or product platform qualification.
 
-The retained Darwin arm64 Docker runs r4/r5 produced byte-identical normalized fixtures
+The retained Darwin arm64 Docker runs r6/r7 produced byte-identical normalized fixtures
 from fresh datastores. `evidence/result.json` is the final raw capture;
 `repeat-capture.tar.gz` retains the earlier independent run. `provenance.json` records
 component source revisions, commands, complete file digests and independent post-run
-Docker absence checks. Ten local regressions pass. Both final API/Kine process pairs
+Docker absence checks. Eleven local regressions pass. Both final API/Kine process pairs
 exited zero without escalation. This executes Linux arm64 binaries on Docker Desktop;
 Linux amd64 inputs are pinned but not executed by this record.
 
@@ -76,3 +76,7 @@ omitted new harness files, then Pod admission rejected a missing default Service
 The fixture now explicitly creates that account. A preparatory successful run exposed
 random projected-volume names; selecting token automount false avoids that unrelated
 admission behavior while preserving the four documented metadata normalization rules.
+
+Verification uses explicit raising checks and remains active under Python optimization.
+A subprocess `-O` regression rejects matching captures with a boolean changed to integer.
+The final live repeats were recaptured with this exact verifier. See [Rust consumer evidence](CONSUMER.md).

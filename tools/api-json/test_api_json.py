@@ -2,6 +2,9 @@
 import copy
 import hashlib
 import json
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 import unittest
 
@@ -14,13 +17,23 @@ class SerializationTests(unittest.TestCase):
     def setUp(self):
         self.fixture = json.loads((HERE / 'fixtures.json').read_text())
 
+    def test_optimized_python_rejects_matching_mutated_capture(self):
+        for suffix in ('create','read'):
+            self.fixture['cases']['custom-'+suffix]['spec']['unknown']['bool']=0
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'changed.json';path.write_text(json.dumps(self.fixture))
+            program='import json,sys; from verify import verify; verify(json.load(open(sys.argv[1])))'
+            result=subprocess.run([sys.executable,'-O','-c',program,str(path)],cwd=HERE,capture_output=True,timeout=10)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn(b'API JSON expectation failed',result.stderr)
+
     def test_official_server_observations_match_independent_expectations(self):
         verify(self.fixture)
 
     def mutate_both(self, name, mutation):
         for suffix in ('create','read'):
             mutation(self.fixture['cases'][name+'-'+suffix])
-        with self.assertRaises(AssertionError): verify(self.fixture)
+        with self.assertRaises(ValueError): verify(self.fixture)
 
     def test_noncanonical_quantity_is_rejected_even_when_both_results_agree(self):
         self.mutate_both('pod',lambda p:p['spec']['containers'][0]['resources']['requests'].update(cpu='0.5'))
@@ -40,7 +53,7 @@ class SerializationTests(unittest.TestCase):
     def test_watch_event_type_and_latest_deleted_value_matter(self):
         for index,change in [(0,{'type':'MODIFIED'}),(2,{'object':copy.deepcopy(self.fixture['watch'][0]['object'])})]:
             changed=copy.deepcopy(self.fixture);changed['watch'][index].update(change)
-            with self.subTest(index=index),self.assertRaises(AssertionError):verify(changed)
+            with self.subTest(index=index),self.assertRaises(ValueError):verify(changed)
 
     def test_normalization_removes_only_explicit_server_metadata(self):
         source={'metadata':{'uid':'volatile','creationTimestamp':'volatile','resourceVersion':'42',
