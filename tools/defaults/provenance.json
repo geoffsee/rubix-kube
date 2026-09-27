@@ -1,9 +1,15 @@
 {
+  "apiserver_expected_sha256": "a7538b7fc55682c4ad920085a12cb53451ad371786b79e957d8c79f29e1ee539",
   "expected_sha256": "d936b24ca4fe4e789e92980ae70b9cbf5ba56231548f151b3a0022e85b75fe8e",
   "schema_version": 1,
-  "scope": "Three official component default functions and the feature gate registry of their import graph; Linux arm64 only",
+  "scope": "Three official component default functions plus API-server option constructor/172flags and each feature-gate import graph; Linux arm64 only",
   "source_revision": "96cb9ab4201d88ce5e549fde047a686171838fdb",
   "sources": {
+    "cmd/kube-apiserver/app/options/options.go": {
+      "bytes": 6481,
+      "sha256": "9e32979637fe8dda762c6b9e1f9037be64bea68d9b254e453c01e85c8c276e31",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/cmd/kube-apiserver/app/options/options.go"
+    },
     "go.mod": {
       "bytes": 11776,
       "sha256": "84b247340b44a32e0fe92928eb3fbcbcd6222fe9a2860de2956a87f5d83fb639",
@@ -34,10 +40,30 @@
       "sha256": "38ec2fe66cacc875d608ef9326590e828618ec45fb6114dfb276630540574632",
       "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/controller/apis/config/v1alpha1/zz_generated.defaults.go"
     },
+    "pkg/controlplane/apiserver/options/options.go": {
+      "bytes": 19984,
+      "sha256": "968db6b8cdd9f5645a5c473bc5f9f5ddcb65ddb54e77a7e6dbf7e82619888573",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/controlplane/apiserver/options/options.go"
+    },
     "pkg/features/kube_features.go": {
       "bytes": 102279,
       "sha256": "252dd04ad4a7fd84cf3ddc677264bac530538737b3085b2970f8a843d0c4444d",
       "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/features/kube_features.go"
+    },
+    "pkg/kubeapiserver/options/authentication.go": {
+      "bytes": 38195,
+      "sha256": "8ccc0cd15519d9dbcfb92158269687be687ba28cb0511aa8156fb44ef93fe31f",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/kubeapiserver/options/authentication.go"
+    },
+    "pkg/kubeapiserver/options/authorization.go": {
+      "bytes": 12631,
+      "sha256": "ce372c77884e95307f75d95ac89950d1f8d3cba3015933c2146e807676a2a9c7",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/kubeapiserver/options/authorization.go"
+    },
+    "pkg/kubeapiserver/options/serving.go": {
+      "bytes": 1289,
+      "sha256": "86ecf662917fc3a2d4c30259b9c21f041c93372c115f18984dcc71cdd33607e3",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/kubeapiserver/options/serving.go"
     },
     "pkg/kubelet/apis/config/v1beta1/defaults.go": {
       "bytes": 11278,
@@ -58,6 +84,16 @@
       "bytes": 1388,
       "sha256": "ca0f6d61e4719df98cf86eb7a5ba8591988998de02fae2e9ce097f5faab4e036",
       "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/pkg/proxy/apis/config/v1alpha1/zz_generated.defaults.go"
+    },
+    "staging/src/k8s.io/apiserver/pkg/server/options/etcd.go": {
+      "bytes": 23057,
+      "sha256": "02419a351bca33622df70631c9c310d6feba31f061c9f46044eef38f4563b9db",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/staging/src/k8s.io/apiserver/pkg/server/options/etcd.go"
+    },
+    "staging/src/k8s.io/apiserver/pkg/server/options/server_run_options.go": {
+      "bytes": 21316,
+      "sha256": "c668ea2a48830be7a3631d9c47f52a938232fcffd2731dd5a5e64a93fe20532b",
+      "url": "https://github.com/kubernetes/kubernetes/blob/96cb9ab4201d88ce5e549fde047a686171838fdb/staging/src/k8s.io/apiserver/pkg/server/options/server_run_options.go"
     },
     "staging/src/k8s.io/cloud-provider/config/v1alpha1/defaults.go": {
       "bytes": 2665,

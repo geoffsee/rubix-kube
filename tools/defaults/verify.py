@@ -63,6 +63,22 @@ def verify(value):
     require(sidecar['specs'][-1]=={'default':True,'locked':True,'stage':'','version':'1.33','minimum_compatibility':''},'sidecar GA history')
 
 
+def verify_apiserver(value):
+    verify(value)
+    options=value['apiserver_options']
+    require(options['construction_only'] is True,'unexpected lifecycle scope')
+    require(options['system_namespaces']==['kube-system','kube-public','default','kube-node-lease'],'system namespace defaults')
+    require(options['kubelet_preferred_address_types']==['Hostname','InternalDNS','InternalIP','ExternalDNS','ExternalIP'],'kubelet address preference')
+    require(options['service_node_port_range']=='30000-32767','service port range')
+    expected={'secure-port':'6443','allow-privileged':'false','kubelet-port':'10250',
+              'kubelet-timeout':'5s','service-node-port-range':'30000-32767',
+              'event-ttl':'1h0m0s','storage-media-type':'application/vnd.kubernetes.protobuf',
+              'watch-cache':'true','apiserver-count':'1','advertise-address':'<nil>',
+              'external-hostname':'','anonymous-auth':'true','authorization-mode':'[]'}
+    for name,default in expected.items():
+        require(options['flags'][name]['default']==default,'API-server default '+name)
+
+
 def differences(before,after,path=''):
     if type(before) is not type(after):
         yield {'path':path,'before':before,'after':after}
@@ -87,9 +103,13 @@ def load_expected(path, validator=verify, digest_key='expected_sha256'):
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('capture',type=Path);parser.add_argument('--expected',type=Path,default=HERE/'expected.json');args=parser.parse_args()
-    actual=load_json(args.capture.read_text());verify(actual)
-    delta=list(differences(load_expected(args.expected),actual))
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('capture',type=Path);parser.add_argument('--expected',type=Path);args=parser.parse_args()
+    actual=load_json(args.capture.read_text())
+    validator=verify_apiserver if 'apiserver_options' in actual else verify
+    digest_key='apiserver_expected_sha256' if 'apiserver_options' in actual else 'expected_sha256'
+    expected_path=args.expected or HERE/('apiserver.expected.json' if 'apiserver_options' in actual else 'expected.json')
+    validator(actual)
+    delta=list(differences(load_expected(expected_path,validator,digest_key),actual))
     print(json.dumps({'status':'drift' if delta else 'unchanged','changes':delta},indent=2))
     return bool(delta)
 
