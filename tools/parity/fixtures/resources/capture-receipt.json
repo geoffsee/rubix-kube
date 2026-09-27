@@ -3,14 +3,14 @@
   "capture_driver_sha256": "4e9ab35635e777d2f8893dcf28197a50b25913eb216f21d901743fb0f90e5a8f",
   "cleanup_errors": [],
   "harness_sha256": {
-    "pki/pki_capture_test.go": "0ebf68176d2d1cf67fb9f3062fb6d36a3c91b2c8549c95dd5f9510379eae1805",
+    "pki/pki_capture_test.go": "979a3c120af8c9d4a99909e90e4773c07070cc1901256ca44cd45380c6b31b72",
     "resources/Capture.Dockerfile": "8f0674992d3905c42cb1fc0b7907992b5fe069c9c6fae30963e4a6675779c3ff",
     "resources/coredns_capture_test.go": "20ce79c78bd3b54ac0cf835b5864ade93d44a95da88b7ff9e98b493b2411abe8",
     "resources/d2k_capture_test.go": "1c67db9f371fd9e8b32f0be8aae5882d613377baa59e97304adccacef1ffff1b",
     "resources/localpath_capture_test.go": "4bbe5b715e48c8c08509bc5134ebbaf9e96cadcffa9411567fe865aee2706b44",
     "resources/portainer_capture_test.go": "43dea256e7602c8be8da315b8ea9eab366b706de1f154079c012d10c914b2e6c"
   },
-  "image_id": "sha256:0d7aa59290c985c18cbc60933b689a11b7db99652848724a8592b71d0387412f",
+  "image_id": "sha256:02959f562aea5e17dac3c8ef15bac370db2e3c81823963c9ddf2791f8f433a02",
   "reference_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
   "remaining_containers": [],
   "remaining_images": [],
@@ -29,7 +29,7 @@
     },
     "pki": {
       "exit_code": 0,
-      "stdout_sha256": "18967348e2774a94295a4b204b18b899c70427679b9abd2e796dfb78c6804280"
+      "stdout_sha256": "55063db880ab482918bc6955824f509d27d8af65c2a0332ddb8f032889ee9680"
     },
     "portainer": {
       "exit_code": 0,

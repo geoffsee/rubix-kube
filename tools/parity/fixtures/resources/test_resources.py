@@ -2,6 +2,8 @@ import copy
 import hashlib
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 import unittest
 import tempfile
@@ -17,35 +19,50 @@ class ResourceOracleTests(unittest.TestCase):
     def setUp(self):
         self.records = json.loads((HERE / 'expected.json').read_text())
 
+    def test_optimized_cli_rejects_empty_and_mutated_records(self):
+        with tempfile.TemporaryDirectory() as folder:
+            record = next(r for r in self.records if r['component'] == 'localpath')
+            record['objects']['storageclasses'][0]['reclaimPolicy'] = 'Delete'
+            for records in ([], self.records):
+                for component in ('coredns', 'localpath', 'portainer', 'd2k'):
+                    (Path(folder) / (component + '.json')).write_text(json.dumps([r for r in records if r['component'] == component]))
+                result = subprocess.run([sys.executable, '-O', str(HERE / 'verify.py'), folder], capture_output=True, timeout=10)
+                self.assertNotEqual(result.returncode, 0)
+
+    def test_boolean_cannot_replace_replica_number(self):
+        self.records[0]['objects']['deployments'][0]['spec']['replicas'] = True
+        with self.assertRaises(ValueError):
+            verifier.verify(self.records)
+
     def test_real_go_capture_satisfies_independent_semantics(self):
         verifier.verify(self.records)
 
     def test_changed_storage_reclaim_policy_is_rejected(self):
         record = next(r for r in self.records if r['component'] == 'localpath')
         record['objects']['storageclasses'][0]['reclaimPolicy'] = 'Delete'
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             verifier.verify(self.records)
 
     def test_broken_service_selector_is_rejected(self):
         self.records[0]['objects']['services'][0]['spec']['selector']['k8s-app'] = 'wrong'
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             verifier.verify(self.records)
 
     def test_changed_dns_forwarding_is_rejected(self):
         r = next(r for r in self.records if r['component'] == 'coredns' and r['variant'] == 'container-dual')
         r['objects']['configmaps'][0]['data']['Corefile'] = 'invalid'
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             verifier.verify(self.records)
 
     def test_unknown_variant_is_rejected(self):
         self.records[0]['variant'] = 'unqualified-variant'
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             verifier.verify(self.records)
 
     def test_missing_named_bootstrap_check_is_rejected(self):
         record = next(r for r in self.records if r['component'] == 'portainer')
         del record['checks']['bootstrap_existing_secret_preserved']
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             verifier.verify(self.records)
 
     def test_daemon_failure_still_publishes_unknown_cleanup_receipt(self):

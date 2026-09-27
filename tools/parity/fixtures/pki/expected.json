@@ -242,6 +242,7 @@
       }
     },
     "invalid_extra_sans_ignored": true,
+    "ipv6_extra_san_rotates": false,
     "restart_unchanged": true,
     "rotations": {
       "corrupt-leaf": {

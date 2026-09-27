@@ -31,43 +31,52 @@ PUBLIC = {
 API_DNS = ['kubernetes', 'kubernetes.default', 'kubernetes.default.svc', 'kubernetes.default.svc.cluster', 'kubernetes.default.svc.cluster.local', 'localhost', 'api.fixture.test']
 
 
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
 def verify(records):
-    assert len(records) == 1
+    require(len(records) == 1, 'PKI expectation failed: len(records) == 1')
     record = records[0]
-    assert record['restart_unchanged'] is True
-    assert record['invalid_extra_sans_ignored'] is True
+    require(record['restart_unchanged'] is True, "PKI expectation failed: record['restart_unchanged'] is True")
+    require(record['invalid_extra_sans_ignored'] is True, "PKI expectation failed: record['invalid_extra_sans_ignored'] is True")
+    require(record['ipv6_extra_san_rotates'] is False, 'baseline IPv6 SAN rotation changed')
     # Characterization of a baseline weakness, not desired repair behavior.
-    assert record['existing_corrupt_key_is_skipped'] is True
-    assert record['existing_mismatched_key_is_skipped'] is True
-    assert record['unsafe_roots_rejected'] == {'': True, '/': True, '.': True, 'symlink': True}
-    assert set(record['rotations']) == {'node-ip-change', 'extra-san-change', 'corrupt-leaf', 'expired-leaf'}
+    require(record['existing_corrupt_key_is_skipped'] is True, "PKI expectation failed: record['existing_corrupt_key_is_skipped'] is True")
+    require(record['existing_mismatched_key_is_skipped'] is True, "PKI expectation failed: record['existing_mismatched_key_is_skipped'] is True")
+    require(record['unsafe_roots_rejected'] == {'': True, '/': True, '.': True, 'symlink': True}, "PKI expectation failed: record['unsafe_roots_rejected'] == {'': True, '/': True, '.': True, 'symlink': True}")
+    require(set(record['rotations']) == {'node-ip-change', 'extra-san-change', 'corrupt-leaf', 'expired-leaf'}, "PKI expectation failed: set(record['rotations']) == {'node-ip-change', 'extra-san-change', 'corrupt-leaf', 'expired-leaf'}")
     for scenario, certificates in [('fresh', record['fresh'])] + [(k, v['certificates']) for k, v in record['rotations'].items()]:
-        assert set(certificates) == set(SUBJECTS)
+        require(set(certificates) == set(SUBJECTS), 'PKI expectation failed: set(certificates) == set(SUBJECTS)')
         for name, cert in certificates.items():
+            require(type(cert['is_ca']) is bool, 'is_ca must be a boolean')
+            require(all(type(cert[field]) is int for field in ('valid_days', 'key_bits', 'key_usage')), 'certificate numeric fields must be integers')
+            require(cert['extended_key_usage'] is None or all(type(value) is int for value in cert['extended_key_usage']), 'extended usages must be integers')
             cn, orgs, ca, days = SUBJECTS[name]
-            assert (cert['cn'], cert['organizations'], cert['is_ca'], cert['valid_days']) == (cn, orgs, ca, days)
+            require((cert['cn'], cert['organizations'], cert['is_ca'], cert['valid_days']) == (cn, orgs, ca, days), "PKI expectation failed: (cert['cn'], cert['organizations'], cert['is_ca'], cert['valid_days']) == (cn, orgs, ca, days)")
             if name == 'apiserver':
                 names = API_DNS + ([] if scenario in ('fresh', 'node-ip-change') else ['new.fixture.test'])
                 addresses = ['10.43.0.1', '127.0.0.1', '192.0.2.10' if scenario == 'fresh' else '192.0.2.11', '192.0.2.20']
                 public = (names, addresses, [1, 2], 5)
             else:
                 public = PUBLIC[name]
-            assert (cert['dns'], cert['ips'], cert['extended_key_usage'], cert['key_usage']) == public
-            assert cert['key_bits'] == 2048
-            assert cert['key_mode'] == '0600'
-            assert all(cert[k] is True for k in ('chain_verified', 'key_matches', 'serial_positive', 'serial_bits_at_most_128'))
+            require((cert['dns'], cert['ips'], cert['extended_key_usage'], cert['key_usage']) == public, "PKI expectation failed: (cert['dns'], cert['ips'], cert['extended_key_usage'], cert['key_usage']) == public")
+            require(cert['key_bits'] == 2048, "PKI expectation failed: cert['key_bits'] == 2048")
+            require(cert['key_mode'] == '0600', "PKI expectation failed: cert['key_mode'] == '0600'")
+            require(all(cert[k] is True for k in ('chain_verified', 'key_matches', 'serial_positive', 'serial_bits_at_most_128')), "PKI expectation failed: all(cert[k] is True for k in ('chain_verified', 'key_matches', 'serial_positive', 'serial_bits_at_most_128'))")
         api = certificates['apiserver']
-        assert set(api['ips']) == {'10.43.0.1', '127.0.0.1', '192.0.2.20', '192.0.2.10' if scenario == 'fresh' else '192.0.2.11'}
-        assert 'api.fixture.test' in api['dns']
-        assert ('new.fixture.test' in api['dns']) == (scenario not in ('fresh', 'node-ip-change'))
-        assert set(certificates['d2k-server']['dns']) == {'d2k', 'd2k.fixture-d2k', 'd2k.fixture-d2k.svc', 'd2k.fixture-d2k.svc.cluster.local', 'localhost'}
-        assert certificates['ca']['key_usage'] & 32
-        assert certificates['request-header-ca']['key_usage'] & 32
+        require(set(api['ips']) == {'10.43.0.1', '127.0.0.1', '192.0.2.20', '192.0.2.10' if scenario == 'fresh' else '192.0.2.11'}, "PKI expectation failed: set(api['ips']) == {'10.43.0.1', '127.0.0.1', '192.0.2.20', '192.0.2.10' if scenario == 'fresh' else '192.0.2.11'}")
+        require('api.fixture.test' in api['dns'], "PKI expectation failed: 'api.fixture.test' in api['dns']")
+        require(('new.fixture.test' in api['dns']) == (scenario not in ('fresh', 'node-ip-change')), "PKI expectation failed: ('new.fixture.test' in api['dns']) == (scenario not in ('fresh', 'node-ip-change'))")
+        require(set(certificates['d2k-server']['dns']) == {'d2k', 'd2k.fixture-d2k', 'd2k.fixture-d2k.svc', 'd2k.fixture-d2k.svc.cluster.local', 'localhost'}, "PKI expectation failed: set(certificates['d2k-server']['dns']) == {'d2k', 'd2k.fixture-d2k', 'd2k.fixture-d2k.svc', 'd2k.fixture-d2k.svc.cluster.local', 'localhost'}")
+        require(certificates['ca']['key_usage'] & 32, "PKI expectation failed: certificates['ca']['key_usage'] & 32")
+        require(certificates['request-header-ca']['key_usage'] & 32, "PKI expectation failed: certificates['request-header-ca']['key_usage'] & 32")
         for name in ('controller-manager', 'request-header-client', 'd2k-client'):
-            assert certificates[name]['extended_key_usage'] == [2]
-        assert certificates['d2k-server']['extended_key_usage'] == [1]
+            require(certificates[name]['extended_key_usage'] == [2], "PKI expectation failed: certificates[name]['extended_key_usage'] == [2]")
+        require(certificates['d2k-server']['extended_key_usage'] == [1], "PKI expectation failed: certificates['d2k-server']['extended_key_usage'] == [1]")
     for rotation in record['rotations'].values():
-        assert rotation['stable_certificates'] == {name: name in ('ca', 'request-header-ca', 'request-header-client') for name in SUBJECTS}
+        require(rotation['stable_certificates'] == {name: name in ('ca', 'request-header-ca', 'request-header-client') for name in SUBJECTS}, "PKI expectation failed: rotation['stable_certificates'] == {name: name in ('ca', 'request-header-ca', 'request-header-client') for name in SUBJECTS}")
 
 
 if __name__ == '__main__':

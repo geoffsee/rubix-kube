@@ -20,7 +20,9 @@ replace it with a correctly signed but expired leaf. Baseline invalidation remov
 stale leaves; regeneration preserves both roots and request-header credentials.
 Fingerprints are compared within the run and exported as booleans, so random keys
 do not make golden files unstable. Invalid extra SAN strings do not trigger a
-rotation. Deletion rejects empty, root, dot and symlink PKI paths.
+rotation. A separate valid IPv6 extra SAN also does not trigger rotation in this
+baseline; this is a distinct baseline gap, not an invalid SAN. Both probes inspect
+leaf absence without aborting before recording the result. Deletion rejects empty, root, dot and symlink PKI paths.
 
 Two separate negative characterizations expose an existing baseline weakness:
 `GenerateAllCertificates` returns success when an already-existing admin private
@@ -36,6 +38,7 @@ chain verification.
 `expected.json` is public normalized output from real cryptographic execution;
 `verify.py` independently checks policy and rotations. Mutation tests reject wrong
 trust-root preservation, mismatched healthy keys, missing SANs and weak file modes.
+Verification also rejects invalid captures under Python optimization (`-O`).
 See the resource provenance for exact baseline, harness and capture hashes.
 
 This covers PKI file lifecycle only. Atomic interruption during issuance, missing
