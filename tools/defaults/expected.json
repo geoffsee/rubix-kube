@@ -42,13 +42,13 @@
           "ExternalCloudVolumePlugin": "",
           "UseServiceAccountCredentials": false,
           "AllowUntaggedCloud": false,
-          "RouteReconciliationPeriod": "0s",
-          "NodeMonitorPeriod": "0s",
-          "ClusterName": "",
+          "RouteReconciliationPeriod": "10s",
+          "NodeMonitorPeriod": "7s",
+          "ClusterName": "fixture-cluster",
           "ClusterCIDR": "",
           "AllocateNodeCIDRs": false,
           "CIDRAllocatorType": "",
-          "ConfigureCloudRoutes": null,
+          "ConfigureCloudRoutes": false,
           "NodeSyncPeriod": "0s"
         },
         "AttachDetachController": {
@@ -294,6 +294,14 @@
         "crashLoopBackOff": {
           "maxContainerRestartPeriod": "5m0s"
         },
+        "reservedMemory": [
+          {
+            "numaNode": 0,
+            "limits": {
+              "memory": "1001m"
+            }
+          }
+        ],
         "enableProfilingHandler": true,
         "enableDebugFlagsHandler": true,
         "seccompDefault": false,
@@ -425,13 +433,13 @@
           "ExternalCloudVolumePlugin": "",
           "UseServiceAccountCredentials": false,
           "AllowUntaggedCloud": false,
-          "RouteReconciliationPeriod": "0s",
-          "NodeMonitorPeriod": "0s",
-          "ClusterName": "",
+          "RouteReconciliationPeriod": "10s",
+          "NodeMonitorPeriod": "5s",
+          "ClusterName": "kubernetes",
           "ClusterCIDR": "",
           "AllocateNodeCIDRs": false,
           "CIDRAllocatorType": "",
-          "ConfigureCloudRoutes": null,
+          "ConfigureCloudRoutes": true,
           "NodeSyncPeriod": "0s"
         },
         "AttachDetachController": {
