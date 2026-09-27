@@ -5,10 +5,63 @@ import os
 from pathlib import Path
 import platform
 import resource
+import re
 import signal
 import subprocess
 import time
 import traceback
+
+
+def validate_files(case):
+    """Keep fixture paths canonical and bound their UTF-8 payload before staging."""
+    files = case.get("files", {})
+    if not isinstance(files, dict) or len(files) > 32:
+        raise ValueError("case files must map at most 32 paths to UTF-8 strings")
+    size = 0
+    for name, content in files.items():
+        if (not isinstance(name, str) or len(name) > 256
+                or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", name)
+                or any(part in (".", "..") for part in name.split("/"))):
+            raise ValueError("fixture path must be a canonical relative POSIX path")
+        if not isinstance(content, str):
+            raise ValueError("fixture content must be a UTF-8 string")
+        size += len(content.encode("utf-8"))
+        if any(parent in files for parent in (str(p) for p in Path(name).parents) if parent != "."):
+            raise ValueError("fixture paths cannot overlap a file and directory")
+    if size > 256 * 1024:
+        raise ValueError("case fixture payload exceeds 256 KiB")
+    fixture_argv(case, Path("/fixtures/validation"))
+    return size
+
+
+def fixture_argv(case, directory):
+    """Expand only complete fixture tokens; never interpret shell expressions."""
+    argv = []
+    for argument in case["argv"]:
+        if argument.startswith("{fixture:"):
+            if not argument.endswith("}") or argument[9:-1] not in case.get("files", {}):
+                raise ValueError("fixture token must name a supplied file")
+            argument = str(directory / argument[9:-1])
+        argv.append(argument)
+    return argv
+
+
+def stage_files(cases, root):
+    """Stage trusted, validated suite inputs in a fresh owned image context."""
+    root.mkdir()
+    root.chmod(0o755)
+    for index, case in enumerate(cases):
+        validate_files(case)
+        for name, content in case.get("files", {}).items():
+            destination = root / f"{index:03d}" / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            for parent in destination.parents:
+                if parent == root:
+                    break
+                parent.chmod(0o755)
+            with destination.open("x", encoding="utf-8") as stream:
+                stream.write(content)
+            destination.chmod(0o444)
 
 
 def assess(case, code, stdout, stderr):
@@ -46,7 +99,7 @@ def execute(case, index, output):
     process = None
     try:
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
-            process = subprocess.Popen(["/artifact/executable", *case["argv"]],
+            process = subprocess.Popen(["/artifact/executable", *fixture_argv(case, Path(f"/fixtures/{index:03d}"))],
                                        stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                                        env=environment, cwd="/tmp", start_new_session=True,
                                        user=65532, group=65532, extra_groups=[], preexec_fn=output_limits)

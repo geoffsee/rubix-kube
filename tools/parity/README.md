@@ -133,3 +133,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity -p 'test_
 The unit checks exercise assertion failures, language-independent expectations and
 rejection of unknown assertions, moving source references and unbounded scenarios.
 Real artifact execution and injected-failure runs are separate integration evidence.
+
+### File inputs
+
+A case may provide `files`, a map of canonical relative POSIX paths to UTF-8 contents.
+Use a complete argv token such as `{fixture:config.yaml}` after `--config`; the adapter
+resolves it to that case's private fixture directory. Inline or environment interpolation
+is not performed. Inputs are copied into the disposable image, root-owned and read-only;
+the container's root filesystem is read-only. No host path is mounted. Paths cannot escape
+or overlap, and limits are 32 files/256 KiB per case and 1 MiB per suite. Contents and
+filenames are covered by the recorded suite hash. Fixtures should contain synthetic data.
