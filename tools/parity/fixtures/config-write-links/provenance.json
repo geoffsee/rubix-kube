@@ -1,0 +1,29 @@
+{
+  "expected_replacement_origin": {
+    "path": "tools/parity/fixtures/config-api/config.json",
+    "selector": "[0].first",
+    "sha256": "f71e045a1317753738eb44965ae6ffbb83c886d904e06cc5f3b6b66e09302800"
+  },
+  "local_sha256": {
+    "Capture.Dockerfile": "2837da4be831e5df41d8b870f060f3c23323706ee3a174597d5d0948f7acbdac",
+    "README.md": "de2f2bcd959c771475abda38aae060718e2b1e92b3ac991502714e48d5a5dcad",
+    "capture-receipt.json": "6f2c4acb7729c8105a1eeb2057d05577c98db2538bec6a8c06c2e924687847b9",
+    "capture.py": "ba5b6702b75dd104094cfd77aa79fdb37d97af436a0fbcac56326cd48912af8b",
+    "evidence/build.log": "3e6d7ee123e928719141aca8c843ee3533d8fa7af58984d35664a692192d40cf",
+    "evidence/first.log": "f414d4ab6de67df206a7653212963c0f018900f5038051a0795b092c38e9c506",
+    "evidence/repeat.json": "d5d209badd508183620bb9ec6408520f6615793587044cc80d4a307c8ad50d65",
+    "evidence/repeat.log": "f414d4ab6de67df206a7653212963c0f018900f5038051a0795b092c38e9c506",
+    "file_capture_test.go": "3d561811f3cb7611fa75bcb26a3674c6903c0a1a78c06f8a8f3855f62312a38f",
+    "reference.json": "d5d209badd508183620bb9ec6408520f6615793587044cc80d4a307c8ad50d65",
+    "replacement.yaml": "0ccb093a8381dea304bafe5bda4f84a30049fba262775476b03db2ea0eb0cb47",
+    "test_links.py": "ca83a1d520c8b6e839ffc38f7c86d4182b4620bd9d4eb13006c3da5ab5050369",
+    "verify.py": "1292c450ea5337c2a0f85cad7f8a9d0da1f80247b1efee88190f1c5cb703c35c"
+  },
+  "reference_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "reference_source_sha256": {
+    "internal/config/defaults.go": "902db154b17cd88d24f18b4f9aeb87d286470b5113c18b1f2066d20ab596a24b",
+    "internal/config/file.go": "9a9af1ea2d94ff1fa1f2306f868721fb88f2e4b1d0d3fa286879b18de61749de",
+    "types/config.go": "e59764b93fd6689f091e79a17a633d94e910ebc23ae7db375734e212211ce4fa"
+  },
+  "schema": 1
+}

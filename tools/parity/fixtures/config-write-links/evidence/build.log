@@ -1,0 +1,52 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 822B 0.0s done
+#1 DONE 0.3s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#2 DONE 2.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 2B done
+#3 DONE 0.9s
+
+#4 [build 1/5] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.45kB done
+#5 DONE 0.0s
+
+#6 [build 2/5] WORKDIR /src
+#6 CACHED
+
+#7 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config
+#7 CACHED
+
+#8 [build 3/5] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
+#8 CACHED
+
+#9 [build 4/5] COPY file_capture_test.go /src/internal/config/rubix_capture_test.go
+#9 CACHED
+
+#10 [capture 1/1] WORKDIR /tmp
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers 0.0s done
+#11 exporting manifest sha256:4898fb1391c655b53a5b798e7d8fd09d5097d3987d792f0cc8e84f1c280d9769 0.0s done
+#11 exporting config sha256:802227779eef94a2ca66f7eb488a6fa303d69d26e8b81befc223eda9d0e0682b
+#11 exporting config sha256:802227779eef94a2ca66f7eb488a6fa303d69d26e8b81befc223eda9d0e0682b 0.0s done
+#11 exporting attestation manifest sha256:57d67bd7381a1065d7ce1bdc50c22b7d279bd016c7327c8cc0d3dc73d4569917 0.1s done
+#11 exporting manifest list sha256:37d7469316cb9a9bee9cdbac0e03e0d72cb7b45442c575cde4a21d4b220321c6
+#11 exporting manifest list sha256:37d7469316cb9a9bee9cdbac0e03e0d72cb7b45442c575cde4a21d4b220321c6 0.0s done
+#11 naming to docker.io/library/rubix-oracles-6a90abc60ad144c380c01258087f0e0a:latest done
+#11 unpacking to docker.io/library/rubix-oracles-6a90abc60ad144c380c01258087f0e0a:latest
+#11 unpacking to docker.io/library/rubix-oracles-6a90abc60ad144c380c01258087f0e0a:latest 1.1s done
+#11 DONE 1.4s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ppykfor8tqq4djqvy0nx2i5f3

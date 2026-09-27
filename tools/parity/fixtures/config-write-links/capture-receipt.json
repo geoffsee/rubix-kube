@@ -1,0 +1,28 @@
+{
+  "builder": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+  "capture_driver_sha256": "ba5b6702b75dd104094cfd77aa79fdb37d97af436a0fbcac56326cd48912af8b",
+  "cleanup_errors": [],
+  "harness_sha256": {
+    "Capture.Dockerfile": "2837da4be831e5df41d8b870f060f3c23323706ee3a174597d5d0948f7acbdac",
+    "file_capture_test.go": "3d561811f3cb7611fa75bcb26a3674c6903c0a1a78c06f8a8f3855f62312a38f"
+  },
+  "image_id": "sha256:37d7469316cb9a9bee9cdbac0e03e0d72cb7b45442c575cde4a21d4b220321c6",
+  "reference_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "repeat_equal": true,
+  "replacement_sha256": "0ccb093a8381dea304bafe5bda4f84a30049fba262775476b03db2ea0eb0cb47",
+  "runs": {
+    "first": {
+      "exit_code": 0,
+      "stdout_sha256": "f414d4ab6de67df206a7653212963c0f018900f5038051a0795b092c38e9c506"
+    },
+    "repeat": {
+      "exit_code": 0,
+      "stdout_sha256": "f414d4ab6de67df206a7653212963c0f018900f5038051a0795b092c38e9c506"
+    }
+  },
+  "schema": 1,
+  "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "verifier_sha256": "1292c450ea5337c2a0f85cad7f8a9d0da1f80247b1efee88190f1c5cb703c35c"
+}
