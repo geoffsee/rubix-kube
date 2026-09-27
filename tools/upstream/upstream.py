@@ -112,6 +112,12 @@ def manifest(path=MANIFEST):
         raise InputError("unsupported input manifest version")
     for record in value["sources"] + value["protoc_archives"]:
         validate_record(record)
+    for record in value["sources"]:
+        if "proto_path" in record:
+            safe_relative(record["proto_path"])
+    for name in value.get("containerd_output_files", []):
+        if len(safe_relative(name)) != 1:
+            raise InputError("generated output names must be direct children")
     for archive in value["protoc_archives"]:
         for record in archive["files"]:
             safe_relative(record["path"])
@@ -187,7 +193,46 @@ def verify(inputs, cache, selected, alternate_protoc=None):
     return protoc
 
 
-def generate(inputs, cache, selected, generator, output, check=False, alternate_protoc=None):
+def protocol_routes(proto):
+    text = re.sub(rb"/\*.*?\*/|//[^\n]*", b"", proto, flags=re.DOTALL)
+    package = re.search(rb"^\s*package\s+([^;]+);", text, re.MULTILINE)
+    routes = []
+    for service in re.finditer(rb"^\s*service\s+(\w+)\s*\{(.*?)^\}", text, re.MULTILINE | re.DOTALL):
+        if package is None:
+            raise InputError("service definition has no protobuf package")
+        for method in re.findall(rb"\brpc\s+(\w+)\s*\(", service[2]):
+            routes.append(b"/" + package[1] + b"." + service[1] + b"/" + method)
+    return routes
+
+
+def prepare_containerd(inputs, cache, selected, directory):
+    records = [record for record in inputs["sources"] if record.get("target") == "containerd"]
+    if not records:
+        raise InputError("no locked containerd protocols")
+    prepared = {}
+    for record in records:
+        name = record["proto_path"]
+        if name in prepared:
+            raise InputError(f"duplicate protobuf import name: {name}")
+        prepared[name] = read_verified(cache, blob_name(record), record)
+    compiler = compiler_record(inputs, selected)
+    for record in compiler["files"]:
+        if record["path"].startswith("include/"):
+            name = record["path"].removeprefix("include/")
+            if name in prepared:
+                raise InputError(f"duplicate protobuf import name: {name}")
+            prepared[name] = read_verified(cache, f"protoc/{selected}/{record['path']}", record)
+    for name, content in prepared.items():
+        for imported in re.findall(rb'^\s*import\s+"([^"]+)";', content, re.MULTILINE):
+            if imported.decode() not in prepared:
+                raise InputError(f"missing locked protobuf import: {imported.decode()} required by {name}")
+    # Write only after the full import closure is checked.
+    for name, content in prepared.items():
+        atomic_write(directory, name, content)
+    return records, [prepared[record["proto_path"]] for record in records]
+
+
+def generate(inputs, cache, selected, generator, output, check=False, alternate_protoc=None, target="cri"):
     if selected != host_platform():
         raise InputError("generation requires the locked compiler for the current host platform")
     protoc = verify(inputs, cache, selected, alternate_protoc)
@@ -196,52 +241,72 @@ def generate(inputs, cache, selected, generator, output, check=False, alternate_
         raise InputError(f"unexpected verified compiler version: {version}")
     if not generator.is_file():
         raise InputError(f"generator missing: {generator}; build rubix-upstream-codegen explicitly")
-    source = next(r for r in inputs["sources"] if r["id"] == "cri")
-    proto = read_verified(cache, blob_name(source), source)
-    with tempfile.TemporaryDirectory(prefix="rubix-cri-generation-") as temporary:
+    with tempfile.TemporaryDirectory(prefix=f"rubix-{target}-generation-") as temporary:
         work = Path(temporary)
-        (work / "api.proto").write_bytes(proto)
         generated = work / "generated"
-        subprocess.run([str(generator), str(work / "api.proto"), str(protoc), str(generated)],
-                       check=True, timeout=120)
-        expected = {"runtime.v1.rs"}
+        if target == "containerd":
+            records, protocols = prepare_containerd(inputs, cache, selected, work / "inputs")
+            arguments = [str(generator), "--containerd", str(work / "inputs"), str(protoc), str(generated)]
+            expected = set(inputs["containerd_output_files"])
+        elif target == "cri":
+            records = [next(r for r in inputs["sources"] if r["id"] == "cri")]
+            protocols = [read_verified(cache, blob_name(records[0]), records[0])]
+            (work / "api.proto").write_bytes(protocols[0])
+            arguments = [str(generator), str(work / "api.proto"), str(protoc), str(generated)]
+            expected = {"runtime.v1.rs"}
+        else:
+            raise InputError(f"unsupported generation target: {target}")
+        subprocess.run(arguments, check=True, timeout=120)
         if {p.name for p in generated.iterdir()} != expected:
             raise InputError("generator returned an unexpected output inventory")
-        content = (generated / "runtime.v1.rs").read_bytes()
-        methods = re.findall(rb"rpc\s+(\w+)\(", proto)
-        for method in methods:
-            if b"/runtime.v1.RuntimeService/" + method not in content and b"/runtime.v1.ImageService/" + method not in content:
-                raise InputError(f"generated client is missing RPC {method.decode()}")
+        contents = {name: (generated / name).read_bytes() for name in sorted(expected)}
+        routes = [route for proto in protocols for route in protocol_routes(proto)]
+        for route in routes:
+            if not any(route in content for content in contents.values()):
+                raise InputError(f"generated client is missing RPC {route.decode()}")
+        # Validate all destination paths before changing any output file.
+        destinations = {name: owned_path(output, name) for name in contents}
+        if output.exists() and {p.name for p in output.iterdir()} - expected:
+            raise InputError(f"unexpected files in generated output: {output}")
+        for path in destinations.values():
+            if path.exists() and not path.is_file():
+                raise InputError(f"generated output destination is not a regular file: {path}")
         if check:
-            path = owned_path(output, "runtime.v1.rs")
-            if not path.is_file() or path.read_bytes() != content:
-                raise InputError(f"generated output drift: {path}")
-            if {p.name for p in output.iterdir()} != expected:
-                raise InputError(f"unexpected files in generated output: {output}")
+            for name, content in contents.items():
+                path = destinations[name]
+                if not path.is_file() or path.read_bytes() != content:
+                    raise InputError(f"generated output drift: {path}")
         else:
-            atomic_write(output, "runtime.v1.rs", content)
-    return {
+            for name, content in contents.items():
+                atomic_write(output, name, content)
+    receipt = {
         "schema_version": 1,
         "mode": "check" if check else "generate",
+        "target": target,
         "platform": selected,
-        "source_sha256": source["sha256"],
+        "source_hashes": {record["id"]: record["sha256"] for record in records},
         "compiler_sha256": digest(protoc.read_bytes()),
         "generator_sha256": digest(generator.read_bytes()),
         "cargo_lock_sha256": digest((ROOT / "Cargo.lock").read_bytes()),
-        "output_sha256": digest(content),
-        "output_bytes": len(content),
-        "rpc_count": len(methods),
+        "outputs": {name: {"sha256": digest(data), "bytes": len(data)} for name, data in contents.items()},
+        "rpc_count": len(routes),
     }
+    # Preserve the first CRI layer's receipt fields for existing evidence consumers.
+    if target == "cri":
+        receipt.update(source_sha256=records[0]["sha256"], output_sha256=digest(contents["runtime.v1.rs"]),
+                       output_bytes=len(contents["runtime.v1.rs"]))
+    return receipt
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["fetch", "verify", "generate-cri", "check-cri"])
+    parser.add_argument("command", choices=["fetch", "verify", "generate-cri", "check-cri",
+                                            "generate-containerd", "check-containerd"])
     parser.add_argument("--cache-dir", type=Path, default=ROOT / "target/upstream")
     parser.add_argument("--platform", default=host_platform())
     parser.add_argument("--protoc", type=Path, help="optional compiler, must match the locked binary digest")
     parser.add_argument("--generator", type=Path, default=ROOT / "target/debug/rubix-upstream-codegen")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "crates/rubix-cri/src/generated")
+    parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args(argv)
     try:
         inputs = manifest()
@@ -253,8 +318,11 @@ def main(argv=None):
             verify(inputs, cache, args.platform, args.protoc)
             result = {"status": "verified", "platform": args.platform}
         else:
-            result = generate(inputs, cache, args.platform, args.generator.resolve(), args.output_dir.resolve(),
-                              check=args.command == "check-cri", alternate_protoc=args.protoc)
+            target = args.command.split("-", 1)[1]
+            crate = "rubix-cri" if target == "cri" else "rubix-containerd-api"
+            output = args.output_dir or ROOT / f"crates/{crate}/src/generated"
+            result = generate(inputs, cache, args.platform, args.generator.resolve(), output.resolve(),
+                              check=args.command.startswith("check-"), alternate_protoc=args.protoc, target=target)
         result["input_manifest_sha256"] = digest(MANIFEST.read_bytes())
         print(json.dumps(result, sort_keys=True))
         return 0

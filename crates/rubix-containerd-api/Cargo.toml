@@ -1,0 +1,15 @@
+[package]
+name = "rubix-containerd-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+prost = "=0.14.4"
+prost-types = "=0.14.4"
+tonic = { version = "=0.14.6", default-features = false, features = ["codegen", "transport"] }
+tonic-prost = "=0.14.6"
+
+[lints]
+workspace = true

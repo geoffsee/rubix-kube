@@ -1,0 +1,301 @@
+{
+  "platform": "darwin-arm64",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "commands": [
+    {
+      "command": "python3 tools/upstream/upstream.py generate-containerd --output-dir <temporary-a>",
+      "exit_code": 0,
+      "receipt": {
+        "cargo_lock_sha256": "99bb5bc4a9809d865f17498ed38ec51eee54fd5e084cdfc9a1a08ebce1d941bb",
+        "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+        "generator_sha256": "647ab376471f6021dff1f0bbe119b35b214a412d377516d416ee6a49aad42e8a",
+        "input_manifest_sha256": "86b355807c73dc7457efeb90b07a35285452300710ec173e04bbec795c5bda13",
+        "mode": "generate",
+        "outputs": {
+          "containerd.services.containers.v1.rs": {
+            "bytes": 17644,
+            "sha256": "ddd2f215db16ab3e878186d988945b6b3c2a029492230d1070f3e7308aeccfd1"
+          },
+          "containerd.services.content.v1.rs": {
+            "bytes": 26939,
+            "sha256": "58964aaa2b9a5b6d573c69caebb893875c3f076ded01dd9f366654b98489389b"
+          },
+          "containerd.services.diff.v1.rs": {
+            "bytes": 8520,
+            "sha256": "9427933a4f1d47df35b1ac8a68088c06a27a5c982376a3abe5f4670bf4a0b012"
+          },
+          "containerd.services.events.v1.rs": {
+            "bytes": 7981,
+            "sha256": "34eb8ad68813be8ad0ad91c426b75cd5b58a73efcff4ba8eea58facec9b50318"
+          },
+          "containerd.services.images.v1.rs": {
+            "bytes": 13577,
+            "sha256": "ffc239379aa226b4c4c3a5a8fbbf1d75d43cfcf2b1d13372c90195edfa76b97e"
+          },
+          "containerd.services.leases.v1.rs": {
+            "bytes": 13329,
+            "sha256": "56489727db773eaa2275dd4ddc2e625398a38e908a3ab0ac1c9d86feea61cf41"
+          },
+          "containerd.services.namespaces.v1.rs": {
+            "bytes": 12458,
+            "sha256": "d777f6a23450e65953fb0ce1dd74e82a574b1fdcf77d2e0b82ee15e2991526dd"
+          },
+          "containerd.services.snapshots.v1.rs": {
+            "bytes": 21804,
+            "sha256": "2e43aa1a133bf852376f486f935590f23abc840dc1d3e843d8e3f3b04707f22b"
+          },
+          "containerd.services.tasks.v1.rs": {
+            "bytes": 27526,
+            "sha256": "86edff7a5220c2e54d232d1214def6e250f165274a6a664443df65a899c667f6"
+          },
+          "containerd.services.transfer.v1.rs": {
+            "bytes": 5057,
+            "sha256": "c1de0ef1ee5348a6f761e521132472ff7ec2f89db466c5ecc87701ee99e681d7"
+          },
+          "containerd.services.version.v1.rs": {
+            "bytes": 4653,
+            "sha256": "94f620d306136db79e55b59be1ec273ca30ba981744c020732843fc2ab4007ca"
+          },
+          "containerd.types.rs": {
+            "bytes": 3706,
+            "sha256": "1aaa08f97da612e838da8a8b6dbc789eec64d7e9675701a9aa7536eb7a1737d9"
+          },
+          "containerd.v1.types.rs": {
+            "bytes": 2522,
+            "sha256": "003ae70854e4dc55f20ccf8cc9c19e4f4c2ee672a158f6a1b33a39f2e898c7b0"
+          }
+        },
+        "platform": "darwin-arm64",
+        "rpc_count": 65,
+        "schema_version": 1,
+        "source_hashes": {
+          "containerd:api/services/containers/v1/containers.proto": "a6cb02f4a422e35c0c3535954ebca50279fb1cecb841029c37eca4b8e50c6570",
+          "containerd:api/services/content/v1/content.proto": "b91daba4649a0e8916d046660905c8a0c70c06d5ef27d23786d8d2b5e4a218a1",
+          "containerd:api/services/diff/v1/diff.proto": "62a7f0b1226fa4981b2e676aae070a242fea5a5820d6a56101fecf82fb1b1ea0",
+          "containerd:api/services/events/v1/events.proto": "307fd39ae5f46b7f9cf55ef17966cd5174347c95c67f0c3c41eaf46b7b233210",
+          "containerd:api/services/images/v1/images.proto": "7b87546a92673ce0a04a75bf3146d4bd84886c4c159ba926293311c9252d9140",
+          "containerd:api/services/leases/v1/leases.proto": "0148dfbf87a9cabe67e6fe4550a1955c8f5fe1c2b4374515a68e4b5d0eb21713",
+          "containerd:api/services/namespaces/v1/namespace.proto": "dc18052397826a5d1e187985e5acd987cbfd404dfcf92f87a048fd585b776ba7",
+          "containerd:api/services/snapshots/v1/snapshots.proto": "65fdabff266f082c88b51df1f6231da025ca41b5f95d718a50ea45a419c3580e",
+          "containerd:api/services/tasks/v1/tasks.proto": "45eddb73447247b2e2b0923c5f8ffad4a9964e383c6f47ab7524320b9aced0e8",
+          "containerd:api/services/transfer/v1/transfer.proto": "f839a924be27e2993f91b8bd0885add2d8e6a2c9d28508c399743a4a8f4506ac",
+          "containerd:api/services/version/v1/version.proto": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439",
+          "containerd:api/types/descriptor.proto": "b5d45974cb169e4d3cfaf2df9ed57ee5ade70677c92a4107eb44967bc6025368",
+          "containerd:api/types/event.proto": "af096bef57267dd10805ecc3cfcee9211e5ebbaab5d0829236c2b9e63a5a6d2e",
+          "containerd:api/types/fieldpath.proto": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf",
+          "containerd:api/types/metrics.proto": "d759da1055afeda08f1debbe45114514af700db5dde0beaed7e6ff3c4e511711",
+          "containerd:api/types/mount.proto": "610b81ec306307b7e1a3fe078f03ab7e6f10e1195ea67a0457685531dbadfb04",
+          "containerd:api/types/task/task.proto": "9986ea9de579506be970d551f7e11a128c12f87bc0df5bae77f56f89aa96bd16"
+        },
+        "target": "containerd"
+      }
+    },
+    {
+      "command": "python3 tools/upstream/upstream.py generate-containerd --output-dir <temporary-b>",
+      "exit_code": 0,
+      "receipt": {
+        "cargo_lock_sha256": "99bb5bc4a9809d865f17498ed38ec51eee54fd5e084cdfc9a1a08ebce1d941bb",
+        "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+        "generator_sha256": "647ab376471f6021dff1f0bbe119b35b214a412d377516d416ee6a49aad42e8a",
+        "input_manifest_sha256": "86b355807c73dc7457efeb90b07a35285452300710ec173e04bbec795c5bda13",
+        "mode": "generate",
+        "outputs": {
+          "containerd.services.containers.v1.rs": {
+            "bytes": 17644,
+            "sha256": "ddd2f215db16ab3e878186d988945b6b3c2a029492230d1070f3e7308aeccfd1"
+          },
+          "containerd.services.content.v1.rs": {
+            "bytes": 26939,
+            "sha256": "58964aaa2b9a5b6d573c69caebb893875c3f076ded01dd9f366654b98489389b"
+          },
+          "containerd.services.diff.v1.rs": {
+            "bytes": 8520,
+            "sha256": "9427933a4f1d47df35b1ac8a68088c06a27a5c982376a3abe5f4670bf4a0b012"
+          },
+          "containerd.services.events.v1.rs": {
+            "bytes": 7981,
+            "sha256": "34eb8ad68813be8ad0ad91c426b75cd5b58a73efcff4ba8eea58facec9b50318"
+          },
+          "containerd.services.images.v1.rs": {
+            "bytes": 13577,
+            "sha256": "ffc239379aa226b4c4c3a5a8fbbf1d75d43cfcf2b1d13372c90195edfa76b97e"
+          },
+          "containerd.services.leases.v1.rs": {
+            "bytes": 13329,
+            "sha256": "56489727db773eaa2275dd4ddc2e625398a38e908a3ab0ac1c9d86feea61cf41"
+          },
+          "containerd.services.namespaces.v1.rs": {
+            "bytes": 12458,
+            "sha256": "d777f6a23450e65953fb0ce1dd74e82a574b1fdcf77d2e0b82ee15e2991526dd"
+          },
+          "containerd.services.snapshots.v1.rs": {
+            "bytes": 21804,
+            "sha256": "2e43aa1a133bf852376f486f935590f23abc840dc1d3e843d8e3f3b04707f22b"
+          },
+          "containerd.services.tasks.v1.rs": {
+            "bytes": 27526,
+            "sha256": "86edff7a5220c2e54d232d1214def6e250f165274a6a664443df65a899c667f6"
+          },
+          "containerd.services.transfer.v1.rs": {
+            "bytes": 5057,
+            "sha256": "c1de0ef1ee5348a6f761e521132472ff7ec2f89db466c5ecc87701ee99e681d7"
+          },
+          "containerd.services.version.v1.rs": {
+            "bytes": 4653,
+            "sha256": "94f620d306136db79e55b59be1ec273ca30ba981744c020732843fc2ab4007ca"
+          },
+          "containerd.types.rs": {
+            "bytes": 3706,
+            "sha256": "1aaa08f97da612e838da8a8b6dbc789eec64d7e9675701a9aa7536eb7a1737d9"
+          },
+          "containerd.v1.types.rs": {
+            "bytes": 2522,
+            "sha256": "003ae70854e4dc55f20ccf8cc9c19e4f4c2ee672a158f6a1b33a39f2e898c7b0"
+          }
+        },
+        "platform": "darwin-arm64",
+        "rpc_count": 65,
+        "schema_version": 1,
+        "source_hashes": {
+          "containerd:api/services/containers/v1/containers.proto": "a6cb02f4a422e35c0c3535954ebca50279fb1cecb841029c37eca4b8e50c6570",
+          "containerd:api/services/content/v1/content.proto": "b91daba4649a0e8916d046660905c8a0c70c06d5ef27d23786d8d2b5e4a218a1",
+          "containerd:api/services/diff/v1/diff.proto": "62a7f0b1226fa4981b2e676aae070a242fea5a5820d6a56101fecf82fb1b1ea0",
+          "containerd:api/services/events/v1/events.proto": "307fd39ae5f46b7f9cf55ef17966cd5174347c95c67f0c3c41eaf46b7b233210",
+          "containerd:api/services/images/v1/images.proto": "7b87546a92673ce0a04a75bf3146d4bd84886c4c159ba926293311c9252d9140",
+          "containerd:api/services/leases/v1/leases.proto": "0148dfbf87a9cabe67e6fe4550a1955c8f5fe1c2b4374515a68e4b5d0eb21713",
+          "containerd:api/services/namespaces/v1/namespace.proto": "dc18052397826a5d1e187985e5acd987cbfd404dfcf92f87a048fd585b776ba7",
+          "containerd:api/services/snapshots/v1/snapshots.proto": "65fdabff266f082c88b51df1f6231da025ca41b5f95d718a50ea45a419c3580e",
+          "containerd:api/services/tasks/v1/tasks.proto": "45eddb73447247b2e2b0923c5f8ffad4a9964e383c6f47ab7524320b9aced0e8",
+          "containerd:api/services/transfer/v1/transfer.proto": "f839a924be27e2993f91b8bd0885add2d8e6a2c9d28508c399743a4a8f4506ac",
+          "containerd:api/services/version/v1/version.proto": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439",
+          "containerd:api/types/descriptor.proto": "b5d45974cb169e4d3cfaf2df9ed57ee5ade70677c92a4107eb44967bc6025368",
+          "containerd:api/types/event.proto": "af096bef57267dd10805ecc3cfcee9211e5ebbaab5d0829236c2b9e63a5a6d2e",
+          "containerd:api/types/fieldpath.proto": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf",
+          "containerd:api/types/metrics.proto": "d759da1055afeda08f1debbe45114514af700db5dde0beaed7e6ff3c4e511711",
+          "containerd:api/types/mount.proto": "610b81ec306307b7e1a3fe078f03ab7e6f10e1195ea67a0457685531dbadfb04",
+          "containerd:api/types/task/task.proto": "9986ea9de579506be970d551f7e11a128c12f87bc0df5bae77f56f89aa96bd16"
+        },
+        "target": "containerd"
+      }
+    }
+  ],
+  "two_output_directories_identical": true,
+  "drift_negative": {
+    "exit_code": 1,
+    "output_preserved": true
+  },
+  "missing_import_negative": {
+    "exit_code": 1,
+    "missing_source": "containerd:api/types/descriptor.proto"
+  },
+  "containerd_committed_check": {
+    "cargo_lock_sha256": "99bb5bc4a9809d865f17498ed38ec51eee54fd5e084cdfc9a1a08ebce1d941bb",
+    "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+    "generator_sha256": "647ab376471f6021dff1f0bbe119b35b214a412d377516d416ee6a49aad42e8a",
+    "input_manifest_sha256": "86b355807c73dc7457efeb90b07a35285452300710ec173e04bbec795c5bda13",
+    "mode": "check",
+    "outputs": {
+      "containerd.services.containers.v1.rs": {
+        "bytes": 17644,
+        "sha256": "ddd2f215db16ab3e878186d988945b6b3c2a029492230d1070f3e7308aeccfd1"
+      },
+      "containerd.services.content.v1.rs": {
+        "bytes": 26939,
+        "sha256": "58964aaa2b9a5b6d573c69caebb893875c3f076ded01dd9f366654b98489389b"
+      },
+      "containerd.services.diff.v1.rs": {
+        "bytes": 8520,
+        "sha256": "9427933a4f1d47df35b1ac8a68088c06a27a5c982376a3abe5f4670bf4a0b012"
+      },
+      "containerd.services.events.v1.rs": {
+        "bytes": 7981,
+        "sha256": "34eb8ad68813be8ad0ad91c426b75cd5b58a73efcff4ba8eea58facec9b50318"
+      },
+      "containerd.services.images.v1.rs": {
+        "bytes": 13577,
+        "sha256": "ffc239379aa226b4c4c3a5a8fbbf1d75d43cfcf2b1d13372c90195edfa76b97e"
+      },
+      "containerd.services.leases.v1.rs": {
+        "bytes": 13329,
+        "sha256": "56489727db773eaa2275dd4ddc2e625398a38e908a3ab0ac1c9d86feea61cf41"
+      },
+      "containerd.services.namespaces.v1.rs": {
+        "bytes": 12458,
+        "sha256": "d777f6a23450e65953fb0ce1dd74e82a574b1fdcf77d2e0b82ee15e2991526dd"
+      },
+      "containerd.services.snapshots.v1.rs": {
+        "bytes": 21804,
+        "sha256": "2e43aa1a133bf852376f486f935590f23abc840dc1d3e843d8e3f3b04707f22b"
+      },
+      "containerd.services.tasks.v1.rs": {
+        "bytes": 27526,
+        "sha256": "86edff7a5220c2e54d232d1214def6e250f165274a6a664443df65a899c667f6"
+      },
+      "containerd.services.transfer.v1.rs": {
+        "bytes": 5057,
+        "sha256": "c1de0ef1ee5348a6f761e521132472ff7ec2f89db466c5ecc87701ee99e681d7"
+      },
+      "containerd.services.version.v1.rs": {
+        "bytes": 4653,
+        "sha256": "94f620d306136db79e55b59be1ec273ca30ba981744c020732843fc2ab4007ca"
+      },
+      "containerd.types.rs": {
+        "bytes": 3706,
+        "sha256": "1aaa08f97da612e838da8a8b6dbc789eec64d7e9675701a9aa7536eb7a1737d9"
+      },
+      "containerd.v1.types.rs": {
+        "bytes": 2522,
+        "sha256": "003ae70854e4dc55f20ccf8cc9c19e4f4c2ee672a158f6a1b33a39f2e898c7b0"
+      }
+    },
+    "platform": "darwin-arm64",
+    "rpc_count": 65,
+    "schema_version": 1,
+    "source_hashes": {
+      "containerd:api/services/containers/v1/containers.proto": "a6cb02f4a422e35c0c3535954ebca50279fb1cecb841029c37eca4b8e50c6570",
+      "containerd:api/services/content/v1/content.proto": "b91daba4649a0e8916d046660905c8a0c70c06d5ef27d23786d8d2b5e4a218a1",
+      "containerd:api/services/diff/v1/diff.proto": "62a7f0b1226fa4981b2e676aae070a242fea5a5820d6a56101fecf82fb1b1ea0",
+      "containerd:api/services/events/v1/events.proto": "307fd39ae5f46b7f9cf55ef17966cd5174347c95c67f0c3c41eaf46b7b233210",
+      "containerd:api/services/images/v1/images.proto": "7b87546a92673ce0a04a75bf3146d4bd84886c4c159ba926293311c9252d9140",
+      "containerd:api/services/leases/v1/leases.proto": "0148dfbf87a9cabe67e6fe4550a1955c8f5fe1c2b4374515a68e4b5d0eb21713",
+      "containerd:api/services/namespaces/v1/namespace.proto": "dc18052397826a5d1e187985e5acd987cbfd404dfcf92f87a048fd585b776ba7",
+      "containerd:api/services/snapshots/v1/snapshots.proto": "65fdabff266f082c88b51df1f6231da025ca41b5f95d718a50ea45a419c3580e",
+      "containerd:api/services/tasks/v1/tasks.proto": "45eddb73447247b2e2b0923c5f8ffad4a9964e383c6f47ab7524320b9aced0e8",
+      "containerd:api/services/transfer/v1/transfer.proto": "f839a924be27e2993f91b8bd0885add2d8e6a2c9d28508c399743a4a8f4506ac",
+      "containerd:api/services/version/v1/version.proto": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439",
+      "containerd:api/types/descriptor.proto": "b5d45974cb169e4d3cfaf2df9ed57ee5ade70677c92a4107eb44967bc6025368",
+      "containerd:api/types/event.proto": "af096bef57267dd10805ecc3cfcee9211e5ebbaab5d0829236c2b9e63a5a6d2e",
+      "containerd:api/types/fieldpath.proto": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf",
+      "containerd:api/types/metrics.proto": "d759da1055afeda08f1debbe45114514af700db5dde0beaed7e6ff3c4e511711",
+      "containerd:api/types/mount.proto": "610b81ec306307b7e1a3fe078f03ab7e6f10e1195ea67a0457685531dbadfb04",
+      "containerd:api/types/task/task.proto": "9986ea9de579506be970d551f7e11a128c12f87bc0df5bae77f56f89aa96bd16"
+    },
+    "target": "containerd"
+  },
+  "cri_committed_check": {
+    "cargo_lock_sha256": "99bb5bc4a9809d865f17498ed38ec51eee54fd5e084cdfc9a1a08ebce1d941bb",
+    "compiler_sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb",
+    "generator_sha256": "647ab376471f6021dff1f0bbe119b35b214a412d377516d416ee6a49aad42e8a",
+    "input_manifest_sha256": "86b355807c73dc7457efeb90b07a35285452300710ec173e04bbec795c5bda13",
+    "mode": "check",
+    "output_bytes": 178603,
+    "output_sha256": "cd0e32f1168232c195f29714b9bed6580e551781a0d17d11db9b07a79375c9cd",
+    "outputs": {
+      "runtime.v1.rs": {
+        "bytes": 178603,
+        "sha256": "cd0e32f1168232c195f29714b9bed6580e551781a0d17d11db9b07a79375c9cd"
+      }
+    },
+    "platform": "darwin-arm64",
+    "rpc_count": 35,
+    "schema_version": 1,
+    "source_hashes": {
+      "cri": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5"
+    },
+    "source_sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5",
+    "target": "cri"
+  },
+  "python_test_count": 22,
+  "containerd_wire_tests": 4,
+  "scope": "deterministic translation, route inventory and independent wire fixtures; no runtime import/parity qualification"
+}

@@ -51,7 +51,7 @@ inventory. The whole source revision remains necessary for executable default ex
 | Kubernetes `staging/src/k8s.io/kube-proxy/config/v1alpha1/types.go` and `pkg/proxy/apis/config/v1alpha1/defaults.go` | Proxy configuration and `SetDefaults_KubeProxyConfiguration` | Effective proxy behavior and Service routing fixtures; E03/E16 |
 | Kubernetes `staging/src/k8s.io/kube-controller-manager/config/v1alpha1/types.go` and `pkg/controller/apis/config/v1alpha1/defaults.go` | Controller-manager configuration and `SetDefaults_KubeControllerManagerConfiguration` | Workload reconciliation fixtures; E03/E12 |
 | Kubernetes generated default dispatch files, component-base defaults, `cmd/kube-apiserver/app/options/options.go`, and apiserver recommended options | Nested default application and `NewServerRunOptions`; these are not a complete closure of defaults | Source-executed extraction plus authenticated API behavior; E02/E11 |
-| Containerd API module services: content, images, leases, namespaces, containers, tasks, events, diff, snapshots, transfer; recursive `api/types` imports | Direct managed-containerd client for archive import, content/image metadata, leases and namespace ownership; CRI remains workload/runtime interface | Pinned containerd RPC behavior, especially offline import, cancellation and ownership; E09 |
+| Containerd API module services: content, images, leases, namespaces, containers, tasks, events, diff, snapshots, transfer, version; recursive `api/types` imports | Direct managed-containerd client for archive import, content/image metadata, leases and namespace ownership; CRI remains workload/runtime interface | Pinned containerd RPC behavior, especially offline import, cancellation and ownership; E09 |
 | Kine `pkg/endpoint/endpoint.go`, `pkg/drivers/sqlite/sqlite.go`, `pkg/server/server.go` | Endpoint, SQLite and etcd-compatible implementation evidence | Authenticated API CRUD, restart, persistence and cleanup spike; E01.02/E08 |
 | Each repository's `go.mod` and `go.sum`; containerd `api/go.mod` and `api/go.sum` | Dependency/extraction provenance, distinct from Rust `Cargo.lock` | Clean preparation with exact source/toolchain and resolved dependency closure; E02/E27 |
 
@@ -276,3 +276,7 @@ drop required consumers. Containerd code generation/compilation and Linux tool e
 explicit implementation checks, not unresolved architecture choices. Full runtime/platform
 qualification remains separate evidence. Changes to these accepted inputs require an upstream
 adoption assessment, updated provenance and relevant compatibility checks.
+
+The generated containerd client includes the Version service for the managed-runtime
+identity handshake. Its API v1.10.0 protocol is byte-identical to server v2.2.5 and is
+recorded in the input inventory; it adds no component runtime implementation.
