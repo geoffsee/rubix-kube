@@ -1,8 +1,10 @@
 # Versioned distribution configuration
 
 This crate implements the E03.01 desired-state model from KubeSolo
-`2ef1c4787989f11f868f81bb84ae2afd4a49a81d`. It does not start components, discover
-host facts, apply environment/flag precedence, or write configuration files.
+`2ef1c4787989f11f868f81bb84ae2afd4a49a81d`. The crate also provides pure
+environment/flag precedence and effective YAML rendering (see [LAYERING.md](LAYERING.md)),
+[atomic persistence](PERSISTENCE.md), and [model-derived schema output](SCHEMA.md).
+It does not start components or discover host facts.
 
 `Config::default()` and the typed nested structs cover all 30 registry settings;
 `FIELDS` is the field/type/consumer-epic inventory. E03 owns the shared model and
@@ -91,9 +93,13 @@ occurred in the established network-isolated disposable container runner.
 Run `cargo test -p rubix-config --locked`, `cargo fmt --package rubix-config`, and
 `cargo clippy -p rubix-config --all-targets --locked -- -D warnings`.
 
-Remaining integration gates: #40 precedence/CLI/print formatting, #41 atomic
-persistence/schema emission, #7 credentials, component consumers and full platform/
-runtime qualification. The Rust serde representation is a typed interchange model;
-the legacy YAML emitter and its omission/formatting rules are #40/#41 work. No
-cluster lifecycle, ARM32 integer-boundary release qualification, or distribution
-parity completion is implied. E02 prerequisite closure remains a separate gate.
+Precedence and effective YAML rendering are implemented in this crate; the
+[startup command adapter](../rubix-kube/README.md) consumes them for version/help,
+configuration selection and printing before the runtime boundary. Shared persistence
+and schema output are implemented; their API/CLI editing consumers remain separate work.
+Remaining integration includes #7 credentials, component consumers and full
+platform/runtime qualification. The Rust serde representation remains a
+typed interchange model; the shared YAML renderer owns legacy omission/formatting
+rules and their documented preservation policies. No cluster lifecycle, ARM32
+integer-boundary release qualification, or distribution parity completion is implied.
+E02 and parent E03 integration completion remain separate gates.

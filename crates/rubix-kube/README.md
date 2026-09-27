@@ -54,15 +54,23 @@ cargo clippy -p rubix-kube --all-targets --all-features --locked -- -D warnings
 Runtime startup, live CRI connection, host installation, and cluster lifecycle
 remain separate implementation and qualification work.
 
-`tests/evidence/linux-arm64.json` records the disposable comparison after the lower-layer review fixes:
+`tests/evidence/linux-arm64.json` records a fresh disposable comparison against
+committed main revision `cd673944bed3c5ab85b35b550edc3f9511f5ea02`.
 Go and Rust each passed all 39 startup and 51 configuration cases, and all 90
-corresponding stdout files were byte-identical. Its compressed public archive
-contains raw streams, runner/process cleanup receipts, exact suite inputs,
-artifact descriptors, build commands, and the copied source hash inventory.
-All owned test containers, images, and evidence volumes were independently
-checked absent after the runs. The Rust artifact is honestly identified as an
-uncommitted implementation over base `57856b6cea182ec8f052affe30e6bcb592b42baf`,
-including the reviewed configuration decoding, secret-debug, and hostname fixes.
+corresponding stdout files were byte-identical. Stderr satisfies independent fixture
+predicates; full diagnostic byte equivalence is not asserted. The Linux arm64 Rust
+release binary was built with the digest-pinned Rust 1.97.1 image and locked Cargo
+inputs. Every copied repository build input was verified byte-for-byte against
+that commit, including the final duplicate-warning and parser entry-point fixes;
+`uncommitted_implementation` is therefore false.
+
+The compressed public archive contains raw streams, runner/process cleanup receipts,
+exact suite and artifact descriptors, build/package commands and scripts, source
+hash inventory, and the exact runner/helper sources. All owned build and test
+containers, images, and evidence volumes were independently checked absent after
+the runs. The receipt identifies the tested commit even when this documentation and
+archive are committed later; subsequent documentation changes are not new production
+code qualification. Local source archives and binaries remain outside the repository.
 No binary or private keys are committed. Reproduce with a release Linux arm64
 binary described by the checksum-bound artifact schema, then run:
 
