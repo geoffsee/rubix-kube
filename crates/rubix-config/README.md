@@ -50,7 +50,10 @@ allows root's thiserror/impl 2.0.18 (syn2) lock alongside existing generators.
 Serde 1.0.228 likewise avoids a syn3 duplicate. serde_json 1.0.151 and existing
 regex 1.13.1 complete the graph; cargo-deny remains authoritative. See
 [saphyr sources](https://github.com/saphyr-rs/saphyr) and the immutable crate archives
-linked by Cargo.lock; no local parser fork or ban exception is required.
+linked by Cargo.lock. A pinned local scanner compatibility patch restores YAML 1.1
+physical NEL/LS/PS line breaks through the iterator/BufferedInput entry point; see
+[the patch rationale](../../third_party/saphyr-parser/RUBIX-COMPATIBILITY.md).
+It adds no dependency or ban exception; original decode/alias limits remain.
 
 Two explicit policy decisions differ from the baseline:
 

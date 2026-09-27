@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::io::Read;
 
-use saphyr_parser::{Event, Parser, ScalarStyle, StrInput, Tag};
+use saphyr_parser::{BufferedInput, Event, Parser, ScalarStyle, Tag};
 use serde_json::{Map, Number, Value};
 
 use crate::{API_VERSION, Config, KIND};
@@ -128,7 +128,7 @@ impl Node {
     }
 }
 struct Tree<'a> {
-    parser: Parser<'a, StrInput<'a>>,
+    parser: Parser<'a, BufferedInput<std::str::Chars<'a>>>,
     anchors: BTreeMap<usize, Node>,
     limits: DecodeLimits,
     nodes: usize,
@@ -583,7 +583,7 @@ pub fn decode_with_limits(input: &str, limits: DecodeLimits) -> Result<DecodedCo
         ));
     }
     let mut tree = Tree {
-        parser: Parser::new_from_str(input),
+        parser: Parser::new_from_iter(input.chars()),
         anchors: BTreeMap::new(),
         limits,
         nodes: 0,

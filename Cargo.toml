@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "tools/upstream"]
+exclude = ["third_party/saphyr-parser"]
 default-members = ["crates/rubix-kube"]
 
 [workspace.package]
@@ -70,3 +71,6 @@ strip = "symbols"
 inherits = "release"
 debug = "full"
 strip = false
+
+[patch.crates-io]
+saphyr-parser = { path = "third_party/saphyr-parser" }
