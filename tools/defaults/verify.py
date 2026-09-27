@@ -103,12 +103,13 @@ def load_expected(path, validator=verify, digest_key='expected_sha256'):
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('capture',type=Path);parser.add_argument('--expected',type=Path,default=HERE/'expected.json');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('capture',type=Path);parser.add_argument('--expected',type=Path);args=parser.parse_args()
     actual=load_json(args.capture.read_text())
     validator=verify_apiserver if 'apiserver_options' in actual else verify
     digest_key='apiserver_expected_sha256' if 'apiserver_options' in actual else 'expected_sha256'
+    expected_path=args.expected or HERE/('apiserver.expected.json' if 'apiserver_options' in actual else 'expected.json')
     validator(actual)
-    delta=list(differences(load_expected(args.expected,validator,digest_key),actual))
+    delta=list(differences(load_expected(expected_path,validator,digest_key),actual))
     print(json.dumps({'status':'drift' if delta else 'unchanged','changes':delta},indent=2))
     return bool(delta)
 
