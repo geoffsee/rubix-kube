@@ -35,7 +35,7 @@ when Docker is unavailable. An unavailable inventory is null, never an empty-suc
 Docker's ordinary build cache remains reusable. This is a trusted official-source fixture,
 not an arbitrary-program security qualification.
 
-Two executions must produce identical raw JSON. `receipt.json` records source/harness,
+Two executions per executable variant must produce identical raw JSON. `receipt.json` records source/harness,
 toolchain and image identity, the output digest and cleanup results; `modules.sha256`
 records top-level and staging module manifests plus vendor/modules.txt. The archive hash
 identifies every remaining transitive vendored byte. Execution output records GOOS/GOARCH,
@@ -61,7 +61,7 @@ to official source assignments. Mutation tests reject altered security defaults,
 explicit false, gate-default changes and gate removals. The complete frozen output catches
 changes outside those selected independent anchors. No Rust generator produces expectations.
 
-Remaining scope includes API-server options/defaults, additional feature override/emulation
+Remaining scope includes completed host-derived API-server configuration, additional feature override/emulation
 cases, other platforms, binary-specific gate registrations and real component behavior.
 These outputs do not qualify a live cluster or close E02.03/E02.04 on their own. Source-derived
 schema/protocol drift remains the complementary `tools/drift` gate.
@@ -69,9 +69,41 @@ schema/protocol drift remains the complementary `tools/drift` gate.
 The durable `evidence/` receipt binds the final executed sources to output SHA-256
 `d936b24ca4fe4e789e92980ae70b9cbf5ba56231548f151b3a0022e85b75fe8e`.
 Both executions passed independent and exact comparisons; all owned resources were removed.
-Seventy top-level/staging module files are hashed in `evidence/modules.sha256`. Fourteen
+Seventy top-level/staging module files are hashed in `evidence/modules.sha256`. Seventeen
 local tests include recursive boolean-versus-integer drift, malformed JSON refusal,
 bounded output and receipt preservation when all Docker cleanup/inspection calls fail.
+
+## API-server option construction
+
+A second build-tagged executable imports the official API-server options package, calls
+`NewServerRunOptions()` and its `Flags()` method, and records all exposed flag defaults,
+types, sections, deprecation and hidden status. Duplicate flag names fail extraction.
+System namespaces, kubelet address preference and service port range are captured directly.
+The base executable retains its original import graph; the receipt lists gates added,
+removed or changed by the API-server import graph. Both variants run twice with distinct
+explicit container hostnames (`fixture-0`, `fixture-1`). No hostname is normalized out.
+
+```sh
+python3 tools/defaults/verify.py /tmp/new-official-default-capture/apiserver0.json \
+  --expected tools/defaults/apiserver.expected.json
+```
+
+This exercises option construction and flag exposure, not completion or server startup.
+Official `pkg/controlplane/apiserver/options.Options.Complete` derives an external hostname
+when no advertised address is available. `GenericServerRunOptions.DefaultAdvertiseAddress`
+resolves an unset address from serving/network configuration. Those later host-derived
+values remain unresolved constructor defaults here; they are not replaced with fixture
+values or omitted from the flag inventory. TLS generation, listener creation, live feature
+gate behavior and host-specific completion remain component/runtime qualification.
+Opaque option callbacks and non-flag internals are not claimed as serialized full state.
+
+The API-server variant captured 172 flags and the same 215 registered gates: no added,
+removed or changed gate entries. Four final executions (two per variant) completed with
+identical per-variant bytes and clean teardown. API-server output SHA-256 is
+`a7538b7fc55682c4ad920085a12cb53451ad371786b79e957d8c79f29e1ee539`.
+The API variant retains the same corrected component cases as the base variant. Independent API anchors and
+mutation tests cover secure port, storage media type, watch cache, event lifetime,
+anonymous authentication, kubelet communication and unresolved host-derived defaults.
 
 Generated default dispatch is required and executed. The controller dispatch defaults
 `KubeCloudShared` (5s node monitor, 10s route reconciliation, cluster name `kubernetes`,

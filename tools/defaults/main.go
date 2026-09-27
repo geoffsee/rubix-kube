@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+var additionalOptions func() interface{}
+
 func main() {
 	gate := utilfeature.DefaultMutableFeatureGate
 	if err := gate.SetEmulationVersionAndMinCompatibilityVersion(version.MustParse("1.35"), version.MustParse("1.34")); err != nil {
@@ -51,6 +53,10 @@ func main() {
 		controllerdefaults.SetObjectDefaults_KubeControllerManagerConfiguration(c)
 		cases[name] = map[string]interface{}{"kubelet": k, "proxy": p, "controller": c}
 	}
+	var apiOptions interface{}
+	if additionalOptions != nil {
+		apiOptions = additionalOptions()
+	}
 	gates := map[string]interface{}{}
 	for name, specs := range gate.GetAllVersioned() {
 		values := []interface{}{}
@@ -64,6 +70,9 @@ func main() {
 		gates[string(name)] = map[string]interface{}{"specs": values, "enabled": gate.Enabled(name)}
 	}
 	out := map[string]interface{}{"schema_version": 1, "platform": runtime.GOOS + "/" + runtime.GOARCH, "go_version": runtime.Version(), "source_revision": "96cb9ab4201d88ce5e549fde047a686171838fdb", "emulation_version": gate.EmulationVersion().String(), "minimum_compatibility_version": gate.MinCompatibilityVersion().String(), "feature_overrides": map[string]bool{}, "cases": cases, "registered_feature_gates": gates}
+	if apiOptions != nil {
+		out["apiserver_options"] = apiOptions
+	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(out); err != nil {
