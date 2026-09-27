@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "protoc_version": "36.2",
+  "sources": [
+    {
+      "path": "api/openapi-spec/swagger.json",
+      "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/96cb9ab4201d88ce5e549fde047a686171838fdb/api/openapi-spec/swagger.json",
+      "sha256": "483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446",
+      "bytes": 3846687,
+      "id": "openapi"
+    },
+    {
+      "path": "staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.proto",
+      "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/96cb9ab4201d88ce5e549fde047a686171838fdb/staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.proto",
+      "sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5",
+      "bytes": 86323,
+      "id": "cri"
+    }
+  ],
+  "protoc_archives": [
+    {
+      "platform": "darwin-arm64",
+      "url": "https://github.com/protocolbuffers/protobuf/releases/download/v36.2/protoc-36.2-osx-aarch_64.zip",
+      "bytes": 2625514,
+      "sha256": "9cd98a532c5c5e0c4161314de0225de27e4c8a323917b6ea7b1b714d3ae23466",
+      "files": [
+        {
+          "path": "bin/protoc",
+          "bytes": 9767472,
+          "sha256": "765ccb18be73e565bfc3e2ad94e85039ca28f928b3e62b487e51b7b8fdf1dcfb"
+        },
+        {
+          "path": "include/google/protobuf/any.proto",
+          "bytes": 5552,
+          "sha256": "8e56f61e3078e9232d39ce1b1bab28613783af8191f93a910c3617933f87a179"
+        },
+        {
+          "path": "include/google/protobuf/descriptor.proto",
+          "bytes": 61186,
+          "sha256": "c96db5406336ebcc82523c1dfb122721986a1f43c4aaed45a4a4ad6996efacc2"
+        },
+        {
+          "path": "include/google/protobuf/empty.proto",
+          "bytes": 2363,
+          "sha256": "ecef3d54cc9e079673b9816c67bac770f7f3bf6dada2d4596ba69d71daa971e6"
+        },
+        {
+          "path": "include/google/protobuf/field_mask.proto",
+          "bytes": 8041,
+          "sha256": "9f031219ae54383afa84299fdd747e119b5f83c8e3dab060930ebb126af4460f"
+        },
+        {
+          "path": "include/google/protobuf/timestamp.proto",
+          "bytes": 6595,
+          "sha256": "fa6c44dca2c90a2aaf3a1e4776cef2e9177f70fba365f236269f0f41ac166c96"
+        }
+      ]
+    },
+    {
+      "platform": "linux-amd64",
+      "url": "https://github.com/protocolbuffers/protobuf/releases/download/v36.2/protoc-36.2-linux-x86_64.zip",
+      "bytes": 3681545,
+      "sha256": "121f6c7afe1d4d0e3ea6aab9432038599250134cbf4474cb1167d2c7decd4278",
+      "files": [
+        {
+          "path": "bin/protoc",
+          "bytes": 10627256,
+          "sha256": "f6ee22d65361338459208da8bff801c9ca689741cba9187b34990dd45198f864"
+        },
+        {
+          "path": "include/google/protobuf/any.proto",
+          "bytes": 5552,
+          "sha256": "8e56f61e3078e9232d39ce1b1bab28613783af8191f93a910c3617933f87a179"
+        },
+        {
+          "path": "include/google/protobuf/descriptor.proto",
+          "bytes": 61186,
+          "sha256": "c96db5406336ebcc82523c1dfb122721986a1f43c4aaed45a4a4ad6996efacc2"
+        },
+        {
+          "path": "include/google/protobuf/empty.proto",
+          "bytes": 2363,
+          "sha256": "ecef3d54cc9e079673b9816c67bac770f7f3bf6dada2d4596ba69d71daa971e6"
+        },
+        {
+          "path": "include/google/protobuf/field_mask.proto",
+          "bytes": 8041,
+          "sha256": "9f031219ae54383afa84299fdd747e119b5f83c8e3dab060930ebb126af4460f"
+        },
+        {
+          "path": "include/google/protobuf/timestamp.proto",
+          "bytes": 6595,
+          "sha256": "fa6c44dca2c90a2aaf3a1e4776cef2e9177f70fba365f236269f0f41ac166c96"
+        }
+      ]
+    },
+    {
+      "platform": "linux-arm64",
+      "url": "https://github.com/protocolbuffers/protobuf/releases/download/v36.2/protoc-36.2-linux-aarch_64.zip",
+      "bytes": 3631325,
+      "sha256": "8b8f18bd2b30346efbc698dd5a73dd7c805f3ef8380f6dfc95c768f3f1852f6a",
+      "files": [
+        {
+          "path": "bin/protoc",
+          "bytes": 10627720,
+          "sha256": "cb89a125fd3d6c1ee86ee65a2bcbd7c3ac7c3fab1a806e0c466f162882053cb7"
+        },
+        {
+          "path": "include/google/protobuf/any.proto",
+          "bytes": 5552,
+          "sha256": "8e56f61e3078e9232d39ce1b1bab28613783af8191f93a910c3617933f87a179"
+        },
+        {
+          "path": "include/google/protobuf/descriptor.proto",
+          "bytes": 61186,
+          "sha256": "c96db5406336ebcc82523c1dfb122721986a1f43c4aaed45a4a4ad6996efacc2"
+        },
+        {
+          "path": "include/google/protobuf/empty.proto",
+          "bytes": 2363,
+          "sha256": "ecef3d54cc9e079673b9816c67bac770f7f3bf6dada2d4596ba69d71daa971e6"
+        },
+        {
+          "path": "include/google/protobuf/field_mask.proto",
+          "bytes": 8041,
+          "sha256": "9f031219ae54383afa84299fdd747e119b5f83c8e3dab060930ebb126af4460f"
+        },
+        {
+          "path": "include/google/protobuf/timestamp.proto",
+          "bytes": 6595,
+          "sha256": "fa6c44dca2c90a2aaf3a1e4776cef2e9177f70fba365f236269f0f41ac166c96"
+        }
+      ]
+    }
+  ]
+}
