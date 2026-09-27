@@ -1,0 +1,133 @@
+name: Disposable integration
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tools/api-json/**'
+      - 'tools/defaults/**'
+      - 'tools/integration/**'
+      - 'tools/upstream/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/integration.yml'
+      - '.github/actions/setup-rust/**'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/api-json/**'
+      - 'tools/defaults/**'
+      - 'tools/integration/**'
+      - 'tools/upstream/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/integration.yml'
+      - '.github/actions/setup-rust/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '47 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  defaults:
+    name: Official defaults (Linux arm64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Restore source archives
+        id: archives
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/default-inputs
+          key: defaults-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/defaults/inputs.json') }}
+      - name: Prepare checksum-locked archives
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import urllib.request
+          pins = json.loads(Path('tools/defaults/inputs.json').read_text())
+          directory = Path('target/default-inputs')
+          directory.mkdir(parents=True, exist_ok=True)
+          for name in ('source', 'go'):
+              pin = pins[name]
+              path = directory / (name + '.tar.gz')
+              if path.exists():
+                  raw = path.read_bytes()
+              else:
+                  with urllib.request.urlopen(pin['url'], timeout=60) as response:
+                      raw = response.read(pin['bytes'] + 1)
+              if len(raw) != pin['bytes'] or hashlib.sha256(raw).hexdigest() != pin['sha256']:
+                  raise ValueError('archive integrity failure: ' + name)
+              if not path.exists():
+                  temporary = path.with_suffix('.partial')
+                  temporary.write_bytes(raw)
+                  temporary.replace(path)
+          PY
+      - name: Extract real official defaults twice per variant
+        env:
+          CAPTURE_DIRECTORY: ${{ runner.temp }}/official-defaults
+        run: |
+          python3 tools/defaults/capture.py \
+            --source-archive target/default-inputs/source.tar.gz \
+            --go-archive target/default-inputs/go.tar.gz \
+            --output "$CAPTURE_DIRECTORY"
+          python3 tools/defaults/verify.py "$CAPTURE_DIRECTORY/run0.json"
+          python3 tools/defaults/verify.py "$CAPTURE_DIRECTORY/apiserver0.json" \
+            --expected tools/defaults/apiserver.expected.json
+      - name: Save verified source archives
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.archives.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/default-inputs
+          key: ${{ steps.archives.outputs.cache-primary-key }}
+      - name: Retain public capture and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: official-defaults-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/official-defaults/
+          if-no-files-found: warn
+          retention-days: 14
+
+  api-json:
+    name: API JSON and Rust consumer (Linux arm64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-rust
+        with:
+          cache-key: integration-api-json-arm64
+      - name: Capture actual API responses in a disposable container
+        env:
+          RUBIX_API_JSON_CAPTURE_DIR: ${{ runner.temp }}/api-json
+        run: python3 tools/api-json/run.py --output "$RUBIX_API_JSON_CAPTURE_DIR"
+      - name: Compare live observations and consume them in Rust
+        env:
+          RUBIX_API_JSON_CAPTURE_DIR: ${{ runner.temp }}/api-json
+        run: |
+          python3 tools/integration/check_api_capture.py "$RUBIX_API_JSON_CAPTURE_DIR"
+          cargo test -p rubix-upstream-codegen --test api_json --locked
+      - name: Retain public capture and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: api-json-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/api-json/
+          if-no-files-found: warn
+          retention-days: 14
