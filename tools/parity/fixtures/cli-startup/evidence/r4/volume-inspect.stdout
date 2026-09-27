@@ -1,0 +1,11 @@
+[
+    {
+        "CreatedAt": "2026-09-27T22:42:19Z",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/rubix-parity-cefecd3fc7914630b0022c2a7ec6c506-evidence/_data",
+        "Name": "rubix-parity-cefecd3fc7914630b0022c2a7ec6c506-evidence",
+        "Options": null,
+        "Scope": "local"
+    }
+]
