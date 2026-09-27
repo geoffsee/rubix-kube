@@ -9,6 +9,94 @@
  }
  
  /// Check whether the character is nil or a line break (`\0`, `\r`, `\n`).
+--- a/src/input/str.rs
++++ b/src/input/str.rs
+@@ -143,44 +143,21 @@
+ 
+     #[inline]
+     fn next_is_document_indicator(&self) -> bool {
+-        if self.buffer.len() < 3 {
+-            false
+-        } else {
+-            // Since all characters we look for are ascii, we can directly use the byte API of str.
+-            let bytes = self.buffer.as_bytes();
+-            (bytes.len() == 3 || is_blank_or_breakz(bytes[3] as char))
+-                && (bytes[0] == b'.' || bytes[0] == b'-')
+-                && bytes[0] == bytes[1]
+-                && bytes[1] == bytes[2]
+-        }
++        self.next_is_document_start() || self.next_is_document_end()
+     }
+ 
+     #[inline]
+     fn next_is_document_start(&self) -> bool {
+-        if self.buffer.len() < 3 {
+-            false
+-        } else {
+-            // Since all characters we look for are ascii, we can directly use the byte API of str.
+-            let bytes = self.buffer.as_bytes();
+-            (bytes.len() == 3 || is_blank_or_breakz(bytes[3] as char))
+-                && bytes[0] == b'-'
+-                && bytes[1] == b'-'
+-                && bytes[2] == b'-'
+-        }
++        self.buffer
++            .strip_prefix("---")
++            .is_some_and(|tail| is_blank_or_breakz(tail.chars().next().unwrap_or('\0')))
+     }
+ 
+     #[inline]
+     fn next_is_document_end(&self) -> bool {
+-        if self.buffer.len() < 3 {
+-            false
+-        } else {
+-            // Since all characters we look for are ascii, we can directly use the byte API of str.
+-            let bytes = self.buffer.as_bytes();
+-            (bytes.len() == 3 || is_blank_or_breakz(bytes[3] as char))
+-                && bytes[0] == b'.'
+-                && bytes[1] == b'.'
+-                && bytes[2] == b'.'
+-        }
++        self.buffer
++            .strip_prefix("...")
++            .is_some_and(|tail| is_blank_or_breakz(tail.chars().next().unwrap_or('\0')))
+     }
+ 
+     fn skip_ws_to_eol(&mut self, skip_tabs: SkipTabs) -> (usize, Result<SkipTabs, &'static str>) {
+@@ -255,16 +232,12 @@
+ 
+     #[inline]
+     fn next_is_blank_or_break(&self) -> bool {
+-        !self.buffer.is_empty()
+-            && (is_blank(self.buffer.as_bytes()[0] as char)
+-                || is_break(self.buffer.as_bytes()[0] as char))
++        is_blank(self.peek()) || is_break(self.peek())
+     }
+ 
+     #[inline]
+     fn next_is_blank_or_breakz(&self) -> bool {
+-        self.buffer.is_empty()
+-            || (is_blank(self.buffer.as_bytes()[0] as char)
+-                || is_breakz(self.buffer.as_bytes()[0] as char))
++        is_blank_or_breakz(self.peek())
+     }
+ 
+     #[inline]
+@@ -274,12 +247,12 @@
+ 
+     #[inline]
+     fn next_is_break(&self) -> bool {
+-        !self.buffer.is_empty() && is_break(self.buffer.as_bytes()[0] as char)
++        is_break(self.peek())
+     }
+ 
+     #[inline]
+     fn next_is_breakz(&self) -> bool {
+-        self.buffer.is_empty() || is_breakz(self.buffer.as_bytes()[0] as char)
++        is_breakz(self.peek())
+     }
+ 
+     #[inline]
 --- a/src/scanner.rs
 +++ b/src/scanner.rs
 @@ -653,8 +653,9 @@

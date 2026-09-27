@@ -5,12 +5,16 @@ This is the crates.io `saphyr-parser` 0.0.11 release, archive SHA-256
 `RUBIX-PROVENANCE.json` records every original packaged file hash. Original
 licenses, notices, manifest and dependency requirements remain intact. The
 separate `RUBIX-COMPATIBILITY.patch` contains the complete local source delta;
-only `src/char_traits.rs` and `src/scanner.rs` differ from the published release.
+`src/char_traits.rs`, `src/scanner.rs` and `src/input/str.rs` differ from the published release.
 
 Rubix selects `Parser::new_from_iter(input.chars())`, using `BufferedInput`.
-The upstream `StrInput` fast path assumes ASCII line-break bytes and is not the
-qualified entry point for this compatibility patch. Rubix does not expose a parser
-constructor to callers and must retain the iterator constructor when upgrading.
+The `StrInput` break predicates and document-marker suffix checks also decode
+complete Unicode characters, keeping the public string constructor consistent with
+the shared YAML 1.1 break classification. ASCII-only predicates keep their byte
+fast paths. Both public parser constructors replay all 57 independent Go
+line-break observations and Unicode document/comment/flow cases in an isolated
+regression subprocess with a ten-second deadline; a stalled scanner is killed
+and reaped rather than hanging CI. Rubix retains the iterator constructor.
 No runtime dependencies were added. The root lock retains thiserror 2.0.18 to
 avoid duplicate syn major versions alongside the Kubernetes generators.
 

@@ -433,7 +433,11 @@ fn merge_mapping(
         };
         for (key, value) in values {
             if map.contains_key(&key) {
-                duplicates.insert(format!("{path}.{key}"));
+                duplicates.insert(if path.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{path}.{key}")
+                });
             }
             map.insert(key, value);
         }

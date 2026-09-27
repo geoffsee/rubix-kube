@@ -483,3 +483,20 @@ fn scalar_signs_and_radix_prefixes_match_captured_go_results() {
         }
     }
 }
+
+#[test]
+fn merge_duplicate_warnings_use_registered_root_and_nested_paths() {
+    let decoded = decode("kind: KubeSoloConfiguration\n<<: {kind: KubeSoloConfiguration}\nlogging: {debug: false, <<: {debug: true}}\n").unwrap();
+    let duplicates: Vec<_> = decoded
+        .warnings
+        .iter()
+        .filter_map(|warning| match warning {
+            Warning::IgnoredSettings { duplicate, .. } => Some(duplicate.as_slice()),
+            _ => None,
+        })
+        .flatten()
+        .map(String::as_str)
+        .collect();
+    assert_eq!(duplicates, ["kind", "logging.debug"]);
+    assert!(decoded.config.logging.debug);
+}

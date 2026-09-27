@@ -44,9 +44,10 @@
     "tools/run_bench.rs": "7c99d04da135fe307e478caf7326f0b85975c56e3707451ebfc402af4042ede0",
     "tools/time_parse.rs": "670e368656d0d860059d31288991be29fdc2484e4fa3069da9155ae745e99c32"
   },
-  "local_patch_sha256": "cc806de0b7b08d2d5e9c5eed59626b53996d293a221607ae6aa4edf8dad9df5e",
+  "local_patch_sha256": "307841a6b03056ecc01ff09b5c21e3d27674181d4631d6bb5b5b0660b1d045c5",
   "changed_files_sha256": {
     "src/char_traits.rs": "8afccadfe1d4983b0245e5b7438152e44f2844a48db9ffe07888b9fb41cc128b",
+    "src/input/str.rs": "f53d935c75a16e508cf784c1c64ed576218aaa3bb6ecf6a4745dbffd7fa0d27d",
     "src/scanner.rs": "1551da06e89e59d28f52560015adf88c9030647062749348396168def8945c0f"
   }
 }
