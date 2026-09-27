@@ -11,7 +11,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12604058301076293,
+      "duration_seconds": 0.12165524999727495,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -25,7 +25,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.131832957995357,
+      "duration_seconds": 0.1297420840128325,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -39,7 +39,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12558466699556448,
+      "duration_seconds": 0.08449683300568722,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -54,7 +54,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12781945899769198,
+      "duration_seconds": 0.12384316700627096,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -69,7 +69,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13451666600303724,
+      "duration_seconds": 0.0784423750010319,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -83,7 +83,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1277182080084458,
+      "duration_seconds": 0.12527679199411068,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -99,7 +99,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13086258398834616,
+      "duration_seconds": 0.11991291600861587,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -113,7 +113,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12941262499953154,
+      "duration_seconds": 0.1313786669925321,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -127,7 +127,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12905754099483602,
+      "duration_seconds": 0.12306504099979065,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -141,7 +141,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1318490839912556,
+      "duration_seconds": 0.1261702080082614,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -155,7 +155,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12235929199960083,
+      "duration_seconds": 0.13464758300688118,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -169,7 +169,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12458516701008193,
+      "duration_seconds": 0.0797695829969598,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -183,7 +183,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12576379199163057,
+      "duration_seconds": 0.122108333001961,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -197,7 +197,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13006537499313708,
+      "duration_seconds": 0.07831258399528451,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -211,7 +211,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1239632079959847,
+      "duration_seconds": 0.12198641699797008,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -225,7 +225,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12688120899838395,
+      "duration_seconds": 0.08218199999828357,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -239,7 +239,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12732566699560266,
+      "duration_seconds": 0.08623729200917296,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -253,7 +253,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12817795800219756,
+      "duration_seconds": 0.08453166700201109,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -278,7 +278,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1275888749951264,
+      "duration_seconds": 0.1236435829923721,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -303,7 +303,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1256827909965068,
+      "duration_seconds": 0.12379029201110825,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -328,7 +328,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12267350000911392,
+      "duration_seconds": 0.1311680829967372,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -342,7 +342,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1277523330063559,
+      "duration_seconds": 0.12821958400309086,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -357,7 +357,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12763999999151565,
+      "duration_seconds": 0.152721875012503,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -372,7 +372,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13004754199937452,
+      "duration_seconds": 0.13578716600022744,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -387,7 +387,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1263420000032056,
+      "duration_seconds": 0.0776790839881869,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -402,7 +402,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13169799999741372,
+      "duration_seconds": 0.1305093749979278,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -418,7 +418,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12299812500714324,
+      "duration_seconds": 0.13651541699073277,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -434,7 +434,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.131243749987334,
+      "duration_seconds": 0.08460629200271796,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -450,7 +450,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12834908299555536,
+      "duration_seconds": 0.085713874999783,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -466,7 +466,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12927912500163075,
+      "duration_seconds": 0.08513970799685922,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -482,7 +482,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12959954199322965,
+      "duration_seconds": 0.07991379201121163,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -498,7 +498,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12337570899398997,
+      "duration_seconds": 0.08556304201192688,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -514,7 +514,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12972070901014376,
+      "duration_seconds": 0.08318716699432116,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -530,7 +530,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12888783399830572,
+      "duration_seconds": 0.1323359999951208,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -546,7 +546,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12573729100404307,
+      "duration_seconds": 0.08814145800715778,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -562,7 +562,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13157266700000037,
+      "duration_seconds": 0.08316549999290146,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -578,7 +578,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12894912499177735,
+      "duration_seconds": 0.08346358301059809,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -594,7 +594,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12691670800268184,
+      "duration_seconds": 0.0903249590046471,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -610,7 +610,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13181279200944118,
+      "duration_seconds": 0.0879379170073662,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -626,7 +626,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1288017910119379,
+      "duration_seconds": 0.1345002920133993,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -642,7 +642,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13169137499062344,
+      "duration_seconds": 0.13543058300274424,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -658,7 +658,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1279250000079628,
+      "duration_seconds": 0.13013074999616947,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -674,7 +674,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13176187498902436,
+      "duration_seconds": 0.08419833298830781,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -690,7 +690,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13166058299248107,
+      "duration_seconds": 0.08288833299593534,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -706,7 +706,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1264870000013616,
+      "duration_seconds": 0.12863304099300876,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -721,7 +721,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.12807854100537952,
+      "duration_seconds": 0.13541741599328816,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -735,7 +735,7 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.1327947910031071,
+      "duration_seconds": 0.13790599998901598,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -749,7 +749,53 @@
       ],
       "guest_uid": 65534,
       "timed_out": false,
-      "duration_seconds": 0.13041233300464228,
+      "duration_seconds": 0.12863979100075085,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-load-balancer-false",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing '  loadBalancer:\\n    enabled: false\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08521608299633954,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-cpu-policy-unknown-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'must be none or static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.09017608300200664,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "file-cpu-policy-unknown-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'must be none or static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08029491599882022,
       "requested_privilege": "none",
       "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -787,7 +833,7 @@
     }
   },
   "suite_id": "config-command-baseline-v1",
-  "suite_sha256": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2",
+  "suite_sha256": "eda33c98a52bbe0a0fc89a4f2218af934c0d926d69513ce66b031f8e4ee7c15e",
   "inputs": {
     "schema_version": 1,
     "image": {
@@ -831,8 +877,8 @@
     "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
   },
   "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n",
-  "owned_temporary_directory": "/tmp/rubix-vm-8or5o62h",
-  "ssh_forward": "127.0.0.1:61788",
+  "owned_temporary_directory": "/tmp/rubix-vm-eogf3j1u",
+  "ssh_forward": "127.0.0.1:63361",
   "qemu_argv": [
     "qemu-system-aarch64",
     "-machine",
@@ -850,22 +896,22 @@
     "-monitor",
     "none",
     "-qmp",
-    "unix:/tmp/rubix-vm-8or5o62h/qmp.sock,server=on,wait=off",
+    "unix:/tmp/rubix-vm-eogf3j1u/qmp.sock,server=on,wait=off",
     "-drive",
     "if=pflash,format=raw,readonly=on,file=/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
     "-drive",
-    "if=pflash,format=raw,file=/tmp/rubix-vm-8or5o62h/vars.fd",
+    "if=pflash,format=raw,file=/tmp/rubix-vm-eogf3j1u/vars.fd",
     "-drive",
-    "if=virtio,format=qcow2,file=/tmp/rubix-vm-8or5o62h/disk.qcow2",
+    "if=virtio,format=qcow2,file=/tmp/rubix-vm-eogf3j1u/disk.qcow2",
     "-drive",
-    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-8or5o62h/seed.iso",
+    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-eogf3j1u/seed.iso",
     "-netdev",
-    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:61788-:22",
+    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:63361-:22",
     "-device",
     "virtio-net-pci,netdev=n0"
   ],
-  "owned_pid": 84949,
-  "ssh_readiness_seconds": 11.359083999996074,
+  "owned_pid": 92977,
+  "ssh_readiness_seconds": 11.22696575000009,
   "environment": "Linux rubix-parity 6.1.0-53-cloud-arm64 #1 SMP Debian 6.1.187-1 (2026-09-07) aarch64 GNU/Linux\nuid=0(root) gid=0(root) groups=0(root)\nPRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n0::/user.slice/user-0.slice/session-4.scope\n",
   "privileged_mount_probe": "passed",
   "shutdown": "acpi-powerdown",

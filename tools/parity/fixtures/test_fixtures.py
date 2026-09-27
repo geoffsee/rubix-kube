@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import unittest
+import tarfile
 
 ROOT = Path(__file__).resolve().parent
 SPEC = importlib.util.spec_from_file_location("fixture_assertions", ROOT.parent / "driver.py")
@@ -47,6 +48,48 @@ class IndependentFixtureTests(unittest.TestCase):
             self.assertEqual(record["verified_cleanup"],
                              {"container": True, "image": True, "volume": True})
         self.assertEqual(controls["actual_rust_placeholder"]["result"]["artifact"]["kind"], "rust")
+
+    def test_review_added_inputs_change_real_reference_behavior(self):
+        controls = json.loads((ROOT / "evidence/negative-controls.json").read_text())
+        negative = controls["input_sensitivity"]
+        mutation_bytes = (ROOT / "evidence/input-sensitivity-suite.json").read_bytes()
+        self.assertEqual(hashlib.sha256(mutation_bytes).hexdigest(), negative["result"]["suite_sha256"])
+        mutated = json.loads(mutation_bytes)
+        original = {c["id"]: c for c in self.suite["cases"]}
+        self.assertEqual(len(mutated["cases"]), 3)
+        self.assertEqual(negative["runner"]["exit_code"], 1)
+        self.assertEqual(negative["runner"]["errors"], [])
+        self.assertTrue(all(negative["verified_cleanup"].values()))
+        for case in mutated["cases"]:
+            with self.subTest(case=case["id"]):
+                self.assertEqual(case["expect"], original[case["id"]]["expect"])
+                self.assertNotEqual(case, original[case["id"]])
+                observed = negative["observations"][case["id"]]
+                self.assertEqual(observed["exit_code"], 0)
+                self.assertTrue(DRIVER.assess(original[case["id"]], observed["exit_code"],
+                                             observed["stdout"], observed["stderr"]))
+                successful = self.capture["observations"][case["id"]]
+                self.assertNotEqual(observed["stdout"], successful["stdout"])
+
+    def test_vm_captures_cover_current_suite_and_preserve_raw_diagnostics(self):
+        vm = ROOT / "evidence/vm"
+        hashes = json.loads((vm / "sha256.json").read_text())
+        for name, expected in hashes.items():
+            self.assertEqual(hashlib.sha256((vm / name).read_bytes()).hexdigest(), expected)
+        suite_hash = hashlib.sha256((ROOT / "config-command.json").read_bytes()).hexdigest()
+        for kind, status in (("go", "passed"), ("rust", "failed")):
+            result = json.loads((vm / kind / "result.json").read_text())
+            self.assertEqual(result["suite_sha256"], suite_hash)
+            self.assertEqual(result["status"], status)
+            self.assertEqual({c["id"] for c in result["cases"]}, {c["id"] for c in self.suite["cases"]})
+            self.assertTrue(result["owned_process_group_absent"])
+            self.assertTrue(result["owned_temporary_directory_removed"])
+            self.assertEqual(result["errors"], [])
+            with tarfile.open(vm / kind / "diagnostics.tar.gz") as archive:
+                for index, case in enumerate(result["cases"]):
+                    for stream in ("stdout", "stderr"):
+                        raw = archive.extractfile(f"case-{index:03d}.{stream}").read()
+                        self.assertEqual(hashlib.sha256(raw).hexdigest(), case[stream + "_sha256"])
 
     def test_frozen_reference_observations_satisfy_every_case(self):
         for case in self.suite["cases"]:

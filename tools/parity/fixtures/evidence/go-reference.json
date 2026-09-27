@@ -16,7 +16,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06711562500277068
+        "duration_seconds": 0.06695995799964294
       },
       {
         "id": "missing-explicit-file-keeps-defaults",
@@ -32,7 +32,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06651445799798239
+        "duration_seconds": 0.0656463749910472
       },
       {
         "id": "missing-environment-file-keeps-defaults",
@@ -47,7 +47,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06612541600770783
+        "duration_seconds": 0.06573999999091029
       },
       {
         "id": "deprecated-full-is-no-op",
@@ -61,9 +61,9 @@
         "stdout_file": "003.stdout",
         "stderr_file": "003.stderr",
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
-        "stderr_sha256": "ae62fe91af2307570ee5d1d5c19d5eee30f3f199ac5c5e4b43e757094ccff847",
+        "stderr_sha256": "9ae0d3814f0814ca3ea593db57bebedfee4937511ec96c7c24129e117dc5b9b1",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06641749999835156
+        "duration_seconds": 0.066008084002533
       },
       {
         "id": "deprecated-full-environment-is-no-op",
@@ -76,9 +76,9 @@
         "stdout_file": "004.stdout",
         "stderr_file": "004.stderr",
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
-        "stderr_sha256": "ae62fe91af2307570ee5d1d5c19d5eee30f3f199ac5c5e4b43e757094ccff847",
+        "stderr_sha256": "9ae0d3814f0814ca3ea593db57bebedfee4937511ec96c7c24129e117dc5b9b1",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06540808400313836
+        "duration_seconds": 0.06604475001222454
       },
       {
         "id": "file-partial-retains-other-defaults",
@@ -95,7 +95,7 @@
         "stdout_sha256": "3dc258bf6730a8b34a42cd726b77542f50c6897fb75f05aaedf9b7faf0a88dc2",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0658980000007432
+        "duration_seconds": 0.07124437500897329
       },
       {
         "id": "file-explicit-zero-and-false",
@@ -112,7 +112,7 @@
         "stdout_sha256": "f6fbc33cb9b745f5da6f5d6d4b10c7c4bb808cedb96ef7771dfa65297fdb67a2",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06598949999897741
+        "duration_seconds": 0.06587229199067224
       },
       {
         "id": "environment-over-file",
@@ -129,7 +129,7 @@
         "stdout_sha256": "d726270e465e96994c908c2ec7995e641248bb877bafc60930d67e6163342d13",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06548245799785946
+        "duration_seconds": 0.06637654099904466
       },
       {
         "id": "flag-over-environment-and-file",
@@ -147,7 +147,7 @@
         "stdout_sha256": "f6fba489750add4d8121a903e1366ffaceb93021a85d4f662f1e03ae98270995",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06593595798767637
+        "duration_seconds": 0.06603287499456201
       },
       {
         "id": "flag-over-environment",
@@ -163,7 +163,7 @@
         "stdout_sha256": "74b6587bdbb71fd7ea90cf4ea8ed1f9df25ef8cfb24f37c665e3876497646db7",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06580654099525418
+        "duration_seconds": 0.06654245899699163
       },
       {
         "id": "environment-false-over-file-true",
@@ -180,7 +180,7 @@
         "stdout_sha256": "cb0bfcaedd0e88e3125ecd5a194b7efa1f43846731d42a0ce622e81d281a9317",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06578533300489653
+        "duration_seconds": 0.06776816600176971
       },
       {
         "id": "environment-zero-over-file",
@@ -197,7 +197,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06820745799632277
+        "duration_seconds": 0.06620766699779779
       },
       {
         "id": "environment-empty-clears-file-value",
@@ -214,7 +214,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06752925000910182
+        "duration_seconds": 0.06915229199512396
       },
       {
         "id": "flag-false-over-environment-true",
@@ -230,7 +230,7 @@
         "stdout_sha256": "cb0bfcaedd0e88e3125ecd5a194b7efa1f43846731d42a0ce622e81d281a9317",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06733174998953473
+        "duration_seconds": 0.06879341699823271
       },
       {
         "id": "flag-zero-over-environment",
@@ -246,7 +246,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0349313750048168
+        "duration_seconds": 0.06829120901238639
       },
       {
         "id": "flag-empty-clears-environment",
@@ -262,7 +262,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.03393370799312834
+        "duration_seconds": 0.06663216699962504
       },
       {
         "id": "container-mode-explicit-false",
@@ -277,7 +277,7 @@
         "stdout_sha256": "38657bdbb6e7eb5913e7998ab4ae40eb231a5d411e4deae3bf5dbbe0e491862e",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06787112599704415
+        "duration_seconds": 0.06787966599222273
       },
       {
         "id": "container-mode-explicit-true",
@@ -292,7 +292,7 @@
         "stdout_sha256": "5950de10c4ba1259416aa574920c0c4a2e2a66693233c1422a9ed273c6177e89",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.033959541004151106
+        "duration_seconds": 0.06589825000264682
       },
       {
         "id": "all-document-settings-round-trip",
@@ -309,7 +309,7 @@
         "stdout_sha256": "0aafa548951c42801b68d33aeab86a4772a8f3dd7e95054ebc55bf5acd2e52e9",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.034943167003802955
+        "duration_seconds": 0.06796958298946265
       },
       {
         "id": "all-environment-settings",
@@ -324,7 +324,7 @@
         "stdout_sha256": "0aafa548951c42801b68d33aeab86a4772a8f3dd7e95054ebc55bf5acd2e52e9",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.03433341700292658
+        "duration_seconds": 0.0660560840042308
       },
       {
         "id": "all-legacy-flags",
@@ -364,7 +364,7 @@
         "stdout_sha256": "0aafa548951c42801b68d33aeab86a4772a8f3dd7e95054ebc55bf5acd2e52e9",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06884433300001547
+        "duration_seconds": 0.06991345799178816
       },
       {
         "id": "explicit-empty-sans-removes-list",
@@ -382,7 +382,7 @@
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0662843750033062
+        "duration_seconds": 0.06753916700836271
       },
       {
         "id": "missing-schema-warns-and-keeps-defaults",
@@ -397,9 +397,9 @@
         "stdout_file": "022.stdout",
         "stderr_file": "022.stderr",
         "stdout_sha256": "3dc258bf6730a8b34a42cd726b77542f50c6897fb75f05aaedf9b7faf0a88dc2",
-        "stderr_sha256": "570f572b80793bf6345c1ed41a7092712419cb613abf6024809da203260f32d8",
+        "stderr_sha256": "153401e115302f072be63d83e4d8529df6e18ba82a57d8d831bcebdd8a704b3a",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06730779200734105
+        "duration_seconds": 0.06893654099258129
       },
       {
         "id": "wrong-kind-is-warning",
@@ -414,9 +414,9 @@
         "stdout_file": "023.stdout",
         "stderr_file": "023.stderr",
         "stdout_sha256": "14cf5dbf6381743a191e46bb00d0d2411b3971742fb2cc04852bbda597480b30",
-        "stderr_sha256": "f1069733da95b7686e3ad4f6a296f9499e2d13db2d7c213226001b1aba3ee893",
+        "stderr_sha256": "718b2e932ce5db9c8802119d918db41cca16fb9c409160be5075df389940a998",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06822025000292342
+        "duration_seconds": 0.06602662500517908
       },
       {
         "id": "unknown-field-is-warning",
@@ -431,9 +431,9 @@
         "stdout_file": "024.stdout",
         "stderr_file": "024.stderr",
         "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
-        "stderr_sha256": "467dc52425eddf0c40df04acfcae0827dfad1868581b6842d9e5d0376e3ab7d7",
+        "stderr_sha256": "a787b9f8c8ce3cde33787a82f059311c699bee67cfd41b7fcea383c88bd03130",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06932687500375323
+        "duration_seconds": 0.06853529100771993
       },
       {
         "id": "duplicate-field-warns-last-value-wins",
@@ -448,9 +448,9 @@
         "stdout_file": "025.stdout",
         "stderr_file": "025.stderr",
         "stdout_sha256": "d726270e465e96994c908c2ec7995e641248bb877bafc60930d67e6163342d13",
-        "stderr_sha256": "1e6533069e09d70bd902a029299db3386f1280e387da359ea06f014985bfc45e",
+        "stderr_sha256": "30620c1887862f846270cdf9a8c6d5e8b2e5040eebdb8553226b2ccfe0b3d10a",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06604212500678841
+        "duration_seconds": 0.06908279200433753
       },
       {
         "id": "unsupported-schema-is-fatal",
@@ -465,9 +465,9 @@
         "stdout_file": "026.stdout",
         "stderr_file": "026.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "c11b1c98d87d4c2e05fe67e27a584659d3682ee4e6435c6ab7be9cde4c641203",
+        "stderr_sha256": "38448d9b0b09fd68baa54c35402d4cdf1e57d345acefb7e4043af751d0f9750d",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0666047080012504
+        "duration_seconds": 0.06708295899443328
       },
       {
         "id": "malformed-yaml-is-fatal",
@@ -482,9 +482,9 @@
         "stdout_file": "027.stdout",
         "stderr_file": "027.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "a959b7b8e97ecbcb8cdbb67dcfc590c3053424e0de42d446247c7f693c36e5a0",
+        "stderr_sha256": "6d0087c1373ab0b6673deb2ba874ab9235845106e93fec2b1394cf721fc4a4fc",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06767391599714756
+        "duration_seconds": 0.06674220800050534
       },
       {
         "id": "wrong-field-type-is-fatal",
@@ -499,9 +499,9 @@
         "stdout_file": "028.stdout",
         "stderr_file": "028.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "edecf6ba1405e9aad1b1d7990a9d1a6d8d887e912b4c61394018f2a0f644c9d0",
+        "stderr_sha256": "3cbe71debd036e5629385990b5f9b5af78020970449512c54ab3251d6b9eb995",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0666883750091074
+        "duration_seconds": 0.06728658299834933
       },
       {
         "id": "directory-config-is-fatal",
@@ -515,9 +515,9 @@
         "stdout_file": "029.stdout",
         "stderr_file": "029.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "5999837c2fca776ffe2451c46c68ed1fd17938994698092e6be985d45397684b",
+        "stderr_sha256": "9a03d6ef4ab01481049756f4bc1a65b106935206335c3a12609a1420fa98a8eb",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06713258399395272
+        "duration_seconds": 0.06667524999647867
       },
       {
         "id": "unknown-flag-is-fatal",
@@ -532,7 +532,7 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "stderr_sha256": "62b3c161396e979e602e377d5fb01df4d1ec11aba75f2d73b8558c92f5e9d04a",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.03738983400398865
+        "duration_seconds": 0.06742566700268071
       },
       {
         "id": "boolean-equals-syntax-is-rejected",
@@ -548,7 +548,7 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "stderr_sha256": "203d756f6546c74f70a39c27e3aec69f27ea24f43da3cfb6c4ba191d3e92fb6f",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.034050082991598174
+        "duration_seconds": 0.06540745800884906
       },
       {
         "id": "unexpected-positional-is-fatal",
@@ -563,7 +563,7 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "stderr_sha256": "eb0fc4e48af08913edd59e0aeca21a0c00c6a1a5a5703da3f308f9a18a4b56ee",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06624562499928288
+        "duration_seconds": 0.06687133299419656
       },
       {
         "id": "invalid-boolean-environment-is-fatal",
@@ -578,7 +578,7 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "stderr_sha256": "b29f2891056e7a2e2237f9bac07c159f95e9547ea23af1ebb8fbedf24aee43c7",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.033510084002045915
+        "duration_seconds": 0.06609425001079217
       },
       {
         "id": "invalid-integer-environment-is-fatal",
@@ -593,7 +593,7 @@
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "stderr_sha256": "733aea2fe5ff0884a37806566392f1eaead699f782d5ecac4550030bd9539ce9",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06579741700261366
+        "duration_seconds": 0.06722108299436513
       },
       {
         "id": "invalid-runtime-endpoint-is-fatal",
@@ -607,9 +607,9 @@
         "stdout_file": "035.stdout",
         "stderr_file": "035.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "7bba2e7db13591adb052c73a675f8077c11bb0172d4b1ad3558d3aad9aebbd55",
+        "stderr_sha256": "7c44863491a559e04d56486355b890ef4d5ffdd80c06f67fcf05a9e2283fa6dd",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06666524999309331
+        "duration_seconds": 0.06553779200476129
       },
       {
         "id": "invalid-image-reference-is-fatal",
@@ -623,9 +623,9 @@
         "stdout_file": "036.stdout",
         "stderr_file": "036.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "cf4829edfb28fcfa8890c222c56c56ad0623230c16543fff70c352f3f6b6199a",
+        "stderr_sha256": "22eb780b477c5f57d1ddcf5aa5a05252a02f0b4e9e934f54e821477c87fe6722",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.07188620799570344
+        "duration_seconds": 0.06601258300361224
       },
       {
         "id": "cpu-policy-unknown-is-fatal",
@@ -639,9 +639,9 @@
         "stdout_file": "037.stdout",
         "stderr_file": "037.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "8415521b2f4b014e8c7c7a989033e2d84cef752fc5dc4284064d7d92d7c904c0",
+        "stderr_sha256": "ca47a66b358974518bbc584e8b76dc982f33987c37141a5e1fa8a73fc27785d5",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06558483300614171
+        "duration_seconds": 0.06566525000380352
       },
       {
         "id": "cpu-static-container-mode-is-fatal",
@@ -656,9 +656,9 @@
         "stdout_file": "038.stdout",
         "stderr_file": "038.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "b56f07e6378a6dc9b0d1b72338fddecee2d04e604d52176808fecc53732d4375",
+        "stderr_sha256": "a412316d684379b7f79546a122b319c1b68083cb1cc1804b5de1aa7c2054b8bb",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06690662499750033
+        "duration_seconds": 0.06816774999606423
       },
       {
         "id": "cpu-options-require-static",
@@ -672,9 +672,9 @@
         "stdout_file": "039.stdout",
         "stderr_file": "039.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "db63ef60810a8562c5aee0b62156306885164bbec003ae7d4f4dcd64c46ff246",
+        "stderr_sha256": "7c1b00f7f9f3b40891aa5c29feaa67699addd4ec807958bf7a7c56920d4bfda9",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06720995900104754
+        "duration_seconds": 0.06576291700184811
       },
       {
         "id": "reserved-cpus-require-static",
@@ -688,9 +688,9 @@
         "stdout_file": "040.stdout",
         "stderr_file": "040.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "db63ef60810a8562c5aee0b62156306885164bbec003ae7d4f4dcd64c46ff246",
+        "stderr_sha256": "7ebe39e09143574a767c1c90048c6a7e09ea60cafbeb72b36064e60c69981142",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06863591700675897
+        "duration_seconds": 0.06649550001020543
       },
       {
         "id": "malformed-map-is-fatal",
@@ -704,9 +704,9 @@
         "stdout_file": "041.stdout",
         "stderr_file": "041.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "4f90620b49301d3a09964b81333104dc9c43966a05a145a2f1bf05181f675dbf",
+        "stderr_sha256": "f457b09a115aa39ab733bcdc54cc9075a1e496886f860d721b4e4906e1ccd3f3",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.03425537500879727
+        "duration_seconds": 0.06606408300285693
       },
       {
         "id": "unsupported-reservation-resource-is-fatal",
@@ -720,9 +720,9 @@
         "stdout_file": "042.stdout",
         "stderr_file": "042.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "7e3785aad933394897a93f861b1187d9be5cc400e03dfef375e772e670dab134",
+        "stderr_sha256": "9559c7f92b0b0424ec96612beceb98ddeb709bd7e0b21baec62f54b2d8bdafaa",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0668786669994006
+        "duration_seconds": 0.06632612500106916
       },
       {
         "id": "d2k-requires-load-balancer",
@@ -737,9 +737,9 @@
         "stdout_file": "043.stdout",
         "stderr_file": "043.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "77bf4a7c70f8569103fa0d5dc1633146de5a4098c1705433da1e5bd6a3ca3f7e",
+        "stderr_sha256": "b77d8ef12ec9278e09a62ebbac52810032cea35d86281ff2bb38db9dc5553cbf",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06660620799812023
+        "duration_seconds": 0.06835366699669976
       },
       {
         "id": "too-long-api-socket-is-fatal",
@@ -752,9 +752,9 @@
         "stdout_file": "044.stdout",
         "stderr_file": "044.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "b454e00b480106897c8fc34d689d31d4bf6d94e2bf458a860a2dd247ec2c90ac",
+        "stderr_sha256": "5cf595d2ff58079a85e4589af7906ed023318e25599421b0dac51915e14126db",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06676270799653139
+        "duration_seconds": 0.0664239159959834
       },
       {
         "id": "low-mtu-is-warning",
@@ -768,9 +768,9 @@
         "stdout_file": "045.stdout",
         "stderr_file": "045.stderr",
         "stdout_sha256": "2e11a0fd01eccdd66d23e440a537ab36883798bf443f64207ab63430221ad81c",
-        "stderr_sha256": "6800f9214ca8eeee6850661913fbf5ef984ccc0360a849b94909c86f73f1d20a",
+        "stderr_sha256": "f396e862df784c18718615bb88e950ae52197cd6a0fff0cdac958f80c1b7d678",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06653712500701658
+        "duration_seconds": 0.06669645800138824
       },
       {
         "id": "short-image-is-normalized",
@@ -786,7 +786,7 @@
         "stdout_sha256": "97e99103c1917607e9ec4c4e4435e1ff1c728a4d8a22332da82c16e83ed79cc2",
         "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.06786237499909475
+        "duration_seconds": 0.0656947920069797
       },
       {
         "id": "version-bypasses-invalid-runtime-config",
@@ -799,9 +799,56 @@
         "stdout_file": "047.stdout",
         "stderr_file": "047.stderr",
         "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "stderr_sha256": "8dc3985bb305cb8413779e5f19e470f7862a05c950af983377dc93f05d6006b6",
+        "stderr_sha256": "7ec66380e086fa7e30e7e88c64a8886aed97ea0135b9da061f5da5093e9de678",
         "owned_process_group_absent": true,
-        "duration_seconds": 0.0714869999937946
+        "duration_seconds": 0.06571725000685547
+      },
+      {
+        "id": "environment-load-balancer-false",
+        "argv": [
+          "--print-config"
+        ],
+        "status": "passed",
+        "exit_code": 0,
+        "failures": [],
+        "stdout_file": "048.stdout",
+        "stderr_file": "048.stderr",
+        "stdout_sha256": "1d150b0c13a3a288fe6270e3c58442729d9f5a6ea257c1c95c2dfce53f22019d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "owned_process_group_absent": true,
+        "duration_seconds": 0.06736899999668822
+      },
+      {
+        "id": "environment-cpu-policy-unknown-is-fatal",
+        "argv": [
+          "--print-config"
+        ],
+        "status": "passed",
+        "exit_code": 1,
+        "failures": [],
+        "stdout_file": "049.stdout",
+        "stderr_file": "049.stderr",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "732db5ae6510159f2b351986affdc3ceb156328a24098a8c4b586cb387744b12",
+        "owned_process_group_absent": true,
+        "duration_seconds": 0.07557879098749254
+      },
+      {
+        "id": "file-cpu-policy-unknown-is-fatal",
+        "argv": [
+          "--print-config",
+          "--config",
+          "{fixture:config.yaml}"
+        ],
+        "status": "passed",
+        "exit_code": 1,
+        "failures": [],
+        "stdout_file": "050.stdout",
+        "stderr_file": "050.stderr",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "732db5ae6510159f2b351986affdc3ceb156328a24098a8c4b586cb387744b12",
+        "owned_process_group_absent": true,
+        "duration_seconds": 0.06600091699510813
       }
     ],
     "unsupported_capabilities": [
@@ -836,7 +883,7 @@
       }
     },
     "suite_id": "config-command-baseline-v1",
-    "suite_sha256": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2"
+    "suite_sha256": "eda33c98a52bbe0a0fc89a4f2218af934c0d926d69513ce66b031f8e4ee7c15e"
   },
   "runner": {
     "schema_version": 1,
@@ -846,12 +893,12 @@
       "run.py": "b81a0fb298d762c4feee7d6e6b7be2f61aaa029a404c1e179329469153333f3d",
       "driver.py": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
       "Dockerfile": "40ce30dcbcda0dbf0e8953c7552197b7b60b5838569b54c2d11d5072ea6b2882",
-      "suite": "7885972d4490310a7572a803eb36862d96ffc8c25e55efced00ff5bb746215d2",
+      "suite": "eda33c98a52bbe0a0fc89a4f2218af934c0d926d69513ce66b031f8e4ee7c15e",
       "artifact_descriptor": "8116cd99591c295d0253d265bc0dde3063c7ccce321600dc6cbd01431bd33bef"
     },
-    "owned_container": "rubix-parity-b48b8b8a63374b7e982b04a838494ebf",
-    "owned_image": "rubix-parity-b48b8b8a63374b7e982b04a838494ebf:test",
-    "owned_volume": "rubix-parity-b48b8b8a63374b7e982b04a838494ebf-evidence"
+    "owned_container": "rubix-parity-0cf85a7914c94992b6c56540b6f587c9",
+    "owned_image": "rubix-parity-0cf85a7914c94992b6c56540b6f587c9:test",
+    "owned_volume": "rubix-parity-0cf85a7914c94992b6c56540b6f587c9-evidence"
   },
   "verified_cleanup": {
     "container": true,
@@ -877,12 +924,12 @@
     "deprecated-full-is-no-op": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:08Z\",\"message\":\"the --full flag (KUBESOLO_FULL) is deprecated and has no effect; KubeSolo always uses upstream Kubernetes defaults\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:04Z\",\"message\":\"the --full flag (KUBESOLO_FULL) is deprecated and has no effect; KubeSolo always uses upstream Kubernetes defaults\"}\n"
     },
     "deprecated-full-environment-is-no-op": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:08Z\",\"message\":\"the --full flag (KUBESOLO_FULL) is deprecated and has no effect; KubeSolo always uses upstream Kubernetes defaults\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:04Z\",\"message\":\"the --full flag (KUBESOLO_FULL) is deprecated and has no effect; KubeSolo always uses upstream Kubernetes defaults\"}\n"
     },
     "file-partial-retains-other-defaults": {
       "exit_code": 0,
@@ -972,42 +1019,42 @@
     "missing-schema-warns-and-keeps-defaults": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1400\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:09Z\",\"message\":\"/fixtures/022/config.yaml does not declare an apiVersion; assuming kubesolo.io/v1alpha1\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:05Z\",\"message\":\"/fixtures/022/config.yaml does not declare an apiVersion; assuming kubesolo.io/v1alpha1\"}\n"
     },
     "wrong-kind-is-warning": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Other\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"/fixtures/023/config.yaml declares kind \\\"Other\\\"; KubeSolo only has Config, and read the file as one\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:05Z\",\"message\":\"/fixtures/023/config.yaml declares kind \\\"Other\\\"; KubeSolo only has Config, and read the file as one\"}\n"
     },
     "unknown-field-is-warning": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"/fixtures/024/config.yaml contains settings this version of KubeSolo does not recognise, which were ignored: error unmarshaling JSON: while decoding JSON: json: unknown field \\\"futureSetting\\\"\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:05Z\",\"message\":\"/fixtures/024/config.yaml contains settings this version of KubeSolo does not recognise, which were ignored: error unmarshaling JSON: while decoding JSON: json: unknown field \\\"futureSetting\\\"\"}\n"
     },
     "duplicate-field-warns-last-value-wins": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1450\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"/fixtures/025/config.yaml contains settings this version of KubeSolo does not recognise, which were ignored: error converting YAML to JSON: yaml: unmarshal errors:\\n  line 5: key \\\"mtu\\\" already set in map\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"/fixtures/025/config.yaml contains settings this version of KubeSolo does not recognise, which were ignored: error converting YAML to JSON: yaml: unmarshal errors:\\n  line 5: key \\\"mtu\\\" already set in map\"}\n"
     },
     "unsupported-schema-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"/fixtures/026/config.yaml declares apiVersion \\\"kubesolo.io/v999\\\", which this version of KubeSolo does not understand (expected kubesolo.io/v1alpha1)\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"/fixtures/026/config.yaml declares apiVersion \\\"kubesolo.io/v999\\\", which this version of KubeSolo does not understand (expected kubesolo.io/v1alpha1)\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "malformed-yaml-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"parse /fixtures/027/config.yaml: error converting YAML to JSON: yaml: line 1: did not find expected node content\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"parse /fixtures/027/config.yaml: error converting YAML to JSON: yaml: line 1: did not find expected node content\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "wrong-field-type-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"parse /fixtures/028/config.yaml: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go struct field NetworkConfig.network.mtu of type int\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"parse /fixtures/028/config.yaml: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go struct field NetworkConfig.network.mtu of type int\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "directory-config-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"read /tmp: read /tmp: is a directory\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"read /tmp: read /tmp: is a directory\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "unknown-flag-is-fatal": {
       "exit_code": 1,
@@ -1037,57 +1084,57 @@
     "invalid-runtime-endpoint-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"runtime.endpoint: invalid container runtime endpoint \\\"tcp://127.0.0.1:1234\\\": expected an absolute socket path or a unix:// URL, for example unix:///run/crio/crio.sock\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"runtime.endpoint: invalid container runtime endpoint \\\"tcp://127.0.0.1:1234\\\": expected an absolute socket path or a unix:// URL, for example unix:///run/crio/crio.sock\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "invalid-image-reference-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"portainer.image: invalid image reference \\\"INVALID IMAGE\\\": invalid reference format: repository name (library/INVALID IMAGE) must be lowercase\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"portainer.image: invalid image reference \\\"INVALID IMAGE\\\": invalid reference format: repository name (library/INVALID IMAGE) must be lowercase\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "cpu-policy-unknown-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: invalid --cpu-manager-policy \\\"unknown\\\": must be none or static\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: invalid --cpu-manager-policy \\\"unknown\\\": must be none or static\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "cpu-static-container-mode-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet.cpuManager.policy=static is not supported in container mode: exclusive cores are bounded by the container's own cpuset, which KubeSolo does not control\",\"time\":\"2026-09-27T21:41:10Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet.cpuManager.policy=static is not supported in container mode: exclusive cores are bounded by the container's own cpuset, which KubeSolo does not control\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "cpu-options-require-static": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: --cpu-manager-policy-options and --reserved-cpus require --cpu-manager-policy=static\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: --cpu-manager-policy-options and --reserved-cpus require --cpu-manager-policy=static\",\"time\":\"2026-09-27T21:57:06Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "reserved-cpus-require-static": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: --cpu-manager-policy-options and --reserved-cpus require --cpu-manager-policy=static\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: --cpu-manager-policy-options and --reserved-cpus require --cpu-manager-policy=static\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "malformed-map-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"--system-reserved: expected key=value pairs, got \\\"memory\\\"\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"--system-reserved: expected key=value pairs, got \\\"memory\\\"\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "unsupported-reservation-resource-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: unsupported --system-reserved resource \\\"unknown\\\": supported resources are cpu, memory, ephemeral-storage, pid\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: unsupported --system-reserved resource \\\"unknown\\\": supported resources are cpu, memory, ephemeral-storage, pid\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "d2k-requires-load-balancer": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"d2k.enabled requires network.loadBalancer.enabled: the d2k Service endpoint is populated by the LoadBalancer webhook\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"d2k.enabled requires network.loadBalancer.enabled: the d2k Service endpoint is populated by the LoadBalancer webhook\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "too-long-api-socket-is-fatal": {
       "exit_code": 1,
       "stdout": "",
-      "stderr": "{\"level\":\"fatal\",\"error\":\"api.socketPath is 109 characters, which exceeds the 107-byte limit for a unix socket; shorten it or shorten path, from which it is derived\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+      "stderr": "{\"level\":\"fatal\",\"error\":\"api.socketPath is 109 characters, which exceeds the 107-byte limit for a unix socket; shorten it or shorten path, from which it is derived\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     },
     "low-mtu-is-warning": {
       "exit_code": 0,
       "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1200\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
-      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"network.mtu: 1200 is below the IPv6 minimum of 1280; IPv6 pod traffic may fail to fragment correctly\"}\n"
+      "stderr": "{\"level\":\"warn\",\"component\":\"kubesolo\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"network.mtu: 1200 is below the IPv6 minimum of 1280; IPv6 pod traffic may fail to fragment correctly\"}\n"
     },
     "short-image-is-normalized": {
       "exit_code": 0,
@@ -1097,7 +1144,22 @@
     "version-bypasses-invalid-runtime-config": {
       "exit_code": 0,
       "stdout": "",
-      "stderr": "{\"level\":\"info\",\"version\":\"2ef1c4787989f11f868f81bb84ae2afd4a49a81d\",\"time\":\"2026-09-27T21:41:11Z\",\"message\":\"kubesolo version\"}\n"
+      "stderr": "{\"level\":\"info\",\"version\":\"2ef1c4787989f11f868f81bb84ae2afd4a49a81d\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"kubesolo version\"}\n"
+    },
+    "environment-load-balancer-false": {
+      "exit_code": 0,
+      "stdout": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: false\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+      "stderr": ""
+    },
+    "environment-cpu-policy-unknown-is-fatal": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: invalid --cpu-manager-policy \\\"unknown\\\": must be none or static\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
+    },
+    "file-cpu-policy-unknown-is-fatal": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "{\"level\":\"fatal\",\"error\":\"kubernetes.kubelet: invalid --cpu-manager-policy \\\"unknown\\\": must be none or static\",\"time\":\"2026-09-27T21:57:07Z\",\"message\":\"failed to create service. check the logs for more information. exiting...\"}\n"
     }
   }
 }

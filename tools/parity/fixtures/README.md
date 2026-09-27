@@ -2,7 +2,7 @@
 
 This is the node configuration/command slice of
 [E02.02](https://github.com/geoffsee/rubix-kube/issues/36), against KubeSolo commit
-`2ef1c4787989f11f868f81bb84ae2afd4a49a81d`. It supplies 48 artifact-neutral cases in
+`2ef1c4787989f11f868f81bb84ae2afd4a49a81d`. It supplies 51 artifact-neutral cases in
 [config-command.json](config-command.json). Use the same suite for the Go reference and Rust
 candidate; expectations never branch on artifact kind.
 
@@ -53,7 +53,7 @@ exclusive-CPU operation and host CPU-count boundary cases remain component quali
 
 ## Evidence and negative controls
 
-The frozen Go capture passes all 48 cases. The actual Rust placeholder fails comparison despite
+The frozen Go capture passes all 51 cases. The actual Rust placeholder fails comparison despite
 exiting successfully for some commands. A separate real reference run with the storage default
 intentionally changed in the expectation fails; the recorded negative result is not a parity pass.
 [evidence/negative-controls.json](evidence/negative-controls.json) retains both outcomes, artifact
@@ -81,6 +81,14 @@ it with the reference artifact to reproduce the expected failure. Integrity regr
 check suite/capture hashes, raw output digests, the default document, negative results
 and verified cleanup records. These checks protect stored evidence, not fresh parity.
 
-The same 48 cases also ran in two fresh Debian arm64 VMs: Go passed all cases;
+The same 51 cases also ran in two fresh Debian arm64 VMs: Go passed all cases;
 the real Rust placeholder failed all cases. [VM records](evidence/vm) retain source,
 suite and artifact identities, compressed diagnostics and verified guest cleanup.
+
+The three review-added cases exercise environment LoadBalancer false and invalid CPU policy
+through both environment and YAML. A real Go run of the exact
+[evidence/input-sensitivity-suite.json](evidence/input-sensitivity-suite.json) removes those
+environment inputs or changes YAML policy to `none`, keeping the expectations unchanged. All
+three cases then fail; this proves the added inputs affect observable behavior. Raw observations,
+artifact/runner identities and independently verified Docker cleanup are retained in the negative
+control record. The earlier deliberate storage-mismatch suite is preserved byte-for-byte.
