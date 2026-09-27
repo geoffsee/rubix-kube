@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Independent source-reviewed assertions plus exact frozen output comparison."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -76,10 +77,19 @@ def differences(before,after,path=''):
     elif before!=after:yield {'path':path,'before':before,'after':after}
 
 
+def load_expected(path, validator=verify, digest_key='expected_sha256'):
+    raw=path.read_bytes()
+    expected=load_json(raw.decode())
+    validator(expected)
+    provenance=load_json((HERE/'provenance.json').read_text())
+    require(hashlib.sha256(raw).hexdigest()==provenance[digest_key], 'expected fixture provenance mismatch')
+    return expected
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('capture',type=Path);parser.add_argument('--expected',type=Path,default=HERE/'expected.json');args=parser.parse_args()
     actual=load_json(args.capture.read_text());verify(actual)
-    delta=list(differences(load_json(args.expected.read_text()),actual))
+    delta=list(differences(load_expected(args.expected),actual))
     print(json.dumps({'status':'drift' if delta else 'unchanged','changes':delta},indent=2))
     return bool(delta)
 

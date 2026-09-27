@@ -81,3 +81,8 @@ quantity rounds upward to milli precision (`1001m`) through official core defaul
 This small quantity is a focused defaulting input, not a validated runtime memory budget.
 Earlier direct-setter captures omitted these nested defaults and are superseded by the
 corrected dispatch capture. Negative tests specifically reject bypassed nested dispatch.
+
+The verifier validates the selected expected fixture and checks its byte digest against
+committed provenance before comparing. `--expected` may select a copy of the reviewed
+fixture; changing both capture and expectation does not bypass the frozen-output gate.
+Upstream adoption updates the expectation and its provenance through review.

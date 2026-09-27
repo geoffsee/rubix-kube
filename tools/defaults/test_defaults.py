@@ -1,6 +1,8 @@
 import copy
 import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,6 +15,23 @@ HERE=Path(__file__).resolve().parent
 class DefaultTests(unittest.TestCase):
     def setUp(self):
         self.value=json.loads((HERE/'expected.json').read_text())
+
+    def test_selected_expected_fixture_is_hash_bound(self):
+        self.assertEqual(verify.load_expected(HERE/'expected.json'),self.value)
+        changed=copy.deepcopy(self.value)
+        name=next(name for name in changed['registered_feature_gates'] if name not in ('RotateKubeletServerCertificate','SidecarContainers'))
+        changed['registered_feature_gates'][name]['enabled']=not changed['registered_feature_gates'][name]['enabled']
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'changed.json';path.write_text(json.dumps(changed))
+            result=subprocess.run([sys.executable,str(HERE/'verify.py'),str(path),'--expected',str(path)],capture_output=True,text=True,timeout=10)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('expected fixture provenance mismatch',result.stderr)
+
+    def test_selected_expected_fixture_is_semantically_checked(self):
+        self.value['cases']['zero']['kubelet']['authentication']['anonymous']['enabled']=True
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'changed.json';path.write_text(json.dumps(self.value))
+            with self.assertRaisesRegex(ValueError,'anonymous authentication'):verify.load_expected(path)
 
     def test_real_official_output_satisfies_independent_assertions(self):
         verify.verify(self.value)
