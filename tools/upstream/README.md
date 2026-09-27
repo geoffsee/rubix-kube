@@ -1,9 +1,10 @@
 # Prepared upstream inputs and runtime client generation
 
-These E02.03 layers implement explicit preparation and offline CRI/containerd client generation
-from the [accepted input contract](../../docs/architecture/upstream-inputs.md). They do not implement
-a container runtime or complete E02.03: the remaining published Kubernetes API provenance checks
-follow separately. Independent drift/default/behavior oracles belong to E02.04.
+These E02.03 layers implement explicit preparation, offline CRI/containerd client generation and
+published Kubernetes resource-binding provenance from the
+[accepted input contract](../../docs/architecture/upstream-inputs.md). They do not implement a
+container runtime. Independent drift/default/behavior oracles belong to E02.04; API serialization
+and live compatibility qualification remain separate gates.
 
 Python 3.10+ handles HTTPS, SHA-256, ZIP inspection and atomic cache writes using the standard
 library. The small Rust maintenance binary generates code using exact prost/tonic versions in
@@ -140,3 +141,43 @@ without changing committed output. The expanded suite passes twenty-three prepar
 four independent containerd wire tests; focused Clippy passes for the generator and bindings.
 Existing CRI output remains byte-identical. These checks establish provenance, reproducibility and
 bounded wire behavior, not live containerd interoperability or completed image-import workflows.
+
+## Published Kubernetes bindings provenance
+
+The maintenance package consumes exact `k8s-openapi 0.28.0` with `v1_35` as a dev dependency.
+No second generated resource tree is introduced. Python 3.11+ is required for this gate and the
+complete Python test suite (`tomllib` parses Cargo manifests and lockfiles).
+
+```sh
+# Explicit network preparation, separate from the offline gate.
+cargo fetch --locked
+python3 tools/upstream/upstream.py fetch
+python3 tools/upstream/upstream.py check-kubernetes-bindings
+```
+
+The check reads the checksum-locked published crate archive in memory, rejects traversal,
+duplicate paths, links and special entries, and bounds archive sizes and entry count. It never
+extracts archive paths to disk. The published manifest, `v1_35` module and VCS metadata must match
+the selected version and source commit. The immutable generator version map must select the
+verified official v1.35.6 schema, whose bytes must equal the accepted v1.35.7 schema. This includes
+all 735 definitions; patch schema equivalence does not imply patch runtime equivalence.
+
+`cargo metadata --offline --locked` verifies the actual resolved registry package and unified
+features. Only explicit `v1_35` is accepted among version selectors; `latest`, `earliest` and other
+version features fail. Cargo.lock's package checksum must equal the verified published archive
+checksum. This invokes no build or network operation; missing Cargo dependencies must be prepared
+explicitly. The JSON receipt includes artifact/schema hashes, selected features and lock digest.
+The gate does not need a compiler executable or generator binary, though the shared `fetch`
+command prepares other generation inputs too.
+
+The published library applies upstream generator fixups and special handling beyond raw schema
+translation. This gate establishes artifact/source/schema provenance, not independent generation
+reproduction or semantic parity. Official API-server/Go JSON fixtures and Rust round trips still
+need qualification for quantities, metadata, CRD JSON, watch events, presence and unknown fields.
+The existing source drift gate remains a separate check. No API-server serialization parity or
+live Kubernetes compatibility is claimed by this layer.
+
+The [Darwin arm64 provenance record](evidence/2026-09-27-kubernetes-provenance-darwin-arm64.json)
+records a successful offline check and real archive/schema corruption rejected before Cargo runs.
+The expanded preparation suite passes 31 tests, including unsafe archive entries, wrong source
+revision, feature aliases, duplicate package selection, checksum mismatch and schema drift.

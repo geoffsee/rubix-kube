@@ -1,0 +1,53 @@
+{
+  "date": "2026-09-27",
+  "platform": "darwin-arm64",
+  "commands": [
+    "cargo fetch --locked",
+    "python3 tools/upstream/upstream.py fetch",
+    "python3 tools/upstream/upstream.py check-kubernetes-bindings",
+    "python3 -m unittest discover -s tools/upstream -p test_*.py"
+  ],
+  "receipt": {
+    "status": "verified",
+    "target": "published-kubernetes-bindings",
+    "contract": {
+      "crate": "k8s-openapi",
+      "version": "0.28.0",
+      "feature": "v1_35",
+      "source_commit": "b2c839b8b1828e9035ff8467cdac87756190aa4e",
+      "schema_release": "v1.35.6"
+    },
+    "cargo_lock_sha256": "aa7d7a083985981d7b9aaf6ef460d835e4a40ec5bc89e5ab06fcd8941cb91adb",
+    "resolved_features": [
+      "v1_35"
+    ],
+    "source_hashes": {
+      "k8s-openapi-crate": "d9c6922f6afe80418dd6019818af5d0d34584c371780ff09b9752370c25b4abb",
+      "k8s-openapi-version-map": "de5cb0579f98672fbd590ae9f2bb7d89771425b2ef9d76b009d45c3f7271da57",
+      "k8s-openapi-schema": "483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446",
+      "openapi": "483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446"
+    },
+    "archive_entries": 3576,
+    "schema_definitions": 735,
+    "limitations": "Published artifact and identical schema provenance; not generator reproduction or semantic parity.",
+    "input_manifest_sha256": "81eb34765ec4d8d6f95306e5c2778d997e5617a2c041bc366cbfb747e7f0f1dd"
+  },
+  "negative_execution": [
+    {
+      "input": "k8s-openapi-crate",
+      "status": "rejected before Cargo",
+      "reason": "length or SHA-256 mismatch"
+    },
+    {
+      "input": "openapi",
+      "status": "rejected before Cargo",
+      "reason": "length or SHA-256 mismatch"
+    }
+  ],
+  "python_tests_passed": 31,
+  "limits": [
+    "No independent generator reproduction",
+    "No API-server serialization or live cluster qualification",
+    "Cargo compilation and CI tracked separately"
+  ]
+}
