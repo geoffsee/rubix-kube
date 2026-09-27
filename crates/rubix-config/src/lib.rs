@@ -14,3 +14,13 @@ mod runtime;
 pub use runtime::{RuntimeEndpoint, RuntimePath, RuntimeProbe, RuntimeSettings};
 mod inventory;
 pub use inventory::{FIELDS, FieldSpec, FieldType};
+
+mod layers;
+pub use layers::{
+    EnvironmentMode, ExplicitFlags, INPUT_BINDINGS, InputBinding, ParsedEnvironment,
+    ResolutionWarning, ResolvedConfig, parse_environment, parse_setting, resolve_layers,
+    resolve_parsed_layers,
+};
+
+mod render;
+pub use render::render_effective_yaml;

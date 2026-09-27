@@ -2,7 +2,7 @@
 require 'yaml'
 require 'json'
 base = File.dirname(__FILE__)
-%w[config-command yaml-reference semantic-reference map-reference].each do |name|
+%w[config-command yaml-reference semantic-reference map-reference layers-reference].each do |name|
   fixture = JSON.parse(File.read(File.join(base, "#{name}.json")))
   fixture['cases'].each do |test|
     text = name == 'config-command' ? test.dig('expect', 'stdout_equals') : test['stdout']
