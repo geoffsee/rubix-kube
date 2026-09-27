@@ -79,3 +79,11 @@ a still-open guest disk.
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity/vm -p 'test_*.py' -v
 ```
+
+The VM adapter uses the shared `case.files` validation, staging and full-argument
+`{fixture:<path>}` expansion helpers. Validated UTF-8 fixture files are copied with
+SCP into `/fixtures/<case-index>/`, matching the Docker adapter's argument paths.
+Guest ownership is root, with directories 0555 and files 0444; ordinary artifact
+users can read them without reopening the driver's private stdin descriptor. There
+is no shell/environment interpolation or host-file import through fixture tokens.
+This adapter revision requires the shared driver revision that provides these helpers.
