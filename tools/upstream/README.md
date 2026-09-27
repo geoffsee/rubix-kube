@@ -181,3 +181,7 @@ The [Darwin arm64 provenance record](evidence/2026-09-27-kubernetes-provenance-d
 records a successful offline check and real archive/schema corruption rejected before Cargo runs.
 The expanded preparation suite passes 31 tests, including unsafe archive entries, wrong source
 revision, feature aliases, duplicate package selection, checksum mismatch and schema drift.
+
+The published binding gate checks the maintenance dependency declaration as well as
+its locked resolution: an exact version, disabled defaults and explicit `v1_35` are
+required even when a loosened manifest would retain the same current Cargo.lock.
