@@ -1,7 +1,7 @@
 # CI and repository rules
 
 The default branch accepts squash-merged pull requests with passing `Format`, `Clippy`,
-`Tests (debug)`, `Tests (release)` and `Dependencies` checks from GitHub Actions.
+`Tests (debug)`, `Tests (release)`, `Dependencies` and `Security` checks from GitHub Actions.
 The branch must be current with its base. Linear history, resolved review conversations,
 and protection against force-pushes/deletion apply without bypass actors. Human approvals
 are optional to support solo development; automated checks remain mandatory.
@@ -20,27 +20,37 @@ valid builds. The first successful default-branch run warms the caches. Advisory
 refreshed by cargo-deny rather than treated as a permanent cached result.
 
 External actions are pinned to commit SHAs, credentials are not persisted by checkout, and
-job permissions are minimal. Dependabot proposes weekly action-pin and Cargo updates.
+job permissions are minimal. Dependabot proposes weekly action-pin, Cargo and security-tool updates.
 
-## CodeQL activation
+## Local security tools
 
-The workflow analyzes Rust and GitHub Actions using `security-and-quality` and build mode
-`none`. It runs alongside CI without another Rust compilation, plus a weekly scan.
+`Security` runs Semgrep Community Edition and zizmor alongside the existing CI, without a
+Rust build or hosted analysis service. Tool versions and transitive package hashes are pinned
+in `security/pyproject.toml` and `security/uv.lock`. Installation downloads packages; analysis
+uses only local files. Semgrep metrics/version checks are disabled, no registry rules are
+fetched, and zizmor runs explicitly offline. No scanner API token or SARIF upload is required.
 
-CodeQL is currently staged, not enforced: this private, personally owned repository is not
-eligible for GitHub's documented private-repository Code Security offering. Do not interpret
-skipped CodeQL jobs as successful scans. Visibility and ownership must not change implicitly.
-See [GitHub's eligibility requirements](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/private-repository-enablement).
+```sh
+uv sync --project .github/security --locked --python 3.12
+uv run --project .github/security --frozen --offline --no-sync python .github/security/check.py
+```
 
-Once the repository is eligible and Code Security is enabled where required:
+The repository-owned Semgrep rules initially detect TLS verification bypasses, common MD5/SHA-1
+calls, and directly formatted shell commands. Positive/negative fixtures run before each scan.
+All findings, scanner errors and unscanned Rust inputs fail the check; inline `nosemgrep`
+suppression is disabled. Refine rules and their fixtures in a reviewed PR when an intentional
+use needs different treatment. The workflow writes tool caches only on default-branch pushes.
 
-1. Use advanced setup with this workflow; avoid duplicate default-setup scans.
-2. Set repository Actions variable `ENABLE_CODEQL=true`.
-3. Run the workflow on the default branch and a pull request, verifying Rust and Actions results.
-4. Change `rulesets/codeql.json` enforcement to `active` and apply that ruleset.
+zizmor audits local workflow and composite-action definitions for permission, injection and
+other workflow risks. Offline mode excludes checks requiring GitHub API history, such as
+remote action provenance checks. Clippy remains the compiler-aware quality gate; cargo-deny
+checks dependency advisories, sources, licenses and bans.
 
-The CodeQL rule requires both analysis jobs and scan results. All security severities and
-quality warnings/errors block merging; successful SARIF upload alone is not sufficient.
+This is deliberately scoped coverage, not CodeQL-equivalent whole-program analysis. Semgrep CE
+does not provide general cross-file dataflow analysis, and these five rules do not detect every
+Rust vulnerability or every equivalent spelling. Expand the rules with tested cases as runtime,
+PKI and network implementations arrive. See [Semgrep CE](https://github.com/semgrep/semgrep)
+and [zizmor operating modes](https://docs.zizmor.sh/usage/#operating-modes).
 
 ## Applying rules
 
@@ -54,7 +64,7 @@ gh api --method POST repos/geoffsee/rubix-kube/rulesets \
 
 For updates, list repository rulesets and use `PUT` on the existing ruleset ID instead of
 creating duplicates. Inspect the active branch rules after applying. Keep repository merge
-settings squash-only. Do not activate the CodeQL ruleset until scans are operational.
+settings squash-only. `Security` is a normal required status check and needs no Code Security license.
 
 If the default branch is renamed, update the workflow `push.branches` filters; the rulesets
 and cache-write policy follow the repository's default branch automatically.
