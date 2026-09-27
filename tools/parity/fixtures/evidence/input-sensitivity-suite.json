@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "config-input-sensitivity-negative-v1",
+  "cases": [
+    {
+      "id": "environment-load-balancer-false",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "  loadBalancer:\n    enabled: false\n"
+        ],
+        "stderr_equals": ""
+      }
+    },
+    {
+      "id": "environment-cpu-policy-unknown-is-fatal",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "must be none or static"
+        ]
+      }
+    },
+    {
+      "id": "file-cpu-policy-unknown-is-fatal",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "files": {
+        "config.yaml": "apiVersion: kubesolo.io/v1alpha1\nkind: Config\nkubernetes:\n  kubelet:\n    cpuManager:\n      policy: none\n"
+      },
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "must be none or static"
+        ]
+      }
+    }
+  ]
+}

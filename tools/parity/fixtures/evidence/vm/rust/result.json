@@ -1,0 +1,921 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "cases": [
+    {
+      "id": "default-document",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12165524999727495,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "missing-explicit-file-keeps-defaults",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1297420840128325,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "missing-environment-file-keeps-defaults",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08449683300568722,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "deprecated-full-is-no-op",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation",
+        "stderr missing 'deprecated and has no effect'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12384316700627096,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "deprecated-full-environment-is-no-op",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation",
+        "stderr missing 'deprecated and has no effect'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.0784423750010319,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "file-partial-retains-other-defaults",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12527679199411068,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "file-explicit-zero-and-false",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing '  mtu: 0\\n'",
+        "stdout missing '  loadBalancer:\\n    enabled: false\\n'",
+        "stdout missing '  localPath:\\n    enabled: false\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.11991291600861587,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-over-file",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1313786669925321,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "flag-over-environment-and-file",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12306504099979065,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "flag-over-environment",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1261702080082614,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-false-over-file-true",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing '  localPath:\\n    enabled: false\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13464758300688118,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-zero-over-file",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.0797695829969598,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-empty-clears-file-value",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.122108333001961,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "flag-false-over-environment-true",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing '  localPath:\\n    enabled: false\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.07831258399528451,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "flag-zero-over-environment",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12198641699797008,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "flag-empty-clears-environment",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08218199999828357,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "container-mode-explicit-false",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: \"\"\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08623729200917296,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "container-mode-explicit-true",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'runtime:\\n  containerMode: true\\n  endpoint: \"\"\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08453166700201109,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "all-document-settings-round-trip",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'api:\\n  enabled: true\\n  socketPath: /run/fixture.sock\\n'",
+        "stdout missing 'd2k:\\n  enabled: true\\n  namespace: fixture-d2k\\n'",
+        "stdout missing '    extraSANs:\\n    - example.invalid\\n    - 192.0.2.11\\n    startupTimeoutSeconds: 123\\n'",
+        "stdout missing '    systemReserved:\\n      memory: 128Mi\\n'",
+        "stdout missing '  nodeName: fixture-node\\n'",
+        "stdout missing 'logging:\\n  debug: true\\n  pprof: true\\n'",
+        "stdout missing 'metrics:\\n  bindAddress: 127.0.0.1:9205\\n  enabled: true\\n'",
+        "stdout missing 'network:\\n  disableIPv6: true\\n  loadBalancer:\\n    enabled: true\\n    ip: 192.0.2.20\\n  mtu: 1400\\n  nodeIP: 192.0.2.10\\n'",
+        "stdout missing 'path: /srv/fixture\\n'",
+        "stdout missing 'portainer:\\n  async: true\\n  edgeID: fixture-id\\n  edgeKey: synthetic-fixture-key\\n  image: docker.io/portainer/agent:fixture\\n'",
+        "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: unix:///run/crio/crio.sock\\n'",
+        "stdout missing 'storage:\\n  dbWALRepair: true\\n  localPath:\\n    enabled: false\\n    sharedPath: /srv/volumes\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1236435829923721,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "all-environment-settings",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'api:\\n  enabled: true\\n  socketPath: /run/fixture.sock\\n'",
+        "stdout missing 'd2k:\\n  enabled: true\\n  namespace: fixture-d2k\\n'",
+        "stdout missing '    extraSANs:\\n    - example.invalid\\n    - 192.0.2.11\\n    startupTimeoutSeconds: 123\\n'",
+        "stdout missing '    systemReserved:\\n      memory: 128Mi\\n'",
+        "stdout missing '  nodeName: fixture-node\\n'",
+        "stdout missing 'logging:\\n  debug: true\\n  pprof: true\\n'",
+        "stdout missing 'metrics:\\n  bindAddress: 127.0.0.1:9205\\n  enabled: true\\n'",
+        "stdout missing 'network:\\n  disableIPv6: true\\n  loadBalancer:\\n    enabled: true\\n    ip: 192.0.2.20\\n  mtu: 1400\\n  nodeIP: 192.0.2.10\\n'",
+        "stdout missing 'path: /srv/fixture\\n'",
+        "stdout missing 'portainer:\\n  async: true\\n  edgeID: fixture-id\\n  edgeKey: synthetic-fixture-key\\n  image: docker.io/portainer/agent:fixture\\n'",
+        "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: unix:///run/crio/crio.sock\\n'",
+        "stdout missing 'storage:\\n  dbWALRepair: true\\n  localPath:\\n    enabled: false\\n    sharedPath: /srv/volumes\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12379029201110825,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "all-legacy-flags",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'api:\\n  enabled: true\\n  socketPath: /run/fixture.sock\\n'",
+        "stdout missing 'd2k:\\n  enabled: true\\n  namespace: fixture-d2k\\n'",
+        "stdout missing '    extraSANs:\\n    - example.invalid\\n    - 192.0.2.11\\n    startupTimeoutSeconds: 123\\n'",
+        "stdout missing '    systemReserved:\\n      memory: 128Mi\\n'",
+        "stdout missing '  nodeName: fixture-node\\n'",
+        "stdout missing 'logging:\\n  debug: true\\n  pprof: true\\n'",
+        "stdout missing 'metrics:\\n  bindAddress: 127.0.0.1:9205\\n  enabled: true\\n'",
+        "stdout missing 'network:\\n  disableIPv6: true\\n  loadBalancer:\\n    enabled: true\\n    ip: 192.0.2.20\\n  mtu: 1400\\n  nodeIP: 192.0.2.10\\n'",
+        "stdout missing 'path: /srv/fixture\\n'",
+        "stdout missing 'portainer:\\n  async: true\\n  edgeID: fixture-id\\n  edgeKey: synthetic-fixture-key\\n  image: docker.io/portainer/agent:fixture\\n'",
+        "stdout missing 'runtime:\\n  containerMode: false\\n  endpoint: unix:///run/crio/crio.sock\\n'",
+        "stdout missing 'storage:\\n  dbWALRepair: true\\n  localPath:\\n    enabled: false\\n    sharedPath: /srv/volumes\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1311680829967372,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "explicit-empty-sans-removes-list",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12821958400309086,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "missing-schema-warns-and-keeps-defaults",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation",
+        "stderr missing 'does not declare an apiVersion; assuming kubesolo.io/v1alpha1'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.152721875012503,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "wrong-kind-is-warning",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing 'kind: Other\\n'",
+        "stderr missing 'KubeSolo only has Config, and read the file as one'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13578716600022744,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "unknown-field-is-warning",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation",
+        "stderr missing 'contains settings this version of KubeSolo does not recognise'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.0776790839881869,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "duplicate-field-warns-last-value-wins",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation",
+        "stderr missing 'contains settings this version of KubeSolo does not recognise'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1305093749979278,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "unsupported-schema-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'does not understand (expected kubesolo.io/v1alpha1)'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13651541699073277,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "malformed-yaml-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'error converting YAML to JSON'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08460629200271796,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "wrong-field-type-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'cannot unmarshal string'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.085713874999783,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "directory-config-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'is a directory'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08513970799685922,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "unknown-flag-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing \"unknown long flag '--not-a-real-flag'\""
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.07991379201121163,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "boolean-equals-syntax-is-rejected",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'unexpected false'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08556304201192688,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "unexpected-positional-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'unexpected unexpected-command'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08318716699432116,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "invalid-boolean-environment-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'not-a-bool'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1323359999951208,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "invalid-integer-environment-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'not-an-integer'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08814145800715778,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "invalid-runtime-endpoint-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'expected an absolute socket path or a unix:// URL'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08316549999290146,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "invalid-image-reference-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'invalid image reference'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08346358301059809,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "cpu-policy-unknown-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'must be none or static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.0903249590046471,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "cpu-static-container-mode-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'is not supported in container mode'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.0879379170073662,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "cpu-options-require-static",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'require --cpu-manager-policy=static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.1345002920133993,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "reserved-cpus-require-static",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'require --cpu-manager-policy=static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13543058300274424,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "malformed-map-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'expected key=value pairs'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13013074999616947,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "unsupported-reservation-resource-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'unsupported --system-reserved resource'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08419833298830781,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "d2k-requires-load-balancer",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'd2k.enabled requires network.loadBalancer.enabled'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08288833299593534,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "too-long-api-socket-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'exceeds the 107-byte limit'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12863304099300876,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "low-mtu-is-warning",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation",
+        "stderr missing 'below the IPv6 minimum of 1280'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13541741599328816,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "short-image-is-normalized",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout differs from exact expectation"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.13790599998901598,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "version-bypasses-invalid-runtime-config",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "combined missing 'version'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.12863979100075085,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-load-balancer-false",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "stdout missing '  loadBalancer:\\n    enabled: false\\n'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08521608299633954,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "environment-cpu-policy-unknown-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'must be none or static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.09017608300200664,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "id": "file-cpu-policy-unknown-is-fatal",
+      "status": "failed",
+      "exit_code": 0,
+      "failures": [
+        "exit 0, expected 1",
+        "stdout differs from exact expectation",
+        "stderr missing 'must be none or static'"
+      ],
+      "guest_uid": 65534,
+      "timed_out": false,
+      "duration_seconds": 0.08029491599882022,
+      "requested_privilege": "none",
+      "stdout_sha256": "d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "errors": [],
+  "adapter": "qemu-disposable-linux-vm",
+  "explicit_privilege_opt_in": true,
+  "unsupported_capabilities": [
+    "full-cluster-assets",
+    "release-platform-qualification"
+  ],
+  "source_sha256": {
+    "run.py": "3726bdcf74ca113afaa2e6b5e738090f89ba818092c948329ea1bb40b9b02086",
+    "inputs.json": "e53d1b0270d49891152e9bdf7171ac262869dc481b69f29435618ab9b66bb30d"
+  },
+  "shared_assertions_sha256": "85d2d930740d9f51ab3e685e1a93481604eb2544666f0e9f8f82c16a76fb7d0f",
+  "shared_validation_sha256": "b81a0fb298d762c4feee7d6e6b7be2f61aaa029a404c1e179329469153333f3d",
+  "artifact": {
+    "schema_version": 1,
+    "kind": "rust",
+    "binary": "rubix-kube",
+    "sha256": "c2e9471f7903a46b1cf4e670a870b801e7129632219705233123be6dccc5d122",
+    "version": "0.1.0",
+    "source": {
+      "repository": "https://github.com/geoffsee/rubix-kube",
+      "revision": "fa5e4ce8092849efd7e95b70c2e3c7ed1fc2208d"
+    },
+    "build": {
+      "toolchain": "rustc 1.97.1",
+      "image": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
+      "source_archive_sha256": "7c7048bbee1537ddd05f354f423f086dd5cf73fcaf6777622c949d32b9110ed7",
+      "profile": "release",
+      "target": "aarch64-unknown-linux-gnu"
+    }
+  },
+  "suite_id": "config-command-baseline-v1",
+  "suite_sha256": "eda33c98a52bbe0a0fc89a4f2218af934c0d926d69513ce66b031f8e4ee7c15e",
+  "inputs": {
+    "schema_version": 1,
+    "image": {
+      "url": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/debian-12-genericcloud-arm64-20260923-2610.qcow2",
+      "sha512": "89a752d5c7d8e88bee39a57d88d496cca574f7d1e8df5df7a169825435f99feb11ed13ab27ec7bee96fe1584be4ff9479358fbca6cc859efa109f4aba18724c8",
+      "checksum_source": "https://cloud.debian.org/images/cloud/bookworm/20260923-2610/SHA512SUMS",
+      "distribution": "Debian 12 genericcloud arm64",
+      "build": "20260923-2610"
+    },
+    "seed_builder": {
+      "name": "pycdlib",
+      "version": "1.14.0",
+      "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
+      "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4"
+    }
+  },
+  "tools": {
+    "qemu-system-aarch64": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-system-aarch64",
+      "sha256": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e"
+    },
+    "qemu-img": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-img",
+      "sha256": "501293f57bfe5249a91d8ab8562e6fc04e4ae349c9d22b15ad50376d7df449a9"
+    },
+    "ssh": {
+      "path": "/usr/bin/ssh",
+      "sha256": "470f812f6e71ee4ca1b49c79f9c2982c054493e22502d4648bd010feb4b2a9b2"
+    },
+    "ssh-keygen": {
+      "path": "/usr/bin/ssh-keygen",
+      "sha256": "bddae9c4ea46fd903574ec6ff61eda75e133f940fa538f2adca80af474767596"
+    },
+    "scp": {
+      "path": "/usr/bin/scp",
+      "sha256": "c3694a6d96db06c0d994fbf7d8c5617b0064c73f97f4298d1b1432dfa7cc6aeb"
+    }
+  },
+  "firmware": {
+    "code_sha256": "47765fe344818cbc464b1c14ae658fb4b854f5c2ceffa982411731eb4865594d",
+    "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
+  },
+  "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n",
+  "owned_temporary_directory": "/tmp/rubix-vm-eogf3j1u",
+  "ssh_forward": "127.0.0.1:63361",
+  "qemu_argv": [
+    "qemu-system-aarch64",
+    "-machine",
+    "virt,accel=hvf",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "2048",
+    "-display",
+    "none",
+    "-serial",
+    "stdio",
+    "-monitor",
+    "none",
+    "-qmp",
+    "unix:/tmp/rubix-vm-eogf3j1u/qmp.sock,server=on,wait=off",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,file=/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
+    "-drive",
+    "if=pflash,format=raw,file=/tmp/rubix-vm-eogf3j1u/vars.fd",
+    "-drive",
+    "if=virtio,format=qcow2,file=/tmp/rubix-vm-eogf3j1u/disk.qcow2",
+    "-drive",
+    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-eogf3j1u/seed.iso",
+    "-netdev",
+    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:63361-:22",
+    "-device",
+    "virtio-net-pci,netdev=n0"
+  ],
+  "owned_pid": 92977,
+  "ssh_readiness_seconds": 11.22696575000009,
+  "environment": "Linux rubix-parity 6.1.0-53-cloud-arm64 #1 SMP Debian 6.1.187-1 (2026-09-07) aarch64 GNU/Linux\nuid=0(root) gid=0(root) groups=0(root)\nPRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"\n0::/user.slice/user-0.slice/session-4.scope\n",
+  "privileged_mount_probe": "passed",
+  "shutdown": "acpi-powerdown",
+  "qemu_exit_code": 0,
+  "owned_process_group_absent": true,
+  "owned_temporary_directory_removed": true
+}

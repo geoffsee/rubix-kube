@@ -1,0 +1,905 @@
+{
+  "schema_version": 1,
+  "id": "config-command-baseline-v1",
+  "cases": [
+    {
+      "id": "default-document",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      }
+    },
+    {
+      "id": "missing-explicit-file-keeps-defaults",
+      "argv": [
+        "--print-config",
+        "--config=/tmp/rubix-does-not-exist.yaml"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      }
+    },
+    {
+      "id": "missing-environment-file-keeps-defaults",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_CONFIG": "/tmp/rubix-does-not-exist.yaml"
+      }
+    },
+    {
+      "id": "deprecated-full-is-no-op",
+      "argv": [
+        "--print-config",
+        "--full"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_contains": [
+          "deprecated and has no effect"
+        ]
+      }
+    },
+    {
+      "id": "deprecated-full-environment-is-no-op",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_contains": [
+          "deprecated and has no effect"
+        ]
+      },
+      "env": {
+        "KUBESOLO_FULL": "true"
+      }
+    },
+    {
+      "id": "file-partial-retains-other-defaults",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1400\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"mtu\": 1400\n  }\n}\n"
+      }
+    },
+    {
+      "id": "file-explicit-zero-and-false",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "  mtu: 0\n",
+          "  loadBalancer:\n    enabled: false\n",
+          "  localPath:\n    enabled: false\n"
+        ],
+        "stderr_equals": ""
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"mtu\": 0,\n    \"loadBalancer\": {\n      \"enabled\": false\n    }\n  },\n  \"storage\": {\n    \"localPath\": {\n      \"enabled\": false\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "id": "environment-over-file",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1450\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_MTU": "1450"
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"mtu\": 1400\n  }\n}\n"
+      }
+    },
+    {
+      "id": "flag-over-environment-and-file",
+      "argv": [
+        "--print-config",
+        "--mtu=1500",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1500\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_MTU": "1450"
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"mtu\": 1400\n  }\n}\n"
+      }
+    },
+    {
+      "id": "flag-over-environment",
+      "argv": [
+        "--print-config",
+        "--path=/srv/flag"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /srv/flag/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /srv/flag\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_PATH": "/srv/environment"
+      }
+    },
+    {
+      "id": "environment-false-over-file-true",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "  localPath:\n    enabled: false\n"
+        ],
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_LOCAL_STORAGE": "false"
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"storage\": {\n    \"localPath\": {\n      \"enabled\": true\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "id": "environment-zero-over-file",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_MTU": "0"
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"mtu\": 1400\n  }\n}\n"
+      }
+    },
+    {
+      "id": "environment-empty-clears-file-value",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_NODE_IP": ""
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"nodeIP\": \"192.0.2.10\"\n  }\n}\n"
+      }
+    },
+    {
+      "id": "flag-false-over-environment-true",
+      "argv": [
+        "--print-config",
+        "--no-local-storage"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "  localPath:\n    enabled: false\n"
+        ],
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_LOCAL_STORAGE": "true"
+      }
+    },
+    {
+      "id": "flag-zero-over-environment",
+      "argv": [
+        "--print-config",
+        "--mtu=0"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_MTU": "1400"
+      }
+    },
+    {
+      "id": "flag-empty-clears-environment",
+      "argv": [
+        "--print-config",
+        "--node-ip="
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_NODE_IP": "192.0.2.10"
+      }
+    },
+    {
+      "id": "container-mode-explicit-false",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "runtime:\n  containerMode: false\n  endpoint: \"\"\n"
+        ],
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_CONTAINER_MODE": "false"
+      }
+    },
+    {
+      "id": "container-mode-explicit-true",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "runtime:\n  containerMode: true\n  endpoint: \"\"\n"
+        ],
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_CONTAINER_MODE": "true"
+      }
+    },
+    {
+      "id": "all-document-settings-round-trip",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "api:\n  enabled: true\n  socketPath: /run/fixture.sock\n",
+          "d2k:\n  enabled: true\n  namespace: fixture-d2k\n",
+          "    extraSANs:\n    - example.invalid\n    - 192.0.2.11\n    startupTimeoutSeconds: 123\n",
+          "    systemReserved:\n      memory: 128Mi\n",
+          "  nodeName: fixture-node\n",
+          "logging:\n  debug: true\n  pprof: true\n",
+          "metrics:\n  bindAddress: 127.0.0.1:9205\n  enabled: true\n",
+          "network:\n  disableIPv6: true\n  loadBalancer:\n    enabled: true\n    ip: 192.0.2.20\n  mtu: 1400\n  nodeIP: 192.0.2.10\n",
+          "path: /srv/fixture\n",
+          "portainer:\n  async: true\n  edgeID: fixture-id\n  edgeKey: synthetic-fixture-key\n  image: docker.io/portainer/agent:fixture\n",
+          "runtime:\n  containerMode: false\n  endpoint: unix:///run/crio/crio.sock\n",
+          "storage:\n  dbWALRepair: true\n  localPath:\n    enabled: false\n    sharedPath: /srv/volumes\n"
+        ],
+        "stderr_equals": ""
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"path\": \"/srv/fixture\",\n  \"api\": {\n    \"enabled\": true,\n    \"socketPath\": \"/run/fixture.sock\"\n  },\n  \"logging\": {\n    \"debug\": true,\n    \"pprof\": true\n  },\n  \"network\": {\n    \"nodeIP\": \"192.0.2.10\",\n    \"mtu\": 1400,\n    \"disableIPv6\": true,\n    \"loadBalancer\": {\n      \"enabled\": true,\n      \"ip\": \"192.0.2.20\"\n    }\n  },\n  \"runtime\": {\n    \"endpoint\": \"unix:///run/crio/crio.sock\",\n    \"containerMode\": false\n  },\n  \"kubernetes\": {\n    \"nodeName\": \"fixture-node\",\n    \"apiServer\": {\n      \"extraSANs\": [\n        \"example.invalid\",\n        \"192.0.2.11\"\n      ],\n      \"startupTimeoutSeconds\": 123\n    },\n    \"kubelet\": {\n      \"cpuManager\": {\n        \"policy\": \"none\"\n      },\n      \"systemReserved\": {\n        \"memory\": \"128Mi\"\n      }\n    }\n  },\n  \"storage\": {\n    \"localPath\": {\n      \"enabled\": false,\n      \"sharedPath\": \"/srv/volumes\"\n    },\n    \"dbWALRepair\": true\n  },\n  \"portainer\": {\n    \"edgeID\": \"fixture-id\",\n    \"edgeKey\": \"synthetic-fixture-key\",\n    \"async\": true,\n    \"image\": \"portainer/agent:fixture\"\n  },\n  \"d2k\": {\n    \"enabled\": true,\n    \"namespace\": \"fixture-d2k\"\n  },\n  \"metrics\": {\n    \"enabled\": true,\n    \"bindAddress\": \"127.0.0.1:9205\"\n  }\n}\n"
+      }
+    },
+    {
+      "id": "all-environment-settings",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "api:\n  enabled: true\n  socketPath: /run/fixture.sock\n",
+          "d2k:\n  enabled: true\n  namespace: fixture-d2k\n",
+          "    extraSANs:\n    - example.invalid\n    - 192.0.2.11\n    startupTimeoutSeconds: 123\n",
+          "    systemReserved:\n      memory: 128Mi\n",
+          "  nodeName: fixture-node\n",
+          "logging:\n  debug: true\n  pprof: true\n",
+          "metrics:\n  bindAddress: 127.0.0.1:9205\n  enabled: true\n",
+          "network:\n  disableIPv6: true\n  loadBalancer:\n    enabled: true\n    ip: 192.0.2.20\n  mtu: 1400\n  nodeIP: 192.0.2.10\n",
+          "path: /srv/fixture\n",
+          "portainer:\n  async: true\n  edgeID: fixture-id\n  edgeKey: synthetic-fixture-key\n  image: docker.io/portainer/agent:fixture\n",
+          "runtime:\n  containerMode: false\n  endpoint: unix:///run/crio/crio.sock\n",
+          "storage:\n  dbWALRepair: true\n  localPath:\n    enabled: false\n    sharedPath: /srv/volumes\n"
+        ],
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_PATH": "/srv/fixture",
+        "KUBESOLO_API_ENABLED": "true",
+        "KUBESOLO_API_SOCKET_PATH": "/run/fixture.sock",
+        "KUBESOLO_DEBUG": "true",
+        "KUBESOLO_PPROF_SERVER": "true",
+        "KUBESOLO_NODE_IP": "192.0.2.10",
+        "KUBESOLO_MTU": "1400",
+        "KUBESOLO_DISABLE_IPV6": "true",
+        "KUBESOLO_LOAD_BALANCER": "true",
+        "KUBESOLO_LOAD_BALANCER_IP": "192.0.2.20",
+        "KUBESOLO_CONTAINER_RUNTIME_ENDPOINT": "unix:///run/crio/crio.sock",
+        "KUBESOLO_CONTAINER_MODE": "false",
+        "KUBESOLO_NODE_NAME": "fixture-node",
+        "KUBESOLO_APISERVER_EXTRA_SANS": " example.invalid, ,192.0.2.11,",
+        "KUBESOLO_STARTUP_TIMEOUT": "123",
+        "KUBESOLO_CPU_MANAGER_POLICY": "none",
+        "KUBESOLO_SYSTEM_RESERVED": "memory=128Mi",
+        "KUBESOLO_LOCAL_STORAGE": "false",
+        "KUBESOLO_LOCAL_STORAGE_SHARED_PATH": "/srv/volumes",
+        "KUBESOLO_DB_WAL_REPAIR": "true",
+        "KUBESOLO_PORTAINER_EDGE_ID": "fixture-id",
+        "KUBESOLO_PORTAINER_EDGE_KEY": "synthetic-fixture-key",
+        "KUBESOLO_PORTAINER_EDGE_ASYNC": "true",
+        "KUBESOLO_PORTAINER_EDGE_IMAGE": "portainer/agent:fixture",
+        "KUBESOLO_D2K": "true",
+        "KUBESOLO_D2K_NAMESPACE": "fixture-d2k",
+        "KUBESOLO_METRICS_SERVER": "true",
+        "KUBESOLO_METRICS_BIND_ADDRESS": "127.0.0.1:9205"
+      }
+    },
+    {
+      "id": "all-legacy-flags",
+      "argv": [
+        "--print-config",
+        "--path=/srv/fixture",
+        "--debug",
+        "--pprof-server",
+        "--node-ip=192.0.2.10",
+        "--mtu=1400",
+        "--disable-ipv6",
+        "--load-balancer",
+        "--load-balancer-ip=192.0.2.20",
+        "--container-runtime-endpoint=unix:///run/crio/crio.sock",
+        "--no-container-mode",
+        "--apiserver-extra-sans= example.invalid, ,192.0.2.11,",
+        "--startup-timeout=123",
+        "--cpu-manager-policy=none",
+        "--system-reserved=memory=128Mi",
+        "--no-local-storage",
+        "--local-storage-shared-path=/srv/volumes",
+        "--db-wal-repair",
+        "--portainer-edge-id=fixture-id",
+        "--portainer-edge-key=synthetic-fixture-key",
+        "--portainer-edge-async",
+        "--portainer-edge-image=portainer/agent:fixture",
+        "--d2k",
+        "--d2k-namespace=fixture-d2k",
+        "--metrics-server",
+        "--metrics-bind-address=127.0.0.1:9205"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "api:\n  enabled: true\n  socketPath: /run/fixture.sock\n",
+          "d2k:\n  enabled: true\n  namespace: fixture-d2k\n",
+          "    extraSANs:\n    - example.invalid\n    - 192.0.2.11\n    startupTimeoutSeconds: 123\n",
+          "    systemReserved:\n      memory: 128Mi\n",
+          "  nodeName: fixture-node\n",
+          "logging:\n  debug: true\n  pprof: true\n",
+          "metrics:\n  bindAddress: 127.0.0.1:9205\n  enabled: true\n",
+          "network:\n  disableIPv6: true\n  loadBalancer:\n    enabled: true\n    ip: 192.0.2.20\n  mtu: 1400\n  nodeIP: 192.0.2.10\n",
+          "path: /srv/fixture\n",
+          "portainer:\n  async: true\n  edgeID: fixture-id\n  edgeKey: synthetic-fixture-key\n  image: docker.io/portainer/agent:fixture\n",
+          "runtime:\n  containerMode: false\n  endpoint: unix:///run/crio/crio.sock\n",
+          "storage:\n  dbWALRepair: true\n  localPath:\n    enabled: false\n    sharedPath: /srv/volumes\n"
+        ],
+        "stderr_equals": ""
+      },
+      "env": {
+        "KUBESOLO_API_ENABLED": "true",
+        "KUBESOLO_API_SOCKET_PATH": "/run/fixture.sock",
+        "KUBESOLO_NODE_NAME": "fixture-node"
+      }
+    },
+    {
+      "id": "explicit-empty-sans-removes-list",
+      "argv": [
+        "--print-config",
+        "--apiserver-extra-sans=",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"kubernetes\": {\n    \"apiServer\": {\n      \"extraSANs\": [\n        \"old.invalid\"\n      ]\n    }\n  }\n}\n"
+      }
+    },
+    {
+      "id": "missing-schema-warns-and-keeps-defaults",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1400\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_contains": [
+          "does not declare an apiVersion; assuming kubesolo.io/v1alpha1"
+        ]
+      },
+      "files": {
+        "config.yaml": "network:\n  mtu: 1400\n"
+      }
+    },
+    {
+      "id": "wrong-kind-is-warning",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "kind: Other\n"
+        ],
+        "stderr_contains": [
+          "KubeSolo only has Config, and read the file as one"
+        ]
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Other\"\n}\n"
+      }
+    },
+    {
+      "id": "unknown-field-is-warning",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_contains": [
+          "contains settings this version of KubeSolo does not recognise"
+        ]
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"futureSetting\": true\n}\n"
+      }
+    },
+    {
+      "id": "duplicate-field-warns-last-value-wins",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1450\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_contains": [
+          "contains settings this version of KubeSolo does not recognise"
+        ]
+      },
+      "files": {
+        "config.yaml": "apiVersion: kubesolo.io/v1alpha1\nkind: Config\nnetwork:\n  mtu: 1400\n  mtu: 1450\n"
+      }
+    },
+    {
+      "id": "unsupported-schema-is-fatal",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "does not understand (expected kubesolo.io/v1alpha1)"
+        ]
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v999\",\n  \"kind\": \"Config\"\n}\n"
+      }
+    },
+    {
+      "id": "malformed-yaml-is-fatal",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "error converting YAML to JSON"
+        ]
+      },
+      "files": {
+        "config.yaml": "network: [\n"
+      }
+    },
+    {
+      "id": "wrong-field-type-is-fatal",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "cannot unmarshal string"
+        ]
+      },
+      "files": {
+        "config.yaml": "{\n  \"apiVersion\": \"kubesolo.io/v1alpha1\",\n  \"kind\": \"Config\",\n  \"network\": {\n    \"mtu\": \"not-an-integer\"\n  }\n}\n"
+      }
+    },
+    {
+      "id": "directory-config-is-fatal",
+      "argv": [
+        "--print-config",
+        "--config=/tmp"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "is a directory"
+        ]
+      }
+    },
+    {
+      "id": "unknown-flag-is-fatal",
+      "argv": [
+        "--not-a-real-flag"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "unknown long flag '--not-a-real-flag'"
+        ]
+      }
+    },
+    {
+      "id": "boolean-equals-syntax-is-rejected",
+      "argv": [
+        "--print-config",
+        "--local-storage=false"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "unexpected false"
+        ]
+      }
+    },
+    {
+      "id": "unexpected-positional-is-fatal",
+      "argv": [
+        "unexpected-command"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "unexpected unexpected-command"
+        ]
+      }
+    },
+    {
+      "id": "invalid-boolean-environment-is-fatal",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "not-a-bool"
+        ]
+      },
+      "env": {
+        "KUBESOLO_DEBUG": "not-a-bool"
+      }
+    },
+    {
+      "id": "invalid-integer-environment-is-fatal",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "not-an-integer"
+        ]
+      },
+      "env": {
+        "KUBESOLO_MTU": "not-an-integer"
+      }
+    },
+    {
+      "id": "invalid-runtime-endpoint-is-fatal",
+      "argv": [
+        "--print-config",
+        "--container-runtime-endpoint=tcp://127.0.0.1:1234"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "expected an absolute socket path or a unix:// URL"
+        ]
+      }
+    },
+    {
+      "id": "invalid-image-reference-is-fatal",
+      "argv": [
+        "--print-config",
+        "--portainer-edge-image=INVALID IMAGE"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "invalid image reference"
+        ]
+      }
+    },
+    {
+      "id": "cpu-policy-unknown-is-fatal",
+      "argv": [
+        "--print-config",
+        "--cpu-manager-policy=unknown"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "must be none or static"
+        ]
+      }
+    },
+    {
+      "id": "cpu-static-container-mode-is-fatal",
+      "argv": [
+        "--print-config",
+        "--cpu-manager-policy=static",
+        "--container-mode"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "is not supported in container mode"
+        ]
+      }
+    },
+    {
+      "id": "cpu-options-require-static",
+      "argv": [
+        "--print-config",
+        "--cpu-manager-policy-options=full-pcpus-only=true"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "require --cpu-manager-policy=static"
+        ]
+      }
+    },
+    {
+      "id": "reserved-cpus-require-static",
+      "argv": [
+        "--print-config",
+        "--reserved-cpus=0"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "require --cpu-manager-policy=static"
+        ]
+      }
+    },
+    {
+      "id": "malformed-map-is-fatal",
+      "argv": [
+        "--print-config",
+        "--system-reserved=memory"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "expected key=value pairs"
+        ]
+      }
+    },
+    {
+      "id": "unsupported-reservation-resource-is-fatal",
+      "argv": [
+        "--print-config",
+        "--system-reserved=unknown=1"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "unsupported --system-reserved resource"
+        ]
+      }
+    },
+    {
+      "id": "d2k-requires-load-balancer",
+      "argv": [
+        "--print-config",
+        "--d2k",
+        "--no-load-balancer"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "d2k.enabled requires network.loadBalancer.enabled"
+        ]
+      }
+    },
+    {
+      "id": "too-long-api-socket-is-fatal",
+      "argv": [
+        "--print-config"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "exceeds the 107-byte limit"
+        ]
+      },
+      "env": {
+        "KUBESOLO_API_ENABLED": "true",
+        "KUBESOLO_API_SOCKET_PATH": "/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    },
+    {
+      "id": "low-mtu-is-warning",
+      "argv": [
+        "--print-config",
+        "--mtu=1200"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 1200\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_contains": [
+          "below the IPv6 minimum of 1280"
+        ]
+      }
+    },
+    {
+      "id": "short-image-is-normalized",
+      "argv": [
+        "--print-config",
+        "--portainer-edge-image=busybox"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout_equals": "api:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/library/busybox:latest\nruntime:\n  endpoint: \"\"\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\n",
+        "stderr_equals": ""
+      }
+    },
+    {
+      "id": "version-bypasses-invalid-runtime-config",
+      "argv": [
+        "--version"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "combined_contains": [
+          "version"
+        ]
+      },
+      "env": {
+        "KUBESOLO_CONTAINER_RUNTIME_ENDPOINT": "bad"
+      }
+    },
+    {
+      "id": "environment-load-balancer-false",
+      "argv": [
+        "--print-config"
+      ],
+      "env": {
+        "KUBESOLO_LOAD_BALANCER": "false"
+      },
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "  loadBalancer:\n    enabled: false\n"
+        ],
+        "stderr_equals": ""
+      }
+    },
+    {
+      "id": "environment-cpu-policy-unknown-is-fatal",
+      "argv": [
+        "--print-config"
+      ],
+      "env": {
+        "KUBESOLO_CPU_MANAGER_POLICY": "unknown"
+      },
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "must be none or static"
+        ]
+      }
+    },
+    {
+      "id": "file-cpu-policy-unknown-is-fatal",
+      "argv": [
+        "--print-config",
+        "--config",
+        "{fixture:config.yaml}"
+      ],
+      "files": {
+        "config.yaml": "apiVersion: kubesolo.io/v1alpha1\nkind: Config\nkubernetes:\n  kubelet:\n    cpuManager:\n      policy: unknown\n"
+      },
+      "expect": {
+        "exit_code": 1,
+        "stdout_equals": "",
+        "stderr_contains": [
+          "must be none or static"
+        ]
+      }
+    }
+  ]
+}
