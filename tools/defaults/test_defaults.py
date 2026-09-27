@@ -36,6 +36,34 @@ class DefaultTests(unittest.TestCase):
     def test_real_official_output_satisfies_independent_assertions(self):
         verify.verify(self.value)
 
+    def test_api_server_expected_fixture_has_its_own_provenance(self):
+        path=HERE/'apiserver.expected.json'
+        expected=verify.load_expected(path,verify.verify_apiserver,'apiserver_expected_sha256')
+        with tempfile.TemporaryDirectory() as folder:
+            changed=Path(folder)/'changed.json'
+            expected['apiserver_options']['flags']['profiling']['default']='false'
+            changed.write_text(json.dumps(expected))
+            with self.assertRaisesRegex(ValueError,'provenance mismatch'):
+                verify.load_expected(changed,verify.verify_apiserver,'apiserver_expected_sha256')
+
+    def test_api_server_defaults_satisfy_independent_source_anchors(self):
+        value=json.loads((HERE/'apiserver.expected.json').read_text())
+        verify.verify_apiserver(value)
+        self.assertEqual(len(value['apiserver_options']['flags']),172)
+        self.assertEqual(value['registered_feature_gates'],self.value['registered_feature_gates'])
+
+    def test_api_server_secure_port_and_unresolved_host_are_checked(self):
+        value=json.loads((HERE/'apiserver.expected.json').read_text())
+        for name,altered in [('secure-port','443'),('advertise-address','192.0.2.8'),('anonymous-auth','false')]:
+            changed=copy.deepcopy(value)
+            changed['apiserver_options']['flags'][name]['default']=altered
+            with self.subTest(name=name),self.assertRaises(ValueError):verify.verify_apiserver(changed)
+
+    def test_api_server_flag_removal_is_reviewable_drift(self):
+        value=json.loads((HERE/'apiserver.expected.json').read_text());changed=copy.deepcopy(value)
+        del changed['apiserver_options']['flags']['service-node-port-range']
+        self.assertEqual(list(verify.differences(value,changed))[0]['path'],'/apiserver_options/flags/service-node-port-range')
+
     def test_omitted_generated_cloud_defaults_are_rejected(self):
         self.value['cases']['zero']['controller']['KubeCloudShared']['NodeMonitorPeriod']='0s'
         with self.assertRaisesRegex(ValueError,'nested cloud'):verify.verify(self.value)
@@ -107,6 +135,9 @@ class DefaultTests(unittest.TestCase):
         for name,digest in receipt['source_sha256'].items():
             self.assertEqual(hashlib.sha256((HERE/name).read_bytes()).hexdigest(),digest,name)
         self.assertEqual(hashlib.sha256((HERE/'expected.json').read_bytes()).hexdigest(),receipt['output_sha256'])
+        self.assertEqual(hashlib.sha256((HERE/'apiserver.expected.json').read_bytes()).hexdigest(),receipt['apiserver_output_sha256'])
+        self.assertEqual(receipt['registry_difference'],{'added':[],'removed':[],'changed':[]})
+        self.assertEqual(receipt['hostnames'],['fixture-0','fixture-1'])
 
     def test_archive_pin_agrees_with_accepted_toolchain(self):
         accepted=json.loads((HERE.parents[1]/'docs/architecture/upstream-inputs.json').read_text())

@@ -1,12 +1,19 @@
 {
+  "apiserver_output_sha256": "a7538b7fc55682c4ad920085a12cb53451ad371786b79e957d8c79f29e1ee539",
   "cleanup_errors": [],
   "containers": [
-    "rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f-0",
-    "rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f-1"
+    "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5-run-0",
+    "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5-run-1",
+    "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5-apiserver-0",
+    "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5-apiserver-1"
   ],
   "errors": [],
+  "hostnames": [
+    "fixture-0",
+    "fixture-1"
+  ],
   "identical_repeats": true,
-  "image": "rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f",
+  "image": "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -21,38 +28,38 @@
         "User": "65532:65532",
         "WorkingDir": "/"
       },
-      "Created": "2026-09-27T22:14:19.679300176Z",
+      "Created": "2026-09-27T22:13:15.695482341Z",
       "Descriptor": {
-        "digest": "sha256:8e6b73bb10fd1a0f6409b182c9f7899a3047d334550823daaad1bb2f9d2fbab9",
+        "digest": "sha256:81e41f6ecfb1c8188649de71d9c72f9d2ab2861b4b15d682e1255796f4621a63",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 855
       },
-      "Id": "sha256:8e6b73bb10fd1a0f6409b182c9f7899a3047d334550823daaad1bb2f9d2fbab9",
+      "Id": "sha256:81e41f6ecfb1c8188649de71d9c72f9d2ab2861b4b15d682e1255796f4621a63",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-27T22:14:21.182809176Z",
-            "Ref": "jkjvcgva3owa6l5oy7qth8gb5"
+            "CreatedAt": "2026-09-27T22:13:18.956699884Z",
+            "Ref": "edp8jktew94qgurr0pkqismoh"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-27T22:14:21.001567843Z"
+        "LastTagTime": "2026-09-27T22:13:18.558822467Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f@sha256:8e6b73bb10fd1a0f6409b182c9f7899a3047d334550823daaad1bb2f9d2fbab9"
+        "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5@sha256:81e41f6ecfb1c8188649de71d9c72f9d2ab2861b4b15d682e1255796f4621a63"
       ],
       "RepoTags": [
-        "rubix-official-defaults-d27422b26c6e4c508fab416d00660a6f:latest"
+        "rubix-official-defaults-51ceb438e57042bf8667c8865bfb0ce5:latest"
       ],
       "RootFS": {
         "Layers": [
-          "sha256:4e1c7c7055182897a136f89a7a4a043e05426dbba7105cdb9aa474458313259b"
+          "sha256:e323c96398aa46b5d377bb12d4327bb2b695e458ef228e3f392ee3944282e978"
         ],
         "Type": "layers"
       },
-      "Size": 29547204
+      "Size": 66059592
     }
   ],
   "inputs": {
@@ -72,12 +79,18 @@
     }
   },
   "output_sha256": "d936b24ca4fe4e789e92980ae70b9cbf5ba56231548f151b3a0022e85b75fe8e",
+  "registry_difference": {
+    "added": [],
+    "changed": [],
+    "removed": []
+  },
   "remaining_containers": [],
   "remaining_images": [],
   "source_sha256": {
-    "Dockerfile": "8eca212efa6f0a4041a35319f311ebace1b91bd8947157c97d5b865520ee0a5b",
-    "capture.py": "6c45d50616627056c35177684be5a1a8ddd100bd6537d1618b2fe61f82cf7de8",
+    "Dockerfile": "f8cecc17d5e513fabcde160840a10d5c0fb5e7545c8f4b5329fedd5aa076e822",
+    "apiserver.go": "75d05cd54f7b0ece46df3985f9f84aa184576341bac035505c01b78f577acaff",
+    "capture.py": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
     "inputs.json": "1b118607ea7d1b26a0051249ac127b924f066b77cc3d68fcaa764644a0f962ce",
-    "main.go": "951a23d9ee13ec009245b57252e46288f7fb79eb64e8a6304eae6faa579bc721"
+    "main.go": "f6e96b4143f2a25c1f4e818485fc9eebea5c5a0cd9704549fbbb7d1608a55c08"
   }
 }

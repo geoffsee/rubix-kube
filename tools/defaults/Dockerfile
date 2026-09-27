@@ -6,8 +6,8 @@ COPY source.tar.gz /tmp/source.tar.gz
 ARG SOURCE_SHA256
 RUN echo "${SOURCE_SHA256}  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
 WORKDIR /src
-COPY main.go /src/cmd/rubix-defaults/main.go
-RUN go version && mkdir /out && go build -mod=vendor -p 2 -trimpath -o /out/extract ./cmd/rubix-defaults && sha256sum go.mod go.sum go.work vendor/modules.txt > /out/modules.sha256 && find staging -type f \( -name go.mod -o -name go.sum \) -print | sort | xargs sha256sum >> /out/modules.sha256
+COPY main.go apiserver.go /src/cmd/rubix-defaults/
+RUN go version && mkdir /out && go build -mod=vendor -p 2 -trimpath -o /out/extract ./cmd/rubix-defaults && go build -tags rubix_apiserver -mod=vendor -p 2 -trimpath -o /out/extract-apiserver ./cmd/rubix-defaults && sha256sum go.mod go.sum go.work vendor/modules.txt > /out/modules.sha256 && find staging -type f \( -name go.mod -o -name go.sum \) -print | sort | xargs sha256sum >> /out/modules.sha256
 FROM scratch
 COPY --from=build /out/ /out/
 USER 65532:65532
