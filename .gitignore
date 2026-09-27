@@ -6,3 +6,6 @@
 # Python development tooling
 __pycache__/
 *.py[cod]
+
+# Standalone checks for the vendored parser.
+/third_party/saphyr-parser/target/
