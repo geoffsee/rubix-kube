@@ -56,7 +56,10 @@ LS and PS. Escaped CR, CRLF, tab, NUL and BEL remain independent control cases.
 Empty extra-SAN lists retain baseline omission and reparse as null: both mean no
 extra SANs, but structural list presence is not retained by the legacy printer.
 
-The executable adapter, OS discovery, argument parsing, version/help/full output,
-startup suppression and black-box Rust-versus-Go command execution remain the next
-#40 layer. Atomic persistence/schema publishing belong to #41. No service startup,
-installed-node lifecycle or platform release qualification is claimed here.
+The [executable adapter](../rubix-kube/README.md) now consumes these APIs and owns
+argument parsing, version/help/full output, file selection, CPU/architecture/container
+facts, and printing before service startup. Its separate 90-case Linux arm64 Go/Rust
+comparison records artifact and source identity. Broader host discovery and actual
+component execution remain future consumers. Shared [persistence](PERSISTENCE.md)
+and [schema output](SCHEMA.md) are also implemented. No service startup, installed-node
+lifecycle or platform release qualification is claimed here.
