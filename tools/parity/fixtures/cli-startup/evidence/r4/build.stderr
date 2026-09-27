@@ -1,0 +1,45 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 329B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#4 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 191.95MB 1.3s done
+#5 DONE 1.3s
+
+#6 [2/5] WORKDIR /artifact
+#6 CACHED
+
+#7 [3/5] COPY executable driver.py artifact.json suite.json ./
+#7 CACHED
+
+#8 [4/5] COPY fixtures /fixtures
+#8 CACHED
+
+#9 [5/5] RUN mkdir /evidence && chmod 0700 /evidence
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:ee6fb42f5d52e17c5e31fe66bc9c034092b8724097c8edc5ccab3068c79f4297 done
+#10 exporting config sha256:aa8b4484900f0ac0431b4f1a6e6c40ebce0afd384a1e35c8942e5be958a4643d done
+#10 exporting attestation manifest sha256:3aeaf24155aa7aff4a0e6f320b8c57ee46952d693ee94312a5425740ef19b84c done
+#10 exporting manifest list sha256:f184a2bdf137d6db4b594809a7138b26b9df8e53e257222ecc6e729a9f65a60e done
+#10 naming to docker.io/library/rubix-parity-cefecd3fc7914630b0022c2a7ec6c506:test done
+#10 unpacking to docker.io/library/rubix-parity-cefecd3fc7914630b0022c2a7ec6c506:test
+#10 unpacking to docker.io/library/rubix-parity-cefecd3fc7914630b0022c2a7ec6c506:test 0.5s done
+#10 DONE 0.5s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ur9a2niyo72qwqckpg38jeljl

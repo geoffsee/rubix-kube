@@ -1,0 +1,58 @@
+[
+    {
+        "Id": "sha256:8e2275a55a20a8bd44b064da3ee67aaff7cec39a19af5ca2c925d8a1249d2abe",
+        "RepoTags": [
+            "rubix-parity-98b896835abb4c5fb078d57ff5fbcfe7:test"
+        ],
+        "RepoDigests": [
+            "rubix-parity-98b896835abb4c5fb078d57ff5fbcfe7@sha256:8e2275a55a20a8bd44b064da3ee67aaff7cec39a19af5ca2c925d8a1249d2abe"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-27T22:41:39.527354546Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.13.7",
+                "PYTHON_SHA256=5462f9099dfd30e238def83c71d91897d8caa5ff6ebc7a50f14d4802cdaaa79a"
+            ],
+            "Entrypoint": [
+                "python",
+                "/artifact/driver.py"
+            ],
+            "WorkingDir": "/artifact"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 122585556,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:3e5d01a55aea2c9ea64c3cfef2bb870df4b01c7e206103a970d4c3dc6caed96b",
+                "sha256:2c6c0c508929946b6c35e513c8efcc2d4fb0e36037b2a1faedca5a2cdc142996",
+                "sha256:0677890d6b927ca890ebaa71cf1ad98f72ac7db91e9b42226e0696516850b0b0",
+                "sha256:f8c782297126895043f9916a4eb9470bdbfe898935f32478d42ff271160d16f5",
+                "sha256:0cc7a8d8428e7264857ce704b56ebb2570a59c178f9742cd57b86fbd9664d580",
+                "sha256:a4f3731dbdc0d76b8bc5db47bde6650ed5eac99399b561ffc50241f8ccde01f2",
+                "sha256:0c9d7da40a46bf76e1255b63345fef2e6bc91008c5d213e772f573dccca43966",
+                "sha256:fa30b01cb6b7723d6ebdb77301ae23866ca3f8f35bb3cadc4487dd93f37c4750"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-27T22:41:42.845832339Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:8e2275a55a20a8bd44b064da3ee67aaff7cec39a19af5ca2c925d8a1249d2abe",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "ybvx5cnir7jznisf91j5e1rg7",
+                    "CreatedAt": "2026-09-27T22:41:43.333000714Z"
+                }
+            ]
+        }
+    }
+]
