@@ -19,7 +19,7 @@
   },
   "fixture_sha256": {
     "README.md": "0224d987494d3ac574b662d24958ff5c8dd24fc49607331a3f9126d2a6b9069f",
-    "capture.py": "c74f622abf4daf7d73a412a53e427c824300ff5b57edc8a07d7960ab203fbb3a",
+    "capture.py": "af7dbfac4a5a22294234d4d2537e9fb305ef6d6975be6bef9633cb147b978600",
     "evidence/r3/000.stderr": "49678d3e1ca70e8bcce2a2ad9cbac997c353b3c743a2173cdfddee61e74909a5",
     "evidence/r3/000.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "evidence/r3/001.stderr": "100e45fb3683117c8b02aa1ab70aa09e69d465ba6f3a9de41388948f36bfadb4",
@@ -242,7 +242,7 @@
     "evidence/r4/volume-verify-removal.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "observations.json": "c5f59c3cf324f073257d5d86b2cb1cd2de4073c87f2d1b7d8817426b640a8055",
     "suite.json": "ee47ffdca0e0de0725ac5fd1682683997cf90a2552b96614253195a943670c0c",
-    "test_startup.py": "02b1fd35b54cba72570dd3c89ca28b2526176bb696f99c02f5015ac4d936b2e5",
+    "test_startup.py": "7997793eab6135ec78c6ac14bac7f58e68f19b085d9a241bf1a4439729367ddd",
     "verify.py": "fd5612a729cac9570a6f7ac0aa660c0ae831f2ccbdcfa3d8b125622472f919e6"
   },
   "kingpin_module_sum": "h1:f48lwail6p8zpO1bC4TxtqACaGqHYA22qkHjHpqDjYY=",
