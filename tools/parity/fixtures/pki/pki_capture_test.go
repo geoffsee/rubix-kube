@@ -46,7 +46,16 @@ func TestRubixCapture(t *testing.T){
  stable:=map[string]bool{};for kind,hash:=range before{stable[kind]=hash==after[kind]};scenarios[scenario]=map[string]interface{}{"stable_certificates":stable,"certificates":captureMetadata(t,e)}
  }
  out["rotations"]=scenarios
- before:=captureFingerprint(t,e);e.APIServerExtraSANs=append(e.APIServerExtraSANs,"", "not a san", "2001:db8::1");if err:=InvalidateIfStale(e);err!=nil{t.Fatal(err)};out["invalid_extra_sans_ignored"]=fmt.Sprint(before)==fmt.Sprint(captureFingerprint(t,e))
+ before:=captureFingerprint(t,e);e.APIServerExtraSANs=append(e.APIServerExtraSANs,"", "not a san");if err:=InvalidateIfStale(e);err!=nil{t.Fatal(err)}
+ _,statErr:=os.Stat(e.APIServerCerts.Cert)
+ if statErr!=nil&&!os.IsNotExist(statErr){t.Fatal(statErr)}
+ out["invalid_extra_sans_ignored"]=statErr==nil&&fmt.Sprint(before)==fmt.Sprint(captureFingerprint(t,e))
+ if err:=GenerateAllCertificates(e);err!=nil{t.Fatal(err)}
+ // A valid IPv6 SAN is a separate baseline characterization, not invalid input.
+ e.APIServerExtraSANs=append(e.APIServerExtraSANs,"2001:db8::1");if err:=InvalidateIfStale(e);err!=nil{t.Fatal(err)}
+ _,statErr=os.Stat(e.APIServerCerts.Cert);if statErr!=nil&&!os.IsNotExist(statErr){t.Fatal(statErr)}
+ out["ipv6_extra_san_rotates"]=os.IsNotExist(statErr)
+ if err:=GenerateAllCertificates(e);err!=nil{t.Fatal(err)}
  // Baseline skips any existing certificate/key pair, even a corrupted key.
  saved:=captureRead(t,e.AdminCerts.Key);if err:=os.WriteFile(e.AdminCerts.Key,[]byte("bad key"),0600);err!=nil{t.Fatal(err)};err:=GenerateAllCertificates(e);out["existing_corrupt_key_is_skipped"]=err==nil&&bytes.Equal(captureRead(t,e.AdminCerts.Key),[]byte("bad key"));if err=os.WriteFile(e.AdminCerts.Key,saved,0600);err!=nil{t.Fatal(err)}
  // A parseable but unrelated private key is also skipped by the baseline.
