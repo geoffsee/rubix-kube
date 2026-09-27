@@ -44,6 +44,15 @@ def inspect_archive(boundary, data, contract):
     return len(names)
 
 
+def check_declaration(boundary, manifest, contract):
+    declaration = manifest.get("dev-dependencies", {}).get(contract["crate"])
+    if (not isinstance(declaration, dict)
+            or declaration.get("version") != "=" + contract["version"]
+            or declaration.get("default-features") is not False
+            or declaration.get("features") != [contract["feature"]]):
+        raise boundary.InputError("maintenance dependency must declare exact version and explicit v1_35 only")
+
+
 def check_selection(boundary, metadata, lock, contract, checksum):
     packages = [p for p in metadata["packages"] if p["name"] == contract["crate"]]
     if len(packages) != 1:
@@ -91,6 +100,7 @@ def check(boundary, inputs, cache, root):
         raise boundary.InputError("official schema disagrees with architecture")
     check_schema(boundary, data, records, contract)
     count = inspect_archive(boundary, data["k8s-openapi-crate"], contract)
+    check_declaration(boundary, tomllib.loads((root / "tools/upstream/Cargo.toml").read_text()), contract)
     # Explicit offline Cargo metadata resolves actual unified features without compiling or fetching.
     metadata = json.loads(subprocess.check_output(
         ["cargo", "metadata", "--offline", "--locked", "--format-version", "1"], cwd=root, timeout=60))

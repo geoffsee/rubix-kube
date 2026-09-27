@@ -49,6 +49,20 @@ class BindingTests(unittest.TestCase):
         with self.assertRaisesRegex(upstream.InputError, "source revision"):
             kubernetes.inspect_archive(upstream, archive(revision="b" * 40), CONTRACT)
 
+    def test_loosened_declaration_fails_even_with_same_locked_resolution(self):
+        valid = {"dev-dependencies": {"k8s-openapi": {
+            "version": "=0.28.0", "default-features": False, "features": ["v1_35"]}}}
+        kubernetes.check_declaration(upstream, valid, CONTRACT)
+        for value in ("0.28.0", "^0.28.0", "*"):
+            changed = copy.deepcopy(valid)
+            changed["dev-dependencies"]["k8s-openapi"]["version"] = value
+            with self.subTest(version=value), self.assertRaisesRegex(upstream.InputError, "declare exact"):
+                kubernetes.check_declaration(upstream, changed, CONTRACT)
+        changed = copy.deepcopy(valid)
+        changed["dev-dependencies"]["k8s-openapi"]["features"] = ["latest"]
+        with self.assertRaises(upstream.InputError):
+            kubernetes.check_declaration(upstream, changed, CONTRACT)
+
     def selection(self):
         package = {"id": "selected", "name": "k8s-openapi", "version": "0.28.0", "source": kubernetes.REGISTRY}
         metadata = {"packages": [package], "resolve": {"nodes": [{"id": "selected", "features": ["v1_35"]}]}}
