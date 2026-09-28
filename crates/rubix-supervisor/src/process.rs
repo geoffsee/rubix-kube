@@ -11,6 +11,12 @@ use std::sync::{Arc, Mutex, MutexGuard, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+#[path = "process_output.rs"]
+mod output;
+pub use output::{
+    CapturedOutput, InvalidOutputLimit, OutputLimit, OutputSnapshot, OutputStatus, ProcessOutput,
+};
+
 const POLL: Duration = Duration::from_millis(10);
 
 /// Command contents are deliberately excluded from diagnostics and Debug.
@@ -83,6 +89,7 @@ impl ProcessCleanupSnapshot {
 struct Shared {
     snapshot: ProcessCleanupSnapshot,
     thread: Option<JoinHandle<()>>,
+    output: Option<Arc<CapturedOutput>>,
 }
 type State = Arc<Mutex<Shared>>;
 fn lock(state: &State) -> MutexGuard<'_, Shared> {
@@ -144,6 +151,7 @@ pub struct OwnedProcessAdapter {
     command: ProcessCommand,
     readiness: AdapterFuture,
     cleanup: ProcessCleanup,
+    output_limit: Option<OutputLimit>,
 }
 impl fmt::Debug for OwnedProcessAdapter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -163,9 +171,21 @@ impl OwnedProcessAdapter {
                 command,
                 readiness: Box::pin(readiness),
                 cleanup: cleanup.clone(),
+                output_limit: None,
             },
             cleanup,
         )
+    }
+    /// Capture merged stdout/stderr with a hard retention limit. Default construction stays null.
+    pub fn new_with_bounded_output(
+        command: ProcessCommand,
+        readiness: impl Future<Output = Result<(), AdapterError>> + Send + 'static,
+        limit: OutputLimit,
+    ) -> (Self, ProcessCleanup, ProcessOutput) {
+        let (mut adapter, cleanup) = Self::new(command, readiness);
+        adapter.output_limit = Some(limit);
+        let output = ProcessOutput(cleanup.clone());
+        (adapter, cleanup, output)
     }
 }
 fn failure(code: &'static str) -> AdapterError {
@@ -180,8 +200,9 @@ fn outcome(
     snapshot: &ProcessCleanupSnapshot,
     stopping: bool,
     probe_error: Option<&'static str>,
+    output_error: Option<&'static str>,
 ) -> Result<(), AdapterError> {
-    if let Some(error) = probe_error.or(snapshot.error) {
+    if let Some(error) = probe_error.or(snapshot.error).or(output_error) {
         return Err(failure(error));
     }
     let expected_exit = snapshot.exit.is_some_and(|exit| {
@@ -204,6 +225,7 @@ async fn run_owned(
         command,
         mut readiness,
         cleanup,
+        output_limit,
     } = adapter;
     if context.stop_phase() != StopPhase::Running {
         return Ok(());
@@ -213,7 +235,7 @@ async fn run_owned(
     let state = cleanup.0.clone();
     let Ok(thread) = thread::Builder::new()
         .name("rubix-process-owner".into())
-        .spawn(move || owner(command, &receiver, &state))
+        .spawn(move || owner(command, &receiver, &state, output_limit))
     else {
         lock(&cleanup.0).snapshot.error = Some("process_owner_spawn_failed");
         return Err(failure("process_owner_spawn_failed"));
@@ -226,7 +248,11 @@ async fn run_owned(
     loop {
         let snapshot = cleanup.snapshot();
         if snapshot.thread_joined {
-            return outcome(&snapshot, stopping, probe_error);
+            let output_error = lock(&cleanup.0)
+                .output
+                .as_ref()
+                .and_then(|output| output.status.error_code());
+            return outcome(&snapshot, stopping, probe_error, output_error);
         }
         tokio::select! {
             phase = context.changed(), if !force_sent => {
@@ -344,14 +370,32 @@ impl Drop for OwnedChild {
         self.finish();
     }
 }
-fn owner(mut command: ProcessCommand, receiver: &mpsc::Receiver<StopPhase>, state: &State) {
+fn owner(
+    mut command: ProcessCommand,
+    receiver: &mpsc::Receiver<StopPhase>,
+    state: &State,
+    output_limit: Option<OutputLimit>,
+) {
+    let Ok(mut drain) = output_limit
+        .map(|limit| output::Drain::setup(&mut command, limit))
+        .transpose()
+    else {
+        let mut shared = lock(state);
+        shared.output = Some(CapturedOutput::empty(OutputStatus::SetupFailed));
+        shared.snapshot.thread_finished = true;
+        return;
+    };
     command.0.process_group(0);
     let Ok(child) = command.0.spawn() else {
         let mut shared = lock(state);
         shared.snapshot.error = Some("process_spawn_failed");
+        if output_limit.is_some() {
+            shared.output = Some(CapturedOutput::empty(OutputStatus::SpawnFailed));
+        }
         shared.snapshot.thread_finished = true;
         return;
     };
+    drop(command); // Close every parent write descriptor; only child stdout/stderr retain writers.
     let pid = Pid::from_child(&child);
     lock(state).snapshot.spawned = true;
     let mut owned = OwnedChild {
@@ -366,49 +410,27 @@ fn owner(mut command: ProcessCommand, receiver: &mpsc::Receiver<StopPhase>, stat
         shared.snapshot.ownership_lost = true;
         shared.snapshot.error = Some("process_group_pid_one_rejected");
     } else {
-        let mut term = false;
-        let mut force = false;
-        loop {
-            match owned.observe() {
-                Ok(true) => break,
-                Err(error) => {
-                    lock(state).snapshot.error = Some(error);
-                    break;
-                },
-                Ok(false) => {},
-            }
-            let phase = if force {
-                thread::sleep(POLL);
-                StopPhase::Running
-            } else {
-                match receiver.recv_timeout(POLL) {
-                    Ok(phase) => phase,
-                    Err(mpsc::RecvTimeoutError::Disconnected) => StopPhase::Force,
-                    Err(mpsc::RecvTimeoutError::Timeout) => StopPhase::Running,
-                }
-            };
-            let signal = match phase {
-                StopPhase::Graceful if !term && !force => {
-                    term = true;
-                    Some(Signal::TERM)
-                },
-                StopPhase::Force if !force => {
-                    force = true;
-                    lock(state).snapshot.force_requested = true;
-                    Some(Signal::KILL)
-                },
-                _ => None,
-            };
-            if let Some(signal) = signal
-                && let Err(error) = owned.signal(signal)
-            {
-                lock(state).snapshot.error = Some(error);
-                break;
-            }
-        }
+        monitor_owned(&mut owned, receiver, state, &mut drain);
     }
     owned.finish();
     drop(owned);
+    if let Some(mut output) = drain {
+        let began = std::time::Instant::now();
+        while output.pending() && began.elapsed() < Duration::from_millis(250) {
+            if !matches!(
+                receiver.try_recv(),
+                Err(mpsc::TryRecvError::Empty) | Ok(StopPhase::Running)
+            ) {
+                output.cancel();
+                break;
+            }
+            output.turn();
+            if output.pending() {
+                thread::sleep(POLL);
+            }
+        }
+        lock(state).output = Some(output.publish());
+    }
     lock(state).snapshot.thread_finished = true;
 }
 
@@ -445,6 +467,70 @@ impl Adapter for ExternalServiceAdapter {
     }
 }
 
+fn monitor_owned(
+    owned: &mut OwnedChild,
+    receiver: &mpsc::Receiver<StopPhase>,
+    state: &State,
+    drain: &mut Option<output::Drain>,
+) {
+    let mut term = false;
+    let mut force = false;
+    loop {
+        if let Some(output) = drain.as_mut() {
+            output.turn();
+        }
+        if drain.as_ref().is_some_and(output::Drain::failed) && !force {
+            force = true;
+            lock(state).snapshot.force_requested = true;
+            if let Err(error) = owned.signal(Signal::KILL) {
+                lock(state).snapshot.error = Some(error);
+                break;
+            }
+        }
+        match owned.observe() {
+            Ok(true) => break,
+            Err(error) => {
+                lock(state).snapshot.error = Some(error);
+                break;
+            },
+            Ok(false) => {},
+        }
+        let phase = if force {
+            thread::sleep(POLL);
+            StopPhase::Running
+        } else {
+            match receiver.recv_timeout(POLL) {
+                Ok(phase) => phase,
+                Err(mpsc::RecvTimeoutError::Disconnected) => StopPhase::Force,
+                Err(mpsc::RecvTimeoutError::Timeout) => StopPhase::Running,
+            }
+        };
+        if phase != StopPhase::Running
+            && let Some(output) = drain.as_mut()
+        {
+            output.cancel();
+        }
+        let signal = match phase {
+            StopPhase::Graceful if !term && !force => {
+                term = true;
+                Some(Signal::TERM)
+            },
+            StopPhase::Force if !force => {
+                force = true;
+                lock(state).snapshot.force_requested = true;
+                Some(Signal::KILL)
+            },
+            _ => None,
+        };
+        if let Some(signal) = signal
+            && let Err(error) = owned.signal(signal)
+        {
+            lock(state).snapshot.error = Some(error);
+            break;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{ProcessCleanupSnapshot, ProcessExit, outcome, retry_interrupted};
@@ -473,7 +559,7 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(
-            outcome(&snapshot, true, None)
+            outcome(&snapshot, true, None, None)
                 .expect_err("abnormal exit")
                 .code,
             "process_exited_unsuccessfully"
@@ -486,11 +572,47 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(
-            outcome(&snapshot, true, Some("probe_failed"))
-                .expect_err("primary failure")
-                .code,
+            outcome(
+                &snapshot,
+                true,
+                Some("probe_failed"),
+                Some("process_output_incomplete")
+            )
+            .expect_err("primary failure")
+            .code,
             "probe_failed"
         );
         assert_eq!(snapshot.error, Some("cleanup_failed"));
+    }
+    #[test]
+    fn output_failure_does_not_hide_ownership_or_signal_failure() {
+        for error in [
+            "process_child_ownership_lost",
+            "process_group_signal_failed",
+        ] {
+            let snapshot = ProcessCleanupSnapshot {
+                error: Some(error),
+                ..Default::default()
+            };
+            for output in ["process_output_incomplete", "process_output_limit"] {
+                assert_eq!(
+                    outcome(&snapshot, true, None, Some(output))
+                        .expect_err("owner failure")
+                        .code,
+                    error
+                );
+            }
+        }
+        assert_eq!(
+            outcome(
+                &ProcessCleanupSnapshot::default(),
+                false,
+                None,
+                Some("process_output_incomplete")
+            )
+            .expect_err("output failure")
+            .code,
+            "process_output_incomplete"
+        );
     }
 }

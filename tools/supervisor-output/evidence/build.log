@@ -1,0 +1,103 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 739B done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#3 DONE 1.6s
+
+#2 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#2 DONE 1.6s
+
+#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [2/5] WORKDIR /source
+#6 CACHED
+
+#7 [internal] load build context
+#7 ...
+
+#8 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#8 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.2s done
+#8 DONE 0.2s
+
+#7 [internal] load build context
+#7 transferring context: 2.01MB 0.1s done
+#7 DONE 0.2s
+
+#9 [build 3/4] COPY . .
+#9 DONE 0.1s
+
+#10 [build 4/4] RUN cargo test -p rubix-supervisor --test output --locked --no-run && mkdir /out && for executable in target/debug/deps/output-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/output-tests; fi; done && test -x /out/output-tests
+#10 0.273 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 4.477 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 4.484 info: downloading 3 components
+#10 26.40     Updating crates.io index
+#10 32.60  Downloading crates ...
+#10 33.31   Downloaded tokio-macros v2.7.1
+#10 33.44   Downloaded pin-project-lite v0.2.17
+#10 33.48   Downloaded errno v0.3.14
+#10 33.61   Downloaded quote v1.0.47
+#10 33.64   Downloaded signal-hook-registry v1.4.8
+#10 33.79   Downloaded bitflags v2.13.2
+#10 33.85   Downloaded unicode-ident v1.0.26
+#10 33.89   Downloaded proc-macro2 v1.0.107
+#10 34.15   Downloaded mio v1.2.3
+#10 35.10   Downloaded syn v2.0.119
+#10 35.38   Downloaded rustix v1.1.5
+#10 36.30   Downloaded libc v0.2.189
+#10 36.42   Downloaded tokio v1.53.1
+#10 38.83   Downloaded linux-raw-sys v0.12.1
+#10 38.91    Compiling proc-macro2 v1.0.107
+#10 38.91    Compiling libc v0.2.189
+#10 38.91    Compiling unicode-ident v1.0.26
+#10 38.91    Compiling quote v1.0.47
+#10 38.91    Compiling rustix v1.1.5
+#10 38.91    Compiling pin-project-lite v0.2.17
+#10 38.91    Compiling linux-raw-sys v0.12.1
+#10 38.91    Compiling bitflags v2.13.2
+#10 39.44    Compiling syn v2.0.119
+#10 39.58    Compiling errno v0.3.14
+#10 39.58    Compiling mio v1.2.3
+#10 39.63    Compiling signal-hook-registry v1.4.8
+#10 43.85    Compiling tokio-macros v2.7.1
+#10 45.06    Compiling tokio v1.53.1
+#10 45.98    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 47.37     Finished `test` profile [unoptimized + debuginfo] target(s) in 20.99s
+#10 47.39   Executable tests/output.rs (target/debug/deps/output-85a6af052d781fd3)
+#10 DONE 47.5s
+
+#8 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#8 CACHED
+
+#11 [stage-1 2/4] COPY --from=build /out/output-tests /output-tests
+#11 DONE 0.0s
+
+#12 [stage-1 3/4] COPY tools/supervisor-output/fixture.py /fixture.py
+#12 DONE 0.0s
+
+#13 [stage-1 4/4] COPY tools/supervisor-process/namespace_inventory.py /namespace_inventory.py
+#13 DONE 0.0s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.2s done
+#14 exporting manifest sha256:61497fde77d4b00f9999ae693bae8ffce19605de51da835fd6f4fe2815b63d9d done
+#14 exporting config sha256:5dd48b573b96b8f5c3cb66fe2b84f42633f0d5acdd516f8334e68bc8cb1adf36 done
+#14 exporting attestation manifest sha256:40e6fa3c6d223d8ebc22551ced2ad0063a751d64706de4677390977cbed3cd74 done
+#14 exporting manifest list sha256:e06f851b34a4a8def253ec819b69d8e83cc3087400e5c55a4344d75f00979dc3 done
+#14 naming to docker.io/library/rubix-output-0eb8a7509aea4e00a9bc3486a599b703:latest done
+#14 unpacking to docker.io/library/rubix-output-0eb8a7509aea4e00a9bc3486a599b703:latest 0.1s done
+#14 DONE 0.4s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/k0y1sm6njwkm1yqzju77tuui3
