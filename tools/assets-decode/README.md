@@ -48,12 +48,17 @@ ABI/CPU/libc combinations, hard RSS/CPU limits or archive/OCI semantics. The new
 suite exercises composed ELF header observations on synthetic compressed vectors;
 it does not establish executable runtime compatibility or installation safety.
 
-Historical schema1 evidence in this branch was captured on
-`ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, with14 decoder cases per run.
-It intentionally cannot satisfy the expanded schema2 verifier. The reviewed new
-harness must be committed and both suites freshly captured before qualification
-is claimed; mandatory stored-evidence tests remain failing until that publication.
+Stored schema2 evidence was captured on
+`a45e635357eafb086fde62aaa0ed5d43ff217f59`. Both Linuxarm64 release runs
+passed all14 decoder tests and all10 decoded ELF tests. Both builder-produced
+executable hashes match both runtime observations:
 
-Fresh schema2 receipts must also bind the build log and both builder-produced
-binary digests. Older receipts without those fields require recapture and cannot
-be relabelled as qualification of this combined harness.
+- `decode`: `5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b`
+- `decoded_elf`: `0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001`
+
+The receipt binds the nonce-controlled build output and build log hash, and reports
+no capture/cleanup errors or remaining owned containers/images. The owned names
+and image tag were independently confirmed absent. All13 evidence regressions and
+current-source verification pass normally and under optimization. Older receipts
+without builder/log bindings are historical only. Production-payload and other
+ABI/runtime qualification remains open.
