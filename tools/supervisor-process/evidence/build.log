@@ -26,50 +26,50 @@
 #7 DONE 0.0s
 
 #8 [internal] load build context
-#8 transferring context: 1.89MB 0.0s done
+#8 transferring context: 1.96MB 0.0s done
 #8 DONE 0.0s
 
 #9 [build 3/4] COPY . .
 #9 DONE 0.0s
 
 #10 [build 4/4] RUN cargo test -p rubix-supervisor --test process_ownership --locked --no-run && mkdir /out && for executable in target/debug/deps/process_ownership-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/process-tests; fi; done && test -x /out/process-tests
-#10 0.115 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 1.674 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 1.682 info: downloading 3 components
-#10 7.628     Updating crates.io index
-#10 12.56  Downloading crates ...
-#10 12.99   Downloaded errno v0.3.14
-#10 13.30   Downloaded tokio-macros v2.7.1
-#10 13.43   Downloaded pin-project-lite v0.2.17
-#10 13.45   Downloaded bitflags v2.13.2
-#10 13.47   Downloaded signal-hook-registry v1.4.8
-#10 13.48   Downloaded quote v1.0.47
-#10 13.49   Downloaded unicode-ident v1.0.26
-#10 13.58   Downloaded proc-macro2 v1.0.107
-#10 13.72   Downloaded mio v1.2.3
-#10 14.65   Downloaded syn v2.0.119
-#10 14.90   Downloaded rustix v1.1.5
-#10 15.67   Downloaded libc v0.2.189
-#10 15.83   Downloaded tokio v1.53.1
-#10 17.31   Downloaded linux-raw-sys v0.12.1
-#10 17.38    Compiling libc v0.2.189
-#10 17.38    Compiling proc-macro2 v1.0.107
-#10 17.38    Compiling quote v1.0.47
-#10 17.38    Compiling unicode-ident v1.0.26
-#10 17.38    Compiling rustix v1.1.5
-#10 17.38    Compiling linux-raw-sys v0.12.1
-#10 17.38    Compiling bitflags v2.13.2
-#10 17.38    Compiling pin-project-lite v0.2.17
-#10 17.96    Compiling syn v2.0.119
-#10 18.07    Compiling errno v0.3.14
-#10 18.07    Compiling mio v1.2.3
-#10 18.12    Compiling signal-hook-registry v1.4.8
-#10 20.53    Compiling tokio-macros v2.7.1
-#10 21.35    Compiling tokio v1.53.1
-#10 22.18    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 23.08     Finished `test` profile [unoptimized + debuginfo] target(s) in 15.46s
-#10 23.09   Executable tests/process_ownership.rs (target/debug/deps/process_ownership-cf803a579a0fe168)
-#10 DONE 23.3s
+#10 0.104 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 1.385 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 1.393 info: downloading 3 components
+#10 6.293     Updating crates.io index
+#10 9.976  Downloading crates ...
+#10 10.52   Downloaded tokio-macros v2.7.1
+#10 10.66   Downloaded errno v0.3.14
+#10 10.72   Downloaded signal-hook-registry v1.4.8
+#10 10.75   Downloaded pin-project-lite v0.2.17
+#10 10.92   Downloaded unicode-ident v1.0.26
+#10 10.92   Downloaded quote v1.0.47
+#10 10.95   Downloaded bitflags v2.13.2
+#10 11.02   Downloaded proc-macro2 v1.0.107
+#10 11.28   Downloaded mio v1.2.3
+#10 12.13   Downloaded syn v2.0.119
+#10 12.63   Downloaded rustix v1.1.5
+#10 14.46   Downloaded tokio v1.53.1
+#10 14.50   Downloaded libc v0.2.189
+#10 17.10   Downloaded linux-raw-sys v0.12.1
+#10 17.16    Compiling libc v0.2.189
+#10 17.16    Compiling proc-macro2 v1.0.107
+#10 17.16    Compiling quote v1.0.47
+#10 17.16    Compiling unicode-ident v1.0.26
+#10 17.16    Compiling rustix v1.1.5
+#10 17.17    Compiling linux-raw-sys v0.12.1
+#10 17.17    Compiling bitflags v2.13.2
+#10 17.17    Compiling pin-project-lite v0.2.17
+#10 17.93    Compiling syn v2.0.119
+#10 18.09    Compiling errno v0.3.14
+#10 18.09    Compiling mio v1.2.3
+#10 18.14    Compiling signal-hook-registry v1.4.8
+#10 20.52    Compiling tokio-macros v2.7.1
+#10 21.42    Compiling tokio v1.53.1
+#10 22.34    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 23.19     Finished `test` profile [unoptimized + debuginfo] target(s) in 16.92s
+#10 23.21   Executable tests/process_ownership.rs (target/debug/deps/process_ownership-cf803a579a0fe168)
+#10 DONE 23.4s
 
 #11 [stage-1 2/4] COPY --from=build /out/process-tests /process-tests
 #11 CACHED
@@ -84,10 +84,10 @@
 #14 exporting layers done
 #14 exporting manifest sha256:409f4f2e500a671daf2ca0c9cec98200fcf5109e88e4751aa149d96d07bd4ab3 done
 #14 exporting config sha256:53e53308a45f5b3c5dc3cefa59d7cf8ec1d966b01e6f4cd3268cc9ca7ce1224d done
-#14 exporting attestation manifest sha256:fdec96ba94ee1a13fc0ae6674055bcdfe8ab7cffac45580ad4b41ac1aeb75b00 done
-#14 exporting manifest list sha256:56fecd07ee06fd199cde131e05587bac5cce5387fe1f84fe0cf62320a07776e6 done
-#14 naming to docker.io/library/rubix-process-4c9adbfde4314919ad250095e6a01ff8:latest done
-#14 unpacking to docker.io/library/rubix-process-4c9adbfde4314919ad250095e6a01ff8:latest 0.0s done
+#14 exporting attestation manifest sha256:7a6690fd45686691eff65db8ef6f66ed90a6ada232604e50a8c70958ea993946 done
+#14 exporting manifest list sha256:b7a719436655656a4a37944372ba08829736261d7d30cd9cfbf92767d3539108 done
+#14 naming to docker.io/library/rubix-process-f9299ce981a74146b0c0f982dcd0f1ab:latest done
+#14 unpacking to docker.io/library/rubix-process-f9299ce981a74146b0c0f982dcd0f1ab:latest 0.0s done
 #14 DONE 0.1s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ck9cgtdsy9u2xhdya9sqtzm4m
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/wfwwznx51ztcb6ed5ngsozcjz
