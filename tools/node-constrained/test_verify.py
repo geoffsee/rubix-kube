@@ -4,6 +4,9 @@ import hashlib
 import json
 from pathlib import Path
 import stat
+import os
+import resource
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -267,6 +270,48 @@ class FailureDiagnostics(unittest.TestCase):
                 self.assertEqual(row['cleanup_error'],'OSError: owned cleanup failed' if cleanup_fails else None)
                 rows=records();rows.insert(-1,dict(schema=1,event=event_name,**row))
                 with self.assertRaises(ValueError):verify.semantic(encoded(rows),META)
+
+class NamespaceToolView(unittest.TestCase):
+    def run_view(self,source,reference,view,tool,double):
+        raw=(support.HERE/'namespace.sh').read_text()
+        begin='# MAKE_TOOL_VIEW_BEGIN\n';end='# MAKE_TOOL_VIEW_END'
+        self.assertEqual(raw.count(begin),1);self.assertEqual(raw.count(end),1)
+        function=raw.split(begin)[1].split(end)[0]
+        # Execute only the marked file-view helper, never namespace setup or any mount.
+        script='set -eu\n'+function+'\nmake_tool_view "$@"\n'
+        def limits():
+            resource.setrlimit(resource.RLIMIT_FSIZE,(1024*1024,1024*1024))
+            resource.setrlimit(resource.RLIMIT_CORE,(0,0))
+        return subprocess.run(['/bin/sh','-c',script,'view-test',str(source),str(reference),str(view),tool,str(double)],capture_output=True,text=True,timeout=10,preexec_fn=limits)
+    def test_large_executable_and_relative_aliases_preserved_under_file_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);source=root/'usr/sbin';source.mkdir(parents=True);external=root/'usr/bin';external.mkdir()
+            payload=b'x'*(2*1024*1024);(source/'large').write_bytes(payload);(external/'outside').write_bytes(payload)
+            (source/'inside-alias').symlink_to('large');(source/'outside-alias').symlink_to('../bin/outside')
+            (source/'iptables').symlink_to('large');reference=root/'original';reference.symlink_to(source,target_is_directory=True)
+            double=root/'double';double.write_text('#!/bin/sh\nexit 73\n');view=root/'view'
+            result=self.run_view(source,reference,view,'iptables',double)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(os.readlink(view/'large'),str(reference/'large'))
+            self.assertEqual(os.readlink(view/'inside-alias'),str(reference/'large'))
+            self.assertEqual(os.readlink(view/'outside-alias'),str((external/'outside').resolve()))
+            self.assertEqual((view/'inside-alias').read_bytes(),payload)
+            self.assertEqual((view/'outside-alias').read_bytes(),payload)
+            self.assertFalse((view/'iptables').is_symlink());self.assertEqual((view/'iptables').read_bytes(),double.read_bytes())
+            self.assertEqual((source/'large').read_bytes(),payload);self.assertTrue((source/'iptables').is_symlink())
+    def test_view_rejects_unbounded_nonregular_or_unapproved_inputs(self):
+        for scenario in ['too-many','dangling','directory','tool','double']:
+            with self.subTest(scenario=scenario),tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);source=root/'sbin';source.mkdir();reference=root/'original';reference.symlink_to(source,target_is_directory=True)
+                (source/'tool').write_bytes(b'original');double=root/'double';double.write_text('#!/bin/sh\nexit 1\n')
+                if scenario=='too-many':
+                    for index in range(256):(source/str(index)).touch()
+                elif scenario=='dangling':(source/'broken').symlink_to('missing')
+                elif scenario=='directory':(source/'nested').mkdir()
+                elif scenario=='double':double.write_bytes(b'x'*4097)
+                result=self.run_view(source,reference,root/'view','unapproved' if scenario=='tool' else 'modprobe',double)
+                self.assertNotEqual(result.returncode,0)
+                self.assertEqual((source/'tool').read_bytes(),b'original')
 
 class PublishedEvidence(unittest.TestCase):
     def test_first_approved_build_required(self):verify_build.verify(support.HERE/'evidence/first/artifact-build',binary=False)
