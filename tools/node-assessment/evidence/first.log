@@ -18,28 +18,28 @@ test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; fini
 
 
 running 1 test
-RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=67
+RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=70
 RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=69
-RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=80
-RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=66
-RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=78
+RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=74
+RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=77
+RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=67
 RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=11
-RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=10
+RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=11
 RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=78
-RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2035
-RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=68
-RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=339
+RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2026
+RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=71
+RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=327
 RUBIX_NODE_PROBE_COMPLETE cases=11 external_sentinel_preserved=true
 test disposable_fixed_probe ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.91s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.90s
 
 
 running 1 test
 RUBIX_NODE_ASSESSMENT external=true real_probe=true injected_host_facts=true
 test disposable_configured_assessment ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.06s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.09s
 
 RUBIX_NODE_CONSUMER case=help exit=0 probe_absent=true
 RUBIX_NODE_CONSUMER case=version exit=0 probe_absent=true
