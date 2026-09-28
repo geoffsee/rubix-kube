@@ -23,7 +23,7 @@ fn main() {
                 &directory,
                 &rest
                     .first()
-                    .map_or_else(|| directory.join("evidence"), std::path::PathBuf::from),
+                    .map_or_else(|| directory.join("rust-evidence"), std::path::PathBuf::from),
                 true,
             )
             .map(|()| 0)

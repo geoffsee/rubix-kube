@@ -52,8 +52,23 @@ pub fn cli(args: &[String]) -> Result<i32> {
         report["output_sha256"] = value!({"run0.json":capture::digest(&args.output.join("run0.json"))?,"run1.json":capture::digest(&args.output.join("run1.json"))?});
         let source = format!("{}:/out/modules.sha256", owned.containers[0]);
         let mut copy = capture::arguments(&["docker", "cp", &source]);
-        copy.push(args.output.join("modules.sha256").into_os_string());
+        copy.push(
+            args.output
+                .canonicalize()?
+                .join("modules.sha256")
+                .into_os_string(),
+        );
         runner.bounded(&copy, "copy-modules", 30, 1024 * 1024)?;
+        report["modules_sha256"] = value!(capture::digest(&args.output.join("modules.sha256"))?);
+        crate::defaults::evidence::verify_modules(
+            &crate::read_bounded(&args.output.join("modules.sha256"), 1024 * 1024)?,
+            &report,
+            true,
+        )?;
+        require(
+            report["source_sha256"] == capture::source_inventory(&fixture)?,
+            "capture sources changed during execution",
+        )?;
         Ok(())
     })();
     if let Err(error) = result {

@@ -22,7 +22,7 @@ fn main() {
             let directory = rubix_dev::defaults::directory();
             rubix_dev::defaults::capture::verify_evidence(
                 &directory,
-                &rest.first().map_or_else(|| directory.join("evidence"), std::path::PathBuf::from),
+                &rest.first().map_or_else(|| directory.join("rust-evidence"), std::path::PathBuf::from),
                 false,
             )
             .map(|()| 0)

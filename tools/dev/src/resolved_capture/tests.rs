@@ -120,6 +120,10 @@ fn historical_receipt_is_not_current_rust_qualification() {
 }
 #[test]
 fn current_resolved_sources_output_and_cleanup_are_bound() {
-    crate::defaults::capture::verify_evidence(&directory(), &directory().join("evidence"), true)
-        .unwrap();
+    crate::defaults::capture::verify_evidence(
+        &directory(),
+        &directory().join("rust-evidence"),
+        true,
+    )
+    .unwrap();
 }

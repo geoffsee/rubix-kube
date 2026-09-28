@@ -89,7 +89,7 @@ the matching receipt; the comparator checks both repeated-output digests.
 
 The source-reviewed oracle and full frozen output comparison now execute in Rust. Historical
 raw evidence, expected hashes, and provenance are preserved without relabeling. A current-source
-`rubix-resolved-defaults verify-evidence` gate intentionally rejects those older receipts until the combined
+`rubix-resolved-defaults verify-evidence` gate reads the separate `rust-evidence/` directory and fails until the combined
 Rust tooling source is frozen and a fresh actual capture is published. The corresponding current
 evidence test fails pending that capture; semantic and adversarial tests remain
 runnable without Docker. No fresh Rust capture is claimed by this migration.
