@@ -3,8 +3,8 @@
 The runner, transport orchestration, normalization and independent verifier now live in
 `tools/dev/src/api_json` and `tools/dev/src/component_boundary`. The existing evidence,
 fixture and provenance bytes remain historical records. Current qualification requires a
-new actual Rust capture under `evidence-rust`; the mandatory test fails until it exists.
-Source-frozen recapture has not yet been performed for this migration.
+verified actual Rust capture under `evidence-rust`, produced from frozen source.
+The mandatory test checks that capture independently of the historical records.
 
 Rust owns child-process groups, request state and assertions. OpenSSL supplies certificate
 operations; curl performs verified TLS HTTP; SQLite CLI executes fixed read-only queries.

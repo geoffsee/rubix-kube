@@ -2,7 +2,7 @@
 
 The Rust migration uses `tools/dev/src/component_boundary` and the shared owned-process
 runner. Existing evidence remains unchanged. A new source-frozen actual Rust capture under
-`evidence-rust` is mandatory; the qualification test currently fails until publication.
+`evidence-rust` is mandatory; publish only captures that pass the current verifier.
 The Rust source, Dockerfile and artifact pin inventory are checked both outside and inside
 the disposable image. Host command receipts bind raw logs, argument vectors and settlement.
 Cancellation and uncertain cleanup cannot be reported as success.

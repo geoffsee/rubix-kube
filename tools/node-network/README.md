@@ -95,19 +95,21 @@ boolean CLI syntax and stopped before preparation effects. Both failed guests
 also shut down cleanly. The corrected capture changes only fixture expectations
 and arguments; production preparation behavior was unchanged.
 
-The current refresh binds the container preparation additions and Rust dependency
+The historical refresh bound the container preparation additions and Rust dependency
 features into the complete compiled source inventory. Both guest captures were
 rerun from this clean revision. This evidence qualifies the network boundary;
 `tools/node-container` separately qualifies the explicit combined preparation API.
 
-The Rust migration requires new schema 3 artifact receipts and schema 2 owned-VM
-receipts from reviewed source. Historical raw evidence is retained unchanged and
-currently fails the mandatory current-evidence gates. No migration capture has
-run. Use `network verify DIRECTORY` for one new guest or `network verify-published`
-for installed first/repeat evidence, through the same `cargo run` prefix above.
+Current qualification requires schema 3 artifact receipts and schema 2 owned-VM
+receipts from reviewed source. Preserve historical raw evidence unchanged and
+publish verified Rust captures separately. Use `network verify DIRECTORY` for one
+new guest or `network verify-published` for installed first/repeat evidence,
+through the same `cargo run` prefix above.
 Builder nonce frames and settled raw command receipts bind every execution.
 The guest lifecycle uses the shared Rust ISO seed builder and process owner;
 family verification additionally binds SCP argv, exact stdin scripts/input hashes,
 restoration and independent kernel observations. Guest command output is bounded
-to 256 KiB. Install whole output directories under `rust-evidence/first` and `rust-evidence/repeat`, retaining historical `evidence/` bytes. Use `rust-provenance.json` for the new complete inventory. Install with every raw command receipt and
-recompute the complete provenance inventory only after review.
+to 256 KiB. Install whole output directories under `rust-evidence/first` and
+`rust-evidence/repeat`, retaining historical `evidence/` bytes. Include every raw
+command receipt and record the complete inventory in `rust-provenance.json`
+only after review.

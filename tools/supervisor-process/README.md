@@ -39,8 +39,8 @@ allows only owned Docker cleanup with a fresh latch. Cleanup failure or unknown
 inventory cannot qualify success. No arbitrary host processes or containers are
 removed. Docker's normal build cache remains.
 
-Existing evidence is historical and is deliberately rejected by the new mandatory
-schema-3 gate until reviewed Rust captures replace it. Never relabel old receipts.
+Existing evidence is historical. The mandatory schema-3 gate requires a separate
+verified Rust capture from reviewed source. Never relabel old receipts.
 `cargo test -p rubix-dev --bin rubix-supervisor-fixture --locked` includes mutation
 checks and mandatory current evidence tests. No acceptance checks depend on debug
 assertions. See `crates/rubix-supervisor/PROCESS.md`: this does not establish escaped

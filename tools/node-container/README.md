@@ -89,9 +89,9 @@ owned process groups, private directories, and builder resources were independen
 confirmed absent. This qualifies the explicit preparation boundary on this pinned
 Linux fixture; production startup and full cluster operation remain outside scope.
 
-The Rust migration requires new schema 3 artifact receipts and schema 2 owned-VM
-receipts. Historical raw evidence remains unchanged and fails current mandatory
-receipt gates; no migration capture has run. Verify each new guest with
+Current qualification requires schema 3 artifact receipts and schema 2 owned-VM
+receipts from reviewed source. Preserve historical raw evidence unchanged and
+publish verified Rust captures separately. Verify each new guest with
 `cargo run -p rubix-dev --bin rubix-node-fixture --locked -- container verify DIRECTORY`.
 Use `container verify-published` to require both installed captures and their exact
 provenance inventory. Run `cargo test -p rubix-dev --bin rubix-node-fixture --locked`

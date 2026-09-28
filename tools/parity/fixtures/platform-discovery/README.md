@@ -25,9 +25,6 @@ paths, including a relative spelling. Unit tests check permission denial and FIF
 rejection. It does not dump machine hostname, environment, mount table or credentials.
 The raw log identifies both executed test binaries by SHA-256.
 
-```sh
-```
-
 Builds are limited to 15 minutes/8 MiB output; Go runs to 45 seconds/1 MiB with a
 30-second Go test deadline, Rust runtime to 60 seconds/1 MiB. Cleanup independently
 attempts every owned container/image removal and inventories remaining resources;
@@ -56,7 +53,7 @@ cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify-linux 
 Historical provenance and raw captures remain immutable. Their Python harness hashes
 identify the old execution; they do not qualify the current Rust tooling. Mandatory
 current qualification tests require `evidence-rust/go` and `evidence-rust/linux`.
-Fresh captures remain pending a combined source review. The current verifier binds
+Produce captures only after the combined source review and freeze. The current verifier binds
 all copied workspace inputs, exact literal Docker commands, raw output and process
 settlement receipts, independent semantic expectations, and empty cleanup inventories.
 The Linux management fixture uses Rust-owned private chroot inputs and bounded

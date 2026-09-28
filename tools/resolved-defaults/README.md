@@ -85,14 +85,13 @@ See `tools/drift/README.md` to include completed values and errors in an adoptio
 report. Copy `run0.json` to `resolved.json` without changing its bytes and retain
 the matching receipt; the comparator checks both repeated-output digests.
 
-## Rust migration qualification status
+## Rust capture qualification
 
 The source-reviewed oracle and full frozen output comparison now execute in Rust. Historical
 raw evidence, expected hashes, and provenance are preserved without relabeling. A current-source
-`rubix-resolved-defaults verify-evidence` gate reads the separate `rust-evidence/` directory and fails until the combined
-Rust tooling source is frozen and a fresh actual capture is published. The corresponding current
-evidence test fails pending that capture; semantic and adversarial tests remain
-runnable without Docker. No fresh Rust capture is claimed by this migration.
+`rubix-resolved-defaults verify-evidence` gate reads the separate `rust-evidence/` directory and
+requires a verified actual capture from frozen Rust tooling source. Semantic and
+adversarial tests remain runnable without Docker; they do not replace actual capture evidence.
 
 New receipts record the complete relevant Rust source inventory and individual bounded command
 settlement facts. SIGINT/SIGTERM permanently cancel capture; confirmed-settled cleanup uses a
