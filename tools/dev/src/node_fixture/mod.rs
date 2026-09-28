@@ -2,6 +2,9 @@ mod assessment;
 mod build;
 mod commands;
 mod common;
+#[cfg(test)]
+mod constrained_diagnostics;
+mod constrained_verify;
 mod container;
 mod docker;
 #[cfg(test)]
@@ -48,7 +51,10 @@ pub(super) fn main() -> Result<u8> {
 }
 fn dispatch(args: &[&str], cancellation: &crate::parity::process::Cancellation) -> Result<u8> {
     match args {
-        [family @ ("network" | "container"), "verify-published"] => {
+        [
+            family @ ("network" | "container" | "constrained"),
+            "verify-published",
+        ] => {
             guest::published(&root()?, family)?;
             Ok(0)
         },
@@ -56,7 +62,11 @@ fn dispatch(args: &[&str], cancellation: &crate::parity::process::Cancellation) 
             guest::cli(&root()?, family, options, cancellation)?;
             Ok(0)
         },
-        [family @ ("network" | "container"), "verify", directory] => {
+        [
+            family @ ("network" | "container" | "constrained"),
+            "verify",
+            directory,
+        ] => {
             println!("{}", guest::verify(&root()?, family, directory.as_ref())?);
             Ok(0)
         },
