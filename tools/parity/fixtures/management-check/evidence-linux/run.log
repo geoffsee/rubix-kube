@@ -5,8 +5,8 @@ running 7 tests
 test earlier_failure_prevents_ports_and_required_port_failure_remains_nonzero ... ok
 test help_version_parse_failure_and_unsupported_preparation_have_no_effects ... ok
 test actual_cobra_cases_match_independent_parser_expectations ... ok
-test output_failure_precedes_host_effects_and_input_budget_is_explicit ... ok
 test probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress ... ok
+test output_failure_precedes_host_effects_and_input_budget_is_explicit ... ok
 test successful_pprof_check_reports_only_observed_prerequisites ... ok
 test real_help_and_version_executable_do_not_need_host_support ... ok
 

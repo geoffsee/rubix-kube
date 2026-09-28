@@ -1,8 +1,8 @@
 {
   "cleanup_errors": [],
   "containers": [
-    "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8-first",
-    "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8-repeat"
+    "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e-first",
+    "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e-repeat"
   ],
   "errors": [],
   "harness_sha256": {
@@ -13,7 +13,7 @@
     "verify.py": "81b58125c02a4b9da98411cc90ec33675c18333b6b6319cca6a8b420d95d599e"
   },
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:cd995b1372fb8b3f8438623b00699b5a9265a031fe791371e9d1f5caa4eb75af",
+  "image_id": "sha256:925577ada1715ffc85eef8ac1f835d93e52c4f244be27f42e5098834f7680fda",
   "remaining_containers": [],
   "remaining_images": [],
   "runs": {
@@ -27,7 +27,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8-first",
+        "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -44,40 +44,40 @@
         "RUBIX_NODE_DISPOSABLE=1",
         "--env",
         "PRIVATE_SENTINEL=must-not-reach-probe",
-        "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8",
+        "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e",
         "/bin/sh",
         "-c",
         "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /usr/local/bin/python3 /consumer.py; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "613c7a0992f27425ff75cca1a3d00630e846c14f0181b1cd1981adb7753ed2b6",
+      "raw_sha256": "52ee9f7aa9897f556b7409a660171fe52a92d1a639b4ab94eebb979a10be8713",
       "records": {
         "cancel": {
-          "elapsed_ms": 68,
+          "elapsed_ms": 71,
           "reaped": true,
           "status": "Some(Cancelled)"
         },
         "deadline": {
-          "elapsed_ms": 2035,
+          "elapsed_ms": 2026,
           "reaped": true,
           "status": "Some(Deadline)"
         },
         "denied": {
-          "elapsed_ms": 10,
+          "elapsed_ms": 11,
           "reaped": false,
           "status": "Some(Command)"
         },
         "empty": {
-          "elapsed_ms": 80,
+          "elapsed_ms": 74,
           "reaped": true,
           "status": "None"
         },
         "held": {
-          "elapsed_ms": 339,
+          "elapsed_ms": 327,
           "reaped": true,
           "status": "Some(Capture)"
         },
         "invalid-utf8": {
-          "elapsed_ms": 66,
+          "elapsed_ms": 77,
           "reaped": true,
           "status": "None"
         },
@@ -92,12 +92,12 @@
           "status": "Some(Command)"
         },
         "nft": {
-          "elapsed_ms": 67,
+          "elapsed_ms": 70,
           "reaped": true,
           "status": "None"
         },
         "nonzero": {
-          "elapsed_ms": 78,
+          "elapsed_ms": 67,
           "reaped": true,
           "status": "Some(Command)"
         },
@@ -118,7 +118,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8-repeat",
+        "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -135,20 +135,20 @@
         "RUBIX_NODE_DISPOSABLE=1",
         "--env",
         "PRIVATE_SENTINEL=must-not-reach-probe",
-        "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8",
+        "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e",
         "/bin/sh",
         "-c",
         "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /usr/local/bin/python3 /consumer.py; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "181bd678620fe578159132a5e7035d037c7c2d198d4291911e8623f485101710",
+      "raw_sha256": "6a2babee1aa4d9f3d7e3da347674fc302999a2d52df76129bb23adda003c8ce9",
       "records": {
         "cancel": {
-          "elapsed_ms": 80,
+          "elapsed_ms": 68,
           "reaped": true,
           "status": "Some(Cancelled)"
         },
         "deadline": {
-          "elapsed_ms": 2023,
+          "elapsed_ms": 2026,
           "reaped": true,
           "status": "Some(Deadline)"
         },
@@ -158,22 +158,22 @@
           "status": "Some(Command)"
         },
         "empty": {
-          "elapsed_ms": 64,
+          "elapsed_ms": 111,
           "reaped": true,
           "status": "None"
         },
         "held": {
-          "elapsed_ms": 322,
+          "elapsed_ms": 339,
           "reaped": true,
           "status": "Some(Capture)"
         },
         "invalid-utf8": {
-          "elapsed_ms": 63,
+          "elapsed_ms": 76,
           "reaped": true,
           "status": "None"
         },
         "legacy": {
-          "elapsed_ms": 67,
+          "elapsed_ms": 107,
           "reaped": true,
           "status": "None"
         },
@@ -183,17 +183,17 @@
           "status": "Some(Command)"
         },
         "nft": {
-          "elapsed_ms": 70,
+          "elapsed_ms": 93,
           "reaped": true,
           "status": "None"
         },
         "nonzero": {
-          "elapsed_ms": 69,
+          "elapsed_ms": 90,
           "reaped": true,
           "status": "Some(Command)"
         },
         "overflow": {
-          "elapsed_ms": 62,
+          "elapsed_ms": 69,
           "reaped": true,
           "status": "Some(Capture)"
         }
@@ -201,8 +201,8 @@
     }
   },
   "schema": 1,
-  "source_inventory_sha256": "d9006f605d8a85a6a186385ec15836a0b793af524cd94c04f676a15dc4d49bd4",
-  "source_revision": "fdad9103a130475633416c4bc4250dd6a27e2c17",
-  "tag": "rubix-node-assessment-4a5212540d8645b0bddd44b1b23d2bd8",
+  "source_inventory_sha256": "4b38bb5815fc973d5108058c080040e6bbfa27cb5a6400193d8d7d4429057349",
+  "source_revision": "c6ad8bb89229997a6fbf8d9d1c202d3df8dec424",
+  "tag": "rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e",
   "uncommitted_source_snapshot": false
 }

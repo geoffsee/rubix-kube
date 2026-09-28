@@ -93,218 +93,218 @@ ConvertPages: Incompatible memory types, the pages to allocate have been allocat
 [    0.000000] arch_timer: cp15 timer running at 24.00MHz (virt).
 [    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
 [    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
-[    0.002212] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
-[    0.002403] Console: colour dummy device 80x25
-[    0.002405] printk: legacy console [tty0] enabled
-[    0.003158] ACPI: Core revision 20250807
-[    0.003927] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=24000)
-[    0.003930] pid_max: default: 32768 minimum: 301
-[    0.006295] LSM: initializing lsm=lockdown,capability,landlock,yama
-[    0.007797] landlock: Up and running.
-[    0.007799] Yama: becoming mindful.
-[    0.008689] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
-[    0.008698] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
-[    0.015528] rcu: Hierarchical SRCU implementation.
-[    0.015530] rcu: 	Max phase no-delay instances is 400.
-[    0.015644] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
-[    0.015886] Remapping and enabling EFI services.
-[    0.015994] smp: Bringing up secondary CPUs ...
-[    0.016268] Detected PIPT I-cache on CPU1
-[    0.016285] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
-[    0.016332] CPU1: Booted secondary processor 0x0000000001 [0x610f0000]
-[    0.016395] smp: Brought up 1 node, 2 CPUs
-[    0.016398] SMP: Total of 2 processors activated.
-[    0.016399] CPU: All CPU(s) started at EL1
-[    0.016401] CPU features: detected: Branch Target Identification
-[    0.016402] CPU features: detected: ARMv8.4 Translation Table Level
-[    0.016403] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
-[    0.016404] CPU features: detected: Common not Private translations
-[    0.016405] CPU features: detected: CRC32 instructions
-[    0.016406] CPU features: detected: Data independent timing control (DIT)
-[    0.016407] CPU features: detected: E0PD
-[    0.016407] CPU features: detected: Enhanced Privileged Access Never
-[    0.016408] CPU features: detected: Generic authentication (IMP DEF algorithm)
-[    0.016409] CPU features: detected: RCpc load-acquire (LDAPR)
-[    0.016410] CPU features: detected: LSE atomic instructions
-[    0.016411] CPU features: detected: Privileged Access Never
-[    0.016412] CPU features: detected: RAS Extension Support
-[    0.016412] CPU features: detected: Speculation barrier (SB)
-[    0.016413] CPU features: detected: TLB range maintenance instructions
-[    0.016459] alternatives: applying system-wide alternatives
-[    0.016646] Memory: 1996100K/2097152K available (13312K kernel code, 1994K rwdata, 8420K rodata, 2048K init, 9282K bss, 96680K reserved, 0K cma-reserved)
-[    0.016847] devtmpfs: initialized
-[    0.017155] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
-[    0.017162] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
-[    0.017174] 23920 pages in range for non-PLT usage
-[    0.017174] 515440 pages in range for PLT usage
-[    0.017236] pinctrl core: initialized pinctrl subsystem
-[    0.017271] SMBIOS 3.0.0 present.
-[    0.017273] DMI: QEMU QEMU Virtual Machine, BIOS edk2-stable202408-prebuilt.qemu.org 08/13/2024
-[    0.017276] DMI: Memory slots populated: 1/1
-[    0.018103] NET: Registered PF_NETLINK/PF_ROUTE protocol family
-[    0.018208] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
-[    0.018252] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
-[    0.018292] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
-[    0.018297] audit: initializing netlink subsys (disabled)
-[    0.018383] thermal_sys: Registered thermal governor 'step_wise'
-[    0.018447] cpuidle: using governor ladder
-[    0.018462] audit: type=2000 audit(0.016:1): state=initialized audit_enabled=0 res=1
-[    0.018506] cpuidle: using governor menu
-[    0.018545] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
-[    0.018575] ASID allocator initialised with 256 entries
-[    0.018584] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
-[    0.018663] Serial: AMBA PL011 UART driver
-[    0.022748] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
-[    0.022751] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
-[    0.022753] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
-[    0.022754] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
-[    0.022754] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-[    0.022755] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
-[    0.022756] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
-[    0.022757] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
-[    0.023476] ACPI: Added _OSI(Module Device)
-[    0.023477] ACPI: Added _OSI(Processor Device)
-[    0.023478] ACPI: Added _OSI(Processor Aggregator Device)
-[    0.023827] ACPI: 1 ACPI AML tables successfully acquired and loaded
-[    0.025147] ACPI: Interpreter enabled
-[    0.025149] ACPI: Using GIC for interrupt routing
-[    0.025155] ACPI: MCFG table detected, 1 entries
-[    0.025880] ACPI: CPU0 has been hot-added
-[    0.025891] ACPI: CPU1 has been hot-added
-[    0.025962] ARMH0011:00: ttyAMA0 at MMIO 0x9000000 (irq = 12, base_baud = 0) is a SBSA
-[    0.026013] printk: console [ttyAMA0] enabled
-[    0.026367] ACPI: PCI: Interrupt link L000 configured for IRQ 35
-[    0.026371] ACPI: PCI: Interrupt link L001 configured for IRQ 36
-[    0.026374] ACPI: PCI: Interrupt link L002 configured for IRQ 37
-[    0.026377] ACPI: PCI: Interrupt link L003 configured for IRQ 38
-[    0.026383] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
-[    0.026397] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
-[    0.026425] acpi PNP0A08:00: _OSC: platform does not support [LTR]
-[    0.026453] acpi PNP0A08:00: _OSC: OS now controls [PCIeHotplug PME PCIeCapability]
-[    0.026512] acpi PNP0A08:00: ECAM area [mem 0x4010000000-0x401fffffff] reserved by PNP0C02:00
-[    0.026520] acpi PNP0A08:00: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
-[    0.026530] ACPI: Remapped I/O 0x000000003eff0000 to [io  0x0000-0xffff window]
-[    0.026595] PCI host bridge to bus 0000:00
-[    0.026602] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff window]
-[    0.026604] pci_bus 0000:00: root bus resource [io  0x0000-0xffff window]
-[    0.026605] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff window]
-[    0.026607] pci_bus 0000:00: root bus resource [bus 00-ff]
-[    0.026667] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000 conventional PCI endpoint
-[    0.027128] pci 0000:00:01.0: [1af4:1000] type 00 class 0x020000 conventional PCI endpoint
-[    0.027437] pci 0000:00:01.0: BAR 0 [io  0x0100-0x011f]
-[    0.027445] pci 0000:00:01.0: BAR 1 [mem 0x10042000-0x10042fff]
-[    0.027455] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]
-[    0.027458] pci 0000:00:01.0: ROM [mem 0xfffc0000-0xffffffff pref]
-[    0.027790] pci 0000:00:02.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
-[    0.028068] pci 0000:00:02.0: BAR 0 [io  0x0080-0x00ff]
-[    0.028072] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]
-[    0.028087] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]
-[    0.028522] pci 0000:00:03.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
-[    0.028750] pci 0000:00:03.0: BAR 0 [io  0x0000-0x007f]
-[    0.028771] pci 0000:00:03.0: BAR 1 [mem 0x10040000-0x10040fff]
-[    0.028797] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]
-[    0.029170] pci 0000:00:01.0: ROM [mem 0x10000000-0x1003ffff pref]: assigned
-[    0.029174] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]: assigned
-[    0.029191] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]: assigned
-[    0.029210] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]: assigned
-[    0.029229] pci 0000:00:01.0: BAR 1 [mem 0x10040000-0x10040fff]: assigned
-[    0.029233] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]: assigned
-[    0.029241] pci 0000:00:03.0: BAR 1 [mem 0x10042000-0x10042fff]: assigned
-[    0.029245] pci 0000:00:02.0: BAR 0 [io  0x1000-0x107f]: assigned
-[    0.029350] pci 0000:00:03.0: BAR 0 [io  0x1080-0x10ff]: assigned
-[    0.029466] pci 0000:00:01.0: BAR 0 [io  0x1100-0x111f]: assigned
-[    0.029571] pci_bus 0000:00: resource 4 [mem 0x10000000-0x3efeffff window]
-[    0.029573] pci_bus 0000:00: resource 5 [io  0x0000-0xffff window]
-[    0.029574] pci_bus 0000:00: resource 6 [mem 0x8000000000-0xffffffffff window]
-[    0.030128] iommu: Default domain type: Translated
-[    0.030130] iommu: DMA domain TLB invalidation policy: lazy mode
-[    0.031518] efivars: Registered efivars operations
-[    0.031823] clocksource: Switched to clocksource arch_sys_counter
-[    0.032111] VFS: Disk quotas dquot_6.6.0
-[    0.032126] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
-[    0.032504] pnp: PnP ACPI init
-[    0.032539] system 00:00: [mem 0x4010000000-0x401fffffff window] could not be reserved
-[    0.032546] pnp: PnP ACPI: found 1 devices
-[    0.033077] NET: Registered PF_INET protocol family
-[    0.033134] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
-[    0.037839] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
-[    0.037844] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
-[    0.037847] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
-[    0.037861] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
-[    0.037876] TCP: Hash tables configured (established 16384 bind 16384)
-[    0.037902] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
-[    0.037917] UDP hash table entries: 1024 (order: 4, 65536 bytes, linear)
-[    0.037921] UDP-Lite hash table entries: 1024 (order: 4, 65536 bytes, linear)
-[    0.037948] NET: Registered PF_UNIX/PF_LOCAL protocol family
-[    0.037953] NET: Registered PF_XDP protocol family
-[    0.037976] PCI: CLS 0 bytes, default 64
-[    0.038022] Unpacking initramfs...
-[    0.038399] kvm [1]: HYP mode not available
-[    0.038489] Initialise system trusted keyrings
-[    0.039118] workingset: timestamp_bits=44 max_order=19 bucket_order=0
-[    0.044894] Key type asymmetric registered
-[    0.044899] Asymmetric key parser 'x509' registered
-[    0.044942] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
-[    0.086022] io scheduler mq-deadline registered
-[    0.086032] io scheduler kyber registered
-[    0.086053] io scheduler bfq registered
-[    0.087468] ACPI: \_SB_.L001: Enabled at IRQ 36
-[    0.087485] virtio-pci 0000:00:01.0: enabling device (0005 -> 0007)
-[    0.089935] ACPI: \_SB_.L002: Enabled at IRQ 37
-[    0.089947] virtio-pci 0000:00:02.0: enabling device (0005 -> 0007)
-[    0.090720] ACPI: \_SB_.L003: Enabled at IRQ 38
-[    0.090732] virtio-pci 0000:00:03.0: enabling device (0005 -> 0007)
-[    0.091445] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
-[    0.093876] hv_vmbus: registering driver hyperv_keyboard
-[    0.093967] rtc-efi rtc-efi.0: registered as rtc0
-[    0.094001] rtc-efi rtc-efi.0: setting system clock to 2026-09-28T02:37:23 UTC (1790563043)
-[    0.094119] NET: Registered PF_INET6 protocol family
-[    0.094340] Segment Routing with IPv6
-[    0.094345] In-situ OAM (IOAM) with IPv6
-[    0.095704] registered taskstats version 1
-[    0.095771] Loading compiled-in X.509 certificates
-[    0.103509] Freeing initrd memory: 10940K
-[    0.106105] Loaded X.509 cert 'alpinelinux.org: Alpine Linux kernel key: 87fa969a47f3e2a6aa35859eb932a17c95abcd82'
-[    0.106862] Demotion targets for Node 0: null
-[    0.107061] Key type .fscrypt registered
-[    0.107067] Key type fscrypt-provisioning registered
-[    0.108975] clk: Disabling unused clocks
-[    0.108984] PM: genpd: Disabling unused power domains
-[    0.109139] Freeing unused kernel memory: 2048K
-[    0.109159] Run /init as init process
-[    0.114982] Alpine Init 3.14.1-r0
-[    0.115137] Loading boot drivers...
-[    0.118732] SCSI subsystem initialized
-[    0.123065] ACPI: bus type USB registered
-[    0.123088] usbcore: registered new interface driver usbfs
-[    0.123091] usbcore: registered new interface driver hub
-[    0.123095] usbcore: registered new device driver usb
-[    0.124333] usbcore: registered new interface driver usb-storage
-[    0.138974] pps_core: LinuxPPS API ver. 1 registered
-[    0.138991] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
-[    0.139807] PTP clock support registered
-[    0.145751] loop: module loaded
-[    0.153985] ACPI: bus type drm_connector registered
-[    0.160807] Loading boot drivers: ok.
-[    0.161560] Mounting root...
-[    0.190118] virtio_blk virtio1: 2/0/0 default/read/poll queues
-[    0.190585] virtio_blk virtio1: [vda] 16777216 512-byte logical blocks (8.59 GB/8.00 GiB)
-[    0.191387] GPT:Primary header thinks Alt. header is not at the end of the disk.
-[    0.191396] GPT:673791 != 16777215
-[    0.191402] GPT:Alternate GPT header not at the end of the disk.
-[    0.191402] GPT:673791 != 16777215
-[    0.191403] GPT: Use GNU Parted to correct GPT errors.
-[    0.191406]  vda: vda1 vda2
-[    0.191532] virtio_blk virtio2: 2/0/0 default/read/poll queues
-[    0.191917] virtio_blk virtio2: [vdb] 132 512-byte logical blocks (67.6 kB/66.0 KiB)
-[    0.267694] EXT4-fs (vda2): mounted filesystem 53fa5455-9314-4990-97ab-91488d6924a9 ro with ordered data mode. Quota mode: none.
-[    0.267757] Mounting root: ok.
-[    1.339043] random: crng init done
+[    0.002245] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.002441] Console: colour dummy device 80x25
+[    0.002443] printk: legacy console [tty0] enabled
+[    0.003206] ACPI: Core revision 20250807
+[    0.003985] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=24000)
+[    0.003987] pid_max: default: 32768 minimum: 301
+[    0.006361] LSM: initializing lsm=lockdown,capability,landlock,yama
+[    0.007841] landlock: Up and running.
+[    0.007842] Yama: becoming mindful.
+[    0.008735] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.008741] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.015673] rcu: Hierarchical SRCU implementation.
+[    0.015676] rcu: 	Max phase no-delay instances is 400.
+[    0.015796] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.016059] Remapping and enabling EFI services.
+[    0.016167] smp: Bringing up secondary CPUs ...
+[    0.016487] Detected PIPT I-cache on CPU1
+[    0.016505] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[    0.016554] CPU1: Booted secondary processor 0x0000000001 [0x610f0000]
+[    0.016605] smp: Brought up 1 node, 2 CPUs
+[    0.016608] SMP: Total of 2 processors activated.
+[    0.016609] CPU: All CPU(s) started at EL1
+[    0.016611] CPU features: detected: Branch Target Identification
+[    0.016612] CPU features: detected: ARMv8.4 Translation Table Level
+[    0.016613] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.016614] CPU features: detected: Common not Private translations
+[    0.016615] CPU features: detected: CRC32 instructions
+[    0.016615] CPU features: detected: Data independent timing control (DIT)
+[    0.016616] CPU features: detected: E0PD
+[    0.016617] CPU features: detected: Enhanced Privileged Access Never
+[    0.016618] CPU features: detected: Generic authentication (IMP DEF algorithm)
+[    0.016619] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.016620] CPU features: detected: LSE atomic instructions
+[    0.016621] CPU features: detected: Privileged Access Never
+[    0.016621] CPU features: detected: RAS Extension Support
+[    0.016622] CPU features: detected: Speculation barrier (SB)
+[    0.016623] CPU features: detected: TLB range maintenance instructions
+[    0.016650] alternatives: applying system-wide alternatives
+[    0.016826] Memory: 1996100K/2097152K available (13312K kernel code, 1994K rwdata, 8420K rodata, 2048K init, 9282K bss, 96680K reserved, 0K cma-reserved)
+[    0.017001] devtmpfs: initialized
+[    0.017276] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.017287] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.017298] 23920 pages in range for non-PLT usage
+[    0.017298] 515440 pages in range for PLT usage
+[    0.017361] pinctrl core: initialized pinctrl subsystem
+[    0.017394] SMBIOS 3.0.0 present.
+[    0.017396] DMI: QEMU QEMU Virtual Machine, BIOS edk2-stable202408-prebuilt.qemu.org 08/13/2024
+[    0.017399] DMI: Memory slots populated: 1/1
+[    0.018132] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.018234] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
+[    0.018279] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.018324] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.018329] audit: initializing netlink subsys (disabled)
+[    0.018391] audit: type=2000 audit(0.016:1): state=initialized audit_enabled=0 res=1
+[    0.018422] thermal_sys: Registered thermal governor 'step_wise'
+[    0.018428] cpuidle: using governor ladder
+[    0.018432] cpuidle: using governor menu
+[    0.018450] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.018483] ASID allocator initialised with 256 entries
+[    0.018487] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.018544] Serial: AMBA PL011 UART driver
+[    0.019765] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.019767] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.019768] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.019768] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[    0.019769] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.019770] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.019771] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.019771] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[    0.021291] ACPI: Added _OSI(Module Device)
+[    0.021294] ACPI: Added _OSI(Processor Device)
+[    0.021295] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.021637] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.022656] ACPI: Interpreter enabled
+[    0.022657] ACPI: Using GIC for interrupt routing
+[    0.022661] ACPI: MCFG table detected, 1 entries
+[    0.023368] ACPI: CPU0 has been hot-added
+[    0.023378] ACPI: CPU1 has been hot-added
+[    0.023439] ARMH0011:00: ttyAMA0 at MMIO 0x9000000 (irq = 12, base_baud = 0) is a SBSA
+[    0.023457] printk: console [ttyAMA0] enabled
+[    0.024926] ACPI: PCI: Interrupt link L000 configured for IRQ 35
+[    0.024930] ACPI: PCI: Interrupt link L001 configured for IRQ 36
+[    0.024933] ACPI: PCI: Interrupt link L002 configured for IRQ 37
+[    0.024936] ACPI: PCI: Interrupt link L003 configured for IRQ 38
+[    0.024941] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.024962] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
+[    0.024988] acpi PNP0A08:00: _OSC: platform does not support [LTR]
+[    0.025015] acpi PNP0A08:00: _OSC: OS now controls [PCIeHotplug PME PCIeCapability]
+[    0.025074] acpi PNP0A08:00: ECAM area [mem 0x4010000000-0x401fffffff] reserved by PNP0C02:00
+[    0.025079] acpi PNP0A08:00: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
+[    0.025090] ACPI: Remapped I/O 0x000000003eff0000 to [io  0x0000-0xffff window]
+[    0.025134] PCI host bridge to bus 0000:00
+[    0.025141] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff window]
+[    0.025142] pci_bus 0000:00: root bus resource [io  0x0000-0xffff window]
+[    0.025143] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff window]
+[    0.025144] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.025158] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000 conventional PCI endpoint
+[    0.025376] pci 0000:00:01.0: [1af4:1000] type 00 class 0x020000 conventional PCI endpoint
+[    0.025798] pci 0000:00:01.0: BAR 0 [io  0x0100-0x011f]
+[    0.025808] pci 0000:00:01.0: BAR 1 [mem 0x10042000-0x10042fff]
+[    0.025829] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]
+[    0.025832] pci 0000:00:01.0: ROM [mem 0xfffc0000-0xffffffff pref]
+[    0.026075] pci 0000:00:02.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.026263] pci 0000:00:02.0: BAR 0 [io  0x0080-0x00ff]
+[    0.026265] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]
+[    0.026275] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]
+[    0.026505] pci 0000:00:03.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.026688] pci 0000:00:03.0: BAR 0 [io  0x0000-0x007f]
+[    0.026692] pci 0000:00:03.0: BAR 1 [mem 0x10040000-0x10040fff]
+[    0.026702] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]
+[    0.027096] pci 0000:00:01.0: ROM [mem 0x10000000-0x1003ffff pref]: assigned
+[    0.027098] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]: assigned
+[    0.027112] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]: assigned
+[    0.027123] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]: assigned
+[    0.027148] pci 0000:00:01.0: BAR 1 [mem 0x10040000-0x10040fff]: assigned
+[    0.027153] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]: assigned
+[    0.027157] pci 0000:00:03.0: BAR 1 [mem 0x10042000-0x10042fff]: assigned
+[    0.027164] pci 0000:00:02.0: BAR 0 [io  0x1000-0x107f]: assigned
+[    0.027272] pci 0000:00:03.0: BAR 0 [io  0x1080-0x10ff]: assigned
+[    0.027387] pci 0000:00:01.0: BAR 0 [io  0x1100-0x111f]: assigned
+[    0.027492] pci_bus 0000:00: resource 4 [mem 0x10000000-0x3efeffff window]
+[    0.027494] pci_bus 0000:00: resource 5 [io  0x0000-0xffff window]
+[    0.027495] pci_bus 0000:00: resource 6 [mem 0x8000000000-0xffffffffff window]
+[    0.027842] iommu: Default domain type: Translated
+[    0.027843] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.028205] efivars: Registered efivars operations
+[    0.028399] clocksource: Switched to clocksource arch_sys_counter
+[    0.028683] VFS: Disk quotas dquot_6.6.0
+[    0.028695] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.028953] pnp: PnP ACPI init
+[    0.028981] system 00:00: [mem 0x4010000000-0x401fffffff window] could not be reserved
+[    0.028987] pnp: PnP ACPI: found 1 devices
+[    0.029493] NET: Registered PF_INET protocol family
+[    0.029547] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.034127] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.034132] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.034135] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.034148] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
+[    0.034162] TCP: Hash tables configured (established 16384 bind 16384)
+[    0.034187] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
+[    0.034201] UDP hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.034205] UDP-Lite hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.034234] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.034238] NET: Registered PF_XDP protocol family
+[    0.034251] PCI: CLS 0 bytes, default 64
+[    0.034286] Unpacking initramfs...
+[    0.053628] kvm [1]: HYP mode not available
+[    0.053764] Initialise system trusted keyrings
+[    0.068634] workingset: timestamp_bits=44 max_order=19 bucket_order=0
+[    0.074341] Key type asymmetric registered
+[    0.074344] Asymmetric key parser 'x509' registered
+[    0.074366] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    0.081766] io scheduler mq-deadline registered
+[    0.081779] io scheduler kyber registered
+[    0.081796] io scheduler bfq registered
+[    0.082721] ACPI: \_SB_.L001: Enabled at IRQ 36
+[    0.082735] virtio-pci 0000:00:01.0: enabling device (0005 -> 0007)
+[    0.083497] ACPI: \_SB_.L002: Enabled at IRQ 37
+[    0.083511] virtio-pci 0000:00:02.0: enabling device (0005 -> 0007)
+[    0.084206] ACPI: \_SB_.L003: Enabled at IRQ 38
+[    0.084214] virtio-pci 0000:00:03.0: enabling device (0005 -> 0007)
+[    0.084911] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.086550] hv_vmbus: registering driver hyperv_keyboard
+[    0.086828] rtc-efi rtc-efi.0: registered as rtc0
+[    0.087012] rtc-efi rtc-efi.0: setting system clock to 2026-09-28T02:37:04 UTC (1790563024)
+[    0.087131] NET: Registered PF_INET6 protocol family
+[    0.087916] Segment Routing with IPv6
+[    0.087928] In-situ OAM (IOAM) with IPv6
+[    0.093545] registered taskstats version 1
+[    0.093611] Loading compiled-in X.509 certificates
+[    0.101070] Freeing initrd memory: 10940K
+[    0.103271] Loaded X.509 cert 'alpinelinux.org: Alpine Linux kernel key: 87fa969a47f3e2a6aa35859eb932a17c95abcd82'
+[    0.104265] Demotion targets for Node 0: null
+[    0.104502] Key type .fscrypt registered
+[    0.104513] Key type fscrypt-provisioning registered
+[    0.106087] clk: Disabling unused clocks
+[    0.106098] PM: genpd: Disabling unused power domains
+[    0.106302] Freeing unused kernel memory: 2048K
+[    0.106322] Run /init as init process
+[    0.111921] Alpine Init 3.14.1-r0
+[    0.112073] Loading boot drivers...
+[    0.115629] SCSI subsystem initialized
+[    0.119967] ACPI: bus type USB registered
+[    0.119987] usbcore: registered new interface driver usbfs
+[    0.119995] usbcore: registered new interface driver hub
+[    0.120003] usbcore: registered new device driver usb
+[    0.121676] usbcore: registered new interface driver usb-storage
+[    0.133356] pps_core: LinuxPPS API ver. 1 registered
+[    0.133366] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.134046] PTP clock support registered
+[    0.139663] loop: module loaded
+[    0.148024] ACPI: bus type drm_connector registered
+[    0.156158] Loading boot drivers: ok.
+[    0.156904] Mounting root...
+[    0.221075] virtio_blk virtio1: 2/0/0 default/read/poll queues
+[    0.221390] virtio_blk virtio1: [vda] 16777216 512-byte logical blocks (8.59 GB/8.00 GiB)
+[    0.222077] GPT:Primary header thinks Alt. header is not at the end of the disk.
+[    0.222080] GPT:673791 != 16777215
+[    0.222081] GPT:Alternate GPT header not at the end of the disk.
+[    0.222082] GPT:673791 != 16777215
+[    0.222083] GPT: Use GNU Parted to correct GPT errors.
+[    0.222086]  vda: vda1 vda2
+[    0.222209] virtio_blk virtio2: 2/0/0 default/read/poll queues
+[    0.222560] virtio_blk virtio2: [vdb] 132 512-byte logical blocks (67.6 kB/66.0 KiB)
+[    0.295870] EXT4-fs (vda2): mounted filesystem 53fa5455-9314-4990-97ab-91488d6924a9 ro with ordered data mode. Quota mode: none.
+[    0.295929] Mounting root: ok.
+[    1.370615] random: crng init done
 
 Welcome to Alpine Linux 3.24
 Kernel 6.18.52-0-virt on aarch64 (/dev/ttyAMA0)
 
-rubix-parity login: [   15.826787] reboot: Restarting system
+rubix-parity login: [   15.649097] reboot: Restarting system
 UEFI firmware (version edk2-stable202408-prebuilt.qemu.org built at 16:28:50 on Sep 12 2024)
 ArmTrngLib could not be correctly initialized.
 Error: Image at 000BFDB6000 start failed: 00000001
@@ -400,209 +400,209 @@ ConvertPages: Incompatible memory types, the pages to allocate have been allocat
 [    0.000000] arch_timer: cp15 timer running at 24.00MHz (virt).
 [    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
 [    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
-[    0.002235] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
-[    0.002434] Console: colour dummy device 80x25
-[    0.002437] printk: legacy console [tty0] enabled
-[    0.003200] ACPI: Core revision 20250807
-[    0.003982] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=24000)
-[    0.003985] pid_max: default: 32768 minimum: 301
-[    0.006410] LSM: initializing lsm=lockdown,capability,landlock,yama
-[    0.007871] landlock: Up and running.
-[    0.007873] Yama: becoming mindful.
-[    0.008732] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
-[    0.008734] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
-[    0.015506] rcu: Hierarchical SRCU implementation.
-[    0.015509] rcu: 	Max phase no-delay instances is 400.
-[    0.015611] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
-[    0.015851] Remapping and enabling EFI services.
-[    0.015954] smp: Bringing up secondary CPUs ...
-[    0.016231] Detected PIPT I-cache on CPU1
-[    0.016251] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
-[    0.016301] CPU1: Booted secondary processor 0x0000000001 [0x610f0000]
-[    0.016393] smp: Brought up 1 node, 2 CPUs
-[    0.016399] SMP: Total of 2 processors activated.
-[    0.016400] CPU: All CPU(s) started at EL1
-[    0.016402] CPU features: detected: Branch Target Identification
-[    0.016404] CPU features: detected: ARMv8.4 Translation Table Level
-[    0.016405] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
-[    0.016406] CPU features: detected: Common not Private translations
-[    0.016407] CPU features: detected: CRC32 instructions
-[    0.016407] CPU features: detected: Data independent timing control (DIT)
-[    0.016408] CPU features: detected: E0PD
-[    0.016409] CPU features: detected: Enhanced Privileged Access Never
-[    0.016410] CPU features: detected: Generic authentication (IMP DEF algorithm)
-[    0.016411] CPU features: detected: RCpc load-acquire (LDAPR)
-[    0.016412] CPU features: detected: LSE atomic instructions
-[    0.016413] CPU features: detected: Privileged Access Never
-[    0.016413] CPU features: detected: RAS Extension Support
-[    0.016414] CPU features: detected: Speculation barrier (SB)
-[    0.016415] CPU features: detected: TLB range maintenance instructions
-[    0.016442] alternatives: applying system-wide alternatives
-[    0.016642] Memory: 1996100K/2097152K available (13312K kernel code, 1994K rwdata, 8420K rodata, 2048K init, 9282K bss, 96680K reserved, 0K cma-reserved)
-[    0.016843] devtmpfs: initialized
-[    0.017078] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
-[    0.017082] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
-[    0.017094] 23920 pages in range for non-PLT usage
-[    0.017094] 515440 pages in range for PLT usage
-[    0.017158] pinctrl core: initialized pinctrl subsystem
-[    0.017190] SMBIOS 3.0.0 present.
-[    0.017193] DMI: QEMU QEMU Virtual Machine, BIOS edk2-stable202408-prebuilt.qemu.org 08/13/2024
-[    0.017196] DMI: Memory slots populated: 1/1
-[    0.017741] NET: Registered PF_NETLINK/PF_ROUTE protocol family
-[    0.017810] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
-[    0.017822] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
-[    0.017832] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
-[    0.017837] audit: initializing netlink subsys (disabled)
-[    0.017874] audit: type=2000 audit(0.016:1): state=initialized audit_enabled=0 res=1
-[    0.017899] thermal_sys: Registered thermal governor 'step_wise'
-[    0.017904] cpuidle: using governor ladder
-[    0.017907] cpuidle: using governor menu
-[    0.017920] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
-[    0.017941] ASID allocator initialised with 256 entries
-[    0.017945] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
-[    0.017995] Serial: AMBA PL011 UART driver
-[    0.021785] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
-[    0.021791] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
-[    0.021792] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
-[    0.021793] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
-[    0.021794] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-[    0.021795] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
-[    0.021796] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
-[    0.021796] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
-[    0.022173] ACPI: Added _OSI(Module Device)
-[    0.022174] ACPI: Added _OSI(Processor Device)
-[    0.022175] ACPI: Added _OSI(Processor Aggregator Device)
-[    0.022515] ACPI: 1 ACPI AML tables successfully acquired and loaded
-[    0.022626] ACPI: Interpreter enabled
-[    0.022627] ACPI: Using GIC for interrupt routing
-[    0.022633] ACPI: MCFG table detected, 1 entries
-[    0.023323] ACPI: CPU0 has been hot-added
-[    0.023333] ACPI: CPU1 has been hot-added
-[    0.023407] ARMH0011:00: ttyAMA0 at MMIO 0x9000000 (irq = 12, base_baud = 0) is a SBSA
-[    0.023654] printk: console [ttyAMA0] enabled
-[    0.023961] ACPI: PCI: Interrupt link L000 configured for IRQ 35
-[    0.023966] ACPI: PCI: Interrupt link L001 configured for IRQ 36
-[    0.023969] ACPI: PCI: Interrupt link L002 configured for IRQ 37
-[    0.023973] ACPI: PCI: Interrupt link L003 configured for IRQ 38
-[    0.023978] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
-[    0.023989] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
-[    0.024016] acpi PNP0A08:00: _OSC: platform does not support [LTR]
-[    0.024044] acpi PNP0A08:00: _OSC: OS now controls [PCIeHotplug PME PCIeCapability]
-[    0.024105] acpi PNP0A08:00: ECAM area [mem 0x4010000000-0x401fffffff] reserved by PNP0C02:00
-[    0.024113] acpi PNP0A08:00: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
-[    0.024119] ACPI: Remapped I/O 0x000000003eff0000 to [io  0x0000-0xffff window]
-[    0.024169] PCI host bridge to bus 0000:00
-[    0.024176] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff window]
-[    0.024177] pci_bus 0000:00: root bus resource [io  0x0000-0xffff window]
-[    0.024178] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff window]
-[    0.024180] pci_bus 0000:00: root bus resource [bus 00-ff]
-[    0.024208] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000 conventional PCI endpoint
-[    0.024440] pci 0000:00:01.0: [1af4:1000] type 00 class 0x020000 conventional PCI endpoint
-[    0.024693] pci 0000:00:01.0: BAR 0 [io  0x0100-0x011f]
-[    0.024696] pci 0000:00:01.0: BAR 1 [mem 0x10042000-0x10042fff]
-[    0.024710] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]
-[    0.024715] pci 0000:00:01.0: ROM [mem 0xfffc0000-0xffffffff pref]
-[    0.024951] pci 0000:00:02.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
-[    0.025172] pci 0000:00:02.0: BAR 0 [io  0x0080-0x00ff]
-[    0.025175] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]
-[    0.025184] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]
-[    0.025476] pci 0000:00:03.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
-[    0.025689] pci 0000:00:03.0: BAR 0 [io  0x0000-0x007f]
-[    0.025692] pci 0000:00:03.0: BAR 1 [mem 0x10040000-0x10040fff]
-[    0.025702] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]
-[    0.025948] pci 0000:00:01.0: ROM [mem 0x10000000-0x1003ffff pref]: assigned
-[    0.025950] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]: assigned
-[    0.025965] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]: assigned
-[    0.025979] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]: assigned
-[    0.025997] pci 0000:00:01.0: BAR 1 [mem 0x10040000-0x10040fff]: assigned
-[    0.026001] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]: assigned
-[    0.026005] pci 0000:00:03.0: BAR 1 [mem 0x10042000-0x10042fff]: assigned
-[    0.026009] pci 0000:00:02.0: BAR 0 [io  0x1000-0x107f]: assigned
-[    0.026119] pci 0000:00:03.0: BAR 0 [io  0x1080-0x10ff]: assigned
-[    0.026251] pci 0000:00:01.0: BAR 0 [io  0x1100-0x111f]: assigned
-[    0.026360] pci_bus 0000:00: resource 4 [mem 0x10000000-0x3efeffff window]
-[    0.026362] pci_bus 0000:00: resource 5 [io  0x0000-0xffff window]
-[    0.026363] pci_bus 0000:00: resource 6 [mem 0x8000000000-0xffffffffff window]
-[    0.026707] iommu: Default domain type: Translated
-[    0.026708] iommu: DMA domain TLB invalidation policy: lazy mode
-[    0.027155] efivars: Registered efivars operations
-[    0.027285] clocksource: Switched to clocksource arch_sys_counter
-[    0.027525] VFS: Disk quotas dquot_6.6.0
-[    0.027538] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
-[    0.027765] pnp: PnP ACPI init
-[    0.027812] system 00:00: [mem 0x4010000000-0x401fffffff window] could not be reserved
-[    0.027819] pnp: PnP ACPI: found 1 devices
-[    0.028586] NET: Registered PF_INET protocol family
-[    0.028604] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
-[    0.032914] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
-[    0.032920] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
-[    0.032923] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
-[    0.032937] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
-[    0.032952] TCP: Hash tables configured (established 16384 bind 16384)
-[    0.032981] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
-[    0.032998] UDP hash table entries: 1024 (order: 4, 65536 bytes, linear)
-[    0.033002] UDP-Lite hash table entries: 1024 (order: 4, 65536 bytes, linear)
-[    0.033030] NET: Registered PF_UNIX/PF_LOCAL protocol family
-[    0.033035] NET: Registered PF_XDP protocol family
-[    0.033059] PCI: CLS 0 bytes, default 64
-[    0.033114] Unpacking initramfs...
-[    0.052530] kvm [1]: HYP mode not available
-[    0.052664] Initialise system trusted keyrings
-[    0.075297] workingset: timestamp_bits=44 max_order=19 bucket_order=0
-[    0.080979] Key type asymmetric registered
-[    0.080989] Asymmetric key parser 'x509' registered
-[    0.081026] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
-[    0.081937] io scheduler mq-deadline registered
-[    0.081945] io scheduler kyber registered
-[    0.081964] io scheduler bfq registered
-[    0.082999] ACPI: \_SB_.L001: Enabled at IRQ 36
-[    0.083017] virtio-pci 0000:00:01.0: enabling device (0005 -> 0007)
-[    0.083826] ACPI: \_SB_.L002: Enabled at IRQ 37
-[    0.083840] virtio-pci 0000:00:02.0: enabling device (0005 -> 0007)
-[    0.084583] ACPI: \_SB_.L003: Enabled at IRQ 38
-[    0.084593] virtio-pci 0000:00:03.0: enabling device (0005 -> 0007)
-[    0.085074] Freeing initrd memory: 10940K
-[    0.085477] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
-[    0.085950] hv_vmbus: registering driver hyperv_keyboard
-[    0.086022] rtc-efi rtc-efi.0: registered as rtc0
-[    0.086032] rtc-efi rtc-efi.0: setting system clock to 2026-09-28T02:37:55 UTC (1790563075)
-[    0.086135] NET: Registered PF_INET6 protocol family
-[    0.087080] Segment Routing with IPv6
-[    0.087096] In-situ OAM (IOAM) with IPv6
-[    0.088933] registered taskstats version 1
-[    0.089004] Loading compiled-in X.509 certificates
-[    0.091068] Loaded X.509 cert 'alpinelinux.org: Alpine Linux kernel key: 87fa969a47f3e2a6aa35859eb932a17c95abcd82'
-[    0.091942] Demotion targets for Node 0: null
-[    0.092157] Key type .fscrypt registered
-[    0.092165] Key type fscrypt-provisioning registered
-[    0.093872] clk: Disabling unused clocks
-[    0.093888] PM: genpd: Disabling unused power domains
-[    0.094028] Freeing unused kernel memory: 2048K
-[    0.094044] Run /init as init process
-[    0.100458] Alpine Init 3.14.1-r0
-[    0.100629] Loading boot drivers...
-[    0.104589] SCSI subsystem initialized
-[    0.109081] ACPI: bus type USB registered
-[    0.109111] usbcore: registered new interface driver usbfs
-[    0.109119] usbcore: registered new interface driver hub
-[    0.109130] usbcore: registered new device driver usb
-[    0.111172] usbcore: registered new interface driver usb-storage
-[    0.123056] pps_core: LinuxPPS API ver. 1 registered
-[    0.123067] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
-[    0.124420] PTP clock support registered
-[    0.130404] loop: module loaded
-[    0.138666] ACPI: bus type drm_connector registered
-[    0.145390] Loading boot drivers: ok.
-[    0.146029] Mounting root...
-[    0.175950] virtio_blk virtio1: 2/0/0 default/read/poll queues
-[    0.176506] virtio_blk virtio1: [vda] 16777216 512-byte logical blocks (8.59 GB/8.00 GiB)
-[    0.177216]  vda: vda1 vda2
-[    0.177383] virtio_blk virtio2: 2/0/0 default/read/poll queues
-[    0.177899] virtio_blk virtio2: [vdb] 132 512-byte logical blocks (67.6 kB/66.0 KiB)
-[    0.254704] EXT4-fs (vda2): mounted filesystem 53fa5455-9314-4990-97ab-91488d6924a9 ro with ordered data mode. Quota mode: none.
-[    0.254770] Mounting root: ok.
+[    0.002281] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.002478] Console: colour dummy device 80x25
+[    0.002480] printk: legacy console [tty0] enabled
+[    0.003226] ACPI: Core revision 20250807
+[    0.003980] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=24000)
+[    0.003983] pid_max: default: 32768 minimum: 301
+[    0.006267] LSM: initializing lsm=lockdown,capability,landlock,yama
+[    0.007680] landlock: Up and running.
+[    0.007680] Yama: becoming mindful.
+[    0.008516] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.008519] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.015311] rcu: Hierarchical SRCU implementation.
+[    0.015315] rcu: 	Max phase no-delay instances is 400.
+[    0.015421] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.015668] Remapping and enabling EFI services.
+[    0.015764] smp: Bringing up secondary CPUs ...
+[    0.016093] Detected PIPT I-cache on CPU1
+[    0.016110] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[    0.016165] CPU1: Booted secondary processor 0x0000000001 [0x610f0000]
+[    0.016229] smp: Brought up 1 node, 2 CPUs
+[    0.016233] SMP: Total of 2 processors activated.
+[    0.016234] CPU: All CPU(s) started at EL1
+[    0.016237] CPU features: detected: Branch Target Identification
+[    0.016238] CPU features: detected: ARMv8.4 Translation Table Level
+[    0.016239] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.016240] CPU features: detected: Common not Private translations
+[    0.016241] CPU features: detected: CRC32 instructions
+[    0.016241] CPU features: detected: Data independent timing control (DIT)
+[    0.016242] CPU features: detected: E0PD
+[    0.016243] CPU features: detected: Enhanced Privileged Access Never
+[    0.016244] CPU features: detected: Generic authentication (IMP DEF algorithm)
+[    0.016245] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.016246] CPU features: detected: LSE atomic instructions
+[    0.016247] CPU features: detected: Privileged Access Never
+[    0.016247] CPU features: detected: RAS Extension Support
+[    0.016248] CPU features: detected: Speculation barrier (SB)
+[    0.016249] CPU features: detected: TLB range maintenance instructions
+[    0.016277] alternatives: applying system-wide alternatives
+[    0.016476] Memory: 1996100K/2097152K available (13312K kernel code, 1994K rwdata, 8420K rodata, 2048K init, 9282K bss, 96680K reserved, 0K cma-reserved)
+[    0.016672] devtmpfs: initialized
+[    0.016978] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.016983] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.016999] 23920 pages in range for non-PLT usage
+[    0.017000] 515440 pages in range for PLT usage
+[    0.017080] pinctrl core: initialized pinctrl subsystem
+[    0.017129] SMBIOS 3.0.0 present.
+[    0.017134] DMI: QEMU QEMU Virtual Machine, BIOS edk2-stable202408-prebuilt.qemu.org 08/13/2024
+[    0.017138] DMI: Memory slots populated: 1/1
+[    0.017671] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.017754] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
+[    0.017765] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.017775] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.017783] audit: initializing netlink subsys (disabled)
+[    0.017837] audit: type=2000 audit(0.016:1): state=initialized audit_enabled=0 res=1
+[    0.017872] thermal_sys: Registered thermal governor 'step_wise'
+[    0.017877] cpuidle: using governor ladder
+[    0.017880] cpuidle: using governor menu
+[    0.017894] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.017925] ASID allocator initialised with 256 entries
+[    0.017929] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.017983] Serial: AMBA PL011 UART driver
+[    0.020736] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.020738] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.020739] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.020740] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[    0.020741] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.020742] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.020743] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.020743] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[    0.022026] ACPI: Added _OSI(Module Device)
+[    0.022029] ACPI: Added _OSI(Processor Device)
+[    0.022030] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.022370] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.022548] ACPI: Interpreter enabled
+[    0.022552] ACPI: Using GIC for interrupt routing
+[    0.022568] ACPI: MCFG table detected, 1 entries
+[    0.023470] ACPI: CPU0 has been hot-added
+[    0.023487] ACPI: CPU1 has been hot-added
+[    0.023556] ARMH0011:00: ttyAMA0 at MMIO 0x9000000 (irq = 12, base_baud = 0) is a SBSA
+[    0.023577] printk: console [ttyAMA0] enabled
+[    0.024406] ACPI: PCI: Interrupt link L000 configured for IRQ 35
+[    0.024412] ACPI: PCI: Interrupt link L001 configured for IRQ 36
+[    0.024415] ACPI: PCI: Interrupt link L002 configured for IRQ 37
+[    0.024418] ACPI: PCI: Interrupt link L003 configured for IRQ 38
+[    0.024423] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.024435] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
+[    0.024461] acpi PNP0A08:00: _OSC: platform does not support [LTR]
+[    0.024489] acpi PNP0A08:00: _OSC: OS now controls [PCIeHotplug PME PCIeCapability]
+[    0.024549] acpi PNP0A08:00: ECAM area [mem 0x4010000000-0x401fffffff] reserved by PNP0C02:00
+[    0.024555] acpi PNP0A08:00: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
+[    0.024561] ACPI: Remapped I/O 0x000000003eff0000 to [io  0x0000-0xffff window]
+[    0.024698] PCI host bridge to bus 0000:00
+[    0.024707] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff window]
+[    0.024709] pci_bus 0000:00: root bus resource [io  0x0000-0xffff window]
+[    0.024710] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff window]
+[    0.024712] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.024731] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000 conventional PCI endpoint
+[    0.025035] pci 0000:00:01.0: [1af4:1000] type 00 class 0x020000 conventional PCI endpoint
+[    0.025689] pci 0000:00:01.0: BAR 0 [io  0x0100-0x011f]
+[    0.025692] pci 0000:00:01.0: BAR 1 [mem 0x10042000-0x10042fff]
+[    0.025699] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]
+[    0.025701] pci 0000:00:01.0: ROM [mem 0xfffc0000-0xffffffff pref]
+[    0.025925] pci 0000:00:02.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.026146] pci 0000:00:02.0: BAR 0 [io  0x0080-0x00ff]
+[    0.026149] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]
+[    0.026155] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]
+[    0.026390] pci 0000:00:03.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.026582] pci 0000:00:03.0: BAR 0 [io  0x0000-0x007f]
+[    0.026586] pci 0000:00:03.0: BAR 1 [mem 0x10040000-0x10040fff]
+[    0.026593] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]
+[    0.026892] pci 0000:00:01.0: ROM [mem 0x10000000-0x1003ffff pref]: assigned
+[    0.026894] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]: assigned
+[    0.026913] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]: assigned
+[    0.026928] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]: assigned
+[    0.026948] pci 0000:00:01.0: BAR 1 [mem 0x10040000-0x10040fff]: assigned
+[    0.026955] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]: assigned
+[    0.026960] pci 0000:00:03.0: BAR 1 [mem 0x10042000-0x10042fff]: assigned
+[    0.026974] pci 0000:00:02.0: BAR 0 [io  0x1000-0x107f]: assigned
+[    0.027088] pci 0000:00:03.0: BAR 0 [io  0x1080-0x10ff]: assigned
+[    0.027259] pci 0000:00:01.0: BAR 0 [io  0x1100-0x111f]: assigned
+[    0.027427] pci_bus 0000:00: resource 4 [mem 0x10000000-0x3efeffff window]
+[    0.027428] pci_bus 0000:00: resource 5 [io  0x0000-0xffff window]
+[    0.027429] pci_bus 0000:00: resource 6 [mem 0x8000000000-0xffffffffff window]
+[    0.027956] iommu: Default domain type: Translated
+[    0.027958] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.028751] efivars: Registered efivars operations
+[    0.028946] clocksource: Switched to clocksource arch_sys_counter
+[    0.030202] VFS: Disk quotas dquot_6.6.0
+[    0.030214] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.030255] pnp: PnP ACPI init
+[    0.030290] system 00:00: [mem 0x4010000000-0x401fffffff window] could not be reserved
+[    0.030296] pnp: PnP ACPI: found 1 devices
+[    0.030745] NET: Registered PF_INET protocol family
+[    0.030762] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.035088] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.035093] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.035097] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.035112] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
+[    0.035127] TCP: Hash tables configured (established 16384 bind 16384)
+[    0.035155] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
+[    0.035171] UDP hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.035175] UDP-Lite hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.035205] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.035209] NET: Registered PF_XDP protocol family
+[    0.035418] PCI: CLS 0 bytes, default 64
+[    0.035479] Unpacking initramfs...
+[    0.038088] kvm [1]: HYP mode not available
+[    0.038189] Initialise system trusted keyrings
+[    0.039003] workingset: timestamp_bits=44 max_order=19 bucket_order=0
+[    0.044759] Key type asymmetric registered
+[    0.044762] Asymmetric key parser 'x509' registered
+[    0.044788] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    0.049992] io scheduler mq-deadline registered
+[    0.049994] io scheduler kyber registered
+[    0.050008] io scheduler bfq registered
+[    0.053372] ACPI: \_SB_.L001: Enabled at IRQ 36
+[    0.053390] virtio-pci 0000:00:01.0: enabling device (0005 -> 0007)
+[    0.053932] ACPI: \_SB_.L002: Enabled at IRQ 37
+[    0.053940] virtio-pci 0000:00:02.0: enabling device (0005 -> 0007)
+[    0.054545] ACPI: \_SB_.L003: Enabled at IRQ 38
+[    0.054550] virtio-pci 0000:00:03.0: enabling device (0005 -> 0007)
+[    0.057130] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.057978] hv_vmbus: registering driver hyperv_keyboard
+[    0.058278] rtc-efi rtc-efi.0: registered as rtc0
+[    0.058321] rtc-efi rtc-efi.0: setting system clock to 2026-09-28T02:37:35 UTC (1790563055)
+[    0.058454] NET: Registered PF_INET6 protocol family
+[    0.058628] Segment Routing with IPv6
+[    0.058633] In-situ OAM (IOAM) with IPv6
+[    0.082527] registered taskstats version 1
+[    0.082603] Loading compiled-in X.509 certificates
+[    0.098569] Freeing initrd memory: 10940K
+[    0.101186] Loaded X.509 cert 'alpinelinux.org: Alpine Linux kernel key: 87fa969a47f3e2a6aa35859eb932a17c95abcd82'
+[    0.102049] Demotion targets for Node 0: null
+[    0.102283] Key type .fscrypt registered
+[    0.102293] Key type fscrypt-provisioning registered
+[    0.103974] clk: Disabling unused clocks
+[    0.103987] PM: genpd: Disabling unused power domains
+[    0.104202] Freeing unused kernel memory: 2048K
+[    0.104217] Run /init as init process
+[    0.110565] Alpine Init 3.14.1-r0
+[    0.110733] Loading boot drivers...
+[    0.114389] SCSI subsystem initialized
+[    0.118881] ACPI: bus type USB registered
+[    0.118909] usbcore: registered new interface driver usbfs
+[    0.118919] usbcore: registered new interface driver hub
+[    0.118928] usbcore: registered new device driver usb
+[    0.120798] usbcore: registered new interface driver usb-storage
+[    0.132876] pps_core: LinuxPPS API ver. 1 registered
+[    0.132887] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.134154] PTP clock support registered
+[    0.140361] loop: module loaded
+[    0.148450] ACPI: bus type drm_connector registered
+[    0.155249] Loading boot drivers: ok.
+[    0.155993] Mounting root...
+[    0.217455] virtio_blk virtio1: 2/0/0 default/read/poll queues
+[    0.218072] virtio_blk virtio1: [vda] 16777216 512-byte logical blocks (8.59 GB/8.00 GiB)
+[    0.219035]  vda: vda1 vda2
+[    0.219263] virtio_blk virtio2: 2/0/0 default/read/poll queues
+[    0.219715] virtio_blk virtio2: [vdb] 132 512-byte logical blocks (67.6 kB/66.0 KiB)
+[    0.294129] EXT4-fs (vda2): mounted filesystem 53fa5455-9314-4990-97ab-91488d6924a9 ro with ordered data mode. Quota mode: none.
+[    0.294198] Mounting root: ok.
 
 Welcome to Alpine Linux 3.24
 Kernel 6.18.52-0-virt on aarch64 (/dev/ttyAMA0)
 
-rubix-parity login: [   15.109931] reboot: Power down
+rubix-parity login: [   16.260986] reboot: Power down
