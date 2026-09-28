@@ -95,6 +95,7 @@ pub(crate) fn owned_path(root: &Path, name: &str) -> Result<PathBuf> {
     Ok(p)
 }
 pub(crate) fn atomic_write(root: &Path, name: &str, data: &[u8], executable: bool) -> Result<()> {
+    check_cancelled()?;
     let p = owned_path(root, name)?;
     let parent = p.parent().ok_or("missing parent")?;
     fs::create_dir_all(parent)?;
@@ -112,6 +113,7 @@ pub(crate) fn atomic_write(root: &Path, name: &str, data: &[u8], executable: boo
                 0o644
             }))?;
     }
+    check_cancelled()?;
     temp.persist(p)?;
     Ok(())
 }
@@ -181,16 +183,52 @@ pub(crate) fn compiler_record<'a>(inputs: &'a Value, selected: &str) -> Result<&
         .find(|r| r["platform"] == selected)
         .ok_or_else(|| format!("no locked protoc archive for platform {selected}").into())
 }
+thread_local! {
+    static EXECUTION: std::cell::RefCell<Option<crate::process::Cancellation>> = const { std::cell::RefCell::new(None) };
+}
+/// One latch covers the entire CLI, including hashing and gaps between children.
+pub(crate) fn with_execution<T>(action: impl FnOnce() -> Result<T>) -> Result<T> {
+    if EXECUTION.with(|context| context.borrow().is_some()) {
+        check_cancelled()?;
+        return action();
+    }
+    let cancellation = crate::process::Cancellation::default();
+    let signals = crate::process::SignalGuard::install(cancellation.clone())?;
+    EXECUTION.with(|context| *context.borrow_mut() = Some(cancellation.clone()));
+    let result = action();
+    EXECUTION.with(|context| *context.borrow_mut() = None);
+    match result {
+        Err(failure) if uncertain(&failure) => Err(Box::new(RunFailure {
+            failure,
+            _signals: signals,
+        })),
+        Ok(_) if cancellation.requested() => fail("upstream execution cancelled"),
+        other => other,
+    }
+}
+pub(crate) fn check_cancelled() -> Result<()> {
+    if EXECUTION.with(|context| {
+        context
+            .borrow()
+            .as_ref()
+            .is_some_and(crate::process::Cancellation::requested)
+    }) {
+        return fail("upstream execution cancelled");
+    }
+    Ok(())
+}
 /// Bounded owned process with byte-exact stdout and retained uncertainty.
 pub(crate) fn run(command: &mut Command, seconds: u64) -> Result<Vec<u8>> {
-    use crate::process::{Cancellation, CommandRequest, Commands, OutputMode, SignalGuard};
+    use crate::process::{CommandRequest, Commands, OutputMode};
     use std::fmt::Write as _;
+    let Some(cancellation) = EXECUTION.with(|context| context.borrow().clone()) else {
+        return with_execution(|| run(command, seconds));
+    };
+    check_cancelled()?;
     if command.get_envs().next().is_some() {
         return fail("upstream commands require inherited environment without overrides");
     }
     let output = tempfile::tempdir()?;
-    let cancellation = Cancellation::default();
-    let signals = SignalGuard::install(cancellation.clone())?;
     let commands = Commands {
         output: output.path().to_owned(),
         cancellation,
@@ -232,10 +270,6 @@ pub(crate) fn run(command: &mut Command, seconds: u64) -> Result<Vec<u8>> {
                     "; logs retained at {}",
                     output.keep().display()
                 );
-                return Err(Box::new(RunFailure {
-                    failure,
-                    _signals: signals,
-                }));
             }
             Err(Box::new(failure))
         },
@@ -243,7 +277,7 @@ pub(crate) fn run(command: &mut Command, seconds: u64) -> Result<Vec<u8>> {
 }
 #[derive(Debug)]
 struct RunFailure {
-    failure: crate::process::CommandFailure,
+    failure: crate::Error,
     _signals: crate::process::SignalGuard,
 }
 impl std::fmt::Display for RunFailure {
@@ -437,6 +471,9 @@ pub(crate) fn fetch(inputs: &Value, cache: &Path, selected: &str) -> Result<()> 
     Ok(())
 }
 pub fn cli(args: &[String]) -> Result<()> {
+    with_execution(|| cli_inner(args))
+}
+fn cli_inner(args: &[String]) -> Result<()> {
     if args
         .iter()
         .any(|arg| matches!(arg.as_str(), "--help" | "-h"))
@@ -518,6 +555,7 @@ pub fn cli(args: &[String]) -> Result<()> {
     };
     result["input_manifest_sha256"] =
         digest(&fs::read(root.join("tools/upstream/inputs.json"))?).into();
+    check_cancelled()?;
     println!("{}", serde_json::to_string(&result)?);
     Ok(())
 }

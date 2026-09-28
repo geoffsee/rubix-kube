@@ -188,6 +188,9 @@ pub(crate) fn changes(before: &Value, after: &Value, path: &str) -> Vec<Value> {
     out
 }
 pub fn cli(args: &[String]) -> Result<i32> {
+    upstream::with_execution(|| cli_inner(args))
+}
+fn cli_inner(args: &[String]) -> Result<i32> {
     if args
         .iter()
         .any(|arg| matches!(arg.as_str(), "--help" | "-h"))
@@ -262,6 +265,7 @@ pub fn cli(args: &[String]) -> Result<i32> {
         return fail("inventory exceeds limit");
     }
     let diff = changes(&strict_json(&raw)?, &current, "");
+    upstream::check_cancelled()?;
     println!(
         "{}",
         serde_json::to_string_pretty(
