@@ -1,0 +1,31 @@
+{
+  "archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-management-60ed5ffc058248fb95458d282097824a-0",
+    "rubix-management-60ed5ffc058248fb95458d282097824a-1"
+  ],
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "identical_records": true,
+  "image_id": "sha256:58f4dac2a627f2af2441afa6044b4d0a513ce7a29c5769c9d39b9d74501ed30c",
+  "outputs": {
+    "run0.log": "f3288475364c1e507267e4f86780a697d2cf8fd04e34499aa295d40240b13be4",
+    "run1.log": "290a947ec6939b721dfa80fc6d0b1c247e77fd4378ecfdaa479e1ac3718636c9",
+    "source.sha256": "27bf9bb9f8641db9035ad2fe8e9478be32073ca38e8300fe1a9efde1785dfa49"
+  },
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_sha256": {
+    "Capture.Dockerfile": "f9d6b9f1512aafa1fa6ddeee501b0492e2190e43c83987194a333b959fd3225c",
+    "capture.py": "67e654124f9eb3ef9a539be2fb850da84fe29ffec0b84438d88ad2947eee213d",
+    "capture_test.go": "3cf7b478ed94757a1543e4e0fc3d69eeff274d9799c19317f787ec805dd3e0b3",
+    "cases.json": "de94f9294e68965db6dc0be1c3417df78db4df8fe06f570b61628897db293277",
+    "expected.json": "ed22f940fe7a808078c8ab1d176c94439e82a3e81085915bcde9c8151d5e691e",
+    "extract.go": "2d2e3b62c49acfaf0780210d9bef87656935251df39c71024518d76f39f4cd7b",
+    "go.mod": "d6ee58aba73dc0755648e370a573b0556956756d3972b0e294a9c397a8e7b963",
+    "source-pins.json": "4c3aef88f55d17048901bd2fb929ab95d6946476648fe14d68dd98567e783318",
+    "verify.py": "c461b4af18830bc3044f08d164251c29ce1bca533ca1765dc944207890d8bdab"
+  }
+}
