@@ -2,7 +2,7 @@
   {
     "case": "delayed",
     "complete": true,
-    "elapsed_ms": 11,
+    "elapsed_ms": 25,
     "error": null,
     "exit_code": 0,
     "kill_attempted": true,
@@ -15,7 +15,7 @@
   {
     "case": "family",
     "complete": true,
-    "elapsed_ms": 34,
+    "elapsed_ms": 59,
     "error": null,
     "exit_code": 0,
     "kill_attempted": true,
@@ -28,7 +28,7 @@
   {
     "case": "ignore",
     "complete": true,
-    "elapsed_ms": 30013,
+    "elapsed_ms": 30012,
     "error": null,
     "exit_code": null,
     "kill_attempted": true,
@@ -41,7 +41,7 @@
   {
     "case": "term-error",
     "complete": true,
-    "elapsed_ms": 32,
+    "elapsed_ms": 35,
     "error": null,
     "exit_code": 17,
     "kill_attempted": true,

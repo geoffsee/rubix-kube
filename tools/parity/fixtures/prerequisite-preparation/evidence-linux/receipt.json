@@ -5,7 +5,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-preparation-linux-ea6cf58e8af34b9bbbdc89ef9c9ef9be-test",
+    "rubix-preparation-linux-4510266859df4f7ab0e8ef1f74af5927-test",
     "--hostname",
     "fixture",
     "--init",
@@ -28,20 +28,20 @@
     "64",
     "--tmpfs",
     "/tmp:rw,exec,nosuid,nodev,size=32m",
-    "rubix-preparation-linux-ea6cf58e8af34b9bbbdc89ef9c9ef9be"
+    "rubix-preparation-linux-4510266859df4f7ab0e8ef1f74af5927"
   ],
   "containers": [
-    "rubix-preparation-linux-ea6cf58e8af34b9bbbdc89ef9c9ef9be-test"
+    "rubix-preparation-linux-4510266859df4f7ab0e8ef1f74af5927-test"
   ],
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:5a73e4de69bfdbeee90f4874d3de6f38a17205eeff3ed0d5f8fde50503498098",
-  "inventory_sha256": "fd7c14306ee20c073c78825b79c7dbe9557bb5a62af5f3ce2d1ef56c7f497a00",
+  "image_id": "sha256:94b03eb3b3ecbac525d7e2dffda57da5441944e7f4d5847da1eea49280379360",
+  "inventory_sha256": "a5540174d8a4521779f8afa5fd8cde45104ac62729e5df397a51ac1806abea90",
   "platform": "linux/arm64",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "5f4064d987ba5dd4f334c3d6ac0bd18c71d3e0f1",
-  "run_sha256": "b2d5ac389affade4e17f05bf13dc262532a37cdf4316b42a90f7aa5009866bc6",
+  "revision": "2f3355235547131d2c5690ff5d22553f79c4a254",
+  "run_sha256": "28136d0e4f0df999549fa37db12bcadd66282d4ef8f441b55fbe57a3a0268eb3",
   "source_sha256": {
     "../management-check/capture.py": "67e654124f9eb3ef9a539be2fb850da84fe29ffec0b84438d88ad2947eee213d",
     "../management-check/verify.py": "c461b4af18830bc3044f08d164251c29ce1bca533ca1765dc944207890d8bdab",

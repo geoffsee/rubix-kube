@@ -1,9 +1,9 @@
 {
-  "path": "/tmp/rubix-output-corrected-prerequisite-20260927-r1/rubixctl",
-  "receipt": "/tmp/rubix-output-corrected-prerequisite-20260927-r1/receipt.json",
-  "revision": "5f4064d987ba5dd4f334c3d6ac0bd18c71d3e0f1",
+  "path": "/tmp/rubix-node-corrected-prerequisite-20260927-r1/rubixctl",
+  "receipt": "/tmp/rubix-node-corrected-prerequisite-20260927-r1/receipt.json",
+  "revision": "2f3355235547131d2c5690ff5d22553f79c4a254",
   "sha256": "1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa",
   "size": 5388504,
-  "source_inventory": "/tmp/rubix-output-corrected-prerequisite-20260927-r1/source-hashes.json",
+  "source_inventory": "/tmp/rubix-node-corrected-prerequisite-20260927-r1/source-hashes.json",
   "target": "aarch64-unknown-linux-musl"
 }
