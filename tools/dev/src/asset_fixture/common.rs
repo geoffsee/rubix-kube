@@ -323,8 +323,14 @@ fn bounded_with(
 pub(super) fn output(command: &mut Command) -> Result<String> {
     control(command, cancellation())
 }
-pub(super) fn cleanup_output(command: &mut Command) -> Result<String> {
-    control(command, rubix_dev::process::Cancellation::default())
+pub(super) fn persistent_control(command: &Command, path: &Path, cleanup: bool) -> Result<String> {
+    let latch = if cleanup {
+        rubix_dev::process::Cancellation::default()
+    } else {
+        cancellation()
+    };
+    bounded_with(command, path, 30, 65536, latch)?;
+    Ok(String::from_utf8(read(path, 65536)?)?.trim().to_owned())
 }
 fn control(command: &Command, cancellation: rubix_dev::process::Cancellation) -> Result<String> {
     let tmp = tempfile::tempdir()?;

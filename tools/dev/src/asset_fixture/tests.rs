@@ -245,6 +245,15 @@ fn synthetic_receipt(directory: &std::path::Path) -> Result<serde_json::Value> {
     for label in ["build", "first", "repeat"] {
         bind_synthetic_command(directory, &mut receipt, label)?;
     }
+    for (label, _) in super::capture::controls(&tag) {
+        let raw = if label == "image-inspect" {
+            format!("{}\n", string(&receipt["image_id"])?)
+        } else {
+            String::new()
+        };
+        std::fs::write(directory.join(format!("{label}.log")), raw)?;
+        bind_synthetic_command(directory, &mut receipt, label)?;
+    }
     save(&directory.join("receipt.json"), &receipt)?;
     super::capture::verify(&root, family, directory)?;
     Ok(receipt)
@@ -254,7 +263,14 @@ fn bind_synthetic_command(
     receipt: &mut serde_json::Value,
     label: &str,
 ) -> Result<()> {
-    let (argv, hash) = if label == "build" {
+    let control = super::capture::controls(string(&receipt["tag"])?)
+        .into_iter()
+        .find(|(name, _)| *name == label);
+    let raw_hash = digest(&directory.join(format!("{label}.log")))?;
+    let raw_hash = json!(raw_hash);
+    let (argv, hash) = if let Some((_, argv)) = &control {
+        (argv, &raw_hash)
+    } else if label == "build" {
         (&receipt["build_command"], &receipt["build_log_sha256"])
     } else {
         (
@@ -294,7 +310,17 @@ fn receipts_bind_source_command_cleanup_and_raw_observations() -> Result<()> {
 fn command_receipt_mutations_fail_even_when_outer_hash_is_updated() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let original = synthetic_receipt(directory.path())?;
-    for label in ["build", "first", "repeat"] {
+    for label in [
+        "build",
+        "first",
+        "repeat",
+        "image-inspect",
+        "cleanup-1",
+        "cleanup-2",
+        "cleanup-3",
+        "cleanup-4",
+        "cleanup-5",
+    ] {
         let path = directory.path().join(format!("{label}.command.json"));
         let command = load(&path)?;
         for (key, value) in [
@@ -327,6 +353,42 @@ fn command_receipt_mutations_fail_even_when_outer_hash_is_updated() -> Result<()
         }
         save(&path, &command)?;
     }
+    Ok(())
+}
+
+#[test]
+fn rehashed_control_outputs_cannot_claim_false_image_or_empty_cleanup() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let original = synthetic_receipt(directory.path())?;
+    for label in ["image-inspect", "cleanup-4", "cleanup-5"] {
+        let log = directory.path().join(format!("{label}.log"));
+        let raw = std::fs::read(&log)?;
+        let command = directory.path().join(format!("{label}.command.json"));
+        let proof = std::fs::read(&command)?;
+        let mut receipt = original.clone();
+        std::fs::write(
+            &log,
+            if label == "image-inspect" {
+                format!("sha256:{}\n", "0".repeat(64))
+            } else {
+                "still-owned\n".into()
+            },
+        )?;
+        bind_synthetic_command(directory.path(), &mut receipt, label)?;
+        save(&directory.path().join("receipt.json"), &receipt)?;
+        assert!(super::capture::verify(&root()?, "decode", directory.path()).is_err());
+        std::fs::write(log, raw)?;
+        std::fs::write(command, proof)?;
+    }
+    save(&directory.path().join("receipt.json"), &original)?;
+    let relocated = tempfile::tempdir()?;
+    for entry in std::fs::read_dir(directory.path())? {
+        let entry = entry?;
+        std::fs::copy(entry.path(), relocated.path().join(entry.file_name()))?;
+    }
+    super::capture::verify(&root()?, "decode", relocated.path())?;
+    std::fs::write(relocated.path().join("unrecorded.log"), b"extra")?;
+    assert!(super::capture::verify(&root()?, "decode", relocated.path()).is_err());
     Ok(())
 }
 

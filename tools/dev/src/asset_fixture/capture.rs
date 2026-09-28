@@ -156,7 +156,7 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path) -> Result<()> 
         "builder recorded digests",
     )?;
     fields(&report["runs"], &["first", "repeat"])?;
-    fields(&report["command_sha256"], &["build", "first", "repeat"])?;
+    verify_controls(directory, &report, tag)?;
     check(
         report["command_sha256"]["build"]
             == super::common::verify_command(
@@ -168,6 +168,84 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path) -> Result<()> 
     )?;
 
     verify_runs(family, directory, &report, tag, &built)
+}
+pub(super) fn controls(tag: &str) -> Vec<(&'static str, Value)> {
+    vec![
+        (
+            "image-inspect",
+            json!(["docker", "image", "inspect", "--format", "{{.Id}}", tag]),
+        ),
+        (
+            "cleanup-1",
+            json!(["docker", "rm", "-f", format!("{tag}-first")]),
+        ),
+        (
+            "cleanup-2",
+            json!(["docker", "rm", "-f", format!("{tag}-repeat")]),
+        ),
+        ("cleanup-3", json!(["docker", "rmi", "-f", tag])),
+        (
+            "cleanup-4",
+            json!([
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                format!("name={tag}"),
+                "--format",
+                "{{.Names}}"
+            ]),
+        ),
+        (
+            "cleanup-5",
+            json!(["docker", "image", "ls", tag, "--format", "{{.ID}}"]),
+        ),
+    ]
+}
+fn verify_controls(directory: &Path, report: &Value, tag: &str) -> Result<()> {
+    let controls = controls(tag);
+    let mut labels = vec!["build", "first", "repeat"];
+    labels.extend(controls.iter().map(|(label, _)| *label));
+    fields(&report["command_sha256"], &labels)?;
+    let mut expected = std::collections::BTreeSet::from([
+        "receipt.json".to_owned(),
+        "source-inventory.json".to_owned(),
+    ]);
+    for label in labels {
+        expected.insert(format!("{label}.log"));
+        expected.insert(format!("{label}.command.json"));
+    }
+    let mut actual = std::collections::BTreeSet::new();
+    for entry in fs::read_dir(directory)? {
+        let entry = entry?;
+        check(entry.file_type()?.is_file(), "regular evidence file")?;
+        actual.insert(
+            entry
+                .file_name()
+                .into_string()
+                .map_err(|_| "evidence filename")?,
+        );
+    }
+    check(actual == expected, "exact evidence files")?;
+    for (label, argv) in controls {
+        let raw = read(&directory.join(format!("{label}.log")), 65536)?;
+        check(
+            report["command_sha256"][label]
+                == super::common::verify_command(
+                    &directory.join(format!("{label}.command.json")),
+                    &argv,
+                    &sha256(&raw),
+                )?,
+            "control command receipt binding",
+        )?;
+        let text = std::str::from_utf8(&raw)?.trim();
+        if label == "image-inspect" {
+            check(report["image_id"] == text, "raw image identity")?;
+        } else if matches!(label, "cleanup-4" | "cleanup-5") {
+            check(text.is_empty(), "raw empty cleanup inventory")?;
+        }
+    }
+    Ok(())
 }
 fn verify_runs(
     family: &str,
@@ -306,9 +384,14 @@ fn execute_in(
         &tag,
         &binaries(family)?,
     )?;
-    report["image_id"] =
-        output(Command::new("docker").args(["image", "inspect", "--format", "{{.Id}}", &tag]))?
-            .into();
+    report["image_id"] = super::common::persistent_control(
+        Command::new("docker").args(["image", "inspect", "--format", "{{.Id}}", &tag]),
+        &directory.join("image-inspect.log"),
+        false,
+    )?
+    .into();
+    report["command_sha256"]["image-inspect"] =
+        digest(&directory.join("image-inspect.command.json"))?.into();
     for name in ["first", "repeat"] {
         report["containers"]
             .as_array_mut()
@@ -365,9 +448,30 @@ pub(super) fn docker(root: &Path, family: &str, directory: &Path) -> Result<()> 
         report["cleanup_errors"] = json!(["unsettled command; further cleanup not attempted"]);
         return super::common::publish_result(&directory.join("receipt.json"), &mut report, result);
     }
+    let mut proofs = Vec::new();
+    let mut index = 0;
     let cleanup_result = cleanup(&mut report, &tag, |args| {
-        super::common::cleanup_output(Command::new("docker").args(args))
+        index += 1;
+        let label = format!("cleanup-{index}");
+        let result = super::common::persistent_control(
+            Command::new("docker").args(args),
+            &directory.join(format!("{label}.log")),
+            true,
+        );
+        let proof = directory.join(format!("{label}.command.json"));
+        if proof.exists() {
+            match digest(&proof) {
+                Ok(hash) => proofs.push((label, hash)),
+                Err(error) if result.is_ok() => return Err(error),
+                // Keep the typed ownership failure so cleanup stops when settlement is unknown.
+                Err(_) => {},
+            }
+        }
+        result
     });
+    for (label, hash) in proofs {
+        report["command_sha256"][label] = hash.into();
+    }
     let status = if cleanup_result.is_err() {
         cleanup_result
     } else {
