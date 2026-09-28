@@ -187,3 +187,9 @@ Bounded ELF header/loader observations are described in ELF.md, with complete
 compressed-executable decoding composition in DECODE.md. Full ELF/ABI qualification,
 production decoded pins, archive/OCI content, provenance, immutable image resolution
 and install safety remain unimplemented. This bounded layer does not close #48.
+
+The narrow single-image Docker-save profile emitted by crane v0.21.5 now has
+streaming outer archive/member/reference and config-platform observations; see
+[ARCHIVE.md](ARCHIVE.md). Stored layer blob hashes are checked against archive
+member names, while declared DiffIDs, nested layer integrity and original registry
+manifest/index identity remain unverified. No production image pin is introduced.
