@@ -1,0 +1,48 @@
+[
+    {
+        "Id": "sha256:9bae2c6b08a1b736a8d9ab8dcbb27193a0a1aa7b493ac15d9eb82dad2f6aedbd",
+        "RepoTags": [
+            "rubix-alpine-preparecynidk:latest"
+        ],
+        "RepoDigests": [
+            "rubix-alpine-preparecynidk@sha256:9bae2c6b08a1b736a8d9ab8dcbb27193a0a1aa7b493ac15d9eb82dad2f6aedbd"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-28T00:59:35.786715085Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "WorkingDir": "/"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 7414106,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:1b349a3334531b575b01d409540dd8aca14ef29abddacd50f36643d7c949db4b",
+                "sha256:d07c8f84da67c5c9892a1d360aade17217abd5c396f9056353dad1721d31d3a0",
+                "sha256:f9dc24adb6cece8f9837db7642f92f15e8c7e3f7b48027b5878b4a861b2f96b0",
+                "sha256:5584bb8734df27248e5fc51467031627e2801adb2a4f0cfc2862bb9f685f0f83",
+                "sha256:2bd7e3bc7e81ee6a8e3a9a6dbdac64a89ca5df9d95712e1b1c817b6d6fcd268e"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-28T07:55:30.17430847Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:9bae2c6b08a1b736a8d9ab8dcbb27193a0a1aa7b493ac15d9eb82dad2f6aedbd",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "w6y6wdl566684svpielxpk33x",
+                    "CreatedAt": "2026-09-28T07:55:30.217168887Z"
+                }
+            ]
+        }
+    }
+]

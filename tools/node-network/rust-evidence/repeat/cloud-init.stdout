@@ -1,0 +1,43 @@
+{
+  "boot_status_code": "enabled-by-sysvinit",
+  "datasource": "nocloud",
+  "detail": "DataSourceNoCloud [seed=/dev/vdb]",
+  "errors": [],
+  "extended_status": "degraded done",
+  "init": {
+    "errors": [],
+    "finished": 8.49,
+    "recoverable_errors": {},
+    "start": 8.01
+  },
+  "init-local": {
+    "errors": [],
+    "finished": 1.88,
+    "recoverable_errors": {},
+    "start": 1.82
+  },
+  "last_update": "Thu, 01 Jan 1970 00:00:08 +0000",
+  "modules-config": {
+    "errors": [],
+    "finished": 8.67,
+    "recoverable_errors": {},
+    "start": 8.66
+  },
+  "modules-final": {
+    "errors": [],
+    "finished": 8.86,
+    "recoverable_errors": {
+      "WARNING": [
+        "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
+      ]
+    },
+    "start": 8.84
+  },
+  "recoverable_errors": {
+    "WARNING": [
+      "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
+    ]
+  },
+  "stage": null,
+  "status": "done"
+}

@@ -1,0 +1,167 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Build.Dockerfile
+#1 transferring dockerfile: 1.30kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+#3 DONE 0.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [stage-1 1/2] FROM docker.io/library/alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+#5 resolve docker.io/library/alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 0.0s done
+#5 DONE 0.0s
+
+#6 [build 1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#6 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 3.96MB 0.1s done
+#7 DONE 0.1s
+
+#8 [build 2/5] WORKDIR /source
+#8 CACHED
+
+#9 [build 3/5] COPY . .
+#9 DONE 0.2s
+
+#10 [build 4/5] RUN rustup target add aarch64-unknown-linux-musl  && cargo clippy -p rubix-kube --lib --test host_network --example prepare_host_network --target aarch64-unknown-linux-musl --locked -- -D warnings  && cargo test -p rubix-kube --test host_network --target aarch64-unknown-linux-musl --locked --release --no-run  && cargo build -p rubix-kube --example prepare_host_network --target aarch64-unknown-linux-musl --locked --release  && mkdir /out  && cp target/aarch64-unknown-linux-musl/release/examples/prepare_host_network /out/prepare_host_network  && for executable in target/aarch64-unknown-linux-musl/release/deps/host_network-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/host_network; fi; done  && test -x /out/host_network
+#10 0.200 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 2.208 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 2.217 info: downloading 3 components
+#10 11.80 info: downloading component rust-std
+#10 16.92     Updating crates.io index
+#10 19.30  Downloading crates ...
+#10 19.74   Downloaded errno v0.3.14
+#10 19.78   Downloaded itoa v1.0.18
+#10 19.89   Downloaded tokio-macros v2.7.1
+#10 20.03   Downloaded quote v1.0.47
+#10 20.04   Downloaded pin-project-lite v0.2.17
+#10 20.07   Downloaded thiserror v2.0.18
+#10 20.11   Downloaded signal-hook-registry v1.4.8
+#10 20.12   Downloaded zmij v1.0.23
+#10 20.12   Downloaded bitflags v2.13.2
+#10 20.13   Downloaded thiserror-impl v2.0.18
+#10 20.13   Downloaded arraydeque v0.5.1
+#10 20.16   Downloaded proc-macro2 v1.0.107
+#10 20.17   Downloaded serde_derive v1.0.228
+#10 20.20   Downloaded serde_core v1.0.228
+#10 20.23   Downloaded unicode-ident v1.0.26
+#10 20.27   Downloaded serde v1.0.228
+#10 20.28   Downloaded memchr v2.8.3
+#10 20.29   Downloaded mio v1.2.3
+#10 20.48   Downloaded regex v1.13.1
+#10 20.49   Downloaded serde_json v1.0.151
+#10 20.50   Downloaded aho-corasick v1.1.5
+#10 20.55   Downloaded syn v2.0.119
+#10 20.67   Downloaded regex-syntax v0.8.11
+#10 20.68   Downloaded rustix v1.1.5
+#10 20.77   Downloaded regex-automata v0.4.18
+#10 20.96   Downloaded libc v0.2.189
+#10 21.04   Downloaded tokio v1.53.1
+#10 21.40   Downloaded linux-raw-sys v0.12.1
+#10 21.48    Compiling proc-macro2 v1.0.107
+#10 21.48    Compiling unicode-ident v1.0.26
+#10 21.48    Compiling quote v1.0.47
+#10 21.48    Compiling libc v0.2.189
+#10 21.48     Checking memchr v2.8.3
+#10 21.49    Compiling serde_core v1.0.228
+#10 21.49    Compiling zmij v1.0.23
+#10 21.49    Compiling thiserror v2.0.18
+#10 21.49    Compiling rustix v1.1.5
+#10 21.49     Checking linux-raw-sys v0.12.1
+#10 21.49     Checking regex-syntax v0.8.11
+#10 21.49    Compiling serde v1.0.228
+#10 21.49     Checking bitflags v2.13.2
+#10 21.49    Compiling serde_json v1.0.151
+#10 21.49     Checking pin-project-lite v0.2.17
+#10 21.49     Checking itoa v1.0.18
+#10 21.54     Checking arraydeque v0.5.1
+#10 21.76     Checking aho-corasick v1.1.5
+#10 22.35    Compiling syn v2.0.119
+#10 22.39     Checking errno v0.3.14
+#10 22.39     Checking mio v1.2.3
+#10 22.43     Checking signal-hook-registry v1.4.8
+#10 22.44     Checking regex-automata v0.4.18
+#10 23.29     Checking regex v1.13.1
+#10 23.48     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#10 25.62    Compiling thiserror-impl v2.0.18
+#10 25.62    Compiling serde_derive v1.0.228
+#10 25.62    Compiling tokio-macros v2.7.1
+#10 26.97     Checking tokio v1.53.1
+#10 27.48     Checking saphyr-parser v0.0.11 (/source/third_party/saphyr-parser)
+#10 28.58     Checking rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 28.81     Checking rubix-config v0.1.0 (/source/crates/rubix-config)
+#10 29.25     Checking rubix-kube v0.1.0 (/source/crates/rubix-kube)
+#10 29.76     Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.87s
+#10 29.93    Compiling proc-macro2 v1.0.107
+#10 29.93    Compiling unicode-ident v1.0.26
+#10 29.93    Compiling quote v1.0.47
+#10 29.93    Compiling libc v0.2.189
+#10 29.93    Compiling serde_core v1.0.228
+#10 29.93    Compiling zmij v1.0.23
+#10 29.93    Compiling rustix v1.1.5
+#10 29.93    Compiling thiserror v2.0.18
+#10 29.93    Compiling serde_json v1.0.151
+#10 29.93    Compiling serde v1.0.228
+#10 29.93    Compiling memchr v2.8.3
+#10 29.94    Compiling regex-syntax v0.8.11
+#10 29.94    Compiling bitflags v2.13.2
+#10 29.94    Compiling linux-raw-sys v0.12.1
+#10 29.94    Compiling itoa v1.0.18
+#10 30.06    Compiling pin-project-lite v0.2.17
+#10 30.19    Compiling arraydeque v0.5.1
+#10 30.24    Compiling aho-corasick v1.1.5
+#10 30.87    Compiling syn v2.0.119
+#10 31.00    Compiling errno v0.3.14
+#10 31.00    Compiling mio v1.2.3
+#10 31.09    Compiling signal-hook-registry v1.4.8
+#10 31.56    Compiling regex-automata v0.4.18
+#10 32.67    Compiling thiserror-impl v2.0.18
+#10 32.67    Compiling tokio-macros v2.7.1
+#10 32.67    Compiling serde_derive v1.0.228
+#10 33.14    Compiling tokio v1.53.1
+#10 33.16    Compiling regex v1.13.1
+#10 33.27    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#10 33.43    Compiling saphyr-parser v0.0.11 (/source/third_party/saphyr-parser)
+#10 34.58    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 34.75    Compiling rubix-config v0.1.0 (/source/crates/rubix-config)
+#10 35.32    Compiling rubix-kube v0.1.0 (/source/crates/rubix-kube)
+#10 43.65     Finished `release` profile [optimized + debuginfo] target(s) in 13.81s
+#10 43.65   Executable tests/host_network.rs (target/aarch64-unknown-linux-musl/release/deps/host_network-e5577a9d22cc7c77)
+#10 43.72    Compiling rubix-kube v0.1.0 (/source/crates/rubix-kube)
+#10 48.07     Finished `release` profile [optimized + debuginfo] target(s) in 4.38s
+#10 DONE 48.7s
+
+#11 [build 5/5] RUN test -n "902b1c17f316b42ea71843adbb4393aa" && echo "RUBIX_BUILD_BIND_BEGIN 902b1c17f316b42ea71843adbb4393aa" && sha256sum /out/prepare_host_network /out/host_network && echo "RUBIX_BUILD_BIND_END 902b1c17f316b42ea71843adbb4393aa"
+#11 0.187 RUBIX_BUILD_BIND_BEGIN 902b1c17f316b42ea71843adbb4393aa
+#11 0.220 e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca  /out/prepare_host_network
+#11 0.252 65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03  /out/host_network
+#11 0.252 RUBIX_BUILD_BIND_END 902b1c17f316b42ea71843adbb4393aa
+#11 DONE 0.3s
+
+#5 [stage-1 1/2] FROM docker.io/library/alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+#5 CACHED
+
+#12 [stage-1 2/2] COPY --from=build /out/ /out/
+#12 DONE 0.4s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 0.6s done
+#13 exporting manifest sha256:4164b4dfaca40a0e1bdfffc86f382fef0906d62b251fe3beba06f7385db9e7f8 done
+#13 exporting config sha256:6cd17f196933d404f6dfed8cfe4501f562c9c5125687b8f2841e35199f120088 done
+#13 exporting attestation manifest sha256:bd58b84c9adb05541dedb417c9d9150c561f79f76b70a3a9f2724f76fbda163f done
+#13 exporting manifest list sha256:45c8f010501c6abde6ad5914059a175e5c54d35c477e2cd6df9c0ce37a97a5ca done
+#13 naming to docker.io/library/rubix-node-network-902b1c17f316b42ea71843adbb4393aa:latest done
+#13 unpacking to docker.io/library/rubix-node-network-902b1c17f316b42ea71843adbb4393aa:latest 0.1s done
+#13 DONE 0.7s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/tuoyslhsk6mz9zwo9t0hsp8a0

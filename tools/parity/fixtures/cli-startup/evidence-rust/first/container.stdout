@@ -1,0 +1,774 @@
+{
+  "artifact": {
+    "binary": "kubesolo",
+    "build": {
+      "cgo": true,
+      "dockerfile_sha256": "a5f48fafe987e290a0f690c9de642b0e16bdecd325ac5b370755147d2d1df84c",
+      "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+      "toolchain": "go1.26.5",
+      "variant": "external_deps"
+    },
+    "kind": "go",
+    "schema_version": 1,
+    "sha256": "67348b2560d0f831de20ef722c53cc317e385ab7cfbf406633fbbb6a7b73f81e",
+    "source": {
+      "repository": "https://github.com/portainer/kubesolo",
+      "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d"
+    },
+    "version": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d"
+  },
+  "cases": [
+    {
+      "argv": [
+        "--version"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.061162125,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-long",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "000.stderr",
+      "stderr_sha256": "99d020f6844b921484cfceb7b877adbf7ab72713ec55d24e4c32bd8d80a8387a",
+      "stdout_file": "000.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "-v"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.071226833,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-short",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "001.stderr",
+      "stderr_sha256": "99d020f6844b921484cfceb7b877adbf7ab72713ec55d24e4c32bd8d80a8387a",
+      "stdout_file": "001.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051095125,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-invalid-bool-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "002.stderr",
+      "stderr_sha256": "99d020f6844b921484cfceb7b877adbf7ab72713ec55d24e4c32bd8d80a8387a",
+      "stdout_file": "002.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.050954459,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-invalid-int-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "003.stderr",
+      "stderr_sha256": "99d020f6844b921484cfceb7b877adbf7ab72713ec55d24e4c32bd8d80a8387a",
+      "stdout_file": "003.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.050921834,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-invalid-map-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "004.stderr",
+      "stderr_sha256": "99d020f6844b921484cfceb7b877adbf7ab72713ec55d24e4c32bd8d80a8387a",
+      "stdout_file": "004.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version",
+        "--config=/tmp"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.052272042,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-directory-file",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "005.stderr",
+      "stderr_sha256": "99d020f6844b921484cfceb7b877adbf7ab72713ec55d24e4c32bd8d80a8387a",
+      "stdout_file": "005.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version",
+        "--full"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.05102925,
+      "exit_code": 0,
+      "failures": [],
+      "id": "version-before-full",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "006.stderr",
+      "stderr_sha256": "2fcd6cd57120be428f13369b6a329815490b4ecbe413f0131932ec59c99dccb4",
+      "stdout_file": "006.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version",
+        "--mtu=invalid"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.052703375,
+      "exit_code": 1,
+      "failures": [],
+      "id": "version-invalid-explicit-int",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "007.stderr",
+      "stderr_sha256": "756f6aa2e0be21b8f531b1a6194932c96f743a0cd22b418904ab2b36ff2141ba",
+      "stdout_file": "007.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version",
+        "--unknown"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051334834,
+      "exit_code": 1,
+      "failures": [],
+      "id": "version-unknown-flag",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "008.stderr",
+      "stderr_sha256": "436d61f3144b3aca85debbe2feef15b090b89bbdeff3af2fd9aba6e8e8ef15ca",
+      "stdout_file": "008.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--unknown",
+        "--version"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.052305917,
+      "exit_code": 1,
+      "failures": [],
+      "id": "unknown-before-version",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "009.stderr",
+      "stderr_sha256": "436d61f3144b3aca85debbe2feef15b090b89bbdeff3af2fd9aba6e8e8ef15ca",
+      "stdout_file": "009.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--help"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.061539459,
+      "exit_code": 0,
+      "failures": [],
+      "id": "help-long-name",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "010.stderr",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "stdout_file": "010.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--help"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051006333,
+      "exit_code": 0,
+      "failures": [],
+      "id": "help-invalid-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "011.stderr",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "stdout_file": "011.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--help",
+        "--mtu=invalid"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.05099725,
+      "exit_code": 0,
+      "failures": [],
+      "id": "help-invalid-explicit-int",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "012.stderr",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "stdout_file": "012.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--help",
+        "--unknown"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.052016458,
+      "exit_code": 1,
+      "failures": [],
+      "id": "help-unknown-flag",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "013.stderr",
+      "stderr_sha256": "436d61f3144b3aca85debbe2feef15b090b89bbdeff3af2fd9aba6e8e8ef15ca",
+      "stdout_file": "013.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "-h"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051361042,
+      "exit_code": 1,
+      "failures": [],
+      "id": "short-h",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "014.stderr",
+      "stderr_sha256": "37b70e721bf0af19cdcfb770e2b82bed5e803599c741a19e9f40502a3861743e",
+      "stdout_file": "014.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug",
+        "--debug"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051136209,
+      "exit_code": 1,
+      "failures": [],
+      "id": "duplicate-bool",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "015.stderr",
+      "stderr_sha256": "557166a2d51ccc2aa0f5a33104fc3fa99438b5203c80c97c894cf3a762d6a30d",
+      "stdout_file": "015.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug",
+        "--no-debug"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051040584,
+      "exit_code": 1,
+      "failures": [],
+      "id": "duplicate-positive-negative",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "016.stderr",
+      "stderr_sha256": "557166a2d51ccc2aa0f5a33104fc3fa99438b5203c80c97c894cf3a762d6a30d",
+      "stdout_file": "016.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--version",
+        "-v"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.061534208,
+      "exit_code": 1,
+      "failures": [],
+      "id": "duplicate-version-alias",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "017.stderr",
+      "stderr_sha256": "7fce8d1cb091cebd592623e9b63a6d62b3085a0092123b22ca3dafd6fb5a2cab",
+      "stdout_file": "017.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--path=/one",
+        "--path=/two"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051273458,
+      "exit_code": 1,
+      "failures": [],
+      "id": "duplicate-string",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "018.stderr",
+      "stderr_sha256": "ef22bf933b26d8130438779835c0d8f68e8761b6f6135df3e680f6c4c6106f2a",
+      "stdout_file": "018.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug=false"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051968375,
+      "exit_code": 1,
+      "failures": [],
+      "id": "bool-equals-false",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "019.stderr",
+      "stderr_sha256": "203d756f6546c74f70a39c27e3aec69f27ea24f43da3cfb6c4ba191d3e92fb6f",
+      "stdout_file": "019.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug=true"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.050933417,
+      "exit_code": 1,
+      "failures": [],
+      "id": "bool-equals-true",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "020.stderr",
+      "stderr_sha256": "594e65e67b6076cbf28178cccff3fda1f785e3ab4675a7890923f61856c45563",
+      "stdout_file": "020.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug",
+        "false"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.0508365,
+      "exit_code": 1,
+      "failures": [],
+      "id": "bool-following-false",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "021.stderr",
+      "stderr_sha256": "203d756f6546c74f70a39c27e3aec69f27ea24f43da3cfb6c4ba191d3e92fb6f",
+      "stdout_file": "021.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug="
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051002917,
+      "exit_code": 1,
+      "failures": [],
+      "id": "bool-empty-equals",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "022.stderr",
+      "stderr_sha256": "db0e5e86b17f3fcd67ebb56b0f61df6ca6b071893c9c3d638cf4b44f78268033",
+      "stdout_file": "022.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--node-ip",
+        ""
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.05189325,
+      "exit_code": 0,
+      "failures": [],
+      "id": "string-empty-argv",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "023.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "023.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--node-ip="
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.05103225,
+      "exit_code": 0,
+      "failures": [],
+      "id": "string-empty-equals",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "024.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "024.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--mtu="
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.050971417,
+      "exit_code": 1,
+      "failures": [],
+      "id": "integer-empty-equals",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "025.stderr",
+      "stderr_sha256": "c779b636a1ffbadd452e9ac90e5e3c78cc92ecc1f0a9ae0eaa6a58df6dcef0ed",
+      "stdout_file": "025.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        ""
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.0510945,
+      "exit_code": 1,
+      "failures": [],
+      "id": "empty-positional",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "026.stderr",
+      "stderr_sha256": "db0e5e86b17f3fcd67ebb56b0f61df6ca6b071893c9c3d638cf4b44f78268033",
+      "stdout_file": "026.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.041045416,
+      "exit_code": 0,
+      "failures": [],
+      "id": "delimiter-empty-tail",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "027.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "027.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--",
+        "--version"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051025708,
+      "exit_code": 1,
+      "failures": [],
+      "id": "delimiter-flag-is-positional",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "028.stderr",
+      "stderr_sha256": "ec2e0442d5e324023498f402b95ace64000a44260f46c76e41a92a5f538030ea",
+      "stdout_file": "028.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--node-ip"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051021334,
+      "exit_code": 1,
+      "failures": [],
+      "id": "missing-argument",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "029.stderr",
+      "stderr_sha256": "9ea3ca0adc7f6bfdd8d60eb769037e211c00a3a03fece212ecbfba99a2a8a884",
+      "stdout_file": "029.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--debug"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051124209,
+      "exit_code": 1,
+      "failures": [],
+      "id": "invalid-env-overridden-boolean",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "030.stderr",
+      "stderr_sha256": "24d83024bd66a27d3cc6e25188f78cef3a018d71bf53748de24675462034772e",
+      "stdout_file": "030.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--mtu=1400"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.050843041,
+      "exit_code": 1,
+      "failures": [],
+      "id": "invalid-env-overridden-integer",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "031.stderr",
+      "stderr_sha256": "314efdf937f88b863c5cf1dc72589cb584ada73877f24e475cef536298abfaec",
+      "stdout_file": "031.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--config=/tmp"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.040687584,
+      "exit_code": 1,
+      "failures": [],
+      "id": "directory-before-string-map-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "032.stderr",
+      "stderr_sha256": "d40307f0bfde6a50f9a276f1f6973a35b0f252798caa93b3fe4bcda5d185b437",
+      "stdout_file": "032.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--config=/tmp"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.050809375,
+      "exit_code": 1,
+      "failures": [],
+      "id": "primitive-env-before-directory",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "033.stderr",
+      "stderr_sha256": "756f6aa2e0be21b8f531b1a6194932c96f743a0cd22b418904ab2b36ff2141ba",
+      "stdout_file": "033.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051122333,
+      "exit_code": 0,
+      "failures": [],
+      "id": "empty-full-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "034.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "034.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.040833666,
+      "exit_code": 0,
+      "failures": [],
+      "id": "empty-config-env",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "035.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "035.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--print-config",
+        "--config="
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.051285458,
+      "exit_code": 0,
+      "failures": [],
+      "id": "empty-config-equals",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "036.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "036.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--no-version",
+        "--print-config"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.0415095,
+      "exit_code": 0,
+      "failures": [],
+      "id": "no-version-print",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "037.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "037.stdout",
+      "stdout_sha256": "2e39d796dbfbd4a0847557e384a25a8946fac2edc2ba950560cd525301596714",
+      "timeout": false
+    },
+    {
+      "argv": [
+        "--no-help"
+      ],
+      "artifact_uid_inventory_confirmed": true,
+      "cancelled": false,
+      "duration_seconds": 0.040828375,
+      "exit_code": 0,
+      "failures": [],
+      "id": "no-help",
+      "owned_process_group_absent": true,
+      "status": "passed",
+      "stderr_file": "038.stderr",
+      "stderr_sha256": "1e5d74a6c64e01fa3b6962144eb3e236bf1807d680e706e704c002f3acea5adf",
+      "stdout_file": "038.stdout",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout": false
+    }
+  ],
+  "driver_sha256": "03967b15d63b5bd5392a51578dc63795b1abec18dcc12c5d2575050851df0265",
+  "environment": {
+    "architecture": "aarch64",
+    "artifact_uid": 65532,
+    "driver_uid": 0,
+    "system": "linux"
+  },
+  "schema_version": 1,
+  "status": "passed",
+  "suite_id": "cli-startup",
+  "suite_sha256": "ee47ffdca0e0de0725ac5fd1682683997cf90a2552b96614253195a943670c0c",
+  "unsupported_capabilities": [
+    "privileged-runtime",
+    "cluster-lifecycle",
+    "conformance"
+  ]
+}

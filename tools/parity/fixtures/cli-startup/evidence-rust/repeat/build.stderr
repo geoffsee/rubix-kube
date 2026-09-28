@@ -1,0 +1,48 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [build 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 357B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 198.44MB 1.5s done
+#5 DONE 1.6s
+
+#6 [2/6] COPY rubix-parity /artifact/rubix-parity
+#6 CACHED
+
+#7 [3/6] WORKDIR /artifact
+#7 CACHED
+
+#8 [4/6] COPY executable artifact.json suite.json ./
+#8 CACHED
+
+#9 [5/6] COPY fixtures /fixtures
+#9 CACHED
+
+#10 [6/6] RUN mkdir /evidence && chmod 0700 /evidence
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:44a7dbfc24f9e75286d038ae23d4c32eb23fd46cb525ccb9b2172b0a961ee26f done
+#11 exporting config sha256:91df3675f5cf75c1b19283a7ae9f1dacd1792a2af3f708adfdc8f7f78003bdbf done
+#11 exporting attestation manifest sha256:b4ae515c20a8c799e976814fac17a606da76a0d6a9313b6b5bd78b3c7c172712 done
+#11 exporting manifest list sha256:f0430f41b896e2cee1ea3ac50aede1c5cbd6190a78ff07e30922b348ff14b592 done
+#11 naming to docker.io/library/rubix-parity-9794df4c852ef817ddc27d1a:test done
+#11 unpacking to docker.io/library/rubix-parity-9794df4c852ef817ddc27d1a:test
+#11 unpacking to docker.io/library/rubix-parity-9794df4c852ef817ddc27d1a:test 0.8s done
+#11 DONE 1.0s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/q6nlqlvebi0zhlxdhxs88jp2e

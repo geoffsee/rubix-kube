@@ -1,0 +1,4 @@
+=== RUN   TestCapture
+RUBIX_CAPTURE ["absent\tnftables","present\tiptables","unreadable\tnftables"]
+--- PASS: TestCapture (0.00s)
+PASS
