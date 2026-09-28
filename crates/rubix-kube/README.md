@@ -75,9 +75,9 @@ No binary or private keys are committed. Reproduce with a release Linux arm64
 binary described by the checksum-bound artifact schema, then run:
 
 ```sh
-python3 tools/parity/run.py --artifact /path/to/artifact.json \
+cargo run --locked -p rubix-dev --bin rubix-parity -- run --artifact /path/to/artifact.json \
   --suite crates/rubix-kube/tests/fixtures/startup.json --output /tmp/startup-run
-python3 tools/parity/run.py --artifact /path/to/artifact.json \
+cargo run --locked -p rubix-dev --bin rubix-parity -- run --artifact /path/to/artifact.json \
   --suite tools/parity/fixtures/config-command.json --output /tmp/config-run
 ```
 
