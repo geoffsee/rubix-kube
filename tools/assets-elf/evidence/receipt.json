@@ -55,11 +55,11 @@
   },
   "errors": [],
   "logs": {
-    "run0.log": "2a27dd3ce557e1df1f79f306ba6f1fd207da86993878ccc4b1bc3d03140555b7",
-    "run1.log": "64741f8dace09316ac9f2469202326d88117b3438935388c7fe9cf58e27be261"
+    "run0.log": "7d382bc1cfc165390b6be61952fde6da164a0f074d0ea0085601d213bc7aef78",
+    "run1.log": "e55fb9eca1b4f756b498343140a04027625b9a25b11e59ce1c59770468eb57b3"
   },
   "qualification": "read-only ELF inspection; no artifact execution",
-  "revision": "90a352c1b720b4a99a235f5bc3ce5d1c6533603f",
+  "revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
     "Cargo.lock": "0524f600f6c7b4da58a242c3c8b4a6699f1b5ac744b31123ffdea9b23eecd185",
@@ -87,7 +87,7 @@
     "crates/rubix-config/Cargo.toml": "1006c70dd15cdc9989a5fa5bd3afd31aff521bd4bf8544604abfdf59cfa7b5e3",
     "crates/rubix-containerd-api/Cargo.toml": "fabe2671f66933b38f470738230e6da84c9ac7e011ba6260efad2058a258cb48",
     "crates/rubix-cri/Cargo.toml": "0e2325f0054e50a30895d4ec08796e73a93818822f9b123aafc83680526d443c",
-    "crates/rubix-kube/Cargo.toml": "69d753592720cf36055887cfcec29f66af7f848e946ef52e8e4ac0b6a2b942d9",
+    "crates/rubix-kube/Cargo.toml": "d18ec49bde2cf845b913f4b6328054d119ca9dd8cdf2efe8012d263ea220dee5",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-platform/src/classify.rs": "e3e62d4aad48ee8087ad94fac258305814ecbf93a428af10a5437d0f1788da01",
     "crates/rubix-platform/src/constrained.rs": "6953a432c5f2ec734c73df23d5aaa757e88944aa4c842b2d8f222ad14568e6b3",

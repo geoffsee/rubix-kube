@@ -1,11 +1,11 @@
 {
-  "build_sha256": "9dc167a85ee0b0baa92052293f31833a460713d263cc51da1ba868f87315eb00",
+  "build_sha256": "2622bc89e0471c9cdbb27954e3f0387911d47435ed859e9a20c8da6c1ea66b29",
   "cleanup_errors": [],
   "command": [
     "docker",
     "run",
     "--name",
-    "rubix-node-network-9a9810300bfe4d9a89761745a853d0d4-test",
+    "rubix-node-network-283e33b25c174505985fb46fe0d1754e-test",
     "--network=none",
     "--read-only",
     "--cap-drop=ALL",
@@ -13,23 +13,23 @@
     "--pids-limit=64",
     "--memory=512m",
     "--cpus=2",
-    "rubix-node-network-9a9810300bfe4d9a89761745a853d0d4",
+    "rubix-node-network-283e33b25c174505985fb46fe0d1754e",
     "/bin/sh",
     "-c",
     "sha256sum /out/prepare_host_network /out/host_network && /out/host_network && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_host_network --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_host_network --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
   ],
   "containers": [
-    "rubix-node-network-9a9810300bfe4d9a89761745a853d0d4-test"
+    "rubix-node-network-283e33b25c174505985fb46fe0d1754e-test"
   ],
   "dirty": false,
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:444ecfd470134b36d8ec0caabacdcffb53fb132a84eecb4dc66bf16580a3f96e",
+  "image_id": "sha256:ff6e30f9dc07d6f247d7a22db62881cac0aff85c6d649e2ae76d4eddca97597d",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "90a352c1b720b4a99a235f5bc3ce5d1c6533603f",
-  "run_sha256": "a83fdf79c7db77c69b11277da2c319581b069b0b03f7682491a650c80ebf78eb",
+  "revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
+  "run_sha256": "0a13e464589c7918bb38e8534d80a6d49061851d6f40d68172056c3e9e290811",
   "schema": 1,
-  "source_sha256": "8bd72f221a1bd40f5b9dcb3cac1b6104aa31f2ffc85286f32edddce1ec085756",
-  "tag": "rubix-node-network-9a9810300bfe4d9a89761745a853d0d4"
+  "source_sha256": "a3de5cd35ff4366b207d9da579db5d547da219805cbcf01ff7dc15f9049d14ab",
+  "tag": "rubix-node-network-283e33b25c174505985fb46fe0d1754e"
 }

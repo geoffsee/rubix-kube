@@ -3,11 +3,11 @@
     "archive-tests": "a5df32ef460ec2f5c9f48a9e59dded4d4a959335b1d4e51c2428357d659a8189",
     "producer": "7434ad637e4fb31b7c89fb4db001eb5678530ebe8c00780a9f4d9ef5b0cb9b9b"
   },
-  "build_log_sha256": "539e35a8098f23483a3414facaef815adaab707f64708b45211ddbabd93474fd",
+  "build_log_sha256": "0d3c98195b8a4388d1f549ef4b09a4eea700690b966c4fbfff5b25d8d85a4ee2",
   "cleanup_errors": [],
   "containers": [
-    "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8-first",
-    "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8-repeat"
+    "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610-first",
+    "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610-repeat"
   ],
   "errors": [],
   "harness_sha256": {
@@ -24,7 +24,7 @@
     "verify.py": "10a5a6c6833ddaa1c319ac05328126968f3a217bad382c029f01a4d24f6f4c24"
   },
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:9a41f51c354b0bf0ecf269b9bd418bb0c9afbdeb12d74ea96fdb8ed25ae7d1a2",
+  "image_id": "sha256:464a914dfa9b6aa9bc0e76b0b236e2572c9c317689591c5f710992f527cc97b1",
   "remaining_containers": [],
   "remaining_images": [],
   "runs": {
@@ -37,7 +37,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8-first",
+        "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -48,12 +48,12 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8",
+        "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610",
         "/bin/sh",
         "-c",
         "sha256sum /producer /archive-tests && /usr/local/bin/python3 /runtime.py; runtime_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "a00bba769c3b009a2ddef28053ac0461a11cfb8039a5f2584f83a195cdf80d3e",
+      "raw_sha256": "71202dbc0a0ed9ecc6282761d612e7756af11004e6a28976f0cb6675ce52f8c8",
       "records": {
         "amd64-repeated": {
           "archive_sha256": "ac1778143c34c5e42427701d547ad812f40068849940858b1ad013e8be65a4ab",
@@ -180,7 +180,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8-repeat",
+        "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -191,12 +191,12 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8",
+        "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610",
         "/bin/sh",
         "-c",
         "sha256sum /producer /archive-tests && /usr/local/bin/python3 /runtime.py; runtime_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "a00bba769c3b009a2ddef28053ac0461a11cfb8039a5f2584f83a195cdf80d3e",
+      "raw_sha256": "cb59cf6b556df8c3f20a4de8b6856bf9b15802611fbbbb1df0f601522dbae6e3",
       "records": {
         "amd64-repeated": {
           "archive_sha256": "ac1778143c34c5e42427701d547ad812f40068849940858b1ad013e8be65a4ab",
@@ -316,8 +316,8 @@
     }
   },
   "schema": 1,
-  "source_inventory_sha256": "df5865f05ce73e94020807f1c29e29b67d39f06f61795888ade7df4a2306d82f",
-  "source_revision": "90a352c1b720b4a99a235f5bc3ce5d1c6533603f",
-  "tag": "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8",
+  "source_inventory_sha256": "6f3cce9cf6948b7bc0fed1673793a6d08230954c8b4438504b9a51b6dff7cb87",
+  "source_revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
+  "tag": "rubix-archive-bc911bb43b6e4cb18ac0a6452a2ad610",
   "uncommitted_source_snapshot": false
 }

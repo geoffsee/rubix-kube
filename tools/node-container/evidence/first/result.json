@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "cases": [],
+  "errors": [],
+  "adapter": "qemu-disposable-node-container",
+  "explicit_privilege_opt_in": true,
+  "unsupported_capabilities": [
+    "full-cluster-assets",
+    "release-platform-qualification"
+  ],
+  "source_sha256": {
+    "capture.py": "212767ba238e43e0022c0850582e8fa0584292152cc07973da5ee76a8a0338fe",
+    "inputs.json": "45e072af7e4580576e952bc962514d98ea1ad3da170d4e1721efbefd1b8f2679",
+    "guest.sh": "233109f2aef862baf63a122d1729283e3b02dc59dbc0cb3ec2f2ddf8f444d8d0",
+    "verify.py": "646cf90bc90fbffddeab1a13bb7f50cac19300a9223866f5a93a8730c632d158",
+    "support.py": "54ad32b120b58620fc0f204e4dfc67fe4b43d3c0a327fad29ea4494378b5b8a2",
+    "launch.sh": "82ccb7922cb3866a85168466b453a17ae2d56323979447c47670e3bdc8e4d13a",
+    "namespace.sh": "a41f41d0cc2d40ba21fefc31927b1cf6b6700ad4f8d0d4411de393c73e31f177"
+  },
+  "inherited_vm_sha256": "3ad1e1e058067234c7ef942b1f88198e3177da7388aa43395e5a14817b60ad5c",
+  "baseline_helper_sha256": "df6e553bf244ed1a8171347e535e0f0d8c6b2d6ab7e1d8144b6ce3634b3fb614",
+  "build_verifier_sha256": "42685eb89628b77530dd7e306c04e6fdc236bc214ae3cd21dddd5e7c3eab820e",
+  "build_support_sha256": "54ad32b120b58620fc0f204e4dfc67fe4b43d3c0a327fad29ea4494378b5b8a2",
+  "artifact_sha256": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+  "revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
+  "working_tree_snapshot": false,
+  "inputs": {
+    "firmware": {
+      "code_sha256": "47765fe344818cbc464b1c14ae658fb4b854f5c2ceffa982411731eb4865594d",
+      "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
+    },
+    "host_tools": {
+      "qemu-img": "501293f57bfe5249a91d8ab8562e6fc04e4ae349c9d22b15ad50376d7df449a9",
+      "qemu-system-aarch64": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e",
+      "scp": "c3694a6d96db06c0d994fbf7d8c5617b0064c73f97f4298d1b1432dfa7cc6aeb",
+      "ssh": "470f812f6e71ee4ca1b49c79f9c2982c054493e22502d4648bd010feb4b2a9b2",
+      "ssh-keygen": "bddae9c4ea46fd903574ec6ff61eda75e133f940fa538f2adca80af474767596"
+    },
+    "image": {
+      "build": "r0 2026-09-19",
+      "bytes": 203161600,
+      "checksum_source": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-aarch64-cloudinit-r0.qcow2.sha512",
+      "distribution": "Alpine3.24.2 aarch64 cloudinit VM",
+      "metadata_source": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-aarch64-cloudinit-r0.yaml",
+      "sha512": "2cbb677c3d21c6716461dbd41568664a11a3ed98cf83b6b93f85a95ffc0254ef238b57ed1ef87e949d7013863526541e50599401ef7c2155b01504e2c7fe3b54",
+      "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-aarch64-cloudinit-r0.qcow2"
+    },
+    "namespace_launcher": {
+      "argv": [
+        "--mount",
+        "--cgroup",
+        "--propagation",
+        "private"
+      ],
+      "fork": false,
+      "package": "util-linux-misc=2.42.3-r1",
+      "pid_namespace": false,
+      "program": "/usr/bin/unshare",
+      "sha256": "fbd39d723da30c513e7dad6138023061620e6adfaccbb0012f8cb487246fb2f1",
+      "version": "unshare from util-linux 2.42.3"
+    },
+    "packages": {
+      "index_sha256": "c9bc75e1d555694bcbdd2bfe53d733661a06c806291f460cd59c3f9fe648616a",
+      "repository": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/",
+      "resolution_image": "alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6",
+      "selected": {
+        "bridge-1.5-r5.apk": {
+          "bytes": 2849,
+          "sha256": "fa0aeacfdac615e8f5f782f7c638fed248fcecc8dd5e1125d6d26c4697c5f798",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/bridge-1.5-r5.apk"
+        },
+        "busybox-1.37.0-r31.apk": {
+          "bytes": 521974,
+          "sha256": "18e3490a6f024004b2b13dd4b54bd50ccd82894938023b2d4eab389a4edcba70",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-1.37.0-r31.apk"
+        },
+        "busybox-binsh-1.37.0-r31.apk": {
+          "bytes": 1547,
+          "sha256": "f3a1b2257cfa114ff20de05c665f380695385d589908bfc9af5768f39fef9ef5",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-binsh-1.37.0-r31.apk"
+        },
+        "gmp-6.3.0-r4.apk": {
+          "bytes": 221014,
+          "sha256": "4dab6e86b850fe1b5bc0cf2fac17efa4d7f648bea44f3d9019694cc1e1cb12b7",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/gmp-6.3.0-r4.apk"
+        },
+        "ifupdown-ng-0.13.0-r0.apk": {
+          "bytes": 74412,
+          "sha256": "7b97836546a587b85126aacec7d9a72496431b2f53e8dd1ec1c383d88a042a55",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/ifupdown-ng-0.13.0-r0.apk"
+        },
+        "iptables-1.8.13-r0.apk": {
+          "bytes": 474039,
+          "sha256": "9d22aef2e74346e9d537f6dc964786ab14b35580e3ccc0e4001dc3a725e8fe77",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/iptables-1.8.13-r0.apk"
+        },
+        "iptables-openrc-1.8.13-r0.apk": {
+          "bytes": 4188,
+          "sha256": "8d3471e0516258d26170b03b515191d99e282ac6983fe9ace0f2025e30df3a4c",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/iptables-openrc-1.8.13-r0.apk"
+        },
+        "jansson-2.15.0-r0.apk": {
+          "bytes": 49825,
+          "sha256": "a13822f5ca1772cced4bb7d3d178ec5dee770d8accba5b4816b2ddc413e6f055",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/jansson-2.15.0-r0.apk"
+        },
+        "libblkid-2.42.3-r1.apk": {
+          "bytes": 97097,
+          "sha256": "9d0f24976c575c53c12526b6e078edf34c980c153bc8e5f1c1053cbece5b8cfa",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libblkid-2.42.3-r1.apk"
+        },
+        "libcap2-2.78-r0.apk": {
+          "bytes": 23993,
+          "sha256": "e13be383f18b1fcfe895361d816ff7cfd2b3c265e442bb371c4a234b29b0e4a9",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libcap2-2.78-r0.apk"
+        },
+        "libeconf-0.8.3-r0.apk": {
+          "bytes": 27259,
+          "sha256": "cf0899d49ded0a6891e3cdf1b37887f2ecd77293afe1d8f3cb8937763c83f183",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libeconf-0.8.3-r0.apk"
+        },
+        "libfdisk-2.42.3-r1.apk": {
+          "bytes": 121449,
+          "sha256": "061e5c9c82eff00f806bd51bdd414d3ff6aaec99de02ed4c1b60f3e13578e2b7",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libfdisk-2.42.3-r1.apk"
+        },
+        "libmnl-1.0.5-r2.apk": {
+          "bytes": 9466,
+          "sha256": "0ca382c70f78affef3a4a28016aab25ad8c3ccf1bcdad59f3968d4536a7b2478",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libmnl-1.0.5-r2.apk"
+        },
+        "libmount-2.42.3-r1.apk": {
+          "bytes": 128579,
+          "sha256": "a2a6fc6aab7a59c70ec060f5fb8c950be42d1a017934bf32e5dd6984eaab15cc",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libmount-2.42.3-r1.apk"
+        },
+        "libncursesw-6.6_p20260516-r0.apk": {
+          "bytes": 161906,
+          "sha256": "51a7aa4b3ec40b144d0801c0544e0a9f62e2a41d04b6067bb5e95786040741c6",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libncursesw-6.6_p20260516-r0.apk"
+        },
+        "libnftnl-1.3.1-r0.apk": {
+          "bytes": 69200,
+          "sha256": "8b31395671e910c294d7f0e29d3ac3c7efe9d89264db255f39aa9944dd4b6cac",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libnftnl-1.3.1-r0.apk"
+        },
+        "libsmartcols-2.42.3-r1.apk": {
+          "bytes": 56563,
+          "sha256": "e2a4b6c2e2f493100305b0e62b9b10454611a49625534b1b06a3bc8aa0087818",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libsmartcols-2.42.3-r1.apk"
+        },
+        "libuuid-2.42.3-r1.apk": {
+          "bytes": 15385,
+          "sha256": "9ce20c7ffe2ccaa7c321893c10564abbca13c3f2edb82f60a35f1f68e004f86c",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libuuid-2.42.3-r1.apk"
+        },
+        "libxtables-1.8.13-r0.apk": {
+          "bytes": 26331,
+          "sha256": "7535f18d9c7229178bc5e3809e5fea171033e33dfa054d88846512e1f25eefa8",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libxtables-1.8.13-r0.apk"
+        },
+        "musl-1.2.6-r2.apk": {
+          "bytes": 417710,
+          "sha256": "5e9674b7f41152fe2119093b5cb4c13eaaadb19c2d5422b2d7267913e663ee6e",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/musl-1.2.6-r2.apk"
+        },
+        "ncurses-terminfo-base-6.6_p20260516-r0.apk": {
+          "bytes": 22150,
+          "sha256": "e0c546b9461bdce206a90bc720cb69aa4628b5a5b8d908c3e5084e00f28f6a9d",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/ncurses-terminfo-base-6.6_p20260516-r0.apk"
+        },
+        "nftables-1.1.6-r1.apk": {
+          "bytes": 346383,
+          "sha256": "e350dc0ae7667486f925a6719add6df562055799baf0e402077ef2b11839ac9e",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/nftables-1.1.6-r1.apk"
+        },
+        "nftables-openrc-1.1.6-r1.apk": {
+          "bytes": 3734,
+          "sha256": "f5e73fc091db715ade23049944544962e48f8cad539803c119111a72bb03b04f",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/nftables-openrc-1.1.6-r1.apk"
+        },
+        "openrc-0.63.2-r0.apk": {
+          "bytes": 376164,
+          "sha256": "625cd378f8e26a0a559986c9647375ea77a6e6d72025b6959d60d4bf0f1a572e",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/openrc-0.63.2-r0.apk"
+        },
+        "openrc-user-0.63.2-r0.apk": {
+          "bytes": 6625,
+          "sha256": "2a219fe5b00e3b8e7e6c69b545839f46cdaad556a9948d2df8a1c953449e3070",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/openrc-user-0.63.2-r0.apk"
+        },
+        "readline-8.3.3-r1.apk": {
+          "bytes": 129706,
+          "sha256": "9f0ae0923c02b0d6aba62e9173542b65396ba3f0efefcbf087ea32f1120e7b34",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/readline-8.3.3-r1.apk"
+        },
+        "setarch-2.42.3-r1.apk": {
+          "bytes": 9249,
+          "sha256": "10c2df054ee731b9cd9da771ef64d1275ff37385a53eaf71db798e756d9501e3",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/setarch-2.42.3-r1.apk"
+        },
+        "skalibs-libs-2.15.0.0-r0.apk": {
+          "bytes": 91460,
+          "sha256": "7ea58fb512067402b519079fcce8a48381eb2b9c690341c4a017aa15f719c198",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/skalibs-libs-2.15.0.0-r0.apk"
+        },
+        "util-linux-misc-2.42.3-r1.apk": {
+          "bytes": 889060,
+          "sha256": "b04d1b39317348f03872bcafb5f5662d0e3f957b44469bef70a688c8a54a7e71",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/util-linux-misc-2.42.3-r1.apk"
+        },
+        "utmps-libs-0.1.3.3-r0.apk": {
+          "bytes": 5758,
+          "sha256": "d6487b6f260728969191314f6706d4cc62527370e757ec3ac6f7fee8ed38cf88",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/utmps-libs-0.1.3.3-r0.apk"
+        },
+        "zlib-1.3.2-r0.apk": {
+          "bytes": 54312,
+          "sha256": "a535991af7c9e8369ebbf33c1e388c1bc63c87ead5142eddaee71f65836c33e3",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/zlib-1.3.2-r0.apk"
+        }
+      }
+    },
+    "schema_version": 1,
+    "seed_builder": {
+      "name": "pycdlib",
+      "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4",
+      "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
+      "version": "1.14.0"
+    }
+  },
+  "tools": {
+    "qemu-system-aarch64": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-system-aarch64",
+      "sha256": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e"
+    },
+    "qemu-img": {
+      "path": "/opt/homebrew/Cellar/qemu/11.1.1/bin/qemu-img",
+      "sha256": "501293f57bfe5249a91d8ab8562e6fc04e4ae349c9d22b15ad50376d7df449a9"
+    },
+    "ssh": {
+      "path": "/usr/bin/ssh",
+      "sha256": "470f812f6e71ee4ca1b49c79f9c2982c054493e22502d4648bd010feb4b2a9b2"
+    },
+    "ssh-keygen": {
+      "path": "/usr/bin/ssh-keygen",
+      "sha256": "bddae9c4ea46fd903574ec6ff61eda75e133f940fa538f2adca80af474767596"
+    },
+    "scp": {
+      "path": "/usr/bin/scp",
+      "sha256": "c3694a6d96db06c0d994fbf7d8c5617b0064c73f97f4298d1b1432dfa7cc6aeb"
+    }
+  },
+  "firmware": {
+    "code_sha256": "47765fe344818cbc464b1c14ae658fb4b854f5c2ceffa982411731eb4865594d",
+    "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
+  },
+  "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n",
+  "owned_temporary_directory": "/tmp/rubix-vm-9vqoalsl",
+  "guest_host_public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPFiKZzQmxC/FIsFlg0b/uLGbI+C4BEoZEJ7cnbxye7j rubix-alpine-fixture-host",
+  "owned_resources": [
+    "disk.qcow2",
+    "vars.fd",
+    "seed.iso",
+    "seed",
+    "client",
+    "client.pub",
+    "host",
+    "host.pub",
+    "known_hosts",
+    "qmp.sock"
+  ],
+  "ssh_forward": "127.0.0.1:57016",
+  "qemu_argv": [
+    "qemu-system-aarch64",
+    "-machine",
+    "virt,accel=hvf",
+    "-cpu",
+    "host",
+    "-smp",
+    "2",
+    "-m",
+    "2048",
+    "-display",
+    "none",
+    "-serial",
+    "stdio",
+    "-monitor",
+    "none",
+    "-qmp",
+    "unix:/tmp/rubix-vm-9vqoalsl/qmp.sock,server=on,wait=off",
+    "-drive",
+    "if=pflash,format=raw,readonly=on,file=/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
+    "-drive",
+    "if=pflash,format=raw,file=/tmp/rubix-vm-9vqoalsl/vars.fd",
+    "-drive",
+    "if=virtio,format=qcow2,file=/tmp/rubix-vm-9vqoalsl/disk.qcow2",
+    "-drive",
+    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-9vqoalsl/seed.iso",
+    "-netdev",
+    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:57016-:22",
+    "-device",
+    "virtio-net-pci,netdev=n0"
+  ],
+  "owned_pid": 93833,
+  "ssh_readiness_seconds": 25.4340718750027,
+  "cloud_init_exit": 2,
+  "cloud_init": {
+    "boot_status_code": "enabled-by-sysvinit",
+    "datasource": "nocloud",
+    "detail": "DataSourceNoCloud [seed=/dev/vdb]",
+    "errors": [],
+    "extended_status": "degraded done",
+    "init": {
+      "errors": [],
+      "finished": 8.03,
+      "recoverable_errors": {},
+      "start": 7.53
+    },
+    "init-local": {
+      "errors": [],
+      "finished": 1.8,
+      "recoverable_errors": {},
+      "start": 1.74
+    },
+    "last_update": "Thu, 01 Jan 1970 00:00:08 +0000",
+    "modules-config": {
+      "errors": [],
+      "finished": 8.2,
+      "recoverable_errors": {},
+      "start": 8.19
+    },
+    "modules-final": {
+      "errors": [],
+      "finished": 8.38,
+      "recoverable_errors": {
+        "WARNING": [
+          "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
+        ]
+      },
+      "start": 8.36
+    },
+    "recoverable_errors": {
+      "WARNING": [
+        "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
+      ]
+    },
+    "stage": null,
+    "status": "done"
+  },
+  "environment": "Linux rubix-parity 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 aarch64 Linux\nuid=0(root) gid=0(root) groups=0(root),0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)\nNAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.24.2\nPRETTY_NAME=\"Alpine Linux v3.24\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"\n",
+  "privileged_mount_probe": "passed",
+  "observation": "SETUP_BEGIN\nLinux rubix-parity 6.18.52-0-virt #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48 aarch64 Linux\n3.24.2\n( 1/10) Installing libnftnl (1.3.1-r0)\n( 2/10) Installing libxtables (1.8.13-r0)\n( 3/10) Installing iptables (1.8.13-r0)\n( 4/10) Installing iptables-openrc (1.8.13-r0)\n( 5/10) Installing gmp (6.3.0-r4)\n( 6/10) Installing jansson (2.15.0-r0)\n( 7/10) Installing nftables (1.1.6-r1)\n( 8/10) Installing nftables-openrc (1.1.6-r1)\n( 9/10) Installing setarch (2.42.3-r1)\n(10/10) Installing util-linux-misc (2.42.3-r1)\nExecuting busybox-1.37.0-r31.trigger\nOK: 176.0 MiB in 213 packages\n * Caching service dependencies ... [ ok ]\nunshare from util-linux 2.42.3\nUNSHARE_SHA256 fbd39d723da30c513e7dad6138023061620e6adfaccbb0012f8cb487246fb2f1  /usr/bin/unshare\nSETUP_END\nCLI_help_BEGIN\nEXIT 0\nSTDOUT_BEGIN\nSTDOUT_END\nSTDERR_BEGIN\nusage: kubesolo [<flags>]\n\nUltra-lightweight, OCI-compliant, single-node Kubernetes built for constrained\nenvironments such as IoT or IIoT devices running in embedded environments.\n\n\nFlags:\n      --[no-]help            Show context-sensitive help (also try --help-long\n                             and --help-man).\n  -v, --[no-]version         Show the version and exit.\n      --[no-]full            Deprecated: has no effect. KubeSolo always\n                             uses upstream Kubernetes defaults. Retained for\n                             backwards compatibility and will be removed in a\n                             future release. ($KUBESOLO_FULL)\n      --config=\"/etc/kubesolo/config.yaml\"  \n                             Path to the KubeSolo configuration file.\n                             ($KUBESOLO_CONFIG)\n      --[no-]print-config    Print the effective configuration to stdout\n                             and exit, without starting anything. Useful for\n                             migrating an existing flag-based install: run it\n                             with the flags currently in the service unit and\n                             save the result as the config file.\n      --path=PATH            Path to the directory containing the kubesolo\n                             configuration files. Defaults to /var/lib/kubesolo.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_PATH)\n      --apiserver-extra-sans=APISERVER-EXTRA-SANS  \n                             A comma-separated list of additional Subject\n                             Alternative Names (SANs) to include in the\n                             API server's TLS certificate. These SANs\n                             can be IP addresses or DNS names (e.g.,\n                             10.0.0.4,kubesolo.local). Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_APISERVER_EXTRA_SANS)\n      --node-ip=NODE-IP      Override the auto-detected node IP. This IP\n                             is used for the API server advertise address,\n                             the generated kubeconfig, the kubelet node IP and\n                             the LoadBalancer EXTERNAL-IP. Useful on hosts with\n                             multiple NICs where auto-detection is ambiguous.\n                             When unset, kubesolo auto-detects and prefers\n                             a private (RFC 1918) address. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_NODE_IP)\n      --mtu=MTU              Override the auto-detected network MTU used by the\n                             embedded CNI bridge (cni0) and pod veth interfaces.\n                             Useful on hosts whose primary interface has a\n                             reduced MTU (e.g. VPN/tunnel/PPPoE links). Defaults\n                             to 0, meaning auto-detect. Deprecated: set this in\n                             the KubeSolo config file instead. ($KUBESOLO_MTU)\n      --portainer-edge-id=PORTAINER-EDGE-ID  \n                             Portainer Edge ID. Defaults to empty string.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_PORTAINER_EDGE_ID)\n      --portainer-edge-key=PORTAINER-EDGE-KEY  \n                             Portainer Edge Key. Defaults to empty string.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_PORTAINER_EDGE_KEY)\n      --[no-]portainer-edge-async  \n                             Enable Portainer Edge Async Mode. Defaults to\n                             false. Deprecated: set this in the KubeSolo config\n                             file instead. ($KUBESOLO_PORTAINER_EDGE_ASYNC)\n      --portainer-edge-image=PORTAINER-EDGE-IMAGE  \n                             Full image reference deployed for the Portainer\n                             Edge Agent, including the tag. Any image other than\n                             the default is pulled from the registry rather\n                             than loaded from the embedded image. Defaults\n                             to docker.io/portainer/agent:lts. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_PORTAINER_EDGE_IMAGE)\n      --[no-]load-balancer   Enable load balancer. With this enabled,\n                             kubesolo sets the EXTERNAL-IP on services of\n                             type LoadBalancer, both when they are created\n                             and when an existing service is changed to\n                             that type. Defaults to true. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_LOAD_BALANCER)\n      --load-balancer-ip=LOAD-BALANCER-IP  \n                             Override the IP published as the LoadBalancer\n                             EXTERNAL-IP. Useful on hosts with multiple NICs\n                             where services should be advertised on a different\n                             address than the node IP. When unset, the node\n                             IP is used. Deprecated: set this in the KubeSolo\n                             config file instead. ($KUBESOLO_LOAD_BALANCER_IP)\n      --[no-]local-storage   Enable local storage. Defaults to false.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_LOCAL_STORAGE)\n      --local-storage-shared-path=LOCAL-STORAGE-SHARED-PATH  \n                             Path to the shared file system for the local\n                             storage. Defaults to empty string. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_LOCAL_STORAGE_SHARED_PATH)\n      --[no-]debug           Enable debug logging. Defaults to false.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_DEBUG)\n      --[no-]pprof-server    Enable pprof server. Defaults to false. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_PPROF_SERVER)\n      --[no-]container-mode  Run in container mode with cgroupfs driver and\n                             relaxed eviction thresholds. Auto-detected\n                             when running inside a container. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_CONTAINER_MODE)\n      --[no-]db-wal-repair   On startup, run an integrity check against\n                             the SQLite database and remove WAL artefacts\n                             (state.db-wal, state.db-shm) if corruption is\n                             detected. Recovers from unclean shutdowns caused\n                             by power loss. Defaults to false. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_DB_WAL_REPAIR)\n      --[no-]disable-ipv6    Disable IPv6 support. When set, CoreDNS\n                             will not serve ip6.arpa reverse zones and\n                             kubelet will register with an explicit IPv4\n                             node address. Defaults to false. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_DISABLE_IPV6)\n      --startup-timeout=STARTUP-TIMEOUT  \n                             Maximum time in seconds to wait for each component\n                             to pass its health check during startup. Increase\n                             on slow storage such as SD cards. Defaults to 600.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_STARTUP_TIMEOUT)\n      --[no-]d2k             Enable d2k integration. When set, kubesolo\n                             deploys the Portainer d2k Docker-to-Kubernetes\n                             translator into the target namespace and exposes\n                             a Docker-compatible API endpoint over mTLS on port\n                             2376. Defaults to false. Deprecated: set this in\n                             the KubeSolo config file instead. ($KUBESOLO_D2K)\n      --d2k-namespace=D2K-NAMESPACE  \n                             Single namespace into which d2k is deployed and\n                             against which it translates Docker API calls.\n                             Only honoured when --d2k is set. Defaults to d2k.\n                             Deprecated: set this in the KubeSolo config file\n                             instead. ($KUBESOLO_D2K_NAMESPACE)\n      --container-runtime-endpoint=CONTAINER-RUNTIME-ENDPOINT  \n                             CRI endpoint of a host-managed container runtime,\n                             for example unix:///run/containerd/containerd.sock\n                             or unix:///run/crio/crio.sock. When set,\n                             KubeSolo does not start its own embedded containerd\n                             and instead attaches to the given runtime;\n                             the host is then responsible for the runtime\n                             itself, the OCI runtime, the CNI plugin binaries\n                             and the sandbox image. When unset, KubeSolo\n                             runs its own embedded containerd. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_CONTAINER_RUNTIME_ENDPOINT)\n      --[no-]metrics-server  Enable the kubesolo Prometheus metrics endpoint.\n                             Exposes a /metrics HTTP endpoint with control plane\n                             health gauges. Defaults to false. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_METRICS_SERVER)\n      --metrics-bind-address=METRICS-BIND-ADDRESS  \n                             Host:port the kubesolo metrics endpoint binds to.\n                             Defaults to 127.0.0.1:9105. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_METRICS_BIND_ADDRESS)\n      --cpu-manager-policy=CPU-MANAGER-POLICY  \n                             CPU manager policy used by the kubelet. Set to\n                             static to give Guaranteed-QoS pods that request\n                             whole CPUs exclusive access to those cores, which\n                             suits latency-sensitive workloads that must not be\n                             preempted by neighbours. Not supported in container\n                             mode. Defaults to none, meaning all pods share the\n                             CPU pool. Deprecated: set this in the KubeSolo\n                             config file instead. ($KUBESOLO_CPU_MANAGER_POLICY)\n      --cpu-manager-policy-options=CPU-MANAGER-POLICY-OPTIONS  \n                             Comma-separated key=value options that fine-tune\n                             the static CPU manager policy, for example\n                             full-pcpus-only=true,strict-cpu-reservation=true.\n                             Only honoured when --cpu-manager-policy=static.\n                             Defaults to empty. Deprecated: set this\n                             in the KubeSolo config file instead.\n                             ($KUBESOLO_CPU_MANAGER_POLICY_OPTIONS)\n      --system-reserved=SYSTEM-RESERVED  \n                             Comma-separated ResourceName=Quantity pairs\n                             withheld from node allocatable for the host,\n                             for example cpu=1,memory=500Mi. Supports cpu,\n                             memory, ephemeral-storage and pid. With the static\n                             CPU manager policy, cpu= satisfies its reservation\n                             requirement but lets the kubelet choose which\n                             cores are held back; use --reserved-cpus to name\n                             them instead. Defaults to empty. Deprecated:\n                             set this in the KubeSolo config file instead.\n                             ($KUBESOLO_SYSTEM_RESERVED)\n      --reserved-cpus=RESERVED-CPUS  \n                             Cpuset reserved for the host and kubesolo itself,\n                             for example 0 or 0-1. These CPUs are never\n                             given out as exclusive cores. Only honoured when\n                             --cpu-manager-policy=static, where it defaults to\n                             0 because the static policy requires a non-empty\n                             reservation. Deprecated: set this in the KubeSolo\n                             config file instead. ($KUBESOLO_RESERVED_CPUS)\n\nSTDERR_END\nCLI_help_END\nCLI_version_BEGIN\nEXIT 0\nSTDOUT_BEGIN\nSTDOUT_END\nSTDERR_BEGIN\n{\"level\":\"info\",\"message\":\"kubesolo version\",\"version\":\"0.1.0\"}\nSTDERR_END\nCLI_version_END\nCLI_print_BEGIN\nEXIT 0\nSTDOUT_BEGIN\napi:\n  enabled: false\n  socketPath: /var/lib/kubesolo/config.sock\napiVersion: kubesolo.io/v1alpha1\nd2k:\n  enabled: false\n  namespace: d2k\nkind: Config\nkubernetes:\n  apiServer:\n    startupTimeoutSeconds: 600\n  kubelet:\n    cpuManager:\n      policy: none\n      reservedCPUs: \"\"\nlogging:\n  debug: false\n  pprof: false\nmetrics:\n  bindAddress: 127.0.0.1:9105\n  enabled: false\nnetwork:\n  disableIPv6: false\n  loadBalancer:\n    enabled: true\n    ip: \"\"\n  mtu: 0\n  nodeIP: \"\"\npath: /var/lib/kubesolo\nportainer:\n  async: false\n  edgeID: \"\"\n  edgeKey: \"\"\n  image: docker.io/portainer/agent:lts\nruntime:\n  containerMode: true\n  endpoint: unix:///tmp/external-runtime/containerd.sock\nstorage:\n  dbWALRepair: false\n  localPath:\n    enabled: true\n    sharedPath: \"\"\nSTDOUT_END\nSTDERR_BEGIN\nSTDERR_END\nCLI_print_END\nINJECTED_TESTS_BEGIN\nTEST_rubix_kube_BEGIN\n\nrunning 18 tests\ntest host_container::platform::tests::mount_paths_decode_only_kernel_escapes_and_keep_bytes ... ok\ntest host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow ... ok\ntest host_container::platform::tests::mount_tree_requires_complete_bounded_unique_records ... ok\ntest host_container::platform::tests::process_membership_accepts_unordered_duplicates_but_not_truncation_or_bad_tokens ... ok\ntest host_container::tests::bulk_and_individual_failures_continue_with_truthful_partial_readback ... ok\ntest host_container::tests::cancellation_during_failed_controller_write_retains_prior_effects ... ok\ntest host_container::tests::cancellation_future_becoming_ready_between_effects_suppresses_next_effect ... ok\ntest host_container::tests::cancellation_observed_during_v1_probe_precedes_completed_skip ... ok\ntest host_container::tests::changed_context_stops_controller_fallback_and_readback ... ok\ntest host_container::tests::controller_tokens_reject_operations_duplicates_and_bounds ... ok\ntest host_container::tests::initially_ready_cancellation_never_acquires_a_session ... ok\ntest host_container::tests::lost_admission_on_final_observation_is_fatal ... ok\ntest host_container::tests::migration_requires_observed_membership_before_delegation ... ok\ntest host_container::tests::mount_failure_and_uncertain_readback_suppress_all_cgroups ... ok\ntest host_container::tests::only_positive_v1_skips_cgroup_operations ... ok\ntest host_container::tests::ordered_effects_use_independent_controller_readback ... ok\ntest host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain ... ok\ntest host_container::tests::successful_write_never_substitutes_for_failed_or_missing_readback ... ok\n\ntest result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nTEST_rubix_kube_END\nTEST_host_preparation_BEGIN\n\nrunning 6 tests\ntest external_runtime_still_prepares_container_after_network_warnings ... ok\ntest fresh_backend_guard_failure_prevents_all_effects ... ok\ntest initially_cancelled_combined_operation_never_performs_effects ... ok\ntest network_cancellation_stops_before_container_and_retains_effects ... ok\ntest resolved_noncontainer_mode_never_acquires_container_session ... ok\ntest uncertain_network_owner_stops_before_container_and_retains_effects ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nTEST_host_preparation_END\nTEST_host_network_BEGIN\n\nrunning 14 tests\ntest cancellation_after_failed_write_retains_possible_effects ... ok\ntest cancellation_after_ipv6_write_preserves_possible_effects_without_readback ... ok\ntest cancellation_before_start_never_observes_or_mutates_network ... ok\ntest cancellation_between_ipv6_read_and_write_prevents_write ... ok\ntest complete_bounded_scalars_reject_prefixes_and_binary_data ... ok\ntest fixed_backend_lists_and_external_runtime_keep_network_effects ... ok\ntest fresh_root_backend_and_ipv4_unknown_guards_prevent_effects ... ok\ntest ipv6_only_zero_writes_and_success_requires_readback ... ok\ntest owner_launch_failure_has_no_child_and_is_settled ... ok\ntest requested_unknown_ipv6_is_deferred_only_by_preparation ... ok\ntest settled_module_failures_warn_and_continue_without_loaded_claim ... ok\ntest unjoined_module_owner_stops_all_further_effects ... ok\ntest write_failures_continue_to_all_controls_and_retain_possible_effects ... ok\ntest cancellation_during_module_waits_for_stop_acknowledgement ... ok\n\ntest result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n\nTEST_host_network_END\nINJECTED_TESTS_END\nPROTOCOL_eof_BEGIN\nEXIT 1\n{\"event\":\"READY\",\"pid\":2574,\"schema\":1}\n{\"event\":\"protocol_failure\",\"phase\":\"READY\",\"preparation_started\":false,\"reason\":\"eof\",\"schema\":1,\"shared_effects_possible\":false}\nSTDERR_BEGIN\nSTDERR_END\nPROTOCOL_eof_END\nPROTOCOL_wrong_BEGIN\nEXIT 1\n{\"event\":\"READY\",\"pid\":2578,\"schema\":1}\n{\"event\":\"protocol_failure\",\"phase\":\"READY\",\"preparation_started\":false,\"reason\":\"wrong_byte\",\"schema\":1,\"shared_effects_possible\":false}\nSTDERR_BEGIN\nSTDERR_END\nPROTOCOL_wrong_END\nOBS_signal_READY_BEGIN\nPID 2582\nSTAT_BEGIN\n2582 (prepare_node_ho) S 2336 2336 2336 0 -1 4194560 279 193 0 0 0 0 0 0 20 0 1 0 1038 2666496 539 18446744073709551615 4194304 6372816 281474869408976 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 175398912 281474869411386 281474869411513 281474869411513 281474869411796 0\nSTAT_END\nEXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2582/exe\nMNT_NS mnt:[4026532175]\nCGROUP_NS cgroup:[4026532176]\nOBSERVER_MNT_NS mnt:[4026531832]\nOBSERVER_CGROUP_NS cgroup:[4026531835]\nGLOBAL_ROOT_ID 31:1\nROOT_ID 31:108\nVISIBLE_ROOT_ID 31:108\nCANDIDATE_MOUNTS_BEGIN\n41 40 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n43 42 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n44 42 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n45 42 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n46 42 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n47 42 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n48 42 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n49 42 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\n50 41 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n51 50 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n52 50 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n53 50 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n54 41 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n55 41 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n56 41 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n57 49 0:31 /rubix-container-signal /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\nCANDIDATE_MOUNTS_END\nOBSERVER_MOUNTS_BEGIN\n24 29 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n25 29 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n26 29 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n27 25 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n28 25 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n29 1 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n30 29 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n31 25 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n32 24 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n33 24 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n34 24 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n35 24 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n36 24 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n37 24 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n38 29 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n39 24 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\nOBSERVER_MOUNTS_END\nPROCESS_CGROUP_BEGIN\n0::/rubix-container-signal\nPROCESS_CGROUP_END\nROOT_TYPE_BEGIN\ndomain\nROOT_TYPE_END\nROOT_MEMBERS_BEGIN\n2582\nROOT_MEMBERS_END\nAVAILABLE_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nAVAILABLE_END\nROOT_ENABLED_BEGIN\nROOT_ENABLED_END\nINIT_ABSENT\nPARENT_ENABLED_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nPARENT_ENABLED_END\nSIBLING_BEGIN\nf1061c5a5926f63a60f59dd3195dd4d50419bd585d7228d052ee2ce35c15efb7  /sys/fs/cgroup/rubix-container-sibling/cgroup.type\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.procs\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.subtree_control\n54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5  /sys/fs/cgroup/rubix-container-sibling/pids.max\nSIBLING_END\nEXTERNAL_BEGIN\nd10ba16de515c491d70913dd434515c1aa4cebc289360581b3b7706f1ae910fd  /tmp/external-runtime/config.toml\n22065e5882e02dbe0d6bc4c458f4e3f2b86a7ccfb280d614eb4328224255ab4c  /tmp/external-runtime/state\nEXTERNAL_END\nOBS_signal_READY_END\nCONSUMER_signal_BEGIN\nEXIT 1\nSTDOUT_BEGIN\nLAUNCH_PID 2582\nPRIVATE_BEFORE_BIND_BEGIN\n41 40 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n43 42 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n44 42 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n45 42 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n46 42 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n47 42 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n48 42 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n49 42 0:31 /.. /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\n50 41 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n51 50 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n52 50 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n53 50 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n54 41 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n55 41 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n56 41 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\nPRIVATE_BEFORE_BIND_END\n{\"event\":\"READY\",\"pid\":2582,\"schema\":1}\n{\"event\":\"protocol_failure\",\"phase\":\"READY\",\"preparation_started\":false,\"reason\":\"cancelled\",\"schema\":1,\"shared_effects_possible\":false}\nSTDOUT_END\nSTDERR_BEGIN\nSTDERR_END\nCONSUMER_signal_END\nSIGNAL_NO_PREPARATION\nPID_ABSENT 2582\nOBS_real_READY_BEGIN\nPID 2619\nSTAT_BEGIN\n2619 (prepare_node_ho) S 2336 2336 2336 0 -1 4194560 283 198 0 0 0 0 0 0 20 0 1 0 1046 2666496 539 18446744073709551615 4194304 6372816 281474450332048 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 381550592 281474450333242 281474450333369 281474450333369 281474450333652 0\nSTAT_END\nEXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2619/exe\nMNT_NS mnt:[4026532175]\nCGROUP_NS cgroup:[4026532176]\nOBSERVER_MNT_NS mnt:[4026531832]\nOBSERVER_CGROUP_NS cgroup:[4026531835]\nGLOBAL_ROOT_ID 31:1\nROOT_ID 31:21\nVISIBLE_ROOT_ID 31:21\nCANDIDATE_MOUNTS_BEGIN\n41 40 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n43 42 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n44 42 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n45 42 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n46 42 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n47 42 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n48 42 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n49 42 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\n50 41 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n51 50 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n52 50 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n53 50 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n54 41 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n55 41 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n56 41 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n57 49 0:31 /rubix-container-real /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\nCANDIDATE_MOUNTS_END\nOBSERVER_MOUNTS_BEGIN\n24 29 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n25 29 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n26 29 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n27 25 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n28 25 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n29 1 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n30 29 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n31 25 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n32 24 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n33 24 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n34 24 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n35 24 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n36 24 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n37 24 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n38 29 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n39 24 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\nOBSERVER_MOUNTS_END\nPROCESS_CGROUP_BEGIN\n0::/rubix-container-real\nPROCESS_CGROUP_END\nROOT_TYPE_BEGIN\ndomain\nROOT_TYPE_END\nROOT_MEMBERS_BEGIN\n2619\nROOT_MEMBERS_END\nAVAILABLE_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nAVAILABLE_END\nROOT_ENABLED_BEGIN\nROOT_ENABLED_END\nINIT_ABSENT\nPARENT_ENABLED_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nPARENT_ENABLED_END\nSIBLING_BEGIN\nf1061c5a5926f63a60f59dd3195dd4d50419bd585d7228d052ee2ce35c15efb7  /sys/fs/cgroup/rubix-container-sibling/cgroup.type\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.procs\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.subtree_control\n54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5  /sys/fs/cgroup/rubix-container-sibling/pids.max\nSIBLING_END\nEXTERNAL_BEGIN\nd10ba16de515c491d70913dd434515c1aa4cebc289360581b3b7706f1ae910fd  /tmp/external-runtime/config.toml\n22065e5882e02dbe0d6bc4c458f4e3f2b86a7ccfb280d614eb4328224255ab4c  /tmp/external-runtime/state\nEXTERNAL_END\nOBS_real_READY_END\nOBS_real_FIRST_BEGIN\nPID 2619\nSTAT_BEGIN\n2619 (prepare_node_ho) S 2336 2336 2336 0 -1 4194560 3145 3515 0 1 1 1 1 1 20 0 1 0 1046 2777088 582 18446744073709551615 4194304 6372816 281474450332048 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 381550592 281474450333242 281474450333369 281474450333369 281474450333652 0\nSTAT_END\nEXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2619/exe\nMNT_NS mnt:[4026532175]\nCGROUP_NS cgroup:[4026532176]\nOBSERVER_MNT_NS mnt:[4026531832]\nOBSERVER_CGROUP_NS cgroup:[4026531835]\nGLOBAL_ROOT_ID 31:1\nROOT_ID 31:21\nVISIBLE_ROOT_ID 31:21\nCANDIDATE_MOUNTS_BEGIN\n41 40 253:2 / / rw,noatime shared:1 - ext4 /dev/vda2 rw\n42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime shared:2 - sysfs sysfs rw\n43 42 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime shared:3 - securityfs securityfs rw\n44 42 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime shared:4 - debugfs debugfs rw\n45 42 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime shared:5 - tracefs tracefs rw\n46 42 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime shared:6 - pstore none rw\n47 42 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime shared:7 - efivarfs efivarfs rw\n48 42 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime shared:8 - bpf bpf rw\n49 42 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:9 - cgroup2 cgroup2 rw,nsdelegate\n50 41 0:6 / /dev rw,nosuid,noexec,relatime shared:11 - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n51 50 0:25 / /dev/pts rw,nosuid,noexec,relatime shared:12 - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n52 50 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime shared:13 - tmpfs shm rw,inode64\n53 50 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime shared:14 - mqueue mqueue rw\n54 41 0:24 / /proc rw,nosuid,nodev,noexec,relatime shared:15 - proc proc rw\n55 41 0:27 / /run rw,nosuid,nodev shared:16 - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n56 41 253:1 / /boot rw,noatime shared:17 - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n57 49 0:31 /rubix-container-real /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:10 - cgroup2 cgroup2 rw,nsdelegate\nCANDIDATE_MOUNTS_END\nOBSERVER_MOUNTS_BEGIN\n24 29 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n25 29 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n26 29 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n27 25 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n28 25 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n29 1 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n30 29 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n31 25 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n32 24 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n33 24 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n34 24 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n35 24 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n36 24 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n37 24 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n38 29 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n39 24 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\nOBSERVER_MOUNTS_END\nPROCESS_CGROUP_BEGIN\n0::/rubix-container-real/init\nPROCESS_CGROUP_END\nROOT_TYPE_BEGIN\ndomain\nROOT_TYPE_END\nROOT_MEMBERS_BEGIN\nROOT_MEMBERS_END\nAVAILABLE_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nAVAILABLE_END\nROOT_ENABLED_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nROOT_ENABLED_END\nINIT_MEMBERS_BEGIN\n2619\nINIT_MEMBERS_END\nINIT_TYPE_BEGIN\ndomain\nINIT_TYPE_END\nINIT_ENABLED_BEGIN\nINIT_ENABLED_END\nPARENT_ENABLED_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nPARENT_ENABLED_END\nSIBLING_BEGIN\nf1061c5a5926f63a60f59dd3195dd4d50419bd585d7228d052ee2ce35c15efb7  /sys/fs/cgroup/rubix-container-sibling/cgroup.type\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.procs\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.subtree_control\n54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5  /sys/fs/cgroup/rubix-container-sibling/pids.max\nSIBLING_END\nEXTERNAL_BEGIN\nd10ba16de515c491d70913dd434515c1aa4cebc289360581b3b7706f1ae910fd  /tmp/external-runtime/config.toml\n22065e5882e02dbe0d6bc4c458f4e3f2b86a7ccfb280d614eb4328224255ab4c  /tmp/external-runtime/state\nEXTERNAL_END\nOBS_real_FIRST_END\nOBS_real_SECOND_BEGIN\nPID 2619\nSTAT_BEGIN\n2619 (prepare_node_ho) S 2336 2336 2336 0 -1 4194560 6030 6235 0 1 2 2 1 2 20 0 1 0 1046 2777088 586 18446744073709551615 4194304 6372816 281474450332048 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 381550592 281474450333242 281474450333369 281474450333369 281474450333652 0\nSTAT_END\nEXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2619/exe\nMNT_NS mnt:[4026532175]\nCGROUP_NS cgroup:[4026532176]\nOBSERVER_MNT_NS mnt:[4026531832]\nOBSERVER_CGROUP_NS cgroup:[4026531835]\nGLOBAL_ROOT_ID 31:1\nROOT_ID 31:21\nVISIBLE_ROOT_ID 31:21\nCANDIDATE_MOUNTS_BEGIN\n41 40 253:2 / / rw,noatime shared:1 - ext4 /dev/vda2 rw\n42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime shared:2 - sysfs sysfs rw\n43 42 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime shared:3 - securityfs securityfs rw\n44 42 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime shared:4 - debugfs debugfs rw\n45 42 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime shared:5 - tracefs tracefs rw\n46 42 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime shared:6 - pstore none rw\n47 42 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime shared:7 - efivarfs efivarfs rw\n48 42 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime shared:8 - bpf bpf rw\n49 42 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:9 - cgroup2 cgroup2 rw,nsdelegate\n50 41 0:6 / /dev rw,nosuid,noexec,relatime shared:11 - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n51 50 0:25 / /dev/pts rw,nosuid,noexec,relatime shared:12 - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n52 50 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime shared:13 - tmpfs shm rw,inode64\n53 50 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime shared:14 - mqueue mqueue rw\n54 41 0:24 / /proc rw,nosuid,nodev,noexec,relatime shared:15 - proc proc rw\n55 41 0:27 / /run rw,nosuid,nodev shared:16 - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n56 41 253:1 / /boot rw,noatime shared:17 - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n57 49 0:31 /rubix-container-real /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:10 - cgroup2 cgroup2 rw,nsdelegate\nCANDIDATE_MOUNTS_END\nOBSERVER_MOUNTS_BEGIN\n24 29 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n25 29 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n26 29 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n27 25 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n28 25 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n29 1 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n30 29 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n31 25 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n32 24 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n33 24 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n34 24 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n35 24 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n36 24 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n37 24 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n38 29 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\n39 24 0:31 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\nOBSERVER_MOUNTS_END\nPROCESS_CGROUP_BEGIN\n0::/rubix-container-real/init\nPROCESS_CGROUP_END\nROOT_TYPE_BEGIN\ndomain\nROOT_TYPE_END\nROOT_MEMBERS_BEGIN\nROOT_MEMBERS_END\nAVAILABLE_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nAVAILABLE_END\nROOT_ENABLED_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nROOT_ENABLED_END\nINIT_MEMBERS_BEGIN\n2619\nINIT_MEMBERS_END\nINIT_TYPE_BEGIN\ndomain\nINIT_TYPE_END\nINIT_ENABLED_BEGIN\nINIT_ENABLED_END\nPARENT_ENABLED_BEGIN\ncpuset cpu io memory hugetlb pids dmem\nPARENT_ENABLED_END\nSIBLING_BEGIN\nf1061c5a5926f63a60f59dd3195dd4d50419bd585d7228d052ee2ce35c15efb7  /sys/fs/cgroup/rubix-container-sibling/cgroup.type\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.procs\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /sys/fs/cgroup/rubix-container-sibling/cgroup.subtree_control\n54183f4323f377b737433a1e98229ead0fdc686f93bab057ecb612daa94002b5  /sys/fs/cgroup/rubix-container-sibling/pids.max\nSIBLING_END\nEXTERNAL_BEGIN\nd10ba16de515c491d70913dd434515c1aa4cebc289360581b3b7706f1ae910fd  /tmp/external-runtime/config.toml\n22065e5882e02dbe0d6bc4c458f4e3f2b86a7ccfb280d614eb4328224255ab4c  /tmp/external-runtime/state\nEXTERNAL_END\nOBS_real_SECOND_END\nCONSUMER_real_BEGIN\nEXIT 0\nSTDOUT_BEGIN\nLAUNCH_PID 2619\nPRIVATE_BEFORE_BIND_BEGIN\n41 40 253:2 / / rw,noatime - ext4 /dev/vda2 rw\n42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw\n43 42 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime - securityfs securityfs rw\n44 42 0:8 / /sys/kernel/debug rw,nosuid,nodev,noexec,relatime - debugfs debugfs rw\n45 42 0:13 / /sys/kernel/tracing rw,nosuid,nodev,noexec,relatime - tracefs tracefs rw\n46 42 0:28 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime - pstore none rw\n47 42 0:29 / /sys/firmware/efi/efivars rw,nosuid,nodev,noexec,relatime - efivarfs efivarfs rw\n48 42 0:30 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime - bpf bpf rw\n49 42 0:31 /.. /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime - cgroup2 cgroup2 rw,nsdelegate\n50 41 0:6 / /dev rw,nosuid,noexec,relatime - devtmpfs devtmpfs rw,size=10240k,nr_inodes=250059,mode=755,inode64\n51 50 0:25 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,gid=5,mode=620,ptmxmode=000\n52 50 0:26 / /dev/shm rw,nosuid,nodev,noexec,relatime - tmpfs shm rw,inode64\n53 50 0:22 / /dev/mqueue rw,nosuid,nodev,noexec,relatime - mqueue mqueue rw\n54 41 0:24 / /proc rw,nosuid,nodev,noexec,relatime - proc proc rw\n55 41 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64\n56 41 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro\nPRIVATE_BEFORE_BIND_END\n{\"event\":\"READY\",\"pid\":2619,\"schema\":1}\n{\"container\":{\"attempts\":[{\"controllers\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"],\"mutation\":{\"attempted\":true,\"result\":\"Ok(())\"}}],\"available\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"],\"enabled_after\":{\"names\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"]},\"enabled_before\":[],\"init\":{\"attempted\":true,\"result\":\"Ok(())\"},\"layout\":\"V2\",\"migration\":{\"attempted\":true,\"result\":\"Ok(())\"},\"missing_after\":[],\"mount\":{\"attempted\":true,\"result\":\"Ok(())\"},\"shared_effects_possible\":true,\"status\":\"Completed\"},\"event\":\"result\",\"network\":{\"assessment\":\"Observed\",\"family\":\"Present(NfTables)\",\"ipv6\":[],\"modules\":[{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"br_netfilter\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"overlay\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_comment\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_conntrack\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_MASQUERADE\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_addrtype\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_multiport\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_nat\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_compat\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_numgen\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_redir\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_limit\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_tproxy\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true}],\"runtime\":\"External\",\"status\":\"Completed\"},\"pass\":1,\"pid\":2619,\"schema\":1,\"shared_effects_possible\":true,\"status\":\"Completed\"}\n{\"event\":\"FIRST\",\"pid\":2619,\"schema\":1}\n{\"container\":{\"attempts\":[{\"controllers\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"],\"mutation\":{\"attempted\":true,\"result\":\"Ok(())\"}}],\"available\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"],\"enabled_after\":{\"names\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"]},\"enabled_before\":[\"cpuset\",\"cpu\",\"io\",\"memory\",\"hugetlb\",\"pids\",\"dmem\"],\"init\":{\"attempted\":false,\"result\":\"Ok(())\"},\"layout\":\"V2\",\"migration\":{\"attempted\":true,\"result\":\"Ok(())\"},\"missing_after\":[],\"mount\":{\"attempted\":true,\"result\":\"Ok(())\"},\"shared_effects_possible\":true,\"status\":\"Completed\"},\"event\":\"result\",\"network\":{\"assessment\":\"Observed\",\"family\":\"Present(NfTables)\",\"ipv6\":[],\"modules\":[{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"br_netfilter\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"overlay\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_comment\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_conntrack\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_MASQUERADE\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_addrtype\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_multiport\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"xt_nat\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_compat\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_numgen\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_redir\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_limit\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true},{\"after\":{\"available_index\":\"Present(true)\",\"builtin_index\":\"Present(false)\",\"loaded\":\"Present(true)\"},\"exit\":0,\"joined\":true,\"name\":\"nft_tproxy\",\"outcome\":\"Success\",\"ownership_lost\":false,\"reaped\":true,\"spawned\":true}],\"runtime\":\"External\",\"status\":\"Completed\"},\"pass\":2,\"pid\":2619,\"schema\":1,\"shared_effects_possible\":true,\"status\":\"Completed\"}\n{\"event\":\"SECOND\",\"pid\":2619,\"schema\":1}\n{\"event\":\"DONE\",\"pid\":2619,\"schema\":1}\nSTDOUT_END\nSTDERR_BEGIN\nSTDERR_END\nCONSUMER_real_END\nREAL_PROCESS_EXITED\nPID_ABSENT 2619\nCONTAINER_GUEST_COMPLETE\n",
+  "shutdown": "guest-poweroff",
+  "qemu_exit_code": 0,
+  "owned_process_group_absent": true,
+  "owned_temporary_directory_removed": true
+}

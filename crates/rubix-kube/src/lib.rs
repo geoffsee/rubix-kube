@@ -181,3 +181,6 @@ pub mod lifecycle_policy;
 pub mod host_preflight;
 
 pub mod host_network;
+
+pub mod host_container;
+pub mod host_preparation;

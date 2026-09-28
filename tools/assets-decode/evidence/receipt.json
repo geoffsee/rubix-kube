@@ -3,11 +3,11 @@
     "decode": "b0534ce94c8bf8fb9f61ff76254e0f0775ad98e6bbcc5abe9ef9f046f87d2229",
     "decoded_elf": "b1ba571471b454ed7b5172373582cd54980dc37a0b0efae1e6d779777bbc3eb7"
   },
-  "build_log_sha256": "420ce52efa308043cdf4b50097fbeb1616c2a8c971fe49bdb8c728aecbe023fe",
+  "build_log_sha256": "067bb3146288bef08f525a2464ac3f957d5bd0e98fca585a881b44044d137783",
   "cleanup_errors": [],
   "containers": [
-    "rubix-decode-f34dbccd680145558063814429708405-first",
-    "rubix-decode-f34dbccd680145558063814429708405-repeat"
+    "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4-first",
+    "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4-repeat"
   ],
   "errors": [],
   "harness_sha256": {
@@ -17,7 +17,7 @@
     "verify.py": "f1e227e1354e4da935a38bac16b1d682e679fe8510649cf1eae7d25b9f677852"
   },
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:e2c70a6a5fb7ffdd54e4116a805633f19a3de9fd6dd8f11e28e936a74656b1f6",
+  "image_id": "sha256:cb29c526ffeac2cb78dbf33cb709842d5b0c7fd6251b24c285c661eea467d909",
   "remaining_containers": [],
   "remaining_images": [],
   "runs": {
@@ -30,7 +30,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-decode-f34dbccd680145558063814429708405-first",
+        "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -41,7 +41,7 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-decode-f34dbccd680145558063814429708405",
+        "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4",
         "/bin/sh",
         "-c",
         "sha256sum /decode-tests /decoded_elf-tests; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -87,7 +87,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-decode-f34dbccd680145558063814429708405-repeat",
+        "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -98,7 +98,7 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-decode-f34dbccd680145558063814429708405",
+        "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4",
         "/bin/sh",
         "-c",
         "sha256sum /decode-tests /decoded_elf-tests; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -137,8 +137,8 @@
     }
   },
   "schema": 2,
-  "source_inventory_sha256": "eee7b0da746404eef87d1734e15b6a0f9622f7cdaa923a8dacdd97fcf937d938",
-  "source_revision": "90a352c1b720b4a99a235f5bc3ce5d1c6533603f",
-  "tag": "rubix-decode-f34dbccd680145558063814429708405",
+  "source_inventory_sha256": "654a16e020154a7dd7d03d7a6f6bc79bec49a3dc745f1090fb805990e683ffd1",
+  "source_revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
+  "tag": "rubix-decode-f06e03c1e54d4818bdb85d3d54c9b1b4",
   "uncommitted_source_snapshot": false
 }
