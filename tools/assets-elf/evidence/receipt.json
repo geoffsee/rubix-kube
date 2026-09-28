@@ -55,23 +55,23 @@
   },
   "errors": [],
   "logs": {
-    "run0.log": "1cb1dc242736bc719e64ee7799df27d5e9b53292d8b7d8064b678dc29ec54344",
-    "run1.log": "9390a31d66b659e020bfbb2a8b9ff63cb3f7a7d42c3203ef36c330ce28f4041c"
+    "run0.log": "5ea34495e69fecc8fdad313eaf2baa8dd6bbe96d9be8dc3525d95be26416ed91",
+    "run1.log": "b797e3537e215d874d6f369e2578bbf3ecf489e4f45a6d89f86b01916f96133c"
   },
   "qualification": "read-only ELF inspection; no artifact execution",
-  "revision": "f2080912285b5857ed59ba3b9f8f57c9b0e26d4d",
+  "revision": "ebedb171a6d538d1eca2a7172116875e9199ef5e",
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
     "Cargo.lock": "735b09f8f97cabb20bddd734b072c76347c7bb396c1bc69817b31e2cca04036f",
     "Cargo.toml": "04ef1c937243f8b63653e63ab740508f1ce31994dff1d595a7de851944ee93ee",
     "crates/rubix-assets/Cargo.toml": "cab1951c7456e04eed8a0e8a65ce384c13a45f7f7d3aceb986f7c789c6917379",
     "crates/rubix-assets/src/catalog.rs": "7154b10c0af78735fbae4b55e1f4e19370b6898819b9a4db7d524ffc77ffdc43",
-    "crates/rubix-assets/src/elf.rs": "09c2dd391df78f65ae224c90325d45f2c4f4966125332805cfff42c2192aa549",
+    "crates/rubix-assets/src/elf.rs": "0510102291afca87221376b4413979e004a72d8b29b91bdef6330612bad7306e",
     "crates/rubix-assets/src/inventory.rs": "738ab9e3d3eb238ac7aa2bbc00387d846aa036c5ef52f8076471dd1a3a430aaa",
     "crates/rubix-assets/src/lib.rs": "24891fd3efc513596e2f54127f9d41f41254a7f1cf8a490c2afaeaa75748169a",
     "crates/rubix-assets/src/verify.rs": "ef8d458267c2be56416ee322c410393fc2bda1bbd013cc118ba3ba533e3ecd12",
     "crates/rubix-assets/tests/common/elf.rs": "1272f40a281ecd8eb942d2f13191331498e5d6bb1a275f59afa4a53c5387a8fb",
-    "crates/rubix-assets/tests/elf.rs": "25fac9e04e1983c46a01698f4017cae388d2776141e64a76a5e39a223f2cd9ab",
+    "crates/rubix-assets/tests/elf.rs": "25856e4c3b346dbfb8a04f05b6b5fbde05b8cdb79c10dc06a0b5f5d2e9c5087e",
     "crates/rubix-assets/tests/elf_real.rs": "bbeb377aa339035c53b58abe4a55d844c9c9e9097453eecf8fc29caf888cd1c2",
     "crates/rubix-assets/tests/encoded.rs": "d89614fa0b2ff6dac9e2f6dadb8f86e564b44702dd4d88121619f41ad7a6ffb5",
     "crates/rubix-assets/tests/fixtures/abc.bin": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
