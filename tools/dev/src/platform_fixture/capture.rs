@@ -53,7 +53,7 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         let directory = options.path("--artifact-directory")?;
         preparation::verify(root, directory)?;
         let metadata = load(&directory.join("artifact.json"))?;
-        for key in ["sha256", "size", "target", "revision"] {
+        for key in ["sha256", "size", "target"] {
             equal(&metadata[key], &inputs["artifact"][key], "candidate pin")?;
         }
         let path = directory.join("rubixctl");
@@ -92,6 +92,21 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         let _retained_logs = revision_logs.keep();
     }
     let revision = revision_command?.stdout.trim().to_owned();
+    let baseline_directory = if profile == "alpine-rust" {
+        Some(options.path("--baseline-directory")?)
+    } else {
+        None
+    };
+    let baseline = if let Some(directory) = baseline_directory {
+        alpine::candidate_metadata(
+            &load(&options.path("--artifact-directory")?.join("artifact.json"))?,
+            &inputs,
+            &revision,
+        )?;
+        Some(alpine::verified_baseline(root, directory, None)?)
+    } else {
+        None
+    };
     let injection = options
         .values
         .get("--inject-failure")
@@ -115,6 +130,9 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         injection,
     };
     let result = guest::capture(&spec, cancellation.clone(), |guest| {
+        if let Some((_, digest)) = &baseline {
+            guest.report["baseline_result_sha256"] = json!(digest);
+        }
         let bundle = guest.private()?.join("bundle");
         let package_dir = bundle.join("repo/aarch64");
         std::fs::create_dir_all(&package_dir)?;
@@ -196,7 +214,9 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         if profile == "alpine" {
             alpine::baseline_semantic(&before, &reboot)?;
         } else {
-            alpine::rust_semantic(root, &before, &reboot)?;
+            let effects = alpine::rust_semantic(root, &before, &reboot)?;
+            let (expected, _) = baseline.as_ref().ok_or("verified baseline missing")?;
+            alpine::baseline_parity(&effects, expected)?;
         }
         equal(
             &source_inventory(root, profile)?,
@@ -207,7 +227,7 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
     });
     let mut report = result?;
     if report["status"] == "passed"
-        && let Err(error) = alpine::verify(root, profile, output)
+        && let Err(error) = alpine::verify_with_baseline(root, profile, output, baseline_directory)
     {
         report["status"] = json!("failed");
         report["errors"]
