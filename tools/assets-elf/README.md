@@ -42,7 +42,7 @@ Publication changes only the exact raw receipts/logs and factual documentation.
 ```sh
 cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- elf capture /tmp/rubix-elf-UNIQUE /tmp/rubix-elf-cache
 cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- elf verify /tmp/rubix-elf-UNIQUE
-cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- elf verify tools/assets-elf/evidence
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- elf verify tools/assets-elf/rust-evidence
 ```
 
 Each Cargo invocation has a 900-second deadline and an 8 MiB output cap. The
@@ -52,3 +52,7 @@ again after inspection. Publish the receipt, two logs and their `*.command.json`
 records; each command must prove exit zero, EOF, process-group absence and no
 timeout, cancellation or output overflow. Downloaded
 executables remain in the explicit temporary cache.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

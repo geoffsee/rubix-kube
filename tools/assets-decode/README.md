@@ -41,7 +41,7 @@ Publication changes only the exact raw receipts/logs and factual documentation.
 ```sh
 cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode capture /tmp/rubix-decode-UNIQUE
 cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode verify /tmp/rubix-decode-UNIQUE
-cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode verify tools/assets-decode/evidence
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode verify tools/assets-decode/rust-evidence
 ```
 
 The build has an 1800-second/16 MiB limit and each runtime a 100-second/2 MiB
@@ -57,3 +57,7 @@ exit zero, EOF, process-group absence and no timeout, cancellation or overflow.
 Unconfirmed command settlement stops further actions, retains its input context
 and records resource inventories as unknown. Settled cancellation permits only
 owned cleanup with a fresh cancellation latch.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

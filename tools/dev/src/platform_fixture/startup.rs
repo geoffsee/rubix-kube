@@ -1,6 +1,6 @@
 use super::{
     BTreeMap, Options, Path, Result, Value, digest, equal, fixture, json, load, read, require,
-    source_inventory, text,
+    source_inventory,
 };
 fn baseline_provenance(root: &Path) -> Result<()> {
     let here = fixture(root, "cli-startup");
@@ -160,19 +160,7 @@ fn observations(root: &Path, directory: &Path) -> Result<Value> {
         &json!(BINARY),
         "baseline binary",
     )?;
-    for kind in ["container", "image", "volume"] {
-        require(
-            text(&directory.join(format!("{kind}-verify-removal.stdout")))?
-                .trim()
-                .is_empty(),
-            "owned resource still present",
-        )?;
-        let receipt = load(&directory.join(format!("{kind}-verify-removal.command.json")))?;
-        require(
-            receipt["exit_code"] == 0,
-            "cleanup inventory command failed",
-        )?;
-    }
+    cleanup_evidence(directory, &runner)?;
     let mut output = serde_json::Map::new();
     for (index, (wanted, actual)) in wanted.iter().zip(cases).enumerate() {
         for key in ["id", "argv"] {
@@ -254,6 +242,12 @@ pub(super) fn verify(root: &Path, directory: &Path) -> Result<Value> {
         "current Rust source inventory",
     )?;
     equal(&capture["status"], &json!("passed"), "capture status")?;
+    equal(
+        &capture["cancelled"],
+        &json!(false),
+        "uncancelled publication",
+    )?;
+    equal(&capture["errors"], &json!([]), "capture errors")?;
     let mut inventory = super::guest::evidence_inventory(directory)?;
     inventory
         .as_object_mut()
@@ -295,6 +289,8 @@ pub(super) fn verify(root: &Path, directory: &Path) -> Result<Value> {
     Ok(output)
 }
 pub(super) fn capture(root: &Path, options: &Options) -> Result<u8> {
+    let cancellation = crate::parity::process::Cancellation::default();
+    let _signals = crate::parity::process::SignalGuard::install(cancellation.clone())?;
     baseline_provenance(root)?;
     require(
         !options.values.contains_key("--runner"),
@@ -338,9 +334,14 @@ pub(super) fn capture(root: &Path, options: &Options) -> Result<u8> {
         "--driver".into(),
         driver.into(),
     ];
-    let execution = crate::parity::main(&argv);
+    let runner_options = crate::parity::Options::parse(&argv[1..])?;
+    require(
+        !cancellation.requested(),
+        "cancelled before startup capture",
+    )?;
+    let execution = crate::parity::run_with_cancellation(&runner_options, cancellation.clone());
     let status = execution.as_ref().copied().unwrap_or(1);
-    let mut capture = json!({"schema_version":2,"source_sha256":sources,"runner_binary_sha256":digest(&std::env::current_exe()?)?,"driver_binary_sha256":driver_hash,"status":"failed"});
+    let mut capture = json!({"schema_version":2,"source_sha256":sources,"runner_binary_sha256":digest(&std::env::current_exe()?)?,"driver_binary_sha256":driver_hash,"status":"failed","errors":[]});
     let verified = (|| -> Result<()> {
         require(status == 0, "parity runner failed")?;
         equal(
@@ -366,13 +367,19 @@ pub(super) fn capture(root: &Path, options: &Options) -> Result<u8> {
         Ok(())
     })();
     if let Err(error) = &verified {
-        capture["error"] = json!(error.to_string());
+        capture["status"] = json!("failed");
+        capture["errors"] = json!([error.to_string()]);
     }
-    let publication = crate::parity::write_json(&output.join("capture.json"), &capture, true);
+    let publication = super::guest::publish_cancellable(
+        &output.join("capture.json"),
+        &mut capture,
+        &cancellation,
+        true,
+    );
     execution?;
     publication?;
     verified?;
-    Ok(0)
+    Ok(u8::from(capture["status"] != "passed"))
 }
 #[cfg(test)]
 mod tests {
@@ -398,6 +405,176 @@ mod tests {
                     .join(run),
             )?;
         }
+        Ok(())
+    }
+}
+fn inventory_argv(kind: &str, target: &str) -> Vec<String> {
+    if kind == "volume" {
+        [
+            "docker",
+            "volume",
+            "ls",
+            "--filter",
+            &format!("name={target}"),
+            "--format",
+            "{{.Name}}",
+        ]
+        .map(str::to_owned)
+        .to_vec()
+    } else {
+        [
+            "docker",
+            kind,
+            "ls",
+            "--all",
+            "--filter",
+            &if kind == "container" {
+                format!("name=^/{target}$")
+            } else {
+                format!("reference={target}")
+            },
+            "--quiet",
+        ]
+        .map(str::to_owned)
+        .to_vec()
+    }
+}
+fn cleanup_evidence(directory: &Path, runner: &Value) -> Result<()> {
+    let container = runner["owned_container"]
+        .as_str()
+        .ok_or("owned container")?;
+    require(
+        container
+            .strip_prefix("rubix-parity-")
+            .is_some_and(|s| s.len() == 24 && s.bytes().all(|b| b.is_ascii_hexdigit())),
+        "owned startup container identity",
+    )?;
+    equal(
+        &runner["owned_image"],
+        &json!(format!("{container}:test")),
+        "owned startup image",
+    )?;
+    equal(
+        &runner["owned_volume"],
+        &json!(format!("{container}-evidence")),
+        "owned startup volume",
+    )?;
+    for kind in ["container", "image", "volume"] {
+        let target = runner[format!("owned_{kind}")]
+            .as_str()
+            .ok_or("owned resource")?;
+        let argv = inventory_argv(kind, target);
+        let (before, _) = super::command_evidence::verify_command(
+            directory,
+            &format!("{kind}-inventory"),
+            &argv,
+            &[0],
+        )?;
+        let before = std::str::from_utf8(&before)?;
+        let existed = if kind == "volume" {
+            before.lines().any(|line| line == target)
+        } else {
+            !before.trim().is_empty()
+        };
+        if existed {
+            let removal = if kind == "container" {
+                vec![
+                    "docker".into(),
+                    "rm".into(),
+                    "--force".into(),
+                    target.into(),
+                ]
+            } else {
+                vec!["docker".into(), kind.into(), "rm".into(), target.into()]
+            };
+            super::command_evidence::verify_command(
+                directory,
+                &format!("{kind}-remove"),
+                &removal,
+                &[0],
+            )?;
+        } else {
+            for extension in ["stdout", "stderr", "command.json"] {
+                require(
+                    !directory
+                        .join(format!("{kind}-remove.{extension}"))
+                        .exists(),
+                    "no removal without observed ownership",
+                )?;
+            }
+        }
+        let (after, _) = super::command_evidence::verify_command(
+            directory,
+            &format!("{kind}-verify-removal"),
+            &argv,
+            &[0],
+        )?;
+        require(
+            std::str::from_utf8(&after)?.trim().is_empty(),
+            "raw owned resource absence",
+        )?;
+    }
+    Ok(())
+}
+#[cfg(test)]
+mod cleanup_tests {
+    use super::*;
+    fn command(directory: &Path, label: &str, argv: &[String], raw: &[u8]) -> Result<()> {
+        std::fs::write(directory.join(format!("{label}.stdout")), raw)?;
+        std::fs::write(directory.join(format!("{label}.stderr")), b"")?;
+        crate::parity::write_json(
+            &directory.join(format!("{label}.command.json")),
+            &json!({"spawned":true,"owned_pid":1234,"owner_directory":"/tmp/owned-test","owned_process_group_absent":true,"cleanup_complete":true,"output_eof":true,"cleanup_errors":[],"timeout":false,"cancelled":false,"merged_output":false,"output_limit":false,"argv":argv,"exit_code":0,"stdout_sha256":rubix_dev::sha256(raw),"stderr_sha256":rubix_dev::sha256(b"")}),
+            false,
+        )
+    }
+    #[test]
+    fn rehashed_empty_inventory_cannot_hide_wrong_commands_or_unsettled_cleanup() -> Result<()> {
+        let directory = tempfile::tempdir()?;
+        let container = format!("rubix-parity-{}", "a".repeat(24));
+        let runner = json!({"owned_container":container,"owned_image":format!("{container}:test"),"owned_volume":format!("{container}-evidence")});
+        for kind in ["container", "image", "volume"] {
+            let target = runner[format!("owned_{kind}")].as_str().ok_or("target")?;
+            for suffix in ["inventory", "verify-removal"] {
+                command(
+                    directory.path(),
+                    &format!("{kind}-{suffix}"),
+                    &inventory_argv(kind, target),
+                    b"",
+                )?;
+            }
+        }
+        cleanup_evidence(directory.path(), &runner)?;
+        let path = directory
+            .path()
+            .join("container-verify-removal.command.json");
+        let valid = load(&path)?;
+        for (key, value) in [
+            ("argv", json!(["true"])),
+            ("exit_code", json!(1)),
+            ("cleanup_complete", json!(false)),
+            ("output_eof", json!(false)),
+            ("owned_process_group_absent", json!(false)),
+            ("timeout", json!(true)),
+            ("cancelled", json!(true)),
+            ("output_limit", json!(true)),
+        ] {
+            let mut mutated = valid.clone();
+            mutated[key] = value;
+            crate::parity::write_json(&path, &mutated, false)?;
+            assert!(
+                cleanup_evidence(directory.path(), &runner).is_err(),
+                "{key}"
+            );
+        }
+        let argv = inventory_argv("container", &container);
+        command(
+            directory.path(),
+            "container-verify-removal",
+            &argv,
+            b"still-owned\n",
+        )?;
+        assert!(cleanup_evidence(directory.path(), &runner).is_err());
         Ok(())
     }
 }

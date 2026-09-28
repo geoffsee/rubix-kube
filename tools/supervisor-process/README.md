@@ -6,7 +6,7 @@ The repository-owned capture, verification and synthetic children are Rust code 
 ```sh
 cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process capture /tmp/unique-process-capture
 cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process verify /tmp/unique-process-capture
-cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process verify tools/supervisor-process/evidence --relevant-current
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process verify tools/supervisor-process/rust-evidence --relevant-current
 ```
 
 Thirteen cases preserve real 30-second TERM escalation, executable spawn failure,
@@ -45,3 +45,7 @@ schema-3 gate until reviewed Rust captures replace it. Never relabel old receipt
 checks and mandatory current evidence tests. No acceptance checks depend on debug
 assertions. See `crates/rubix-supervisor/PROCESS.md`: this does not establish escaped
 daemon containment, universal bounded kernel reaping or panic-abort cleanup.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

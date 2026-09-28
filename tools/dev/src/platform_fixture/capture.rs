@@ -7,6 +7,8 @@ use super::{
     reason = "Sequential ownership and immutable input preparation"
 )]
 pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8> {
+    let cancellation = crate::parity::process::Cancellation::default();
+    let _signals = crate::parity::process::SignalGuard::install(cancellation.clone())?;
     let here = fixture(
         root,
         if profile == "alpine" {
@@ -63,8 +65,6 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         path
     };
     let output = options.path("--output")?;
-    let cancellation = crate::parity::process::Cancellation::default();
-    let signals = crate::parity::process::SignalGuard::install(cancellation.clone())?;
     let revision_logs = tempfile::tempdir()?;
     let revision_command = crate::parity::process::Commands {
         output: revision_logs.path().to_path_buf(),
@@ -114,7 +114,7 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         },
         injection,
     };
-    let result = guest::capture(&spec, cancellation, |guest| {
+    let result = guest::capture(&spec, cancellation.clone(), |guest| {
         let bundle = guest.private()?.join("bundle");
         let package_dir = bundle.join("repo/aarch64");
         std::fs::create_dir_all(&package_dir)?;
@@ -153,19 +153,11 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
                 "service-double.sh".into(),
                 digest(&here.join("service-double.sh"))?,
             );
-            let build = output.join("artifact-build");
-            std::fs::create_dir(&build)?;
-            for name in [
-                "artifact.json",
-                "receipt.json",
-                "source-hashes.json",
-                "run.log",
-            ] {
-                std::fs::copy(
-                    options.path("--artifact-directory")?.join(name),
-                    build.join(name),
-                )?;
-            }
+            archive_artifact(
+                root,
+                options.path("--artifact-directory")?,
+                &output.join("artifact-build"),
+            )?;
             guest.report["artifact_sha256"] = json!(digest(&artifact)?);
         }
         guest.upload_directory("copy-inputs", &bundle, "/tmp/rubix-bundle")?;
@@ -213,7 +205,46 @@ pub(super) fn alpine(root: &Path, profile: &str, options: &Options) -> Result<u8
         )?;
         Ok(())
     });
-    drop(signals);
-    let report = result?;
+    let mut report = result?;
+    if report["status"] == "passed"
+        && let Err(error) = alpine::verify(root, profile, output)
+    {
+        report["status"] = json!("failed");
+        report["errors"]
+            .as_array_mut()
+            .ok_or("capture errors")?
+            .push(json!(error.to_string()));
+    }
+    guest::publish_cancellable(
+        &output.join("result.json"),
+        &mut report,
+        &cancellation,
+        false,
+    )?;
     Ok(u8::from(report["status"] != "passed"))
+}
+
+fn archive_artifact(root: &Path, source: &Path, destination: &Path) -> Result<()> {
+    preparation::verify(root, source)?;
+    let qualification = load(&source.join("qualification.json"))?;
+    let files = qualification["files"]
+        .as_object()
+        .ok_or("qualified artifact inventory")?;
+    std::fs::create_dir(destination)?;
+    for name in files
+        .keys()
+        .map(String::as_str)
+        .chain(std::iter::once("qualification.json"))
+    {
+        require(
+            Path::new(name).file_name().and_then(|n| n.to_str()) == Some(name),
+            "artifact inventory basename",
+        )?;
+        std::fs::write(
+            destination.join(name),
+            read(&source.join(name), 32 * 1024 * 1024)?,
+        )?;
+    }
+    preparation::verify(root, destination)?;
+    Ok(())
 }

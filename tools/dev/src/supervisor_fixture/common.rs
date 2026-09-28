@@ -59,9 +59,17 @@ pub(super) fn files(path: &Path) -> Result<Vec<PathBuf>> {
     let mut result = Vec::new();
     for entry in fs::read_dir(path)? {
         let entry = entry?;
-        if ["target", "evidence", ".git", "__pycache__", ".DS_Store"]
-            .iter()
-            .any(|name| entry.file_name() == *name)
+        if [
+            "target",
+            "evidence",
+            "rust-evidence",
+            "evidence-rust",
+            ".git",
+            "__pycache__",
+            ".DS_Store",
+        ]
+        .iter()
+        .any(|name| entry.file_name() == *name)
         {
             continue;
         }

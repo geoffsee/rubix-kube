@@ -326,6 +326,7 @@ fn verify_guest_fields(
     equal(&report["adapter"], &json!(adapter), "expected adapter")?;
     for (key, value) in [
         ("status", json!("passed")),
+        ("cancelled", json!(false)),
         ("errors", json!([])),
         ("owned_process_group_absent", json!(true)),
         ("owned_temporary_directory_removed", json!(true)),
@@ -631,6 +632,7 @@ mod tests {
         // Synthetic envelope unit fixture only: historical observations are not promoted to current capture evidence.
         let mut valid = load(&dir.path().join("result.json"))?;
         valid["schema_version"] = json!(2);
+        valid["cancelled"] = json!(false);
         valid["serial_log_truncated"] = json!(false);
         valid["retained_commands"] = json!([]);
         valid["evidence_sha256"] = guest::evidence_inventory(dir.path())?;

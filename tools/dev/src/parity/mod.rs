@@ -174,6 +174,12 @@ impl Options {
         ))
     }
 }
+pub(crate) fn run_with_cancellation(
+    options: &Options,
+    cancellation: process::Cancellation,
+) -> Result<u8> {
+    runner::run(options, cancellation)
+}
 pub(crate) fn main(arguments: &[OsString]) -> Result<u8> {
     let Some(command) = arguments.first().and_then(|a| a.to_str()) else {
         return Err(
@@ -198,7 +204,7 @@ pub(crate) fn main(arguments: &[OsString]) -> Result<u8> {
     let signals = process::SignalGuard::install(cancellation.clone())?;
     let outcome = match command {
         "driver" => driver::run(&cancellation),
-        "run" => runner::run(&options, cancellation),
+        "run" => run_with_cancellation(&options, cancellation),
         "vm" => vm::run(&options, &cancellation),
         "prepare-upstream" => runner::prepare_upstream(&options, cancellation),
         _ => Err(format!("unknown subcommand {command}").into()),

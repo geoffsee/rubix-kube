@@ -13,7 +13,7 @@ After reviewing and committing source inputs:
 ```sh
 cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals capture /tmp/unique-signal-capture
 cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals verify /tmp/unique-signal-capture
-cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals verify tools/supervisor-signals/evidence --relevant-current
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals verify tools/supervisor-signals/rust-evidence --relevant-current
 ```
 
 Rust signal streams and synthetic process children replace the interpreter fixture.
@@ -41,7 +41,11 @@ Cancellation, incomplete settlement and failed cleanup cannot publish success;
 unknown settlement retains context and stops further actions. Only owned resources
 are removed. The source-bound `kill.sh` preserves the shell builtin signal helper.
 
-Historical evidence remains untouched until review and fresh Rust capture. The
-mandatory schema-3 evidence gate currently rejects it. Run `cargo test -p rubix-dev
+Historical evidence remains unchanged. The mandatory schema-3 gate requires
+a separate fresh Rust capture. Run `cargo test -p rubix-dev
 --bin rubix-supervisor-fixture --locked`; mutation checks remain active in release.
 Never rewrite failed receipts or generate expected semantics from captured results.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

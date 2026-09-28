@@ -86,7 +86,7 @@ Publication changes only the exact raw receipts/logs and factual documentation.
 ```sh
 cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive capture /tmp/rubix-archive-UNIQUE
 cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive verify /tmp/rubix-archive-UNIQUE
-cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive verify tools/assets-archive/evidence
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive verify tools/assets-archive/rust-evidence
 ```
 
 The build binds all three executable hashes (`producer`, `archive-tests`,
@@ -113,3 +113,7 @@ requires exact arguments and hashes, exit zero, EOF, process-group absence and n
 timeout, cancellation or overflow. Unconfirmed settlement stops further actions
 and retains input contexts; resource inventories remain unknown. Settled
 cancellation permits only owned cleanup with a fresh cancellation latch.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.
