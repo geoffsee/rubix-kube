@@ -1,0 +1,45 @@
+{
+  "archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-network-0",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-system-0",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-proxy-0",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-embedded-0",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-network-1",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-system-1",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-proxy-1",
+    "rubix-constrained-8368e1f72c7d406e88cbc9df49ea2cc4-embedded-1"
+  ],
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "identical_records": true,
+  "image_id": "sha256:ec059b809ee62645cc27b2058aabd756a96538b563290c4fb4ae041f941a8899",
+  "outputs": {
+    "embedded0.log": "ec338cecc7c2232d638c8e30023ad5cda6b45d51f7964503689d7b9bf05fb7c4",
+    "embedded1.log": "ec338cecc7c2232d638c8e30023ad5cda6b45d51f7964503689d7b9bf05fb7c4",
+    "network0.log": "7e06fc0e9d8cd6ec69f562356d58d6eb415bcd7a6e34b592593c5903c6d894c2",
+    "network1.log": "7e06fc0e9d8cd6ec69f562356d58d6eb415bcd7a6e34b592593c5903c6d894c2",
+    "proxy0.log": "52bdb429b180855b18a8c117f279b21fac315d07059cc091300462a0b6278c3e",
+    "proxy1.log": "7d8590235712090142b8b90d6b0162f019a8e402ab2122680f8b52db9dfc651e",
+    "source.sha256": "a68d98d709ee9ffc6e3581e026491047ec8c8ceac1e3aaba2145f3d9fb8f3114",
+    "system0.log": "9d4c998829b528eaff80e747c20dbd2278236789a17c4055551bc4f3a68da8ec",
+    "system1.log": "9d4c998829b528eaff80e747c20dbd2278236789a17c4055551bc4f3a68da8ec"
+  },
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "source_sha256": {
+    "Capture.Dockerfile": "191305e7ff0f8f8473a0a9d28c893314726df6ddf4b377824f8c4cf18e7d0617",
+    "capture.py": "18f4cc85580049c348557d2b1f68d95541d3b30aecab93d87d60e18e63bdffe5",
+    "embedded_test.go": "f52709ea2eea9bbbe6edaa8d078b54dfe2593780764fcb0f900fc7e24da39fd5",
+    "expected.json": "d4ef00c73eea118a8e0f3d8707949774e8561fddfb99569fdc71c1df7267922b",
+    "extract.go": "5da264eddf44c22121a2eaeb710ab9ccebcd7a0c624d3651b921b13032216feb",
+    "go.mod": "cc259ffa0b9cb5e6a2d5429395f5c6a08efd9c22c0c6854911e4df227178d544",
+    "network_test.go": "85765f17197da2091a589f3a541336bc6d414ca1026be8f3797ed996e6992f8f",
+    "proxy_test.go": "c11f92b8108b08276787cc310f9685c82460b35c92e2ae3ee7003b89e14df615",
+    "source-pins.json": "e170dbbc8c7b855948e437c295541a1a1126a8ff45e10948e0da6b0736b9843e",
+    "system_test.go": "b8f3166ef9eb2ec523878ae9af80c0dc266983793902b13be301746d8c17c2b2",
+    "verify.py": "943153c2bb0744f42762c8f015bd27e816e5800489faf69fd32371039b4d89d6"
+  }
+}
