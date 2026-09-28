@@ -6,7 +6,7 @@ use super::{
 use rubix_dev::defaults::capture::{OwnedDocker, Runner, arguments, owned_tag, push_error};
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::Write;
+use std::io::{Seek, Write};
 fn publish(path: &Path, bytes: &[u8], expected: &str) -> Result<()> {
     require(
         rubix_dev::sha256(bytes) == expected,
@@ -288,13 +288,24 @@ fn publish_qualification(
     output: &Path,
     report: &Value,
     cancellation: &rubix_dev::process::Cancellation,
-    before_publish: impl FnOnce(),
+    after_publish: impl FnOnce(),
 ) -> Result<u8> {
     let inventory = super::guest::evidence_inventory(output)?;
-    before_publish();
-    let qualification =
+    let mut qualification =
         json!({"schema_version":2,"files":inventory,"cancelled":cancellation.requested()});
-    crate::parity::write_json(&output.join("qualification.json"), &qualification, true)?;
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(output.join("qualification.json"))?;
+    serde_json::to_writer_pretty(&mut file, &qualification)?;
+    after_publish();
+    if cancellation.requested() {
+        qualification["cancelled"] = json!(true);
+        file.rewind()?;
+        serde_json::to_writer_pretty(&mut file, &qualification)?;
+        let position = file.stream_position()?;
+        file.set_len(position)?;
+    }
     Ok(u8::from(
         !rubix_dev::defaults::capture::successful(report) || cancellation.requested(),
     ))
@@ -737,7 +748,7 @@ mod evidence_tests {
         )
     }
     #[test]
-    fn cancellation_before_final_publication_cannot_claim_success() -> Result<()> {
+    fn cancellation_during_final_publication_cannot_claim_success() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let report = report();
         write_json(&dir.path().join("receipt.json"), &report)?;
