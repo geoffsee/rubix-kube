@@ -1,0 +1,276 @@
+[
+  {
+    "name": "check",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "check_help",
+    "outcome": "help_check"
+  },
+  {
+    "name": "help_check",
+    "outcome": "help_check"
+  },
+  {
+    "name": "root_help_check",
+    "outcome": "help_root"
+  },
+  {
+    "name": "help_false",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "help_then_bad",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "bad_then_help",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "check_version",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "version",
+    "outcome": "version"
+  },
+  {
+    "name": "version_help",
+    "outcome": "help_version"
+  },
+  {
+    "name": "extra",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "dashdash",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "bool_bare",
+    "outcome": "check",
+    "install": false,
+    "pprof": true
+  },
+  {
+    "name": "bool_false",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "bool_separated",
+    "outcome": "check",
+    "install": false,
+    "pprof": true
+  },
+  {
+    "name": "bool_upper",
+    "outcome": "check",
+    "install": false,
+    "pprof": true
+  },
+  {
+    "name": "bool_yes",
+    "outcome": "invalid_boolean"
+  },
+  {
+    "name": "bool_empty",
+    "outcome": "invalid_boolean"
+  },
+  {
+    "name": "repeat",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "install",
+    "outcome": "check",
+    "install": true,
+    "pprof": false
+  },
+  {
+    "name": "install_false",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "shorthand",
+    "outcome": "help_check"
+  },
+  {
+    "name": "shorthand_false",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "shorthand_bundle",
+    "outcome": "help_check"
+  },
+  {
+    "name": "unknown_before",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "flag_before",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "no_command",
+    "outcome": "help_root"
+  },
+  {
+    "name": "unknown_command",
+    "outcome": "unknown_command"
+  },
+  {
+    "name": "help_unknown",
+    "outcome": "unknown_help"
+  },
+  {
+    "name": "env_'true'",
+    "outcome": "check",
+    "install": true,
+    "pprof": true
+  },
+  {
+    "name": "env_'1'",
+    "outcome": "check",
+    "install": true,
+    "pprof": true
+  },
+  {
+    "name": "env_'yes'",
+    "outcome": "check",
+    "install": true,
+    "pprof": true
+  },
+  {
+    "name": "env_'false'",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_'0'",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_'no'",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_'TRUE'",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_'Yes'",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_'bad'",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_''",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "env_override",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "attached_help_before",
+    "outcome": "help_check"
+  },
+  {
+    "name": "false_help_before",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "root_dashdash",
+    "outcome": "help_root"
+  },
+  {
+    "name": "help_check_unknown_flag",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "help_unknown_flag",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "bad_unknown_command",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "short_attached",
+    "outcome": "unknown_flag"
+  },
+  {
+    "name": "short_bundle_value",
+    "outcome": "check",
+    "install": false,
+    "pprof": false
+  },
+  {
+    "name": "check_help_badbool",
+    "outcome": "invalid_boolean"
+  },
+  {
+    "name": "help_version",
+    "outcome": "help_version"
+  },
+  {
+    "name": "version_extra",
+    "outcome": "version"
+  },
+  {
+    "name": "flag_both_before",
+    "outcome": "help_check"
+  },
+  {
+    "name": "help_dashdash_check",
+    "outcome": "help_check"
+  },
+  {
+    "name": "help_false_check",
+    "outcome": "help_check"
+  },
+  {
+    "name": "help_short_false_version",
+    "outcome": "help_version"
+  },
+  {
+    "name": "help_dashdash",
+    "outcome": "help_root"
+  }
+]

@@ -1,17 +1,17 @@
 {
   "cleanup_errors": [],
   "containers": [
-    "rubix-platform-linux-d15b49c3c69749d394394ecdd773f1e3-test"
+    "rubix-platform-linux-04002d8c90bc4b82a2f2291e47afb636-test"
   ],
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:ad146d589caa8decdcb587f27181987d3cf7283f04f1a0985b87c3c87be9ebb2",
-  "inventory_sha256": "ca4622c5d0541312040f27e5ee1de5ef6fdbe6f87ce1ec76a8756aba788155d0",
+  "image_id": "sha256:2d35fd0dc4b969a4866556f62a15a630fa414ca30c7e10146c48cb83a183df43",
+  "inventory_sha256": "0992cdf6d7ac131f36c95ab5880662612bb30076b2992ec48cd6eba7dcc3b39d",
   "platform": "linux/arm64",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "b756099695e672947d36c13cccbcb15318813e54",
-  "run_sha256": "740a7773eabfa3db97a8b219c51db86cacef1f7edde333e14922a48ba5eb6dc8",
+  "revision": "1198ee92291926ac3b0d3fe372abf0412acc0e1f",
+  "run_sha256": "9630b49e4e6951a88011eb81595648ad72156bb90c3d7a6fd1717c51c4df576d",
   "source_sha256": {
     "Linux.Dockerfile": "94baa7cb9c9429b89afe1c3d62c9e3b143c14a526ea8e1694923e128c46f6356",
     "capture.py": "ec9a087e5392efe70f97def74be2bdb823f3c9ca2d8cd42a6111929ab5a22403",
