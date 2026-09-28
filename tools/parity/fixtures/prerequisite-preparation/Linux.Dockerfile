@@ -10,9 +10,9 @@ RUN rustup target add aarch64-unknown-linux-musl \
  && test -x /out/rubixctl-tests \
  && rustc --edition=2024 --target aarch64-unknown-linux-musl -O tools/parity/fixtures/prerequisite-preparation/fixture-command.rs -o /out/fixture-command \
  && sha256sum /out/* > /out/binaries.sha256 \
- && cargo build -p rubix-dev --bin rubix-prerequisite-fixture --release --target aarch64-unknown-linux-musl --locked \
- && cp target/aarch64-unknown-linux-musl/release/rubix-prerequisite-fixture /out/rubix-prerequisite-fixture
-FROM alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+ && cargo build -p rubix-dev --bin rubix-prerequisite-fixture --release --locked \
+ && cp target/release/rubix-prerequisite-fixture /out/rubix-prerequisite-fixture
+FROM rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 COPY --from=build /out/ /
 COPY --from=build /out/rubixctl /source/target/aarch64-unknown-linux-musl/release/rubixctl
 ENTRYPOINT []
