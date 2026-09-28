@@ -3,26 +3,26 @@
   "cleanup_errors": [],
   "combined_cases": 61,
   "containers": [
-    "rubix-signal-capture-88333b9a9f5e4c9eacf938180ca42874-test"
+    "rubix-signal-capture-a5ca4a73669c4a7887a36c3a0f7dfa62-test"
   ],
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:1cd4f2ceee9ac7a1499acc9359fde881c1988927d29cc80dc4776abc61bfc6b3",
+  "image_id": "sha256:19f52dcb547b8310307da0f3c3edd913d0d3225951ce30186cd5172ba046f54c",
   "owned_binary_sha256": "7681bd499830524342d62c22599bcd4a1a9e2d4a1a5afeb84cb0a990c7baf6af",
   "owned_subprocesses_reaped": true,
   "platform": "linux/arm64",
   "remaining_containers": [],
   "remaining_images": [],
   "repetitions": 20,
-  "run_sha256": "0071fe37ce7a1d99e649a61d8b398b411414691ac02836c0d77d97e57e6aaae2",
+  "run_sha256": "d7d4e1c3d7b6d419444cf71a53a962bfbf8013af79229bd5241438916c3a52a2",
   "schema_version": 1,
   "scope": "cooperative task signals and owned process adapter signals; no cluster or escaped-daemon qualification",
   "signal_cases": 160,
-  "source_revision": "b756099695e672947d36c13cccbcb15318813e54",
+  "source_revision": "1198ee92291926ac3b0d3fe372abf0412acc0e1f",
   "source_sha256": {
     "Capture.Dockerfile": "bd45c4342d9c3cfde684ceed3dda7598a825536cec6c0900c377e883e1b6cd30",
     "capture.py": "02a393e71b4ee734fa6684005d7d160083d3b6b7e70341b29353a40ea007e9d3",
-    "source-hashes.json": "4ff51fc2be97c201a7ff9338b8ba1125538cc8dc819eff1b8718bd18ae2c5143",
+    "source-hashes.json": "f28b544018eab3a29437e3e58e38e302e22b48b0ad680e18d23be794212799b8",
     "verify.py": "d172113a3928b4d8609dd35e7dc2d902780c12450e91575f8c6f12c42cdb5847"
   },
   "test_binary_sha256": "2cffd6dc192a33daab7be2295b897407fffd3f183bccb67d713afdd0db71d107",
