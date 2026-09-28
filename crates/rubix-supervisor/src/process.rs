@@ -200,8 +200,9 @@ fn outcome(
     snapshot: &ProcessCleanupSnapshot,
     stopping: bool,
     probe_error: Option<&'static str>,
+    output_error: Option<&'static str>,
 ) -> Result<(), AdapterError> {
-    if let Some(error) = probe_error.or(snapshot.error) {
+    if let Some(error) = probe_error.or(snapshot.error).or(output_error) {
         return Err(failure(error));
     }
     let expected_exit = snapshot.exit.is_some_and(|exit| {
@@ -251,7 +252,7 @@ async fn run_owned(
                 .output
                 .as_ref()
                 .and_then(|output| output.status.error_code());
-            return outcome(&snapshot, stopping, probe_error.or(output_error));
+            return outcome(&snapshot, stopping, probe_error, output_error);
         }
         tokio::select! {
             phase = context.changed(), if !force_sent => {
@@ -558,7 +559,7 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(
-            outcome(&snapshot, true, None)
+            outcome(&snapshot, true, None, None)
                 .expect_err("abnormal exit")
                 .code,
             "process_exited_unsuccessfully"
@@ -571,11 +572,47 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(
-            outcome(&snapshot, true, Some("probe_failed"))
-                .expect_err("primary failure")
-                .code,
+            outcome(
+                &snapshot,
+                true,
+                Some("probe_failed"),
+                Some("process_output_incomplete")
+            )
+            .expect_err("primary failure")
+            .code,
             "probe_failed"
         );
         assert_eq!(snapshot.error, Some("cleanup_failed"));
+    }
+    #[test]
+    fn output_failure_does_not_hide_ownership_or_signal_failure() {
+        for error in [
+            "process_child_ownership_lost",
+            "process_group_signal_failed",
+        ] {
+            let snapshot = ProcessCleanupSnapshot {
+                error: Some(error),
+                ..Default::default()
+            };
+            for output in ["process_output_incomplete", "process_output_limit"] {
+                assert_eq!(
+                    outcome(&snapshot, true, None, Some(output))
+                        .expect_err("owner failure")
+                        .code,
+                    error
+                );
+            }
+        }
+        assert_eq!(
+            outcome(
+                &ProcessCleanupSnapshot::default(),
+                false,
+                None,
+                Some("process_output_incomplete")
+            )
+            .expect_err("output failure")
+            .code,
+            "process_output_incomplete"
+        );
     }
 }
