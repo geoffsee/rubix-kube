@@ -7,10 +7,9 @@ This is the node configuration/command slice of
 candidate; expectations never branch on artifact kind.
 
 ```sh
-python3 tools/parity/run.py --artifact /path/to/artifact.json \
+cargo run --locked -p rubix-dev --bin rubix-parity -- run --artifact /path/to/artifact.json \
   --suite tools/parity/fixtures/config-command.json --output /tmp/new-config-parity-run
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
-  -s tools/parity/fixtures -p 'test_*.py' -v
+cargo test --locked -p rubix-dev --bin rubix-parity historical
 ```
 
 The runner must support `case.files` and complete `{fixture:config.yaml}` argument tokens.

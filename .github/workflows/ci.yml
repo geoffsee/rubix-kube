@@ -42,6 +42,8 @@ jobs:
       - uses: $/.github/actions/setup-rust
         with:
           cache-key: clippy
+      - name: Enforce repository language policy
+        run: cargo run --locked -p rubix-dev --bin rubix-language-policy
       - run: cargo lint
 
   test:
@@ -68,24 +70,7 @@ jobs:
             profile_args+=(--release)
           fi
           cargo test --locked --workspace --all-targets --all-features "${profile_args[@]}"
-          python3 - <<'PY'
-          import json
-          import os
-          import subprocess
-          metadata = json.loads(subprocess.check_output(
-              ["cargo", "metadata", "--locked", "--no-deps", "--format-version", "1"]))
-          members = set(metadata["workspace_members"])
-          has_doctests = any(target["doctest"]
-                             for package in metadata["packages"] if package["id"] in members
-                             for target in package["targets"])
-          if has_doctests:
-              command = ["cargo", "test", "--locked", "--workspace", "--doc", "--all-features"]
-              if os.environ["TEST_PROFILE"] == "release":
-                  command.append("--release")
-              subprocess.run(command, check=True)
-          else:
-              print("No workspace targets enable doctests.")
-          PY
+          cargo test --locked --workspace --doc --all-features "${profile_args[@]}"
 
       - name: Restore prepared upstream inputs
         if: matrix.profile == 'debug'
@@ -97,17 +82,19 @@ jobs:
       - name: Verify generated clients and independent source inventories
         if: matrix.profile == 'debug'
         run: |
-          python3 tools/upstream/upstream.py fetch
+          cargo run --locked -p rubix-dev --bin rubix-upstream -- fetch
           cargo fetch --locked
           cargo build -p rubix-upstream-codegen --locked
-          python3 tools/upstream/upstream.py verify
-          python3 tools/upstream/upstream.py check-cri
-          python3 tools/upstream/upstream.py check-containerd
-          python3 tools/upstream/upstream.py check-kubernetes-bindings
-          python3 tools/drift/drift.py check
-      - name: Test repository Python tooling
+          cargo run --locked -p rubix-dev --bin rubix-upstream -- verify
+          cargo run --locked -p rubix-dev --bin rubix-upstream -- check-cri
+          cargo run --locked -p rubix-dev --bin rubix-upstream -- check-containerd
+          cargo run --locked -p rubix-dev --bin rubix-upstream -- check-kubernetes-bindings
+          cargo run --locked -p rubix-dev --bin rubix-drift -- check
+      - name: Test prepared protocol parser with verified compiler
         if: matrix.profile == 'debug'
-        run: python3 .github/test-python.py
+        env:
+          RUBIX_UPSTREAM_CACHE: ${{ github.workspace }}/target/upstream
+        run: cargo test --locked -p rubix-dev --test upstream_internals -- --ignored --exact drift::tests::actual_verified_protoc_detects_field_number_type_rpc_and_streaming_mutations
       - name: Save verified upstream inputs
         if: matrix.profile == 'debug' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.upstream-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -126,11 +113,9 @@ jobs:
       - name: Read the pinned toolchain
         id: toolchain
         run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import tomllib
-          with open("rust-toolchain.toml", "rb") as source:
-              print("version=" + tomllib.load(source)["toolchain"]["channel"])
-          PY
+          rustup toolchain install --no-self-update
+          version=$(rustc --version | cut -d ' ' -f 2)
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
         with:
           rust-version: ${{ steps.toolchain.outputs.version }}

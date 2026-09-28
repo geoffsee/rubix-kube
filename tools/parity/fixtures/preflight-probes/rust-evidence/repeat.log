@@ -1,0 +1,61 @@
+3caa2de08bade8d276620830482b5af8caa9f65392c173787a67be011fd3a41a  /out/preflight_probe-232dbf13efeef0e5
+e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566  /out/rubix_platform-a0b7fc1077c686ed
+
+running 8 tests
+test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
+test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
+test preflight_probe::disposable_filesystem::disposable_real_filesystem_limits_errors_and_baseline_candidates ... ignored, actual filesystem fixtures only inside owned disposable Linux container
+test preflight_probe::disposable_filesystem::only_unavailable_ipv6_allows_ipv4_fallback ... ok
+test preflight_probe::tests::definitive_presence_survives_other_candidate_errors_and_rc_is_exact ... ok
+test preflight_probe::tests::port_phase_is_explicit_and_does_not_probe_unused_pprof ... ok
+test preflight_probe::tests::exact_candidates_and_one_level_glob_match_baseline_existence ... ok
+test preflight_probe::tests::unsafe_release_limits_and_errors_are_unknown_not_absent ... ok
+
+test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+RUBIX_PREFLIGHT_FILES missing_version pass
+RUBIX_PREFLIGHT_FILES no_candidates pass
+RUBIX_PREFLIGHT_FILES exact pass
+RUBIX_PREFLIGHT_FILES exact.xz pass
+RUBIX_PREFLIGHT_FILES exact.zst pass
+RUBIX_PREFLIGHT_FILES exact.gz pass
+RUBIX_PREFLIGHT_FILES glob_broken_symlink pass
+RUBIX_PREFLIGHT_FILES glob_non_utf8_name pass
+RUBIX_PREFLIGHT_FILES not_recursive pass
+RUBIX_PREFLIGHT_FILES entry_limit pass
+RUBIX_PREFLIGHT_FILES byte_limit pass
+RUBIX_PREFLIGHT_FILES non_utf8_version pass
+RUBIX_PREFLIGHT_FILES unsafe_release pass
+RUBIX_PREFLIGHT_FILES permission_denied pass
+RUBIX_PREFLIGHT_FILES fifo_nonblocking pass
+RUBIX_PREFLIGHT_FILES rc_service_exact pass
+RUBIX_PREFLIGHT_FILES injected_ipv6_unsupported_real_ipv4 pass
+test preflight_probe::disposable_filesystem::disposable_real_filesystem_limits_errors_and_baseline_candidates ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+
+running 2 tests
+test disposable_wildcard_ports_detect_both_families_and_release_all_owned_sockets ... ignored, opens fixed wildcard ports; disposable Linux namespace only
+test invalid_limits_fail_before_filesystem_observation ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+RUBIX_PREFLIGHT_PORTS free_all available
+RUBIX_PREFLIGHT_PORTS ipv4_2379 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS ipv6_2379 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS ipv4_6443 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS ipv6_6443 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS ipv4_10443 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS ipv6_10443 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS pprof_disabled unprobed
+RUBIX_PREFLIGHT_PORTS ipv4_6060 conflict_then_rebind
+RUBIX_PREFLIGHT_PORTS ipv6_6060 conflict_then_rebind
+test disposable_wildcard_ports_detect_both_families_and_release_all_owned_sockets ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+

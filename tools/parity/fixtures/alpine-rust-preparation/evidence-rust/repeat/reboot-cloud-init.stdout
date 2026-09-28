@@ -1,0 +1,35 @@
+{
+  "boot_status_code": "enabled-by-sysvinit",
+  "datasource": "nocloud",
+  "detail": "DataSourceNoCloud [seed=/dev/vdb]",
+  "errors": [],
+  "extended_status": "done",
+  "init": {
+    "errors": [],
+    "finished": 7.53,
+    "recoverable_errors": {},
+    "start": 7.47
+  },
+  "init-local": {
+    "errors": [],
+    "finished": 1.99,
+    "recoverable_errors": {},
+    "start": 1.92
+  },
+  "last_update": "Thu, 01 Jan 1970 00:00:07 +0000",
+  "modules-config": {
+    "errors": [],
+    "finished": 7.72,
+    "recoverable_errors": {},
+    "start": 7.7
+  },
+  "modules-final": {
+    "errors": [],
+    "finished": 7.95,
+    "recoverable_errors": {},
+    "start": 7.92
+  },
+  "recoverable_errors": {},
+  "stage": null,
+  "status": "done"
+}

@@ -121,12 +121,7 @@
     }
   },
   "schema_version": 1,
-  "seed_builder": {
-    "name": "pycdlib",
-    "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4",
-    "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
-    "version": "1.14.0"
-  },
+  "seed_builder": {"name": "rubix-dev", "format": "ISO9660 with Joliet", "source": "tools/dev/src/parity/seed.rs"},
   "host_tools": {
     "qemu-system-aarch64": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e",
     "qemu-img": "501293f57bfe5249a91d8ab8562e6fc04e4ae349c9d22b15ad50376d7df449a9",
@@ -141,8 +136,7 @@
   "artifact": {
     "sha256": "1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa",
     "size": 5388504,
-    "target": "aarch64-unknown-linux-musl",
-    "revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb"
+    "target": "aarch64-unknown-linux-musl"
   },
   "openrc_service_sha256": "8b56a0712bff950b23696699e5ba76f895b448ef8f7a77412edb8e8f28571e7a"
 }

@@ -13,7 +13,7 @@ overrides, watch history relative to request timeout, legacy runtime-config alia
 resolution, and service-account maximum token expiration. Four error cases cover
 malformed and too-small primary CIDRs, invalid watch-cache size, and subhour token
 expiration. All flag values are recorded before and after completion; selected
-derived values have independently source-reviewed expectations in `verify.py`.
+derived values have independently source-reviewed expectations in the Rust verifier.
 The entire reviewed output is also compared against hash-bound `expected.json`.
 
 Controls set serving bind and external addresses to `127.0.0.1` and the serving
@@ -37,12 +37,12 @@ would pass startup validation or represent production security policy.
 Run explicitly with prepared checksum-locked archives:
 
 ```sh
-python3 tools/resolved-defaults/capture.py \
+cargo run -p rubix-dev --bin rubix-resolved-defaults --locked -- capture \
   --source-archive /path/to/kubernetes.tar.gz \
   --go-archive /path/to/go1.26.8.linux-arm64.tar.gz \
   --output /tmp/resolved-options-new
-python3 tools/resolved-defaults/verify.py /tmp/resolved-options-new/run0.json
-python3 -m unittest discover -s tools/resolved-defaults -p 'test_*.py'
+cargo run -p rubix-dev --bin rubix-resolved-defaults --locked -- verify /tmp/resolved-options-new/run0.json
+cargo test -p rubix-dev resolved_capture --locked
 ```
 
 Capture builds a scratch image from the official vendored source, using the
@@ -52,20 +52,21 @@ The build is bounded to 30 minutes, and each of two runs to 90 seconds, 512 MiB,
 two CPUs, 64 PIDs, a read-only root, and a 16 MiB disposable tmpfs. Runtime has no
 network, host mounts, capabilities, or privilege escalation, and runs as UID
 65532. Different hostnames must produce byte-identical records. Shared lifecycle
-helpers are imported read-only from `tools/defaults/capture.py` and hash-bound in
-the receipt. Owned containers and images are removed on success and failure.
+helpers live in `tools/dev/src/defaults/capture.rs` and the shared Rust process runner,
+and are hash-bound in new receipts. Confirmed-settled failures still attempt every owned cleanup.
+Uncertain process cleanup stops further commands and retains build context and ownership facts.
 JSON receipts and public logs describe extraction and cleanup; they are local
 evidence, not a signed attestation of a hostile Docker host.
 
-The committed evidence is the final `r3` capture: two successful bounded runs,
+The historical committed evidence is the final pre-migration `r3` capture: two successful bounded runs,
 172 flags before and after completion for each successful case, four expected
 completion errors, and empty error/cleanup/inventory lists in the receipt.
-Both normal and `python3 -O` runs of the 12 regression tests pass. They exercise
+Its original normal and optimized regression runs passed. They exercise
 resolved-value mutations, missing/error cases, flag transitions, strict JSON and
 types, complete frozen comparison, frozen-file hash binding, rejection of wrong
 prepared source before Docker runs, and cleanup failure reporting. Initial `r1`
 and `r2` successful local captures preceded deterministic set ordering and final
-format/runtime metadata changes; the committed receipt binds the final harness.
+format/runtime metadata changes; the committed receipt binds that original harness, not the migrated Rust driver.
 Only Linux/arm64 extraction is evidenced here.
 
 ## Disposable CI coverage
@@ -83,3 +84,18 @@ are distinct steps; neither starts a server or proves startup validation.
 See `tools/drift/README.md` to include completed values and errors in an adoption
 report. Copy `run0.json` to `resolved.json` without changing its bytes and retain
 the matching receipt; the comparator checks both repeated-output digests.
+
+## Rust capture qualification
+
+The source-reviewed oracle and full frozen output comparison now execute in Rust. Historical
+raw evidence, expected hashes, and provenance are preserved without relabeling. A current-source
+`rubix-resolved-defaults verify-evidence` gate reads the separate `rust-evidence/` directory and
+requires a verified actual capture from frozen Rust tooling source. Semantic and
+adversarial tests remain runnable without Docker; they do not replace actual capture evidence.
+
+New receipts record the complete relevant Rust source inventory and individual bounded command
+settlement facts. SIGINT/SIGTERM permanently cancel capture; confirmed-settled cleanup uses a
+separate uncancelled runner. Unconfirmed process ownership is retained with build directories,
+remaining Docker resources are reported unknown, and no further capture or cleanup command runs.
+Only exact owned container names and the unique image tag are removed; a shared cached image ID
+is recorded but never used to remove other tags.

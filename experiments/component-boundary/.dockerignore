@@ -1,5 +1,4 @@
-*
-!Dockerfile
-!inputs.json
-!fetch.py
-!spike.py
+# Owned workspace context assembled by rubix-component-boundary.
+target
+.git
+**/evidence

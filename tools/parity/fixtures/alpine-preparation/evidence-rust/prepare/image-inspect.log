@@ -1,0 +1,48 @@
+[
+    {
+        "Id": "sha256:749c390e389c12749421a641307015872d1aee571033f64320e91d8c486eab6d",
+        "RepoTags": [
+            "rubix-alpine-prepare0iyg9a:latest"
+        ],
+        "RepoDigests": [
+            "rubix-alpine-prepare0iyg9a@sha256:749c390e389c12749421a641307015872d1aee571033f64320e91d8c486eab6d"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-28T00:59:35.786715085Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "WorkingDir": "/"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 7414106,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:1b349a3334531b575b01d409540dd8aca14ef29abddacd50f36643d7c949db4b",
+                "sha256:d07c8f84da67c5c9892a1d360aade17217abd5c396f9056353dad1721d31d3a0",
+                "sha256:f9dc24adb6cece8f9837db7642f92f15e8c7e3f7b48027b5878b4a861b2f96b0",
+                "sha256:5584bb8734df27248e5fc51467031627e2801adb2a4f0cfc2862bb9f685f0f83",
+                "sha256:2bd7e3bc7e81ee6a8e3a9a6dbdac64a89ca5df9d95712e1b1c817b6d6fcd268e"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-28T08:27:16.30626763Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:749c390e389c12749421a641307015872d1aee571033f64320e91d8c486eab6d",
+            "size": 856
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "50z0capcvd5y7epqgvgfbzw26",
+                    "CreatedAt": "2026-09-28T08:27:16.365153338Z"
+                }
+            ]
+        }
+    }
+]

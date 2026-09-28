@@ -1,18 +1,31 @@
 # Official API-server JSON serialization fixtures
 
+The runner, transport orchestration, normalization and independent verifier now live in
+`tools/dev/src/api_json` and `tools/dev/src/component_boundary`. The existing evidence,
+fixture and provenance bytes remain historical records. Current qualification requires a
+verified actual Rust capture under `evidence-rust`, produced from frozen source.
+The mandatory test checks that capture independently of the historical records.
+
+Rust owns child-process groups, request state and assertions. OpenSSL supplies certificate
+operations; curl performs verified TLS HTTP; SQLite CLI executes fixed read-only queries.
+No response parser or lifecycle code calls an interpreter. Bounded command receipts bind
+raw logs, exact Docker arguments, successful settlement and owned-resource removal.
+Cancellation stays latched through cleanup and publication. Unconfirmed process ownership
+retains temporary inputs and stops further capture or cleanup commands.
+
 This bounded E02 serialization gate runs official Kubernetes v1.35.7 and Kine v0.16.3
-in a new Docker container. Requests and expectations are independent of Rust and
+in a new Docker container. Requests and semantic expectations are independent of
 `k8s-openapi` code generation. No existing cluster, kubelet, scheduler, container runtime
 or workload participates. It characterizes API admission/storage/JSON behavior, not
 whole-cluster or conformance behavior.
 
 ```sh
-python3 tools/api-json/run.py --output /tmp/new-api-json-capture
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/api-json -p 'test_*.py' -v
+cargo run --locked -p rubix-dev --bin rubix-api-json -- capture --output /tmp/new-api-json-capture
+cargo test --locked -p rubix-dev --lib api_json
 ```
 
-Preparation uses checksum-locked official component binaries and the pinned Python image
-copied from the accepted component-boundary experiment. OpenSSL installation still uses
+Preparation uses checksum-locked official component binaries and a pinned Rust image
+shared with the Rust qualification tools. OpenSSL, curl and SQLite installation use
 Debian's live package repository; image identity is retained rather than claiming a fully
 reproducible image build. Build is bounded to 900 seconds, execution to 600 seconds, HTTP
 requests to 10 seconds, readiness to 120 seconds, and cleanup operations to 30 seconds.
@@ -43,7 +56,7 @@ names and token projections. Fixtures cover:
   then the connection closes. The server deadline is 10 seconds and client deadline 15.
 
 Raw HTTP responses, request objects, statuses and watch lines are retained in
-`evidence/result.json` before normalization. Requests use Python's compact JSON encoding.
+`evidence/result.json` before normalization. Requests use compact serde_json encoding from source-reviewed JSON values.
 The only normalized paths are each observed object's top-level `metadata.uid`,
 `metadata.resourceVersion`, `metadata.creationTimestamp`, and `metadata.managedFields`.
 No recursive key removal occurs: CRD user data named `metadata.uid` remains unchanged.
@@ -77,6 +90,6 @@ The fixture now explicitly creates that account. A preparatory successful run ex
 random projected-volume names; selecting token automount false avoids that unrelated
 admission behavior while preserving the four documented metadata normalization rules.
 
-Verification uses explicit raising checks and remains active under Python optimization.
-A subprocess `-O` regression rejects matching captures with a boolean changed to integer.
-The final live repeats were recaptured with this exact verifier. See [Rust consumer evidence](CONSUMER.md).
+Rust verification uses explicit Result checks and remains active in release builds.
+A CLI regression rejects matching captures with a boolean changed to integer without echoing supplied data.
+The retained live repeats predate the Rust verifier and remain historical evidence. See [Rust consumer evidence](CONSUMER.md).

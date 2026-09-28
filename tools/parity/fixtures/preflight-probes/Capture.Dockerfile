@@ -6,6 +6,8 @@ RUN cargo clippy -p rubix-platform --all-targets --locked -- -D warnings \
  && mkdir /out \
  && for binary in target/release/deps/rubix_platform-* target/release/deps/preflight_probe-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/; fi; done \
  && sha256sum /out/* > /out/binaries.sha256
+ARG QUALIFICATION_NONCE
+RUN test -n "$QUALIFICATION_NONCE" && echo "RUBIX_BUILD_BIND_BEGIN $QUALIFICATION_NONCE" && sha256sum /out/rubix_platform-* /out/preflight_probe-* && echo "RUBIX_BUILD_BIND_END $QUALIFICATION_NONCE"
 USER 65532:65532
 WORKDIR /tmp
 ENTRYPOINT []

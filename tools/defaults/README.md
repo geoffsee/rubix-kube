@@ -9,12 +9,12 @@ The source archive and official Go 1.26.8 Linux arm64 archive are pinned by URL,
 SHA-256 in `inputs.json`. Explicitly download those two archives, then run:
 
 ```sh
-python3 tools/defaults/capture.py \
+cargo run -p rubix-dev --bin rubix-defaults --locked -- capture \
   --source-archive /path/to/verified-kubernetes.tar.gz \
   --go-archive /path/to/go1.26.8.linux-arm64.tar.gz \
   --output /tmp/new-official-default-capture
-python3 tools/defaults/verify.py /tmp/new-official-default-capture/run0.json
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/defaults -p 'test_*.py' -v
+cargo run -p rubix-dev --bin rubix-defaults --locked -- verify /tmp/new-official-default-capture/run0.json
+cargo test -p rubix-dev defaults --locked
 ```
 
 The capture validates both input hashes before building. Docker may fetch the pinned
@@ -29,7 +29,7 @@ no capabilities, no-new-privileges, 512 MiB RAM, two CPUs, 64 PIDs and 16 MiB te
 storage. There are no host mounts, host device access or existing cluster credentials.
 The build deadline is 30 minutes, execution deadline 60 seconds; host capture retains at
 most 8 MiB of build log and 2 MiB per execution. Exceeding output or time limits fails and
-terminates the owned Docker client process group. Cleanup separately attempts every
+terminates the owned Docker client process group. After confirmed process settlement, cleanup separately attempts every
 owned container/image removal and inventory query, aggregates errors and writes a receipt
 when Docker is unavailable. An unavailable inventory is null, never an empty-success claim.
 Docker's ordinary build cache remains reusable. This is a trusted official-source fixture,
@@ -40,7 +40,7 @@ toolchain and image identity, the output digest and cleanup results; `modules.sh
 records top-level and staging module manifests plus vendor/modules.txt. The archive hash
 identifies every remaining transitive vendored byte. Execution output records GOOS/GOARCH,
 Go version, emulation version 1.35, minimum compatibility 1.34 and the empty feature-override
-map. Both runs must independently satisfy `verify.py` and exact `expected.json` comparison.
+map. Both runs must independently satisfy the Rust verifier and exact `expected.json` comparison.
 Checks never refresh expected output automatically; changed defaults, gate history or gate
 removals require a reviewed compatibility decision.
 
@@ -66,7 +66,7 @@ cases, other platforms, binary-specific gate registrations and real component be
 These outputs do not qualify a live cluster or close E02.03/E02.04 on their own. Source-derived
 schema/protocol drift remains the complementary `tools/drift` gate.
 
-The durable `evidence/` receipt binds the final executed sources to output SHA-256
+The historical `evidence/` receipt binds its original executed sources to output SHA-256
 `d936b24ca4fe4e789e92980ae70b9cbf5ba56231548f151b3a0022e85b75fe8e`.
 Both executions passed independent and exact comparisons; all owned resources were removed.
 Seventy top-level/staging module files are hashed in `evidence/modules.sha256`. Seventeen
@@ -84,7 +84,7 @@ removed or changed by the API-server import graph. Both variants run twice with 
 explicit container hostnames (`fixture-0`, `fixture-1`). No hostname is normalized out.
 
 ```sh
-python3 tools/defaults/verify.py /tmp/new-official-default-capture/apiserver0.json \
+cargo run -p rubix-dev --bin rubix-defaults --locked -- verify /tmp/new-official-default-capture/apiserver0.json \
   --expected tools/defaults/apiserver.expected.json
 ```
 
@@ -118,3 +118,18 @@ The verifier validates the selected expected fixture and checks its byte digest 
 committed provenance before comparing. `--expected` may select a copy of the reviewed
 fixture; changing both capture and expectation does not bypass the frozen-output gate.
 Upstream adoption updates the expectation and its provenance through review.
+
+## Rust capture qualification
+
+The source-reviewed oracle and full frozen output comparison now execute in Rust. Historical
+raw evidence, expected hashes, and provenance are preserved without relabeling. A current-source
+`rubix-defaults verify-evidence` gate reads the separate `rust-evidence/` directory and
+requires a verified actual capture from frozen Rust tooling source. Semantic and
+adversarial tests remain runnable without Docker; they do not replace actual capture evidence.
+
+New receipts record the complete relevant Rust source inventory and individual bounded command
+settlement facts. SIGINT/SIGTERM permanently cancel capture; confirmed-settled cleanup uses a
+separate uncancelled runner. Unconfirmed process ownership is retained with build directories,
+remaining Docker resources are reported unknown, and no further capture or cleanup command runs.
+Only exact owned container names and the unique image tag are removed; a shared cached image ID
+is recorded but never used to remove other tags.

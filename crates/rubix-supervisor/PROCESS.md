@@ -62,7 +62,7 @@ layer is Linux arm64 only.
 
 The process-free tests check effect-free construction/rejected graphs, diagnostic
 redaction, interrupted observation and failure precedence. The ignored integration
-test is only run by `tools/supervisor-process/capture.py` in an unprivileged
+test is only run by `rubix-supervisor-fixture process capture` in an unprivileged
 container with its own PID namespace, init reaper, no network or host bind mounts,
 read-only root and bounded private temporary storage. It covers delayed readiness,
 cooperating descendants reaped by their parent, ignored TERM with real 30-second

@@ -40,15 +40,21 @@ The exact owned CNI filename is `10-bridge.conflist`. Default-location plugin wa
 do not establish that a runtime lacks plugins in another configured directory.
 
 ```sh
-python3 tools/parity/fixtures/constrained-policy/capture.py --output /tmp/new-constrained-capture
-python3 tools/parity/fixtures/constrained-policy/verify.py tools/parity/fixtures/constrained-policy/evidence
-python3 -m unittest discover -s tools/parity/fixtures/constrained-policy -p 'test_*.py'
-python3 -O -m unittest discover -s tools/parity/fixtures/constrained-policy -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture constrained-policy --output /tmp/new-constrained-policy
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify constrained-policy /tmp/new-constrained-policy
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence constrained-policy /tmp/new-constrained-policy
+cargo test --locked -p rubix-dev --lib fixture_oracles::policy
 ```
 
-Six verifier regressions bind exact source/output inventories, original source pins,
-helper version, repeated records and cleanup; reject typed/semantic mutations and
-nonfinite JSON under optimized Python; and simulate setup plus cleanup failure.
-Provenance hashes bind the independent expectations and retained build/raw evidence.
+Rust verifier regressions bind exact source and output inventories, original source
+pins, settled commands, repeated records and cleanup. They reject typed/semantic
+mutations, duplicate/nonfinite JSON, rehashed false cleanup and altered commands.
+Shared process tests cover setup and cleanup failures. Provenance hashes bind the independent expectations and retained build/raw evidence.
 Fixtures contain synthetic values only. No credentials, host sysctls, services,
 external runtime configuration or real CNI files are modified.
+
+Historical `evidence/` captures and provenance remain unchanged. Current maintenance
+uses the Rust runner and independent `tools/dev/src/fixture_oracles/policy.rs`
+expectations. Fresh captures belong in `rust-evidence/`; current qualification
+requires the complete Rust source inventory, exact owned command arguments, raw
+image and cleanup inventories, and settled child processes.

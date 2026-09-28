@@ -36,9 +36,10 @@ E07.01 (#51). The healthy captures separately require successful matching and
 chain verification.
 
 `expected.json` is public normalized output from real cryptographic execution;
-`verify.py` independently checks policy and rotations. Mutation tests reject wrong
+`tools/dev/src/fixture_oracles/pki.rs` independently constructs policy and rotation
+expectations from the reviewed source. Mutation tests reject wrong
 trust-root preservation, mismatched healthy keys, missing SANs and weak file modes.
-Verification also rejects invalid captures under Python optimization (`-O`).
+The Rust CLI rejects invalid captures in debug and release builds.
 See the resource provenance for exact baseline, harness and capture hashes.
 
 This captures PKI file lifecycle. [Credential fixtures](../credentials/README.md)

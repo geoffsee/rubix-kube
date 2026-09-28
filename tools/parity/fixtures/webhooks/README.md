@@ -18,7 +18,7 @@ exact GET/PATCH actions, status subresource, merge patch, counts, successful ret
 and five-attempt exhaustion are recorded. Fake actions establish builder/control
 flow behavior, not actual API validation or networking.
 
-`verify.py` independently constructs the complete expected envelope from reviewed
+The Rust `fixture_oracles::webhook` module constructs the complete expected envelope from reviewed
 source behavior, with exact inventories and strict JSON types; captures never
 supply their own expected component or case list. Only log timestamps and private
 test-directory names remain outside the comparison record; no JSON field is removed.
@@ -38,20 +38,25 @@ registration resource matches.
 Run from the repository root:
 
 ```sh
-python3 tools/parity/fixtures/webhooks/capture.py --output /tmp/unique-webhooks
-python3 -O tools/parity/fixtures/webhooks/verify.py /tmp/unique-webhooks
-python3 -m unittest discover -s tools/parity/fixtures/webhooks -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture webhooks --output /tmp/unique-webhooks
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify webhooks /tmp/unique-webhooks
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence webhooks /tmp/unique-webhooks
+cargo test --locked -p rubix-dev fixture_oracles
 ```
 
 Build uses the SHA256-locked baseline archive, digest-pinned Go 1.26.5 image,
 unchanged go.mod replacements/go.sum with -mod=readonly, and external_deps. Source,
 harness, helper and public evidence identities are recorded. The shared defaults
-lifecycle helper is imported read-only: 30-minute/8MiB build bounds, 110-second/1MiB
+lifecycle helper is Rust: 30-minute/8MiB build bounds, 110-second/1MiB
 runtime client bounds and independent guarded cleanup/inventory receipt publication.
 Each trusted test process has a 90-second Go deadline; runtime is UID65532, network
 none, read-only, no capabilities or privilege escalation, 512MiB, 2CPUs, 128PIDs,
 and a 64MiB private tmpfs. No host mounts or external credentials. Only owned named
 containers/images are removed; Docker build cache remains reusable.
+
+Historical evidence is retained unchanged. Current Rust captures live in
+`rust-evidence/`; their mandatory gate binds tooling, baseline source identities,
+complete raw artifacts, exact public records and owned process cleanup.
 
 Fixture maintenance belongs to #36. Consumers are E14.01 #73 (transport/registration),
 E14.02 #74 (placement), E14.03 #75 (LoadBalancer status), and E11.03 #65 (live API

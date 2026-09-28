@@ -6,9 +6,10 @@ published Kubernetes resource-binding provenance from the
 container runtime. Independent drift/default/behavior oracles belong to E02.04; API serialization
 and live compatibility qualification remain separate gates.
 
-Python 3.10+ handles HTTPS, SHA-256, ZIP inspection and atomic cache writes using the standard
-library. The small Rust maintenance binary generates code using exact prost/tonic versions in
-the workspace lockfile. The node and CRI library do not depend on that maintenance binary.
+The Rust `rubix-upstream` maintenance binary handles SHA-256, ZIP inspection and atomic cache
+writes. Explicit HTTPS downloads use curl with HTTPS-only redirects and a timeout. The separate
+Rust code generator uses exact prost/tonic versions in the workspace lockfile. Neither maintenance
+binary is a node runtime dependency.
 
 ## Commands
 
@@ -16,16 +17,17 @@ From the repository root:
 
 ```sh
 # Explicit network preparation: official CRI/schema plus checksum-locked protoc and includes.
-python3 tools/upstream/upstream.py fetch
+cargo run -p rubix-dev --bin rubix-upstream --locked -- fetch
 # Build the maintenance binary explicitly; this can download locked Cargo dependencies.
 cargo build -p rubix-upstream-codegen --locked
-# These commands do not fetch sources, invoke Cargo or install tools.
-python3 tools/upstream/upstream.py verify
-python3 tools/upstream/upstream.py generate-cri
-python3 tools/upstream/upstream.py check-cri
-python3 tools/upstream/upstream.py generate-containerd
-python3 tools/upstream/upstream.py check-containerd
-python3 -m unittest discover -s tools/upstream -p 'test_*.py'
+# The commands themselves do not fetch sources or install tools; cargo run builds the tool.
+# After an explicit build, target/debug/rubix-upstream avoids the Cargo wrapper.
+cargo run -p rubix-dev --bin rubix-upstream --locked -- verify
+cargo run -p rubix-dev --bin rubix-upstream --locked -- generate-cri
+cargo run -p rubix-dev --bin rubix-upstream --locked -- check-cri
+cargo run -p rubix-dev --bin rubix-upstream --locked -- generate-containerd
+cargo run -p rubix-dev --bin rubix-upstream --locked -- check-containerd
+cargo test -p rubix-dev upstream --locked
 cargo test -p rubix-cri --locked
 cargo test -p rubix-containerd-api --locked
 ```
@@ -145,14 +147,14 @@ bounded wire behavior, not live containerd interoperability or completed image-i
 ## Published Kubernetes bindings provenance
 
 The maintenance package consumes exact `k8s-openapi 0.28.0` with `v1_35` as a dev dependency.
-No second generated resource tree is introduced. Python 3.11+ is required for this gate and the
-complete Python test suite (`tomllib` parses Cargo manifests and lockfiles).
+No second generated resource tree is introduced. The Rust gate parses Cargo manifests and
+lockfiles and invokes `cargo metadata --offline --locked` to inspect unified features.
 
 ```sh
 # Explicit network preparation, separate from the offline gate.
 cargo fetch --locked
-python3 tools/upstream/upstream.py fetch
-python3 tools/upstream/upstream.py check-kubernetes-bindings
+cargo run -p rubix-dev --bin rubix-upstream --locked -- fetch
+cargo run -p rubix-dev --bin rubix-upstream --locked -- check-kubernetes-bindings
 ```
 
 The check reads the checksum-locked published crate archive in memory, rejects traversal,
@@ -195,3 +197,20 @@ existing stale-output, archive integrity and import-closure regressions.
 The [official API JSON consumer evidence](../api-json/CONSUMER.md) exercises the selected
 published types against real server responses and watch events. It records exact round trips
 and observed null/omission, unknown-field and quantity-string limitations explicitly.
+
+## Rust maintenance migration
+
+The preparation, generation checks, Kubernetes provenance gate, and their negative tests now live
+in `tools/dev/src/upstream`. Run `cargo test -p rubix-dev upstream --locked`; the CLI regressions
+are in `tools/dev/tests/upstream_drift_cli.rs`. Tests cover cache corruption, alternate compiler
+substitution, ZIP traversal/links/duplicate names, import closure, RPC coverage, output preservation,
+command timeout, Cargo feature selection, crate metadata, and failed-download atomicity.
+The ZIP central-directory entry count is checked independently because the ZIP library indexes
+entries by name and otherwise hides duplicates.
+
+The migration was checked on Darwin arm64 with the explicitly selected existing prepared cache
+and existing Rust generator: `verify`, `check-cri`, `check-containerd`, and
+`check-kubernetes-bindings` pass. The Kubernetes check inspected 3,576 archive entries and 735
+schema definitions. These local migration checks do not replace or relabel the historical JSON
+receipts above. Fixture source inventories that include these maintenance sources require fresh
+qualification after integration; existing receipts retain their actual original source hashes.

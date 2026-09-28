@@ -1,0 +1,70 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [stage-0 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Capture.Dockerfile
+#2 transferring dockerfile: 1.00kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [stage-0 2/6] WORKDIR /src
+#5 CACHED
+
+#6 [build 3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
+#6 CACHED
+
+#7 [internal] load build context
+#7 transferring context: 7.18kB done
+#7 DONE 0.0s
+
+#8 [build 4/6] COPY file_capture_test.go /src/internal/config/rubix_capture_test.go
+#8 DONE 0.2s
+
+#9 [build 5/6] COPY api_capture_test.go /src/pkg/components/configapi/rubix_capture_test.go
+#9 DONE 0.1s
+
+#10 [build 6/6] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config     && go test -c -p 2 -tags external_deps -trimpath -o /out/configapi.test ./pkg/components/configapi
+#10 0.195 go: downloading github.com/rs/zerolog v1.33.0
+#10 0.195 go: downloading github.com/distribution/reference v0.6.0
+#10 0.197 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#10 0.197 go: downloading sigs.k8s.io/yaml v1.6.0
+#10 0.203 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#10 0.222 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#10 1.505 go: downloading github.com/mattn/go-colorable v0.1.13
+#10 1.506 go: downloading github.com/opencontainers/go-digest v1.0.0
+#10 1.506 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#10 1.506 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#10 1.507 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#10 1.773 go: downloading gopkg.in/inf.v0 v0.9.1
+#10 1.773 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#10 1.773 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#10 1.779 go: downloading github.com/mattn/go-isatty v0.0.20
+#10 2.042 go: downloading golang.org/x/sys v0.47.0
+#10 2.042 go: downloading github.com/x448/float16 v0.8.4
+#10 8.233 go: downloading gopkg.in/evanphx/json-patch.v4 v4.13.0
+#10 DONE 11.6s
+
+#11 [capture 1/1] WORKDIR /tmp
+#11 DONE 0.1s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 3.8s done
+#12 exporting manifest sha256:976c50a8cc16c1e2e382cb1c6b4991c04c71611965730c54adf0358956e997fd done
+#12 exporting config sha256:4c3fb72746608627cf3bfc845e27f244c1d41a6325e93d33a8131be50f040947 done
+#12 exporting attestation manifest sha256:13753bff970029e46649ca0fa2f2b016265a9980f40c050b404ab9b4208903f9 done
+#12 exporting manifest list sha256:44445b10c5488f34d4ee07bd944c64f7ede8a9ffaa4f314bf9c9a75277e2b669 done
+#12 naming to docker.io/library/rubix-config-api-datgje:latest done
+#12 unpacking to docker.io/library/rubix-config-api-datgje:latest
+#12 unpacking to docker.io/library/rubix-config-api-datgje:latest 0.9s done
+#12 DONE 4.7s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/hrfe3ltyf4m0sfxb0jwamj2y3

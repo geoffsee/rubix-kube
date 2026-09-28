@@ -1,7 +1,7 @@
 # Disposable container host-preparation qualification
 
 This fixture exercises the explicit `prepare_node_host` example. Production startup
-still does not prepare a node. Two fresh disposable Alpine captures are published
+still does not prepare a node. Two historical disposable Alpine captures were published
 from clean source `fb24f95f20d1152fc5921c4f0377add1051f42cb`.
 
 The fixed preparation order is fresh assessment, actual network attempts, container
@@ -9,16 +9,16 @@ root propagation, actual process migration to `init`, and controller delegation.
 The consumer and provider require quiescent startup; all runtime threads inherit the
 intended namespace. The example uses a current-thread Tokio runtime.
 
-`build.py --output DIRECTORY` builds four static aarch64 Linux artifacts with the pinned
+`cargo run -p rubix-dev --bin rubix-node-fixture --locked -- container build DIRECTORY` builds four static aarch64 Linux artifacts with the pinned
 Rust builder and Alpine runtime. Its isolated unprivileged runtime executes 38 injected
 unit/integration tests plus complete help/version and the exact guest flags with
 `--print-config`. Two additional builder-executed policy tests prove quiet exit2 and
 terminal cancellation. A random builder nonce frames independent hashes of all four
 executables; the verifier compares these with runtime hashes and exact artifact bytes.
 Source, lockfile, toolchain, builder, consumer, harness and test inventories are bound.
-A dirty exploratory build requires `--allow-dirty-hostsafe-build` and cannot qualify.
+Dirty builds are rejected.
 
-`capture.py --allow-privileged-vm --artifact-directory DIRECTORY --output DIRECTORY
+`cargo run -p rubix-dev --bin rubix-node-fixture --locked -- container capture-vm --allow-privileged-vm --artifact-directory DIRECTORY --output DIRECTORY
 --image-cache CACHE --input-cache CACHE` creates only a new owned QEMU overlay, keys,
 firmware variables and seed. It requires a reviewed committed source snapshot and
 verified artifacts. Its signed pinned APK closure includes util-linux-misc2.42.3-r1;
@@ -84,9 +84,28 @@ The static consumer SHA256 is
 `9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c`,
 13,156,744 bytes, target `aarch64-unknown-linux-musl`. All four artifact hashes,
 clean build receipts, complete source inventories, and 62 captured files are
-bound by the published evidence. All 25 synthetic rejection tests and five
-mandatory published-evidence tests pass under normal Python and `-O`, as do the
-current build and guest verifiers. Both guests powered off with QEMU exit 0;
+bound by the published evidence. Those historical checks do not satisfy the new mandatory Rust receipt gates. Both guests powered off with QEMU exit 0;
 owned process groups, private directories, and builder resources were independently
 confirmed absent. This qualifies the explicit preparation boundary on this pinned
 Linux fixture; production startup and full cluster operation remain outside scope.
+
+Current qualification requires schema 3 artifact receipts and schema 2 owned-VM
+receipts from reviewed source. Preserve historical raw evidence unchanged and
+publish verified Rust captures separately. Verify each new guest with
+`cargo run -p rubix-dev --bin rubix-node-fixture --locked -- container verify DIRECTORY`.
+Use `container verify-published` to require both installed captures and their exact
+provenance inventory. Run `cargo test -p rubix-dev --bin rubix-node-fixture --locked`
+for semantic, mutation and mandatory publication gates.
+
+Every build/guest command must have a settled receipt proving expected argv/exit,
+raw hashes, EOF and absent process group, with no cancellation, timeout or overflow.
+Guest commands have a 256 KiB output ceiling. Rust generates the pinned ISO seed;
+source hashes bind its implementation. Credential scrubbing and owned cleanup use
+the shared reviewed guest lifecycle. Input package pins, transferred hashes, SCP
+argv, exact guest script bytes and namespace/protocol observations are independently
+checked. Install complete outputs and all command receipts after source review.
+
+Publish new captures under `rust-evidence/first` and `rust-evidence/repeat` with
+`rust-provenance.json` beside that directory. Retain historical `evidence/` and
+its provenance unchanged. Docker image identity and cleanup inventories are
+verified from their own persisted raw command receipts.
