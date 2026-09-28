@@ -1,0 +1,45 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 782B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.00MB 0.0s done
+#5 DONE 0.0s
+
+#6 [4/5] RUN cargo clippy -p rubix-platform --all-targets --locked -- -D warnings  && cargo test -p rubix-platform --locked --release --lib --test preflight_probe --no-run  && mkdir /out  && for binary in target/release/deps/rubix_platform-* target/release/deps/preflight_probe-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/; fi; done  && sha256sum /out/* > /out/binaries.sha256
+#6 CACHED
+
+#7 [2/5] WORKDIR /source
+#7 CACHED
+
+#8 [3/5] COPY . .
+#8 CACHED
+
+#9 [5/5] WORKDIR /tmp
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 exporting manifest sha256:99f5518cb113e022290ffa7769e54d44a1b8341db90124b875988cc82f1a67ac done
+#10 exporting config sha256:cf3819d778f27061396be9246f09c6e4f35969a9edff62ce62657ee0d79f28b6 done
+#10 exporting attestation manifest sha256:372e61bbd48457ab157060fe85a70ebfcff86c0757267247c4bc80d97dace6d0 done
+#10 exporting manifest list sha256:35399181309eefbd3f77f706948d2504351e6f352debc35103d76b5649d9f400 done
+#10 naming to docker.io/library/rubix-preflight-probes-8b984649aedd45b7882f573b703de586:latest done
+#10 unpacking to docker.io/library/rubix-preflight-probes-8b984649aedd45b7882f573b703de586:latest
+#10 unpacking to docker.io/library/rubix-preflight-probes-8b984649aedd45b7882f573b703de586:latest 1.1s done
+#10 DONE 1.2s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/4eybejhk1www3p6hpzo8jy86m
