@@ -345,9 +345,20 @@ fn consume<E, F: FnMut(&[u8]) -> Result<(), E>>(
         // maximum excludes the reserved one-byte excess/EOF probe.
         let capacity = usize::try_from((maximum - count + 1).min(8192))
             .map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
-        let read = reader
-            .read(&mut buffer[..capacity])
-            .map_err(DecodeError::Decoder)?;
+        let read = match reader.read(&mut buffer[..capacity]) {
+            Ok(read) => read,
+            Err(error) => {
+                // A decoder can write output and then fail without reporting its length.
+                // Retain the offered capacity; the reserved probe covers any excess byte.
+                let charge = u64::try_from(capacity)
+                    .map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?
+                    .min(maximum - count);
+                *remaining = remaining
+                    .checked_sub(charge)
+                    .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
+                return Err(DecodeError::Decoder(error));
+            },
+        };
         if read == 0 {
             return Ok((count, hash.finalize().into()));
         }
@@ -462,4 +473,33 @@ fn gzip_header(bytes: &[u8]) -> Result<(), DecodePolicyError> {
         return Err(DecodePolicyError::Header);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod error_budget_tests {
+    use super::*;
+    use std::convert::Infallible;
+
+    struct WritesThenFails;
+    impl Read for WritesThenFails {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            buffer.fill(0x61);
+            Err(io::Error::other("output length unavailable"))
+        }
+    }
+
+    #[test]
+    fn failed_read_retains_offered_capacity_without_observing_output() {
+        for (allowance, charged) in [(0, 0), (2, 2), (8191, 8191), (9000, 8192)] {
+            let mut remaining = allowance;
+            let mut callbacks = 0;
+            let result = consume(&mut WritesThenFails, allowance, &mut remaining, &mut |_| {
+                callbacks += 1;
+                Ok::<_, Infallible>(())
+            });
+            assert!(matches!(result, Err(DecodeError::Decoder(_))));
+            assert_eq!(remaining, allowance - charged);
+            assert_eq!(callbacks, 0);
+        }
+    }
 }

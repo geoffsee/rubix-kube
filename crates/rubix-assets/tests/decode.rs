@@ -147,6 +147,37 @@ fn same_encoded_slice_must_match_before_any_callback() {
 }
 #[test]
 fn exact_limit_succeeds_but_excess_and_failed_attempts_retain_budget_charges() {
+    // Unknown-size zstd raw block "abc" with deliberately incorrect XXH64 checksum.
+    // The pinned decoder can write abc and return an error with output.pos still zero.
+    let corrupt = [
+        0x28, 0xb5, 0x2f, 0xfd, 4, 0, 0x19, 0, 0, b'a', b'b', b'c', 0, 0, 0, 0,
+    ];
+    let inv = inventory(&corrupt, AssetId::Crun);
+    let mut session = inv
+        .decoding_session(DecodeLimits {
+            total_bytes: 9000,
+            ..DecodeLimits::default()
+        })
+        .unwrap();
+    for remaining in [807, 0] {
+        assert!(matches!(
+            session.inspect_compressed_blob(
+                AssetId::Crun,
+                &corrupt,
+                |_| -> Result<(), Infallible> {
+                    panic!("failed output must not reach the observer")
+                }
+            ),
+            Err(DecodeError::Decoder(_))
+        ));
+        assert_eq!(session.remaining_decoded_budget(), remaining);
+    }
+    let encoded_remaining = session.remaining_encoded_budget();
+    assert!(matches!(
+        session.inspect_compressed_blob(AssetId::Crun, &corrupt, |_| Ok::<_, Infallible>(())),
+        Err(DecodeError::Policy(DecodePolicyError::Budget))
+    ));
+    assert_eq!(session.remaining_encoded_budget(), encoded_remaining);
     for original in [GZIP, ZSTD] {
         let asset = id(original);
         let inv = inventory(original, asset);
