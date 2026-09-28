@@ -23,7 +23,7 @@ def main():
   name=tag+'-test';report['containers'].append(name)
   helper.bounded(['docker','run','--name',name,'--read-only','--network','none','--cap-drop','ALL','--security-opt','no-new-privileges','--memory','256m','--cpus','2','--pids-limit','64','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',tag],args.output/'run.log',60,1048576)
   log=(args.output/'run.log').read_text()
-  if 'test result: ok. 6 passed;' not in log or 'test result: ok. 1 passed;' not in log or 'test result: ok. 8 passed;' not in log or 'real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok' not in log:raise ValueError('missing test completion')
+  if 'test result: ok. 4 passed;' not in log or 'test result: ok. 6 passed;' not in log or 'test result: ok. 2 passed;' not in log or 'test result: ok. 8 passed;' not in log or 'real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok' not in log:raise ValueError('missing test completion')
   report['run_sha256']=digest(args.output/'run.log')
   for name,value in inventory.items():
    if name!='Dockerfile' and digest(ROOT/name)!=value:raise ValueError('source changed during capture: '+name)

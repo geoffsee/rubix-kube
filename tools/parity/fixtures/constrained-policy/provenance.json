@@ -1,0 +1,18 @@
+{
+  "files": {
+    "evidence/build.log": "fc141135c0fb0f614a3ee72ecc5019c5037a0e483775fcd446934521cbff1eb7",
+    "evidence/embedded0.log": "ec338cecc7c2232d638c8e30023ad5cda6b45d51f7964503689d7b9bf05fb7c4",
+    "evidence/embedded1.log": "ec338cecc7c2232d638c8e30023ad5cda6b45d51f7964503689d7b9bf05fb7c4",
+    "evidence/network0.log": "7e06fc0e9d8cd6ec69f562356d58d6eb415bcd7a6e34b592593c5903c6d894c2",
+    "evidence/network1.log": "7e06fc0e9d8cd6ec69f562356d58d6eb415bcd7a6e34b592593c5903c6d894c2",
+    "evidence/proxy0.log": "52bdb429b180855b18a8c117f279b21fac315d07059cc091300462a0b6278c3e",
+    "evidence/proxy1.log": "7d8590235712090142b8b90d6b0162f019a8e402ab2122680f8b52db9dfc651e",
+    "evidence/receipt.json": "b43d58061c7bf6d32bd78310cf460fd91d8ed8c6fb8929e78c76ae72e0313798",
+    "evidence/source.sha256": "a68d98d709ee9ffc6e3581e026491047ec8c8ceac1e3aaba2145f3d9fb8f3114",
+    "evidence/system0.log": "9d4c998829b528eaff80e747c20dbd2278236789a17c4055551bc4f3a68da8ec",
+    "evidence/system1.log": "9d4c998829b528eaff80e747c20dbd2278236789a17c4055551bc4f3a68da8ec",
+    "expected.json": "d4ef00c73eea118a8e0f3d8707949774e8561fddfb99569fdc71c1df7267922b",
+    "source-pins.json": "e170dbbc8c7b855948e437c295541a1a1126a8ff45e10948e0da6b0736b9843e"
+  },
+  "schema": 1
+}
