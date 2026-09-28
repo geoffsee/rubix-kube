@@ -1,11 +1,13 @@
-27b142228bc2f99b7b041ab2a76e1f31f38675869866af6dda6d04438a347629  /out/discovery-fee14ee4b0097263
+a2d660ee23c0a9d93e129db9ba982f8ec4f40e53be0bb7b4f3b4aceacea06ca1  /out/constrained-ed89db06948c9148
+d7c4baa6b6b40aeca1d6a1f4688ae11ac8255f6f4a3549b29b80734fd76bad74  /out/discovery-fee14ee4b0097263
 008918bb310ecc7380ce225d2cb60c09c406bd7f33fb4a0f06a7d6fca21e0842  /out/preflight-1998688e0f22a6cc
-55c6e2b14e5b5f30866763097926494e1723410be87a9e6e8f1b8f08eb81fbf0  /out/rubix_platform-91f62fc350dbc229
+184b3f1bb24676dce56e4fe2a50c9b290a0ee9921fdefdea8a7eb08bdc1c77f1  /out/rubix_platform-91f62fc350dbc229
 
-running 1 test
+running 2 tests
+test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
 test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 8 tests
@@ -24,10 +26,19 @@ test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 running 6 tests
 test baseline_order_and_real_uid_are_distinct_from_effective_uid ... ok
 test agrees_with_actual_pinned_go_reference_observations ... ok
-test module_indexes_are_not_proof_of_comment_capability ... ok
 test every_required_controller_and_optional_port_has_distinct_evidence ... ok
+test module_indexes_are_not_proof_of_comment_capability ... ok
 test prerequisite_opt_in_plans_require_recheck_and_never_grant_runtime_ownership ... ok
 test unknown_read_errors_and_unprobed_ports_never_claim_success ... ok
 
 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test backend_hints_remain_independent_and_never_waive_xtables ... ok
+test correct_values_require_no_writes_and_missing_ipv4_is_not_optional ... ok
+test collector_never_claims_unsupported_platform_or_invalid_limits ... ok
+test external_responsibility_does_not_adopt_host_resources ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
