@@ -1,5 +1,5 @@
-    Finished `release` profile [optimized + debuginfo] target(s) in 0.05s
-     Running tests/elf_real.rs (target/release/deps/elf_real-d266167463751342)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.07s
+     Running tests/elf_real.rs (target/release/deps/elf_real-cd444e63e2fb17a8)
 
 running 1 test
 RUBIX_ELF {"architecture":"arm64","bytes":79888568,"elf_type":2,"entry":603408,"flags":0,"interpreter":null,"loader":"Unknown","loader_relation":"Unresolved","machine":183,"needed":[],"role":"kube-apiserver","sha256":"4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"}
