@@ -3,8 +3,8 @@
 This fixture qualifies `DecodeSession::inspect_crane_image_archive` against actual
 `crane.Save` serialization of two **synthetic, tiny** images. It does not fetch a
 registry image, establish baseline release payload provenance, execute an image,
-extract members, or import into a runtime. No successful capture is recorded yet. The mandatory `PublishedEvidence` test
-therefore fails until real evidence is published.
+extract members, or import into a runtime. Two successful runs are recorded below;
+the mandatory `PublishedEvidence` test verifies their published raw proof.
 
 The producer imports `github.com/google/go-containerregistry` **v0.21.5**, whose
 module proxy origin identifies commit `5b80281da727dae218e1697ab8529b631b9efa64`.
@@ -102,9 +102,9 @@ capture, independently inspect Docker for that exact owned tag before release.
 
 The `Evidence` Python mutation class uses explicitly invented records to test verifier rejection;
 they never substitute for a real capture. The separate `verify.py` command and `PublishedEvidence` class are mandatory
-published-evidence gates and fail when evidence is absent. Before capture, run
-`python3 -m unittest test_evidence.Evidence` (and `python3 -O`) from this directory
-for the mutation checks alone.
+published-evidence gates. Run the complete test and verification commands above,
+including the published-evidence gate. Investigate any failure or missing evidence;
+the invented mutation records cannot replace the actual capture.
 
 Actual pinned-crane writer qualification passed twice on source
 `90a352c1b720b4a99a235f5bc3ce5d1c6533603f`, including the decoder error-budget
