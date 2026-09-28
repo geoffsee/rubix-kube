@@ -1,0 +1,7 @@
+{
+  "internal/core/embedded/host.go": "e64d143129383c17b130921afd8776bcb2c0111e2119e13863ceb414c40f1e6d",
+  "internal/runtime/network/ipv6.go": "38d8fcf4efe237891328148d21f1fd9170871850156fe88724b8216b0b7ea0d5",
+  "internal/system/modules.go": "543ef157f17a6a4f54310d68365327d2673963c1ccf97d175a2e3e5000ffb107",
+  "pkg/kubernetes/kubeproxy/flags.go": "7935824118ee9f3e96299b057fd1c16fed4de56ccd94f2af3502b0fb41db802a",
+  "types/const.go": "f60c550e2f40060a51b0ec45a0da0bb7c5add84a30e06570517c87588f55d52d"
+}
