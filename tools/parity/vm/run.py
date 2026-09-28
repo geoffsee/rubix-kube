@@ -131,6 +131,11 @@ def finish(report, output, vm, serial, private, log_thread, ssh, qmp, command):
         if not cleanup_attempt("ACPI powerdown", powerdown):
             report["shutdown"] = "forced-process-termination"
             def signal_group(value):
+                # A successful poll reaps the leader and relinquishes its numeric identity.
+                # If it is still running, this owner is the only waiter, so a later exit
+                # remains unreaped until the following wait and keeps the group ID pinned.
+                if vm.poll() is not None:
+                    return
                 try:
                     os.killpg(vm.pid, value)
                 except ProcessLookupError:
@@ -149,17 +154,9 @@ def finish(report, output, vm, serial, private, log_thread, ssh, qmp, command):
             except ProcessLookupError:
                 report["owned_process_group_absent"] = True
                 return
-            report["errors"].append("owned QEMU process group required forced cleanup")
-            os.killpg(vm.pid, signal.SIGKILL)
-            deadline = time.monotonic() + 5
-            while time.monotonic() < deadline:
-                try:
-                    os.killpg(vm.pid, 0)
-                except ProcessLookupError:
-                    report["owned_process_group_absent"] = True
-                    return
-                time.sleep(0.05)
-            raise RuntimeError("owned QEMU process group remains")
+            # The leader may already be reaped. A remaining numeric group could
+            # have been reused, so never send another signal here or delete its files.
+            raise RuntimeError("QEMU group absence is unconfirmed; no post-reap signal sent")
         cleanup_attempt("QEMU process-group check", ensure_group_absent)
     if log_thread:
         cleanup_attempt("console drain", lambda: log_thread.join(timeout=5))
