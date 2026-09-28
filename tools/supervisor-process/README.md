@@ -1,87 +1,47 @@
-# Disposable process-ownership qualification
+# Disposable process ownership qualification
 
-Run the real Linux arm64 cases with:
-
-```sh
-python3 tools/supervisor-process/capture.py --output /tmp/unique-process-capture
-python3 tools/supervisor-process/verify.py /tmp/unique-process-capture
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/supervisor-process -p 'test_*.py'
-```
-
-The driver builds the current Rust source using the checksum-pinned Rust 1.97.1
-image in `Capture.Dockerfile`, then runs the ignored process test twice in the
-pinned Python runtime image. It records the actual source base plus complete
-copied working-tree hashes, image ID, executable digest, commands, raw records,
-exit statuses, repeat comparison and cleanup. It does not label uncommitted
-implementation as committed code. Compilation may fetch Cargo.lock dependencies;
-runtime containers have no network and no user-provided host mounts.
-
-Each run has a 100-second outer deadline and 1MiB streamed output budget. The build
-has a 30-minute deadline and 16MiB streamed log budget. Control-command output is
-also incrementally bounded. Runtime has init reaping, an isolated PID namespace,
-512MiB memory, two CPUs, 96 PIDs, a read-only root and a private 64MiB /tmp. All
-fixtures use synthetic values and ordinary unprivileged subprocesses. No real
-Kubernetes components, credentials, host services or cluster startup are used.
-
-Thirteen cases include actual 30-second TERM escalation, an executable spawn
-failure, and a live process whose readiness never completes before its one-second
-startup deadline. Both startup failures retain the original cause, stop a previously
-ready provider and leave a dependent unstarted. Spawn failure joins its owner
-thread without claiming a spawned/reaped process; its explicit adapter error means
-`complete` is false. The live timeout checks real readiness-marker production,
-absence of supervisor Ready state, TERM cleanup and reaping. Readiness markers,
-parent-reaped descendant markers, heartbeat advancement and process exit statuses
-are asserted by the Rust integration test. Independent Python assertions fix the
-expected status/signal/cleanup facts for every case. Final namespace enumeration
-must contain only init, the driver shell and its inventory helper. A driver
-failure still triggers container/image removal and a cleanup receipt; unknown
-inventory is failure. Docker's ordinary build cache remains.
-
-The verifier rejects missing or duplicate cases, bool/int confusion, duplicate
-JSON keys, nonfinite numbers/overflow, excessive input, failed run/build status,
-stale driver/verifier/source hashes, raw-to-normalized drift, changed binary
-identity, missing containment flags and incomplete cleanup. Elapsed time is the
-only case-record field omitted from repeat equality; ignored TERM must still
-respect the real grace interval. Random container/PID names and diagnostic timing
-are retained in raw logs and receipts. They are not normalized into behavioral
-claims. Frozen evidence lives under `evidence/`, excluded from its own source
-inventory to avoid recursive hashes. Do not regenerate expected semantics from
-observed outputs.
-
-See `crates/rubix-supervisor/PROCESS.md` for ownership assumptions and limitations.
-In particular, these tests do not establish escaped-daemon containment, universal
-bounded kernel reaping, arbitrary hostile-child containment or panic-abort cleanup.
-
-Verification has two explicit source scopes. The default CLI and a fresh capture
-require every copied source hash to match the current checkout. For stored
-qualification evidence after unrelated workspace work, use:
+The repository-owned capture, verification and synthetic children are Rust code in
+`tools/dev/src/supervisor_fixture/`. After review and committing all source inputs:
 
 ```sh
-python3 tools/supervisor-process/verify.py --relevant-current tools/supervisor-process/evidence
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process capture /tmp/unique-process-capture
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process verify /tmp/unique-process-capture
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- process verify tools/supervisor-process/evidence --relevant-current
 ```
 
-This mode still validates the entire historical inventory against the separately
-hash-bound `source-inventory.json`, its recorded source revision, the binary,
-raw outputs, commands, repeated semantics and cleanup. It additionally requires
-exact current hashes and inventories for workspace Cargo.toml/Cargo.lock/toolchain,
-the supervisor package manifest and every supervisor src/tests file, and the
-capture/verifier/runtime/inventory scripts and Dockerfile. It does not compare
-unrelated crates, maintenance tools, general README files, PROCESS.md, or the
-Python unit-test source to their historical contents. Their captured hashes remain
-in the full historical inventory. This scope reflects what builds or executes the
-process test; it does not assert historical files are the current checkout.
+Thirteen cases preserve real 30-second TERM escalation, executable spawn failure,
+a one-second readiness deadline, parent-reaped descendants and external sentinel
+survival. The existing supervisor integration tests assert markers, heartbeat
+advancement, readiness transitions, original startup errors and cleanup. Independent
+Rust expectations additionally fix exact case order, types, exit/signal/ownership
+facts and observed elapsed samples at or below 35,000 ms. Untimed zero samples do
+not establish timing evidence. Final namespace enumeration permits only init,
+driver shell and inventory helper.
 
-Normal Python test discovery verifies the real frozen evidence in this mode and
-rejects mutated raw output, failed runs, missing historical inventory entries,
-changed current process inputs and removed process tests. A narrower source scope
-never bypasses historical provenance or relaxes runtime assertions.
+The pinned Rust image builds the tests and Rust fixture. The nonroot runtime has
+no network or host mounts, a read-only root, no capabilities, an init reaper,
+96 PIDs, 512 MiB memory, two CPUs and private 64 MiB temporary storage. Build and
+runtime bounds are 1800 seconds/16 MiB and 100 seconds/1 MiB. Both runs use the
+same nonce-bound build binaries, whose hashes are checked against actual runtime
+hashes. Raw output and exact command receipts bind exit status, EOF, process-group
+absence and absence of timeout, cancellation or overflow.
 
-The ordinary Python acceptance tests separately require every recorded elapsed
-sample to be at most 35,000 ms, and reject a 35,001 ms mutation. They first verify
-the frozen evidence and its current relevant inputs. The 37/38-second Rust
-watchdogs and the structural verifier's wider timing tolerance retain overdue
-results for diagnosis; they do not replace this stricter engineering gate.
-This qualifies the observed samples, not a universal kernel cleanup bound.
-Some process records use zero as an untimed placeholder. Those cases establish
-behavior and cleanup, not a measured shutdown deadline; the gate does not turn
-these placeholders into timing evidence.
+Schema 3 requires committed relevant inputs and a complete copied source inventory.
+Default verification compares all current inputs. `--relevant-current` preserves
+historical provenance while requiring current workspace manifests, lock/toolchain,
+Cargo configuration, all supervisor Rust files, all Rust maintenance implementation
+and executable fixture files. Removed or changed relevant files require recapture.
+Only elapsed measurements are omitted from repeated semantic equality.
+
+Cancellation during cleanup remains a failed capture. Unknown process settlement
+stops further commands and retains owned input directories. Settled cancellation
+allows only owned Docker cleanup with a fresh latch. Cleanup failure or unknown
+inventory cannot qualify success. No arbitrary host processes or containers are
+removed. Docker's normal build cache remains.
+
+Existing evidence is historical and is deliberately rejected by the new mandatory
+schema-3 gate until reviewed Rust captures replace it. Never relabel old receipts.
+`cargo test -p rubix-dev --bin rubix-supervisor-fixture --locked` includes mutation
+checks and mandatory current evidence tests. No acceptance checks depend on debug
+assertions. See `crates/rubix-supervisor/PROCESS.md`: this does not establish escaped
+daemon containment, universal bounded kernel reaping or panic-abort cleanup.
