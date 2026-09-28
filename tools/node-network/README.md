@@ -75,7 +75,7 @@ exceptions rather than removable assertions. Synthetic mutation tests exercise
 verifier rejection and do not substitute for captured VM evidence.
 
 Published qualification uses frozen source
-`7be6768673263c26cf6fc3407b6650b239e41cf8`. Both fresh Alpine guests completed
+`90a352c1b720b4a99a235f5bc3ce5d1c6533603f`. Both fresh Alpine guests completed
 all nine cases and orderly shutdown, with no recorded cleanup errors. The first
 real pass in each guest returned 13 successful fixed nft-family command attempts;
 loaded/built-in/available observations are separately retained, so successful exit
@@ -99,7 +99,7 @@ boolean CLI syntax and stopped before preparation effects. Both failed guests
 also shut down cleanly. The corrected capture changes only fixture expectations
 and arguments; production preparation behavior was unchanged.
 
-The current refresh binds the decoder error-budget correction into the complete
-source inventory. The network binary is byte-identical to the earlier qualification;
+The current refresh binds the image archive layer and inherited decoder correction
+into the complete source inventory. The network binary is byte-identical to the earlier qualification;
 both guest captures were nevertheless rerun from this clean revision. This evidence
-qualifies the network boundary and does not substitute for decoder-specific tests.
+qualifies the network boundary and does not substitute for archive or decoder-specific tests.

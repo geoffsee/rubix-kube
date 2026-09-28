@@ -1,0 +1,193 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 2.05kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#4 DONE 1.6s
+
+#5 [build 1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#5 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#5 DONE 0.0s
+
+#6 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#6 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
+#6 DONE 0.0s
+
+#7 [build 2/5] WORKDIR /source
+#7 CACHED
+
+#8 [internal] load .dockerignore
+#8 transferring context: 2B done
+#8 DONE 0.0s
+
+#9 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#9 resolve docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19 0.0s done
+#9 DONE 0.0s
+
+#10 [internal] load build context
+#10 transferring context: 2.62MB 0.0s done
+#10 DONE 0.0s
+
+#11 [producer 4/6] RUN mkdir /out && cp go.mod go.sum /out/ && go mod download all && go mod verify && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#11 CACHED
+
+#12 [producer 2/6] WORKDIR /source
+#12 CACHED
+
+#13 [graph 2/4] COPY --from=producer /out /out
+#13 CACHED
+
+#14 [graph 3/4] COPY tools/assets-archive/graph.py tools/assets-archive/modules.json /pins/
+#14 CACHED
+
+#15 [producer 6/6] RUN test "$(go version)" = "go version go1.26.2 linux/arm64" && go list -m -json all > /out/modules-actual.json && go build -trimpath -buildvcs=false -o /out/producer . && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#15 CACHED
+
+#16 [producer 3/6] COPY tools/assets-archive/go.mod tools/assets-archive/go.sum ./
+#16 CACHED
+
+#17 [producer 5/6] COPY tools/assets-archive/main.go ./
+#17 CACHED
+
+#18 [graph 4/4] RUN python /pins/graph.py /out/modules-actual.json /pins/modules.json
+#18 CACHED
+
+#19 [build 3/6] COPY . .
+#19 DONE 0.1s
+
+#20 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#20 0.136 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#20 2.182 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#20 2.189 info: downloading 3 components
+#20 7.623     Updating crates.io index
+#20 11.40  Downloading crates ...
+#20 11.78   Downloaded adler2 v2.0.1
+#20 11.80   Downloaded block-buffer v0.12.1
+#20 12.00   Downloaded errno v0.3.14
+#20 12.02   Downloaded crypto-common v0.2.2
+#20 12.10   Downloaded cfg-if v1.0.5
+#20 12.15   Downloaded cpufeatures v0.3.1
+#20 12.15   Downloaded digest v0.11.3
+#20 12.16   Downloaded itoa v1.0.18
+#20 12.18   Downloaded zstd v0.13.3
+#20 12.20   Downloaded pkg-config v0.3.34
+#20 12.20   Downloaded zstd-safe v7.3.0
+#20 12.22   Downloaded quote v1.0.47
+#20 12.23   Downloaded zmij v1.0.23
+#20 12.24   Downloaded jobserver v0.1.35
+#20 12.24   Downloaded find-msvc-tools v0.1.14
+#20 12.25   Downloaded simd-adler32 v0.3.10
+#20 12.25   Downloaded crc32fast v1.5.2
+#20 12.26   Downloaded hybrid-array v0.4.15
+#20 12.27   Downloaded sha2 v0.11.0
+#20 12.27   Downloaded shlex v2.0.1
+#20 12.28   Downloaded bitflags v2.13.2
+#20 12.29   Downloaded proc-macro2 v1.0.107
+#20 12.33   Downloaded unicode-ident v1.0.26
+#20 12.34   Downloaded serde_derive v1.0.228
+#20 12.34   Downloaded flate2 v1.1.10
+#20 12.35   Downloaded miniz_oxide v0.9.1
+#20 12.35   Downloaded serde v1.0.228
+#20 12.36   Downloaded serde_core v1.0.228
+#20 12.36   Downloaded memchr v2.8.3
+#20 12.38   Downloaded typenum v1.20.1
+#20 12.38   Downloaded cc v1.5.1
+#20 12.38   Downloaded serde_json v1.0.151
+#20 12.45   Downloaded syn v2.0.119
+#20 12.46   Downloaded object v0.39.1
+#20 12.48   Downloaded rustix v1.1.5
+#20 12.53   Downloaded zstd-sys v2.1.0+zstd.1.5.7
+#20 12.55   Downloaded libc v0.2.189
+#20 12.69   Downloaded linux-raw-sys v0.12.1
+#20 12.79    Compiling libc v0.2.189
+#20 12.79    Compiling shlex v2.0.1
+#20 12.79    Compiling find-msvc-tools v0.1.14
+#20 12.79    Compiling proc-macro2 v1.0.107
+#20 12.79    Compiling pkg-config v0.3.34
+#20 12.79    Compiling quote v1.0.47
+#20 12.79    Compiling typenum v1.20.1
+#20 12.79    Compiling unicode-ident v1.0.26
+#20 12.79    Compiling serde_core v1.0.228
+#20 12.79    Compiling cfg-if v1.0.5
+#20 12.79    Compiling zstd-safe v7.3.0
+#20 12.79    Compiling crc32fast v1.5.2
+#20 12.79    Compiling rustix v1.1.5
+#20 12.79    Compiling zmij v1.0.23
+#20 12.79    Compiling linux-raw-sys v0.12.1
+#20 12.83    Compiling adler2 v2.0.1
+#20 12.87    Compiling serde_json v1.0.151
+#20 12.93    Compiling simd-adler32 v0.3.10
+#20 12.94    Compiling serde v1.0.228
+#20 12.97    Compiling memchr v2.8.3
+#20 12.98    Compiling bitflags v2.13.2
+#20 13.02    Compiling object v0.39.1
+#20 13.03    Compiling miniz_oxide v0.9.1
+#20 13.11    Compiling itoa v1.0.18
+#20 13.24    Compiling flate2 v1.1.10
+#20 13.24    Compiling hybrid-array v0.4.15
+#20 13.35    Compiling syn v2.0.119
+#20 13.51    Compiling cpufeatures v0.3.1
+#20 13.51    Compiling jobserver v0.1.35
+#20 13.52    Compiling crypto-common v0.2.2
+#20 13.53    Compiling block-buffer v0.12.1
+#20 13.63    Compiling cc v1.5.1
+#20 13.80    Compiling digest v0.11.3
+#20 13.84    Compiling sha2 v0.11.0
+#20 14.05    Compiling serde_derive v1.0.228
+#20 14.10    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#20 14.80    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#20 21.68    Compiling zstd v0.13.3
+#20 21.74    Compiling rubix-assets v0.1.0 (/source/crates/rubix-assets)
+#20 ...
+
+#6 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#6 CACHED
+
+#20 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#20 25.66     Finished `release` profile [optimized + debuginfo] target(s) in 18.06s
+#20 25.68   Executable tests/archive_fixture.rs (target/release/deps/archive_fixture-feb3676c19325f33)
+#20 DONE 25.7s
+
+#21 [build 5/6] COPY --from=graph /out/producer /out/producer
+#21 DONE 0.1s
+
+#22 [build 6/6] RUN test -n "rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8" && sha256sum /out/producer /out/archive-tests
+#22 0.094 7434ad637e4fb31b7c89fb4db001eb5678530ebe8c00780a9f4d9ef5b0cb9b9b  /out/producer
+#22 0.114 a5df32ef460ec2f5c9f48a9e59dded4d4a959335b1d4e51c2428357d659a8189  /out/archive-tests
+#22 DONE 0.1s
+
+#23 [stage-3 2/6] COPY --from=build /out/producer /producer
+#23 CACHED
+
+#24 [stage-3 3/6] COPY --from=build /out/archive-tests /archive-tests
+#24 DONE 0.0s
+
+#25 [stage-3 4/6] COPY tools/assets-archive/runtime.py tools/assets-archive/oracle.py /
+#25 DONE 0.0s
+
+#26 [stage-3 5/6] COPY tools/supervisor-process/namespace_inventory.py /namespace_inventory.py
+#26 DONE 0.0s
+
+#27 [stage-3 6/6] COPY tools/defaults/capture.py /bounded.py
+#27 DONE 0.0s
+
+#28 exporting to image
+#28 exporting layers
+#28 exporting layers 0.2s done
+#28 exporting manifest sha256:4deed87da8f307101da222dc2683fac0ddc12c4e64dcee80b61e75f2a38dfa18 done
+#28 exporting config sha256:d1899fbc92371ff03a963ee6bd54029a42757dc3092d1f87d40716aabfde13a8 done
+#28 exporting attestation manifest sha256:3db04a32e6d05948eba8f77d5a21c592da0a6d6397128a453fe04d7815941d47 done
+#28 exporting manifest list sha256:9a41f51c354b0bf0ecf269b9bd418bb0c9afbdeb12d74ea96fdb8ed25ae7d1a2 done
+#28 naming to docker.io/library/rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8:latest done
+#28 unpacking to docker.io/library/rubix-archive-df1fbaa276ee4d5ba4b3bff9959fe3a8:latest 0.1s done
+#28 DONE 0.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/mcg8hwcst5eduweaz3gycyoqe
