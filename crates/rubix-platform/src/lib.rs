@@ -22,3 +22,5 @@ impl fmt::Display for PlatformError {
 impl std::error::Error for PlatformError {}
 
 pub mod preflight;
+
+pub mod constrained;

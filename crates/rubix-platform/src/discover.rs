@@ -1,6 +1,6 @@
 use crate::{
     DiscoveryRequest, ExecutableAbi, HostEvidence, KernelIdentity, Observation, PathFacts,
-    PathKind, PlatformError, Privileges, ProbeFailure, RequestedPath,
+    PathKind, PlatformError, Privileges, ProbeFailure, ProbeLimits, RequestedPath,
 };
 use std::collections::BTreeMap;
 use std::fs;
@@ -43,20 +43,20 @@ const FILES: [&str; 6] = [
     "/proc/self/mountinfo",
     "/proc/net/ip_tables_matches",
 ];
-fn error<T>(error: &io::Error) -> Observation<T> {
+pub(crate) fn error<T>(error: &io::Error) -> Observation<T> {
     match error.kind() {
         io::ErrorKind::NotFound => Observation::Absent,
         io::ErrorKind::PermissionDenied => Observation::Unknown(ProbeFailure::PermissionDenied),
         _ => Observation::Unknown(ProbeFailure::Io),
     }
 }
-fn exists(path: &Path) -> Observation<bool> {
+pub(crate) fn exists(path: &Path) -> Observation<bool> {
     match fs::metadata(path) {
         Ok(_) => Observation::Present(true),
         Err(failure) => error(&failure),
     }
 }
-fn bounded_text(path: &Path, limit: usize) -> Observation<String> {
+pub(crate) fn bounded_text(path: &Path, limit: usize) -> Observation<String> {
     let mut options = fs::OpenOptions::new();
     options.read(true);
     #[cfg(target_os = "linux")]
@@ -172,14 +172,7 @@ fn executable() -> ExecutableAbi {
         environment: environment.into(),
     }
 }
-/// Observe the current namespace without preparation, command execution or write probes.
-/// Relative paths resolve against the caller's current directory, retaining their spelling.
-/// Limits bound bytes/counts, not latency of arbitrary kernel/filesystem operations.
-pub fn discover(request: &DiscoveryRequest) -> Result<HostEvidence, PlatformError> {
-    if !cfg!(target_os = "linux") {
-        return Err(PlatformError::UnsupportedHost);
-    }
-    let limits = request.limits;
+pub(crate) fn validate_limits(limits: ProbeLimits) -> Result<(), PlatformError> {
     if limits.bytes_per_file == 0
         || limits.bytes_per_file > 4 * 1024 * 1024
         || limits.directory_entries == 0
@@ -188,6 +181,17 @@ pub fn discover(request: &DiscoveryRequest) -> Result<HostEvidence, PlatformErro
     {
         return Err(PlatformError::InvalidLimits);
     }
+    Ok(())
+}
+/// Observe the current namespace without preparation, command execution or write probes.
+/// Relative paths resolve against the caller's current directory, retaining their spelling.
+/// Limits bound bytes/counts, not latency of arbitrary kernel/filesystem operations.
+pub fn discover(request: &DiscoveryRequest) -> Result<HostEvidence, PlatformError> {
+    if !cfg!(target_os = "linux") {
+        return Err(PlatformError::UnsupportedHost);
+    }
+    let limits = request.limits;
+    validate_limits(limits)?;
     if request.paths.len() > limits.requested_paths {
         return Err(PlatformError::TooManyPaths);
     }

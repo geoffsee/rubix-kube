@@ -1,0 +1,6 @@
+{
+  "network": ["correct_readonly\ttrue", "correct_readonly_bytes\t310a", "incorrect_readonly\tfalse", "incorrect_readonly_bytes\t300a", "absent\ttrue", "unreadable_skipped\ttrue", "unreadable_skipped_bytes\t300a", "prefix_one_accepted\ttrue", "prefix_one_accepted_bytes\t313067617262616765", "incorrect_writable\ttrue", "incorrect_writable_bytes\t31"],
+  "system": ["nft\ttrue", "legacy\tfalse", "unrecognized\tfalse", "failed_assumes_nft\ttrue"],
+  "proxy": ["absent\tnftables", "present\tiptables", "unreadable\tnftables"],
+  "embedded": ["owned\t10-bridge.conflist", "plugins\tbridge,host-local,portmap,loopback", "default_missing_warning\ttrue", "ordering\t3,1", "files_unchanged\ttrue"]
+}
