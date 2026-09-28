@@ -9,10 +9,11 @@ RUN rustup target add aarch64-unknown-linux-musl \
  && for binary in target/aarch64-unknown-linux-musl/release/deps/rubixctl-*; do if [ -f "$binary" ] && [ -x "$binary" ] && "$binary" --list 2>/dev/null | grep -q '^preparation::tests::'; then cp "$binary" /out/rubixctl-tests; fi; done \
  && test -x /out/rubixctl-tests \
  && rustc --edition=2024 --target aarch64-unknown-linux-musl -O tools/parity/fixtures/prerequisite-preparation/fixture-command.rs -o /out/fixture-command \
- && sha256sum /out/* > /out/binaries.sha256
-FROM python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+ && sha256sum /out/* > /out/binaries.sha256 \
+ && cargo build -p rubix-dev --bin rubix-prerequisite-fixture --release --target aarch64-unknown-linux-musl --locked \
+ && cp target/aarch64-unknown-linux-musl/release/rubix-prerequisite-fixture /out/rubix-prerequisite-fixture
+FROM alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
 COPY --from=build /out/ /
 COPY --from=build /out/rubixctl /source/target/aarch64-unknown-linux-musl/release/rubixctl
-COPY tools/parity/fixtures/prerequisite-preparation/linux_fixture.py /linux_fixture.py
 ENTRYPOINT []
-CMD ["sh","-c","cat /binaries.sha256 && /rubixctl-tests --include-ignored --nocapture && /check-tests --nocapture && /preparation-tests --nocapture && python3 /linux_fixture.py"]
+CMD ["sh","-c","cat /binaries.sha256 && /rubixctl-tests --include-ignored --nocapture && /check-tests --nocapture && /preparation-tests --nocapture && /rubix-prerequisite-fixture --run-disposable-fixture"]

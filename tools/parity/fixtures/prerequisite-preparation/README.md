@@ -20,13 +20,19 @@ and a read-only root. Teardown records exact owned container/image identities an
 errors. Historical management/parser captures are preserved separately.
 
 ```
-python3 qualify.py --output /tmp/new-preparation-evidence
-python3 verify_linux.py /tmp/new-preparation-evidence
-python3 -m unittest discover -s . -p 'test_*.py'
-python3 -O -m unittest discover -s . -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-prerequisite-fixture -- qualify --output /tmp/new-preparation-evidence
+cargo run --locked -p rubix-dev --bin rubix-prerequisite-fixture -- verify --directory /tmp/new-preparation-evidence
+cargo test --locked -p rubix-dev --bin rubix-prerequisite-fixture
+cargo test --locked -p rubix-dev --bin rubix-prerequisite-fixture --release
 ```
 
 The real Alpine package/OpenRC oracle is a separate disposable VM qualification.
 This slice does not claim full node readiness, broader installers, modprobe or
 external runtime/CNI ownership. Strict replay requires the current relevant
 compiled source; a changed dependency/manifest legitimately requires recapture.
+
+The Rust helper is statically cross-compiled in the pinned builder and enters each
+private chroot through a single-threaded reexec. Its sole process waiter retains
+uncertain owners and their directories. Historical `evidence-linux` remains an
+immutable archive; the mandatory current-source gate requires schema-2 evidence
+under `evidence-rust` and fails until a reviewed fresh qualification is published.

@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
     clippy::too_many_lines,
     reason = "Independent exact prerequisite behavior oracle"
 )]
-fn verify_run(raw: &str) -> Result<Value> {
+pub(crate) fn verify_run(raw: &str) -> Result<Value> {
     require(
         raw.matches("test result: ok. 6 passed;").count() == 1
             && raw.matches("test result: ok. 7 passed;").count() == 2,
@@ -146,7 +146,7 @@ fn verify_run(raw: &str) -> Result<Value> {
     clippy::items_after_statements,
     reason = "Audit exact compiled inventory and artifact provenance together"
 )]
-pub(crate) fn verify(root: &Path, directory: &Path) -> Result<Value> {
+pub(crate) fn verify_core(root: &Path, directory: &Path) -> Result<Value> {
     let receipt = load(&directory.join("receipt.json"))?;
     equal(
         &receipt["schema_version"],
@@ -222,6 +222,27 @@ pub(crate) fn verify(root: &Path, directory: &Path) -> Result<Value> {
     ] {
         equal(&receipt[key], &json!([]), key)?;
     }
+    equal(
+        &receipt["process_cleanup_complete"],
+        &json!(true),
+        "settled prerequisite commands",
+    )?;
+    equal(
+        &receipt["cancelled"],
+        &json!(false),
+        "uncancelled prerequisite capture",
+    )?;
+    let argv = receipt["command"]
+        .as_array()
+        .ok_or("run argv")?
+        .iter()
+        .map(|arg| {
+            arg.as_str()
+                .map(str::to_owned)
+                .ok_or("string argument".into())
+        })
+        .collect::<Result<Vec<String>>>()?;
+    super::command_evidence::verify_merged_command(directory, "run", &argv, &[0])?;
     equal(&receipt["platform"], &json!("linux/arm64"), "platform")?;
     equal(
         &receipt["target"],
@@ -363,7 +384,7 @@ pub(crate) fn verify(root: &Path, directory: &Path) -> Result<Value> {
         "artifact revision",
     )?;
     let binary = directory.join("rubixctl");
-    if binary.exists() {
+    {
         equal(
             &json!(digest(&binary)?),
             &artifact["sha256"],
@@ -375,7 +396,199 @@ pub(crate) fn verify(root: &Path, directory: &Path) -> Result<Value> {
             "exported size",
         )?;
     }
+    verify_commands(root, directory, &receipt, tag, container)?;
     Ok(receipt)
+}
+pub(crate) fn evidence_inventory(directory: &Path) -> Result<Value> {
+    let mut names = vec![
+        "receipt.json".to_owned(),
+        "source-hashes.json".into(),
+        "artifact.json".into(),
+        "rubixctl".into(),
+    ];
+    for label in [
+        "revision",
+        "build",
+        "image-inspect",
+        "run",
+        "artifact-copy",
+        "cleanup-1",
+        "cleanup-2",
+        "cleanup-3",
+        "cleanup-4",
+    ] {
+        names.extend([format!("{label}.log"), format!("{label}.command.json")]);
+    }
+    let mut inventory = BTreeMap::new();
+    for name in names {
+        inventory.insert(name.clone(), digest(&directory.join(name))?);
+    }
+    Ok(json!(inventory))
+}
+pub(crate) fn verify(root: &Path, directory: &Path) -> Result<Value> {
+    let qualification = load(&directory.join("qualification.json"))?;
+    equal(
+        &qualification["schema_version"],
+        &json!(2),
+        "current final qualification",
+    )?;
+    equal(
+        &qualification["cancelled"],
+        &json!(false),
+        "uncancelled final verification",
+    )?;
+    equal(
+        &qualification["files"],
+        &evidence_inventory(directory)?,
+        "full command and artifact inventory",
+    )?;
+    verify_core(root, directory)
+}
+fn verify_commands(
+    root: &Path,
+    directory: &Path,
+    receipt: &Value,
+    tag: &str,
+    container: &str,
+) -> Result<()> {
+    use super::command_evidence::verify_merged_command as command;
+    let root = root.canonicalize()?;
+    let output = Path::new(
+        receipt["output_directory"]
+            .as_str()
+            .ok_or("original output directory")?,
+    );
+    require(output.is_absolute(), "absolute original output")?;
+    let revision = command(
+        directory,
+        "revision",
+        &[
+            "git".into(),
+            "-C".into(),
+            root.to_str().ok_or("root UTF8")?.into(),
+            "rev-parse".into(),
+            "HEAD".into(),
+        ],
+        &[0],
+    )?;
+    equal(
+        &json!(std::str::from_utf8(&revision)?.trim()),
+        &receipt["revision"],
+        "actual revision",
+    )?;
+    let build = load(&directory.join("build.command.json"))?;
+    let context = build["argv"][6].as_str().ok_or("build context")?;
+    require(
+        Path::new(context).is_absolute()
+            && !Path::new(context)
+                .components()
+                .any(|p| matches!(p, std::path::Component::ParentDir))
+            && Path::new(context).file_name().is_some_and(|name| {
+                name.to_string_lossy()
+                    .starts_with("rubix-prerequisite-build-")
+            }),
+        "owned context",
+    )?;
+    command(
+        directory,
+        "build",
+        &[
+            "docker".into(),
+            "build".into(),
+            "--platform".into(),
+            "linux/arm64".into(),
+            "-t".into(),
+            tag.into(),
+            context.into(),
+        ],
+        &[0],
+    )?;
+    let image = command(
+        directory,
+        "image-inspect",
+        &[
+            "docker".into(),
+            "image".into(),
+            "inspect".into(),
+            tag.into(),
+        ],
+        &[0],
+    )?;
+    verify_image(&image, receipt, tag)?;
+    command(
+        directory,
+        "artifact-copy",
+        &[
+            "docker".into(),
+            "cp".into(),
+            format!("{container}:/rubixctl"),
+            output
+                .join("rubixctl")
+                .to_str()
+                .ok_or("artifact UTF8")?
+                .into(),
+        ],
+        &[0],
+    )?;
+    let cleanup = cleanup_argv(tag, container);
+    for (index, argv) in cleanup.iter().enumerate() {
+        let raw = command(directory, &format!("cleanup-{}", index + 1), argv, &[0])?;
+        if index >= 2 {
+            require(
+                raw.iter().all(u8::is_ascii_whitespace),
+                "owned Docker inventory not empty",
+            )?;
+        }
+    }
+    Ok(())
+}
+fn verify_image(image: &[u8], receipt: &Value, tag: &str) -> Result<()> {
+    let rows = rubix_dev::json::parse(image)?;
+    require(
+        rows.as_array().is_some_and(|rows| rows.len() == 1),
+        "single inspected image",
+    )?;
+    equal(&rows, &receipt["image"], "actual image inspection")?;
+    equal(&rows[0]["Id"], &receipt["image_id"], "owned image identity")?;
+    require(
+        rows[0]["RepoTags"]
+            .as_array()
+            .is_some_and(|tags| tags.contains(&json!(format!("{tag}:latest")))),
+        "owned inspected image tag",
+    )?;
+    Ok(())
+}
+fn cleanup_argv(tag: &str, container: &str) -> [Vec<String>; 4] {
+    [
+        vec![
+            "docker".into(),
+            "rm".into(),
+            "--force".into(),
+            container.into(),
+        ],
+        vec![
+            "docker".into(),
+            "image".into(),
+            "rm".into(),
+            "--force".into(),
+            tag.into(),
+        ],
+        vec![
+            "docker".into(),
+            "ps".into(),
+            "-aq".into(),
+            "--filter".into(),
+            format!("name=^/{}$", regex::escape(container)),
+        ],
+        vec![
+            "docker".into(),
+            "images".into(),
+            "--no-trunc".into(),
+            "-q".into(),
+            "--filter".into(),
+            format!("reference={tag}"),
+        ],
+    ]
 }
 #[cfg(test)]
 mod tests {
@@ -412,6 +625,114 @@ mod tests {
             verify_run(&raw.replace("test result: ok. 6 passed;", "test result: ok. 5 passed;"))
                 .is_err()
         );
+        Ok(())
+    }
+    #[test]
+    fn prerequisite_commands_reject_rehashed_cleanup_and_wrong_image() -> Result<()> {
+        let directory = tempfile::tempdir()?;
+        let root =
+            rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?.canonicalize()?;
+        let output = directory.path().canonicalize()?;
+        let tag = format!("rubix-preparation-linux-{}", "a".repeat(32));
+        let container = format!("{tag}-test");
+        let id = format!("sha256:{}", "b".repeat(64));
+        let image = json!([{"Id":id,"RepoTags":[format!("{tag}:latest")]}]);
+        let revision = "c".repeat(40);
+        let report =
+            json!({"revision":revision,"image":image,"image_id":id,"output_directory":output});
+        synthetic_commands(&root, &output, &tag, &container, &report)?;
+        verify_commands(&root, &output, &report, &tag, &container)?;
+        let mut changed = report.clone();
+        changed["image_id"] = json!(format!("sha256:{}", "d".repeat(64)));
+        assert!(verify_commands(&root, &output, &changed, &tag, &container).is_err());
+        for label in ["cleanup-3", "cleanup-4"] {
+            let path = output.join(format!("{label}.command.json"));
+            let original = load(&path)?;
+            let mut changed = original.clone();
+            std::fs::write(output.join(format!("{label}.log")), b"leftover\n")?;
+            changed["stdout_sha256"] = json!(rubix_dev::sha256(b"leftover\n"));
+            crate::parity::write_json(&path, &changed, false)?;
+            assert!(verify_commands(&root, &output, &report, &tag, &container).is_err());
+            std::fs::write(output.join(format!("{label}.log")), b"")?;
+            crate::parity::write_json(&path, &original, false)?;
+        }
+        std::fs::remove_file(output.join("build.command.json"))?;
+        assert!(verify_commands(&root, &output, &report, &tag, &container).is_err());
+        assert!(evidence_inventory(&output).is_err());
+        Ok(())
+    }
+    fn synthetic_commands(
+        root: &Path,
+        output: &Path,
+        tag: &str,
+        container: &str,
+        report: &Value,
+    ) -> Result<()> {
+        let mut rows = vec![
+            (
+                "revision".to_owned(),
+                vec![
+                    "git".into(),
+                    "-C".into(),
+                    root.to_str().ok_or("root")?.into(),
+                    "rev-parse".into(),
+                    "HEAD".into(),
+                ],
+                report["revision"]
+                    .as_str()
+                    .ok_or("revision")?
+                    .as_bytes()
+                    .to_vec(),
+            ),
+            (
+                "build".into(),
+                vec![
+                    "docker".into(),
+                    "build".into(),
+                    "--platform".into(),
+                    "linux/arm64".into(),
+                    "-t".into(),
+                    tag.into(),
+                    "/tmp/rubix-prerequisite-build-fixture".into(),
+                ],
+                vec![],
+            ),
+            (
+                "image-inspect".into(),
+                vec![
+                    "docker".into(),
+                    "image".into(),
+                    "inspect".into(),
+                    tag.into(),
+                ],
+                serde_json::to_vec(&report["image"])?,
+            ),
+            (
+                "artifact-copy".into(),
+                vec![
+                    "docker".into(),
+                    "cp".into(),
+                    format!("{container}:/rubixctl"),
+                    output.join("rubixctl").to_str().ok_or("output")?.into(),
+                ],
+                vec![],
+            ),
+        ];
+        rows.extend(
+            cleanup_argv(tag, container)
+                .into_iter()
+                .enumerate()
+                .map(|(i, argv)| (format!("cleanup-{}", i + 1), argv, vec![])),
+        );
+        for (label, argv, raw) in rows {
+            let receipt = json!({"spawned":true,"owned_process_group_absent":true,"cleanup_complete":true,"output_eof":true,"cleanup_errors":[],"timeout":false,"cancelled":false,"merged_output":true,"output_limit":false,"owned_pid":123,"owner_directory":"/tmp/rubix-process-test","argv":argv,"exit_code":0,"stdout_sha256":rubix_dev::sha256(&raw),"stderr_sha256":rubix_dev::sha256(b"")});
+            std::fs::write(output.join(format!("{label}.log")), raw)?;
+            crate::parity::write_json(
+                &output.join(format!("{label}.command.json")),
+                &receipt,
+                true,
+            )?;
+        }
         Ok(())
     }
 }
