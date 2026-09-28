@@ -65,6 +65,6 @@ def verify(here=HERE):
  require(inventory.get('tools/parity/fixtures/preflight-policy/expected.tsv')==digest(ROOT/'tools/parity/fixtures/preflight-policy/expected.tsv'),'compiled preflight fixture changed')
  require(inventory['Dockerfile']==digest(here/'Linux.Dockerfile'),'Linux builder recipe')
  log=read(here/'evidence/linux/run.log');require(hashlib.sha256(log).hexdigest()==linux['run_sha256'],'Linux raw log')
- text=log.decode();require(text.count('test result: ok. 2 passed;')==1 and text.count('test result: ok. 8 passed;')==1 and text.count('test result: ok. 6 passed;')==1 and text.count('test result: ok. 4 passed;')==1 and 'real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok' in text,'Linux completion')
- require(len(re.findall(r'^[0-9a-f]{64}  /out/(?:discovery|rubix_platform|preflight|constrained)-[0-9a-f]+$',text,re.MULTILINE))==4,'binary identities')
+ text=log.decode();require(text.count('test result: ok. 7 passed;')==1 and text.count('test result: ok. 1 passed;')==1 and text.count('test result: ok. 8 passed;')==1 and text.count('test result: ok. 6 passed;')==1 and text.count('test result: ok. 4 passed;')==1 and 'real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok' in text,'Linux completion')
+ require(len(re.findall(r'^[0-9a-f]{64}  /out/(?:discovery|rubix_platform|preflight|constrained|preflight_probe)-[0-9a-f]+$',text,re.MULTILINE))==5,'binary identities')
 if __name__=='__main__':verify();print('Platform evidence verified')
