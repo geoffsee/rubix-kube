@@ -108,3 +108,8 @@ The additive [single-image crane archive inspector](ARCHIVE.md) streams gzip/tar
 structure and stored-member digests with bounded metadata. Config platform and
 reference observations leave nested layer codecs/DiffIDs, original registry
 manifest identity, production pins and safe materialization unresolved.
+
+The additive [nested layer digest verifier](LAYER-INTEGRITY.md) now matches complete
+bounded gzip/zstd layer output hashes against ordered declared DiffIDs, retaining
+the same session budgets. This is a byte-stream identity proof; inner tar safety,
+unsupported codecs, production payload provenance and import remain separate.
