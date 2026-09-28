@@ -3,29 +3,29 @@
   "cleanup_errors": [],
   "combined_cases": 61,
   "containers": [
-    "rubix-signal-capture-cb4e62e895ce4dd8bee914d27571c59d-test"
+    "rubix-signal-capture-be0a0396536747fb99e0ff68d792ae97-test"
   ],
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:7a150f477fa3b73564994840f486ab7b1743c9e21f4c475e4e8aaa73daa70d08",
-  "owned_binary_sha256": "7681bd499830524342d62c22599bcd4a1a9e2d4a1a5afeb84cb0a990c7baf6af",
+  "image_id": "sha256:5efce9e1fa1cc29ffa67df7f9b19af1c508ee654bc4a8a5eb3a9fa1380fb65fc",
+  "owned_binary_sha256": "058cf944cb68603794963ae81fd02ea05b57add9f114c673277470e918f1c1db",
   "owned_subprocesses_reaped": true,
   "platform": "linux/arm64",
   "remaining_containers": [],
   "remaining_images": [],
   "repetitions": 20,
-  "run_sha256": "8376bf8b3f254eb4d8864c56d44013f6f2660f84c14ae8db9569a3e86abae358",
+  "run_sha256": "cca9189c8fe0fa627fd73d405794fd2216233c873c9023953f772753e7309d5a",
   "schema_version": 1,
   "scope": "cooperative task signals and owned process adapter signals; no cluster or escaped-daemon qualification",
   "signal_cases": 160,
-  "source_revision": "3ea7303716e0b98455c0d9781e3552da75e0f431",
+  "source_revision": "80b05534a6d50842a7db129ee0164a68294d1a25",
   "source_sha256": {
     "Capture.Dockerfile": "bd45c4342d9c3cfde684ceed3dda7598a825536cec6c0900c377e883e1b6cd30",
     "capture.py": "02a393e71b4ee734fa6684005d7d160083d3b6b7e70341b29353a40ea007e9d3",
-    "source-hashes.json": "53e993babad040d74ca64fe9cc06048d36983ed4b53601d0482ebf5823acdb3b",
+    "source-hashes.json": "c46257232251a018d66b227e275847bb1d88ba3432a44e2779c7a4992a1c8863",
     "verify.py": "d172113a3928b4d8609dd35e7dc2d902780c12450e91575f8c6f12c42cdb5847"
   },
-  "test_binary_sha256": "2cffd6dc192a33daab7be2295b897407fffd3f183bccb67d713afdd0db71d107",
+  "test_binary_sha256": "ddbe0ba042fede613c531ae529fa3be06f5a60fd12be917dff59afcf9f6375b2",
   "uncommitted_implementation": true,
   "worker_failure_cases": 20
 }

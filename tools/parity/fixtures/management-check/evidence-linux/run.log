@@ -1,5 +1,5 @@
 b38a62e39625cff33fac4e925133d642638d0880f3986f7e6c7bf8d780807470  /out/check-tests
-8e512766d58cdf39cce89c484414718908403aa324a28ae17e26c4d2b023defb  /out/rubixctl
+54b41bea422f74f46938fec2ed8e4ca4ab7698b61d28a9bb93325b3672c011fc  /out/rubixctl
 
 running 7 tests
 test earlier_failure_prevents_ports_and_required_port_failure_remains_nonzero ... ok
