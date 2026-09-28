@@ -1,16 +1,16 @@
 706078269e42a4412995bd048c6b6e9a5304fb8fd8f06b298d76b09ead521886  /process-tests
 
 running 1 test
-RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":38}
+RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":23}
 RUBIX_PROCESS {"case":"family","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":23}
-RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30013}
-RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":35}
+RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30014}
+RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":22}
 RUBIX_PROCESS {"case":"early","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0}
 RUBIX_PROCESS {"case":"leader-exits-first","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0}
 RUBIX_PROCESS {"case":"oneshot","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0}
 RUBIX_PROCESS {"case":"probe-error","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":0}
 
-thread 'disposable_process_cases' (9) panicked at crates/rubix-supervisor/tests/process_ownership.rs:230:13:
+thread 'disposable_process_cases' (10) panicked at crates/rubix-supervisor/tests/process_ownership.rs:230:13:
 synthetic adapter worker failure
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 RUBIX_PROCESS {"case":"worker-panic","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":0}
@@ -18,6 +18,6 @@ RUBIX_PROCESS {"case":"cancelled","spawned":true,"term_attempted":false,"kill_at
 RUBIX_PROCESS {"case":"sentinel-survived-external-stop","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0}
 test disposable_process_cases ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 31.77s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 31.69s
 
-RUBIX_NAMESPACE {"helper": 34, "init": 1, "processes": [1, 6, 34], "shell": 6}
+RUBIX_NAMESPACE {"helper": 35, "init": 1, "processes": [1, 7, 35], "shell": 7}
