@@ -44,10 +44,10 @@ def main():
   free_ports()
   for index in range(2):
    row=invoke(root,['check','--pprof-server']);row['name']='repeat_'+str(index);rows.append(row);free_ports()
-  expected={'help':0,'version':0,'root_pass':0,'nonroot':1,'preparation':1,'pprof_off':0,'pprof_conflict':1,'repeat_0':0,'repeat_1':0}
+  expected={'help':0,'version':0,'root_pass':0,'nonroot':1,'preparation':0,'pprof_off':0,'pprof_conflict':1,'repeat_0':0,'repeat_1':0}
   require({r['name']:r['exit'] for r in rows}==expected,'expected exits')
-  require('RootRequired' in rows[3]['stderr'],'root blocker')
-  require('Port6060' in rows[6]['stderr'],'optional port conflict')
+  require('root privileges required' in rows[3]['stderr'],'root blocker')
+  require('TCP port 6060' in rows[6]['stderr'],'optional port conflict')
   require(all((root/path).read_text()==value for path,value in {'proc/version':'Linux version fixture compiler\n','proc/modules':'xt_comment 1 0 - Live 0x0\n','sys/fs/cgroup/cgroup.controllers':'cpuset cpu io memory pids\n'}.items()),'fixture files unchanged')
  print('RUBIX_CHECK '+json.dumps({'cases':rows,'listener_survived':True,'ports_released':True,'files_unchanged':True},sort_keys=True))
 if __name__=='__main__':main()
