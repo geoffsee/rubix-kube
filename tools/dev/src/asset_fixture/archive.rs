@@ -386,6 +386,9 @@ fn runtime_in(directory: &Path) -> Result<()> {
     Ok(())
 }
 pub(super) fn graph(actual: &Path, pinned: &Path) -> Result<()> {
+    graph_module(actual, pinned, "rubix.invalid/assets-archive-fixture")
+}
+pub(super) fn graph_module(actual: &Path, pinned: &Path, main_module: &str) -> Result<()> {
     let mut rows = BTreeMap::new();
     let mut mains = 0;
     for row in stream_json(&read(actual, 4 * 1024 * 1024)?)? {
@@ -395,10 +398,7 @@ pub(super) fn graph(actual: &Path, pinned: &Path) -> Result<()> {
         )?;
         if row["Main"] == true {
             mains += 1;
-            check(
-                row["Path"] == "rubix.invalid/assets-archive-fixture",
-                "main module",
-            )?;
+            check(row["Path"] == main_module, "main module")?;
             continue;
         }
         let mut item = Map::new();

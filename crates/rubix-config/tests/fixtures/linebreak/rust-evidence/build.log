@@ -12,7 +12,7 @@
 #3 DONE 0.0s
 
 #4 [build 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
 #4 DONE 0.0s
 
 #5 [internal] load build context
@@ -32,38 +32,38 @@
 #9 DONE 0.0s
 
 #10 [build 6/6] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config
-#10 0.167 go: downloading sigs.k8s.io/yaml v1.6.0
-#10 0.168 go: downloading github.com/distribution/reference v0.6.0
-#10 0.170 go: downloading github.com/rs/zerolog v1.33.0
-#10 0.170 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#10 0.172 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#10 0.175 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#10 1.315 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#10 1.316 go: downloading github.com/opencontainers/go-digest v1.0.0
-#10 1.317 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#10 1.320 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#10 1.371 go: downloading github.com/mattn/go-colorable v0.1.13
-#10 1.582 go: downloading github.com/mattn/go-isatty v0.0.20
-#10 1.662 go: downloading gopkg.in/inf.v0 v0.9.1
-#10 1.663 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#10 1.665 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#10 1.811 go: downloading golang.org/x/sys v0.47.0
-#10 2.072 go: downloading github.com/x448/float16 v0.8.4
-#10 DONE 14.7s
+#10 0.185 go: downloading github.com/distribution/reference v0.6.0
+#10 0.186 go: downloading sigs.k8s.io/yaml v1.6.0
+#10 0.190 go: downloading github.com/rs/zerolog v1.33.0
+#10 0.190 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#10 0.190 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#10 0.190 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#10 1.553 go: downloading github.com/opencontainers/go-digest v1.0.0
+#10 1.553 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#10 1.553 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#10 1.554 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#10 1.609 go: downloading github.com/mattn/go-colorable v0.1.13
+#10 1.799 go: downloading gopkg.in/inf.v0 v0.9.1
+#10 1.799 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#10 1.800 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#10 1.943 go: downloading github.com/mattn/go-isatty v0.0.20
+#10 2.059 go: downloading github.com/x448/float16 v0.8.4
+#10 2.125 go: downloading golang.org/x/sys v0.47.0
+#10 DONE 11.7s
 
 #11 [capture 1/1] WORKDIR /tmp
 #11 DONE 0.0s
 
 #12 exporting to image
 #12 exporting layers
-#12 exporting layers 2.7s done
-#12 exporting manifest sha256:fd797d880949f99db342ec59ba8883d8098705cc7dedd4ff0e7947e9428eec97 done
-#12 exporting config sha256:7c2f359511b500e5047ec4f2c9779c5a0f1b4d8e815168ccc138a3bf8e6bb4fe done
-#12 exporting attestation manifest sha256:00ea0b9530cf68f5a5a9bf0e8aaec0441f6af4fb59b8ca8762b86ca42e33935e done
-#12 exporting manifest list sha256:4ec5f0507df3e1ef12c8acdbbe6929e3941d7fb0a486bddd57583593c1842245 done
-#12 naming to docker.io/library/rubix-config-linebreak-kj2xbk:latest done
-#12 unpacking to docker.io/library/rubix-config-linebreak-kj2xbk:latest
-#12 unpacking to docker.io/library/rubix-config-linebreak-kj2xbk:latest 0.7s done
-#12 DONE 3.4s
+#12 exporting layers 3.6s done
+#12 exporting manifest sha256:2dfbfc0da3faae1b9f1ac78cd564a1ee782984f2f3795a0094b03cbd7f8b5715 done
+#12 exporting config sha256:cfc41f3f6b676c6891f2932753e17ec31dae53280ee8b24e1e221c68693e3058 done
+#12 exporting attestation manifest sha256:8c01aa15f0d6384de5cdf8f40483df88c14d402de7f70f6943263526c9e7e5db done
+#12 exporting manifest list sha256:2b19a86ebf78b71744a474ea4527b089c89d7916c4de4b1ef187f910f88bd5eb done
+#12 naming to docker.io/library/rubix-config-linebreak-7v2ist:latest done
+#12 unpacking to docker.io/library/rubix-config-linebreak-7v2ist:latest
+#12 unpacking to docker.io/library/rubix-config-linebreak-7v2ist:latest 1.1s done
+#12 DONE 4.7s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/aowh1h1doua3npg80l5y8sbu0
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/gb6gqc8xftp81kwmb4mzmdmex

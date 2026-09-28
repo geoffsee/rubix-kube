@@ -2,6 +2,8 @@ mod archive;
 mod capture;
 mod common;
 mod elf;
+mod layer;
+mod layer_oracle;
 mod native;
 #[cfg(test)]
 mod tests;
@@ -16,10 +18,12 @@ pub(super) fn main() -> Result<()> {
         .into_iter()
         .map(|argument| argument.into_string().map_err(|_| "argument UTF8".into()))
         .collect::<Result<Vec<_>>>()?;
-    let _signals = if args
-        .iter()
-        .any(|argument| argument == "capture" || argument == "archive-runtime")
-    {
+    let _signals = if args.iter().any(|argument| {
+        matches!(
+            argument.as_str(),
+            "capture" | "archive-runtime" | "layer-runtime"
+        )
+    }) {
         Some(rubix_dev::process::SignalGuard::install(
             common::cancellation(),
         )?)
@@ -30,10 +34,12 @@ pub(super) fn main() -> Result<()> {
     match args.as_slice() {
         [command] if command == "namespace" => capture::namespace(),
         [command] if command == "archive-runtime" => archive::runtime(),
+        [command] if command == "layer-runtime" => layer::runtime(),
+        [command, actual, pinned] if command == "layer-graph" => archive::graph_module(actual.as_ref(), pinned.as_ref(), "rubix.invalid/assets-layer-fixture"),
         [command, actual, pinned] if command == "graph" => archive::graph(actual.as_ref(), pinned.as_ref()),
         [family, command, directory] if command == "verify" => capture::verify(&root()?, family, directory.as_ref()),
         [family, command, directory] if command == "capture" && family != "elf" => capture::docker(&root()?, family, directory.as_ref()),
         [family, command, directory, cache] if family == "elf" && command == "capture" => elf::capture(&root()?, directory.as_ref(), cache.as_ref()),
-        _ => Err("usage: rubix-asset-fixture {elf|decode|archive} verify DIRECTORY | {decode|archive} capture DIRECTORY | elf capture DIRECTORY CACHE | archive-runtime | namespace | graph ACTUAL PINNED".into()),
+        _ => Err("usage: rubix-asset-fixture {elf|decode|archive|layer} verify DIRECTORY | {decode|archive|layer} capture DIRECTORY | elf capture DIRECTORY CACHE | archive-runtime | layer-runtime | namespace | {graph|layer-graph} ACTUAL PINNED".into()),
     }
 }

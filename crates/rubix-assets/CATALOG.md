@@ -193,3 +193,8 @@ streaming outer archive/member/reference and config-platform observations; see
 [ARCHIVE.md](ARCHIVE.md). Stored layer blob hashes are checked against archive
 member names, while declared DiffIDs, nested layer integrity and original registry
 manifest/index identity remain unverified. No production image pin is introduced.
+
+An optional stronger `verify_crane_image_layer_digests` call now verifies complete
+bounded gzip/zstd layer-stream hashes against the declared DiffIDs; see
+[LAYER-INTEGRITY.md](LAYER-INTEGRITY.md). It adds no production pins or authenticity
+claim, and does not close unsupported-layer, inner-tar safety or install gates.
