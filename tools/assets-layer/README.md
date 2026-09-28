@@ -79,9 +79,27 @@ python3 tools/assets-layer/verify.py /tmp/rubix-layer-capture
 python3 -m unittest discover -s tools/assets-layer -p 'test_*.py'
 ```
 
-The mandatory `PublishedEvidence` test and default verifier fail while real
-published evidence is absent. Invented mutation records never substitute for
-actual producer execution. No qualification capture has been published yet.
+The mandatory `PublishedEvidence` test and default verifier require the published
+real capture; absent or stale evidence fails. Invented mutation records never
+substitute for actual producer execution.
+
+Current qualification passed all twelve cases twice at clean source
+`bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`. Both runs match the actual emitted
+archives and independent observations. The producer SHA-256 is
+`949122075fe13d50ee1588de9cd6bb6fa7233626b08c84eea89c1d3825b1e070`;
+the Rust consumer SHA-256 is
+`e80bf3b9ba88bee3379e1b8c27774b964ad8c51972b5af74f997bed9926387a3`.
+Both match fresh builder records and each runtime observation. Capture and cleanup
+error arrays are empty. Independent Docker queries confirmed both owned containers
+and their image tag absent. All 19 Python tests, including the mandatory published
+evidence gate, and current-source verification pass normally and under optimization.
+
+The first attempted capture at `b4aef28704bdd0f713ac05e16da9bdc096f950ad`
+failed on a fixture encoded-probe accounting assertion. Its raw record remains
+historical at `/tmp/rubix-layer-qualified-20260928-r1`; it is not passing
+qualification. The current fresh capture also corrects the wrong-DiffID mutation
+to preserve repeated-reference consistency and preserves bounded consumer failure
+logs. Local diagnostic replays were not substituted for the two Docker runs.
 
 Primary pinned sources:
 
