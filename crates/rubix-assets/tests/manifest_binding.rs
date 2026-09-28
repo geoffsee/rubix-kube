@@ -369,9 +369,7 @@ fn duplicated_json_and_depth_limits_apply_before_semantic_interpretation() {
         format!("{raw} null"),
         raw.replacen("\"size\":29", "\"size\":18446744073709551616", 1),
     ] {
-        if bad == raw {
-            continue;
-        }
+        assert_ne!(bad, raw, "negative fixture must change the original bytes");
         assert!(
             f.observe(AssetId::ImageCoredns)
                 .bind_manifest(
