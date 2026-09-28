@@ -75,3 +75,5 @@ decoder dependencies and workspace inputs. Its SHA-256 is
 `1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa`
 and its size is 5388504 bytes. Earlier temporary receipts remain historical; their
 revisions and observations were not relabeled.
+
+Network integration qualification: two fresh guests on source `5799b93cf85ff5e28f8f0da18472122e0fa424b3` passed all seven prerequisite paths and reboot checks. The executed rubixctl candidate was built on `45e727574ff8b2c8ec0c760a16e4f110a188343a` (SHA256 `1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa`, 5,388,504 bytes). Both guests powered off cleanly; owned groups and private directories were independently absent. This sibling prerequisite evidence does not substitute for the separate host-network effect fixture.

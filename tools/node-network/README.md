@@ -74,5 +74,27 @@ and the verifier under both normal Python and `python3 -O`; checks use explicit
 exceptions rather than removable assertions. Synthetic mutation tests exercise
 verifier rejection and do not substitute for captured VM evidence.
 
-Qualification is pending until reviewed frozen captures are published. Preliminary
-Linux builds prove compilation and injected policy behavior only.
+Published qualification uses frozen source
+`5799b93cf85ff5e28f8f0da18472122e0fa424b3`. Both fresh Alpine guests completed
+all nine cases and orderly shutdown, with no recorded cleanup errors. The first
+real pass in each guest returned 13 successful fixed nft-family command attempts;
+loaded/built-in/available observations are separately retained, so successful exit
+is not treated as proof of loading. All/default/lo readbacks were `1`; later
+controls skipped writes after the all-control propagation, and the real repeat
+skipped all IPv6 writes. Explicit deadline/output-limit/cancellation doubles
+settled cleanup and the external-runtime sentinel remained unchanged.
+
+The static candidate SHA256 is
+`0214a3de0383f0ec03427bf922e27913577808125f8f372420bb78e1de9a8377`,
+12,883,656 bytes, target `aarch64-unknown-linux-musl`. Its clean build binds the
+same frozen revision and includes all 14 safe Rust tests plus effect-free CLI
+checks with actual guest flags. Published first/repeat evidence retains exact
+build receipts and source inventories along with every captured guest file.
+Twenty synthetic rejection tests and four mandatory frozen-evidence tests pass
+under normal Python and `-O`; current build and guest verifiers also pass.
+
+Earlier failed exploratory guests remain outside the publication at
+`/tmp/rubix-network-reviewed-{first,repeat}-20260928-r1`: the fixture used invalid
+boolean CLI syntax and stopped before preparation effects. Both failed guests
+also shut down cleanly. The corrected capture changes only fixture expectations
+and arguments; production preparation behavior was unchanged.
