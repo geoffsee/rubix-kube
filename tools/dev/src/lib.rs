@@ -112,3 +112,6 @@ mod tests {
 
 #[path = "fixture_oracles/probes.rs"]
 pub mod preflight_probes;
+
+pub mod api_json;
+pub mod component_boundary;

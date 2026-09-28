@@ -1,14 +1,21 @@
 # Kubernetes / Kine component boundary experiment
 
+The Rust migration uses `tools/dev/src/component_boundary` and the shared owned-process
+runner. Existing evidence remains unchanged. A new source-frozen actual Rust capture under
+`evidence-rust` is mandatory; the qualification test currently fails until publication.
+The Rust source, Dockerfile and artifact pin inventory are checked both outside and inside
+the disposable image. Host command receipts bind raw logs, argument vectors and settlement.
+Cancellation and uncertain cleanup cannot be reported as success.
+
 E01.02 candidate: supervise the official Kubernetes v1.35.7 API server and Kine
 v0.16.3 CGO executable as separate processes. This experiment does not start a
 kubelet, container runtime, scheduler, addon or workload. It tests the protocol
-boundary with a Python test driver; production Rust supervision remains E04 work.
+boundary with Rust maintenance tooling; production node supervision remains E04 work.
 
-Run from a machine with Docker and Python 3.10 or later:
+Run from a machine with Docker and the repository Rust toolchain:
 
 ```sh
-python3 experiments/component-boundary/run.py --output /tmp/rubix-boundary-evidence
+cargo run --locked -p rubix-dev --bin rubix-component-boundary -- capture --output /tmp/rubix-boundary-evidence
 ```
 
 The output directory must not exist. Image preparation downloads checksum-locked
@@ -68,7 +75,7 @@ gate. Readiness requires the complete authenticated `/readyz` response to succee
 including post-start hooks; a reachable socket alone is not sufficient.
 
 Source SHA-256 identities are recorded by the runner at invocation for all fixture
-build inputs and by the container for the executed `spike.py`. Retain these alongside
+build inputs and independently by the container for the staged Rust source inventory. Retain these alongside
 the eventual Git revision when archiving runs prepared before a commit.
 
 The ADR records an observed failure to stop the API gracefully while Kine remains
