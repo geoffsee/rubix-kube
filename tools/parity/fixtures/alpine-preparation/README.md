@@ -1,5 +1,10 @@
 # Owned Alpine preparation feasibility
 
+The capture and verifier now run in Rust. Historical `evidence/` receipts remain
+unchanged. Current schema 2 qualification requires fresh `evidence-rust/prepare`,
+`evidence-rust/first`, and `evidence-rust/repeat`; mandatory tests fail while these
+captures are absent. The seed is generated directly as ISO9660/Joliet in Rust.
+
 Procedure: checksum-verify the official Alpine3.24.2 cloud-init arm64 image; create
 a private 8GiB overlay, firmware variables, cloud-init seed and fresh SSH identities;
 boot with existing QEMU/HVF (2CPUs/2GiB), restricted user networking and loopback-only
@@ -60,20 +65,20 @@ private files. This local correction is stricter than the inherited adapter's
 historical post-reap group cleanup; the inherited source is recorded for provenance,
 not executed as this fixture's lifecycle implementation. Normal shutdown, command
 and console deadlines remain bounded. The outer caller owns this capture process;
-forced host termination itself cannot guarantee its Python finally block runs.
+forced host termination itself cannot guarantee its cleanup code runs.
 
 Reproduce on the pinned Darwin arm64 host with existing QEMU/HVF:
 
 ```sh
-python3 tools/parity/fixtures/alpine-preparation/prepare.py \
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine prepare \
   --cache /tmp/rubix-alpine-input-cache --output /tmp/alpine-prepare-fresh
-python3 tools/parity/fixtures/alpine-preparation/capture.py \
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine capture \
   --allow-privileged-vm --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache --output /tmp/alpine-first-fresh
 # Repeat capture with a different output directory; it creates another fresh VM.
-python3 tools/parity/fixtures/alpine-preparation/verify.py
-python3 -m unittest discover -s tools/parity/fixtures/alpine-preparation
-python3 -O -m unittest discover -s tools/parity/fixtures/alpine-preparation
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine verify --directory /tmp/alpine-first-fresh
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture --release
 ```
 
 The input-cache argument is mandatory: an observation-only run cannot report
