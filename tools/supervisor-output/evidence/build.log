@@ -2,74 +2,74 @@
 
 #1 [internal] load build definition from Capture.Dockerfile
 #1 transferring dockerfile: 739B done
-#1 DONE 0.0s
+#1 DONE 0.1s
 
-#2 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#2 DONE 0.0s
+#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 DONE 0.1s
 
-#3 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#3 DONE 0.0s
+#3 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 DONE 0.1s
 
-#4 [internal] load .dockerignore
-#4 transferring context: 2B done
+#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
 #4 DONE 0.0s
 
-#5 [build 1/4] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#5 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
-#5 DONE 0.0s
+#5 [2/5] WORKDIR /source
+#5 CACHED
 
 #6 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#6 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
-#6 DONE 0.0s
+#6 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.2s done
+#6 CACHED
 
-#7 [internal] load build context
-#7 transferring context: 2.05MB 0.0s done
+#7 [internal] load .dockerignore
+#7 transferring context: 2B done
 #7 DONE 0.0s
 
-#8 [build 2/4] WORKDIR /source
-#8 CACHED
+#8 [internal] load build context
+#8 transferring context: 2.05MB 0.1s done
+#8 DONE 0.3s
 
 #9 [build 3/4] COPY . .
-#9 DONE 0.0s
+#9 DONE 0.1s
 
 #10 [build 4/4] RUN cargo test -p rubix-supervisor --test output --locked --no-run && mkdir /out && for executable in target/debug/deps/output-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/output-tests; fi; done && test -x /out/output-tests
-#10 0.118 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 1.181 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 1.189 info: downloading 3 components
-#10 36.39     Updating crates.io index
-#10 66.76  Downloading crates ...
-#10 67.69   Downloaded errno v0.3.14
-#10 67.70   Downloaded quote v1.0.47
-#10 67.72   Downloaded tokio-macros v2.7.1
-#10 67.73   Downloaded signal-hook-registry v1.4.8
-#10 67.73   Downloaded pin-project-lite v0.2.17
-#10 67.73   Downloaded bitflags v2.13.2
-#10 67.78   Downloaded proc-macro2 v1.0.107
-#10 67.80   Downloaded unicode-ident v1.0.26
-#10 67.86   Downloaded mio v1.2.3
-#10 68.18   Downloaded syn v2.0.119
-#10 68.31   Downloaded rustix v1.1.5
-#10 68.84   Downloaded libc v0.2.189
-#10 69.18   Downloaded tokio v1.53.1
-#10 74.83   Downloaded linux-raw-sys v0.12.1
-#10 74.91    Compiling proc-macro2 v1.0.107
-#10 74.91    Compiling libc v0.2.189
-#10 74.91    Compiling unicode-ident v1.0.26
-#10 74.91    Compiling quote v1.0.47
-#10 74.91    Compiling rustix v1.1.5
-#10 74.92    Compiling bitflags v2.13.2
-#10 74.92    Compiling pin-project-lite v0.2.17
-#10 74.92    Compiling linux-raw-sys v0.12.1
-#10 75.45    Compiling syn v2.0.119
-#10 75.60    Compiling errno v0.3.14
-#10 75.60    Compiling mio v1.2.3
-#10 75.64    Compiling signal-hook-registry v1.4.8
-#10 77.75    Compiling tokio-macros v2.7.1
-#10 78.54    Compiling tokio v1.53.1
-#10 79.44    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 80.35     Finished `test` profile [unoptimized + debuginfo] target(s) in 43.96s
-#10 80.39   Executable tests/output.rs (target/debug/deps/output-85a6af052d781fd3)
-#10 DONE 80.6s
+#10 0.294 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 20.60 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 20.61 info: downloading 3 components
+#10 52.14     Updating crates.io index
+#10 69.09  Downloading crates ...
+#10 69.50   Downloaded errno v0.3.14
+#10 69.79   Downloaded tokio-macros v2.7.1
+#10 70.12   Downloaded signal-hook-registry v1.4.8
+#10 70.25   Downloaded bitflags v2.13.2
+#10 70.28   Downloaded pin-project-lite v0.2.17
+#10 70.37   Downloaded quote v1.0.47
+#10 70.62   Downloaded proc-macro2 v1.0.107
+#10 70.76   Downloaded unicode-ident v1.0.26
+#10 70.93   Downloaded mio v1.2.3
+#10 72.21   Downloaded syn v2.0.119
+#10 72.51   Downloaded rustix v1.1.5
+#10 73.36   Downloaded libc v0.2.189
+#10 73.50   Downloaded tokio v1.53.1
+#10 74.68   Downloaded linux-raw-sys v0.12.1
+#10 74.96    Compiling libc v0.2.189
+#10 74.96    Compiling proc-macro2 v1.0.107
+#10 74.96    Compiling quote v1.0.47
+#10 74.96    Compiling unicode-ident v1.0.26
+#10 74.96    Compiling rustix v1.1.5
+#10 74.96    Compiling pin-project-lite v0.2.17
+#10 74.96    Compiling linux-raw-sys v0.12.1
+#10 74.96    Compiling bitflags v2.13.2
+#10 76.89    Compiling syn v2.0.119
+#10 78.75    Compiling errno v0.3.14
+#10 78.75    Compiling mio v1.2.3
+#10 78.87    Compiling signal-hook-registry v1.4.8
+#10 95.13    Compiling tokio-macros v2.7.1
+#10 103.0    Compiling tokio v1.53.1
+#10 107.7    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 113.3     Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 01s
+#10 113.6   Executable tests/output.rs (target/debug/deps/output-85a6af052d781fd3)
+#10 DONE 113.9s
 
 #11 [stage-1 3/4] COPY tools/supervisor-output/fixture.py /fixture.py
 #11 CACHED
@@ -82,12 +82,16 @@
 
 #14 exporting to image
 #14 exporting layers done
-#14 exporting manifest sha256:292e5cebc4c0d4f263cf3ed923246628d3b24bdaa773a6b4753acbedb2d0c484 done
-#14 exporting config sha256:f8f6dd29809b94cb68ee16cc0feddfb5c7c592fd2eda5d9638c0eeb5121a1d71 done
-#14 exporting attestation manifest sha256:43c279b4e275381af18faf8cda2d535c778099eb93421cf0b1163a6428c1b4c9 done
-#14 exporting manifest list sha256:dd9bf7515c4e1c84ae2f84d3043ec173488064d9af4147a2d1b1e283cac2505b done
-#14 naming to docker.io/library/rubix-output-e303375dab6948eb971947896a93becf:latest done
-#14 unpacking to docker.io/library/rubix-output-e303375dab6948eb971947896a93becf:latest 0.0s done
-#14 DONE 0.1s
+#14 exporting manifest sha256:61497fde77d4b00f9999ae693bae8ffce19605de51da835fd6f4fe2815b63d9d done
+#14 exporting config sha256:5dd48b573b96b8f5c3cb66fe2b84f42633f0d5acdd516f8334e68bc8cb1adf36 0.0s done
+#14 exporting attestation manifest sha256:066823daa8c728da58f73936a70fc5ad884e1a52817ffea3e539c662feb39b22
+#14 exporting attestation manifest sha256:066823daa8c728da58f73936a70fc5ad884e1a52817ffea3e539c662feb39b22 0.4s done
+#14 exporting manifest list sha256:4e29c17393511427d2b20c46af5d3ce9abbec50a488f68c7cbfc3b03f5392ad8
+#14 exporting manifest list sha256:4e29c17393511427d2b20c46af5d3ce9abbec50a488f68c7cbfc3b03f5392ad8 0.1s done
+#14 naming to docker.io/library/rubix-output-e921b12f94784f06bd898349f76728a8:latest
+#14 naming to docker.io/library/rubix-output-e921b12f94784f06bd898349f76728a8:latest 0.2s done
+#14 unpacking to docker.io/library/rubix-output-e921b12f94784f06bd898349f76728a8:latest
+#14 unpacking to docker.io/library/rubix-output-e921b12f94784f06bd898349f76728a8:latest 0.1s done
+#14 DONE 1.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/i10jbfcj5z82d3itxmsj3229x
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/klfck1bb57gv46q390x3a5bgu

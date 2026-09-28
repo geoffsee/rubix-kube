@@ -5,67 +5,70 @@
 #1 DONE 0.1s
 
 #2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#2 DONE 0.1s
+#2 DONE 0.0s
 
-#3 [build 1/4] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#3 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
-#3 DONE 0.0s
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 2B done
+#3 DONE 0.1s
 
-#4 [build 2/4] WORKDIR /source
-#4 CACHED
+#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#4 DONE 0.0s
 
-#5 [internal] load .dockerignore
-#5 transferring context: 2B done
-#5 DONE 0.0s
+#5 [2/5] WORKDIR /source
+#5 CACHED
 
 #6 [internal] load build context
-#6 transferring context: 2.21MB 0.1s done
+#6 transferring context: 2.22MB 0.1s done
 #6 DONE 0.1s
 
 #7 [3/5] COPY . .
 #7 DONE 0.2s
 
 #8 [4/5] RUN cargo clippy -p rubix-platform --all-targets --locked -- -D warnings  && cargo test -p rubix-platform --locked --release --no-run  && mkdir /out  && for binary in target/release/deps/rubix_platform-* target/release/deps/discovery-* target/release/deps/preflight-* target/release/deps/constrained-* target/release/deps/preflight_probe-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/; fi; done  && sha256sum /out/* > /out/binaries.sha256
-#8 0.402 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#8 1.619 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#8 1.627 info: downloading 3 components
-#8 5.750     Updating crates.io index
-#8 7.870  Downloading crates ...
-#8 8.297   Downloaded errno v0.3.14
-#8 8.395   Downloaded bitflags v2.13.2
-#8 8.779   Downloaded rustix v1.1.5
-#8 8.885   Downloaded libc v0.2.189
-#8 9.353   Downloaded linux-raw-sys v0.12.1
-#8 9.422    Compiling rustix v1.1.5
-#8 9.423     Checking linux-raw-sys v0.12.1
-#8 9.423     Checking bitflags v2.13.2
-#8 10.87     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#8 11.18     Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.46s
-#8 11.27    Compiling rustix v1.1.5
-#8 11.27    Compiling bitflags v2.13.2
-#8 11.27    Compiling linux-raw-sys v0.12.1
-#8 12.89    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#8 17.65     Finished `release` profile [optimized + debuginfo] target(s) in 6.42s
-#8 17.65   Executable unittests src/lib.rs (target/release/deps/rubix_platform-a0b7fc1077c686ed)
-#8 17.65   Executable tests/constrained.rs (target/release/deps/constrained-103eea116147f732)
-#8 17.65   Executable tests/discovery.rs (target/release/deps/discovery-36f26188ef46671a)
-#8 17.65   Executable tests/preflight.rs (target/release/deps/preflight-17ca696c0614e8c8)
-#8 17.65   Executable tests/preflight_probe.rs (target/release/deps/preflight_probe-232dbf13efeef0e5)
-#8 DONE 17.8s
+#8 0.328 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#8 25.07 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#8 25.08 info: downloading 3 components
+#8 52.09     Updating crates.io index
+#8 63.69  Downloading crates ...
+#8 64.35   Downloaded errno v0.3.14
+#8 64.86   Downloaded bitflags v2.13.2
+#8 67.22   Downloaded rustix v1.1.5
+#8 68.36   Downloaded libc v0.2.189
+#8 71.36   Downloaded linux-raw-sys v0.12.1
+#8 71.60    Compiling rustix v1.1.5
+#8 71.60     Checking bitflags v2.13.2
+#8 71.60     Checking linux-raw-sys v0.12.1
+#8 76.02     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#8 77.33     Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.28s
+#8 77.54    Compiling rustix v1.1.5
+#8 77.54    Compiling bitflags v2.13.2
+#8 77.54    Compiling linux-raw-sys v0.12.1
+#8 83.67    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#8 123.1     Finished `release` profile [optimized + debuginfo] target(s) in 45.20s
+#8 123.1   Executable unittests src/lib.rs (target/release/deps/rubix_platform-a0b7fc1077c686ed)
+#8 123.1   Executable tests/constrained.rs (target/release/deps/constrained-103eea116147f732)
+#8 123.1   Executable tests/discovery.rs (target/release/deps/discovery-36f26188ef46671a)
+#8 123.1   Executable tests/preflight.rs (target/release/deps/preflight-17ca696c0614e8c8)
+#8 123.1   Executable tests/preflight_probe.rs (target/release/deps/preflight_probe-232dbf13efeef0e5)
+#8 DONE 123.4s
 
 #9 [5/5] WORKDIR /tmp
-#9 DONE 0.0s
+#9 DONE 1.0s
 
 #10 exporting to image
 #10 exporting layers
-#10 exporting layers 5.7s done
-#10 exporting manifest sha256:e333bda21eaca16d13febaf2afe394c94d96df0e384194c2b86240b91104071e done
-#10 exporting config sha256:83ae206d8183ac54daad74631e50bfb30e405dba2fc03ad04a1fc18bfa91a4cd done
-#10 exporting attestation manifest sha256:edd4c52e35a8c90b97f658edfee36112658c4840156b8a44719c0741c8455517 done
-#10 exporting manifest list sha256:248855ab292dbf3e478440e88d6cc0f5f2ce6869b7bc000b9d9bc67c71f85d6e done
-#10 naming to docker.io/library/rubix-platform-linux-b71e4d389d8741e2bf294416ed6b3352:latest done
-#10 unpacking to docker.io/library/rubix-platform-linux-b71e4d389d8741e2bf294416ed6b3352:latest
-#10 unpacking to docker.io/library/rubix-platform-linux-b71e4d389d8741e2bf294416ed6b3352:latest 1.3s done
-#10 DONE 7.1s
+#10 exporting layers 20.7s done
+#10 exporting manifest sha256:58f822039ba91f7ddae366b942e0366f84a4c288ea44dc8cb5323b93d0d59009
+#10 exporting manifest sha256:58f822039ba91f7ddae366b942e0366f84a4c288ea44dc8cb5323b93d0d59009 0.1s done
+#10 exporting config sha256:d55dc5a86d2dfbf1a15c7e0b79177dc4e5d9db73822d3083211d6bb3f56df6d6 0.0s done
+#10 exporting attestation manifest sha256:6fcdc7164f62e6d537212845bcdc8b770751f52e9c7f11462c6b6891cf448735
+#10 exporting attestation manifest sha256:6fcdc7164f62e6d537212845bcdc8b770751f52e9c7f11462c6b6891cf448735 0.1s done
+#10 exporting manifest list sha256:8dc7ae41f30bf74391d383fe9e8561a98ad1e7d14260b4e0c59bef3dcfeb1e01 0.0s done
+#10 naming to docker.io/library/rubix-platform-linux-3b189c9d2e604dba9d34991789bd81b2:latest done
+#10 unpacking to docker.io/library/rubix-platform-linux-3b189c9d2e604dba9d34991789bd81b2:latest
+#10 unpacking to docker.io/library/rubix-platform-linux-3b189c9d2e604dba9d34991789bd81b2:latest 6.9s done
+#10 DONE 27.9s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/en7130t8aklscmyc6ppy1s5x0
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/zjnt3hexctcob38jm1k7w7jnd
