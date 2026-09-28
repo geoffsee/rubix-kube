@@ -60,7 +60,8 @@ exercise missing/unreadable facts, cgroup generations, malformed module/mount da
 byte limits and read-only path preservation. See
 `tools/parity/fixtures/platform-discovery` for source hashes and receipts.
 
-Remaining #45 coverage includes broader real platform/ABI qualification, deployment-specific module availability/loadability verification and capability consumption.
+Broader real platform/ABI qualification, deployment-specific module loadability and
+capability consumption remain parent-epic and later-consumer qualification work.
 This slice supplies module index, loaded module and networking-match observations, not a guarantee
 that missing modules are unavailable or required. #46 owns actionable preflight
 policy/check output and owned preparation; #47 owns constrained/external-runtime

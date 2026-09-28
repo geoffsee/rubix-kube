@@ -155,9 +155,17 @@ fn observed_go_classifier_cases_match_independent_expectations() {
 }
 #[test]
 fn accepted_d01_targets_include_all_arch_libc_pairs_without_using_kernel_or_executable() {
-    for arch in ["amd64", "arm64", "arm", "riscv64"] {
+    for (arch, architecture) in [
+        ("amd64", Architecture::Amd64),
+        ("arm64", Architecture::Arm64),
+        ("arm", Architecture::ArmV7),
+        ("riscv64", Architecture::Riscv64),
+    ] {
         for libc in [Libc::Glibc, Libc::Musl] {
-            assert_eq!(node_target("linux", arch, libc).unwrap().libc, libc);
+            assert_eq!(
+                node_target("linux", arch, libc).unwrap(),
+                NodeTarget { architecture, libc }
+            );
         }
     }
     for (os, arch) in [
