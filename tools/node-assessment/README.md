@@ -17,3 +17,5 @@ The ignored tests must never run directly on the development host.
 commands, namespace cleanup and repeated identities. `test_evidence.py` requires
 published frozen evidence and tests meaningful mutations, normally and under
 `python3 -O`. No success is claimed until those checks pass on final source.
+
+The committed combined ELF integration capture passed twice on `f2080912285b5857ed59ba3b9f8f57c9b0e26d4d`, with all seven evidence regressions and strict verification passing normally and under optimization. Owned container and image inventories are empty. The fixture separates Docker init’s `/sbin` mount from the private `/usr/sbin` probe directory.

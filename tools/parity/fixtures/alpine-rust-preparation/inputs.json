@@ -142,7 +142,7 @@
     "sha256": "54b41bea422f74f46938fec2ed8e4ca4ab7698b61d28a9bb93325b3672c011fc",
     "size": 5388512,
     "target": "aarch64-unknown-linux-musl",
-    "revision": "80b05534a6d50842a7db129ee0164a68294d1a25"
+    "revision": "f2080912285b5857ed59ba3b9f8f57c9b0e26d4d"
   },
   "openrc_service_sha256": "8b56a0712bff950b23696699e5ba76f895b448ef8f7a77412edb8e8f28571e7a"
 }

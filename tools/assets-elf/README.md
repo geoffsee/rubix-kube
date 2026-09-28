@@ -28,3 +28,5 @@ current compiled sources/manifests/lock, harness, pins, independent observations
 raw logs and honest revision/working-source snapshot semantics. It proves the
 implemented observations of those locked bytes, not execution, ABI closure,
 cryptographic publisher authenticity or install safety. Full E06.01 remains open.
+
+Committed qualification passed twice on `f2080912285b5857ed59ba3b9f8f57c9b0e26d4d`. All seven evidence regressions and strict verification pass normally and under optimization. The four pinned files have the expected arm64/amd64 machine IDs and ET_EXEC headers; no interpreter or DT_NEEDED entries were observed. Loader/ABI compatibility remains unresolved.
