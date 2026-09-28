@@ -1,0 +1,208 @@
+{
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a-first",
+    "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a-repeat"
+  ],
+  "errors": [],
+  "harness_sha256": {
+    "Capture.Dockerfile": "e6a8c3314e48c9978d7dbbd41aa46e06a9d321fda1444f08cb53ab3322e76db8",
+    "capture.py": "d7b89ad3c19a0219acb78946552443e65385b4ca7f4c915e7d291afefcc53eff",
+    "consumer.py": "c9ae2576b5bd160c84e243c6738870099ae5e01019a39d018086757fe94df888",
+    "iptables.py": "08d0a88e18d4f1804c133b8c922c4725c65f144afc6d17d081e38d22043e1b55",
+    "verify.py": "81b58125c02a4b9da98411cc90ec33675c18333b6b6319cca6a8b420d95d599e"
+  },
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "image_id": "sha256:bffb338443564264da1a144041b565772fc628864c7b6fef7efded3e43ed3c03",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "runs": {
+    "first": {
+      "binary_sha256": {
+        "assess_host": "f9d19abb23fbefe2215db5819d7b717435f354176182d7b2b8197cacaa4f5b13",
+        "host_preflight": "b2631989a3a0ed0cedb1268ef1e45c61a60f96c752a597ad854ebb0b51d955bb",
+        "iptables_probe": "498c046c1b19bcc5b5fcd210c80c5a99453ce9fa29503fdbc4326e9fa8bd78ab"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a-first",
+        "--init",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=96",
+        "--memory=512m",
+        "--cpus=2",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--tmpfs",
+        "/usr/sbin:rw,exec,nosuid,nodev,size=1m,uid=65532,gid=65532,mode=0755",
+        "--env",
+        "RUBIX_NODE_DISPOSABLE=1",
+        "--env",
+        "PRIVATE_SENTINEL=must-not-reach-probe",
+        "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a",
+        "/bin/sh",
+        "-c",
+        "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /usr/local/bin/python3 /consumer.py; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+      ],
+      "raw_sha256": "473d21765540f1aeeb8a4acc8a5c87085dbd1a87ec4ea86226bb302fd73251d5",
+      "records": {
+        "cancel": {
+          "elapsed_ms": 120,
+          "reaped": true,
+          "status": "Some(Cancelled)"
+        },
+        "deadline": {
+          "elapsed_ms": 2022,
+          "reaped": true,
+          "status": "Some(Deadline)"
+        },
+        "denied": {
+          "elapsed_ms": 11,
+          "reaped": false,
+          "status": "Some(Command)"
+        },
+        "empty": {
+          "elapsed_ms": 113,
+          "reaped": true,
+          "status": "None"
+        },
+        "held": {
+          "elapsed_ms": 407,
+          "reaped": true,
+          "status": "Some(Capture)"
+        },
+        "invalid-utf8": {
+          "elapsed_ms": 111,
+          "reaped": true,
+          "status": "None"
+        },
+        "legacy": {
+          "elapsed_ms": 89,
+          "reaped": true,
+          "status": "None"
+        },
+        "missing": {
+          "elapsed_ms": 11,
+          "reaped": false,
+          "status": "Some(Command)"
+        },
+        "nft": {
+          "elapsed_ms": 113,
+          "reaped": true,
+          "status": "None"
+        },
+        "nonzero": {
+          "elapsed_ms": 89,
+          "reaped": true,
+          "status": "Some(Command)"
+        },
+        "overflow": {
+          "elapsed_ms": 207,
+          "reaped": true,
+          "status": "Some(Capture)"
+        }
+      }
+    },
+    "repeat": {
+      "binary_sha256": {
+        "assess_host": "f9d19abb23fbefe2215db5819d7b717435f354176182d7b2b8197cacaa4f5b13",
+        "host_preflight": "b2631989a3a0ed0cedb1268ef1e45c61a60f96c752a597ad854ebb0b51d955bb",
+        "iptables_probe": "498c046c1b19bcc5b5fcd210c80c5a99453ce9fa29503fdbc4326e9fa8bd78ab"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a-repeat",
+        "--init",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=96",
+        "--memory=512m",
+        "--cpus=2",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--tmpfs",
+        "/usr/sbin:rw,exec,nosuid,nodev,size=1m,uid=65532,gid=65532,mode=0755",
+        "--env",
+        "RUBIX_NODE_DISPOSABLE=1",
+        "--env",
+        "PRIVATE_SENTINEL=must-not-reach-probe",
+        "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a",
+        "/bin/sh",
+        "-c",
+        "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /usr/local/bin/python3 /consumer.py; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+      ],
+      "raw_sha256": "4805d0c8697e3bdb24276c853c6596c768190cb2c66b1bef688efbfd0c5ba4fb",
+      "records": {
+        "cancel": {
+          "elapsed_ms": 81,
+          "reaped": true,
+          "status": "Some(Cancelled)"
+        },
+        "deadline": {
+          "elapsed_ms": 2025,
+          "reaped": true,
+          "status": "Some(Deadline)"
+        },
+        "denied": {
+          "elapsed_ms": 11,
+          "reaped": false,
+          "status": "Some(Command)"
+        },
+        "empty": {
+          "elapsed_ms": 89,
+          "reaped": true,
+          "status": "None"
+        },
+        "held": {
+          "elapsed_ms": 332,
+          "reaped": true,
+          "status": "Some(Capture)"
+        },
+        "invalid-utf8": {
+          "elapsed_ms": 101,
+          "reaped": true,
+          "status": "None"
+        },
+        "legacy": {
+          "elapsed_ms": 78,
+          "reaped": true,
+          "status": "None"
+        },
+        "missing": {
+          "elapsed_ms": 11,
+          "reaped": false,
+          "status": "Some(Command)"
+        },
+        "nft": {
+          "elapsed_ms": 78,
+          "reaped": true,
+          "status": "None"
+        },
+        "nonzero": {
+          "elapsed_ms": 88,
+          "reaped": true,
+          "status": "Some(Command)"
+        },
+        "overflow": {
+          "elapsed_ms": 78,
+          "reaped": true,
+          "status": "Some(Capture)"
+        }
+      }
+    }
+  },
+  "schema": 1,
+  "source_inventory_sha256": "d1d516db1b0d74a67e5d51e14039714f8da2429240508b9aab0d27cf4972a0fd",
+  "source_revision": "2f3355235547131d2c5690ff5d22553f79c4a254",
+  "tag": "rubix-node-assessment-2f7746abc95d4e8dbe65e6b8f711f75a",
+  "uncommitted_source_snapshot": false
+}

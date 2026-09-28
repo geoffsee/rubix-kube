@@ -8,8 +8,8 @@ test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversiz
 test preflight_probe::disposable_filesystem::only_unavailable_ipv6_allows_ipv4_fallback ... ok
 test preflight_probe::tests::definitive_presence_survives_other_candidate_errors_and_rc_is_exact ... ok
 test preflight_probe::tests::exact_candidates_and_one_level_glob_match_baseline_existence ... ok
-test preflight_probe::tests::unsafe_release_limits_and_errors_are_unknown_not_absent ... ok
 test preflight_probe::tests::port_phase_is_explicit_and_does_not_probe_unused_pprof ... ok
+test preflight_probe::tests::unsafe_release_limits_and_errors_are_unknown_not_absent ... ok
 
 test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
