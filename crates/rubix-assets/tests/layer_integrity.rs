@@ -191,7 +191,8 @@ fn complete_inner_streams_do_not_publish_before_outer_crc_validation() {
     );
     assert_eq!(
         before - session.remaining_decoded_budget(),
-        1 + t.len() as u64 + 3 + 1
+        // The outer CRC failure retains the final offered capacity after prior output.
+        1 + t.len() as u64 + 3 + 1 + 8192
     );
 }
 #[test]
