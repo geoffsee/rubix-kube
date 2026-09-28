@@ -5,21 +5,21 @@
 e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566  /out/rubix_platform-a0b7fc1077c686ed
 
 running 8 tests
+test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
 test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
 test preflight_probe::disposable_filesystem::disposable_real_filesystem_limits_errors_and_baseline_candidates ... ignored, actual filesystem fixtures only inside owned disposable Linux container
-test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
-test preflight_probe::disposable_filesystem::only_unavailable_ipv6_allows_ipv4_fallback ... ok
 test preflight_probe::tests::definitive_presence_survives_other_candidate_errors_and_rc_is_exact ... ok
+test preflight_probe::disposable_filesystem::only_unavailable_ipv6_allows_ipv4_fallback ... ok
+test preflight_probe::tests::exact_candidates_and_one_level_glob_match_baseline_existence ... ok
 test preflight_probe::tests::port_phase_is_explicit_and_does_not_probe_unused_pprof ... ok
 test preflight_probe::tests::unsafe_release_limits_and_errors_are_unknown_not_absent ... ok
-test preflight_probe::tests::exact_candidates_and_one_level_glob_match_baseline_existence ... ok
 
 test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 8 tests
-test accepted_d01_targets_include_all_arch_libc_pairs_without_using_kernel_or_executable ... ok
 test available_builtin_and_loaded_modules_remain_distinct_and_malformed_indexes_fail_closed ... ok
+test accepted_d01_targets_include_all_arch_libc_pairs_without_using_kernel_or_executable ... ok
 test cgroup_generations_and_loaded_modules_are_observations_not_policy_success ... ok
 test missing_or_unreadable_evidence_never_becomes_a_positive_default ... ok
 test mountinfo_decodes_paths_and_keeps_mount_and_superblock_readonly_separate ... ok
