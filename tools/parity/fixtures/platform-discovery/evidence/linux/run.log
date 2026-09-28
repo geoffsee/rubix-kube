@@ -1,0 +1,21 @@
+23d5a7a3785c1fe602e96caea822b9ce0ab17d4a0ce56976331adb74f4728bd8  /out/discovery-fee14ee4b0097263
+55c6e2b14e5b5f30866763097926494e1723410be87a9e6e8f1b8f08eb81fbf0  /out/rubix_platform-91f62fc350dbc229
+
+running 1 test
+test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test accepted_d01_targets_include_all_arch_libc_pairs_without_using_kernel_or_executable ... ok
+test available_builtin_and_loaded_modules_remain_distinct_and_malformed_indexes_fail_closed ... ok
+test cgroup_generations_and_loaded_modules_are_observations_not_policy_success ... ok
+test missing_or_unreadable_evidence_never_becomes_a_positive_default ... ok
+test mountinfo_decodes_paths_and_keeps_mount_and_superblock_readonly_separate ... ok
+test observed_go_classifier_cases_match_independent_expectations ... ok
+test runtime_container_and_installer_environment_keep_distinct_indicators ... ok
+test real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

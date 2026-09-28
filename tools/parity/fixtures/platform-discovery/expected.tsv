@@ -1,0 +1,25 @@
+empty	unknown	arm	glibc
+systemd_socket	systemd	arm	glibc
+systemd_units	systemd	arm	glibc
+command_directory	systemd	arm	glibc
+custom_path_only	unknown	arm	glibc
+upstart	upstart	arm	glibc
+openrc	openrc	arm	glibc
+s6	s6	arm	glibc
+runit	runit	arm	glibc
+sysv	sysvinit	arm	glibc
+precedence	systemd	arm	glibc
+docker_marker	unknown	container	glibc
+podman_marker	unknown	container	glibc
+docker_cgroup	unknown	container	glibc
+embedded	unknown	embedded	glibc
+musl	unknown	arm	musl
+target	amd64	true
+target	arm64	true
+target	arm	true
+target	riscv64	true
+target	amd64-musl	true
+target	arm64-musl	true
+target	arm-musl	false
+target	riscv64-musl	false
+target	mips	false
