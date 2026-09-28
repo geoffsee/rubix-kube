@@ -16,6 +16,29 @@ const SOURCE: &str = "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7b
 const BUILDER: &str = "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd";
 
 fn baseline(root: &Path, profile: &Profile) -> Result<Value> {
+    if [
+        "tools/parity/fixtures/config-api",
+        "tools/parity/fixtures/config-write-links",
+    ]
+    .contains(&profile.directory)
+    {
+        let provenance = oracle::load(&root.join(profile.directory).join("provenance.json"))?;
+        oracle::equal(&provenance["reference_revision"], &json!(REVISION))?;
+        return Ok(if profile.directory.ends_with("config-api") {
+            provenance["sources"].clone()
+        } else {
+            provenance["reference_source_sha256"].clone()
+        });
+    }
+    if profile.directory == "tools/parity/fixtures" {
+        let provenance = oracle::load(
+            &root
+                .join(profile.directory)
+                .join("resources/provenance.json"),
+        )?;
+        oracle::equal(&provenance["reference_revision"], &json!(REVISION))?;
+        return Ok(provenance["sources"].clone());
+    }
     if profile.repeats != 2 {
         return Ok(Value::Null);
     }
@@ -36,6 +59,16 @@ fn baseline(root: &Path, profile: &Profile) -> Result<Value> {
             "types/const.go",
             "types/types.go",
             "types/var.go",
+        ],
+        ["kubelet", "containerd"] => &[
+            "pkg/kubernetes/kubelet/config.go",
+            "pkg/kubernetes/kubelet/args.go",
+            "pkg/kubernetes/kubelet/service.go",
+            "pkg/runtime/containerd/config.go",
+            "pkg/runtime/containerd/service.go",
+            "internal/runtime/network/ip.go",
+            "internal/runtime/filesystem/file.go",
+            "types/const.go",
         ],
         ["webhook"] => &[
             "pkg/kubernetes/webhook/config.go",
@@ -107,6 +140,36 @@ pub fn profile(family: &str) -> Result<Profile> {
             profile.harnesses = &["webhook_capture_test.go"];
             profile.components = &["webhook"];
         },
+        "node-config" => {
+            profile.directory = "tools/parity/fixtures/node-config";
+            profile.harnesses = &["kubelet_capture_test.go", "containerd_capture_test.go"];
+            profile.components = &["kubelet", "containerd"];
+        },
+        "config-api" => {
+            profile.directory = "tools/parity/fixtures/config-api";
+            profile.harnesses = &["file_capture_test.go", "api_capture_test.go"];
+            profile.components = &["config", "configapi"];
+            profile.multiple_records = true;
+        },
+        "config-write-links" => {
+            profile.directory = "tools/parity/fixtures/config-write-links";
+            profile.harnesses = &["file_capture_test.go"];
+            profile.components = &["config"];
+            profile.multiple_records = true;
+        },
+        "resources-pki" => {
+            profile.directory = "tools/parity/fixtures";
+            profile.dockerfile = "resources/Capture.Dockerfile";
+            profile.harnesses = &[
+                "resources/coredns_capture_test.go",
+                "resources/localpath_capture_test.go",
+                "resources/portainer_capture_test.go",
+                "resources/d2k_capture_test.go",
+                "pki/pki_capture_test.go",
+            ];
+            profile.components = &["coredns", "localpath", "portainer", "d2k", "pki"];
+            profile.multiple_records = true;
+        },
         "config-linebreak" | "config-print-preservation" => {
             profile.directory = if family == "config-linebreak" {
                 "crates/rubix-config/tests/fixtures/linebreak"
@@ -139,6 +202,11 @@ pub fn expected(family: &str, component: &str) -> Result<Value> {
         "credentials" => oracle::credentials::expected(component),
         "runtime-mapping" if component == "mapping" => Ok(oracle::mapping::expected()),
         "webhooks" if component == "webhook" => oracle::webhook::expected(),
+        "node-config" => oracle::node_config::expected(component),
+        "config-api" => oracle::config_api::expected(component),
+        "config-write-links" if component == "config" => oracle::config_links::expected(),
+        "resources-pki" if component == "pki" => Ok(oracle::pki::expected()),
+        "resources-pki" => oracle::resources::expected(component),
         _ => Err("family/component has no independent complete oracle".into()),
     }
 }
@@ -170,8 +238,27 @@ pub fn sources(root: &Path, profile: &Profile) -> Result<Value> {
         root.join("tools/dev/Cargo.toml"),
     ]);
     let fixture = root.join(profile.directory);
-    if profile.repeats == 2 {
+    if profile.directory == "tools/parity/fixtures" {
+        paths.push(fixture.join("resources/provenance.json"));
+        paths.push(fixture.join("resources/expected.json"));
+    } else if profile.repeats == 2 {
         paths.push(fixture.join("provenance.json"));
+    }
+    if profile.directory == "tools/parity/fixtures/node-config" {
+        for component in profile.components {
+            paths.push(fixture.join("expected").join(format!("{component}.json")));
+        }
+    }
+    if [
+        "tools/parity/fixtures/config-api",
+        "tools/parity/fixtures/config-write-links",
+    ]
+    .contains(&profile.directory)
+    {
+        paths.push(root.join("tools/parity/fixtures/config-api/config.json"));
+        paths.push(root.join("tools/parity/fixtures/config-api/configapi.json"));
+        paths.push(root.join("tools/parity/fixtures/config-api/provenance.json"));
+        paths.push(root.join("tools/parity/fixtures/config-write-links/replacement.yaml"));
     }
     paths.push(fixture.join(profile.dockerfile));
     paths.extend(profile.harnesses.iter().map(|name| fixture.join(name)));
@@ -246,7 +333,9 @@ pub fn run(root: &Path, family: &str, output: &Path) -> Result<i32> {
             .copied()
             .chain(std::iter::once(profile.dockerfile))
         {
-            fs::copy(fixture.join(name), context.path().join(name))?;
+            let destination = context.path().join(name);
+            fs::create_dir_all(destination.parent().ok_or("capture input parent")?)?;
+            fs::copy(fixture.join(name), destination)?;
         }
         let mut argv = capture::arguments(&[
             "docker",
@@ -268,7 +357,7 @@ pub fn run(root: &Path, family: &str, output: &Path) -> Result<i32> {
                 let name = format!("{}-{component}-{repeat}", owned.tag);
                 owned.containers.push(name.clone());
                 let label = format!("{component}-{repeat}");
-                let argv = runtime_args(&owned.tag, &name, component);
+                let argv = runtime_args(family, &owned.tag, &name, component);
                 let raw = runner.bounded(&argv, &label, 110, oracle::LIMIT)?;
                 let value = records(&raw, profile.multiple_records)?;
                 if profile.repeats == 2 {
@@ -321,8 +410,8 @@ fn publish_provenance(output: &Path) -> Result<()> {
     Ok(())
 }
 
-fn runtime_args(tag: &str, name: &str, component: &str) -> Vec<OsString> {
-    capture::arguments(&[
+fn runtime_args(family: &str, tag: &str, name: &str, component: &str) -> Vec<OsString> {
+    let mut args = capture::arguments(&[
         "docker",
         "run",
         "--name",
@@ -351,13 +440,60 @@ fn runtime_args(tag: &str, name: &str, component: &str) -> Vec<OsString> {
         "-test.v",
         "-test.timeout",
         "90s",
-    ])
+    ]);
+    if family == "node-config" {
+        args.splice(
+            6..6,
+            capture::arguments(&["--dns", "192.0.2.53", "--dns-search", "."]),
+        );
+    }
+    args
+}
+
+fn verify_receipt_fields(receipt: &Value) -> Result<()> {
+    let fields = [
+        "schema_version",
+        "family",
+        "revision",
+        "source_archive_sha256",
+        "builder",
+        "source_sha256",
+        "baseline_source_sha256",
+        "image",
+        "runner_sha256",
+        "containers",
+        "outputs",
+        "errors",
+        "cleanup_errors",
+        "image_inspect",
+        "image_id",
+        "identical_repeats",
+        "repeat_count",
+        "remaining_containers",
+        "remaining_images",
+        "process_cleanup_complete",
+        "process_failures",
+        "retained_build_contexts",
+        "cancelled",
+    ];
+    if receipt
+        .as_object()
+        .ok_or("receipt object")?
+        .keys()
+        .map(String::as_str)
+        .collect::<std::collections::BTreeSet<_>>()
+        != fields.into_iter().collect()
+    {
+        return Err("receipt field inventory differs".into());
+    }
+    Ok(())
 }
 
 /// Require current Rust inputs, complete outputs, successful owned commands and two real records.
 pub fn verify_evidence(root: &Path, family: &str, output: &Path) -> Result<()> {
     let profile = profile(family)?;
     let receipt = oracle::load(&output.join("receipt.json"))?;
+    verify_receipt_fields(&receipt)?;
     for (key, value) in [
         ("schema_version", json!(2)),
         ("family", json!(family)),
@@ -424,7 +560,7 @@ pub fn verify_evidence(root: &Path, family: &str, output: &Path) -> Result<()> {
             let raw = crate::read_bounded(&output.join(format!("{label}.log")), oracle::LIMIT)?;
             oracle::equal(&records(&raw, profile.multiple_records)?, &value)?;
             let facts = oracle::load(&output.join(format!("{label}.command.json")))?;
-            let argv = runtime_args(tag, &format!("{tag}-{label}"), component)
+            let argv = runtime_args(family, tag, &format!("{tag}-{label}"), component)
                 .iter()
                 .map(|arg| arg.to_string_lossy().into_owned())
                 .collect::<Vec<_>>();

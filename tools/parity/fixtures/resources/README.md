@@ -8,7 +8,7 @@ Kubernetes fake clients capture typed JSON before API admission/defaulting; this
 is an in-memory builder oracle, not server reconciliation or running-addon parity.
 
 `expected.json` retains full typed object fields (including null empty collections).
-`verify.py` independently specifies source-derived identities, references, images,
+`tools/dev/src/fixture_oracles/resources.rs` independently specifies source-derived identities, references, images,
 DNS variants, storage semantics, synthetic Edge configuration and D2K TLS mounts.
 Each constructor sequence executes twice. Injected client errors must propagate;
 Portainer existing configuration/secrets remain unchanged after replacement inputs;
@@ -19,11 +19,11 @@ bytes without parsing certificates. Genuine crypto is exercised in `../pki/`.
 Reproduce from the repository root with Docker available:
 
 ```sh
-python3 tools/parity/fixtures/resources/capture.py --output /tmp/unique-oracle-capture
-python3 tools/parity/fixtures/resources/verify.py /tmp/unique-oracle-capture
-python3 tools/parity/fixtures/pki/verify.py /tmp/unique-oracle-capture/pki.json
-python3 -m unittest discover -s tools/parity/fixtures/resources -p 'test_*.py'
-python3 -m unittest discover -s tools/parity/fixtures/pki -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture resources-pki --output /tmp/unique-oracle-capture
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify resources /tmp/unique-oracle-capture
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify pki /tmp/unique-oracle-capture/pki.json
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence resources-pki /tmp/unique-oracle-capture
+cargo test --locked -p rubix-dev fixture_oracles
 ```
 
 Build uses the digest-pinned Go 1.26.5 parity toolchain and SHA256-pinned source
@@ -40,6 +40,11 @@ public resource JSON, synthetic secret strings and normalized PKI metadata.
 
 `provenance.json` records immutable source links/hashes, additive harness and durable
 fixture hashes. `capture-receipt.json` and `evidence/` preserve execution output.
+These historical captures remain unchanged. Current Rust captures run each component
+twice, require equal records, and belong in `../rust-evidence/`. The mandatory current
+evidence gate binds Rust sources, exact runtime commands, process settlement and cleanup.
+Historical source and documentation hashes describe the original capture; current
+source identity comes from the new Rust receipt.
 The unit negatives deliberately change storage policy, selectors and DNS behavior;
 they must fail the independent checks. A future Rust builder should emit this
 object envelope and pass both full fixture equality and semantic checks; no Rust

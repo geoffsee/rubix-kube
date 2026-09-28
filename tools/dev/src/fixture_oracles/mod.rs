@@ -7,8 +7,13 @@ use std::path::Path;
 use crate::{Result, json, read_bounded};
 use serde_json::Value;
 
+pub mod config_api;
+pub mod config_links;
 pub mod credentials;
 pub mod mapping;
+pub mod node_config;
+pub mod pki;
+pub mod resources;
 pub mod webhook;
 
 pub const LIMIT: u64 = 1024 * 1024;

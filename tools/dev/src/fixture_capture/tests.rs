@@ -37,10 +37,17 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
         for index in 0..profile.repeats {
             let label = format!("{component}-{index}");
             containers.push(format!("{tag}-{label}"));
-            fs::write(
-                output.join(format!("{label}.log")),
-                format!("RUBIX_CAPTURE {}\n", serde_json::to_string(&expected)?),
-            )?;
+            let rows = if profile.multiple_records {
+                expected.as_array().ok_or("record array")?.clone()
+            } else {
+                vec![expected.clone()]
+            };
+            let raw = rows
+                .iter()
+                .map(|row| Ok(format!("RUBIX_CAPTURE {}\n", serde_json::to_string(row)?)))
+                .collect::<Result<Vec<_>>>()?
+                .concat();
+            fs::write(output.join(format!("{label}.log")), raw)?;
             labels.push(label);
         }
     }
@@ -57,7 +64,7 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
         for component in profile.components {
             if label.starts_with(&format!("{component}-")) {
                 facts["argv"] = json!(
-                    runtime_args(&tag, &format!("{tag}-{label}"), component)
+                    runtime_args(family, &tag, &format!("{tag}-{label}"), component)
                         .iter()
                         .map(|arg| arg.to_string_lossy().into_owned())
                         .collect::<Vec<_>>()
@@ -73,7 +80,7 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
         "image_id":image_id,"image_inspect":[{"Id":image_id}],"runner_sha256":"a".repeat(64),
         "repeat_count":2,"identical_repeats":true,"outputs":outputs,"errors":[],"cleanup_errors":[],
         "remaining_containers":[],"remaining_images":[],"process_failures":[],
-        "process_cleanup_complete":true,"capture_cancelled":false,"cancelled":false,"retained_build_contexts":[]});
+        "process_cleanup_complete":true,"cancelled":false,"retained_build_contexts":[]});
     capture::write_json(&output.join("receipt.json"), &receipt)?;
     publish_provenance(output)?;
     verify_evidence(&root, family, output)?;
@@ -82,7 +89,7 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
 
 #[test]
 fn rejects_omitted_sources_outputs_baseline_and_raw_artifacts() -> Result<()> {
-    for family in ["credentials", "runtime-mapping", "webhooks"] {
+    for family in ["credentials", "runtime-mapping", "webhooks", "node-config"] {
         let directory = synthetic(family)?;
         let receipt_path = directory.path().join("receipt.json");
         let original = oracle::load(&receipt_path)?;
@@ -181,12 +188,34 @@ fn captured_record_parser_rejects_missing_duplicate_and_invalid_json() {
 }
 
 #[test]
+fn resource_capture_checks_multirecord_output_and_node_dns_arguments() -> Result<()> {
+    synthetic("config-api")?;
+    synthetic("config-write-links")?;
+    let output = synthetic("resources-pki")?;
+    let path = output.path().join("pki.json");
+    let mut changed = oracle::load(&path)?;
+    changed[0]["fresh"]["ca"]["key_mode"] = json!("0644");
+    replace(&path, &changed)?;
+    assert!(verify_evidence(&root()?, "resources-pki", output.path()).is_err());
+    let args = runtime_args("node-config", "tag", "name", "kubelet");
+    assert!(
+        args.windows(4)
+            .any(|values| values == ["--dns", "192.0.2.53", "--dns-search", "."])
+    );
+    Ok(())
+}
+
+#[test]
 fn published_rust_fixture_captures_bind_current_sources_and_commands() -> Result<()> {
     let root = root()?;
     for family in [
         "credentials",
         "runtime-mapping",
         "webhooks",
+        "node-config",
+        "resources-pki",
+        "config-api",
+        "config-write-links",
         "config-linebreak",
         "config-print-preservation",
         "config-scalar-base",
