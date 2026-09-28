@@ -1,6 +1,6 @@
 b2631989a3a0ed0cedb1268ef1e45c61a60f96c752a597ad854ebb0b51d955bb  /out/host_preflight
 498c046c1b19bcc5b5fcd210c80c5a99453ce9fa29503fdbc4326e9fa8bd78ab  /out/iptables_probe
-f9d19abb23fbefe2215db5819d7b717435f354176182d7b2b8197cacaa4f5b13  /out/assess_host
+11b0554df039e7a98905d3d78503387a0b0d70172195f70a1304a7855950e36c  /out/assess_host
 
 running 10 tests
 test cancellation_before_start_and_between_phases_latches_without_send_bound ... ok
@@ -18,31 +18,31 @@ test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; fini
 
 
 running 1 test
-RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=91
-RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=141
-RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=179
-RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=100
-RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=128
+RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=70
+RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=69
+RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=74
+RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=77
+RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=67
 RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=11
 RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=11
-RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=143
-RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2024
-RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=98
-RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=403
+RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=78
+RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2026
+RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=71
+RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=327
 RUBIX_NODE_PROBE_COMPLETE cases=11 external_sentinel_preserved=true
 test disposable_fixed_probe ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.34s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.90s
 
 
 running 1 test
 RUBIX_NODE_ASSESSMENT external=true real_probe=true injected_host_facts=true
 test disposable_configured_assessment ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.18s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.09s
 
 RUBIX_NODE_CONSUMER case=help exit=0 probe_absent=true
 RUBIX_NODE_CONSUMER case=version exit=0 probe_absent=true
 RUBIX_NODE_CONSUMER case=print exit=0 probe_absent=true
 RUBIX_NODE_CONSUMER case=blocked exit=1 probe_absent=true
-RUBIX_NAMESPACE {"helper": 55, "init": 1, "processes": [1, 8, 55], "shell": 8}
+RUBIX_NAMESPACE {"helper": 54, "init": 1, "processes": [1, 7, 54], "shell": 7}

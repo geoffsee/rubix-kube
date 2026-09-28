@@ -1,138 +1,144 @@
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Capture.Dockerfile
-#1 transferring dockerfile: 1.21kB done
-#1 DONE 0.1s
+#1 DONE 0.0s
 
-#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 [build 1/4] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
 #2 DONE 0.0s
 
-#3 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 [stage-1 1/6] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
 #3 DONE 0.0s
 
-#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
-#4 DONE 0.0s
+#4 [build 2/4] WORKDIR /source
+#4 CACHED
 
-#5 [2/5] WORKDIR /source
-#5 CACHED
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 1.21kB done
+#1 DONE 0.0s
 
-#6 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#6 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.2s done
-#6 CACHED
+#5 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#5 DONE 0.0s
+
+#6 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#6 DONE 0.0s
 
 #7 [internal] load .dockerignore
 #7 transferring context: 2B done
-#7 DONE 0.1s
+#7 DONE 0.0s
 
 #8 [internal] load build context
-#8 transferring context: 2.09MB 0.0s done
+#8 transferring context: 2.09MB 0.1s done
 #8 DONE 0.2s
 
 #9 [build 3/4] COPY . .
-#9 DONE 0.2s
+#9 DONE 0.4s
 
 #10 [build 4/4] RUN cargo test -p rubix-kube --test host_preflight --test iptables_probe --locked --no-run && cargo build -p rubix-kube --example assess_host --locked && mkdir /out && for suite in host_preflight iptables_probe; do for executable in target/debug/deps/$suite-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/$suite; fi; done; done && cp target/debug/examples/assess_host /out/assess_host && test -x /out/iptables_probe && test -x /out/host_preflight
-#10 0.344 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 3.409 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 3.416 info: downloading 3 components
-#10 83.50     Updating crates.io index
-#10 90.74  Downloading crates ...
-#10 91.28   Downloaded itoa v1.0.18
-#10 91.56   Downloaded tokio-macros v2.7.1
-#10 91.96   Downloaded errno v0.3.14
-#10 92.01   Downloaded arraydeque v0.5.1
-#10 92.05   Downloaded pin-project-lite v0.2.17
-#10 92.06   Downloaded quote v1.0.47
-#10 92.14   Downloaded thiserror-impl v2.0.18
-#10 92.19   Downloaded zmij v1.0.23
-#10 92.20   Downloaded thiserror v2.0.18
-#10 92.21   Downloaded signal-hook-registry v1.4.8
-#10 92.79   Downloaded bitflags v2.13.2
-#10 92.83   Downloaded serde_derive v1.0.228
-#10 92.88   Downloaded unicode-ident v1.0.26
-#10 92.96   Downloaded serde_core v1.0.228
-#10 93.24   Downloaded proc-macro2 v1.0.107
-#10 93.54   Downloaded serde v1.0.228
-#10 93.70   Downloaded memchr v2.8.3
-#10 93.72   Downloaded mio v1.2.3
-#10 94.25   Downloaded serde_json v1.0.151
-#10 94.27   Downloaded regex v1.13.1
-#10 94.32   Downloaded aho-corasick v1.1.5
-#10 95.37   Downloaded syn v2.0.119
-#10 95.65   Downloaded regex-syntax v0.8.11
-#10 95.94   Downloaded rustix v1.1.5
-#10 96.39   Downloaded regex-automata v0.4.18
-#10 97.26   Downloaded libc v0.2.189
-#10 97.42   Downloaded tokio v1.53.1
-#10 99.36   Downloaded linux-raw-sys v0.12.1
-#10 99.46    Compiling proc-macro2 v1.0.107
-#10 99.46    Compiling unicode-ident v1.0.26
-#10 99.46    Compiling quote v1.0.47
-#10 99.47    Compiling libc v0.2.189
-#10 99.47    Compiling memchr v2.8.3
-#10 99.47    Compiling serde_core v1.0.228
-#10 99.47    Compiling thiserror v2.0.18
-#10 99.47    Compiling rustix v1.1.5
-#10 99.47    Compiling zmij v1.0.23
-#10 99.47    Compiling regex-syntax v0.8.11
-#10 99.47    Compiling serde_json v1.0.151
-#10 99.47    Compiling linux-raw-sys v0.12.1
-#10 99.47    Compiling serde v1.0.228
-#10 99.47    Compiling bitflags v2.13.2
-#10 99.47    Compiling pin-project-lite v0.2.17
-#10 99.47    Compiling arraydeque v0.5.1
-#10 99.54    Compiling itoa v1.0.18
-#10 99.90    Compiling aho-corasick v1.1.5
-#10 100.8    Compiling syn v2.0.119
-#10 101.1    Compiling regex-automata v0.4.18
-#10 101.5    Compiling errno v0.3.14
-#10 101.7    Compiling mio v1.2.3
-#10 101.7    Compiling signal-hook-registry v1.4.8
-#10 103.4    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#10 105.4    Compiling regex v1.13.1
-#10 109.4    Compiling thiserror-impl v2.0.18
-#10 109.4    Compiling tokio-macros v2.7.1
-#10 109.4    Compiling serde_derive v1.0.228
-#10 119.8    Compiling tokio v1.53.1
-#10 122.2    Compiling saphyr-parser v0.0.11 (/source/third_party/saphyr-parser)
-#10 132.2    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 136.7    Compiling rubix-config v0.1.0 (/source/crates/rubix-config)
-#10 140.7    Compiling rubix-kube v0.1.0 (/source/crates/rubix-kube)
-#10 147.0     Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 03s
-#10 147.1   Executable tests/host_preflight.rs (target/debug/deps/host_preflight-2989e6eeb232333c)
-#10 147.1   Executable tests/iptables_probe.rs (target/debug/deps/iptables_probe-090145152efa4180)
-#10 147.8    Compiling rubix-kube v0.1.0 (/source/crates/rubix-kube)
-#10 149.7     Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.47s
-#10 DONE 150.0s
+#10 0.159 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 1.456 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 1.472 info: downloading 3 components
+#10 ...
+
+#3 [stage-1 1/6] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 CACHED
+
+#10 [build 4/4] RUN cargo test -p rubix-kube --test host_preflight --test iptables_probe --locked --no-run && cargo build -p rubix-kube --example assess_host --locked && mkdir /out && for suite in host_preflight iptables_probe; do for executable in target/debug/deps/$suite-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/$suite; fi; done; done && cp target/debug/examples/assess_host /out/assess_host && test -x /out/iptables_probe && test -x /out/host_preflight
+#10 11.00     Updating crates.io index
+#10 19.21  Downloading crates ...
+#10 22.78   Downloaded itoa v1.0.18
+#10 22.82   Downloaded errno v0.3.14
+#10 23.10   Downloaded quote v1.0.47
+#10 23.13   Downloaded arraydeque v0.5.1
+#10 23.13   Downloaded pin-project-lite v0.2.17
+#10 23.14   Downloaded signal-hook-registry v1.4.8
+#10 23.14   Downloaded tokio-macros v2.7.1
+#10 23.16   Downloaded thiserror v2.0.18
+#10 23.31   Downloaded thiserror-impl v2.0.18
+#10 23.36   Downloaded zmij v1.0.23
+#10 23.40   Downloaded serde_derive v1.0.228
+#10 23.41   Downloaded bitflags v2.13.2
+#10 23.43   Downloaded proc-macro2 v1.0.107
+#10 23.46   Downloaded unicode-ident v1.0.26
+#10 23.60   Downloaded serde_core v1.0.228
+#10 23.70   Downloaded serde v1.0.228
+#10 23.85   Downloaded memchr v2.8.3
+#10 23.86   Downloaded mio v1.2.3
+#10 23.94   Downloaded regex v1.13.1
+#10 24.12   Downloaded serde_json v1.0.151
+#10 24.17   Downloaded aho-corasick v1.1.5
+#10 24.67   Downloaded syn v2.0.119
+#10 24.75   Downloaded regex-syntax v0.8.11
+#10 24.82   Downloaded rustix v1.1.5
+#10 25.16   Downloaded regex-automata v0.4.18
+#10 25.31   Downloaded libc v0.2.189
+#10 25.37   Downloaded tokio v1.53.1
+#10 25.89   Downloaded linux-raw-sys v0.12.1
+#10 25.97    Compiling proc-macro2 v1.0.107
+#10 25.97    Compiling quote v1.0.47
+#10 25.97    Compiling unicode-ident v1.0.26
+#10 25.97    Compiling libc v0.2.189
+#10 25.97    Compiling memchr v2.8.3
+#10 25.97    Compiling serde_core v1.0.228
+#10 25.97    Compiling thiserror v2.0.18
+#10 25.98    Compiling zmij v1.0.23
+#10 25.98    Compiling rustix v1.1.5
+#10 25.98    Compiling linux-raw-sys v0.12.1
+#10 25.98    Compiling serde v1.0.228
+#10 25.98    Compiling regex-syntax v0.8.11
+#10 25.98    Compiling serde_json v1.0.151
+#10 25.98    Compiling bitflags v2.13.2
+#10 25.98    Compiling arraydeque v0.5.1
+#10 25.98    Compiling itoa v1.0.18
+#10 26.04    Compiling pin-project-lite v0.2.17
+#10 26.19    Compiling aho-corasick v1.1.5
+#10 26.54    Compiling syn v2.0.119
+#10 26.73    Compiling errno v0.3.14
+#10 26.74    Compiling mio v1.2.3
+#10 26.76    Compiling signal-hook-registry v1.4.8
+#10 26.79    Compiling regex-automata v0.4.18
+#10 27.71    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#10 28.04    Compiling regex v1.13.1
+#10 29.41    Compiling thiserror-impl v2.0.18
+#10 29.41    Compiling tokio-macros v2.7.1
+#10 29.41    Compiling serde_derive v1.0.228
+#10 30.48    Compiling tokio v1.53.1
+#10 30.71    Compiling saphyr-parser v0.0.11 (/source/third_party/saphyr-parser)
+#10 31.45    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 31.66    Compiling rubix-config v0.1.0 (/source/crates/rubix-config)
+#10 32.12    Compiling rubix-kube v0.1.0 (/source/crates/rubix-kube)
+#10 33.04     Finished `test` profile [unoptimized + debuginfo] target(s) in 22.06s
+#10 33.06   Executable tests/host_preflight.rs (target/debug/deps/host_preflight-2989e6eeb232333c)
+#10 33.06   Executable tests/iptables_probe.rs (target/debug/deps/iptables_probe-090145152efa4180)
+#10 33.11    Compiling rubix-kube v0.1.0 (/source/crates/rubix-kube)
+#10 33.62     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.54s
+#10 DONE 34.0s
 
 #11 [stage-1 2/6] COPY --from=build /out/ /out/
-#11 DONE 0.3s
+#11 DONE 0.1s
 
 #12 [stage-1 3/6] COPY tools/node-assessment/iptables.py /iptables.py
-#12 DONE 0.3s
+#12 DONE 0.0s
 
 #13 [stage-1 4/6] COPY tools/node-assessment/consumer.py /consumer.py
-#13 DONE 0.2s
+#13 DONE 0.0s
 
 #14 [stage-1 5/6] COPY tools/supervisor-process/namespace_inventory.py /namespace_inventory.py
-#14 DONE 0.2s
+#14 DONE 0.0s
 
 #15 [stage-1 6/6] RUN test -L /sbin && rm /sbin && mkdir /sbin
-#15 DONE 0.4s
+#15 DONE 0.1s
 
 #16 exporting to image
 #16 exporting layers
-#16 exporting layers 2.0s done
-#16 exporting manifest sha256:9d0afdae4ebc1e2d01f9071236464fe9e97969f163f7b6cce592e9c7dfee3c49 0.0s done
-#16 exporting config sha256:31c18f495404d91164caf8e4c99619b66e81d7964b713a31298b4ed0649d128a 0.0s done
-#16 exporting attestation manifest sha256:95ff0feab8cb36a6a110bdee4aade30c1088bfbe3d829f7f5b232e1f6110f024
-#16 exporting attestation manifest sha256:95ff0feab8cb36a6a110bdee4aade30c1088bfbe3d829f7f5b232e1f6110f024 0.2s done
-#16 exporting manifest list sha256:0b69b4c4438d7c09e7165c7c817f0f04be36be4f2c7e8010a7dd6bf68a23f45e
-#16 exporting manifest list sha256:0b69b4c4438d7c09e7165c7c817f0f04be36be4f2c7e8010a7dd6bf68a23f45e 0.0s done
-#16 naming to docker.io/library/rubix-node-assessment-458d6586b2c34587a5c00a5bbb24c83a:latest done
-#16 unpacking to docker.io/library/rubix-node-assessment-458d6586b2c34587a5c00a5bbb24c83a:latest
-#16 unpacking to docker.io/library/rubix-node-assessment-458d6586b2c34587a5c00a5bbb24c83a:latest 1.3s done
-#16 DONE 3.6s
+#16 exporting layers 0.8s done
+#16 exporting manifest sha256:50d77385d986ef002444fc7fbb84d6fda6b47043df044858508650b1491bae4c done
+#16 exporting config sha256:3e7be9d45e854d9cb8172a0546f55f224922537cf19d47808ab5acf089d0d8da done
+#16 exporting attestation manifest sha256:ac70193e366ae6b89181c273af8981f0b1453ce384691183b54b82fa2c76d3e5 done
+#16 exporting manifest list sha256:925577ada1715ffc85eef8ac1f835d93e52c4f244be27f42e5098834f7680fda done
+#16 naming to docker.io/library/rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e:latest done
+#16 unpacking to docker.io/library/rubix-node-assessment-9c30de0beea5459f91f549bd5704b91e:latest 0.1s done
+#16 DONE 1.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/v63n5nsmyqwxdcvf915zxkz1e
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/lwat3lvc3e9ua3ltrep0ttew9

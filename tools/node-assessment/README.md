@@ -18,4 +18,4 @@ commands, namespace cleanup and repeated identities. `test_evidence.py` requires
 published frozen evidence and tests meaningful mutations, normally and under
 `python3 -O`. No success is claimed until those checks pass on final source.
 
-The committed combined ELF integration capture passed twice on `2e2d3195961ae61955f173a90f0db69b3a2b9818`, with all seven evidence regressions and strict verification passing normally and under optimization. Owned container and image inventories are empty. The fixture separates Docker init’s `/sbin` mount from the private `/usr/sbin` probe directory.
+The committed combined ELF integration capture, including the assessment error diagnostic, passed twice on `c6ad8bb89229997a6fbf8d9d1c202d3df8dec424`, with all seven evidence regressions and strict verification passing normally and under optimization. Owned container and image inventories are empty. The fixture separates Docker init’s `/sbin` mount from the private `/usr/sbin` probe directory.
