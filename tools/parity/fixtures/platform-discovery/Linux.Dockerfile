@@ -4,9 +4,9 @@ COPY . .
 RUN cargo clippy -p rubix-platform --all-targets --locked -- -D warnings \
  && cargo test -p rubix-platform --locked --release --no-run \
  && mkdir /out \
- && for binary in target/release/deps/rubix_platform-* target/release/deps/discovery-* target/release/deps/preflight-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/; fi; done \
+ && for binary in target/release/deps/rubix_platform-* target/release/deps/discovery-* target/release/deps/preflight-* target/release/deps/constrained-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/; fi; done \
  && sha256sum /out/* > /out/binaries.sha256
 USER 65532:65532
 WORKDIR /tmp
 ENTRYPOINT []
-CMD ["sh", "-c", "cat /out/binaries.sha256; for binary in /out/rubix_platform-* /out/discovery-* /out/preflight-*; do \"$binary\" --nocapture || exit; done"]
+CMD ["sh", "-c", "cat /out/binaries.sha256; for binary in /out/rubix_platform-* /out/discovery-* /out/preflight-* /out/constrained-*; do \"$binary\" --nocapture || exit; done"]
