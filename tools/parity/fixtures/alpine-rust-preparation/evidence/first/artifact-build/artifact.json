@@ -1,9 +1,9 @@
 {
-  "path": "/tmp/rubix-preparation-linux-20260927-r3/rubixctl",
-  "receipt": "/tmp/rubix-preparation-linux-20260927-r3/receipt.json",
-  "revision": "e7d8844e599b959ed39ffaadb6ea265fd6edb5b7",
+  "path": "/tmp/rubix-preparation-linux-20260927-r4/rubixctl",
+  "receipt": "/tmp/rubix-preparation-linux-20260927-r4/receipt.json",
+  "revision": "e9d4235d781219a635d03171fec2cc0f806be757",
   "sha256": "8e512766d58cdf39cce89c484414718908403aa324a28ae17e26c4d2b023defb",
   "size": 5352968,
-  "source_inventory": "/tmp/rubix-preparation-linux-20260927-r3/source-hashes.json",
+  "source_inventory": "/tmp/rubix-preparation-linux-20260927-r4/source-hashes.json",
   "target": "aarch64-unknown-linux-musl"
 }
