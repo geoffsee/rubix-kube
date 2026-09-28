@@ -48,7 +48,7 @@ individual CLI limit. The production command's own deadlines remain active.
 python3 tools/parity/fixtures/alpine-rust-preparation/capture.py \
   --allow-privileged-vm --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache \
-  --artifact-directory /tmp/rubix-elf-integrated-prerequisite-20260927-r1 \
+  --artifact-directory /tmp/rubix-elf-corrected-prerequisite-20260927-r1 \
   --output /tmp/alpine-rust-fresh
 python3 tools/parity/fixtures/alpine-rust-preparation/verify.py
 python3 -m unittest discover -s tools/parity/fixtures/alpine-rust-preparation
@@ -69,9 +69,10 @@ no stage errors. The verifier binds each raw JSON response independently to its 
 Fresh SSH keys use fixed fixture comments rather than local account/hostname comments.
 
 Both stored guest captures were refreshed for ELF and node-assessment integration and
-bind source revision `3624bb5d28b618d4a4817a01420745139dc06114`. The verified candidate
-build receipt binds `f2080912285b5857ed59ba3b9f8f57c9b0e26d4d`, including the integrated
+bind source revision `6c797c8b1fd17a5c2518213642af44ee4b9ea58b`. The verified candidate
+build receipt binds `2e2d3195961ae61955f173a90f0db69b3a2b9818`, including the integrated
 node-assessment implementation and workspace inputs. Its SHA-256 is
-`54b41bea422f74f46938fec2ed8e4ca4ab7698b61d28a9bb93325b3672c011fc`
-and its size is 5388512 bytes. Earlier temporary receipts remain historical; their
+`1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa`
+and its size is 5388504 bytes. Earlier temporary receipts remain historical; their
 revisions and observations were not relabeled.
+
