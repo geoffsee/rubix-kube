@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "tools/upstream"]
+members = ["crates/*", "tools/upstream", "tools/dev"]
 exclude = ["third_party/saphyr-parser"]
 default-members = ["crates/rubix-kube"]
 
