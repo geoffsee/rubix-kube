@@ -27,7 +27,11 @@ probe. A session reserves one decoded-budget byte before any encoded read/hash,
 header parse, decoder allocation or callback. Empty successful streams cost that
 one byte. The effective output limit is min(role limit, remaining session budget).
 Returned decoded bytes are charged before callbacks; charges are retained on
-observer/checksum/trailing/other errors. The reserved byte pays for the EOF/excess
+observer/checksum/trailing/other errors. A failed decoder read can write bytes without
+reporting their length, so it conservatively retains the offered output capacity
+within the remaining allowance, without invoking the observer or hashing that
+failed buffer. This can charge more than the bytes actually produced; it does not
+measure hidden codec work or establish a CPU deadline. The reserved byte pays for the EOF/excess
 probe, including when the output exactly reaches its limit. Failed encoded
 verification also retains its probe reservation and the existing encoded attempt
 reservation. Unavailable/identity roles do not start a decoding attempt.
