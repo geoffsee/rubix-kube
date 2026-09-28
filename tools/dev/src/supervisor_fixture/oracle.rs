@@ -246,7 +246,12 @@ pub(super) fn normalize(value: &Value) -> Value {
         Value::Array(values) => values.iter().map(normalize).collect(),
         Value::Object(values) => values
             .iter()
-            .filter(|(k, _)| *k != "elapsed_ms")
+            .filter(|(k, _)| {
+                // Validated cancellation stops retention at a scheduling-dependent prefix.
+                // Keep its exact bounded count in raw records, not repeat equality.
+                *k != "elapsed_ms"
+                    && !(*k == "bytes" && values.get("status") == Some(&json!("Cancelled")))
+            })
             .map(|(k, v)| (k.clone(), normalize(v)))
             .collect(),
         _ => value.clone(),
