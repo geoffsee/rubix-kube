@@ -290,7 +290,8 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path, full: bool) ->
         report["build_binary_sha256"] == built,
         "build binary binding",
     )?;
-    fields(&report["command_sha256"], &["build", "first", "repeat"])?;
+    fields(&report["command_sha256"], &COMMAND_LABELS)?;
+    verify_controls(directory, &report, tag)?;
     require(
         report["command_sha256"]["build"]
             == verify_command(directory, "build", &report["build_command"])?,
@@ -303,20 +304,77 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path, full: bool) ->
     )?;
     verify_runs(family, directory, &report, tag, &built)
 }
-fn exact_evidence_files(directory: &Path) -> Result<()> {
-    let expected = [
-        "receipt.json",
-        "source-inventory.json",
-        "build.log",
-        "build.command.json",
-        "first.log",
-        "first.command.json",
-        "repeat.log",
-        "repeat.command.json",
+const COMMAND_LABELS: [&str; 9] = [
+    "build",
+    "first",
+    "repeat",
+    "image-inspect",
+    "cleanup-1",
+    "cleanup-2",
+    "cleanup-3",
+    "cleanup-4",
+    "cleanup-5",
+];
+fn control_commands(tag: &str) -> [(&'static str, Value); 6] {
+    [
+        (
+            "image-inspect",
+            json!(["docker", "image", "inspect", "--format", "{{.Id}}", tag]),
+        ),
+        (
+            "cleanup-1",
+            json!(["docker", "rm", "-f", format!("{tag}-first")]),
+        ),
+        (
+            "cleanup-2",
+            json!(["docker", "rm", "-f", format!("{tag}-repeat")]),
+        ),
+        ("cleanup-3", json!(["docker", "rmi", "-f", tag])),
+        (
+            "cleanup-4",
+            json!([
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                format!("name={tag}"),
+                "--format",
+                "{{.Names}}"
+            ]),
+        ),
+        (
+            "cleanup-5",
+            json!(["docker", "image", "ls", tag, "--format", "{{.ID}}"]),
+        ),
     ]
-    .map(OsString::from)
-    .into_iter()
-    .collect::<std::collections::BTreeSet<_>>();
+}
+fn verify_controls(directory: &Path, report: &Value, tag: &str) -> Result<()> {
+    for (label, command) in control_commands(tag) {
+        require(
+            report["command_sha256"][label] == verify_command(directory, label, &command)?,
+            "control command binding",
+        )?;
+        let raw = read(&directory.join(format!("{label}.log")), 65536)?;
+        if label == "image-inspect" {
+            require(
+                raw == format!("{}\n", text(&report["image_id"])?).as_bytes(),
+                "raw image identity",
+            )?;
+        } else if ["cleanup-4", "cleanup-5"].contains(&label) {
+            require(raw.is_empty(), "raw empty owned inventory")?;
+        }
+    }
+    Ok(())
+}
+fn exact_evidence_files(directory: &Path) -> Result<()> {
+    let mut expected = ["receipt.json", "source-inventory.json"]
+        .map(OsString::from)
+        .into_iter()
+        .collect::<std::collections::BTreeSet<_>>();
+    for label in COMMAND_LABELS {
+        expected.insert(format!("{label}.log").into());
+        expected.insert(format!("{label}.command.json").into());
+    }
     let actual = fs::read_dir(directory)?
         .map(|entry| {
             let entry = entry?;
@@ -451,9 +509,25 @@ pub(super) fn capture(
         report["cleanup_errors"] = json!(["unsettled command; no further cleanup attempted"]);
         result
     } else {
+        let mut index = 0;
         let cleanup = cleanup(&mut report, &tag, |args| {
-            control(args, Cancellation::default())
+            index += 1;
+            Ok(String::from_utf8(run(
+                directory,
+                &format!("cleanup-{index}"),
+                args,
+                30,
+                65536,
+                Cancellation::default(),
+            )?)?
+            .trim()
+            .into())
         });
+        for (label, command) in control_commands(&tag) {
+            if let Ok(hash) = verify_command(directory, label, &command) {
+                report["command_sha256"][label] = hash.into();
+            }
+        }
         if cleanup.is_err() { cleanup } else { result }
     };
     report["cancelled"] = cancellation.requested().into();
@@ -514,18 +588,18 @@ fn execute(
         report["build_binary_sha256"] = builder(&raw, &tag, &binaries(family)?)?;
         report["command_sha256"]["build"] =
             verify_command(directory, "build", &report["build_command"])?.into();
-        report["image_id"] = control(
-            &[
-                "docker".into(),
-                "image".into(),
-                "inspect".into(),
-                "--format".into(),
-                "{{.Id}}".into(),
-                tag.clone().into(),
-            ],
+        let inspect = control_commands(&tag)[0].1.clone();
+        let raw = run(
+            directory,
+            "image-inspect",
+            &argv(&inspect)?,
+            30,
+            65536,
             cancellation.clone(),
-        )?
-        .into();
+        )?;
+        report["image_id"] = String::from_utf8(raw)?.trim().into();
+        report["command_sha256"]["image-inspect"] =
+            verify_command(directory, "image-inspect", &inspect)?.into();
         for name in ["first", "repeat"] {
             report["containers"]
                 .as_array_mut()

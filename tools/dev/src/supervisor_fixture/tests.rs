@@ -43,7 +43,17 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
         fs::write(directory.join(format!("{name}.log")), &raw)?;
         receipt["runs"][name] = json!({"command":runtime_command(family,&tag,name)?,"raw_sha256":rubix_dev::sha256(raw.as_bytes()),"binary_sha256":hashes,"records":rows});
     }
-    for label in ["build", "first", "repeat"] {
+    for (label, _) in control_commands(&tag) {
+        fs::write(
+            directory.join(format!("{label}.log")),
+            if label == "image-inspect" {
+                format!("{}\n", text(&receipt["image_id"])?)
+            } else {
+                String::new()
+            },
+        )?;
+    }
+    for label in COMMAND_LABELS {
         bind_command(directory, &mut receipt, label)?;
     }
     save(&directory.join("receipt.json"), &receipt)?;
@@ -51,7 +61,10 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
     Ok(receipt)
 }
 fn bind_command(directory: &Path, receipt: &mut Value, label: &str) -> Result<()> {
-    let argv = if label == "build" {
+    let controls = control_commands(text(&receipt["tag"])?);
+    let argv = if let Some((_, args)) = controls.iter().find(|(name, _)| *name == label) {
+        args
+    } else if label == "build" {
         &receipt["build_command"]
     } else {
         &receipt["runs"][label]["command"]
@@ -412,4 +425,51 @@ fn published_signal_evidence_is_required() -> Result<()> {
         &root()?.join("tools/supervisor-signals/rust-evidence"),
         false,
     )
+}
+
+#[test]
+fn rehashed_control_proofs_reject_fabricated_images_and_cleanup() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let original = staged(directory.path(), "process")?;
+    let tag = text(&original["tag"])?;
+    for (label, _) in control_commands(tag) {
+        let path = directory.path().join(format!("{label}.command.json"));
+        let valid = load(&path)?;
+        for (key, value) in [
+            ("argv", json!(["true"])),
+            ("exit_code", json!(1)),
+            ("owned_process_group_absent", json!(false)),
+            ("cancelled", json!(true)),
+            ("output_eof", json!(false)),
+        ] {
+            let mut changed = valid.clone();
+            changed[key] = value;
+            save(&path, &changed)?;
+            let mut report = original.clone();
+            report["command_sha256"][label] = digest(&path)?.into();
+            assert!(
+                verify_controls(directory.path(), &report, tag).is_err(),
+                "{label} {key}"
+            );
+        }
+        save(&path, &valid)?;
+        fs::remove_file(&path)?;
+        assert!(verify_controls(directory.path(), &original, tag).is_err());
+        save(&path, &valid)?;
+    }
+    for label in ["image-inspect", "cleanup-4", "cleanup-5"] {
+        let log = directory.path().join(format!("{label}.log"));
+        let saved = fs::read(&log)?;
+        fs::write(&log, b"fabricated residue\n")?;
+        let mut report = original.clone();
+        bind_command(directory.path(), &mut report, label)?;
+        assert!(
+            verify_controls(directory.path(), &report, tag).is_err(),
+            "{label} raw"
+        );
+        fs::write(&log, saved)?;
+        bind_command(directory.path(), &mut report, label)?;
+    }
+    verify_controls(directory.path(), &original, tag)?;
+    Ok(())
 }
