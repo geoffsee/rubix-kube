@@ -7,5 +7,8 @@ COPY --from=build /out/ /out/
 COPY tools/node-assessment/iptables.py /iptables.py
 COPY tools/node-assessment/consumer.py /consumer.py
 COPY tools/supervisor-process/namespace_inventory.py /namespace_inventory.py
+# Keep Docker's /sbin/docker-init mount outside the private /usr/sbin fixture tmpfs.
+# This synthetic image layout changes no production lookup path or host filesystem.
+RUN test -L /sbin && rm /sbin && mkdir /sbin
 USER 65532:65532
 ENTRYPOINT []
