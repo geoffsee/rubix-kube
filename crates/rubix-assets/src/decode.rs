@@ -383,7 +383,7 @@ fn consume<E, F: FnMut(&[u8], &mut u64) -> Result<(), E>>(
                 // Retain the offered capacity; the reserved probe covers any excess byte.
                 let charge = u64::try_from(capacity)
                     .map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?
-                    .min(maximum - count);
+                    .min(allowance);
                 *remaining = remaining
                     .checked_sub(charge)
                     .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
@@ -519,15 +519,60 @@ mod error_budget_tests {
         }
     }
 
+    struct SucceedsThenFails {
+        capacities: Vec<usize>,
+    }
+    impl Read for SucceedsThenFails {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            self.capacities.push(buffer.len());
+            if self.capacities.len() == 1 {
+                buffer[..3].copy_from_slice(b"abc");
+                Ok(3)
+            } else {
+                buffer.fill(b'x');
+                Err(io::Error::other("failed after nested observer"))
+            }
+        }
+    }
+
+    #[test]
+    fn failed_outer_read_uses_budget_remaining_after_nested_observer() {
+        for (after_nested, capacity, charged) in
+            [(0, 1, 0), (2, 3, 2), (8191, 8192, 8191), (9000, 8192, 8192)]
+        {
+            let mut reader = SucceedsThenFails {
+                capacities: Vec::new(),
+            };
+            let mut remaining = 20000;
+            let mut callbacks = 0;
+            let result = consume(&mut reader, 20000, &mut remaining, &mut |bytes, budget| {
+                assert_eq!(bytes, b"abc");
+                assert_eq!(*budget, 19997);
+                *budget = after_nested;
+                callbacks += 1;
+                Ok::<_, Infallible>(())
+            });
+            assert!(matches!(result, Err(DecodeError::Decoder(_))));
+            assert_eq!(reader.capacities, [8192, capacity]);
+            assert_eq!(remaining, after_nested - charged);
+            assert_eq!(callbacks, 1);
+        }
+    }
+
     #[test]
     fn failed_read_retains_offered_capacity_without_observing_output() {
         for (allowance, charged) in [(0, 0), (2, 2), (8191, 8191), (9000, 8192)] {
             let mut remaining = allowance;
             let mut callbacks = 0;
-            let result = consume(&mut WritesThenFails, allowance, &mut remaining, &mut |_| {
-                callbacks += 1;
-                Ok::<_, Infallible>(())
-            });
+            let result = consume(
+                &mut WritesThenFails,
+                allowance,
+                &mut remaining,
+                &mut |_, _| {
+                    callbacks += 1;
+                    Ok::<_, Infallible>(())
+                },
+            );
             assert!(matches!(result, Err(DecodeError::Decoder(_))));
             assert_eq!(remaining, allowance - charged);
             assert_eq!(callbacks, 0);
