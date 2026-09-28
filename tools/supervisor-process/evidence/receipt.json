@@ -4,26 +4,26 @@
     "build",
     "--platform=linux/arm64",
     "--tag",
-    "rubix-process-7cff2447c3a240fe9a1c03476d3c2dcd",
+    "rubix-process-e1022903248e409b805707a6205cadd5",
     "--file",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-source-pnjlhiv3/tools/supervisor-process/Capture.Dockerfile",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-source-pnjlhiv3"
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-source-z1ppo31n/tools/supervisor-process/Capture.Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-source-z1ppo31n"
   ],
   "build_exit_code": 0,
   "cleanup_errors": [],
   "driver_sha256": "20d14c7b1fd8c643997f4902409288a6e441547d15890401460fe34ffe810132",
-  "image_id": "sha256:8b7205def042a3d6f557e0cc4c4ea94cd5b3b9d62dc4837d567027e70733a1f1",
+  "image_id": "sha256:2b35542108aa148728154641372ae9990a13d5f3dded83526d8112fd0704f564",
   "remaining_containers": [],
   "remaining_images": [],
   "repeat_equal": true,
   "runs": {
     "first": {
-      "binary_sha256": "61448b2f19953b94d2551f7358af1d75429e2bdaa9a269e074eefce684dc8358",
+      "binary_sha256": "cca227535a65110443a6ddfd02fe1f94f9cf584b9404cdabc7a11ba60f83965d",
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-process-7cff2447c3a240fe9a1c03476d3c2dcd-first",
+        "rubix-process-e1022903248e409b805707a6205cadd5-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -36,21 +36,21 @@
         "/tmp:rw,nosuid,nodev,size=64m",
         "--env",
         "RUBIX_PROCESS_DISPOSABLE=1",
-        "rubix-process-7cff2447c3a240fe9a1c03476d3c2dcd",
+        "rubix-process-e1022903248e409b805707a6205cadd5",
         "/bin/sh",
         "-c",
         "sha256sum /process-tests; /process-tests --ignored --exact disposable_process_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py || exit $?; exit \"$status\""
       ],
       "exit_code": 0,
-      "raw_sha256": "ac72ca7a153b109f9f8e6ce007dda9369d33216373c49fd796e8b92f47dff49d"
+      "raw_sha256": "6e7ace1d70722405d0f16aa9cdbffa701030dcf9ef8caadd9f69eff7ffe9afa8"
     },
     "repeat": {
-      "binary_sha256": "61448b2f19953b94d2551f7358af1d75429e2bdaa9a269e074eefce684dc8358",
+      "binary_sha256": "cca227535a65110443a6ddfd02fe1f94f9cf584b9404cdabc7a11ba60f83965d",
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-process-7cff2447c3a240fe9a1c03476d3c2dcd-repeat",
+        "rubix-process-e1022903248e409b805707a6205cadd5-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -63,18 +63,18 @@
         "/tmp:rw,nosuid,nodev,size=64m",
         "--env",
         "RUBIX_PROCESS_DISPOSABLE=1",
-        "rubix-process-7cff2447c3a240fe9a1c03476d3c2dcd",
+        "rubix-process-e1022903248e409b805707a6205cadd5",
         "/bin/sh",
         "-c",
         "sha256sum /process-tests; /process-tests --ignored --exact disposable_process_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py || exit $?; exit \"$status\""
       ],
       "exit_code": 0,
-      "raw_sha256": "1f37136b237ca83186e6bd595296a93efbc6b484ae1cc1673dfaa617f08b3240"
+      "raw_sha256": "5ef84eb50cdf40fa293e8b264a84305397827d45712bc44faf7308ff943e4588"
     }
   },
   "schema": 1,
-  "source_inventory_sha256": "4e833b3e693997d5a57b96a1f767c854edcbe9a01fb5a533ebc19a54b794d7cc",
-  "source_revision": "80b05534a6d50842a7db129ee0164a68294d1a25",
+  "source_inventory_sha256": "0e885b7fce33c1d0bda5b80b1cc11ac014ef01c8dd283a4cd24994f37536e7cf",
+  "source_revision": "5f4064d987ba5dd4f334c3d6ac0bd18c71d3e0f1",
   "source_sha256": {
     "Cargo.lock": "b323f900fa902cc72f3aec599c7dbaa54f77cac06bbe156395f1ed71b6f9621c",
     "Cargo.toml": "04ef1c937243f8b63653e63ab740508f1ce31994dff1d595a7de851944ee93ee",
@@ -207,7 +207,7 @@
     "crates/rubix-supervisor/src/diagnostics.rs": "4fd88c7f2dbf00603dfc4129ae1da77da7c0fb7ef0430691d5021dad3c9d5ae7",
     "crates/rubix-supervisor/src/lib.rs": "1a5166e8a8820a28a870b42c51643b554dfd081364635870e8338a003b16ee3b",
     "crates/rubix-supervisor/src/model.rs": "c23f23dde1ef236cf54d3905fa0a35355afc66207cf2880c0eaa949f8a8a6441",
-    "crates/rubix-supervisor/src/process.rs": "ed1ae195720373c2d7eee914167befa42afdff6d1524e477db1b3cbfa4b1adfa",
+    "crates/rubix-supervisor/src/process.rs": "b383e6d02d4ce8a9c98ebb121202a7b9c6d532ff86ae586bba6394e12994deb5",
     "crates/rubix-supervisor/src/process_output.rs": "5a71bbbee7c839589a13a0eee7ccf24d10ab63f26da59aad9c04c84ef8423546",
     "crates/rubix-supervisor/src/signals.rs": "27c7605663061d431f834f052e5e09d6f2b54b17bb8b2de1d761671b1d3dfa85",
     "crates/rubix-supervisor/tests/diagnostics.rs": "16404164747a8f3ab8529b392d13b8e92a7766758850dff78aa6b4e26caf8255",
