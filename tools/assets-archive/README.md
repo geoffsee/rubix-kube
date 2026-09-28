@@ -106,7 +106,13 @@ published-evidence gates. Run the complete test and verification commands above,
 including the published-evidence gate. Investigate any failure or missing evidence;
 the invented mutation records cannot replace the actual capture.
 
-Current container-preparation integration qualification was captured at source
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed the eight pinned-crane serialization cases. Producer and consumer hashes match the prior archive qualification; the complete source inventory was refreshed. DiffIDs remain declared-only in the archive API.
-Current-source verification passes normally and with `-O`; exact raw evidence is
-published in `evidence/`. Owned capture resources were independently confirmed absent.
+Current nested-layer integration qualification was captured twice at source
+`bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`. Each Linux arm64 run passed all eight
+pinned-crane serialization cases. Fresh builder and runtime hashes match producer
+`7434ad637e4fb31b7c89fb4db001eb5678530ebe8c00780a9f4d9ef5b0cb9b9b`
+and Rust consumer
+`6f18fbe142cd09df0030a93187878cee50820703d9157dc8d304b353e657f20e`.
+All 14 Python evidence tests and current-source verification pass normally and
+with `-O`. Capture and cleanup errors are empty; both owned containers and their
+image tag were independently confirmed absent. This archive API still reports
+only declared DiffIDs; the separate nested-layer API and fixture verify them.

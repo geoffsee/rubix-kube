@@ -4,8 +4,8 @@ e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca  /out/prepare_h
 running 14 tests
 test cancellation_after_ipv6_write_preserves_possible_effects_without_readback ... ok
 test cancellation_after_failed_write_retains_possible_effects ... ok
-test cancellation_before_start_never_observes_or_mutates_network ... ok
 test cancellation_between_ipv6_read_and_write_prevents_write ... ok
+test cancellation_before_start_never_observes_or_mutates_network ... ok
 test complete_bounded_scalars_reject_prefixes_and_binary_data ... ok
 test fixed_backend_lists_and_external_runtime_keep_network_effects ... ok
 test fresh_root_backend_and_ipv4_unknown_guards_prevent_effects ... ok
@@ -17,7 +17,7 @@ test unjoined_module_owner_stops_all_further_effects ... ok
 test write_failures_continue_to_all_controls_and_retain_possible_effects ... ok
 test cancellation_during_module_waits_for_stop_acknowledgement ... ok
 
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
 CLI_version_BEGIN
 {"level":"info","message":"kubesolo version","version":"0.1.0"}

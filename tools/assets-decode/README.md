@@ -57,7 +57,7 @@ Fresh schema2 receipts must also bind the build log and both builder-produced
 binary digests. Older receipts without those fields require recapture and cannot
 be relabelled as qualification of this combined harness.
 
-Current schema2 qualification was captured twice on decoder error-budget source
+Historical schema2 qualification was captured twice on decoder error-budget source
 `7be6768673263c26cf6fc3407b6650b239e41cf8`. Both Linux arm64 release runs passed
 all 14 decoder and 10 compressed ELF integration tests. Builder and both runtime
 observations agree on decoder SHA-256
@@ -70,7 +70,14 @@ and current-source verification pass normally and under optimization. This fixtu
 runs the two integration executables; the private failed-read error-accounting
 regression passed separately as a library test, not in these Docker runs.
 
-Current container-preparation integration qualification was captured at source
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed all 14 decoder and 10 compressed-ELF integration tests. Builder and runtime binary hashes match the prior archive qualification; the full source binding was refreshed.
-Current-source verification passes normally and with `-O`; exact raw evidence is
-published in `evidence/`. Owned capture resources were independently confirmed absent.
+Current nested-layer integration qualification was captured twice at source
+`bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`. Each Linux arm64 run passed all
+14 decoder and 10 compressed-ELF integration tests. Fresh builder records and both
+runtime observations match decoder SHA-256
+`71643138b63beb75903665b62c2aba5b9631555bea1ce71a3d0e2d4ece4a0799`
+and compressed-ELF SHA-256
+`e0baaddca78061be29eb058ed7c1561a4dece60ff5d5deb82f3bb7ce479024eb`.
+All 13 evidence tests and current-source verification pass normally and with `-O`.
+Capture and cleanup error arrays are empty; owned containers and image tag were
+independently confirmed absent. This fixture still exercises only its two named
+integration executables; nested-layer compatibility has separate evidence.

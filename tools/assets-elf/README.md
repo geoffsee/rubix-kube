@@ -38,12 +38,13 @@ decoder source `436a871e77da04ea6ebeeff8dfb64a94c3c66d1b`. Current-source
 verification and all seven evidence regressions pass normally and under optimization.
 The raw upstream executables were read only and never executed.
 
-Current decoder error-budget qualification inspected all four pins twice on source
+Historical decoder error-budget qualification inspected all four pins twice on source
 `7be6768673263c26cf6fc3407b6650b239e41cf8`. All seven evidence tests and
 current-source verification pass normally and under optimization. Each artifact
 remains read-only; these observations do not establish runtime ABI compatibility.
 
-Current container-preparation integration qualification was captured at source
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`. All four pinned ELF files were inspected twice without execution.
-Current-source verification passes normally and with `-O`; exact raw evidence is
-published in `evidence/`. Owned capture resources were independently confirmed absent.
+Current nested-layer integration qualification inspected all four pinned ELF files
+twice at source `bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`. All seven evidence
+tests and current-source verification pass normally and with `-O`. The upstream
+executables were read only and never executed; runtime ABI compatibility remains
+outside this proof.
