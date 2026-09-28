@@ -1,4 +1,4 @@
-    Finished `release` profile [optimized + debuginfo] target(s) in 0.03s
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.07s
      Running tests/elf_real.rs (target/release/deps/elf_real-cd444e63e2fb17a8)
 
 running 1 test
