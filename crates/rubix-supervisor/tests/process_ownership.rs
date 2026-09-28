@@ -82,7 +82,7 @@ async fn cleanup(observer: &ProcessCleanup) -> ProcessCleanupSnapshot {
 }
 fn emit(name: &str, snapshot: &ProcessCleanupSnapshot, elapsed: u128) {
     println!(
-        "RUBIX_PROCESS {{\"case\":\"{name}\",\"spawned\":{},\"term_attempted\":{},\"kill_attempted\":{},\"leader_reaped\":{},\"thread_joined\":{},\"complete\":{},\"exit_code\":{},\"signal\":{},\"elapsed_ms\":{elapsed}}}",
+        "RUBIX_PROCESS {{\"case\":\"{name}\",\"spawned\":{},\"term_attempted\":{},\"kill_attempted\":{},\"leader_reaped\":{},\"thread_joined\":{},\"complete\":{},\"exit_code\":{},\"signal\":{},\"elapsed_ms\":{elapsed},\"error\":{}}}",
         snapshot.spawned,
         snapshot.term_attempted,
         snapshot.kill_attempted,
@@ -96,7 +96,10 @@ fn emit(name: &str, snapshot: &ProcessCleanupSnapshot, elapsed: u128) {
         snapshot
             .exit
             .and_then(|exit| exit.signal)
-            .map_or_else(|| "null".into(), |v| v.to_string())
+            .map_or_else(|| "null".into(), |v| v.to_string()),
+        snapshot
+            .error
+            .map_or_else(|| "null".into(), |code| format!("\"{code}\""))
     );
 }
 async fn orderly(mode: &str, base: &Path) {
@@ -188,6 +191,9 @@ async fn disposable_process_cases() {
         orderly(mode, base).await;
     }
     failure_cases(base).await;
+    for mode in ["spawn-error", "startup-timeout"] {
+        startup_failure_case(mode, base).await;
+    }
     let (stop, receiver) = stop_channel();
     let task = tokio::spawn(
         Supervisor::new(vec![Registration::new(
@@ -292,5 +298,105 @@ async fn failure_cases(base: &Path) {
             assert_eq!(snapshot.exit.expect("early status").code, Some(17));
         }
         emit(mode, &snapshot, 0);
+    }
+}
+
+async fn startup_failure_case(mode: &str, base: &Path) {
+    let root = base.join(mode);
+    let provider_root = root.join("provider");
+    let (provider, provider_cleanup) = OwnedProcessAdapter::new(
+        command("steady", &provider_root),
+        ready(provider_root.clone()),
+    );
+    let readiness_polled = Arc::new(AtomicBool::new(false));
+    let polled = readiness_polled.clone();
+    let target_root = root.join("target");
+    let probe_root = target_root.clone();
+    let command = if mode == "spawn-error" {
+        ProcessCommand::new(root.join("absent-executable"))
+    } else {
+        command("steady", &target_root)
+    };
+    let (target, target_cleanup) = OwnedProcessAdapter::new(command, async move {
+        polled.store(true, Ordering::SeqCst);
+        ready(probe_root).await?;
+        pending().await
+    });
+    let mut target_spec = spec(mode);
+    target_spec.prerequisites.push("provider".into());
+    target_spec.startup_timeout = Duration::from_secs(1);
+    let (dependent, dependent_cleanup) = OwnedProcessAdapter::new(
+        ProcessCommand::new(root.join("dependent-must-not-execute")),
+        pending(),
+    );
+    let mut dependent_spec = spec("dependent");
+    dependent_spec.prerequisites.push(mode.into());
+    let supervisor = Supervisor::new(vec![
+        Registration::new(spec("provider"), provider),
+        Registration::new(target_spec, target),
+        Registration::new(dependent_spec, dependent),
+    ])
+    .expect("partial startup graph");
+    let (_stop, receiver) = stop_channel();
+    let began = Instant::now();
+    let report = tokio::time::timeout(Duration::from_secs(5), supervisor.run(receiver))
+        .await
+        .expect("bounded startup failure");
+    let expected = rubix_supervisor::ComponentFailure {
+        component: mode.into(),
+        kind: if mode == "spawn-error" {
+            FailureKind::Adapter("process_spawn_failed")
+        } else {
+            FailureKind::StartupTimeout
+        },
+    };
+    let expected_cause = rubix_supervisor::StopCause::Fatal(expected.clone());
+    assert_eq!(report.cause, expected_cause);
+    assert!(report.failures.contains(&expected));
+    assert!(report.cleanup_failures.is_empty(), "{report:?}");
+    assert!(
+        !report
+            .transitions
+            .iter()
+            .any(|event| event.component == "dependent" && event.state == ComponentState::Starting)
+    );
+    assert!(!dependent_cleanup.snapshot().started);
+    let provider = cleanup(&provider_cleanup).await;
+    assert_eq!(provider.exit.expect("provider exit").code, Some(0));
+    assert!(provider_root.join("stopped").is_file());
+    let target = target_cleanup.wait(Duration::from_secs(2)).await;
+    assert!(
+        target.started && target.thread_finished && target.thread_joined && !target.ownership_lost
+    );
+    if mode == "spawn-error" {
+        assert!(!readiness_polled.load(Ordering::SeqCst));
+        assert!(
+            !target.spawned
+                && !target.leader_reaped
+                && !target.term_attempted
+                && !target.kill_attempted
+        );
+        assert!(!target.complete());
+        assert_eq!(target.error, Some("process_spawn_failed"));
+        assert_eq!(target.exit, None);
+        emit(mode, &target, 0);
+    } else {
+        assert!(readiness_polled.load(Ordering::SeqCst));
+        assert!(target_root.join("ready").is_file());
+        assert!(
+            !report
+                .transitions
+                .iter()
+                .any(|event| event.component == mode && event.state == ComponentState::Ready)
+        );
+        assert!(
+            target.complete()
+                && target.leader_reaped
+                && target.term_attempted
+                && target.kill_attempted
+        );
+        assert_eq!(target.exit.expect("target exit").code, Some(0));
+        assert!(began.elapsed() >= Duration::from_secs(1));
+        emit(mode, &target, began.elapsed().as_millis());
     }
 }
