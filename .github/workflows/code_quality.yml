@@ -21,12 +21,15 @@ jobs:
       matrix:
         include:
           - linter: qodana-rust
-            # Rust has no 2026.1 release image; 2026.1-eap matches this action's CLI.
+            # No 2026.1 release image exists. Root lets rustup install rust-toolchain.toml.
             image: jetbrains/qodana-rust:2026.1-eap
+            extra-args: --user root
           - linter: qodana-python
             image: jetbrains/qodana-python:2026.1
+            extra-args: ""
           - linter: qodana-go
             image: jetbrains/qodana-go:2026.1
+            extra-args: ""
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -39,7 +42,7 @@ jobs:
           # Scan the whole tree. The default PR mode only inspects files changed in the pull request.
           pr-mode: false
           push-fixes: none
-          args: --image ${{ matrix.image }} --within-docker true
+          args: --image ${{ matrix.image }} --within-docker true ${{ matrix.extra-args }}
           artifact-name: qodana-${{ matrix.linter }}
           primary-cache-key: qodana-${{ matrix.linter }}-${{ github.ref }}-${{ github.sha }}
           additional-cache-key: qodana-${{ matrix.linter }}-${{ github.ref }}
