@@ -49,12 +49,12 @@ suite exercises composed ELF header observations on synthetic compressed vectors
 it does not establish executable runtime compatibility or installation safety.
 
 Stored schema2 evidence was captured on
-`a45e635357eafb086fde62aaa0ed5d43ff217f59`. Both Linuxarm64 release runs
+`7df98150ffcfe09da065a3cbdce1685a6ea5f674`. Both Linuxarm64 release runs
 passed all14 decoder tests and all10 decoded ELF tests. Both builder-produced
 executable hashes match both runtime observations:
 
-- `decode`: `5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b`
-- `decoded_elf`: `0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001`
+- `decode`: `88fe00df05956e8a3d49f58afc837cd76e708d6e53dadd47a881470cd32c1e6e`
+- `decoded_elf`: `725c21f5d537893626793e3ce799004e2a1b4ebe9717d3d7b78b8c5b2dffc656`
 
 The receipt binds the nonce-controlled build output and build log hash, and reports
 no capture/cleanup errors or remaining owned containers/images. The owned names

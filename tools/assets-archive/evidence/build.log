@@ -1,0 +1,324 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 2.05kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 DONE 1.6s
+
+#4 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 DONE 1.6s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#2 DONE 2.6s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [build 1/6] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#6 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#6 DONE 0.0s
+
+#7 [graph 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#7 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 2.57MB 0.0s done
+#8 DONE 0.0s
+
+#9 [build 2/6] WORKDIR /source
+#9 CACHED
+
+#10 [build 3/6] COPY . .
+#10 DONE 0.1s
+
+#11 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#11 resolve docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19 0.0s done
+#11 sha256:278e939fa22d68e36607e674b583732c11b2ad41d39ef718034b4badd71b761c 0B / 126B 0.2s
+#11 sha256:278e939fa22d68e36607e674b583732c11b2ad41d39ef718034b4badd71b761c 126B / 126B 0.3s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 0B / 64.48MB 0.2s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 0B / 64.11MB 0.2s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 0B / 86.52MB 0.2s
+#11 sha256:278e939fa22d68e36607e674b583732c11b2ad41d39ef718034b4badd71b761c 126B / 126B 0.3s done
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 0B / 23.61MB 0.2s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 4.19MB / 64.48MB 1.5s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 8.39MB / 64.48MB 2.0s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 12.58MB / 64.48MB 2.4s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 17.83MB / 64.48MB 3.9s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 2.10MB / 64.11MB 5.3s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 2.10MB / 86.52MB 5.3s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 1.05MB / 23.61MB 5.3s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 22.02MB / 64.48MB 8.3s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 3.15MB / 23.61MB 8.4s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 26.21MB / 64.48MB 9.8s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 7.34MB / 86.52MB 9.9s
+#11 ...
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 0.121 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#12 ...
+
+#11 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 4.19MB / 64.11MB 10.4s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 30.41MB / 64.48MB 10.8s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 5.24MB / 23.61MB 10.4s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 34.60MB / 64.48MB 12.0s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 7.34MB / 23.61MB 12.2s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 38.80MB / 64.48MB 12.9s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 42.99MB / 64.48MB 14.0s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 8.39MB / 64.11MB 13.8s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 12.58MB / 86.52MB 13.8s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 47.19MB / 64.48MB 14.6s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 9.44MB / 23.61MB 14.4s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 51.38MB / 64.48MB 15.5s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 17.83MB / 86.52MB 15.8s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 55.57MB / 64.48MB 16.1s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 11.53MB / 23.61MB 15.9s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 12.58MB / 64.11MB 16.5s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 59.77MB / 64.48MB 17.1s
+#11 sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 64.48MB / 64.48MB 17.9s done
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 23.07MB / 86.52MB 17.9s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 13.63MB / 23.61MB 17.7s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 0B / 48.37MB 0.2s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 16.78MB / 64.11MB 19.2s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 15.73MB / 23.61MB 19.1s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 4.19MB / 48.37MB 1.4s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 7.34MB / 48.37MB 2.0s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 28.31MB / 86.52MB 20.1s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 10.49MB / 48.37MB 2.6s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 17.83MB / 23.61MB 20.6s
+#11 ...
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 10.67 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#12 10.68 info: downloading 3 components
+#12 ...
+
+#11 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 13.63MB / 48.37MB 3.2s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 20.97MB / 64.11MB 21.9s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 33.55MB / 86.52MB 22.1s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 19.92MB / 48.37MB 4.2s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 19.92MB / 23.61MB 22.1s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 23.07MB / 48.37MB 4.7s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 26.21MB / 48.37MB 5.0s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 22.02MB / 23.61MB 23.1s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 29.36MB / 48.37MB 5.4s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 25.17MB / 64.11MB 23.6s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 38.80MB / 86.52MB 23.6s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 32.51MB / 48.37MB 5.9s
+#11 sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 23.61MB / 23.61MB 24.2s done
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 36.70MB / 48.37MB 6.6s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 39.85MB / 48.37MB 7.1s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 42.99MB / 48.37MB 7.4s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 29.36MB / 64.11MB 25.5s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 44.04MB / 86.52MB 25.4s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 46.14MB / 48.37MB 7.8s
+#11 sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 48.37MB / 48.37MB 8.1s done
+#11 extracting sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 49.28MB / 86.52MB 26.4s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 33.55MB / 64.11MB 27.0s
+#11 extracting sha256:30de66f8fdafab67e88d876087f571a693a1a6c4cf0abc29efbf88ea878e0d29 0.9s done
+#11 extracting sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137
+#11 extracting sha256:0bb7bd28fbdfe678a7f45878b7b1c07dbbc0fa7753b0312aa8fd049667a9e137 0.3s done
+#11 extracting sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 54.53MB / 86.52MB 27.5s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 37.75MB / 64.11MB 28.2s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 59.77MB / 86.52MB 28.2s
+#11 extracting sha256:599d07e8492bcee46202f5eae3e3010a470acc5139840e6d14556aefa3fc355f 1.0s done
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 41.94MB / 64.11MB 29.1s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 65.01MB / 86.52MB 29.1s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 70.25MB / 86.52MB 29.7s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 46.14MB / 64.11MB 30.0s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 75.50MB / 86.52MB 30.5s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 50.33MB / 64.11MB 30.8s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 80.74MB / 86.52MB 31.1s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 54.53MB / 64.11MB 31.4s
+#11 sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 86.52MB / 86.52MB 31.7s done
+#11 extracting sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 58.72MB / 64.11MB 32.0s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 62.91MB / 64.11MB 32.4s
+#11 sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 64.11MB / 64.11MB 32.5s done
+#11 extracting sha256:9bb7af042d1be07a8e311d1e93d7493544a23bcaa1225ea6b5eac98017ef94a6 0.9s done
+#11 DONE 32.7s
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 29.60     Updating crates.io index
+#12 ...
+
+#11 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#11 extracting sha256:05e89efc4b5ec39fa30d639b12ad2c7fd994a11ffa608e77427a882d73768d76 1.8s done
+#11 DONE 34.6s
+
+#11 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#11 extracting sha256:278e939fa22d68e36607e674b583732c11b2ad41d39ef718034b4badd71b761c done
+#11 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done
+#11 DONE 34.6s
+
+#13 [producer 2/6] WORKDIR /source
+#13 DONE 1.1s
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 ...
+
+#14 [producer 3/6] COPY tools/assets-archive/go.mod tools/assets-archive/go.sum ./
+#14 DONE 0.0s
+
+#15 [producer 4/6] RUN mkdir /out && cp go.mod go.sum /out/ && go mod download all && go mod verify && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#15 ...
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 36.76  Downloading crates ...
+#12 37.09   Downloaded adler2 v2.0.1
+#12 37.22   Downloaded itoa v1.0.18
+#12 37.26   Downloaded block-buffer v0.12.1
+#12 37.31   Downloaded crypto-common v0.2.2
+#12 37.37   Downloaded cpufeatures v0.3.1
+#12 37.43   Downloaded errno v0.3.14
+#12 37.43   Downloaded cfg-if v1.0.5
+#12 37.46   Downloaded jobserver v0.1.35
+#12 37.49   Downloaded shlex v2.0.1
+#12 37.49   Downloaded simd-adler32 v0.3.10
+#12 37.49   Downloaded digest v0.11.3
+#12 37.50   Downloaded pkg-config v0.3.34
+#12 37.51   Downloaded zstd-safe v7.3.0
+#12 37.51   Downloaded find-msvc-tools v0.1.14
+#12 37.51   Downloaded zmij v1.0.23
+#12 37.53   Downloaded bitflags v2.13.2
+#12 37.53   Downloaded zstd v0.13.3
+#12 37.54   Downloaded hybrid-array v0.4.15
+#12 37.54   Downloaded quote v1.0.47
+#12 37.54   Downloaded sha2 v0.11.0
+#12 37.58   Downloaded serde_core v1.0.228
+#12 37.59   Downloaded crc32fast v1.5.2
+#12 37.59   Downloaded serde_derive v1.0.228
+#12 37.61   Downloaded proc-macro2 v1.0.107
+#12 37.61   Downloaded unicode-ident v1.0.26
+#12 37.62   Downloaded miniz_oxide v0.9.1
+#12 37.62   Downloaded flate2 v1.1.10
+#12 37.64   Downloaded serde v1.0.228
+#12 37.64   Downloaded memchr v2.8.3
+#12 37.66   Downloaded cc v1.5.1
+#12 37.66   Downloaded typenum v1.20.1
+#12 37.68   Downloaded serde_json v1.0.151
+#12 37.80   Downloaded syn v2.0.119
+#12 37.85   Downloaded object v0.39.1
+#12 37.89   Downloaded rustix v1.1.5
+#12 37.97   Downloaded zstd-sys v2.1.0+zstd.1.5.7
+#12 38.03   Downloaded libc v0.2.189
+#12 38.24   Downloaded linux-raw-sys v0.12.1
+#12 38.42    Compiling libc v0.2.189
+#12 38.42    Compiling shlex v2.0.1
+#12 38.42    Compiling find-msvc-tools v0.1.14
+#12 38.42    Compiling pkg-config v0.3.34
+#12 38.42    Compiling proc-macro2 v1.0.107
+#12 38.42    Compiling typenum v1.20.1
+#12 38.42    Compiling unicode-ident v1.0.26
+#12 38.42    Compiling quote v1.0.47
+#12 38.42    Compiling serde_core v1.0.228
+#12 38.42    Compiling rustix v1.1.5
+#12 38.42    Compiling zstd-safe v7.3.0
+#12 38.42    Compiling cfg-if v1.0.5
+#12 38.42    Compiling crc32fast v1.5.2
+#12 38.42    Compiling zmij v1.0.23
+#12 38.42    Compiling simd-adler32 v0.3.10
+#12 38.50    Compiling memchr v2.8.3
+#12 38.56    Compiling serde_json v1.0.151
+#12 38.63    Compiling serde v1.0.228
+#12 38.63    Compiling adler2 v2.0.1
+#12 38.68    Compiling object v0.39.1
+#12 38.73    Compiling bitflags v2.13.2
+#12 38.74    Compiling linux-raw-sys v0.12.1
+#12 38.78    Compiling miniz_oxide v0.9.1
+#12 38.93    Compiling itoa v1.0.18
+#12 39.24    Compiling flate2 v1.1.10
+#12 39.26    Compiling hybrid-array v0.4.15
+#12 39.32    Compiling cpufeatures v0.3.1
+#12 39.33    Compiling syn v2.0.119
+#12 39.42    Compiling jobserver v0.1.35
+#12 39.52    Compiling cc v1.5.1
+#12 39.66    Compiling crypto-common v0.2.2
+#12 39.66    Compiling block-buffer v0.12.1
+#12 40.22    Compiling digest v0.11.3
+#12 40.37    Compiling sha2 v0.11.0
+#12 40.44    Compiling serde_derive v1.0.228
+#12 40.54    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#12 42.15    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#12 ...
+
+#15 [producer 4/6] RUN mkdir /out && cp go.mod go.sum /out/ && go mod download all && go mod verify && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#15 7.897 all modules verified
+#15 DONE 8.3s
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 ...
+
+#16 [producer 5/6] COPY tools/assets-archive/main.go ./
+#16 DONE 0.0s
+
+#17 [producer 6/6] RUN test "$(go version)" = "go version go1.26.2 linux/arm64" && go list -m -json all > /out/modules-actual.json && go build -trimpath -buildvcs=false -o /out/producer . && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#17 DONE 4.1s
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 ...
+
+#18 [graph 2/4] COPY --from=producer /out /out
+#18 DONE 0.0s
+
+#19 [graph 3/4] COPY tools/assets-archive/graph.py tools/assets-archive/modules.json /pins/
+#19 DONE 0.0s
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 48.69    Compiling zstd v0.13.3
+#12 ...
+
+#20 [graph 4/4] RUN python /pins/graph.py /out/modules-actual.json /pins/modules.json
+#20 DONE 0.2s
+
+#12 [build 4/6] RUN set -eu; cargo test -p rubix-assets --release --locked --test archive_fixture --no-run && mkdir /out && count=0; for executable in target/release/deps/archive_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/archive-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/archive-tests
+#12 48.77    Compiling rubix-assets v0.1.0 (/source/crates/rubix-assets)
+#12 52.64     Finished `release` profile [optimized + debuginfo] target(s) in 23.07s
+#12 52.66   Executable tests/archive_fixture.rs (target/release/deps/archive_fixture-feb3676c19325f33)
+#12 DONE 52.7s
+
+#21 [build 5/6] COPY --from=graph /out/producer /out/producer
+#21 DONE 0.1s
+
+#22 [build 6/6] RUN test -n "rubix-archive-498699657cfd4721acd5914b66134bf5" && sha256sum /out/producer /out/archive-tests
+#22 0.114 7434ad637e4fb31b7c89fb4db001eb5678530ebe8c00780a9f4d9ef5b0cb9b9b  /out/producer
+#22 0.134 9d93e8cf5c0e226a8fa11309393e7dc25990ff5f140d3cf89126620e61a3a61f  /out/archive-tests
+#22 DONE 0.1s
+
+#23 [stage-3 2/6] COPY --from=build /out/producer /producer
+#23 DONE 0.0s
+
+#24 [stage-3 3/6] COPY --from=build /out/archive-tests /archive-tests
+#24 DONE 0.0s
+
+#25 [stage-3 4/6] COPY tools/assets-archive/runtime.py tools/assets-archive/oracle.py /
+#25 DONE 0.0s
+
+#26 [stage-3 5/6] COPY tools/supervisor-process/namespace_inventory.py /namespace_inventory.py
+#26 DONE 0.0s
+
+#27 [stage-3 6/6] COPY tools/defaults/capture.py /bounded.py
+#27 DONE 0.0s
+
+#28 exporting to image
+#28 exporting layers
+#28 exporting layers 0.3s done
+#28 exporting manifest sha256:a7db53d27fcd330b53db44f9eaebc6bb036d00e110db31851616b60877997fc8 done
+#28 exporting config sha256:5e5eeb7030f18be3474dfd4bd1b90dab29a1d2dcf5d0d2685808c2d79840cadd done
+#28 exporting attestation manifest sha256:0997e4898210d3dfbfd42aff21d89ef961a303dd3ebb385a1d7b5ea8878dd988 done
+#28 exporting manifest list sha256:45e30b31fd18026adcde3d83406f69a311f96b66ce0a8f5811b86cbf27370652 done
+#28 naming to docker.io/library/rubix-archive-498699657cfd4721acd5914b66134bf5:latest done
+#28 unpacking to docker.io/library/rubix-archive-498699657cfd4721acd5914b66134bf5:latest 0.1s done
+#28 DONE 0.5s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/udren1fjhkzdoqr1jynejq9f4

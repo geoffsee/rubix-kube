@@ -1,5 +1,5 @@
-5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b  /decode-tests
-0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001  /decoded_elf-tests
+88fe00df05956e8a3d49f58afc837cd76e708d6e53dadd47a881470cd32c1e6e  /decode-tests
+725c21f5d537893626793e3ce799004e2a1b4ebe9717d3d7b78b8c5b2dffc656  /decoded_elf-tests
 RUBIX_SUITE decode
 
 running 14 tests
@@ -18,7 +18,7 @@ test unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit ... ok
 test unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked ... ok
 test zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected ... ok
 
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
 RUBIX_SUITE decoded_elf
 

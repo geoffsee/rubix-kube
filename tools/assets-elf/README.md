@@ -42,3 +42,8 @@ Corrected oracle field/limit checks were also qualified against all four pins tw
 on decoded ELF composition source `a45e635357eafb086fde62aaa0ed5d43ff217f59`.
 Current-source verification and all seven evidence regressions pass normally and
 under optimization. Upstream artifacts were read only and never executed.
+
+Current archive-integration qualification read all four pinned artifacts twice on
+source `7df98150ffcfe09da065a3cbdce1685a6ea5f674`. The source-bound current
+verifier and seven regression tests pass normally and under optimization.
+The existing explicit cache was reused after hash checks; no artifact was executed.

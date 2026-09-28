@@ -1,132 +1,129 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [internal] load build definition from Capture.Dockerfile
-#1 transferring dockerfile: 991B done
+#1 [build 1/6] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#1 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
 #1 DONE 0.0s
 
-#2 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#2 DONE 0.0s
+#2 [graph 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#2 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
+#2 CACHED
 
-#3 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#3 DONE 0.0s
+#3 [build 2/6] WORKDIR /source
+#3 CACHED
 
-#4 [internal] load .dockerignore
-#4 transferring context: 2B done
+#4 [internal] load build definition from Capture.Dockerfile
+#4 transferring dockerfile: 991B done
 #4 DONE 0.0s
 
-#5 [build 1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#5 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#5 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
 #5 DONE 0.0s
 
-#6 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#6 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
+#6 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 #6 DONE 0.0s
 
-#7 [internal] load build context
-#7 transferring context: 2.46MB 0.0s done
-#7 DONE 0.1s
+#7 [internal] load .dockerignore
+#7 transferring context: 2B done
+#7 DONE 0.0s
 
-#8 [build 2/5] WORKDIR /source
-#8 CACHED
+#8 [internal] load build context
+#8 transferring context: 2.53MB 0.0s done
+#8 DONE 0.0s
 
 #9 [build 3/5] COPY . .
 #9 DONE 0.1s
 
 #10 [build 4/5] RUN cargo test -p rubix-assets --release --locked --test decode --test decoded_elf --no-run && mkdir /out && for suite in decode decoded_elf; do count=0; for executable in target/release/deps/$suite-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/$suite-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/$suite-tests || exit 1; done
-#10 0.229 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 1.661 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 1.669 info: downloading 3 components
-#10 7.386     Updating crates.io index
-#10 11.46  Downloading crates ...
-#10 13.09   Downloaded cpufeatures v0.3.1
-#10 13.12   Downloaded crypto-common v0.2.2
-#10 13.13   Downloaded errno v0.3.14
-#10 13.17   Downloaded cfg-if v1.0.5
-#10 13.18   Downloaded block-buffer v0.12.1
-#10 13.20   Downloaded find-msvc-tools v0.1.14
-#10 13.21   Downloaded itoa v1.0.18
-#10 13.33   Downloaded adler2 v2.0.1
-#10 13.37   Downloaded simd-adler32 v0.3.10
-#10 13.38   Downloaded jobserver v0.1.35
-#10 13.39   Downloaded zmij v1.0.23
-#10 13.43   Downloaded pkg-config v0.3.34
-#10 13.44   Downloaded zstd-safe v7.3.0
-#10 13.44   Downloaded sha2 v0.11.0
-#10 13.45   Downloaded quote v1.0.47
-#10 13.45   Downloaded shlex v2.0.1
-#10 13.46   Downloaded unicode-ident v1.0.26
-#10 13.46   Downloaded zstd v0.13.3
-#10 13.46   Downloaded hybrid-array v0.4.15
-#10 13.49   Downloaded crc32fast v1.5.2
-#10 13.49   Downloaded digest v0.11.3
-#10 13.49   Downloaded serde_core v1.0.228
-#10 13.50   Downloaded serde_derive v1.0.228
-#10 13.51   Downloaded proc-macro2 v1.0.107
-#10 13.51   Downloaded bitflags v2.13.2
-#10 13.52   Downloaded miniz_oxide v0.9.1
-#10 13.52   Downloaded flate2 v1.1.10
-#10 13.56   Downloaded cc v1.5.1
-#10 13.56   Downloaded typenum v1.20.1
-#10 13.57   Downloaded memchr v2.8.3
-#10 13.58   Downloaded serde v1.0.228
-#10 13.60   Downloaded serde_json v1.0.151
-#10 13.68   Downloaded syn v2.0.119
-#10 13.70   Downloaded object v0.39.1
-#10 13.74   Downloaded rustix v1.1.5
-#10 13.82   Downloaded zstd-sys v2.1.0+zstd.1.5.7
-#10 13.84   Downloaded libc v0.2.189
-#10 14.03   Downloaded linux-raw-sys v0.12.1
-#10 14.13    Compiling libc v0.2.189
-#10 14.13    Compiling shlex v2.0.1
-#10 14.13    Compiling find-msvc-tools v0.1.14
-#10 14.13    Compiling pkg-config v0.3.34
-#10 14.13    Compiling proc-macro2 v1.0.107
-#10 14.13    Compiling quote v1.0.47
-#10 14.13    Compiling unicode-ident v1.0.26
-#10 14.13    Compiling typenum v1.20.1
-#10 14.14    Compiling serde_core v1.0.228
-#10 14.14    Compiling crc32fast v1.5.2
-#10 14.14    Compiling zmij v1.0.23
-#10 14.14    Compiling zstd-safe v7.3.0
-#10 14.14    Compiling rustix v1.1.5
-#10 14.14    Compiling cfg-if v1.0.5
-#10 14.14    Compiling serde_json v1.0.151
-#10 14.22    Compiling linux-raw-sys v0.12.1
-#10 14.25    Compiling object v0.39.1
-#10 14.29    Compiling bitflags v2.13.2
-#10 14.29    Compiling adler2 v2.0.1
-#10 14.56    Compiling serde v1.0.228
-#10 14.57    Compiling simd-adler32 v0.3.10
-#10 14.57    Compiling memchr v2.8.3
-#10 14.62    Compiling itoa v1.0.18
-#10 14.65    Compiling miniz_oxide v0.9.1
-#10 14.74    Compiling hybrid-array v0.4.15
-#10 14.88    Compiling flate2 v1.1.10
-#10 14.90    Compiling syn v2.0.119
-#10 14.97    Compiling block-buffer v0.12.1
-#10 14.97    Compiling crypto-common v0.2.2
-#10 14.98    Compiling jobserver v0.1.35
-#10 15.02    Compiling cpufeatures v0.3.1
-#10 15.08    Compiling cc v1.5.1
-#10 15.26    Compiling digest v0.11.3
-#10 15.30    Compiling sha2 v0.11.0
-#10 15.52    Compiling zstd-sys v2.1.0+zstd.1.5.7
-#10 15.54    Compiling serde_derive v1.0.228
-#10 16.42    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#10 22.75    Compiling zstd v0.13.3
-#10 22.82    Compiling rubix-assets v0.1.0 (/source/crates/rubix-assets)
-#10 26.80     Finished `release` profile [optimized + debuginfo] target(s) in 19.44s
-#10 26.82   Executable tests/decode.rs (target/release/deps/decode-aabe2aee2b2cf83d)
-#10 26.82   Executable tests/decoded_elf.rs (target/release/deps/decoded_elf-2280b54e6c6b6ac3)
-#10 DONE 27.0s
+#10 0.166 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 3.099 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 3.106 info: downloading 3 components
+#10 9.642     Updating crates.io index
+#10 13.37  Downloading crates ...
+#10 13.97   Downloaded block-buffer v0.12.1
+#10 14.04   Downloaded errno v0.3.14
+#10 14.07   Downloaded crypto-common v0.2.2
+#10 14.07   Downloaded digest v0.11.3
+#10 14.08   Downloaded cfg-if v1.0.5
+#10 14.16   Downloaded itoa v1.0.18
+#10 14.17   Downloaded adler2 v2.0.1
+#10 14.20   Downloaded cpufeatures v0.3.1
+#10 14.21   Downloaded pkg-config v0.3.34
+#10 14.22   Downloaded simd-adler32 v0.3.10
+#10 14.23   Downloaded quote v1.0.47
+#10 14.24   Downloaded zstd v0.13.3
+#10 14.25   Downloaded shlex v2.0.1
+#10 14.25   Downloaded zstd-safe v7.3.0
+#10 14.26   Downloaded zmij v1.0.23
+#10 14.26   Downloaded find-msvc-tools v0.1.14
+#10 14.28   Downloaded jobserver v0.1.35
+#10 14.28   Downloaded hybrid-array v0.4.15
+#10 14.30   Downloaded sha2 v0.11.0
+#10 14.31   Downloaded crc32fast v1.5.2
+#10 14.31   Downloaded proc-macro2 v1.0.107
+#10 14.33   Downloaded unicode-ident v1.0.26
+#10 14.35   Downloaded bitflags v2.13.2
+#10 14.36   Downloaded serde_core v1.0.228
+#10 14.38   Downloaded miniz_oxide v0.9.1
+#10 14.39   Downloaded serde_derive v1.0.228
+#10 14.42   Downloaded serde v1.0.228
+#10 14.43   Downloaded memchr v2.8.3
+#10 14.48   Downloaded flate2 v1.1.10
+#10 14.49   Downloaded typenum v1.20.1
+#10 14.51   Downloaded cc v1.5.1
+#10 14.72   Downloaded serde_json v1.0.151
+#10 14.83   Downloaded syn v2.0.119
+#10 14.86   Downloaded object v0.39.1
+#10 14.95   Downloaded rustix v1.1.5
+#10 15.14   Downloaded zstd-sys v2.1.0+zstd.1.5.7
+#10 15.16   Downloaded libc v0.2.189
+#10 15.59   Downloaded linux-raw-sys v0.12.1
+#10 15.68    Compiling libc v0.2.189
+#10 15.68    Compiling find-msvc-tools v0.1.14
+#10 15.68    Compiling shlex v2.0.1
+#10 15.68    Compiling pkg-config v0.3.34
+#10 15.69    Compiling proc-macro2 v1.0.107
+#10 15.69    Compiling quote v1.0.47
+#10 15.69    Compiling typenum v1.20.1
+#10 15.69    Compiling unicode-ident v1.0.26
+#10 15.69    Compiling serde_core v1.0.228
+#10 15.69    Compiling zmij v1.0.23
+#10 15.69    Compiling zstd-safe v7.3.0
+#10 15.69    Compiling cfg-if v1.0.5
+#10 15.69    Compiling rustix v1.1.5
+#10 15.69    Compiling crc32fast v1.5.2
+#10 15.69    Compiling object v0.39.1
+#10 15.75    Compiling bitflags v2.13.2
+#10 15.76    Compiling linux-raw-sys v0.12.1
+#10 15.82    Compiling simd-adler32 v0.3.10
+#10 15.83    Compiling serde_json v1.0.151
+#10 15.89    Compiling memchr v2.8.3
+#10 15.89    Compiling adler2 v2.0.1
+#10 15.91    Compiling serde v1.0.228
+#10 15.93    Compiling itoa v1.0.18
+#10 15.97    Compiling miniz_oxide v0.9.1
+#10 16.13    Compiling hybrid-array v0.4.15
+#10 16.23    Compiling flate2 v1.1.10
+#10 16.34    Compiling syn v2.0.119
+#10 16.37    Compiling block-buffer v0.12.1
+#10 16.37    Compiling crypto-common v0.2.2
+#10 16.37    Compiling jobserver v0.1.35
+#10 16.46    Compiling cpufeatures v0.3.1
+#10 16.47    Compiling cc v1.5.1
+#10 16.69    Compiling digest v0.11.3
+#10 16.78    Compiling sha2 v0.11.0
+#10 17.34    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#10 17.52    Compiling serde_derive v1.0.228
+#10 18.83    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#10 26.42    Compiling zstd v0.13.3
+#10 26.49    Compiling rubix-assets v0.1.0 (/source/crates/rubix-assets)
+#10 30.86     Finished `release` profile [optimized + debuginfo] target(s) in 21.23s
+#10 30.87   Executable tests/decode.rs (target/release/deps/decode-aabe2aee2b2cf83d)
+#10 30.87   Executable tests/decoded_elf.rs (target/release/deps/decoded_elf-2280b54e6c6b6ac3)
+#10 DONE 30.9s
 
-#11 [build 5/5] RUN test -n "rubix-decode-69ca21df6424477e9cbd3c646a17a742" && sha256sum /out/decode-tests /out/decoded_elf-tests
-#11 0.128 5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b  /out/decode-tests
-#11 0.147 0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001  /out/decoded_elf-tests
+#11 [build 5/5] RUN test -n "rubix-decode-b2b6574ff8c64b58bc7e6a44dfe5bfa5" && sha256sum /out/decode-tests /out/decoded_elf-tests
+#11 0.129 88fe00df05956e8a3d49f58afc837cd76e708d6e53dadd47a881470cd32c1e6e  /out/decode-tests
+#11 0.148 725c21f5d537893626793e3ce799004e2a1b4ebe9717d3d7b78b8c5b2dffc656  /out/decoded_elf-tests
 #11 DONE 0.2s
-
-#6 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#6 CACHED
 
 #12 [stage-1 2/4] COPY --from=build /out/decode-tests /decode-tests
 #12 DONE 0.0s
@@ -140,12 +137,12 @@
 #15 exporting to image
 #15 exporting layers
 #15 exporting layers 0.2s done
-#15 exporting manifest sha256:433e55e8e8ed926a19353bfa5e6a34376f7caf06f72a3d4924f244911127d461 done
-#15 exporting config sha256:92f875ce68e24500dd1f33e0b018373f4fef58c6c7341df5d3f9a73d4d60b8b1 done
-#15 exporting attestation manifest sha256:851a903348e7f32de789609f53e980494797974a9d211786f17836c65146d020 done
-#15 exporting manifest list sha256:d90ae9874fd00f6aa45fc5b8710cff6d1f0d294a7cb41b2c8505565f27133655 done
-#15 naming to docker.io/library/rubix-decode-69ca21df6424477e9cbd3c646a17a742:latest done
-#15 unpacking to docker.io/library/rubix-decode-69ca21df6424477e9cbd3c646a17a742:latest 0.1s done
+#15 exporting manifest sha256:0eb1c11ea6d989fb195b3263557a29c1ad08cecbda864986c4c5bf195b7f0aa8 done
+#15 exporting config sha256:bf5c61d3e3050c7ec7b0dd8a5f44bbad6fe5907f1dba9ffc7a997ff2f3473cc3 0.0s done
+#15 exporting attestation manifest sha256:578cd5621bc22f070d63a1ad672d45b63e64209d2cc017724b2379c4f51275eb done
+#15 exporting manifest list sha256:b22f9a2b9cca5a96805fdc4ac39f68efcbe1c5fd99774444a4bce3fb2231696b 0.0s done
+#15 naming to docker.io/library/rubix-decode-b2b6574ff8c64b58bc7e6a44dfe5bfa5:latest done
+#15 unpacking to docker.io/library/rubix-decode-b2b6574ff8c64b58bc7e6a44dfe5bfa5:latest 0.1s done
 #15 DONE 0.3s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/pkhvcf65ofn6qn70w4caw9m60
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/fii7dqnzgdbquemo7p26o4if7
