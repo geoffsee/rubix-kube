@@ -79,7 +79,7 @@ After independent review and a clean source commit, run:
 
 ```sh
 python3 tools/node-constrained/capture.py --allow-privileged-vm \
-  --artifact-directory /tmp/rubix-container-qualified-build-20260928-r1 \
+  --artifact-directory /tmp/rubix-layer-inherited-container-build-20260928-r1 \
   --input-cache /tmp/rubix-container-input-cache \
   --image-cache /tmp/rubix-vm-image-cache --output /tmp/constrained-first
 ```
@@ -91,7 +91,7 @@ must pass; synthetic mutation tests never substitute for actual captures. This i
 bounded E05.03 evidence, not closure of E05.02/E05.03 or their parent integration gates.
 
 Published qualification uses clean capture source
-`cb96f5d6ddb8d7ad492b51820104446a04449d0c`. Both fresh guests passed all four
+`895ff1e92ad079afb08abb14df0ea7c4f1e7501d`. Both fresh guests passed all four
 cases; each real read-only case completed two preparations in the same observed
 live process. Already-disabled values stayed 1; failed writes stayed 0 with all
 three truthful warning outcomes. The live external keeper, socket/configuration,
@@ -100,7 +100,7 @@ through real success, failed guard and in-flight cancellation. These observation
 do not establish CRI readiness or an nftables-only kernel.
 
 The executed consumer was built at original revision
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`, SHA256
+`bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`, SHA256
 `9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c`,
 13,156,744 bytes. Its historical build receipts and current compiled-source bindings
 are retained separately from the new capture revision. Both QEMU processes exited
@@ -117,3 +117,11 @@ fixture uses a bounded symlink view over a private read-only original bind, reso
 relative aliases before overlay and replacing only the fixed double. Regression
 tests cover large originals under the original limit and internal/external aliases.
 No production behavior or output/file limit was changed; r1 is not qualifying evidence.
+
+The aligned refresh incorporates the qualified image-layer inventory through its
+approved layer build and two new guests. Earlier successful r2 captures remain at
+`/tmp/rubix-constrained-qualified-{first,repeat}-20260928-r2`, with their actual
+capture revision `cb96f5d6ddb8d7ad492b51820104446a04449d0c` and original build
+`fb24f95f20d1152fc5921c4f0377add1051f42cb` unchanged. Their records were not relabeled.
+The consumer bytes are identical; the current publication binds the new complete
+compiled-source inventory and actual fresh observations.
