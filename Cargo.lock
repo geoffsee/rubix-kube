@@ -686,6 +686,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rubix-platform"
+version = "0.1.0"
+dependencies = [
+ "rustix",
+]
+
+[[package]]
 name = "rubix-supervisor"
 version = "0.1.0"
 dependencies = [
