@@ -1,6 +1,6 @@
 //! Client bindings for the official Kubernetes v1.35.7 CRI v1 protocol.
 //!
-//! Regenerate with `tools/upstream/upstream.py`; ordinary builds do not fetch inputs
+//! Regenerate with the `rubix-upstream` maintenance CLI; ordinary builds do not fetch inputs
 //! or execute a protobuf compiler. These bindings do not implement a runtime.
 
 pub mod runtime {
