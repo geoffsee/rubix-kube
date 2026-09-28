@@ -120,7 +120,7 @@ pub trait AssessmentInputs {
     fn ports(&mut self, pprof: bool) -> Result<[Observation<PortAvailability>; 4], PlatformError>;
     fn version(&mut self, stop: StopReceiver) -> impl Future<Output = VersionProbe>;
 }
-struct Host;
+pub(crate) struct Host;
 impl AssessmentInputs for Host {
     fn discover(&mut self, request: &DiscoveryRequest) -> Result<HostEvidence, PlatformError> {
         discover(request)
@@ -138,12 +138,12 @@ impl AssessmentInputs for Host {
         iptables_version(stop).await
     }
 }
-struct Cancellation<F> {
-    future: Pin<Box<F>>,
-    stopped: bool,
+pub(crate) struct Cancellation<F> {
+    pub(crate) future: Pin<Box<F>>,
+    pub(crate) stopped: bool,
 }
 impl<F: Future<Output = ()>> Cancellation<F> {
-    async fn checkpoint(&mut self) -> bool {
+    pub(crate) async fn checkpoint(&mut self) -> bool {
         if !self.stopped {
             tokio::select! { biased; () = &mut self.future => self.stopped = true, () = tokio::task::yield_now() => {} }
         }
@@ -163,12 +163,21 @@ pub async fn assess_node_with(
     cancellation: impl Future<Output = ()>,
     inputs: &mut impl AssessmentInputs,
 ) -> NodeAssessment {
-    let mut report = NodeAssessment::initial(config);
     let mut cancel = Cancellation {
         future: Box::pin(cancellation),
         stopped: false,
     };
-    if let Err(error) = observe(config, inputs, &mut cancel, &mut report).await {
+    assess_with_cancel(config, &mut cancel, inputs, false).await
+}
+
+pub(crate) async fn assess_with_cancel<F: Future<Output = ()>>(
+    config: &ValidatedConfig,
+    cancel: &mut Cancellation<F>,
+    inputs: &mut impl AssessmentInputs,
+    defer_ipv6: bool,
+) -> NodeAssessment {
+    let mut report = NodeAssessment::initial(config);
+    if let Err(error) = observe(config, inputs, cancel, &mut report, defer_ipv6).await {
         report.status = AssessmentStatus::Platform(error);
     }
     report
@@ -207,6 +216,7 @@ async fn observe<F: Future<Output = ()>>(
     inputs: &mut impl AssessmentInputs,
     cancel: &mut Cancellation<F>,
     report: &mut NodeAssessment,
+    defer_ipv6: bool,
 ) -> Result<(), PlatformError> {
     let limits = ProbeLimits::default();
     if !checkpoint(cancel, report).await {
@@ -263,10 +273,11 @@ async fn observe<F: Future<Output = ()>>(
         Observation::Unknown(_) | Observation::Absent
     ) || matches!(constrained.proxy_selection, Observation::Unknown(_))
         || matches!(constrained.sysctls[0], SysctlState::Unknown(_))
-        || report
-            .ipv6_disable
-            .iter()
-            .any(|value| matches!(value, Some(SysctlState::Unknown(_))));
+        || (!defer_ipv6
+            && report
+                .ipv6_disable
+                .iter()
+                .any(|value| matches!(value, Some(SysctlState::Unknown(_)))));
     if unknown {
         report.constrained = Some(constrained);
         report.status = AssessmentStatus::Unknown;
