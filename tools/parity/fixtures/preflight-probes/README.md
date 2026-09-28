@@ -23,7 +23,7 @@ result and then really binds/conflicts/closes IPv4. Detection on a kernel withou
 IPv6 remains unqualified; no host IPv6 setting is changed.
 
 The Rust verifier requires a current schema 3 receipt. Historical evidence remains
-unchanged and does not satisfy this gate until a reviewed Rust capture replaces it.
+unchanged. Publish a separate verified Rust capture from reviewed source.
 Run these commands from a clean, committed checkout after source review:
 
 ```sh
@@ -46,7 +46,6 @@ four successful test summaries. Repeated observations must agree.
 Only the capture's exact owned image and containers are removed. Uncertain process
 cleanup stops further effects and leaves inventory unknown. Failed daemon queries
 cannot claim empty inventories. Cancellation is sampled again before publication.
-No actual recapture has been performed for this migration.
 
 Install new captures under `rust-evidence/`, preserving historical `evidence/`.
 Image identity and empty cleanup inventories require their own persisted raw

@@ -29,7 +29,7 @@ cancellation, timeout or overflow. Unsettled commands retain context and stop ne
 actions; cleanup inventories remain unknown and qualification fails.
 
 Existing evidence remains historical. The mandatory Rust schema-3 evidence gate
-fails until reviewed fresh captures are published. Run `cargo test -p rubix-dev
+requires published, verified captures from reviewed source. Run `cargo test -p rubix-dev
 --bin rubix-supervisor-fixture --locked` for mutation checks and current evidence
 gates. Ignored supervisor effects tests run only inside the disposable container.
 

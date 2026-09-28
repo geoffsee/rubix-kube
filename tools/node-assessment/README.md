@@ -26,9 +26,9 @@ EOF, process-group absence and no timeout, cancellation or output overflow. Fail
 cleanup cannot publish empty inventories. Late cancellation prevents success.
 
 Historical raw evidence remains unchanged. The mandatory published-evidence test
-fails until reviewed Rust captures replace it. No new capture was run during this
-migration. Review and install each entire capture directory with its command
-receipts; partial installation fails the exact file inventory check.
+requires a separate verified Rust capture from reviewed source. Review and install
+each entire capture directory with its command receipts; partial installation
+fails the exact file inventory check.
 
 Install current Rust captures under `rust-evidence/`. Historical `evidence/`
 remains unchanged. Image inspection and all cleanup operations have persisted

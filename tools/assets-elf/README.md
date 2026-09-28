@@ -12,9 +12,9 @@ endian headers, program segments, interpreter and dynamic dependencies. The
 fixture qualifies arm64 and amd64 observations only. Loader/ABI compatibility,
 publisher authenticity, execution and install safety remain outside this proof.
 
-## Rust harness migration status
+## Rust capture qualification
 
-The Rust harness is under review; fresh qualification has not run yet. Existing
+Current qualification requires reviewed Rust captures. Existing
 `evidence/` files remain the unchanged historical capture from source
 `fb24f95f20d1152fc5921c4f0377add1051f42cb`. Their original source hashes and Python
 harness identities are preserved. They are not current Rust-harness evidence and
@@ -27,7 +27,7 @@ byte limits. Exact test names, record order, typed values, commands, source
 inventory, raw log hashes and cleanup outcomes are verified.
 
 The default Rust test suite includes three mandatory published-evidence checks;
-these remain failing until reviewed, clean-source Rust captures are published.
+these require published, verified captures from reviewed, clean Rust source.
 Synthetic mutation tests cannot satisfy those checks.
 
 ```sh
