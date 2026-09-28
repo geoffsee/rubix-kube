@@ -40,6 +40,11 @@ fn sources(root: &Path) -> Result<BTreeSet<PathBuf>> {
 }
 
 fn scanner(root: &Path, reports: &Path) -> Result<Command> {
+    let user = format!(
+        "{}:{}",
+        rustix::process::geteuid().as_raw(),
+        rustix::process::getegid().as_raw()
+    );
     let source_mount = format!("{}:/workspace:ro", root.display());
     let report_mount = format!("{}:/reports:rw", reports.display());
     if root.to_string_lossy().contains(':') || reports.to_string_lossy().contains(':') {
@@ -49,6 +54,8 @@ fn scanner(root: &Path, reports: &Path) -> Result<Command> {
     command.args([
         "run",
         "--rm",
+        "--user",
+        &user,
         "--network",
         "none",
         "--read-only",
@@ -176,6 +183,33 @@ fn main() -> Result<()> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn scanner_uses_effective_identity_without_changing_private_report_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        let before = directory.path().metadata().unwrap().permissions().mode();
+        let command = scanner(Path::new("/source"), directory.path()).unwrap();
+        let args: Vec<_> = command
+            .get_args()
+            .map(|arg| arg.to_str().unwrap())
+            .collect();
+        let identity = format!(
+            "{}:{}",
+            rustix::process::geteuid().as_raw(),
+            rustix::process::getegid().as_raw()
+        );
+        assert!(args.windows(2).any(|pair| pair == ["--user", &identity]));
+        assert!(args.windows(2).any(|pair| pair == ["--cap-drop", "ALL"]));
+        assert!(args.contains(&"--read-only"));
+        assert_eq!(before & 0o777, 0o700);
+        assert_eq!(
+            directory.path().metadata().unwrap().permissions().mode(),
+            before
+        );
+    }
 
     #[test]
     fn scan_requires_complete_coverage_and_no_errors_or_findings() {
