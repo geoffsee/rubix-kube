@@ -95,6 +95,37 @@ class EvidenceTests(unittest.TestCase):
         with patch.object(verify, 'loads', side_effect=without_coordinator), self.assertRaisesRegex(ValueError, 'compiled input inventory'):
             verify.verify()
 
+    def test_metadata_failures_leave_no_capture_directory_or_docker_activity(self):
+        import subprocess
+        import sys
+        for failure in [subprocess.TimeoutExpired(['git','rev-parse','HEAD'],30), subprocess.CalledProcessError(1,['git','rev-parse','HEAD']), OSError('git unavailable')]:
+            with self.subTest(failure=type(failure).__name__), tempfile.TemporaryDirectory() as temporary:
+                output=Path(temporary)/'capture'
+                with patch.object(sys,'argv',['capture.py','--output',str(output)]), patch.object(capture.subprocess,'check_output',side_effect=failure) as metadata, patch.object(capture.helper,'bounded') as docker, patch.object(capture.helper,'finish') as cleanup:
+                    with self.assertRaises(type(failure)):capture.main()
+                metadata.assert_called_once_with(['git','rev-parse','HEAD'],cwd=capture.ROOT,text=True,timeout=30)
+                docker.assert_not_called();cleanup.assert_not_called()
+                self.assertFalse(output.exists())
+
+    def test_helper_digest_failure_precedes_output_creation(self):
+        import sys
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)/'capture'
+            with patch.object(sys,'argv',['capture.py','--output',str(output)]), patch.object(capture.subprocess,'check_output',return_value='a'*40+'\n'), patch.object(capture,'digest',side_effect=OSError('helper unreadable')), patch.object(capture.helper,'bounded') as docker, patch.object(capture.helper,'finish') as cleanup:
+                with self.assertRaises(OSError):capture.main()
+            docker.assert_not_called();cleanup.assert_not_called()
+            self.assertFalse(output.exists())
+
+    def test_existing_capture_is_not_overwritten(self):
+        import sys
+        with tempfile.TemporaryDirectory() as temporary:
+            output=Path(temporary)/'capture';output.mkdir()
+            (output/'receipt.json').write_text('historical failure')
+            with patch.object(sys,'argv',['capture.py','--output',str(output)]), patch.object(capture.subprocess,'check_output',return_value='a'*40+'\n'), patch.object(capture.helper,'bounded') as docker, patch.object(capture.helper,'finish') as cleanup:
+                with self.assertRaises(FileExistsError):capture.main()
+            docker.assert_not_called();cleanup.assert_not_called()
+            self.assertEqual((output/'receipt.json').read_text(),'historical failure')
+
     def test_cleanup_failure_still_records_all_attempts(self):
         report = {'containers': ['owned-test'], 'cleanup_errors': []}
         with tempfile.TemporaryDirectory() as temporary:
