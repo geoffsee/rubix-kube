@@ -69,3 +69,8 @@ confirmed both owned containers and the image tag absent. All 13 evidence tests
 and current-source verification pass normally and under optimization. This fixture
 runs the two integration executables; the private failed-read error-accounting
 regression passed separately as a library test, not in these Docker runs.
+
+Current container-preparation integration qualification was captured at source
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed all 14 decoder and 10 compressed-ELF integration tests. Builder and runtime binary hashes match the prior archive qualification; the full source binding was refreshed.
+Current-source verification passes normally and with `-O`; exact raw evidence is
+published in `evidence/`. Owned capture resources were independently confirmed absent.

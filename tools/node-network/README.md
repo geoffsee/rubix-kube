@@ -75,7 +75,7 @@ exceptions rather than removable assertions. Synthetic mutation tests exercise
 verifier rejection and do not substitute for captured VM evidence.
 
 Published qualification uses frozen source
-`7be6768673263c26cf6fc3407b6650b239e41cf8`. Both fresh Alpine guests completed
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both fresh Alpine guests completed
 all nine cases and orderly shutdown, with no recorded cleanup errors. The first
 real pass in each guest returned 13 successful fixed nft-family command attempts;
 loaded/built-in/available observations are separately retained, so successful exit
@@ -85,8 +85,8 @@ skipped all IPv6 writes. Explicit deadline/output-limit/cancellation doubles
 settled cleanup and the external-runtime sentinel remained unchanged.
 
 The static candidate SHA256 is
-`0214a3de0383f0ec03427bf922e27913577808125f8f372420bb78e1de9a8377`,
-12,883,656 bytes, target `aarch64-unknown-linux-musl`. Its clean build binds the
+`e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca`,
+12,883,248 bytes, target `aarch64-unknown-linux-musl`. Its clean build binds the
 same frozen revision and includes all 14 safe Rust tests plus effect-free CLI
 checks with actual guest flags. Published first/repeat evidence retains exact
 build receipts and source inventories along with every captured guest file.
@@ -99,7 +99,7 @@ boolean CLI syntax and stopped before preparation effects. Both failed guests
 also shut down cleanly. The corrected capture changes only fixture expectations
 and arguments; production preparation behavior was unchanged.
 
-The current refresh binds the decoder error-budget correction into the complete
-source inventory. The network binary is byte-identical to the earlier qualification;
-both guest captures were nevertheless rerun from this clean revision. This evidence
-qualifies the network boundary and does not substitute for decoder-specific tests.
+The current refresh binds the container preparation additions and Rust dependency
+features into the complete compiled source inventory. Both guest captures were
+rerun from this clean revision. This evidence qualifies the network boundary;
+`tools/node-container` separately qualifies the explicit combined preparation API.

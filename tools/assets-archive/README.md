@@ -105,3 +105,8 @@ they never substitute for a real capture. The separate `verify.py` command and `
 published-evidence gates and fail when evidence is absent. Before capture, run
 `python3 -m unittest test_evidence.Evidence` (and `python3 -O`) from this directory
 for the mutation checks alone.
+
+Current container-preparation integration qualification was captured at source
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed the eight pinned-crane serialization cases. Producer and consumer hashes match the prior archive qualification; the complete source inventory was refreshed. DiffIDs remain declared-only in the archive API.
+Current-source verification passes normally and with `-O`; exact raw evidence is
+published in `evidence/`. Owned capture resources were independently confirmed absent.
