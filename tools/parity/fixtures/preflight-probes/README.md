@@ -22,48 +22,32 @@ closure/rebind and preservation of competing listeners. The explicitly labeled
 result and then really binds/conflicts/closes IPv4. Detection on a kernel without
 IPv6 remains unqualified; no host IPv6 setting is changed.
 
-The verifier checks the committed `evidence/` directory and `provenance.json`.
-To refresh it, run the following from the repository root. The shell stops if
-capture or installation fails; verification then checks the newly installed run.
-Review the resulting evidence diff before committing it.
+The Rust verifier requires a current schema 3 receipt. Historical evidence remains
+unchanged and does not satisfy this gate until a reviewed Rust capture replaces it.
+Run these commands from a clean, committed checkout after source review:
 
 ```sh
-set -e
-python3 tools/parity/fixtures/preflight-probes/capture.py --output /tmp/new-probe-evidence
-python3 - <<'INSTALL'
-import hashlib
-import json
-from pathlib import Path
-import shutil
-
-capture = Path('/tmp/new-probe-evidence')
-fixture = Path('tools/parity/fixtures/preflight-probes')
-names = {'build.log', 'run0.log', 'run1.log', 'source-hashes.json', 'receipt.json'}
-if {path.name for path in capture.iterdir()} != names:
-    raise SystemExit('unexpected capture file inventory')
-receipt = json.loads((capture / 'receipt.json').read_text())
-for key in ['errors', 'cleanup_errors', 'remaining_containers', 'remaining_images']:
-    if receipt.get(key) != []:
-        raise SystemExit('capture did not finish cleanly: ' + key)
-(fixture / 'evidence').mkdir(exist_ok=True)
-for name in names:
-    shutil.copyfile(capture / name, fixture / 'evidence' / name)
-hashes = {name: hashlib.sha256((fixture / 'evidence' / name).read_bytes()).hexdigest()
-          for name in sorted(names)}
-(fixture / 'provenance.json').write_text(json.dumps({'files': hashes}, indent=2) + '\n')
-INSTALL
-python3 tools/parity/fixtures/preflight-probes/verify.py
-python3 -m unittest discover -s tools/parity/fixtures/preflight-probes -p 'test_*.py'
+cargo run -p rubix-dev --bin rubix-node-fixture --locked -- probes capture /tmp/new-probe-evidence
+cargo run -p rubix-dev --bin rubix-node-fixture --locked -- probes verify /tmp/new-probe-evidence
+cargo test -p rubix-dev --bin rubix-node-fixture --locked
 ```
 
-To verify existing committed evidence without capturing or replacing files, run
-only the final verifier and test commands.
+Review and install the entire capture directory together; each command receipt is
+part of the evidence. The `published_probes_require_current_rust_capture` gate
+checks the installed `rust-evidence/` directory against current source hashes.
 
-A capture build is bounded to 900 seconds/8 MiB, each run to 60 seconds/1 MiB, and
-metadata/cleanup commands to 30 seconds/64 KiB. Every cleanup inspection is attempted
-independently and the receipt is published on failure. Only the exact owned image
-and containers are removed. Docker build cache is daemon-owned. The verifier checks
-raw assertion markers, identical binaries across repeats, source/manifest/lock
-binding, current harness hashes, exact evidence inventory and clean teardown.
-Logs retain test-runtime formatting; no claim of byte-identical test timings is made.
-The tests qualify trusted repository code, not hostile artifact execution.
+The build is bounded to 900 seconds/8 MiB, each run to 60 seconds/1 MiB, and
+metadata/cleanup commands to 30 seconds/64 KiB. Builder nonce frames bind the exact
+binaries to both executions. Raw bytes and settled command receipts prove exit
+status, EOF, process-group absence, and absence of cancellation, timeout, or output
+overflow. The independent oracle checks every filesystem/socket marker and all
+four successful test summaries. Repeated observations must agree.
+
+Only the capture's exact owned image and containers are removed. Uncertain process
+cleanup stops further effects and leaves inventory unknown. Failed daemon queries
+cannot claim empty inventories. Cancellation is sampled again before publication.
+No actual recapture has been performed for this migration.
+
+Install new captures under `rust-evidence/`, preserving historical `evidence/`.
+Image identity and empty cleanup inventories require their own persisted raw
+command receipts and exact daemon argv.
