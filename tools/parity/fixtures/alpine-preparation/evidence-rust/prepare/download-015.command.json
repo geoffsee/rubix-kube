@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-aZkwVH/nftables-1.1.6-r1.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/nftables-1.1.6-r1.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/nftables-1.1.6-r1.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 40201,
+  "owned_pid": 77701,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Z5I62p",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Kntgon",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "92a9fa8154572059be787bc6b9b5fa755e6ffef573eeee9ef7843e6efd147e5d",
+  "stdout_sha256": "113fb363500fa21739d20ad212b903d2aa0bba644dc107f0885f32b2f497dedb",
   "timeout": false
 }

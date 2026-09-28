@@ -5,7 +5,7 @@
     "ls",
     "--all",
     "--filter",
-    "reference=rubix-parity-6171ae8ac551ade3952601ba:test",
+    "reference=rubix-parity-fffd728827fe4265f749a29e:test",
     "--quiet"
   ],
   "cancelled": false,
@@ -15,11 +15,11 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 55376,
+  "owned_pid": 79275,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-u1COnx",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-nuQEiO",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "e1b4882e48c1053ae23dc4ff88d275250c90711fee5a408427d9f9263c19bfe4",
+  "stdout_sha256": "9b73098a5fb8f4904edf4df12221f768b2503d7caaf60f5ec76c75ca9bf136a5",
   "timeout": false
 }

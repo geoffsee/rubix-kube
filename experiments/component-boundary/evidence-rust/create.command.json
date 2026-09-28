@@ -3,14 +3,14 @@
     "docker",
     "create",
     "--name",
-    "rubix-component-boundary-acbbmc-capture",
+    "rubix-component-boundary-wl54i1-capture",
     "--network=none",
     "--cap-drop=ALL",
     "--security-opt=no-new-privileges",
     "--memory=1g",
     "--cpus=2",
     "--pids-limit=256",
-    "rubix-component-boundary-acbbmc"
+    "rubix-component-boundary-wl54i1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -19,11 +19,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 55433,
+  "owned_pid": 79788,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-WpAmBu",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-uwwF8V",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a584e52228c86e345dae680ae1efe4164064297d29019c0b0007f226accf3b2e",
+  "stdout_sha256": "20d71d20f2ce0659ac192889a462d24d51c70e839517a2ff33f506fcf9d21015",
   "timeout": false
 }

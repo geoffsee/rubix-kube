@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-print-preservation-mfusyg-config-0"
+    "rubix-config-print-preservation-wzhqa9-config-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41006,
+  "owned_pid": 77935,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qOUIPC",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zR5y25",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "10d7b74338537a8ee2a048cc842b86f32e207d1fe24451b61b2142c602d6a4e8",
+  "stdout_sha256": "a03bbaa757b51c0406610d5058c5046aeea7e8acc9aa191c4fc18fa5cfe71eca",
   "timeout": false
 }

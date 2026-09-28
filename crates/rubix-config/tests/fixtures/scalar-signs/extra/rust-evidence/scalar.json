@@ -18,12 +18,12 @@
   },
   "-0b+1": {
     "explicit_integer": {
-      "error": "parse /tmp/TestRubixCapture1519650143/021/config.yaml: error converting YAML to JSON: yaml: cannot decode !!str `-0b+1` as a !!int",
+      "error": "parse /tmp/TestRubixCapture3156505494/021/config.yaml: error converting YAML to JSON: yaml: cannot decode !!str `-0b+1` as a !!int",
       "mtu": 0,
       "namespace": "d2k"
     },
     "integer": {
-      "error": "parse /tmp/TestRubixCapture1519650143/020/config.yaml: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go struct field NetworkConfig.network.mtu of type int",
+      "error": "parse /tmp/TestRubixCapture3156505494/020/config.yaml: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go struct field NetworkConfig.network.mtu of type int",
       "mtu": 0,
       "namespace": "d2k"
     },

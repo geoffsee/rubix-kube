@@ -1,6 +1,6 @@
-71643138b63beb75903665b62c2aba5b9631555bea1ce71a3d0e2d4ece4a0799  /decode-tests
-e0baaddca78061be29eb058ed7c1561a4dece60ff5d5deb82f3bb7ce479024eb  /decoded_elf-tests
-aa943e51fa97c477cf6ce527884458d12128b8053d757f6bfadbe2d399c29e07  /fixture
+df7b14849985774ec669cd41abe50234447174b5a61aa1a52a03a6a34f9662c7  /decode-tests
+2af2ae84a43003639cebecd64c1fcfec80fd2e5f692d05bbb839a56fe02c887c  /decoded_elf-tests
+f91d30c683255b5b82a0b480084e3c8a0068cf4d17cc7f27b566b84b002bf351  /fixture
 RUBIX_SUITE decode
 
 running 14 tests

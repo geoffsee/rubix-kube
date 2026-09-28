@@ -3,50 +3,50 @@
   "cleanup_errors": [],
   "commands": {
     "build": {
-      "log_sha256": "13e3c17a92bc003e680aa011430d47fb648b6349c4685046dd17c2a7a4a0cb2e",
-      "receipt_sha256": "92c687fab34cba2531ef26b5321dcb6300f23d4670d779038ac226c1436b99a1"
+      "log_sha256": "c51c1efa317ff60fc29a275a4777547086834ee5202a1bbfcf568fb966d1a483",
+      "receipt_sha256": "23c0ca234e86367cbfe428433b8db866c95626a40bf1d668ac514fca1233fdb4"
     },
     "cleanup-1": {
-      "log_sha256": "1d055d6fb1e8e5b00f02e703e246440c0bc62ffe1befde9992b50c6f3aa71910",
-      "receipt_sha256": "087a3a9128891f50158e66cf25253d784237bf63c0aedc455d9b7642f67460e2"
+      "log_sha256": "e565a17405ae306cb42389cc250e95039b526fe549e6d9c5c3858c2e20b00958",
+      "receipt_sha256": "c19443203265a2fecec9c9e5b239984b255a23e8fa16a921a1a73466aa6d558e"
     },
     "cleanup-2": {
-      "log_sha256": "8332df64588cf7f2c16b7c58db85b0d596045205be15b23203d9876ce9a6b76f",
-      "receipt_sha256": "ca92f5bbaf613b2c0e1d1a5c6bbeef9be580eeb38dbeb6ec9e258ade72ce313f"
+      "log_sha256": "5eb1a71209e378960ac8d9cb70687291c25e0c9cd83b5eb2b3042b7d88d46c31",
+      "receipt_sha256": "7b07cf97209d01dbfcdb11a7768ecb3d32becf4f0cdb9a9af9d8c6321098fce2"
     },
     "cleanup-3": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "c19f26683ea31a2428e312c3092339d27256892dab608e78c837fbac8913c8ff"
+      "receipt_sha256": "4eae42f060652fc461eb8d4f4baec977c77a288b0d13aacb3e7bee31fc67b975"
     },
     "cleanup-4": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "50f8ba8fca3d00d884fb16ae832417736cd93a26d4ef1b0212db1a6a4e66dff0"
+      "receipt_sha256": "55962f6e16474c80ada5f9d82348fa30ae3ec44aaaf1f192a5d6c84eccb4fc62"
     },
     "container-inspect": {
-      "log_sha256": "5b558d5a0dbd0dd04686972b367f091c18f7ac2f8ea241771384b39ade6be8ba",
-      "receipt_sha256": "8ebd944f7b57ed3253dcdd3ef7a92d0ee0d1405790b19c146fb57a994b5d204f"
+      "log_sha256": "58d308dd2a2da66652206298b47549dd9e9b4c6fd8c94284de90a91392feecc0",
+      "receipt_sha256": "6746abbb80b19adae085b8a5b727faa84cf32c8753c5f1a36e7aa7670774ce9c"
     },
     "copy-evidence": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "e2eee708c355ea2a0420487e0c8467190c830778726a85f05dcee4ce4e807a3c"
+      "receipt_sha256": "fce7209a6a13f44a4036ac12d5f131bd24c6caf38053dd493bb0ac349c9209e2"
     },
     "create": {
-      "log_sha256": "32f547cf78e305b3199b8efdc8e6973a17a710939340457b444b3c94aefc4785",
-      "receipt_sha256": "7a487dc91555b56c2bc488d7df5e74acb4d2fa7bb9c9b61843d6b125fee16a9c"
+      "log_sha256": "320b5907b234e533518abd893e7cf2b773764882d96740c529fab0e7360fd27a",
+      "receipt_sha256": "ba72682b42bfdadab6ba0763564e67941652e47555f56645b18a80c8c0ac839d"
     },
     "execute": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "59f9fa6cdd036ecdea61af34041fd4c3367917fd06d3e5ab0c7b1831e0fd27b8"
+      "receipt_sha256": "5c8ee2aa6bb95e123ff1fbb29feaab1ce5c139df10e295ace23ce02beec4ce99"
     },
     "image-inspect": {
-      "log_sha256": "d60b0ee869ab612cee62beb0d899bed43b7c8bf87e615a03906be8c5fdf21e67",
-      "receipt_sha256": "9e1c0a7f0eb0df08dab594831ead91c66834423d5a191a4af85ab5d400a96c1b"
+      "log_sha256": "fec792df45969d6cc0986689b6369e80153f3be1832bb3926cc2c89173ecbf62",
+      "receipt_sha256": "055ec56d3d80aaf0ebc3d64fe683655a75691881bb90761d51093c1f4e313fe5"
     }
   },
   "errors": [],
   "exit_code": 0,
-  "owned_container": "rubix-api-json-hul4cl-capture",
-  "owned_image": "rubix-api-json-hul4cl",
+  "owned_container": "rubix-api-json-mpk83d-capture",
+  "owned_image": "rubix-api-json-mpk83d",
   "process_cleanup_complete": true,
   "process_failures": [],
   "remaining_containers": [],
@@ -75,14 +75,18 @@
     "tools/dev/src/api_json/scenario.rs": "45f2a17428612a8a8c915aeb5182a4e417cd4703d521af257caa198d8da3718a",
     "tools/dev/src/api_json/tests.rs": "e07bba5b75f6ea03328634c8171850cd2363334cdb8f0bb566d964087c71d623",
     "tools/dev/src/asset_fixture/archive.rs": "0f201bcd3bce78f39a15a0b9cd3716c091b44e502ed32aa0b17c6bb236b7d11f",
-    "tools/dev/src/asset_fixture/capture.rs": "5a81d8751269013db826bf373b97209367df014409d77f6b889c293ae7a14658",
-    "tools/dev/src/asset_fixture/common.rs": "df2e5a2b5dbdee1c50a2485f05e7a4862b1546ca283b01b394ef482fecc6120f",
+    "tools/dev/src/asset_fixture/capture.rs": "7f98c39165ce4cfbb5eb3d36713a78ba20cd694868e5b23e7af4bd2752ec44fc",
+    "tools/dev/src/asset_fixture/common.rs": "e04a63face2460d77f3d8647d7f33f096c96431e441a0a43e13b7e1ea6d690c9",
     "tools/dev/src/asset_fixture/elf.rs": "23a1f53af6d93b3860da1a7ad778cec882e4e511dd9f76e8895e249482f1b234",
     "tools/dev/src/asset_fixture/layer.rs": "19000975e7ce425028db7edffda5c496ba733997c2d384d896fa940fbaa66df0",
     "tools/dev/src/asset_fixture/layer_oracle.rs": "a3a15668c3b80f7ce473ec4183efa3fc4d4cbf337f982e2fc84cf9eb05e2ba1c",
     "tools/dev/src/asset_fixture/layer_oracle_tests.rs": "0bb581063598486ffbd08c70524d99bf39d1074f69a605b17eeab8883c6f379d",
     "tools/dev/src/asset_fixture/layer_tests.rs": "fc60e999f0adc5ced07c74a04bc441d75f52c3e4c50580e062e0a60cd14c884f",
-    "tools/dev/src/asset_fixture/mod.rs": "252d351deb20e67298f9a16540ad1ffc38e0dfbf4d555a3cfa56a9ac06b9edb2",
+    "tools/dev/src/asset_fixture/manifest.rs": "09998935b40804dbc5b3347fc403c965dd5f8fd5cdaa556b80db51254616e9cb",
+    "tools/dev/src/asset_fixture/manifest_oracle.rs": "a00fa8a51e0ae5aaef150e13fe929cdf1cb3c88b262aba62dc6c9a6d64a76125",
+    "tools/dev/src/asset_fixture/manifest_oracle_tests.rs": "865ab7b53d7f9ee3912b8060662323cb626a640983f660429d7755a374786055",
+    "tools/dev/src/asset_fixture/manifest_tests.rs": "d4af2dd9e3fd23876d45802a314d57d51a1841a83e28b92934d1a96e462f0d8c",
+    "tools/dev/src/asset_fixture/mod.rs": "9b996f6f00d420aa48a310eae43694e2c7138c0efa741cf31b55dface087311d",
     "tools/dev/src/asset_fixture/native.rs": "4b4c9fd7a55326c861af80c3c5a157dcfbc1da18ca5d806285d1b4407eb0dc00",
     "tools/dev/src/asset_fixture/tests.rs": "766052bb742f4fc5e6a9670a4ff263de565b90ef52b9f6d3a258ce479b6110d2",
     "tools/dev/src/bin/rubix-api-json.rs": "c27628a35967e435ba937fc277788d6381e71bf8c0b474db100e2e5ff2dc9b98",

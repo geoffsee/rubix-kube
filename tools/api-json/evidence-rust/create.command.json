@@ -3,14 +3,14 @@
     "docker",
     "create",
     "--name",
-    "rubix-api-json-hul4cl-capture",
+    "rubix-api-json-mpk83d-capture",
     "--network=none",
     "--cap-drop=ALL",
     "--security-opt=no-new-privileges",
     "--memory=1g",
     "--cpus=2",
     "--pids-limit=256",
-    "rubix-api-json-hul4cl"
+    "rubix-api-json-mpk83d"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -19,11 +19,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 42089,
+  "owned_pid": 79431,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-1wAz19",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-6cipYX",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "32f547cf78e305b3199b8efdc8e6973a17a710939340457b444b3c94aefc4785",
+  "stdout_sha256": "320b5907b234e533518abd893e7cf2b773764882d96740c529fab0e7360fd27a",
   "timeout": false
 }

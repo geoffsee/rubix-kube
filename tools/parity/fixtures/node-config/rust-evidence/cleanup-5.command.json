@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-node-config-wejjqr"
+    "rubix-node-config-dfrgdt"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 57197,
+  "owned_pid": 80265,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ZAljCP",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-nGs9Sr",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f413ca4c0625e18beeb0be52570fa3f6cf3873201df6be0c00352e664ebe5a1f",
+  "stdout_sha256": "6b93e54e6442b9fff3985f80521c6191c1dab2fb084ac64c32c92f493a007175",
   "timeout": false
 }

@@ -3,7 +3,7 @@
     "docker",
     "create",
     "--name",
-    "rubix-parity-6171ae8ac551ade3952601ba",
+    "rubix-parity-fffd728827fe4265f749a29e",
     "--network=none",
     "--cap-drop=ALL",
     "--cap-add=SETUID",
@@ -16,8 +16,8 @@
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,noexec,size=64m,mode=1777",
     "--mount",
-    "type=volume,source=rubix-parity-6171ae8ac551ade3952601ba-evidence,target=/evidence",
-    "rubix-parity-6171ae8ac551ade3952601ba:test"
+    "type=volume,source=rubix-parity-fffd728827fe4265f749a29e-evidence,target=/evidence",
+    "rubix-parity-fffd728827fe4265f749a29e:test"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -26,11 +26,11 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 55362,
+  "owned_pid": 79262,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-JvNbiG",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-XDV0QG",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "fe700cc257f76600572897b0f5f8a1b97487deefdd7cd651948538e60563965a",
+  "stdout_sha256": "fa3f57c4c2b2938d95825d479afa6b5264edb185d9c1d1f21677a82b76340eee",
   "timeout": false
 }

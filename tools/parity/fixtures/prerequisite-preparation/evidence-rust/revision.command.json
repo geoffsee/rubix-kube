@@ -2,7 +2,7 @@
   "argv": [
     "git",
     "-C",
-    "/private/tmp/rubix-layer-integrity-worktree-20260928",
+    "/private/tmp/rubix-manifest-binding-worktree-20260928",
     "rev-parse",
     "HEAD"
   ],
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 40102,
+  "owned_pid": 77667,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-F4logB",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-yqO9oJ",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "d13ea1fbf2d8a5e62bb454a072598c34399c5f831f8cd9423b526a352ab2494a",
+  "stdout_sha256": "cfaeea2a7bfb2dedb47da4a47a9d10808cf8c5728910d5b62eef8e09e98c08ef",
   "timeout": false
 }

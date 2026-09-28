@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-node-assessment-5140c5aa613b9be0284f1c281019a2c0-first",
+    "rubix-node-assessment-1562a3e831e6af53a4d4929627869222-first",
     "--init",
     "--network=none",
     "--read-only",
@@ -20,7 +20,7 @@
     "RUBIX_NODE_DISPOSABLE=1",
     "--env",
     "PRIVATE_SENTINEL=must-not-reach-probe",
-    "rubix-node-assessment-5140c5aa613b9be0284f1c281019a2c0",
+    "rubix-node-assessment-1562a3e831e6af53a4d4929627869222",
     "/bin/sh",
     "-c",
     "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host /out/node-fixture; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /node-fixture consumer; status=$?; /node-fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -32,11 +32,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41686,
+  "owned_pid": 79942,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-mNFpC0",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-YseoZt",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "568eefcbe2bcc95670760d55017a9c64c8398589ae54d987aabd042058bd6860",
+  "stdout_sha256": "d85c8979837ff693b88ba2506d5f68491f2215c4e7e43c0a9a28b6c6215c561a",
   "timeout": false
 }

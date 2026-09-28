@@ -4,13 +4,13 @@
     "build",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=rubix-supervisor-output-4793e551a6f089c0be35f1060bfb5d40",
+    "QUALIFICATION_NONCE=rubix-supervisor-output-6307e74173b2b4f096943d5bec44f6a8",
     "--platform=linux/arm64",
     "-t",
-    "rubix-supervisor-output-4793e551a6f089c0be35f1060bfb5d40",
+    "rubix-supervisor-output-6307e74173b2b4f096943d5bec44f6a8",
     "-f",
-    "/tmp/rubix-supervisor-context-K0iH0a/tools/supervisor-output/Capture.Dockerfile",
-    "/tmp/rubix-supervisor-context-K0iH0a"
+    "/tmp/rubix-supervisor-context-V9RhHI/tools/supervisor-output/Capture.Dockerfile",
+    "/tmp/rubix-supervisor-context-V9RhHI"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -19,11 +19,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 56569,
+  "owned_pid": 78900,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-bNQDeQ",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-r8xdVy",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "4b21d376ea43939e96912472abd890dedcbcc89c9ced074e8cb0e2c05d3f183a",
+  "stdout_sha256": "5ce5dcc2686cacc73e86d7b26cf5f5f028a56389235f36d0b6eb3f258d32adda",
   "timeout": false
 }

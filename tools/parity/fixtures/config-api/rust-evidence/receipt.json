@@ -170,16 +170,16 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-config-api-zetzdk-config-0",
-    "rubix-config-api-zetzdk-config-1",
-    "rubix-config-api-zetzdk-configapi-0",
-    "rubix-config-api-zetzdk-configapi-1"
+    "rubix-config-api-burl1r-config-0",
+    "rubix-config-api-burl1r-config-1",
+    "rubix-config-api-burl1r-configapi-0",
+    "rubix-config-api-burl1r-configapi-1"
   ],
   "errors": [],
   "family": "config-api",
   "identical_repeats": true,
-  "image": "rubix-config-api-zetzdk",
-  "image_id": "sha256:5d4918ec0041f1068f434dc71ce6a885874cff685330a33ea52ba3ff3ca19320",
+  "image": "rubix-config-api-burl1r",
+  "image_id": "sha256:e27e7c02aec5b41187f39727e83234aee688e398fcb7ee386fc4c7a51c7addb7",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -196,30 +196,30 @@
         "User": "65532:65532",
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T09:07:18.900726089Z",
+      "Created": "2026-09-28T16:21:49.366114546Z",
       "Descriptor": {
-        "digest": "sha256:5d4918ec0041f1068f434dc71ce6a885874cff685330a33ea52ba3ff3ca19320",
+        "digest": "sha256:e27e7c02aec5b41187f39727e83234aee688e398fcb7ee386fc4c7a51c7addb7",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:5d4918ec0041f1068f434dc71ce6a885874cff685330a33ea52ba3ff3ca19320",
+      "Id": "sha256:e27e7c02aec5b41187f39727e83234aee688e398fcb7ee386fc4c7a51c7addb7",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T09:07:26.759101301Z",
-            "Ref": "tz87evuagz0i5xyach7zu4s62"
+            "CreatedAt": "2026-09-28T16:21:53.77638984Z",
+            "Ref": "he65nnfibyueivk3lw5jiyp09"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T09:07:23.567099425Z"
+        "LastTagTime": "2026-09-28T16:21:52.796971172Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-config-api-zetzdk@sha256:5d4918ec0041f1068f434dc71ce6a885874cff685330a33ea52ba3ff3ca19320"
+        "rubix-config-api-burl1r@sha256:e27e7c02aec5b41187f39727e83234aee688e398fcb7ee386fc4c7a51c7addb7"
       ],
       "RepoTags": [
-        "rubix-config-api-zetzdk:latest"
+        "rubix-config-api-burl1r:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -232,14 +232,14 @@
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
           "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
           "sha256:89e8c1a498d66a2155a581feb21a032650ac64b05d4c00fec6594ac27484aa0e",
-          "sha256:ff02256f8b26fa9e08fa6f3a62e0a9f856a531542bc8bb32fad13bf5fc881530",
-          "sha256:bccc0f2216c56e685ca8a0bb15e45eb52b6f89727bf7d28036c8686d7f152ea9",
-          "sha256:e15da3b46b01ca29177b45c4380d0cf210bcb5a1cd22a4d88d7306afd6acf73f",
+          "sha256:9237ce659c876ac72f7c7d7d939177f88986f4ecbe43aba9eca8e726667ac48f",
+          "sha256:eed848f97cd1d9bccf62eb9ea368e58a2505e374bbd60a062cda0b697e0597f3",
+          "sha256:ccc042ffb93439d583e8c1a4e3ee36d5d8c94a9326d798e97cee25e0820ec3bc",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 339598021
+      "Size": 339595254
     }
   ],
   "outputs": {
@@ -253,7 +253,7 @@
   "repeat_count": 2,
   "retained_build_contexts": [],
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
-  "runner_sha256": "1c0805cf5052541019659bcfca275f7024a12fbc4c0a7e157a4cf1286dc48664",
+  "runner_sha256": "37d89de5f4366653598fe767a994a9b7162bdaab3f2c893a7e277b45625cf6bb",
   "schema_version": 2,
   "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
   "source_sha256": {
@@ -265,14 +265,18 @@
     "tools/dev/src/api_json/scenario.rs": "45f2a17428612a8a8c915aeb5182a4e417cd4703d521af257caa198d8da3718a",
     "tools/dev/src/api_json/tests.rs": "e07bba5b75f6ea03328634c8171850cd2363334cdb8f0bb566d964087c71d623",
     "tools/dev/src/asset_fixture/archive.rs": "0f201bcd3bce78f39a15a0b9cd3716c091b44e502ed32aa0b17c6bb236b7d11f",
-    "tools/dev/src/asset_fixture/capture.rs": "5a81d8751269013db826bf373b97209367df014409d77f6b889c293ae7a14658",
-    "tools/dev/src/asset_fixture/common.rs": "df2e5a2b5dbdee1c50a2485f05e7a4862b1546ca283b01b394ef482fecc6120f",
+    "tools/dev/src/asset_fixture/capture.rs": "7f98c39165ce4cfbb5eb3d36713a78ba20cd694868e5b23e7af4bd2752ec44fc",
+    "tools/dev/src/asset_fixture/common.rs": "e04a63face2460d77f3d8647d7f33f096c96431e441a0a43e13b7e1ea6d690c9",
     "tools/dev/src/asset_fixture/elf.rs": "23a1f53af6d93b3860da1a7ad778cec882e4e511dd9f76e8895e249482f1b234",
     "tools/dev/src/asset_fixture/layer.rs": "19000975e7ce425028db7edffda5c496ba733997c2d384d896fa940fbaa66df0",
     "tools/dev/src/asset_fixture/layer_oracle.rs": "a3a15668c3b80f7ce473ec4183efa3fc4d4cbf337f982e2fc84cf9eb05e2ba1c",
     "tools/dev/src/asset_fixture/layer_oracle_tests.rs": "0bb581063598486ffbd08c70524d99bf39d1074f69a605b17eeab8883c6f379d",
     "tools/dev/src/asset_fixture/layer_tests.rs": "fc60e999f0adc5ced07c74a04bc441d75f52c3e4c50580e062e0a60cd14c884f",
-    "tools/dev/src/asset_fixture/mod.rs": "252d351deb20e67298f9a16540ad1ffc38e0dfbf4d555a3cfa56a9ac06b9edb2",
+    "tools/dev/src/asset_fixture/manifest.rs": "09998935b40804dbc5b3347fc403c965dd5f8fd5cdaa556b80db51254616e9cb",
+    "tools/dev/src/asset_fixture/manifest_oracle.rs": "a00fa8a51e0ae5aaef150e13fe929cdf1cb3c88b262aba62dc6c9a6d64a76125",
+    "tools/dev/src/asset_fixture/manifest_oracle_tests.rs": "865ab7b53d7f9ee3912b8060662323cb626a640983f660429d7755a374786055",
+    "tools/dev/src/asset_fixture/manifest_tests.rs": "d4af2dd9e3fd23876d45802a314d57d51a1841a83e28b92934d1a96e462f0d8c",
+    "tools/dev/src/asset_fixture/mod.rs": "9b996f6f00d420aa48a310eae43694e2c7138c0efa741cf31b55dface087311d",
     "tools/dev/src/asset_fixture/native.rs": "4b4c9fd7a55326c861af80c3c5a157dcfbc1da18ca5d806285d1b4407eb0dc00",
     "tools/dev/src/asset_fixture/tests.rs": "766052bb742f4fc5e6a9670a4ff263de565b90ef52b9f6d3a258ce479b6110d2",
     "tools/dev/src/bin/rubix-api-json.rs": "c27628a35967e435ba937fc277788d6381e71bf8c0b474db100e2e5ff2dc9b98",

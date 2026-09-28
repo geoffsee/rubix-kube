@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-config-api-zetzdk"
+    "rubix-config-api-burl1r"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 40345,
+  "owned_pid": 77764,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-EsbHew",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qxMr2t",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "ab763150687fe8ff2b09b46d5e390ac7b050c1bf36fc5753a1af2e712d26a58f",
+  "stdout_sha256": "57b8c2cc621629def7ad785621753d6d653ed2560b45731193a1938f685e8ee1",
   "timeout": false
 }

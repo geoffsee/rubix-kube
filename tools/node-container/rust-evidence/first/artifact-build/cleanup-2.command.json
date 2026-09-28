@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "-f",
-    "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b-test"
+    "rubix-node-container-1e289687eeaa4db59d618c6397f5e366-test"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 55210,
+  "owned_pid": 81403,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-2ToqPN",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-WjPC3R",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "6d15656c462e293f49dd91e46a44679c89ba746013d3bb8f48d242ab6843d81b",
+  "stdout_sha256": "bb407f87d3980e21abf75237bf405d5cbd306c8101ff0dd7c463fabec3c44714",
   "timeout": false
 }

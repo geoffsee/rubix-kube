@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-aZkwVH/ifupdown-ng-0.13.0-r0.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/ifupdown-ng-0.13.0-r0.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/ifupdown-ng-0.13.0-r0.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 40140,
+  "owned_pid": 77656,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qpzHjo",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-rqOhOI",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "9ad3a6f79c7b3435a42facfb9817c7b79dfb221cde4ba47f754624ac93836e5f",
+  "stdout_sha256": "7943b0d0e3c40b9446c1de4d18909b517bb406419728d06763552c5ce811d94e",
   "timeout": false
 }

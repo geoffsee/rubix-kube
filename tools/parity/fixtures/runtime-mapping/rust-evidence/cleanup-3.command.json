@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-runtime-mapping-dpdb0k"
+    "rubix-runtime-mapping-dpkjeg"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 56172,
+  "owned_pid": 79251,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Xe0zdv",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-enPtSB",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "5754a75da21d963da8de84fccf602238f1b282739e8a72544624a79cc7c04951",
+  "stdout_sha256": "900e3f686da43aa77fcc21208c17833170a8f48089ebe7d7b11c7e2ad2674c1a",
   "timeout": false
 }

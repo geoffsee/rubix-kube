@@ -1,7 +1,7 @@
-{"level":"info","time":"2026-09-28T09:09:02Z","message":"installing Alpine networking packages: nftables iptables"}
-{"level":"debug","time":"2026-09-28T09:09:02Z","message":"apk output: (1/8) Installing libnftnl (1.3.1-r0)\n(2/8) Installing libxtables (1.8.13-r0)\n(3/8) Installing iptables (1.8.13-r0)\n(4/8) Installing iptables-openrc (1.8.13-r0)\n(5/8) Installing gmp (6.3.0-r4)\n(6/8) Installing jansson (2.15.0-r0)\n(7/8) Installing nftables (1.1.6-r1)\n(8/8) Installing nftables-openrc (1.1.6-r1)\nExecuting busybox-1.37.0-r31.trigger\nOK: 170.0 MiB in 211 packages"}
-{"level":"info","time":"2026-09-28T09:09:02Z","message":"Alpine networking packages installed successfully"}
-{"level":"info","time":"2026-09-28T09:09:02Z","message":"enabling Alpine cgroups service..."}
-{"level":"debug","time":"2026-09-28T09:09:02Z","message":"rc-update output: * service cgroups added to runlevel boot"}
-{"level":"debug","time":"2026-09-28T09:09:02Z","message":"rc-service output: * Caching service dependencies ... [ ok ]"}
-{"level":"info","time":"2026-09-28T09:09:02Z","message":"Alpine cgroups service started"}
+{"level":"info","time":"2026-09-28T16:23:27Z","message":"installing Alpine networking packages: nftables iptables"}
+{"level":"debug","time":"2026-09-28T16:23:27Z","message":"apk output: (1/8) Installing libnftnl (1.3.1-r0)\n(2/8) Installing libxtables (1.8.13-r0)\n(3/8) Installing iptables (1.8.13-r0)\n(4/8) Installing iptables-openrc (1.8.13-r0)\n(5/8) Installing gmp (6.3.0-r4)\n(6/8) Installing jansson (2.15.0-r0)\n(7/8) Installing nftables (1.1.6-r1)\n(8/8) Installing nftables-openrc (1.1.6-r1)\nExecuting busybox-1.37.0-r31.trigger\nOK: 170.0 MiB in 211 packages"}
+{"level":"info","time":"2026-09-28T16:23:27Z","message":"Alpine networking packages installed successfully"}
+{"level":"info","time":"2026-09-28T16:23:27Z","message":"enabling Alpine cgroups service..."}
+{"level":"debug","time":"2026-09-28T16:23:27Z","message":"rc-update output: * service cgroups added to runlevel boot"}
+{"level":"debug","time":"2026-09-28T16:23:27Z","message":"rc-service output: * Caching service dependencies ... [ ok ]"}
+{"level":"info","time":"2026-09-28T16:23:27Z","message":"Alpine cgroups service started"}

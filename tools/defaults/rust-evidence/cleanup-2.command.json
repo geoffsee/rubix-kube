@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-official-defaults-jt3knr-run-1"
+    "rubix-official-defaults-bkbxpj-run-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 57458,
+  "owned_pid": 80513,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-pdpNep",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-JerVD4",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f454574863580dbdf8983750b70af775f0551860f7b41c87656086e3583b28b4",
+  "stdout_sha256": "e2c10ab56bb5e31a1be0cc0500861e9dd7dafa15a7f9fbe00fb2fceb365b0f9f",
   "timeout": false
 }
