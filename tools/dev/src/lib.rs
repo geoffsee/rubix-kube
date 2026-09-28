@@ -109,3 +109,6 @@ mod tests {
         );
     }
 }
+
+#[path = "fixture_oracles/probes.rs"]
+pub mod preflight_probes;

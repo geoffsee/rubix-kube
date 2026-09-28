@@ -2,6 +2,8 @@
 mod archive;
 mod contract;
 mod driver;
+#[cfg(test)]
+mod historical;
 pub(crate) mod lifecycle;
 pub mod process;
 mod runner;
