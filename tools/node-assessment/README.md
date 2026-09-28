@@ -17,3 +17,5 @@ The ignored tests must never run directly on the development host.
 commands, namespace cleanup and repeated identities. `test_evidence.py` requires
 published frozen evidence and tests meaningful mutations, normally and under
 `python3 -O`. No success is claimed until those checks pass on final source.
+
+The committed evidence passed twice on source `fe020bae3e8b4047671685c6e153f0f78dfa6908`. All seven evidence regressions and strict verification pass normally and under `python3 -O`; owned container/image inventories are empty. An earlier attempt stopped before tests because the private fixture mount obscured Docker init through the base image’s `/sbin` symlink. The fixture now separates `/sbin` from `/usr/sbin`; production lookup paths are unchanged.
