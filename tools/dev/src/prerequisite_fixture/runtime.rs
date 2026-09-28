@@ -114,22 +114,7 @@ fn invoke(root: &Path, opt_in: bool, send: Option<Signal>, uid: u32) -> Result<V
                         .trim()
                         .parse::<i32>()?,
                 );
-                // The sole waiter still retains this unreaped child, so its PID cannot be reused.
-                rustix::process::kill_process(
-                    Pid::from_raw(i32::try_from(owner.pid())?).ok_or("CLI PID")?,
-                    signal,
-                )?;
-                std::thread::sleep(Duration::from_millis(10));
-                if owner.poll()?.is_none() {
-                    rustix::process::kill_process(
-                        Pid::from_raw(i32::try_from(owner.pid())?).ok_or("CLI PID")?,
-                        if signal == Signal::INT {
-                            Signal::TERM
-                        } else {
-                            Signal::INT
-                        },
-                    )?;
-                }
+                signal_owned_cli(&mut owner, signal)?;
                 signalled = true;
             }
             std::thread::sleep(Duration::from_millis(10));
@@ -173,8 +158,23 @@ fn invoke(root: &Path, opt_in: bool, send: Option<Signal>, uid: u32) -> Result<V
         vec![]
     };
     Ok(
-        json!({"exit":code,"actions":actions,"signal_sent":send.map(|s|s.as_raw()),"owned_child_absent":send.is_some(),"stdout":String::from_utf8(crate::parity::read(&logs.path().join("stdout"),65536)?)?,"stderr":String::from_utf8(crate::parity::read(&logs.path().join("stderr"),65536)?)?}),
+        json!({"exit":code,"actions":actions,"signal_sent":send.map(Signal::as_raw),"owned_child_absent":send.is_some(),"stdout":String::from_utf8(crate::parity::read(&logs.path().join("stdout"),65536)?)?,"stderr":String::from_utf8(crate::parity::read(&logs.path().join("stderr"),65536)?)?}),
     )
+}
+fn signal_owned_cli(owner: &mut OwnedChild, signal: Signal) -> Result<()> {
+    // The sole waiter retains this unreaped child, so its PID cannot be reused.
+    let pid = Pid::from_raw(i32::try_from(owner.pid())?).ok_or("CLI PID")?;
+    rustix::process::kill_process(pid, signal)?;
+    std::thread::sleep(Duration::from_millis(10));
+    if owner.poll()?.is_none() {
+        let alternate = if signal == Signal::INT {
+            Signal::TERM
+        } else {
+            Signal::INT
+        };
+        rustix::process::kill_process(pid, alternate)?;
+    }
+    Ok(())
 }
 #[derive(Debug)]
 struct Unsettled {
