@@ -680,7 +680,9 @@ name = "rubix-kube"
 version = "0.1.0"
 dependencies = [
  "rubix-config",
+ "rubix-supervisor",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
