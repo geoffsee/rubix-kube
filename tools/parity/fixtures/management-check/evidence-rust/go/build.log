@@ -1,70 +1,70 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [build 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.16kB done
 #1 DONE 0.0s
 
-#2 [internal] load build definition from Dockerfile
-#2 transferring dockerfile: 1.16kB done
+#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 #2 DONE 0.0s
 
-#3 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
 #3 DONE 0.0s
 
-#4 [internal] load .dockerignore
-#4 transferring context: 2B done
+#4 [ 1/11] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
 #4 DONE 0.0s
 
 #5 [internal] load build context
 #5 transferring context: 11.78kB done
 #5 DONE 0.0s
 
-#6 [ 7/11] COPY go.mod ./
+#6 [ 2/11] WORKDIR /source
 #6 CACHED
 
-#7 [ 3/11] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=1
+#7 [ 4/11] COPY extract.go /extract.go
 #7 CACHED
 
-#8 [ 8/11] COPY capture_test.go cli/capture_test.go
+#8 [ 5/11] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/internal/cli/ui && cp internal/cli/ui/ui.go /oracle/internal/cli/ui/  && cp go.sum /oracle/  && sha256sum internal/cli/cmd_check.go internal/cli/root.go internal/cli/helpers.go internal/cli/config/config.go internal/cli/cmd_version.go internal/cli/ui/ui.go > /source.sha256
 #8 CACHED
 
-#9 [ 2/11] WORKDIR /source
+#9 [ 6/11] WORKDIR /oracle
 #9 CACHED
 
-#10 [ 4/11] COPY extract.go /extract.go
+#10 [ 3/11] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=1
 #10 CACHED
 
-#11 [ 5/11] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/internal/cli/ui && cp internal/cli/ui/ui.go /oracle/internal/cli/ui/  && cp go.sum /oracle/  && sha256sum internal/cli/cmd_check.go internal/cli/root.go internal/cli/helpers.go internal/cli/config/config.go internal/cli/cmd_version.go internal/cli/ui/ui.go > /source.sha256
+#11 [ 7/11] COPY go.mod ./
 #11 CACHED
 
-#12 [ 6/11] WORKDIR /oracle
-#12 CACHED
+#12 [ 8/11] COPY capture_test.go cli/capture_test.go
+#12 DONE 0.0s
 
 #13 [ 9/11] COPY cases.json /cases.json
-#13 CACHED
+#13 DONE 0.0s
 
 #14 [10/11] RUN go test -mod=readonly -c -trimpath -o /capture.test ./cli && sha256sum /capture.test >> /source.sha256
-#14 0.117 go: downloading github.com/rs/zerolog v1.33.0
-#14 1.055 go: downloading github.com/spf13/cobra v1.10.2
-#14 1.140 go: downloading github.com/mattn/go-colorable v0.1.13
-#14 1.500 go: downloading github.com/mattn/go-isatty v0.0.20
-#14 1.501 go: downloading github.com/spf13/pflag v1.0.10
-#14 1.795 go: downloading golang.org/x/sys v0.47.0
-#14 DONE 9.2s
+#14 0.128 go: downloading github.com/rs/zerolog v1.33.0
+#14 1.117 go: downloading github.com/spf13/cobra v1.10.2
+#14 1.174 go: downloading github.com/mattn/go-colorable v0.1.13
+#14 1.529 go: downloading github.com/mattn/go-isatty v0.0.20
+#14 1.529 go: downloading github.com/spf13/pflag v1.0.10
+#14 1.829 go: downloading golang.org/x/sys v0.47.0
+#14 DONE 8.0s
 
 #15 [11/11] WORKDIR /tmp
-#15 DONE 0.1s
+#15 DONE 0.0s
 
 #16 exporting to image
 #16 exporting layers
-#16 exporting layers 1.9s done
-#16 exporting manifest sha256:634bf3526662a6e7991033c7de25d23e67f2e49431cc8be689eaca9db7103150 done
-#16 exporting config sha256:65dad4aefe5a243ab8aec68124888b8eabfd1acb4d84ebaf6625ebb7d0423e01 done
-#16 exporting attestation manifest sha256:6da1f773932170f77e793ada011901180d9b932d5301097ea87e0f284d536479 done
-#16 exporting manifest list sha256:8ef94023a7f64f5bd8c0e6345f67a7fa096c69d171f6001769570a9c26f2e358 done
-#16 naming to docker.io/library/rubix-management-go-26aaje:latest done
-#16 unpacking to docker.io/library/rubix-management-go-26aaje:latest
-#16 unpacking to docker.io/library/rubix-management-go-26aaje:latest 0.9s done
-#16 DONE 2.8s
+#16 exporting layers 1.8s done
+#16 exporting manifest sha256:1d4f3966007cff21fc5f6327cb5553e230cde0143d47912df9b8ea47610b8ffc done
+#16 exporting config sha256:db9f7bc50a0b523e5d92dae3977d8a8bcdb2fa303d05e003bc2ded6d3ab6b244 done
+#16 exporting attestation manifest sha256:a09bf294bf7d8695ccc85103f938b16b71ed06ad068ad9460c73783113162d33 done
+#16 exporting manifest list sha256:0ea2b5fbb34d36ee9a3a5ffcd6103cfff0ca1b0d9467514f584d7c6c11e901ed done
+#16 naming to docker.io/library/rubix-management-go-mhb5kz:latest done
+#16 unpacking to docker.io/library/rubix-management-go-mhb5kz:latest
+#16 unpacking to docker.io/library/rubix-management-go-mhb5kz:latest 0.6s done
+#16 DONE 2.4s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/laz5ertodltqyld1kp3y9nwbj
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/zqavwdk9uqazvugeimh45cll3

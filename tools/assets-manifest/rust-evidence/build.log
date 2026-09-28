@@ -4,87 +4,257 @@
 #1 transferring dockerfile: 2.09kB done
 #1 DONE 0.0s
 
-#2 [internal] load metadata for docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 #2 DONE 0.0s
 
-#3 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#3 [internal] load metadata for docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
 #3 DONE 0.0s
 
 #4 [internal] load .dockerignore
 #4 transferring context: 2B done
 #4 DONE 0.0s
 
-#5 [build 1/7] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#5 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#5 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#5 resolve docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19 0.0s done
 #5 DONE 0.0s
 
-#6 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
-#6 resolve docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19 0.0s done
+#6 [build 1/7] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#6 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
 #6 DONE 0.0s
 
 #7 [internal] load build context
-#7 transferring context: 24.92MB 0.2s done
+#7 transferring context: 25.01MB 0.2s done
 #7 DONE 0.2s
 
-#8 [build 2/7] WORKDIR /source
+#8 [producer 2/6] WORKDIR /source
 #8 CACHED
 
-#9 [producer 2/6] WORKDIR /source
+#9 [build 2/7] WORKDIR /source
 #9 CACHED
 
-#10 [producer 6/6] RUN test "$(go version)" = "go version go1.26.2 linux/arm64" && go test -timeout 20s . && go list -m -json all > /out/modules-actual.json && go build -trimpath -buildvcs=false -o /out/producer . && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
-#10 CACHED
+#10 [build 3/7] COPY . .
+#10 DONE 0.2s
 
-#11 [producer 5/6] COPY tools/assets-manifest/main.go tools/assets-manifest/main_test.go tools/assets-manifest/inputs.json ./
-#11 CACHED
+#11 [producer 3/6] COPY tools/assets-manifest/go.mod tools/assets-manifest/go.sum ./
+#11 DONE 0.2s
 
-#12 [build 3/7] COPY . .
-#12 CACHED
+#12 [producer 4/6] RUN mkdir /out && cp go.mod go.sum /out/ && go mod download all && go mod verify && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#12 9.592 all modules verified
+#12 DONE 9.7s
 
-#13 [producer 3/6] COPY tools/assets-manifest/go.mod tools/assets-manifest/go.sum ./
-#13 CACHED
+#13 [producer 5/6] COPY tools/assets-manifest/main.go tools/assets-manifest/main_test.go tools/assets-manifest/inputs.json ./
+#13 DONE 0.1s
 
-#14 [producer 4/6] RUN mkdir /out && cp go.mod go.sum /out/ && go mod download all && go mod verify && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
-#14 CACHED
+#14 [producer 6/6] RUN test "$(go version)" = "go version go1.26.2 linux/arm64" && go test -timeout 20s . && go list -m -json all > /out/modules-actual.json && go build -trimpath -buildvcs=false -o /out/producer . && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#14 4.382 ok  	rubix.invalid/assets-manifest-fixture	0.003s
+#14 DONE 8.2s
 
 #15 [build 4/7] COPY --from=producer /out/ /producer-build/
-#15 CACHED
+#15 DONE 0.0s
 
 #16 [build 5/7] RUN cargo build -p rubix-dev --bin rubix-asset-fixture --release --locked && target/release/rubix-asset-fixture manifest-graph /producer-build/modules-actual.json tools/assets-manifest/modules.json
-#16 CACHED
+#16 0.129 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#16 1.224 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#16 1.233 info: downloading 3 components
+#16 4.972     Updating crates.io index
+#16 9.221  Downloading crates ...
+#16 9.805   Downloaded block-buffer v0.12.1
+#16 9.995   Downloaded adler2 v2.0.1
+#16 10.05   Downloaded equivalent v1.0.2
+#16 10.08   Downloaded cpufeatures v0.3.1
+#16 10.26   Downloaded itoa v1.0.18
+#16 10.26   Downloaded serde_spanned v1.1.1
+#16 10.26   Downloaded crypto-common v0.2.2
+#16 10.31   Downloaded zmij v1.0.23
+#16 10.31   Downloaded cfg-if v1.0.5
+#16 10.31   Downloaded errno v0.3.14
+#16 10.31   Downloaded pin-project-lite v0.2.17
+#16 10.32   Downloaded sha2 v0.11.0
+#16 10.32   Downloaded shlex v2.0.1
+#16 10.32   Downloaded signal-hook-registry v1.4.8
+#16 10.32   Downloaded simd-adler32 v0.3.10
+#16 10.33   Downloaded toml_datetime v0.7.5+spec-1.1.0
+#16 10.33   Downloaded zstd v0.13.3
+#16 10.33   Downloaded zstd-safe v7.3.0
+#16 10.33   Downloaded filetime v0.2.29
+#16 10.35   Downloaded toml_writer v1.1.2+spec-1.1.0
+#16 10.36   Downloaded find-msvc-tools v0.1.14
+#16 10.37   Downloaded digest v0.11.3
+#16 10.38   Downloaded jobserver v0.1.35
+#16 10.50   Downloaded crc32fast v1.5.2
+#16 10.50   Downloaded once_cell v1.21.4
+#16 10.50   Downloaded pkg-config v0.3.34
+#16 10.50   Downloaded toml_parser v1.0.5+spec-1.0.0
+#16 10.51   Downloaded fastrand v2.5.0
+#16 10.51   Downloaded hybrid-array v0.4.15
+#16 10.52   Downloaded quote v1.0.47
+#16 10.54   Downloaded bitflags v2.13.2
+#16 10.55   Downloaded toml v0.9.6
+#16 10.56   Downloaded tempfile v3.27.0
+#16 10.57   Downloaded proc-macro2 v1.0.107
+#16 10.62   Downloaded getrandom v0.4.3
+#16 10.63   Downloaded unicode-ident v1.0.26
+#16 10.67   Downloaded serde_derive v1.0.228
+#16 10.69   Downloaded flate2 v1.1.10
+#16 10.73   Downloaded miniz_oxide v0.9.1
+#16 10.73   Downloaded tar v0.4.46
+#16 10.76   Downloaded serde_core v1.0.228
+#16 10.86   Downloaded base64 v0.22.1
+#16 10.98   Downloaded serde v1.0.228
+#16 11.05   Downloaded typenum v1.20.1
+#16 11.05   Downloaded cc v1.5.1
+#16 11.05   Downloaded indexmap v2.11.3
+#16 11.06   Downloaded memchr v2.8.3
+#16 11.11   Downloaded typed-path v0.12.3
+#16 11.11   Downloaded mio v1.2.3
+#16 11.23   Downloaded zip v8.6.0
+#16 11.37   Downloaded hashbrown v0.15.5
+#16 11.41   Downloaded serde_json v1.0.151
+#16 11.46   Downloaded aho-corasick v1.1.5
+#16 11.46   Downloaded regex v1.13.1
+#16 11.47   Downloaded winnow v0.7.15
+#16 11.93   Downloaded syn v2.0.119
+#16 11.98   Downloaded regex-syntax v0.8.11
+#16 12.34   Downloaded rustix v1.1.5
+#16 12.94   Downloaded regex-automata v0.4.18
+#16 13.19   Downloaded zstd-sys v2.1.0+zstd.1.5.7
+#16 13.34   Downloaded libc v0.2.189
+#16 13.41   Downloaded tokio v1.53.1
+#16 15.20   Downloaded linux-raw-sys v0.12.1
+#16 15.29    Compiling libc v0.2.189
+#16 15.29    Compiling proc-macro2 v1.0.107
+#16 15.29    Compiling quote v1.0.47
+#16 15.29    Compiling cfg-if v1.0.5
+#16 15.29    Compiling shlex v2.0.1
+#16 15.30    Compiling serde_core v1.0.228
+#16 15.30    Compiling find-msvc-tools v0.1.14
+#16 15.30    Compiling pkg-config v0.3.34
+#16 15.30    Compiling unicode-ident v1.0.26
+#16 15.30    Compiling memchr v2.8.3
+#16 15.30    Compiling typenum v1.20.1
+#16 15.30    Compiling crc32fast v1.5.2
+#16 15.30    Compiling simd-adler32 v0.3.10
+#16 15.30    Compiling getrandom v0.4.3
+#16 15.31    Compiling zmij v1.0.23
+#16 15.33    Compiling zstd-safe v7.3.0
+#16 15.38    Compiling rustix v1.1.5
+#16 15.38    Compiling adler2 v2.0.1
+#16 15.38    Compiling bitflags v2.13.2
+#16 15.43    Compiling winnow v0.7.15
+#16 15.46    Compiling miniz_oxide v0.9.1
+#16 15.49    Compiling equivalent v1.0.2
+#16 15.49    Compiling serde_json v1.0.151
+#16 15.52    Compiling linux-raw-sys v0.12.1
+#16 15.55    Compiling aho-corasick v1.1.5
+#16 15.56    Compiling serde v1.0.228
+#16 15.58    Compiling hashbrown v0.15.5
+#16 15.62    Compiling regex-syntax v0.8.11
+#16 15.65    Compiling itoa v1.0.18
+#16 15.65    Compiling typed-path v0.12.3
+#16 15.78    Compiling hybrid-array v0.4.15
+#16 15.83    Compiling flate2 v1.1.10
+#16 15.83    Compiling fastrand v2.5.0
+#16 15.94    Compiling syn v2.0.119
+#16 15.95    Compiling indexmap v2.11.3
+#16 16.00    Compiling errno v0.3.14
+#16 16.04    Compiling jobserver v0.1.35
+#16 16.05    Compiling mio v1.2.3
+#16 16.05    Compiling cpufeatures v0.3.1
+#16 16.09    Compiling signal-hook-registry v1.4.8
+#16 16.11    Compiling crypto-common v0.2.2
+#16 16.13    Compiling block-buffer v0.12.1
+#16 16.14    Compiling filetime v0.2.29
+#16 16.26    Compiling cc v1.5.1
+#16 16.28    Compiling toml_parser v1.0.5+spec-1.0.0
+#16 16.30    Compiling once_cell v1.21.4
+#16 16.31    Compiling pin-project-lite v0.2.17
+#16 16.34    Compiling tar v0.4.46
+#16 16.37    Compiling tokio v1.53.1
+#16 16.38    Compiling base64 v0.22.1
+#16 16.42    Compiling zip v8.6.0
+#16 16.50    Compiling digest v0.11.3
+#16 16.55    Compiling regex-automata v0.4.18
+#16 16.62    Compiling toml_datetime v0.7.5+spec-1.1.0
+#16 16.63    Compiling serde_spanned v1.1.1
+#16 16.67    Compiling sha2 v0.11.0
+#16 16.80    Compiling toml v0.9.6
+#16 16.95    Compiling serde_derive v1.0.228
+#16 17.01    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#16 17.21    Compiling tempfile v3.27.0
+#16 17.70    Compiling regex v1.13.1
+#16 24.60    Compiling zstd v0.13.3
+#16 24.69    Compiling rubix-dev v0.1.0 (/source/tools/dev)
+#16 40.05     Finished `release` profile [optimized + debuginfo] target(s) in 35.10s
+#16 DONE 40.2s
 
 #17 [build 6/7] RUN set -eu; cargo test -p rubix-assets --release --locked --test manifest_fixture --no-run && mkdir /out && cp target/release/rubix-asset-fixture /out/fixture && cp /producer-build/producer /out/producer && count=0; for executable in target/release/deps/manifest_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/manifest-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/manifest-tests
-#17 CACHED
+#17 0.166  Downloading crates ...
+#17 0.815   Downloaded object v0.39.1
+#17 0.850    Compiling typenum v1.20.1
+#17 0.852    Compiling libc v0.2.189
+#17 0.852    Compiling serde_core v1.0.228
+#17 0.852    Compiling rustix v1.1.5
+#17 0.852    Compiling cfg-if v1.0.5
+#17 0.852    Compiling crc32fast v1.5.2
+#17 0.852    Compiling simd-adler32 v0.3.10
+#17 0.852    Compiling bitflags v2.13.2
+#17 0.852    Compiling adler2 v2.0.1
+#17 0.852    Compiling object v0.39.1
+#17 0.852    Compiling linux-raw-sys v0.12.1
+#17 0.852    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#17 0.852    Compiling memchr v2.8.3
+#17 0.854    Compiling zmij v1.0.23
+#17 0.862    Compiling itoa v1.0.18
+#17 0.884    Compiling zstd-safe v7.3.0
+#17 0.923    Compiling miniz_oxide v0.9.1
+#17 0.968    Compiling zstd v0.13.3
+#17 1.123    Compiling flate2 v1.1.10
+#17 1.263    Compiling hybrid-array v0.4.15
+#17 1.442    Compiling cpufeatures v0.3.1
+#17 1.482    Compiling crypto-common v0.2.2
+#17 1.482    Compiling block-buffer v0.12.1
+#17 1.746    Compiling digest v0.11.3
+#17 1.787    Compiling sha2 v0.11.0
+#17 1.901    Compiling serde v1.0.228
+#17 1.901    Compiling serde_json v1.0.151
+#17 2.542    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#17 2.729    Compiling rubix-assets v0.1.0 (/source/crates/rubix-assets)
+#17 7.244     Finished `release` profile [optimized + debuginfo] target(s) in 7.10s
+#17 7.246   Executable tests/manifest_fixture.rs (target/release/deps/manifest_fixture-d7a1c56a7edc0fd4)
+#17 DONE 7.3s
 
-#18 [build 7/7] RUN test -n "rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7" && echo "RUBIX_BUILD_BEGIN rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7" && sha256sum /out/producer /out/manifest-tests /out/fixture && echo "RUBIX_BUILD_END rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7"
-#18 0.077 RUBIX_BUILD_BEGIN rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7
-#18 0.098 d564e922b99904ecb7d50eef539042eb6641c05f86077f3f8198babe8fd2dd44  /out/producer
-#18 0.119 fce0fb721351bb2d07985931ee5cab263b3b646b2f119a6dce3bbcc979301e41  /out/manifest-tests
-#18 0.138 f91d30c683255b5b82a0b480084e3c8a0068cf4d17cc7f27b566b84b002bf351  /out/fixture
-#18 0.139 RUBIX_BUILD_END rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7
+#18 [build 7/7] RUN test -n "rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab" && echo "RUBIX_BUILD_BEGIN rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab" && sha256sum /out/producer /out/manifest-tests /out/fixture && echo "RUBIX_BUILD_END rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab"
+#18 0.108 RUBIX_BUILD_BEGIN rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab
+#18 0.129 d564e922b99904ecb7d50eef539042eb6641c05f86077f3f8198babe8fd2dd44  /out/producer
+#18 0.149 fce0fb721351bb2d07985931ee5cab263b3b646b2f119a6dce3bbcc979301e41  /out/manifest-tests
+#18 0.167 f91d30c683255b5b82a0b480084e3c8a0068cf4d17cc7f27b566b84b002bf351  /out/fixture
+#18 0.167 RUBIX_BUILD_END rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab
 #18 DONE 0.2s
 
+#6 [build 1/7] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#6 CACHED
+
 #19 [stage-2 2/5] COPY --from=build /out/producer /producer
-#19 CACHED
+#19 DONE 0.1s
 
 #20 [stage-2 3/5] COPY --from=build /out/manifest-tests /manifest-tests
-#20 CACHED
+#20 DONE 0.0s
 
 #21 [stage-2 4/5] COPY --from=build /out/fixture /fixture
-#21 CACHED
+#21 DONE 0.0s
 
 #22 [stage-2 5/5] COPY manifest-inputs /inputs
-#22 CACHED
+#22 DONE 0.0s
 
 #23 exporting to image
-#23 exporting layers done
-#23 exporting manifest sha256:8c8ef2aa1c76c65e20661787ab51330b6bbf3a8bb9631d87cd12c12c3f7164b6 done
-#23 exporting config sha256:d29fc9eb2e9bd6e11286d94663eb554252acf28fb8f93121f34dad797e1fab63 done
-#23 exporting attestation manifest sha256:90306fe32fda7f9d24a38425e2a35743b93640ddc85430d71a0484f9af3feec8 done
-#23 exporting manifest list sha256:1e5749b61cd58e3b3e283fe5fc17fcd993653697be454bc5d0f0dcfa6334cefb
-#23 exporting manifest list sha256:1e5749b61cd58e3b3e283fe5fc17fcd993653697be454bc5d0f0dcfa6334cefb done
-#23 naming to docker.io/library/rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7:latest done
-#23 unpacking to docker.io/library/rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7:latest 0.1s done
-#23 DONE 0.2s
+#23 exporting layers
+#23 exporting layers 0.4s done
+#23 exporting manifest sha256:b7fa270d59eaa2832fc5831b367d9b0bd1f4edbe4b3ba4b42f56f9443cab16ce done
+#23 exporting config sha256:78973ec90315e08f877d14120f5a71e2570354813a3ad65f19c490747ab88fd4 done
+#23 exporting attestation manifest sha256:bd2b3245965a9d324223ed77e82a2f2afd6d074b9933df8cdf842c13ef917635 done
+#23 exporting manifest list sha256:44bb13b1dc3a6306b88b3faa877691183791f171e4d636748560f8b1c5ac1294 done
+#23 naming to docker.io/library/rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab:latest done
+#23 unpacking to docker.io/library/rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab:latest 0.1s done
+#23 DONE 0.6s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/531n7dtv6dnfl5s0khugrme0c
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/0mhddsk38sl89rlpeum2gvhgw
