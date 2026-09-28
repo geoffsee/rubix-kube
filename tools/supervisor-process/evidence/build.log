@@ -5,10 +5,10 @@
 #1 DONE 0.0s
 
 #2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#2 DONE 1.7s
+#2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#3 DONE 1.7s
+#3 DONE 0.0s
 
 #4 [internal] load .dockerignore
 #4 transferring context: 2B done
@@ -22,54 +22,54 @@
 #6 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
 #6 DONE 0.0s
 
-#7 [2/5] WORKDIR /source
-#7 CACHED
+#7 [internal] load build context
+#7 transferring context: 1.85MB 0.0s done
+#7 DONE 0.1s
 
-#8 [internal] load build context
-#8 transferring context: 1.82MB 0.0s done
-#8 DONE 0.1s
+#8 [2/5] WORKDIR /source
+#8 CACHED
 
 #9 [build 3/4] COPY . .
-#9 DONE 0.0s
+#9 DONE 0.1s
 
 #10 [build 4/4] RUN cargo test -p rubix-supervisor --test process_ownership --locked --no-run && mkdir /out && for executable in target/debug/deps/process_ownership-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/process-tests; fi; done && test -x /out/process-tests
-#10 0.161 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 2.264 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 2.271 info: downloading 3 components
-#10 17.13     Updating crates.io index
-#10 20.00  Downloading crates ...
-#10 20.56   Downloaded errno v0.3.14
-#10 20.61   Downloaded pin-project-lite v0.2.17
-#10 20.62   Downloaded tokio-macros v2.7.1
-#10 20.68   Downloaded quote v1.0.47
-#10 20.70   Downloaded unicode-ident v1.0.26
-#10 20.70   Downloaded signal-hook-registry v1.4.8
-#10 20.78   Downloaded proc-macro2 v1.0.107
-#10 20.80   Downloaded bitflags v2.13.2
-#10 20.81   Downloaded mio v1.2.3
-#10 21.08   Downloaded syn v2.0.119
-#10 21.09   Downloaded rustix v1.1.5
-#10 21.13   Downloaded libc v0.2.189
-#10 21.23   Downloaded tokio v1.53.1
-#10 21.64   Downloaded linux-raw-sys v0.12.1
-#10 21.71    Compiling proc-macro2 v1.0.107
-#10 21.71    Compiling libc v0.2.189
-#10 21.71    Compiling quote v1.0.47
-#10 21.71    Compiling unicode-ident v1.0.26
-#10 21.71    Compiling rustix v1.1.5
-#10 21.71    Compiling linux-raw-sys v0.12.1
-#10 21.71    Compiling pin-project-lite v0.2.17
-#10 21.71    Compiling bitflags v2.13.2
-#10 22.18    Compiling syn v2.0.119
-#10 22.31    Compiling errno v0.3.14
-#10 22.31    Compiling mio v1.2.3
-#10 22.34    Compiling signal-hook-registry v1.4.8
-#10 24.44    Compiling tokio-macros v2.7.1
-#10 25.27    Compiling tokio v1.53.1
-#10 26.18    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 27.03     Finished `test` profile [unoptimized + debuginfo] target(s) in 9.93s
-#10 27.05   Executable tests/process_ownership.rs (target/debug/deps/process_ownership-cf803a579a0fe168)
-#10 DONE 27.1s
+#10 0.110 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 1.573 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 1.580 info: downloading 3 components
+#10 11.97     Updating crates.io index
+#10 14.95  Downloading crates ...
+#10 15.50   Downloaded errno v0.3.14
+#10 15.65   Downloaded tokio-macros v2.7.1
+#10 15.73   Downloaded quote v1.0.47
+#10 15.76   Downloaded signal-hook-registry v1.4.8
+#10 15.76   Downloaded pin-project-lite v0.2.17
+#10 15.79   Downloaded bitflags v2.13.2
+#10 15.79   Downloaded proc-macro2 v1.0.107
+#10 15.83   Downloaded unicode-ident v1.0.26
+#10 15.91   Downloaded mio v1.2.3
+#10 16.07   Downloaded syn v2.0.119
+#10 16.14   Downloaded rustix v1.1.5
+#10 16.38   Downloaded libc v0.2.189
+#10 16.44   Downloaded tokio v1.53.1
+#10 16.82   Downloaded linux-raw-sys v0.12.1
+#10 16.89    Compiling libc v0.2.189
+#10 16.89    Compiling proc-macro2 v1.0.107
+#10 16.89    Compiling unicode-ident v1.0.26
+#10 16.89    Compiling quote v1.0.47
+#10 16.89    Compiling rustix v1.1.5
+#10 16.89    Compiling linux-raw-sys v0.12.1
+#10 16.90    Compiling pin-project-lite v0.2.17
+#10 16.90    Compiling bitflags v2.13.2
+#10 17.46    Compiling syn v2.0.119
+#10 17.58    Compiling errno v0.3.14
+#10 17.58    Compiling mio v1.2.3
+#10 17.62    Compiling signal-hook-registry v1.4.8
+#10 19.83    Compiling tokio-macros v2.7.1
+#10 20.65    Compiling tokio v1.53.1
+#10 21.51    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 22.31     Finished `test` profile [unoptimized + debuginfo] target(s) in 10.36s
+#10 22.33   Executable tests/process_ownership.rs (target/debug/deps/process_ownership-cf803a579a0fe168)
+#10 DONE 22.5s
 
 #11 [stage-1 2/4] COPY --from=build /out/process-tests /process-tests
 #11 CACHED
@@ -84,11 +84,10 @@
 #14 exporting layers done
 #14 exporting manifest sha256:409f4f2e500a671daf2ca0c9cec98200fcf5109e88e4751aa149d96d07bd4ab3 done
 #14 exporting config sha256:53e53308a45f5b3c5dc3cefa59d7cf8ec1d966b01e6f4cd3268cc9ca7ce1224d done
-#14 exporting attestation manifest sha256:a28a27ad03e5a7d3fb732403d051547a4cb3e80276880dfab07730bf128a176b done
-#14 exporting manifest list sha256:0e460847cf3d7ed3bcc679cdd34817d6d1d31ed5422d9fc315c32a7f93839873
-#14 exporting manifest list sha256:0e460847cf3d7ed3bcc679cdd34817d6d1d31ed5422d9fc315c32a7f93839873 done
-#14 naming to docker.io/library/rubix-process-9e45b5fe056c47458da2bf4c341a1bc2:latest done
-#14 unpacking to docker.io/library/rubix-process-9e45b5fe056c47458da2bf4c341a1bc2:latest 0.0s done
+#14 exporting attestation manifest sha256:c07e6170df49f3207533f240acee18ab74059714bf0fdb3702b0dd0458ac313b done
+#14 exporting manifest list sha256:87c964eb47f45aea6ea1a578053987db1f76186e4dd91d46146f61b988761c9e done
+#14 naming to docker.io/library/rubix-process-edd8fa92d33e407ea510c034c408fc6b:latest done
+#14 unpacking to docker.io/library/rubix-process-edd8fa92d33e407ea510c034c408fc6b:latest 0.0s done
 #14 DONE 0.1s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/l3yx28zv6x0cv6ioc9j5e1kmp
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/foxm8r13v7kl367utowucld4o

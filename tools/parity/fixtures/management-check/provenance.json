@@ -1,0 +1,13 @@
+{
+  "files": {
+    "cases.json": "de94f9294e68965db6dc0be1c3417df78db4df8fe06f570b61628897db293277",
+    "evidence/build.log": "0e90f9303f77c417a773543b1220e2658bcdc9b7be1b366617b4cd0268c336db",
+    "evidence/receipt.json": "aa707f70a2a5ec7b01b81fc9245585c49a3c939246ae75081114ce3a10552233",
+    "evidence/run0.log": "f3288475364c1e507267e4f86780a697d2cf8fd04e34499aa295d40240b13be4",
+    "evidence/run1.log": "290a947ec6939b721dfa80fc6d0b1c247e77fd4378ecfdaa479e1ac3718636c9",
+    "evidence/source.sha256": "27bf9bb9f8641db9035ad2fe8e9478be32073ca38e8300fe1a9efde1785dfa49",
+    "expected.json": "ed22f940fe7a808078c8ab1d176c94439e82a3e81085915bcde9c8151d5e691e",
+    "source-pins.json": "4c3aef88f55d17048901bd2fb929ab95d6946476648fe14d68dd98567e783318"
+  },
+  "schema": 1
+}
