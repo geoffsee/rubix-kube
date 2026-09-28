@@ -4,7 +4,7 @@
     "ps",
     "-aq",
     "--filter",
-    "name=^/rubix\\-config\\-write\\-links\\-9o6xgf\\-config\\-0$"
+    "name=^/rubix\\-config\\-write\\-links\\-5jl0fv\\-config\\-0$"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,9 +13,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77850,
+  "owned_pid": 97730,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-E27IIB",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zpiKPd",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

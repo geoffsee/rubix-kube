@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "inspect",
+    "--format",
+    "{{.Id}}",
+    "rubix-node-constrained-bb8923a22974414754049664e5f19c94"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 32299,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-tQLDyd",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "e7d0094ebba4eeacebe08d9f6bc012e852b5935fcd35b7c2f05930ab0bc34560",
+  "timeout": false
+}

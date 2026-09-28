@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-alpine-preparew1slot"
+    "rubix-alpine-prepare3mlg3h"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77712,
+  "owned_pid": 97893,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-QKaTAI",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-GPQiz4",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f09eeaa0de5d1db7b78117e9a06b92be625088f41408f7f10f44c7a204f7269a",
+  "stdout_sha256": "5c5155d7ece84f55487afb6c745cd566056954ef7e8c1c9368d6ebc6aa47cc7e",
   "timeout": false
 }

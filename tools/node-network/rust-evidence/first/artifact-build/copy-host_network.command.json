@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e-artifact:/out/host_network",
-    "/private/tmp/rubix-manifest-qualification-d0f66fe/assets/node-network-build/host_network"
+    "rubix-node-network-a539444a09e838115d75a873c5475441-artifact:/out/host_network",
+    "/private/tmp/rubix-constrained-qualification-4b3bb45/assets/node-network-build/host_network"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 80289,
+  "owned_pid": 34397,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zAkm2z",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-oxGlPM",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

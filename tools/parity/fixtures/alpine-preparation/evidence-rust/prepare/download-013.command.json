@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/musl-1.2.6-r2.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/musl-1.2.6-r2.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/musl-1.2.6-r2.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77699,
+  "owned_pid": 97868,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-LXQY4F",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-wafLSG",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "0796c1c8c4a1b88843f09ebd298da7bcd90be57d0b6cfde4c57010e68bc08677",
+  "stdout_sha256": "5c80a5dcab1d08bf13269c98cb703566d9e3cb2da78df704b2b200ebbc53632c",
   "timeout": false
 }

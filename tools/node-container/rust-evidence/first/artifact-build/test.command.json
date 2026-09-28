@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-node-container-1e289687eeaa4db59d618c6397f5e366-test",
+    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d-test",
     "--network=none",
     "--read-only",
     "--cap-drop=ALL",
@@ -11,7 +11,7 @@
     "--pids-limit=64",
     "--memory=512m",
     "--cpus=2",
-    "rubix-node-container-1e289687eeaa4db59d618c6397f5e366",
+    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d",
     "/bin/sh",
     "-c",
     "sha256sum /out/prepare_node_host /out/rubix_kube /out/host_preparation /out/host_network && for binary in rubix_kube host_preparation host_network; do echo TEST_${binary}_BEGIN; /out/$binary || exit 1; echo TEST_${binary}_END; done && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_node_host --container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_node_host --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
@@ -23,11 +23,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 81400,
+  "owned_pid": 34866,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Wgvi9h",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-BPT3tO",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "d3f6379e53db0aa70e0c3bebf7aa4693c3aae5d5c15bfb2001caaa9d0a1dfe43",
+  "stdout_sha256": "d29adc65e4a75af205913ec16cfa792803d4871cb76b5e6917089c90862b710e",
   "timeout": false
 }

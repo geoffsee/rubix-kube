@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/libncursesw-6.6_p20260516-r0.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/libncursesw-6.6_p20260516-r0.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libncursesw-6.6_p20260516-r0.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77694,
+  "owned_pid": 97863,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-KCtcd5",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-XGfvVP",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b08e582f20402cd5c727102975bbe7b05878c44d4abc2f779d253ce7408e31de",
+  "stdout_sha256": "3c9bc444ed954498007b9525878cf5793205918d270d5dd0039aa15ea59a5f55",
   "timeout": false
 }

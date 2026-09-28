@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/gmp-6.3.0-r4.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/gmp-6.3.0-r4.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/gmp-6.3.0-r4.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77653,
+  "owned_pid": 97852,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-nDc434",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qkH5E1",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "c7bb49dd98bab12e9f6ebbdc3bf9a22a197c0d2ae67683e3d371ab87c45af2f2",
+  "stdout_sha256": "6263c55204908bea3d99bb54822620bd18c1a118fa7161a6fee63a7833133786",
   "timeout": false
 }

@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "qemu-system-aarch64",
+    "--version"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 32454,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-j4fToI",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "92870dbe490cd75464d5d6e0a53d0a65b3e57e0de79f32cc000dfe7a5f1694c0",
+  "timeout": false
+}

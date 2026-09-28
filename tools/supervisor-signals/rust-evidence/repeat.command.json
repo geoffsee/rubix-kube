@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca-repeat",
+    "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc-repeat",
     "--init",
     "--network=none",
     "--read-only",
@@ -18,7 +18,7 @@
     "RUBIX_SIGNAL_DISPOSABLE=1",
     "--ulimit",
     "fsize=1048576:1048576",
-    "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca",
+    "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc",
     "/bin/sh",
     "-c",
     "sha256sum /signals.test /owned_signals.test /fixture; /signals.test --nocapture && /owned_signals.test --ignored --exact disposable_owned_signals --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -30,11 +30,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 79502,
+  "owned_pid": 33634,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SKDaxU",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-g0pfdR",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "227b6f1e7f6e6402d7c07ffee05e8de726c334d076c36ca1dd304f830e04c46a",
+  "stdout_sha256": "b982c89baaf0d493ad7f64ab86dc83f858b06c541cee95ec5ff311aff64d1cfc",
   "timeout": false
 }

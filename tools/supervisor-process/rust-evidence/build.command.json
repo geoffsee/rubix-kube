@@ -4,13 +4,13 @@
     "build",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=rubix-supervisor-process-28bf637e1199ea5f305545ac73b38fc8",
+    "QUALIFICATION_NONCE=rubix-supervisor-process-6901c21ee9d22adae1ab83f3491d21ec",
     "--platform=linux/arm64",
     "-t",
-    "rubix-supervisor-process-28bf637e1199ea5f305545ac73b38fc8",
+    "rubix-supervisor-process-6901c21ee9d22adae1ab83f3491d21ec",
     "-f",
-    "/tmp/rubix-supervisor-context-JuOu3V/tools/supervisor-process/Capture.Dockerfile",
-    "/tmp/rubix-supervisor-context-JuOu3V"
+    "/tmp/rubix-supervisor-context-lWyEBD/tools/supervisor-process/Capture.Dockerfile",
+    "/tmp/rubix-supervisor-context-lWyEBD"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -19,11 +19,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78402,
+  "owned_pid": 33013,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-tP2hef",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-CefuPC",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "1f394a5a60d89050a750be28dd656c04752baf7e5c69757e7f5960186e8c6101",
+  "stdout_sha256": "65392a84ae739daf7001ef7e6dab72f1b84a51f3c9e03074a4476a4ad28ab667",
   "timeout": false
 }

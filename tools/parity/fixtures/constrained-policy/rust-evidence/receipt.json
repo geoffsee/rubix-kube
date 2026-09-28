@@ -10,20 +10,20 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-constrained-policy-i7wypt-network-0",
-    "rubix-constrained-policy-i7wypt-network-1",
-    "rubix-constrained-policy-i7wypt-system-0",
-    "rubix-constrained-policy-i7wypt-system-1",
-    "rubix-constrained-policy-i7wypt-proxy-0",
-    "rubix-constrained-policy-i7wypt-proxy-1",
-    "rubix-constrained-policy-i7wypt-embedded-0",
-    "rubix-constrained-policy-i7wypt-embedded-1"
+    "rubix-constrained-policy-ybicam-network-0",
+    "rubix-constrained-policy-ybicam-network-1",
+    "rubix-constrained-policy-ybicam-system-0",
+    "rubix-constrained-policy-ybicam-system-1",
+    "rubix-constrained-policy-ybicam-proxy-0",
+    "rubix-constrained-policy-ybicam-proxy-1",
+    "rubix-constrained-policy-ybicam-embedded-0",
+    "rubix-constrained-policy-ybicam-embedded-1"
   ],
   "errors": [],
   "family": "constrained-policy",
   "identical_repeats": true,
-  "image": "rubix-constrained-policy-i7wypt",
-  "image_id": "sha256:d7bc26363b8872c5eaa3d21269f831158b3a8167a69f25d1eb56f817379fdf05",
+  "image": "rubix-constrained-policy-ybicam",
+  "image_id": "sha256:69cc05c1d8d7fb7d856b6907e2b936be874fa6ec4d6c9ebbaf5b5c7ef9d5bdc8",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -39,30 +39,30 @@
         ],
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T16:23:32.420109802Z",
+      "Created": "2026-09-28T16:58:43.743017876Z",
       "Descriptor": {
-        "digest": "sha256:d7bc26363b8872c5eaa3d21269f831158b3a8167a69f25d1eb56f817379fdf05",
+        "digest": "sha256:69cc05c1d8d7fb7d856b6907e2b936be874fa6ec4d6c9ebbaf5b5c7ef9d5bdc8",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:d7bc26363b8872c5eaa3d21269f831158b3a8167a69f25d1eb56f817379fdf05",
+      "Id": "sha256:69cc05c1d8d7fb7d856b6907e2b936be874fa6ec4d6c9ebbaf5b5c7ef9d5bdc8",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T16:23:35.035570553Z",
-            "Ref": "r8fh4u5ht5yotlkqesix4a7gv"
+            "CreatedAt": "2026-09-28T16:58:46.361081253Z",
+            "Ref": "v4csitgcelsb5nxtkrifxoscl"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T16:23:34.371951011Z"
+        "LastTagTime": "2026-09-28T16:58:45.684257627Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-constrained-policy-i7wypt@sha256:d7bc26363b8872c5eaa3d21269f831158b3a8167a69f25d1eb56f817379fdf05"
+        "rubix-constrained-policy-ybicam@sha256:69cc05c1d8d7fb7d856b6907e2b936be874fa6ec4d6c9ebbaf5b5c7ef9d5bdc8"
       ],
       "RepoTags": [
-        "rubix-constrained-policy-i7wypt:latest"
+        "rubix-constrained-policy-ybicam:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -81,14 +81,14 @@
           "sha256:9b58c16abc527e569917d250580daa3915836cc54ad9d9a7d1f022cf5e9bdd2c",
           "sha256:11c8ff5e5167601a0418f5eeb97a670eeb39369fdd33cfe61aba26a5356b8484",
           "sha256:fafdabd40952b439357596aea04be0906840afd506c488027207174db7b78042",
-          "sha256:3b949b88bf0e891016a1a95c28947025dd366506cc42f0323310114a80a23988",
-          "sha256:3f30754f55abccbfd9e0cc12764da6f0e4015a666524e8a7643e2206f42d70d1",
-          "sha256:7ac601b77f51fe6463f002c3cbc225f84dac55e70c30420416474b29fb61ce40",
+          "sha256:6fcf76ca6d1f785530b5217be23bfb822aec7eaaa653a2ac34b20918e2606eb8",
+          "sha256:409e8ad2afb2f0d2cbcbd15c42bc2dcd2fee5db8218826f5d8ffbbf4bcac2652",
+          "sha256:ca504c8ab7cdedba5a76459286aada6a9df485bf80d90a254fb1ba4ac1ff2444",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 331421519
+      "Size": 331420882
     }
   ],
   "outputs": {
@@ -105,7 +105,7 @@
   "repeat_count": 2,
   "retained_build_contexts": [],
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
-  "runner_sha256": "37d89de5f4366653598fe767a994a9b7162bdaab3f2c893a7e277b45625cf6bb",
+  "runner_sha256": "6e1e36786196ab56d9ef63e3c48002654754893af34bdf88797b9ec50b22299f",
   "schema_version": 2,
   "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
   "source_sha256": {
@@ -134,6 +134,7 @@
     "tools/dev/src/bin/rubix-api-json.rs": "c27628a35967e435ba937fc277788d6381e71bf8c0b474db100e2e5ff2dc9b98",
     "tools/dev/src/bin/rubix-asset-fixture.rs": "f37ccc205ab2c1245179e0c01e8e090ac2c04e3f3cea878d33350bafc9e970c9",
     "tools/dev/src/bin/rubix-component-boundary.rs": "16924b396b3363a7bec0f9d0146db24f10a9d28c056f0effafe63e07c331a2da",
+    "tools/dev/src/bin/rubix-constrained-guest.rs": "00dd909f7b61b01bb68ace51742af202c528b5bc3037a63f7d0bfcfb81df8630",
     "tools/dev/src/bin/rubix-defaults.rs": "c201e5eb62ca1f5ed2166254306e11bc5e582028f852906d26f762d687344991",
     "tools/dev/src/bin/rubix-drift.rs": "ed8b19087c8a5e7276bc5267106de93fa09b299c88fe02262d02e6ade532449c",
     "tools/dev/src/bin/rubix-fixture.rs": "9efe14ab34cae365d9683384d91b3f005067421365e7e3d78173d406435e0425",
@@ -180,14 +181,19 @@
     "tools/dev/src/language_policy.rs": "ac8249bce2561e23c6fa58bffe6eaf09a6e682653b56826efd47a8ecd5cf4815",
     "tools/dev/src/lib.rs": "8b7eb5afa8d952061a03f2ad09f6f4706d54eb2c042986440c08dffb8c36259b",
     "tools/dev/src/node_fixture/assessment.rs": "f8add93fce4b31be1ff1c178cda2ca4ec480ff851d016778821b45051006e28b",
-    "tools/dev/src/node_fixture/build.rs": "a558aa4aab704f601070e713a59ee522091a3c4664d0d5f4df6b6273f7f8a358",
+    "tools/dev/src/node_fixture/build.rs": "2f4d6431c2e807ff89b4e3bbdc301883ddd87ca4401843ae2ea72b32dab92868",
     "tools/dev/src/node_fixture/commands.rs": "a4c3cab7a9edb575a9c4f475e71daebbce32ee6620d7836e6d5447980652722d",
-    "tools/dev/src/node_fixture/common.rs": "5d50396ebfd70604f925e3404370384c77d8fae28277e15f0d53159606fe5b6b",
+    "tools/dev/src/node_fixture/common.rs": "28dd0e146705bdeabf6509bbac81d4ed0b6bbda37b7f4c38807a99ae9cbba694",
+    "tools/dev/src/node_fixture/constrained_diagnostics.rs": "01699b897e8b08adfda0e2c0ff4ccdce72be9d79cdec07d5ca0efded35c57169",
+    "tools/dev/src/node_fixture/constrained_envelope_tests.rs": "c0cc675aaa10b94a700d7b9f4f1be0b5b69fecc59186d37fe1e12a302756d30c",
+    "tools/dev/src/node_fixture/constrained_guest.rs": "c14caefb52d9b04bf102dba75634b2af9b19f65c0065ae95237f762a4e2e69c4",
+    "tools/dev/src/node_fixture/constrained_tests.rs": "c2e274ff0d9ff207c64f2b5f197a8aae359dece6edc5d49d33f3674c52eb71bb",
+    "tools/dev/src/node_fixture/constrained_verify.rs": "6befad8c41140dc9e6cabe043f9ae672ffb0849c4daa20f700c0219a43a1cc54",
     "tools/dev/src/node_fixture/container.rs": "13f0443067423b15c372c65769009970a02bba9300663e309571c7935a3f06d9",
     "tools/dev/src/node_fixture/docker.rs": "3f97c1e10f2d0b95f92bd2f8e46058d7ba9f70de4c2884460d8a3fea624fc705",
-    "tools/dev/src/node_fixture/docker_tests.rs": "6ff5fc9aca2c636546a54298c814e1acadaa47514671216902c0b1a8f27eed57",
-    "tools/dev/src/node_fixture/guest.rs": "c44cefdb2ee3eacf5a6d138350bb0bb83bdd1351f9e9d9fe091f190e8c41d7fd",
-    "tools/dev/src/node_fixture/mod.rs": "89a7d8d24ff362e3619c10c4ac83fec2cfb01bcdb92efc8c67d27feda6d67760",
+    "tools/dev/src/node_fixture/docker_tests.rs": "e2996495ac40db11f4db67ee5f9e43615b263d62507383743a53054d5e85ecb7",
+    "tools/dev/src/node_fixture/guest.rs": "76dcf6465916b0f85b849b5ec2d98ba07f2a30ea57fcdd8e61ab8df4a4bb5e9e",
+    "tools/dev/src/node_fixture/mod.rs": "437641676e58c44049f24c0de5bf01c723ccb65449df242f4ffb168c3fd01479",
     "tools/dev/src/node_fixture/network.rs": "e99af8fe1b0d5e59d2cd498bac99e72ca37b42bd39b9076d806d452eb4fc58bd",
     "tools/dev/src/node_fixture/runtime.rs": "5dd1ed4b0c8e962112544b433ee7b6b38527fbb0ef900d06b18232f86c15ff11",
     "tools/dev/src/node_fixture/tests.rs": "d0ee2e77c2a8e591df75755f5134dc72bfc2f2dd4232882adf39369285089891",
@@ -203,8 +209,8 @@
     "tools/dev/src/parity/vm.rs": "6077d574aba2b13791f8174dacc87ef50419f7e1372505e801058221ebdc7478",
     "tools/dev/src/platform_fixture/alpine.rs": "587d6a4ad86ff0e4a460b0f308b53b0ee09ce6dc6d03bdf0b89a26f8fa9547de",
     "tools/dev/src/platform_fixture/capture.rs": "33160726f437690a5285afe9cdd0d789aaee6d005935d273826865e2fb66f6d4",
-    "tools/dev/src/platform_fixture/command_evidence.rs": "1d2716692e91cc82535b080db1e64d7dc6701507d96ab3ecc1e3c68531b65b65",
-    "tools/dev/src/platform_fixture/guest.rs": "fcfc391e9c419af3aad8ee2b355eaf1b78dc328ef3713d953a36f7877fb5b34e",
+    "tools/dev/src/platform_fixture/command_evidence.rs": "4dd47e0b66ee4b101cc685b666b148d7c40ca1eb09405de81e4a8a0efd6af6eb",
+    "tools/dev/src/platform_fixture/guest.rs": "03635b2688448c2e996aa7b41702bac778473fe5c96c3116b6adcb3116fad15c",
     "tools/dev/src/platform_fixture/mod.rs": "04eeea9d6c96f3505cbd946be41c55b5a6ffff8fce50ee09a2f9c0a057a79cdf",
     "tools/dev/src/platform_fixture/preparation.rs": "d7a54d0462d56e3c1ef616ac610c991caac433a9f991264b67f2ab55e8c13e3d",
     "tools/dev/src/platform_fixture/prepare.rs": "5b78ed8f676d184935a13fa59dc4dc1ed13507bf51ea22c5cba3024d335e5bf8",
@@ -232,6 +238,7 @@
     "tools/dev/src/upstream/tests.rs": "b01992bd1d2ec3f502ca36c3307ff27ed6336100dfb4662e6c9e6d58a00ee7f2",
     "tools/dev/tests/api_json_cli.rs": "8ba67f8e871ab51a37cf2132dd9a580ea82fb1e937cae0e4428d456a8f120342",
     "tools/dev/tests/component_internals.rs": "1084aa22f80f07d4c85e6856a96669e0f33383b9b8a5d204f024b42db4dd67ba",
+    "tools/dev/tests/constrained_namespace.rs": "ac07c149827ab3e87cc8bf1d62af437ef0c97adab21d795860728762e5abfb8c",
     "tools/dev/tests/defaults_cli.rs": "69b71e859a852a6eed2b1dafee1cf4ca3bc656c32f2bceccf1c2df7761c414ef",
     "tools/dev/tests/fixture_cli.rs": "42954d98ea90aea3768f03a3c561f564c077cdacbf7a9476497e3fc2bc50dc3b",
     "tools/dev/tests/parity_process.rs": "68369166b36b8b34cba207406a902418b744dc85bdc37f696e5cfcf5e9435b81",

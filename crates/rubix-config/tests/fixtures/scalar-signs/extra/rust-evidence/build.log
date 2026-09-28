@@ -29,38 +29,38 @@
 #8 DONE 0.0s
 
 #9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/scalar.test ./internal/config
-#9 0.169 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.169 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 0.170 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 0.170 go: downloading github.com/distribution/reference v0.6.0
-#9 0.170 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.171 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 1.929 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 2.154 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 2.159 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 2.160 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 2.160 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 2.446 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 2.447 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 2.447 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 2.455 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 2.870 go: downloading golang.org/x/sys v0.47.0
-#9 2.934 go: downloading github.com/x448/float16 v0.8.4
-#9 DONE 11.0s
+#9 0.232 go: downloading github.com/distribution/reference v0.6.0
+#9 0.233 go: downloading sigs.k8s.io/yaml v1.6.0
+#9 0.234 go: downloading github.com/rs/zerolog v1.33.0
+#9 0.236 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#9 0.237 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#9 0.241 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#9 7.905 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#9 7.905 go: downloading github.com/opencontainers/go-digest v1.0.0
+#9 7.905 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#9 7.905 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#9 7.906 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 8.106 go: downloading gopkg.in/inf.v0 v0.9.1
+#9 8.106 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#9 8.106 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#9 8.159 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 8.442 go: downloading golang.org/x/sys v0.47.0
+#9 8.442 go: downloading github.com/x448/float16 v0.8.4
+#9 DONE 14.0s
 
 #10 [capture 1/1] WORKDIR /tmp
-#10 DONE 0.2s
+#10 DONE 0.0s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 2.8s done
-#11 exporting manifest sha256:68704c78e3c2a7729aec05d5456d2c3b0dc941aa350a3b50616c354ed9d58201 done
-#11 exporting config sha256:37294a4643562577c768c25375cac181e4df026a6a610fe5ef38877c5d33813d done
-#11 exporting attestation manifest sha256:74a74281cc7ffeb6497925ddaf88da3358df7943149f86a258f22f6966b7389c done
-#11 exporting manifest list sha256:c87a2f1432754b348683af2aecbd0fe381d2faa4ea23d9177a15c84cda69ee48 done
-#11 naming to docker.io/library/rubix-config-scalar-extra-yd0lk0:latest done
-#11 unpacking to docker.io/library/rubix-config-scalar-extra-yd0lk0:latest
-#11 unpacking to docker.io/library/rubix-config-scalar-extra-yd0lk0:latest 0.6s done
-#11 DONE 3.5s
+#11 exporting layers 2.2s done
+#11 exporting manifest sha256:3014fdb29478911f3efd261ff0e4bdb33ac9780b1e1a38c6b83e0bf9e0ab1de4 done
+#11 exporting config sha256:3fc266109e50a5f8e2382d07ea6d3dbdcdf748936d4fe1677c19ef0d6410c6b5 done
+#11 exporting attestation manifest sha256:695e25142843f43dd868fb80d4788002d52ff85b397fb0a22b2134c288f604af done
+#11 exporting manifest list sha256:fc4fed1c9994d20ef8055c3b61e7ed168a41cc809a76da56de20bb484565754b done
+#11 naming to docker.io/library/rubix-config-scalar-extra-el3rbb:latest done
+#11 unpacking to docker.io/library/rubix-config-scalar-extra-el3rbb:latest
+#11 unpacking to docker.io/library/rubix-config-scalar-extra-el3rbb:latest 0.6s done
+#11 DONE 2.9s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/d3mgsgaz5xess22fl9gnhb3b2
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/gbq4ucnkz9gbgm7k4wlv8uzjf

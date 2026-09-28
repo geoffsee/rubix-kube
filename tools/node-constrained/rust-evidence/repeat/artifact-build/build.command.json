@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=bb8923a22974414754049664e5f19c94",
+    "-t",
+    "rubix-node-constrained-bb8923a22974414754049664e5f19c94",
+    "-f",
+    "/tmp/rubix-node-context-Dhjzud/tools/node-constrained/Build.Dockerfile",
+    "/tmp/rubix-node-context-Dhjzud"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 31676,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-yjGg15",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "9c795c9780ed78f6754c8b98bf86ea55cb04b7275dfc2029132413ebca0ed75e",
+  "timeout": false
+}

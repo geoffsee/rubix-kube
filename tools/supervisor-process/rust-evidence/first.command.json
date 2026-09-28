@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-supervisor-process-28bf637e1199ea5f305545ac73b38fc8-first",
+    "rubix-supervisor-process-6901c21ee9d22adae1ab83f3491d21ec-first",
     "--init",
     "--network=none",
     "--read-only",
@@ -18,7 +18,7 @@
     "RUBIX_PROCESS_DISPOSABLE=1",
     "--ulimit",
     "fsize=1048576:1048576",
-    "rubix-supervisor-process-28bf637e1199ea5f305545ac73b38fc8",
+    "rubix-supervisor-process-6901c21ee9d22adae1ab83f3491d21ec",
     "/bin/sh",
     "-c",
     "sha256sum /process-tests /fixture; /process-tests --ignored --exact disposable_process_cases --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -30,11 +30,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78577,
+  "owned_pid": 33130,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-6Konvj",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-jS1Nde",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "34b7da304254eda386fb739a72660bf6be9de012b7510e97bb9c227c052d1b97",
+  "stdout_sha256": "8d2d4005944f63881c36e4c4abdd8c2fb6b45f852e3b2178125cc546b54a2f35",
   "timeout": false
 }

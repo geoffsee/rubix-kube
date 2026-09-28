@@ -4,7 +4,7 @@
     "ps",
     "-aq",
     "--filter",
-    "name=^/rubix\\-management\\-go\\-26aaje\\-0$"
+    "name=^/rubix\\-management\\-go\\-mhb5kz\\-0$"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,9 +13,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78631,
+  "owned_pid": 32773,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-4Px78c",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Ac66DO",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

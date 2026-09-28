@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-management-linux-myqpot-0"
+    "rubix-management-linux-p2dyes-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78553,
+  "owned_pid": 32667,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-r1G5pm",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-TtPVwp",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a9c6528b230679e03cb79b816970fe5a47dc6dcfe5f983bfad58f82369f350ce",
+  "stdout_sha256": "313efbfa537b06e1e0f10281d1ba369e5cec305f6989445d7ded9d031cfd371a",
   "timeout": false
 }

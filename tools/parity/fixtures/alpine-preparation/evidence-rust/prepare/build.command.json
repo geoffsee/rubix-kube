@@ -5,10 +5,10 @@
     "--platform",
     "linux/arm64",
     "-t",
-    "rubix-alpine-preparew1slot",
+    "rubix-alpine-prepare3mlg3h",
     "-f",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/Prepare.Dockerfile",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF"
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/Prepare.Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -17,11 +17,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77579,
+  "owned_pid": 97836,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-vzUVts",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-C7aR9o",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "cae2ba8ceec16c3120dd381bef42e68f27bbc0a865ac3dbb65922000eda34bed",
+  "stdout_sha256": "68c03906f4740f637df700a6f13d8c2944be9ff23e9578ea7a1336cffe4e3725",
   "timeout": false
 }

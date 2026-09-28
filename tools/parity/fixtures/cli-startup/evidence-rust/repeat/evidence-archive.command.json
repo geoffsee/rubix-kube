@@ -2,7 +2,7 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-parity-5046330f00ffe40f4e464e68:/evidence/.",
+    "rubix-parity-75e5239f2872600a6321d6bc:/evidence/.",
     "-"
   ],
   "cancelled": false,
@@ -12,11 +12,11 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 79331,
+  "owned_pid": 32064,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-3VZHOq",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-yQ6HaY",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a0b9d66e5140542be81abf9523874094422edf225c1a036b91b168b603d68cef",
+  "stdout_sha256": "aec30e2aefc2f081fca5bb1c2ce728446e9012c3a7733ec4bcbf2fb3b1353be2",
   "timeout": false
 }

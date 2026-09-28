@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/openrc-0.63.2-r0.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/openrc-0.63.2-r0.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/openrc-0.63.2-r0.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77705,
+  "owned_pid": 97874,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-4GKhSD",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qBwi0Z",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f3d5ddaeb14bbb77035a8724c15f0fa7655517a68937e9b717b5c3f20e70b479",
+  "stdout_sha256": "52ac3d72d070db57e39fd33bd49d4d1ba1e6a95e0e1c51373ab8c491032fc37c",
   "timeout": false
 }

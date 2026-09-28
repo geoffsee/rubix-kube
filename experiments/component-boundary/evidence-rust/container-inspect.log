@@ -1,7 +1,7 @@
 [
     {
-        "Id": "a5ad91586e0685ea0689cba2aada1abcf41fc7d470e526026a764bc2c905776f",
-        "Created": "2026-09-28T16:30:06.621271221Z",
+        "Id": "b91ce23195f35003180bb26458091d64dd6dce33f13d70997a88213c8e6eba69",
+        "Created": "2026-09-28T20:59:13.934461084Z",
         "Path": "/fixture",
         "Args": [
             "runtime"
@@ -16,15 +16,15 @@
             "Pid": 0,
             "ExitCode": 0,
             "Error": "",
-            "StartedAt": "2026-09-28T16:30:06.829746679Z",
-            "FinishedAt": "2026-09-28T16:30:25.981417049Z"
+            "StartedAt": "2026-09-28T20:59:14.102961042Z",
+            "FinishedAt": "2026-09-28T20:59:31.385841842Z"
         },
-        "Image": "sha256:d539df0a035cee73a5ae0dc7c8d11393318f1eecd1a297e87b26f7195b8751a7",
-        "ResolvConfPath": "/var/lib/docker/containers/a5ad91586e0685ea0689cba2aada1abcf41fc7d470e526026a764bc2c905776f/resolv.conf",
-        "HostnamePath": "/var/lib/docker/containers/a5ad91586e0685ea0689cba2aada1abcf41fc7d470e526026a764bc2c905776f/hostname",
-        "HostsPath": "/var/lib/docker/containers/a5ad91586e0685ea0689cba2aada1abcf41fc7d470e526026a764bc2c905776f/hosts",
-        "LogPath": "/var/lib/docker/containers/a5ad91586e0685ea0689cba2aada1abcf41fc7d470e526026a764bc2c905776f/a5ad91586e0685ea0689cba2aada1abcf41fc7d470e526026a764bc2c905776f-json.log",
-        "Name": "/rubix-component-boundary-wl54i1-capture",
+        "Image": "sha256:793e395f5737254864e6bb5685d4475b5c8dbf4795a60e4b81665b472a3c9293",
+        "ResolvConfPath": "/var/lib/docker/containers/b91ce23195f35003180bb26458091d64dd6dce33f13d70997a88213c8e6eba69/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/b91ce23195f35003180bb26458091d64dd6dce33f13d70997a88213c8e6eba69/hostname",
+        "HostsPath": "/var/lib/docker/containers/b91ce23195f35003180bb26458091d64dd6dce33f13d70997a88213c8e6eba69/hosts",
+        "LogPath": "/var/lib/docker/containers/b91ce23195f35003180bb26458091d64dd6dce33f13d70997a88213c8e6eba69/b91ce23195f35003180bb26458091d64dd6dce33f13d70997a88213c8e6eba69-json.log",
+        "Name": "/rubix-component-boundary-irtljv-capture",
         "RestartCount": 0,
         "Driver": "overlayfs",
         "Platform": "linux",
@@ -138,7 +138,7 @@
         },
         "Mounts": [],
         "Config": {
-            "Hostname": "a5ad91586e06",
+            "Hostname": "b91ce23195f3",
             "Domainname": "",
             "User": "65532:65532",
             "AttachStdin": false,
@@ -156,7 +156,7 @@
                 "RUBIX_DISPOSABLE_FIXTURE=component-boundary"
             ],
             "Cmd": null,
-            "Image": "rubix-component-boundary-wl54i1",
+            "Image": "rubix-component-boundary-irtljv",
             "Volumes": null,
             "WorkingDir": "/experiment",
             "Entrypoint": [
@@ -193,7 +193,7 @@
         },
         "ImageManifestDescriptor": {
             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "digest": "sha256:c7eefc3c055014699afe2a5a6e567e3c2fb7cc151c0cfe7a1eb39dde2dbdbb0e",
+            "digest": "sha256:deb7433fea95607072c128ccc7ed131463c288a82f49005cd89bd9e54bbe6203",
             "size": 2400,
             "platform": {
                 "architecture": "arm64",

@@ -5,10 +5,10 @@
     "--platform",
     "linux/arm64",
     "--tag",
-    "rubix-config-write-links-9o6xgf",
+    "rubix-config-write-links-5jl0fv",
     "--file",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-FDMEAv/Capture.Dockerfile",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-FDMEAv"
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-sDpFJT/Capture.Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-sDpFJT"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -17,11 +17,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77772,
+  "owned_pid": 97628,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-4L5d4s",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-0FSxsB",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b7c6c7a45d61f6841d8c777ae96b1b19e158f98ec1f0ce91678f4e152cb629d3",
+  "stdout_sha256": "79760db330827f79e98b1755cf5072c163a0bf4e64eff37bed05b1da6d5531a1",
   "timeout": false
 }

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-scalar-extra-yd0lk0-scalar-0"
+    "rubix-config-scalar-extra-el3rbb-scalar-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78084,
+  "owned_pid": 97923,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-oOh4FC",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-QWpmhA",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "d9d3a7351df356df4c87e2b4d54283b6fe7844da3424080a45cd06e8086a3a05",
+  "stdout_sha256": "15a3966823b25b89b12df7c8c6dfc9b295f2cdec927b28c719a6fbc3f2370631",
   "timeout": false
 }

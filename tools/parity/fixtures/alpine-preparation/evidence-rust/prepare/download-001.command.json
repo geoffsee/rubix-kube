@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/busybox-1.37.0-r31.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/busybox-1.37.0-r31.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-1.37.0-r31.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77651,
+  "owned_pid": 97848,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-fkIfW6",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-6fL8m8",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "2669e0f2391ab72c048b97bce1a4e58f70e8ae9d0664b023bc76d06234d6363e",
+  "stdout_sha256": "e6caeab6c76207d4206e401f2e97d0d83cfaef59e0a4fc81a97f671a80b0bafd",
   "timeout": false
 }

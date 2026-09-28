@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/bridge-1.5-r5.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/bridge-1.5-r5.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/bridge-1.5-r5.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77648,
+  "owned_pid": 97847,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Us1pDO",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-xNeoLa",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "9b68d6719071f71d301f4400b4a8e32ec0c290af4001ab384b6ff763051bba47",
+  "stdout_sha256": "7bcf2c2f43af559d718aca68e221b84f2b8abc0e063a3918c4fe3a3e5e718da4",
   "timeout": false
 }

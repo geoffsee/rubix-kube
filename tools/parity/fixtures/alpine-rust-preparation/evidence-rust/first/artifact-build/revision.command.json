@@ -2,7 +2,7 @@
   "argv": [
     "git",
     "-C",
-    "/private/tmp/rubix-manifest-binding-worktree-20260928",
+    "/private/tmp/rubix-node-constrained-worktree-20260928",
     "rev-parse",
     "HEAD"
   ],
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77667,
+  "owned_pid": 31654,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-yqO9oJ",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Eo5MnT",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "cfaeea2a7bfb2dedb47da4a47a9d10808cf8c5728910d5b62eef8e09e98c08ef",
+  "stdout_sha256": "03e02ae57aa581a22de77378edb53e95d3b9e5fbe697f8902a147fed22a4a62a",
   "timeout": false
 }

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-node-config-dfrgdt-kubelet-1"
+    "rubix-node-config-axiht8-kubelet-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 80262,
+  "owned_pid": 98832,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gtkAxb",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-IwoduC",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "1e7f97efcb9f2a84b008f3b3385f44a9a5b5dccce3aef7cb6615439ca01cf023",
+  "stdout_sha256": "d82a4f3715e75e63a7b2245e9e4b9f2fb75649450890fa29622de1295b2a2675",
   "timeout": false
 }

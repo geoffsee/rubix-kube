@@ -1,7 +1,7 @@
 [
     {
-        "Id": "0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f",
-        "Created": "2026-09-28T16:28:49.407735129Z",
+        "Id": "b0a3cd38239b2023bea1d612051f7c2ec1e673ceb92c7a031871a236164ffaef",
+        "Created": "2026-09-28T20:54:48.916479919Z",
         "Path": "/fixture",
         "Args": [
             "runtime"
@@ -16,15 +16,15 @@
             "Pid": 0,
             "ExitCode": 0,
             "Error": "",
-            "StartedAt": "2026-09-28T16:28:49.572332546Z",
-            "FinishedAt": "2026-09-28T16:29:08.83686893Z"
+            "StartedAt": "2026-09-28T20:54:49.067427128Z",
+            "FinishedAt": "2026-09-28T20:55:07.810263304Z"
         },
-        "Image": "sha256:55c4acf9d418fa302b6b37134866d7790f3be68df14459edbf56552315b94353",
-        "ResolvConfPath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/resolv.conf",
-        "HostnamePath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/hostname",
-        "HostsPath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/hosts",
-        "LogPath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f-json.log",
-        "Name": "/rubix-api-json-mpk83d-capture",
+        "Image": "sha256:a14a4197b8b3a648778b34d75020fba0feb32187344773607f69d18a3474e8fb",
+        "ResolvConfPath": "/var/lib/docker/containers/b0a3cd38239b2023bea1d612051f7c2ec1e673ceb92c7a031871a236164ffaef/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/b0a3cd38239b2023bea1d612051f7c2ec1e673ceb92c7a031871a236164ffaef/hostname",
+        "HostsPath": "/var/lib/docker/containers/b0a3cd38239b2023bea1d612051f7c2ec1e673ceb92c7a031871a236164ffaef/hosts",
+        "LogPath": "/var/lib/docker/containers/b0a3cd38239b2023bea1d612051f7c2ec1e673ceb92c7a031871a236164ffaef/b0a3cd38239b2023bea1d612051f7c2ec1e673ceb92c7a031871a236164ffaef-json.log",
+        "Name": "/rubix-api-json-ktvlle-capture",
         "RestartCount": 0,
         "Driver": "overlayfs",
         "Platform": "linux",
@@ -138,7 +138,7 @@
         },
         "Mounts": [],
         "Config": {
-            "Hostname": "0fe2f2168223",
+            "Hostname": "b0a3cd38239b",
             "Domainname": "",
             "User": "65532:65532",
             "AttachStdin": false,
@@ -156,7 +156,7 @@
                 "RUBIX_DISPOSABLE_FIXTURE=api-json"
             ],
             "Cmd": null,
-            "Image": "rubix-api-json-mpk83d",
+            "Image": "rubix-api-json-ktvlle",
             "Volumes": null,
             "WorkingDir": "/experiment",
             "Entrypoint": [
@@ -193,7 +193,7 @@
         },
         "ImageManifestDescriptor": {
             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "digest": "sha256:a06740a356820cd7fe5226d3c9c49486669f8b37752464543258f35975719b70",
+            "digest": "sha256:ec99289161222b10f1fcc5ff3974fc0e2a8eb88dd78693aeff374cb8cf165e83",
             "size": 2400,
             "platform": {
                 "architecture": "arm64",

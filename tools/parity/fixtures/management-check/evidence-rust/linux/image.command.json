@@ -5,7 +5,7 @@
     "inspect",
     "--format",
     "{{.Id}}",
-    "rubix-management-linux-myqpot"
+    "rubix-management-linux-p2dyes"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78551,
+  "owned_pid": 32654,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-aTBuGp",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-sJOQmU",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "907d23111430e16b4d6d4ad9c166ea0584bdaebc946e0948ad2d217b582b450c",
+  "stdout_sha256": "de12b24b4c0551afd3971ea1af31544060b7dc0071a6a35072e7c52ee16e6bc5",
   "timeout": false
 }

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-constrained-policy-i7wypt-network-1"
+    "rubix-constrained-policy-ybicam-network-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78205,
+  "owned_pid": 98005,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-NGvl2N",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-17A1HW",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "72913da2f9c6b8a2ff759eac4e35fda7867306a09de04663e48821998610131d",
+  "stdout_sha256": "fba79a769527b8755a143f9870a076c50f0213c0b7451fdfe05fc8f3b7ed0fe4",
   "timeout": false
 }
