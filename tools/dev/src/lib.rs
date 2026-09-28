@@ -6,6 +6,7 @@ use std::process::Command;
 
 use sha2::{Digest, Sha256};
 
+pub mod fixture_oracles;
 pub mod json;
 pub mod resolved_report;
 
@@ -25,10 +26,21 @@ pub fn repository_root(start: &Path) -> Result<PathBuf> {
 /// Read at most `limit` bytes, rejecting an oversized input rather than truncating it.
 pub fn read_bounded(path: &Path, limit: u64) -> Result<Vec<u8>> {
     let maximum = limit.checked_add(1).ok_or("invalid input byte limit")?;
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(i32::try_from(
+            (rustix::fs::OFlags::NOFOLLOW | rustix::fs::OFlags::NONBLOCK).bits(),
+        )?);
+    }
+    let file = options.open(path)?;
+    if !file.metadata()?.is_file() {
+        return Err(format!("{} is not a regular input file", path.display()).into());
+    }
     let mut bytes = Vec::new();
-    std::fs::File::open(path)?
-        .take(maximum)
-        .read_to_end(&mut bytes)?;
+    file.take(maximum).read_to_end(&mut bytes)?;
     if u64::try_from(bytes.len())? > limit {
         return Err(format!("{} exceeds {limit} bytes", path.display()).into());
     }
@@ -69,6 +81,13 @@ mod tests {
         assert_eq!(read_bounded(&path, 3)?, b"abc");
         assert!(read_bounded(&path, 2).is_err());
         assert!(read_bounded(&path, u64::MAX).is_err());
+        assert!(read_bounded(directory.path(), 3).is_err());
+        #[cfg(unix)]
+        {
+            let link = directory.path().join("link");
+            std::os::unix::fs::symlink(&path, &link)?;
+            assert!(read_bounded(&link, 3).is_err());
+        }
         Ok(())
     }
 
