@@ -1,9 +1,10 @@
-# Read-only management checks
+# Management checks and explicit prerequisites
 
 `rubixctl` is a separate management executable. Its current commands are `check`,
 `version` and help. The existing `rubix-kube` startup parser, startup YAML and its
-90-case qualification remain separate. This crate does not start Kubernetes,
-install services, download artifacts, stop conflicting processes or prepare hosts.
+90-case qualification remain separate. This crate does not start Kubernetes or provide a general installer. Explicit
+opt-in can install missing Alpine networking packages and enable its cgroups
+service; ordinary checks never prepare a host or stop conflicting processes.
 
 The name is an explicit Rubix management CLI choice replacing `kubesoloctl` for
 this executable. Help/version text is branded accordingly. KubeSolo environment
@@ -29,10 +30,12 @@ boolean-looking words remain positional arguments and are ignored, as by Cobra.
 Repeated flags use the final value. `--` ends flag parsing. There is no YAML or
 startup-flag processing here.
 
-Requesting prerequisite installation fails explicitly before host effects; this
-includes enabling it through the environment. Use `--install-prereqs=false` for
-read-only checking until a separate owned preparation executor exists. A planned
-preparation is never printed as completed work.
+Explicit `--install-prereqs` (or its existing environment opt-in) authorizes only
+missing Alpine networking packages and the Alpine cgroups service. The executable
+installs invocation-wide signal handling before observations or actions. See
+[PREPARATION.md](PREPARATION.md) for fixed commands, reobservation, partial effects
+and incomplete-cleanup exit status. The synchronous library `execute` boundary
+remains read-only and rejects this opt-in; the executable uses the async workflow.
 
 The host check uses Linux discovery and supplemental filesystem observations.
 It evaluates earlier checks before briefly binding wildcard ports; any earlier
@@ -64,7 +67,7 @@ Cobra's exit 0 but use a static safe diagnostic. `version` is a management subco
 
 Intentional changes are bounded argv acceptance (256 arguments/64KiB), UTF-8 command
 input, rebranded/smaller help, static safe diagnostics, propagated output failures,
-explicit unsupported preparation/container-engine checks, and a qualified success
+explicit unsupported container-engine checks, and a qualified success
 message. The baseline's universal "Host is ready" message would overstate these
 observations. ANSI styling, byte-identical management UI and unimplemented sibling
 commands are not claimed. E05 integration and E23 installation remain open.

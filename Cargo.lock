@@ -718,7 +718,9 @@ name = "rubixctl"
 version = "0.1.0"
 dependencies = [
  "rubix-platform",
+ "rubix-supervisor",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
