@@ -38,11 +38,12 @@ SIGKILL remains outside cooperative cleanup. Repository panic-abort behavior and
 normal panic-hook output retain the core's documented limits.
 
 The budgets require cooperative adapter futures and a scheduled runtime. They are
-not a hard OS process termination guarantee. This core-only slice starts no managed
-component processes, uses no process-adapter implementation, and proves no cleanup
-of detached tasks, arbitrary descendants, threads or external services. Combining
-signals with the separately owned process adapter, real component readiness probes
-and owned-process inventories remains E04 integration work.
+not a hard OS process termination guarantee. The standalone bridge tests use
+cooperative task adapters. The combined Linux qualification also exercises
+`OwnedProcessAdapter` and its explicit cleanup observers through real signals;
+it retains the [process ownership assumptions](PROCESS.md). Concrete Kubernetes
+component probes, detached work and arbitrary descendant containment remain outside
+this qualification.
 
 ## Reference and policy
 
@@ -92,5 +93,11 @@ exact source inventory, locked toolchain/image and test binary digest, and retai
 cleanup receipts. The qualification summary means all 180 child assertions passed;
 individual successful child streams are consumed by the parent rather than retained
 as separate artifacts. Failure output is included in the parent's test failure.
-Darwin arm64 was also exercised locally. These are signal/core qualification results,
-not a claim that #42/#43/#44 or parent E04 is complete.
+Darwin arm64 was also exercised locally. The Linux capture additionally runs 61
+owned-process cases: 20 repetitions each of full startup, partial startup and fatal
+worker failure, plus one real TERM-to-KILL escalation. Full-startup cases require
+coordinator-accepted readiness; every case checks exact cause/cleanup evidence,
+owner joining/reaping, external-sentinel survival and namespace cleanup. The earlier
+two-by-eleven process suite is recaptured on the same integrated source. These are
+bounded supervision qualification results, not a claim that #42/#43/#44 or parent
+E04 is complete.
