@@ -57,13 +57,15 @@ Fresh schema2 receipts must also bind the build log and both builder-produced
 binary digests. Older receipts without those fields require recapture and cannot
 be relabelled as qualification of this combined harness.
 
-Current schema2 qualification was captured twice on integrated network source
-`77e7fff321ddc3481ab84d85e5c0129fa2e6592e`. Both Linux arm64 release runs passed
-all 14 decoder and 10 compressed ELF tests. Builder and both runtime observations
-agree on decoder SHA-256
-`5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b`
+Current schema2 qualification was captured twice on decoder error-budget source
+`7be6768673263c26cf6fc3407b6650b239e41cf8`. Both Linux arm64 release runs passed
+all 14 decoder and 10 compressed ELF integration tests. Builder and both runtime
+observations agree on decoder SHA-256
+`0a27bdd86dd617e5a971482a073020f78951f4ab00ded4dab212e28321b6d2a8`
 and compressed ELF test SHA-256
-`0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001`.
+`d34ebfb20488e19aced666b2eab1147957aeaf5ea56e4a6cd879ebed5c53c2ac`.
 Capture and cleanup error arrays are empty; independent Docker inventory checks
 confirmed both owned containers and the image tag absent. All 13 evidence tests
-and current-source verification pass normally and under optimization.
+and current-source verification pass normally and under optimization. This fixture
+runs the two integration executables; the private failed-read error-accounting
+regression passed separately as a library test, not in these Docker runs.

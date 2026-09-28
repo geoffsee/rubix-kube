@@ -6,9 +6,9 @@
   "extended_status": "degraded done",
   "init": {
     "errors": [],
-    "finished": 9.34,
+    "finished": 7.67,
     "recoverable_errors": {},
-    "start": 8.84
+    "start": 7.16
   },
   "init-local": {
     "errors": [],
@@ -16,22 +16,22 @@
     "recoverable_errors": {},
     "start": 1.79
   },
-  "last_update": "Thu, 01 Jan 1970 00:00:09 +0000",
+  "last_update": "Thu, 01 Jan 1970 00:00:08 +0000",
   "modules-config": {
     "errors": [],
-    "finished": 9.53,
+    "finished": 7.84,
     "recoverable_errors": {},
-    "start": 9.52
+    "start": 7.83
   },
   "modules-final": {
     "errors": [],
-    "finished": 9.72,
+    "finished": 8.02,
     "recoverable_errors": {
       "WARNING": [
         "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
       ]
     },
-    "start": 9.7
+    "start": 8.0
   },
   "recoverable_errors": {
     "WARNING": [
