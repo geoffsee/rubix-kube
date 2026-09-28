@@ -2,7 +2,7 @@
 
 This is the first bounded layer of E06.01/#48. It is a synchronous, read-only
 library shared by future runtime and release consumers. It does not open paths,
-fetch inputs, start commands, decode compression, parse OCI content, install
+fetch inputs, start commands, parse OCI content, install
 files, import images or authorize any of those actions.
 
 `Manifest::decode(bytes, limits)` is the sole public construction route and parses
@@ -94,3 +94,7 @@ gates. Ordinary builds perform no upstream refresh and embed no third-party asse
 The additive [identity ELF inspection](ELF.md) now checks the exact identity bytes and
 reports bounded header/loader/dependency facts. Compression and runtime ABI closure
 remain separate; this addition does not close #48.
+
+The additive [bounded compressed-byte inspector](DECODE.md) now streams one zstd
+frame or gzip member with explicit budgets. Its decoded digest/count observations
+do not establish ELF/archive/OCI semantics or authenticate a publisher.
