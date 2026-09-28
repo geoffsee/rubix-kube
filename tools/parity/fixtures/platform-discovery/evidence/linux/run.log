@@ -33,8 +33,8 @@ test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 running 6 tests
 test baseline_order_and_real_uid_are_distinct_from_effective_uid ... ok
 test agrees_with_actual_pinned_go_reference_observations ... ok
-test module_indexes_are_not_proof_of_comment_capability ... ok
 test every_required_controller_and_optional_port_has_distinct_evidence ... ok
+test module_indexes_are_not_proof_of_comment_capability ... ok
 test prerequisite_opt_in_plans_require_recheck_and_never_grant_runtime_ownership ... ok
 test unknown_read_errors_and_unprobed_ports_never_claim_success ... ok
 
