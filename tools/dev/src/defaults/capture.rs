@@ -251,14 +251,22 @@ impl Runner {
         }
         report["retained_build_contexts"] = value!(self.retained_contexts);
         report["cancelled"] = value!(self.commands.cancellation.requested());
-        write_json(&output.join("receipt.json"), report)?;
+        let publication = write_json(&output.join("receipt.json"), report);
         if uncertain {
+            let message = publication.err().map_or_else(
+                || "owned process cleanup is unconfirmed".to_owned(),
+                |error| {
+                    format!(
+                        "owned process cleanup is unconfirmed; receipt publication failed: {error}"
+                    )
+                },
+            );
             return Err(Box::new(CaptureFailure {
                 owner: self,
-                message: "owned process cleanup is unconfirmed".into(),
+                message,
             }));
         }
-        Ok(())
+        publication
     }
     fn retain_contexts(&mut self) {
         for context in self.contexts.drain(..) {
@@ -664,6 +672,37 @@ fn visit(path: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn failed_receipt_publication_preserves_uncertain_owner_and_context() {
+        let output = tempfile::tempdir().unwrap();
+        fs::create_dir(output.path().join("receipt.json")).unwrap();
+        let context = tempfile::tempdir().unwrap();
+        let path = context.path().to_owned();
+        let mut runner = Runner::new(output.path());
+        runner.keep_context(context);
+        runner.retained.push(CommandFailure {
+            message: "injected unsettled command".into(),
+            cleanup_complete: false,
+            receipt: value!({"cleanup_complete":false}),
+            owner: None,
+        });
+        let owned = OwnedDocker {
+            tag: "owned-test".into(),
+            image_id: None,
+            containers: vec![],
+        };
+        let error = runner
+            .finish(&mut value!({}), output.path(), &owned)
+            .unwrap_err();
+        let failure = error
+            .downcast_ref::<CaptureFailure>()
+            .expect("typed retained owner");
+        assert_eq!(failure.owner.retained.len(), 1);
+        assert!(failure.message.contains("receipt publication failed"));
+        drop(error);
+        assert!(path.exists());
+        fs::remove_dir_all(path).unwrap();
+    }
     #[test]
     fn uncertain_process_retains_context_and_prevents_all_later_commands() {
         let output = tempfile::tempdir().unwrap();

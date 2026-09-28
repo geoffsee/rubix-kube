@@ -370,8 +370,16 @@ pub(crate) fn cli(args: &[String]) -> Result<i32> {
         _ => return fail("both resolved snapshot directories are required"),
     }
     match opts.get("--format").copied().unwrap_or("json") {
-        "json" => println!("{}", serde_json::to_string_pretty(&report)?),
-        "markdown" => print!("{}", markdown(&report)?),
+        "json" => {
+            let text = serde_json::to_string_pretty(&report)?;
+            crate::upstream::check_cancelled()?;
+            println!("{text}");
+        },
+        "markdown" => {
+            let text = markdown(&report)?;
+            crate::upstream::check_cancelled()?;
+            print!("{text}");
+        },
         _ => return fail("format must be json or markdown"),
     }
     Ok(i32::from(report["change_count"] != 0))

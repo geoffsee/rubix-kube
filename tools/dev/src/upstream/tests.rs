@@ -337,6 +337,22 @@ fn command_timeout_kills_and_reaps_child_and_errors_preserve_diagnostics() {
     assert!(run(&mut Command::new("cat"), 2).unwrap().is_empty());
 }
 #[test]
+fn cancellation_between_commands_prevents_next_spawn_publication_and_success() {
+    let dir = tempfile::tempdir().unwrap();
+    let result = with_execution(|| {
+        assert!(run(&mut Command::new("cat"), 2)?.is_empty());
+        EXECUTION.with(|context| context.borrow().as_ref().unwrap().request());
+        let marker = dir.path().join("must-not-exist");
+        assert!(run(Command::new("touch").arg(&marker), 2).is_err());
+        assert!(!marker.exists());
+        assert!(atomic_write(dir.path(), "publication", b"data", false).is_err());
+        assert!(!dir.path().join("publication").exists());
+        Ok(())
+    });
+    assert!(result.unwrap_err().to_string().contains("cancelled"));
+    assert!(EXECUTION.with(|context| context.borrow().is_none()));
+}
+#[test]
 fn fetch_with_all_verified_cache_entries_never_needs_network() {
     let f = Fixture::new();
     fetch(&f.inputs, f.dir.path(), &host_platform()).unwrap();
