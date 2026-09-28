@@ -36,7 +36,7 @@ The configured runtime endpoint also conflicts with the explicitly resolved prob
 The actual mapper uses those supplied probes. The variant additionally changes
 SANs, CPU policy/options/reservations, local storage, load balancing, IPv6, D2K,
 metrics and Portainer selection. `mapping_capture_test.go` is the complete input
-recipe; `verify.expected()` independently specifies every resulting field.
+recipe; `fixture_oracles::mapping::expected()` independently specifies every resulting field.
 Synthetic Portainer ID/key are only used to exercise the activation boolean;
 no input key value or generated credential is exported. Certificate fields contain
 path strings only.
@@ -61,10 +61,10 @@ invalid runtime configurations. Host discovery and managed/external runtime
 interoperability remain separate component work.
 
 ```sh
-python3 tools/parity/fixtures/runtime-mapping/capture.py --output /tmp/new-runtime-mapping
-python3 tools/parity/fixtures/runtime-mapping/verify.py /tmp/new-runtime-mapping/mapping.json
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity/fixtures/runtime-mapping -p 'test_*.py'
-PYTHONDONTWRITEBYTECODE=1 python3 -O -m unittest discover -s tools/parity/fixtures/runtime-mapping -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture runtime-mapping --output /tmp/new-runtime-mapping
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify runtime-mapping /tmp/new-runtime-mapping/mapping.json
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence runtime-mapping /tmp/new-runtime-mapping
+cargo test --locked -p rubix-dev fixture_oracles
 ```
 
 The Dockerfile pins the source archive SHA-256 and Go 1.26.5 builder image digest,
@@ -89,6 +89,8 @@ executes only the pinned trusted source test, not arbitrary hostile artifacts.
 files. Receipt tests require exact source/output inventories and current hashes.
 Mutation tests reject altered hostname/path/probe/endpoint semantics, omitted or
 reordered cases, missing/duplicate/changed repeated records, and incomplete hash
-inventories, including under Python optimization. This is a future-consumer oracle,
+inventories in debug and release builds. Historical evidence stays unchanged; current
+Rust captures live in `rust-evidence/` and bind current tooling and command settlement.
+This is a future-consumer oracle,
 not Rust parity, distribution lifecycle qualification, or an additional foundation
 closure gate.

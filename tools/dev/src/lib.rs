@@ -6,12 +6,19 @@ use std::process::Command;
 
 use sha2::{Digest, Sha256};
 
+pub mod defaults;
+#[cfg(not(test))]
+pub mod drift;
+pub mod fixture_capture;
 pub mod fixture_oracles;
 pub mod json;
 pub mod language_policy;
 #[path = "parity/process.rs"]
 pub mod process;
+pub mod resolved_capture;
 pub mod resolved_report;
+#[cfg(not(test))]
+pub mod upstream;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;

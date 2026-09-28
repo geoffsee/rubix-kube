@@ -3,6 +3,21 @@ use rubix_dev::{Result, fixture_oracles as oracle};
 use std::{ffi::OsString, path::PathBuf, process::ExitCode};
 
 fn run(args: &[OsString]) -> Result<()> {
+    if args.first().is_some_and(|arg| arg == "capture") {
+        let code = rubix_dev::fixture_capture::cli(&args[1..])?;
+        if code != 0 {
+            return Err("fixture capture failed; inspect its receipt".into());
+        }
+        return Ok(());
+    }
+    if args.len() == 3 && args[0] == "verify-evidence" {
+        let root = rubix_dev::repository_root(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))?;
+        return rubix_dev::fixture_capture::verify_evidence(
+            &root,
+            args[1].to_str().ok_or("non UTF-8 fixture family")?,
+            std::path::Path::new(&args[2]),
+        );
+    }
     if args.len() != 3 || args[0] != "verify" {
         return Err(
             "usage: rubix-fixture verify <credentials|runtime-mapping|webhooks> PATH".into(),
