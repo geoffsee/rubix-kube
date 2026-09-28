@@ -28,7 +28,7 @@ class EvidenceTests(unittest.TestCase):
    with self.assertRaisesRegex(ValueError,'exact independent Go records'):verify.verify(here)
  def test_current_dependency_and_probe_changes_require_recapture(self):
   original=verify.digest
-  for name in ['Cargo.lock','crates/rubix-platform/src/discover.rs']:
+  for name in ['Cargo.lock','crates/rubix-platform/src/discover.rs','tools/parity/fixtures/preflight-policy/expected.tsv']:
    with self.subTest(name=name),patch.object(verify,'digest',side_effect=lambda path:'0'*64 if path==verify.ROOT/name else original(path)),self.assertRaises(ValueError):verify.verify()
  def test_cleanup_continues_and_reports_unavailable_inventories(self):
   with tempfile.TemporaryDirectory() as temporary:
