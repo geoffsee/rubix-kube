@@ -68,12 +68,12 @@ exit 2 is accepted only with the exact pinned missing fingerprint-helper warning
 no stage errors. The verifier binds each raw JSON response independently to its receipt.
 Fresh SSH keys use fixed fixture comments rather than local account/hostname comments.
 
-Both stored guest captures were refreshed for bounded asset-decoder integration and
-bind source revision `d7bd7d0ac66ca6347e66b12f344e7a31c77f5bfd`. The verified candidate
-build receipt binds `ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, including the updated
-decoder dependencies and workspace inputs. Its SHA-256 is
+The previous guest captures qualified bounded asset-decoder integration and
+bound source revision `d7bd7d0ac66ca6347e66b12f344e7a31c77f5bfd`. Their candidate
+build receipt bound `ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, including the updated
+decoder dependencies and workspace inputs. Its SHA-256 was
 `1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa`
-and its size is 5388504 bytes. Earlier temporary receipts remain historical; their
+and its size was 5388504 bytes. Earlier temporary receipts remain historical; their
 revisions and observations were not relabeled.
 
 Network integration qualification: two fresh guests on source `5799b93cf85ff5e28f8f0da18472122e0fa424b3` passed all seven prerequisite paths and reboot checks. The executed rubixctl candidate was built on `45e727574ff8b2c8ec0c760a16e4f110a188343a` (SHA256 `1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa`, 5,388,504 bytes). Both guests powered off cleanly; owned groups and private directories were independently absent. This sibling prerequisite evidence does not substitute for the separate host-network effect fixture.
