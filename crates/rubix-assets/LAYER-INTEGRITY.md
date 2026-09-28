@@ -112,6 +112,8 @@ produced dynamic-DEFLATE expansion vector, the exact zstd zero-position/error
 counterexample with mutated output bytes, known checksum constants, optional
 headers, arbitrary input chunk boundaries, concatenation, repeated references,
 metadata order, exact limits and retained late-error charges. No actual upstream
-artifact is executed. Pinned Go/crane gzip/zstd compatibility qualification for
-this new API is still pending; the existing archive fixture exercises the older
-archive-inspection API only.
+artifact is executed. The independent pinned Go/crane gzip/zstd compatibility
+fixture for this API lives in `tools/assets-layer`. Its Rust verifier requires
+fresh captures bound to the current sources, including both runtime observations
+and confirmed cleanup. Historical captures alone do not satisfy that gate. The
+separate archive fixture exercises the archive-inspection API only.

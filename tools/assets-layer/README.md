@@ -17,12 +17,12 @@ config, and manifest last. Four image profiles exercise gzip and zstd, each with
 one frame/member and with two concatenated frames/members. Layer A expands past
 32 KiB; B contains deterministic SHA-256 blocks to cross outer read boundaries.
 
-The Python oracle independently reconstructs the complete raw tar bytes, including
+The Rust fixture oracle independently reconstructs the complete raw tar bytes, including
 headers, padding and end markers. It checks the producer's decoded-byte sidecar
 against those bytes, recomputes DiffIDs and member/config/manifest identities,
-and checks ordered repeated references. Python additionally decodes gzip via zlib.
-Zstd's independent decoder is the pinned upstream Go implementation; Python does
-not pretend to implement a second zstd decoder. Raw logs contain the actual outer
+and checks ordered repeated references. It additionally decodes gzip with a bounded
+flate2 path, independently of the production layer verifier. Zstd's independent
+decoder remains the pinned upstream Go implementation. Raw logs contain the actual outer
 archive bytes and upstream sidecar, allowing strict offline verification against
 the source-bound producer. This is editable local build/run consistency, not
 cryptographic authenticity against replacement of every record and receipt.
@@ -45,8 +45,8 @@ private regression that demonstrates zstd writing bytes with an unchanged error
 output position. Exact positive and negative observations are compared to the
 independent oracle. No observation can pass for a missing, extra or swapped case.
 
-The build compiles only the ignored `layer_fixture` consumer executable. A fresh
-nonce checksum step binds producer and Rust consumer SHA-256 values from the
+The build compiles the ignored `layer_fixture` consumer executable and Rust helper.
+A fresh nonce checksum frame binds producer, consumer and helper SHA-256 values from the
 bounded plain build log to both runtime executions, retaining compilation cache.
 The verifier binds workspace manifests/lock/toolchain, relevant Rust files,
 complete fixture module graph, harness/helper hashes and copied-source inventory.
@@ -64,40 +64,47 @@ production hard CPU/memory or mid-call cancellation guarantees.
 
 Both runs must match archive bytes and observations exactly, with a final process
 namespace inventory containing only init, shell and inventory helper. Cleanup
-always attempts removal of only the unique owned image and containers, records
-failures and checks for leftovers. Independently query those exact resources
-after capture. Builds may download pinned dependencies; runtime is offline.
+removes only the unique owned image and containers, records failures and checks
+for leftovers. Image inspection and all five cleanup commands retain raw logs and
+settled receipts. Verification requires exact argv, image identity, empty final
+inventories, EOF, process-group absence, and no timeout, cancellation or overflow.
+Unknown settlement stops further commands and retains owned context. Settled
+cancellation permits owned cleanup with a fresh latch but cannot qualify success.
+Builds may download pinned dependencies; runtime is offline.
 
 ```sh
 # Before evidence: source/verifier mutation checks use explicitly invented records.
-(cd tools/assets-layer && python3 -m unittest test_evidence.Evidence)
-(cd tools/assets-layer && python3 -O -m unittest test_evidence.Evidence)
+cargo test -p rubix-dev --bin rubix-asset-fixture --locked -- --skip published_
+cargo test -p rubix-dev --bin rubix-asset-fixture --release --locked -- --skip published_
 # Only after independent source review and a clean frozen commit:
-python3 tools/assets-layer/capture.py --output /tmp/rubix-layer-capture
-python3 tools/assets-layer/verify.py /tmp/rubix-layer-capture
-# After publishing exact receipt, inventory, build log and two runtime logs:
-python3 -m unittest discover -s tools/assets-layer -p 'test_*.py'
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- layer capture /tmp/rubix-layer-capture
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- layer verify /tmp/rubix-layer-capture
+# After publishing the entire verified capture directory under rust-evidence/:
+cargo test -p rubix-dev --bin rubix-asset-fixture --locked
 ```
 
-The mandatory `PublishedEvidence` test and default verifier require the published
-real capture; absent or stale evidence fails. Invented mutation records never
-substitute for actual producer execution.
+The mandatory `published_layer_requires_current_rust_capture` test requires a
+current schema-3 capture at `rust-evidence/`; absent or stale evidence fails.
+All 20 files are required: source inventory, capture receipt, and raw logs plus
+settled command receipts for build, two runs, image inspection and five cleanup
+commands. Preserve historical `evidence/` byte-for-byte. Invented mutation records
+and historical raw parser tests never substitute for actual current producer execution.
 
-Current qualification passed all twelve cases twice at clean source
+Historical qualification passed all twelve cases twice at clean source
 `bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`. Both runs match the actual emitted
 archives and independent observations. The producer SHA-256 is
 `949122075fe13d50ee1588de9cd6bb6fa7233626b08c84eea89c1d3825b1e070`;
 the Rust consumer SHA-256 is
 `e80bf3b9ba88bee3379e1b8c27774b964ad8c51972b5af74f997bed9926387a3`.
 Both match fresh builder records and each runtime observation. Capture and cleanup
-error arrays are empty. Independent Docker queries confirmed both owned containers
-and their image tag absent. All 19 Python tests, including the mandatory published
-evidence gate, and current-source verification pass normally and under optimization.
+error arrays were empty. Independent Docker queries confirmed both owned containers
+and their image tag absent. These historical receipts do not qualify the new Rust
+capture implementation; publish a fresh verified capture from reviewed source.
 
 The first attempted capture at `b4aef28704bdd0f713ac05e16da9bdc096f950ad`
 failed on a fixture encoded-probe accounting assertion. Its raw record remains
 historical at `/tmp/rubix-layer-qualified-20260928-r1`; it is not passing
-qualification. The current fresh capture also corrects the wrong-DiffID mutation
+qualification. The historical passing capture also corrected the wrong-DiffID mutation
 to preserve repeated-reference consistency and preserves bounded consumer failure
 logs. Local diagnostic replays were not substituted for the two Docker runs.
 
