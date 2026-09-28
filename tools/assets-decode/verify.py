@@ -36,6 +36,15 @@ def strict(raw):return json.loads(raw,object_pairs_hook=pairs,parse_float=reject
 def load(path):return strict(read(path))
 def run_command(tag,name):
     return ['docker','run','--name',tag+'-'+name,'--init','--network=none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--pids-limit=64','--memory=256m','--cpus=2','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',tag,'/bin/sh','-c','sha256sum /decode-tests; /decode-tests --nocapture --test-threads=1; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test "$status" -eq 0 && test "$inventory" -eq 0']
+def build_binary(path):
+    # --progress=plain and a per-capture nonce make the builder checksum observable.
+    # A Dockerfile RUN command echo is not a checksum output record.
+    matches=[]
+    for line in read(path,16*1024*1024).decode().splitlines():
+        match=re.fullmatch(r'#[0-9]+ [0-9]+(?:\.[0-9]+)? ([a-f0-9]{64})  /out/decode-tests',line)
+        if match:matches.append(match[1])
+    require(len(matches)==1,'unique builder binary digest')
+    return matches[0]
 def records(path):
     lines=read(path,1024*1024).decode().splitlines()
     require(sum(line.startswith('test result: ok. 14 passed; 0 failed; 0 ignored;') for line in lines)==1,'test completion')
@@ -61,7 +70,7 @@ def current_inventory():
     return {str(p.relative_to(ROOT)):digest(p) for p in sorted(set(paths))}
 def capture(directory):
     directory=Path(directory);report=load(directory/'receipt.json')
-    require(set(report)=={'schema','source_revision','uncommitted_source_snapshot','tag','harness_sha256','helper_sha256','containers','errors','cleanup_errors','runs','source_inventory_sha256','image_id','remaining_containers','remaining_images'},'receipt schema')
+    require(set(report)=={'schema','source_revision','uncommitted_source_snapshot','tag','harness_sha256','helper_sha256','containers','errors','cleanup_errors','runs','source_inventory_sha256','image_id','remaining_containers','remaining_images','build_log_sha256','build_binary_sha256'},'receipt schema')
     require(type(report['schema']) is int and report['schema']==1,'schema');require(type(report['uncommitted_source_snapshot']) is bool,'dirty scope')
     require(re.fullmatch('[a-f0-9]{40}',report['source_revision']) is not None,'revision');tag=report['tag'];require(re.fullmatch('rubix-decode-[a-f0-9]{32}',tag) is not None,'owned tag')
     require(report['containers']==[tag+'-first',tag+'-repeat'],'owned containers')
@@ -70,10 +79,14 @@ def capture(directory):
     require(report['harness_sha256']=={name:digest(HERE/name) for name in HARNESS},'harness binding');require(report['helper_sha256']==digest(ROOT/'tools/defaults/capture.py'),'helper')
     require(report['source_inventory_sha256']==digest(directory/'source-inventory.json'),'inventory digest');inventory=load(directory/'source-inventory.json')
     require({key:value for key,value in inventory.items() if relevant(key)}==current_inventory(),'exact compiled input inventory')
+    require(report['build_log_sha256']==digest(directory/'build.log'),'build log binding')
+    builder=build_binary(directory/'build.log')
+    require(report['build_binary_sha256']==builder,'builder observation binding')
     require(set(report['runs'])=={'first','repeat'},'two runs');binaries=[]
     for name,run in report['runs'].items():
         require(set(run)=={'command','raw_sha256','binary_sha256','records'},'run schema');require(run['command']==run_command(tag,name),'isolated command')
         require(run['raw_sha256']==digest(directory/(name+'.log')),'raw log binding');cases,binary=records(directory/(name+'.log'))
-        require(run['records']==cases and run['binary_sha256']==binary,'raw observation binding');binaries.append(binary)
+        require(run['records']==cases and run['binary_sha256']==binary,'raw observation binding')
+        require(binary==builder,'builder/runtime binary mismatch');binaries.append(binary)
     require(binaries[0]==binaries[1],'repeated executable')
 if __name__=='__main__':capture(Path(sys.argv[1]) if len(sys.argv)>1 else HERE/'evidence');print('Native Linux decoder qualification verified')

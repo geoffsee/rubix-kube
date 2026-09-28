@@ -21,7 +21,14 @@ socket are mounted into test containers. No host software/settings are changed.
 The current verifier binds all manifests/lock/toolchain, .cargo, relevant asset and
 platform sources/fixtures, native dependency graph through Cargo.lock, exact build
 recipe/helper and runtime namespace helper, complete copied-source inventory,
-run commands, raw logs and binary hashes. JSON duplicate/nonintegral values and
+run commands, raw logs and binary hashes. The builder prints the SHA-256 of the
+copied `/out/decode-tests` executable. Builds use `--progress=plain` and pass the
+unique owned image tag as `QUALIFICATION_NONCE`. That build argument is declared
+and consumed only in a separate checksum step after compilation/copying, forcing
+fresh checksum output while preserving compilation cache reuse. The receipt
+binds the bounded build log's SHA-256 and its unique builder-produced digest; both
+runtime digests must equal that builder digest. This is build/run consistency,
+not cryptographic authenticity of editable local evidence. JSON duplicate/nonintegral values and
 oversized/nonregular evidence are rejected. Evidence revision and dirty-state
 metadata describe the actual snapshot; later commits never relabel receipts.
 
@@ -41,3 +48,7 @@ Stored evidence was captured on `ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`.
 Both Linuxarm64 release runs passed all14 tests with executable SHA-256
 `6646d28e926b028a77ed5317e642a999cf75b953c9ad72b6969dc790d0e8e049`.
 The receipt reports no capture/cleanup errors or remaining owned containers/images.
+
+The added builder binding requires a fresh capture after review/commit. Older
+receipts lacking the build-log digest and builder observation fail verification;
+they must not be relabelled or treated as qualification of the revised harness.
