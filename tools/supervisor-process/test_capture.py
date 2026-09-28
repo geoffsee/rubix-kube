@@ -47,13 +47,7 @@ class Capture(unittest.TestCase):
                 capture.run([sys.executable,'-c','import time; time.sleep(30)'],.1,p)
 
     def test_semantic_negatives(self):
-        rows=[]
-        for name in verify.CASES:
-            graceful=name in ['delayed','family','term-error','sentinel-survived-external-stop']
-            code=17 if name in ['early','leader-exits-first','term-error'] else 0 if graceful or name=='oneshot' else None
-            rows.append(dict(case=name,spawned=True,term_attempted=graceful or name=='ignore',kill_attempted=True,
-                             leader_reaped=True,thread_joined=True,complete=True,exit_code=code,signal=None if code is not None else 9,
-                             elapsed_ms=30000 if name=='ignore' else 0))
+        rows=self.records()
         verify.verify_records(rows)
         for field,value in [('leader_reaped',False),('thread_joined',False),('complete',1),('term_attempted',False),('exit_code',17)]:
             changed=copy.deepcopy(rows);changed[0][field]=value
@@ -66,15 +60,38 @@ class Capture(unittest.TestCase):
 
 
 
+    def records(self):
+        # Explicit expected outcomes, independent of captured output.
+        statuses = [
+            ('delayed', True, 0, None, 0), ('family', True, 0, None, 0),
+            ('ignore', True, None, 9, 30000), ('term-error', True, 17, None, 0),
+            ('early', False, 17, None, 0), ('leader-exits-first', False, 17, None, 0),
+            ('oneshot', False, 0, None, 0), ('probe-error', False, None, 9, 0),
+            ('worker-panic', False, None, 9, 0), ('cancelled', False, None, 9, 0),
+            ('spawn-error', False, None, None, 0), ('startup-timeout', True, 0, None, 1000),
+            ('sentinel-survived-external-stop', True, 0, None, 0),
+        ]
+        return [dict(case=name, spawned=name!='spawn-error', term_attempted=term,
+                     kill_attempted=name!='spawn-error', leader_reaped=name!='spawn-error',
+                     thread_joined=True, complete=name!='spawn-error', exit_code=code,
+                     signal=signal, elapsed_ms=elapsed,
+                     error='process_spawn_failed' if name=='spawn-error' else None)
+                for name,term,code,signal,elapsed in statuses]
+
+    def test_startup_failure_claims_are_required(self):
+        for case, field, value in [
+            ('spawn-error', 'error', None), ('spawn-error', 'spawned', True),
+            ('spawn-error', 'leader_reaped', True), ('spawn-error', 'thread_joined', False),
+            ('startup-timeout', 'elapsed_ms', 0), ('startup-timeout', 'term_attempted', False),
+            ('startup-timeout', 'error', 'process_spawn_failed'),
+        ]:
+            rows=self.records()
+            next(row for row in rows if row['case']==case)[field]=value
+            with self.assertRaises(ValueError): verify.verify_records(rows)
+
     def staged(self, directory):
         # Synthetic envelope isolates verifier failures; real frozen captures remain separate evidence.
-        records=[]
-        for name in verify.CASES:
-            graceful=name in ['delayed','family','term-error','sentinel-survived-external-stop']
-            code=17 if name in ['early','leader-exits-first','term-error'] else 0 if graceful or name=='oneshot' else None
-            records.append(dict(case=name,spawned=True,term_attempted=graceful or name=='ignore',kill_attempted=True,
-                                leader_reaped=True,thread_joined=True,complete=True,exit_code=code,signal=None if code is not None else 9,
-                                elapsed_ms=30000 if name=='ignore' else 0))
+        records=self.records()
         image='rubix-process-'+'a'*32
         receipt=dict(schema=1,source_revision='a'*40,uncommitted_source_snapshot=True,
                      source_sha256=verify.source_inventory(),driver_sha256=verify.digest(verify.HERE/'capture.py'),

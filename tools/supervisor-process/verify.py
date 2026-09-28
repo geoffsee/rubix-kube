@@ -9,7 +9,7 @@ import re
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 LIMIT = 1024 * 1024
-CASES = ['delayed', 'family', 'ignore', 'term-error', 'early', 'leader-exits-first', 'oneshot', 'probe-error', 'worker-panic', 'cancelled', 'sentinel-survived-external-stop']
+CASES = ['delayed', 'family', 'ignore', 'term-error', 'early', 'leader-exits-first', 'oneshot', 'probe-error', 'worker-panic', 'cancelled', 'spawn-error', 'startup-timeout', 'sentinel-survived-external-stop']
 
 def require(condition, message):
     if not condition: raise ValueError(message)
@@ -45,17 +45,19 @@ def normalize(records):
 def verify_records(records):
     require(type(records) is list and len(records)==len(CASES),'incomplete cases')
     for record,name in zip(records,CASES,strict=True):
-        keys(record, {'case','spawned','term_attempted','kill_attempted','leader_reaped','thread_joined','complete','exit_code','signal','elapsed_ms'},'record')
+        keys(record, {'case','spawned','term_attempted','kill_attempted','leader_reaped','thread_joined','complete','exit_code','signal','elapsed_ms','error'},'record')
         for key in ['spawned','kill_attempted','leader_reaped','thread_joined','complete']:
-            require(record[key] is True,'incomplete '+key)
+            equal(record[key],name != 'spawn-error' or key == 'thread_joined','ownership '+key)
         equal(record['case'],name,'case identity')
         require(type(record['elapsed_ms']) is int and 0 <= record['elapsed_ms'] <= 37000,'elapsed bound')
-        graceful = name in ['delayed','family','term-error','sentinel-survived-external-stop']
+        graceful = name in ['delayed','family','term-error','startup-timeout','sentinel-survived-external-stop']
         equal(record['term_attempted'],graceful or name=='ignore','TERM expectation')
         code = 17 if name in ['early','leader-exits-first','term-error'] else 0 if graceful or name=='oneshot' else None
         equal(record['exit_code'],code,'exit status')
-        equal(record['signal'],None if code is not None else 9,'termination signal')
+        equal(record['signal'],None if code is not None or name=='spawn-error' else 9,'termination signal')
+        equal(record['error'],'process_spawn_failed' if name=='spawn-error' else None,'adapter error')
         if name=='ignore': require(record['elapsed_ms'] >= 29000,'escalation occurred before real grace')
+        elif name=='startup-timeout': require(1000 <= record['elapsed_ms'] <= 5000,'startup timeout bound')
         elif not graceful: equal(record['elapsed_ms'],0,'untimed case')
 
 def raw_records(path):
