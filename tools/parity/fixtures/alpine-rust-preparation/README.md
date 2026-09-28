@@ -1,5 +1,10 @@
 # Actual Rust preparation in an owned Alpine guest
 
+The capture and verifier now run in Rust. Historical `evidence/` receipts remain
+unchanged. Current schema 2 qualification requires fresh `evidence-rust/first` and
+`evidence-rust/repeat`, plus a current Rust prerequisite artifact-build receipt.
+Mandatory tests fail until those independently checked captures exist.
+
 This sibling fixture preserves the frozen Go baseline evidence. It runs the actual
 static `rubixctl` candidate through the complete `check` command, including Linux
 host discovery, ordered policy, preparation, reobservation and port probes. It uses
@@ -45,14 +50,14 @@ the reviewed Alpine boundary, with a180-second guest script limit and40-second
 individual CLI limit. The production command's own deadlines remain active.
 
 ```sh
-python3 tools/parity/fixtures/alpine-rust-preparation/capture.py \
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine-rust capture \
   --allow-privileged-vm --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache \
   --artifact-directory /tmp/rubix-decode-integrated-prerequisite-20260927-r1 \
   --output /tmp/alpine-rust-fresh
-python3 tools/parity/fixtures/alpine-rust-preparation/verify.py
-python3 -m unittest discover -s tools/parity/fixtures/alpine-rust-preparation
-python3 -O -m unittest discover -s tools/parity/fixtures/alpine-rust-preparation
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine-rust verify --directory /tmp/alpine-rust-first-fresh
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture --release
 ```
 
 This is one pinned Alpine/aarch64/musl/OpenRC kernel environment. It does not close
