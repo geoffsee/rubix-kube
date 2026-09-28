@@ -1,0 +1,10 @@
+FROM golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+WORKDIR /src
+RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d \
+ && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check \
+ && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/detect/detect.go
+COPY detect_capture_test.go .
+ENV CGO_ENABLED=0 GOTOOLCHAIN=local GOMAXPROCS=2 GO111MODULE=off
+RUN sha256sum detect.go > /source.sha256 && go test -c -trimpath -o /detect.test .
+WORKDIR /tmp
+ENTRYPOINT []

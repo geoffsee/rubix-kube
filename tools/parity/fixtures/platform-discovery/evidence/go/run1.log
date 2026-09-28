@@ -1,0 +1,4 @@
+=== RUN   TestRubixCapture
+RUBIX_CAPTURE ["empty\tunknown\tarm\tglibc","systemd_socket\tsystemd\tarm\tglibc","systemd_units\tsystemd\tarm\tglibc","command_directory\tsystemd\tarm\tglibc","custom_path_only\tunknown\tarm\tglibc","upstart\tupstart\tarm\tglibc","openrc\topenrc\tarm\tglibc","s6\ts6\tarm\tglibc","runit\trunit\tarm\tglibc","sysv\tsysvinit\tarm\tglibc","precedence\tsystemd\tarm\tglibc","docker_marker\tunknown\tcontainer\tglibc","podman_marker\tunknown\tcontainer\tglibc","docker_cgroup\tunknown\tcontainer\tglibc","embedded\tunknown\tembedded\tglibc","musl\tunknown\tarm\tmusl","target\tamd64\ttrue","target\tarm64\ttrue","target\tarm\ttrue","target\triscv64\ttrue","target\tamd64-musl\ttrue","target\tarm64-musl\ttrue","target\tarm-musl\tfalse","target\triscv64-musl\tfalse","target\tmips\tfalse"]
+--- PASS: TestRubixCapture (0.01s)
+PASS
