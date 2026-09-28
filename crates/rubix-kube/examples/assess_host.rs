@@ -97,10 +97,11 @@ fn run() -> io::Result<u8> {
     Ok(u8::from(report.status != AssessmentStatus::Observed))
 }
 fn main() -> ExitCode {
-    if let Ok(code) = run() {
-        ExitCode::from(code)
-    } else {
-        eprintln!("assessment failed before a result was available");
-        ExitCode::FAILURE
+    match run() {
+        Ok(code) => ExitCode::from(code),
+        Err(error) => {
+            eprintln!("assessment failed before a result was available: {error}");
+            ExitCode::FAILURE
+        },
     }
 }
