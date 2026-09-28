@@ -26,11 +26,6 @@ rejection. It does not dump machine hostname, environment, mount table or creden
 The raw log identifies both executed test binaries by SHA-256.
 
 ```sh
-python3 tools/parity/fixtures/platform-discovery/capture.py --output /tmp/new-platform-go
-python3 tools/parity/fixtures/platform-discovery/qualify.py --output /tmp/new-platform-rust
-python3 -m unittest discover -s tools/parity/fixtures/platform-discovery -p 'test_*.py'
-python3 -O -m unittest discover -s tools/parity/fixtures/platform-discovery -p 'test_*.py'
-python3 -O tools/parity/fixtures/platform-discovery/verify.py
 ```
 
 Builds are limited to 15 minutes/8 MiB output; Go runs to 45 seconds/1 MiB with a
@@ -47,3 +42,22 @@ an external publisher. No E05 child or parent completion is claimed by this slic
 The command-landmark cases include nonexecutable files, a directory named systemctl,
 and a systemctl present only in custom PATH. Baseline detection accepts the first
 two and ignores caller PATH; this is an existence heuristic, not exec permission.
+
+Rust maintenance commands replace the former scripts:
+
+```sh
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify platform
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- capture-go platform --output /tmp/new-platform-go
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- qualify-linux platform --output /tmp/new-platform-linux
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify-go platform /tmp/new-platform-go
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify-linux platform /tmp/new-platform-linux
+```
+
+Historical provenance and raw captures remain immutable. Their Python harness hashes
+identify the old execution; they do not qualify the current Rust tooling. Mandatory
+current qualification tests require `evidence-rust/go` and `evidence-rust/linux`.
+Fresh captures remain pending a combined source review. The current verifier binds
+all copied workspace inputs, exact literal Docker commands, raw output and process
+settlement receipts, independent semantic expectations, and empty cleanup inventories.
+The Linux management fixture uses Rust-owned private chroot inputs and bounded
+children, with no host mounts. The pinned Rust image replaces the Python runtime.
