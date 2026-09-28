@@ -5,12 +5,12 @@ import verify_linux
 
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('--output',type=pathlib.Path,required=True);args=parser.parse_args()
- helper_hash=digest(ROOT/'tools/defaults/capture.py')
+ helper_hash=digest(ROOT/'tools/defaults/capture.py');harness_hashes={n:digest(HERE/n) for n in verify_linux.HARNESS}
  with tempfile.TemporaryDirectory() as temporary:
   path=pathlib.Path(temporary)/'revision';helper.bounded(['git','-C',str(ROOT),'rev-parse','HEAD'],path,10,4096);revision=path.read_text().strip()
  if re.fullmatch('[a-f0-9]{40}',revision) is None:raise ValueError('source revision')
  args.output.mkdir(parents=True,exist_ok=False);tag='rubix-management-linux-'+uuid.uuid4().hex
- report={'revision':revision,'uncommitted_implementation':True,'platform':'linux/arm64','target':'aarch64-unknown-linux-musl','containers':[],'errors':[],'cleanup_errors':[],'helper_sha256':helper_hash,'source_sha256':{n:digest(HERE/n) for n in verify_linux.HARNESS}}
+ report={'revision':revision,'uncommitted_implementation':True,'platform':'linux/arm64','target':'aarch64-unknown-linux-musl','containers':[],'errors':[],'cleanup_errors':[],'helper_sha256':helper_hash,'source_sha256':harness_hashes}
  try:
   with tempfile.TemporaryDirectory() as temporary:
    context=pathlib.Path(temporary)
@@ -23,7 +23,7 @@ def main():
    helper.bounded(['docker','build','--platform','linux/arm64','-t',tag,str(context)],args.output/'build.log',900,8*1024*1024)
   helper.bounded(['docker','image','inspect','--format','{{.Id}}',tag],args.output/'image.log',30,65536);report['image_id']=(args.output/'image.log').read_text().strip()
   name=tag+'-test';report['containers'].append(name)
-  command=['docker','run','--name',name,'--hostname','fixture','--init','--read-only','--network','none','--cap-drop','ALL','--cap-add','SYS_CHROOT','--cap-add','SETUID','--security-opt','no-new-privileges','--memory','256m','--cpus','2','--pids-limit','64','--tmpfs','/tmp:rw,nosuid,nodev,size=32m',tag]
+  command=['docker','run','--name',name,'--hostname','fixture','--init','--read-only','--network','none','--cap-drop','ALL','--cap-add','SYS_CHROOT','--cap-add','SETUID','--security-opt','no-new-privileges','--memory','256m','--cpus','2','--pids-limit','64','--tmpfs','/tmp:rw,exec,nosuid,nodev,size=32m',tag]
   report['command']=command;helper.bounded(command,args.output/'run.log',60,1048576)
   verify_linux.verify_run((args.output/'run.log').read_bytes());report['run_sha256']=digest(args.output/'run.log')
   for name,value in inventory.items():
