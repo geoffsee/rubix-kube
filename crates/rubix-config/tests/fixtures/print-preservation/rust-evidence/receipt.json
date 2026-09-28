@@ -4,13 +4,13 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-config-print-preservation-odnhqq-config-0"
+    "rubix-config-print-preservation-o8h93t-config-0"
   ],
   "errors": [],
   "family": "config-print-preservation",
   "identical_repeats": false,
-  "image": "rubix-config-print-preservation-odnhqq",
-  "image_id": "sha256:4a294f964339acdc23fb2be64ae9b5ba164d596674f7c5eebbc1c0245a60326a",
+  "image": "rubix-config-print-preservation-o8h93t",
+  "image_id": "sha256:5fb40ab3e842fbc97727d5f5302cc184141a637e4bc0ece56dd07a6551c3eb0d",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -27,30 +27,30 @@
         "User": "65532:65532",
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T07:56:40.829375794Z",
+      "Created": "2026-09-28T08:28:22.124304757Z",
       "Descriptor": {
-        "digest": "sha256:4a294f964339acdc23fb2be64ae9b5ba164d596674f7c5eebbc1c0245a60326a",
+        "digest": "sha256:5fb40ab3e842fbc97727d5f5302cc184141a637e4bc0ece56dd07a6551c3eb0d",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:4a294f964339acdc23fb2be64ae9b5ba164d596674f7c5eebbc1c0245a60326a",
+      "Id": "sha256:5fb40ab3e842fbc97727d5f5302cc184141a637e4bc0ece56dd07a6551c3eb0d",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T07:56:43.985213587Z",
-            "Ref": "gnd4misxhwstrqfs9joul3d6m"
+            "CreatedAt": "2026-09-28T08:28:25.877263759Z",
+            "Ref": "mrryfqekycoz2fkvdplztdivu"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T07:56:43.274487962Z"
+        "LastTagTime": "2026-09-28T08:28:25.109888509Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-config-print-preservation-odnhqq@sha256:4a294f964339acdc23fb2be64ae9b5ba164d596674f7c5eebbc1c0245a60326a"
+        "rubix-config-print-preservation-o8h93t@sha256:5fb40ab3e842fbc97727d5f5302cc184141a637e4bc0ece56dd07a6551c3eb0d"
       ],
       "RepoTags": [
-        "rubix-config-print-preservation-odnhqq:latest"
+        "rubix-config-print-preservation-o8h93t:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -63,14 +63,14 @@
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
           "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
           "sha256:89e8c1a498d66a2155a581feb21a032650ac64b05d4c00fec6594ac27484aa0e",
-          "sha256:2373c8ae2b77567c3fa07528384d0e57e15a2090bdd77359d3e75ba0036fb752",
-          "sha256:bff1ef637f8f70f67d4076c24ce8fe033fbc6a7a750d69f652ed0dacf3134af1",
-          "sha256:cb228a6fd9c53890b38df0e5c5d8769ce687720ee0697ccbc65aabaf001cfb47",
+          "sha256:5960938e962e93e0c06cdcaf2bd48653839253c891571c0032c487f901dade71",
+          "sha256:c18c4c0a0d0cefa7452c7aaa649487234dc81783bb905c5648bc186e728851f0",
+          "sha256:4e33a2cdadaffbc0383c4ddf9ca0e946affddefdcce248d4ef959cac9a981e5c",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 324057174
+      "Size": 324057297
     }
   ],
   "outputs": {
@@ -118,7 +118,7 @@
     "tools/dev/src/bin/rubix-prerequisite-fixture.rs": "b308dc52a00230e067aeabe8e151d77c8c53fd2753ebb09e72d06bde1bf7acef",
     "tools/dev/src/bin/rubix-resolved-defaults.rs": "effb0d05062d0f96406b10f984bc095c243e683070bcffe13f6d971274d5df8e",
     "tools/dev/src/bin/rubix-resolved.rs": "1623ca641ecc351ca3760481c28d771b75fc68cd0d8765bb4bcadc8d69826839",
-    "tools/dev/src/bin/rubix-security.rs": "adfe14fd8714d726ed2171405c00b7ce09d413b24702ee998bf62592fd4d80ea",
+    "tools/dev/src/bin/rubix-security.rs": "9467a0ee90714a689062f94306798c4bf499b92caf438e425120ad13437ac773",
     "tools/dev/src/bin/rubix-supervisor-fixture.rs": "a4853a53525c0c5227cb16704ef30e5bc8ebbd3e4be3cee694c654135b16b8d1",
     "tools/dev/src/bin/rubix-upstream.rs": "85bda844f4eb994a9e381c5cebf1e62ab3ffe867bab25d8c85205e9eeaa6a040",
     "tools/dev/src/component_boundary/capture.rs": "b2b1119d3aaf767a01df97211368702fd875c5c8baabba53d1e18a49a4f82966",
@@ -188,7 +188,7 @@
     "tools/dev/src/platform_management/oracle.rs": "dbdd1038455f58eb8f390c67ea681bceee250e9e8f63ba0f42c75b02bb474c3a",
     "tools/dev/src/prerequisite_fixture/mod.rs": "f96459c0cbc39454f6168be1cb80f948ebebec8a0cbcb53e12f7b14991a42ead",
     "tools/dev/src/prerequisite_fixture/qualify.rs": "4ee43deaa94c4b13eba3ee63972228f1718288ff85acd53c08323d622f14586d",
-    "tools/dev/src/prerequisite_fixture/runtime.rs": "df827f05811e26d1c060a17f4de728c263681f6836eb92a79e26114b5d49f98c",
+    "tools/dev/src/prerequisite_fixture/runtime.rs": "90ebb36cfcd6030a2d82bd2afb0133acb4bb8099f74954a8fc5725e885c1403a",
     "tools/dev/src/resolved_capture/capture.rs": "2a9cf4417ab5b4fc4b932a080408bdb9f89cbbde8176aa103c53903dfb1fc309",
     "tools/dev/src/resolved_capture/mod.rs": "2e6c57b8496037e26ac3f86f009113d74ee8d528556e2af591ff869bdb9a7aa8",
     "tools/dev/src/resolved_capture/tests.rs": "f9093991a4fb303835b34e7a1d63af81c0b3379cc0d69e89728bbde326048373",

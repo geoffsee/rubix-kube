@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-config-print-preservation-odnhqq"
+    "rubix-config-print-preservation-o8h93t"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5142,
+  "owned_pid": 21532,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-DyhFa5",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-RpaPag",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "4fc32909ab5ec49e8e4b1ec7e3b14cbbee2f395179556a5a0ffd0372ed130801",
+  "stdout_sha256": "2cfcd3be82b68a7b133b5bcddfa0467627c6596a90fd61cd8b412fa7978d6c02",
   "timeout": false
 }

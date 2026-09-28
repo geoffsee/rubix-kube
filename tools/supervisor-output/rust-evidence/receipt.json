@@ -8,39 +8,39 @@
     "build",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d",
+    "QUALIFICATION_NONCE=rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d",
     "--platform=linux/arm64",
     "-t",
-    "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d",
+    "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d",
     "-f",
-    "/tmp/rubix-supervisor-context-k6VAS3/tools/supervisor-output/Capture.Dockerfile",
-    "/tmp/rubix-supervisor-context-k6VAS3"
+    "/tmp/rubix-supervisor-context-zcmEPe/tools/supervisor-output/Capture.Dockerfile",
+    "/tmp/rubix-supervisor-context-zcmEPe"
   ],
-  "build_log_sha256": "a6fb783e259fabdbfabc68917fb15739aa715a3cd368f82eb1ffa191780bd4ea",
+  "build_log_sha256": "88216d86c8a4c2bff825f44639e0f9560cd7994e7b56b9c52773415f29c12088",
   "cancelled": false,
   "cleanup_errors": [],
   "command_sha256": {
-    "build": "c522883595b9790cdba2d66b379676c942d7922ae769c9abf2aabe5a15080c57",
-    "cleanup-1": "4e4ba6991124cfdf9e316d2cb123a108b7a342873e763a9db98fb7d772450b78",
-    "cleanup-2": "49c3c11ed42c80d7a444c4625d7be1e2b7e08b813217ffbc180dfbf57a2d045d",
-    "cleanup-3": "d33d7029d54ab4beb525683e381f04033e0b5c6d1fdec874a15293056fa8c500",
-    "cleanup-4": "52c72090066220b48208e9f86b3b3439df1d53efafbef6ea07b981211977a125",
-    "cleanup-5": "6ee804a1bcf42fbb43440ee01634947f07af0b9cfc74172280bc2be54aa5ca4d",
-    "first": "6a45a062fffdfc6612770124d0ac02fe4677a4d48e51852b404f65c4e96d030a",
-    "image-inspect": "09fd1b7bec305a11fb9c346e8bb6250e0cc599cb12d04c3eec0df7658ddd731f",
-    "repeat": "ab56e2828b161ecc8b938768ca1e49d6bc35e99dcc29176a1b51758e6f7cbac3"
+    "build": "7b7e20b0fcbdbb1c8d9001c98a567569bccceeb9d87f13f116232ae483158586",
+    "cleanup-1": "9892d22654e36ffae2a64911a4d0e4b12824f436cbcee51720b13fccb35520a1",
+    "cleanup-2": "eb4fb9922e8546f0de1b38c2212f8c4767934a10942c677cee1dffc283d45b75",
+    "cleanup-3": "e7d288a72d3087c1089eb5fc179149e567cae8410cb530e88045d886e7bee531",
+    "cleanup-4": "2625aec909df10edea5f3a46949f18f953cc4871b75ee8824ae29d99f4086e21",
+    "cleanup-5": "36124b8c75bfe20c989fc573315601f980b6c334fd2cdbf0ceb3764d426fe2dc",
+    "first": "614bce870e50be879b7a7e3de334a37441dac1aea8cf41c3a33c7d7e4efc29b1",
+    "image-inspect": "e528262b807b547eed9cd213caf72c122f21d7342acbae10d82f99875142fa3a",
+    "repeat": "578df6aca1146ff58b6726f5fadf83e8d3e75b5b3120070a5f56115089bfc25c"
   },
   "containers": [
-    "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d-first",
-    "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d-repeat"
+    "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d-first",
+    "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d-repeat"
   ],
   "dirty": false,
   "errors": [],
   "family": "output",
-  "image_id": "sha256:d6965ac8f9c0e58c4cc13a2a2262bb87653ccba98c6aec1eb56899e597b26b32",
+  "image_id": "sha256:bd67b20d3357a1f9c0e0241bed21a315a1b9b63873d1e2f09ed751377ffb69c0",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "29a048efda28167cba128c18fa0ac883524c1e8b",
+  "revision": "c582f8427b1585c3c9883268034cda09e8485284",
   "runs": {
     "first": {
       "binary_sha256": {
@@ -51,7 +51,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d-first",
+        "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -66,16 +66,16 @@
         "RUBIX_OUTPUT_DISPOSABLE=1",
         "--ulimit",
         "fsize=1048576:1048576",
-        "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d",
+        "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d",
         "/bin/sh",
         "-c",
         "sha256sum /output-tests /fixture; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "69180e39168731f24feaeb4c2546aa48dabb53a8945681154830516a05065eca",
+      "raw_sha256": "ca06d4b468fd1036bb74c3921568c41cb4a3eba7f44e16992cc16fd6b1de984e",
       "records": {
         "abort": {
           "bytes": 0,
-          "elapsed_ms": 18,
+          "elapsed_ms": 17,
           "joined": true,
           "reaped": true,
           "status": "Cancelled"
@@ -89,14 +89,14 @@
         },
         "empty": {
           "bytes": 0,
-          "elapsed_ms": 11,
+          "elapsed_ms": 22,
           "joined": true,
           "reaped": true,
           "status": "Complete"
         },
         "escaped": {
           "bytes": 6,
-          "elapsed_ms": 281,
+          "elapsed_ms": 268,
           "joined": true,
           "reaped": true,
           "status": "IncompleteAfterExit"
@@ -117,7 +117,7 @@
         },
         "merged": {
           "bytes": 8,
-          "elapsed_ms": 11,
+          "elapsed_ms": 12,
           "joined": true,
           "reaped": true,
           "status": "Complete"
@@ -145,14 +145,14 @@
         },
         "simultaneous": {
           "bytes": 2000,
-          "elapsed_ms": 11,
+          "elapsed_ms": 22,
           "joined": true,
           "reaped": true,
           "status": "Complete"
         },
         "stop": {
           "bytes": 0,
-          "elapsed_ms": 17,
+          "elapsed_ms": 18,
           "joined": true,
           "reaped": true,
           "status": "Cancelled"
@@ -175,7 +175,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d-repeat",
+        "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -190,12 +190,12 @@
         "RUBIX_OUTPUT_DISPOSABLE=1",
         "--ulimit",
         "fsize=1048576:1048576",
-        "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d",
+        "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d",
         "/bin/sh",
         "-c",
         "sha256sum /output-tests /fixture; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "7471089b057f59b93faa91966e091655fed8b92e02ade9629b4ca37c370112c7",
+      "raw_sha256": "7cb32a24c5a81d4773c35d2f660e331ce765661f6b6e9e038435798ed7ef5547",
       "records": {
         "abort": {
           "bytes": 0,
@@ -234,7 +234,7 @@
         },
         "flood": {
           "bytes": 64,
-          "elapsed_ms": 21,
+          "elapsed_ms": 24,
           "joined": true,
           "reaped": true,
           "status": "LimitExceeded"
@@ -262,28 +262,28 @@
         },
         "probe-failure": {
           "bytes": 6,
-          "elapsed_ms": 22,
+          "elapsed_ms": 33,
           "joined": true,
           "reaped": true,
           "status": "Cancelled"
         },
         "simultaneous": {
           "bytes": 2000,
-          "elapsed_ms": 11,
+          "elapsed_ms": 12,
           "joined": true,
           "reaped": true,
           "status": "Complete"
         },
         "stop": {
           "bytes": 0,
-          "elapsed_ms": 18,
+          "elapsed_ms": 17,
           "joined": true,
           "reaped": true,
           "status": "Cancelled"
         },
         "timeout": {
           "bytes": 6,
-          "elapsed_ms": 212,
+          "elapsed_ms": 222,
           "joined": true,
           "reaped": true,
           "status": "Cancelled"
@@ -292,7 +292,7 @@
     }
   },
   "schema": 3,
-  "source_inventory_sha256": "bf6d2a15f2c21141266552ceedba2edc34180793ed59864a6d0907e8a244ee43",
+  "source_inventory_sha256": "160b152dd4ba3b467d12466d68274500af3cc2f1479b9eef058216db2f145716",
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
     "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
@@ -539,7 +539,7 @@
     "tools/dev/src/bin/rubix-prerequisite-fixture.rs": "b308dc52a00230e067aeabe8e151d77c8c53fd2753ebb09e72d06bde1bf7acef",
     "tools/dev/src/bin/rubix-resolved-defaults.rs": "effb0d05062d0f96406b10f984bc095c243e683070bcffe13f6d971274d5df8e",
     "tools/dev/src/bin/rubix-resolved.rs": "1623ca641ecc351ca3760481c28d771b75fc68cd0d8765bb4bcadc8d69826839",
-    "tools/dev/src/bin/rubix-security.rs": "adfe14fd8714d726ed2171405c00b7ce09d413b24702ee998bf62592fd4d80ea",
+    "tools/dev/src/bin/rubix-security.rs": "9467a0ee90714a689062f94306798c4bf499b92caf438e425120ad13437ac773",
     "tools/dev/src/bin/rubix-supervisor-fixture.rs": "a4853a53525c0c5227cb16704ef30e5bc8ebbd3e4be3cee694c654135b16b8d1",
     "tools/dev/src/bin/rubix-upstream.rs": "85bda844f4eb994a9e381c5cebf1e62ab3ffe867bab25d8c85205e9eeaa6a040",
     "tools/dev/src/component_boundary/capture.rs": "b2b1119d3aaf767a01df97211368702fd875c5c8baabba53d1e18a49a4f82966",
@@ -609,7 +609,7 @@
     "tools/dev/src/platform_management/oracle.rs": "dbdd1038455f58eb8f390c67ea681bceee250e9e8f63ba0f42c75b02bb474c3a",
     "tools/dev/src/prerequisite_fixture/mod.rs": "f96459c0cbc39454f6168be1cb80f948ebebec8a0cbcb53e12f7b14991a42ead",
     "tools/dev/src/prerequisite_fixture/qualify.rs": "4ee43deaa94c4b13eba3ee63972228f1718288ff85acd53c08323d622f14586d",
-    "tools/dev/src/prerequisite_fixture/runtime.rs": "df827f05811e26d1c060a17f4de728c263681f6836eb92a79e26114b5d49f98c",
+    "tools/dev/src/prerequisite_fixture/runtime.rs": "90ebb36cfcd6030a2d82bd2afb0133acb4bb8099f74954a8fc5725e885c1403a",
     "tools/dev/src/resolved_capture/capture.rs": "2a9cf4417ab5b4fc4b932a080408bdb9f89cbbde8176aa103c53903dfb1fc309",
     "tools/dev/src/resolved_capture/mod.rs": "2e6c57b8496037e26ac3f86f009113d74ee8d528556e2af591ff869bdb9a7aa8",
     "tools/dev/src/resolved_capture/tests.rs": "f9093991a4fb303835b34e7a1d63af81c0b3379cc0d69e89728bbde326048373",
@@ -650,5 +650,5 @@
     "tools/upstream/src/main.rs": "8c141ec322ab8a3786390877a9459c9599a570135d5e883f7d534cca178ba8d4",
     "tools/upstream/tests/api_json.rs": "cae7fe6c80e5dc3cc743c3789f4fdf6fe1304f3ea6ea034767daadb70710c1e3"
   },
-  "tag": "rubix-supervisor-output-3c886f52c4aa1a320ddbaf8c7cb2117d"
+  "tag": "rubix-supervisor-output-881b6efc4e8db36037608c68df606f6d"
 }

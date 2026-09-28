@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-node-probes-cdb4f7ce789f8795518fd34d8bafa930-repeat",
+    "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d-repeat",
     "--read-only",
     "--network=none",
     "--cap-drop=ALL",
@@ -15,7 +15,7 @@
     "/tmp:rw,nosuid,nodev,size=16m",
     "--env",
     "RUBIX_PREFLIGHT_DISPOSABLE=1",
-    "rubix-node-probes-cdb4f7ce789f8795518fd34d8bafa930",
+    "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d",
     "/bin/sh",
     "-c",
     "cat /out/binaries.sha256; for binary in /out/rubix_platform-* /out/preflight_probe-*; do \"$binary\" --nocapture || exit; \"$binary\" --ignored --nocapture || exit; done"
@@ -27,11 +27,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 8047,
+  "owned_pid": 21849,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-AjIR3O",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-E024Kr",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "1290ecb0c3dfba53689c342fc3831d3ba1d6bd40f77735178bcf6ac3932cef67",
+  "stdout_sha256": "547cc953a110b30d805b4533fd9ab34adfded1ff22c7cdf7e3a252e141a86ae7",
   "timeout": false
 }

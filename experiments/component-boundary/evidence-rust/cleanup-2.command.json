@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-component-boundary-xbptgn"
+    "rubix-component-boundary-oxy0jo"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 7668,
+  "owned_pid": 22901,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-AcWbpG",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-rs5AyM",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "1cee6a977a05b78cf70d1706054868f2b891cd253307a3020b1d9c08a93e924f",
+  "stdout_sha256": "d0a2f212693c699383403fde46285ab0de03fc47e3d24af580f4a57644cec79f",
   "timeout": false
 }

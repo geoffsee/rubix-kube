@@ -3,7 +3,7 @@
     "docker",
     "image",
     "inspect",
-    "rubix-resources-pki-a0jwgh"
+    "rubix-resources-pki-fttffl"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5884,
+  "owned_pid": 21906,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-VyGP2Y",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-O320Eu",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "0f0216b9d4f272414e98eab5dabc1bf7e423a27f1287f4fd57137f8b3321b4b4",
+  "stdout_sha256": "3cf977b37c82792cae971b18a31810969557eff25b6fb9d01bccfa9c0e4bcdcb",
   "timeout": false
 }

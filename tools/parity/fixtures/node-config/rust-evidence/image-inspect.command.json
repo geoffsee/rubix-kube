@@ -3,7 +3,7 @@
     "docker",
     "image",
     "inspect",
-    "rubix-node-config-r7ut1r"
+    "rubix-node-config-nyuske"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 8853,
+  "owned_pid": 23737,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Sspmoh",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-mwgp3N",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "950cfde8216239ea990a5f78e02e7f3296281f7c4507c7cdce3d60454d46e81d",
+  "stdout_sha256": "4325dc170039e2d41f83cd2dd17cca9896d7eedc8ca1b587a960bfa52d120b9f",
   "timeout": false
 }

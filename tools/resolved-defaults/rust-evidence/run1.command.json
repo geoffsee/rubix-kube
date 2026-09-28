@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-resolved-gklia5-1",
+    "rubix-resolved-40aqin-1",
     "--hostname",
     "fixture-1",
     "--network",
@@ -21,7 +21,7 @@
     "64",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=16m",
-    "rubix-resolved-gklia5"
+    "rubix-resolved-40aqin"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -30,11 +30,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 9601,
+  "owned_pid": 24346,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gKHQuL",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-erftRq",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "3dafeee0b6172960cb6ea21f913abd46f323451074f3b238821ad2a44f0ae2cd",
+  "stdout_sha256": "820741bb7356d21b4414f065ddeb62829b1a6a44f5a70490494c4db9016463a2",
   "timeout": false
 }

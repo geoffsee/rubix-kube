@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-write-links-gru4sz-config-1"
+    "rubix-config-write-links-g3fixq-config-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5022,
+  "owned_pid": 21404,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-jflz7E",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-3iP22i",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "65baabddfe141cdaa4d9922e61b2e5ae85158abb2730ed4280098c3dc1187c63",
+  "stdout_sha256": "03f78a08128c03a840b3ff38337d45e78af425e25ce168f9708e8e94449e1c7b",
   "timeout": false
 }

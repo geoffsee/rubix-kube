@@ -37,4 +37,4 @@ test tighter_elf_decode_and_session_limits_bound_unknown_size_output ... ok
 
 test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-RUBIX_NAMESPACE {"helper":34,"init":1,"processes":[1,6,34],"shell":6}
+RUBIX_NAMESPACE {"helper":35,"init":1,"processes":[1,7,35],"shell":7}

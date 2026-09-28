@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-linebreak-ekw6n9-config-0"
+    "rubix-config-linebreak-kj2xbk-config-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5073,
+  "owned_pid": 21493,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-FazMA1",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Kdf0zz",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a579e87348d2c95a14b6e14dba656dfeace0eb7fe22377d0fb360c8e4905a0dc",
+  "stdout_sha256": "3059a4217fc45c90fdfc0ac4a60f825b7dac77164e496772b43f05fccbe18304",
   "timeout": false
 }

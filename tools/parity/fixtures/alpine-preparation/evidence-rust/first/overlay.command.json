@@ -8,7 +8,7 @@
     "qcow2",
     "-b",
     "/private/tmp/rubix-vm-image-cache/alpine-3.24.2-aarch64-cloudinit-r0.qcow2",
-    "/tmp/rubix-vm-OmtxBk/disk.qcow2",
+    "/tmp/rubix-vm-FD7pqt/disk.qcow2",
     "8G"
   ],
   "cancelled": false,
@@ -18,11 +18,11 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 4887,
+  "owned_pid": 21350,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-1CanCe",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Nx8ZNc",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "8668828f6078a722739a90923c1aa3328e131520e8e21fdb803ff7f23d76c888",
+  "stdout_sha256": "b29ec078d088c9897f49f358afbef16cdb4d294cd3e2641cb6937f68f53f217a",
   "timeout": false
 }

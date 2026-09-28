@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 6538,
+  "owned_pid": 23845,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Remy6m",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-YnusaS",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b8a6eef3cca059e40a306c9013abd72f3d1816b215144c5802620d113c649a87",
+  "stdout_sha256": "9dda26bc601decee3acd245295febbc6d8471829a41b70fa9e38d7c9b0287b3d",
   "timeout": false
 }

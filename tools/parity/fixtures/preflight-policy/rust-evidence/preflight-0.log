@@ -1,4 +1,4 @@
 === RUN   TestRubixCapture
 RUBIX_CAPTURE ["root\ttrue","hostname_valid\ttrue","hostname_uppercase\tfalse","hostname_empty\tfalse","hostname_dot\tfalse","hostname_underscore\tfalse","hostname_space\tfalse","hostname_label63\ttrue","hostname_label64\tfalse","hostname_total253\ttrue","hostname_total254\tfalse","hostname_unicode\tfalse","hostname_dash\tfalse","docker_absent\ttrue","docker_socket\tfalse","docker_binary\tfalse","comment_absent\tfalse","comment_loaded\ttrue","comment_match\ttrue","comment_substring\tfalse","comment_disk\ttrue","comment_glob\ttrue","not_alpine\ttrue","alpine_missing\tfalse","alpine_tools\ttrue","alpine_custom_paths\tfalse","v2_all\ttrue","v2_missing\tfalse","v2_empty\tfalse","v1_all\ttrue","v1_io_wrong\tfalse","alpine_rc_service\tfalse","alpine_ready\ttrue","ports_0_false\ttrue","ports_0_true\ttrue","ports_6060_false\ttrue","ports_6060_true\tfalse","ports_2379_false\tfalse","ports_2379_true\tfalse","ports_6443_false\tfalse","ports_6443_true\tfalse","ports_10443_false\tfalse","ports_10443_true\tfalse","suite_failfast\ttrue"]
---- PASS: TestRubixCapture (0.03s)
+--- PASS: TestRubixCapture (0.05s)
 PASS

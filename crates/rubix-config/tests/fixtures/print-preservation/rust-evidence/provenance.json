@@ -1,21 +1,21 @@
 {
   "fixture_sha256": {
-    "build.command.json": "e047d478c9d2e26c365dc1e7b517546878e3ef3a7229aa1aa26f7b91780d054b",
-    "build.log": "6f7ee42e4a194a052da3f26890a420b1ef3dc7ae088911838b20043dfbd05c4a",
-    "cleanup-1.command.json": "11f8d8f224634dca61b5f21499f9055e4a0b6acd4eda945a826d5164309cdca8",
-    "cleanup-1.log": "2671f72bd437e5317045d5262fd6e30021b4c596aff989db52d6eea270652c01",
-    "cleanup-2.command.json": "4d74703681b0b076fc857879c7948d77385defb65b9559ed35387004de69fefa",
-    "cleanup-2.log": "4fc32909ab5ec49e8e4b1ec7e3b14cbbee2f395179556a5a0ffd0372ed130801",
-    "cleanup-3.command.json": "7057da2c5d3e9f908639e37a8f07a73a0eee021de24832a0d325699101756d8e",
+    "build.command.json": "c45011d2d742df5f8dc1a7d12f4064a9b685ed218de72ab786206d7631cc201d",
+    "build.log": "ac6ba5dc7a1c38b8fdf0fd41fe909f44dd8678d09cf62a84d6ea7660057ffe98",
+    "cleanup-1.command.json": "b0525b294182164afd033f084a327b445b6250ae0b3fe3abf3c2b806bffe3429",
+    "cleanup-1.log": "638a82f27aefc228ab9ed7370f6c7c03908c6f3256e6a90aaef0b7dd262191a9",
+    "cleanup-2.command.json": "cb950b88dacd0171c6a1b27a3950a837a6083f1edb98f8ad97bcf9876eb7a3a8",
+    "cleanup-2.log": "2cfcd3be82b68a7b133b5bcddfa0467627c6596a90fd61cd8b412fa7978d6c02",
+    "cleanup-3.command.json": "57686afed1af8eca947fd2b784cd5054d9e216a0ad1283bfe78a08b9fe5f5834",
     "cleanup-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "cleanup-4.command.json": "21c58c7e7c061acc0abe9f7b92cc03f6c08634d415fbfdab800f2df1dcc72479",
+    "cleanup-4.command.json": "fda1ef0528e63fdfcc9bf51233d98a723dd4890f9995061e67cbd50c0f651c7d",
     "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "config-0.command.json": "764cb467b1f1708530eb97d2fb900a0339c0871be62bf518b3c7b6ac50b164a0",
+    "config-0.command.json": "88189e5eb8d5e317b74af66cd8af68f9c704369ad8428b347bf0a303926a4f98",
     "config-0.log": "03c115676dca8a9cccf6cc2f1e49a3e55d56369f6e9bb7d0ac6dbab109461bf2",
     "config.json": "18e8880417b14b5434c7d6d172c9a82e4f601b5a69692560e4077cc11707ea45",
-    "image-inspect.command.json": "0125b7b2c3068de65ac2f100dc5a78002bc854f9e2380b8e925f8bae8dec44cb",
-    "image-inspect.log": "29ac63599c20f934330090b77131a5c0b38fc8c261885c08bb0adcbd94058b82",
-    "receipt.json": "4566738517eff21bcf1b6fa463bb4c4fd2cf24d0ea47c07931ee2957d164d1d9"
+    "image-inspect.command.json": "d6614bf00e8a957a0aa5b203aee826fa0ca7ebe574e24d9e40ed07bd3eed9f6c",
+    "image-inspect.log": "00ad69d12aa460612d8393983695f7b47c25ec1b97a8cb58b045f506d900369a",
+    "receipt.json": "cbea7049caf37dc3930f0b32664ecf5209131691b38d29d8f2d706ab07bd164b"
   },
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
   "schema_version": 2

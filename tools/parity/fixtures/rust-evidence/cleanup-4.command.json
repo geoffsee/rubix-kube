@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-resources-pki-a0jwgh-localpath-1"
+    "rubix-resources-pki-fttffl-localpath-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5996,
+  "owned_pid": 21950,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-14t4Cc",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Neuvmi",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a538df02b64f596cc5d25a2e469450497f5573c77aad17097a4765df5b9823b1",
+  "stdout_sha256": "a0d4ba0ad7aada0bb05f7a0a56bc52e9a6b2fb1d90175fc708b5611dab28bba0",
   "timeout": false
 }

@@ -5,7 +5,7 @@
     "inspect",
     "--format",
     "{{.Id}}",
-    "rubix-management-go-tsbfgp"
+    "rubix-management-go-2ixyyi"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 6815,
+  "owned_pid": 22162,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-OaVgbP",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-DPAK4G",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "91c58f984648f96e59a139a6536132b3a7ea8846a8ad776d52fb3f3d6c8737b1",
+  "stdout_sha256": "1ba1c27b2d90cc6fe89524ba761cc5f47d38570c087071329be29f15672a4ec2",
   "timeout": false
 }

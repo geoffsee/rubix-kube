@@ -1,11 +1,11 @@
 [
     {
-        "Id": "sha256:f0430f41b896e2cee1ea3ac50aede1c5cbd6190a78ff07e30922b348ff14b592",
+        "Id": "sha256:6184b1ca5f9f6fb04c98ab69e9fa59bdd6d1a011d00ef59c37656c49a98eb840",
         "RepoTags": [
-            "rubix-parity-9794df4c852ef817ddc27d1a:test"
+            "rubix-parity-0b3aa58588a5147d3bad1ca4:test"
         ],
         "RepoDigests": [
-            "rubix-parity-9794df4c852ef817ddc27d1a@sha256:f0430f41b896e2cee1ea3ac50aede1c5cbd6190a78ff07e30922b348ff14b592"
+            "rubix-parity-0b3aa58588a5147d3bad1ca4@sha256:6184b1ca5f9f6fb04c98ab69e9fa59bdd6d1a011d00ef59c37656c49a98eb840"
         ],
         "Comment": "buildkit.dockerfile.v0",
         "Created": "2026-09-28T07:47:18.233502964Z",
@@ -43,18 +43,18 @@
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-28T08:02:08.974755418Z"
+            "LastTagTime": "2026-09-28T08:34:00.009961636Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:f0430f41b896e2cee1ea3ac50aede1c5cbd6190a78ff07e30922b348ff14b592",
+            "digest": "sha256:6184b1ca5f9f6fb04c98ab69e9fa59bdd6d1a011d00ef59c37656c49a98eb840",
             "size": 856
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "q6nlqlvebi0zhlxdhxs88jp2e",
-                    "CreatedAt": "2026-09-28T08:02:09.761621627Z"
+                    "Ref": "y5uvgsvwrx97h35u8texknfuw",
+                    "CreatedAt": "2026-09-28T08:34:01.00563422Z"
                 }
             ]
         }

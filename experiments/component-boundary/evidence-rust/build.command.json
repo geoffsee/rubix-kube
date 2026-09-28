@@ -4,10 +4,10 @@
     "build",
     "--progress=plain",
     "--tag",
-    "rubix-component-boundary-xbptgn",
+    "rubix-component-boundary-oxy0jo",
     "-f",
-    "/tmp/rubix-component-context-7YZ5CM/experiments/component-boundary/Dockerfile",
-    "/tmp/rubix-component-context-7YZ5CM"
+    "/tmp/rubix-component-context-69DVYQ/experiments/component-boundary/Dockerfile",
+    "/tmp/rubix-component-context-69DVYQ"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -16,11 +16,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 7422,
+  "owned_pid": 22599,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Bfy3Eb",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-y8udZG",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b26190d5fabb33cb69280bdd5fbddd87871ee0331614e6c3f6edf0acabe7192e",
+  "stdout_sha256": "d9a04b75a9e3706e7c56568c85ce289d4bb385e4a8b3870a123c4b556f17902a",
   "timeout": false
 }

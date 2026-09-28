@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-api-ythmfh-config-0"
+    "rubix-config-api-datgje-config-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 4958,
+  "owned_pid": 21269,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-wp7JAS",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-InJdot",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "14ab77bdb0c59e37dc18a91a6cb387210155854096587282d255a5a33e93a1b5",
+  "stdout_sha256": "65c6503bfaa721699667f5480d0bdd10045b16a88c47a608b55e23b5ed4ce1c8",
   "timeout": false
 }

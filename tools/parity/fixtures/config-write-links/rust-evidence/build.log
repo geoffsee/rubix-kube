@@ -11,13 +11,16 @@
 #3 transferring context: 2B done
 #3 DONE 0.0s
 
-#4 [build 1/5] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#4 [internal] load build context
 #4 DONE 0.0s
 
-#5 [internal] load build context
-#5 transferring context: 2.45kB done
+#5 [build 1/5] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#5 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
 #5 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 2.45kB done
+#4 DONE 0.0s
 
 #6 [build 2/5] WORKDIR /src
 #6 CACHED
@@ -29,38 +32,38 @@
 #8 DONE 0.0s
 
 #9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config
-#9 0.176 go: downloading github.com/distribution/reference v0.6.0
-#9 0.176 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.178 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.179 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 0.179 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 0.183 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 1.370 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 1.370 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 1.409 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 1.413 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 1.414 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 1.628 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 1.715 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 1.716 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 1.716 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 1.854 go: downloading golang.org/x/sys v0.47.0
-#9 2.099 go: downloading github.com/x448/float16 v0.8.4
-#9 DONE 11.5s
+#9 0.205 go: downloading github.com/distribution/reference v0.6.0
+#9 0.206 go: downloading sigs.k8s.io/yaml v1.6.0
+#9 0.214 go: downloading github.com/rs/zerolog v1.33.0
+#9 0.214 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#9 0.217 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#9 0.217 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#9 1.665 go: downloading github.com/opencontainers/go-digest v1.0.0
+#9 1.665 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#9 1.665 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#9 1.666 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#9 1.745 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 1.895 go: downloading gopkg.in/inf.v0 v0.9.1
+#9 1.895 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#9 1.897 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#9 1.977 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 2.206 go: downloading golang.org/x/sys v0.47.0
+#9 2.212 go: downloading github.com/x448/float16 v0.8.4
+#9 DONE 12.2s
 
 #10 [capture 1/1] WORKDIR /tmp
-#10 DONE 0.0s
+#10 DONE 0.1s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 2.6s done
-#11 exporting manifest sha256:abbb1ab22d819bc4970c6bc91facbf5beb0ce05520c62e740e778c7db2f4516e done
-#11 exporting config sha256:e75fc9858f4e231c50c8406f3a2d35c54933dbf56f03af152c7e148f28d3b2a7 done
-#11 exporting attestation manifest sha256:ef051513f514981d22817f4b02e1093c31fdb400aa1133c9f8ea47352392e706 done
-#11 exporting manifest list sha256:44b55758376a5281b79798b9c1a426182dbdd84c9ab5cd61dd770418236501d5 done
-#11 naming to docker.io/library/rubix-config-write-links-gru4sz:latest done
-#11 unpacking to docker.io/library/rubix-config-write-links-gru4sz:latest
-#11 unpacking to docker.io/library/rubix-config-write-links-gru4sz:latest 1.0s done
-#11 DONE 3.6s
+#11 exporting layers 3.4s done
+#11 exporting manifest sha256:ff881e3641896dc46c88334dcb32533714420dd8a310eca0d073a9b01e26889d done
+#11 exporting config sha256:881411506d6f337117dec369cf5866d543b0a4767fe9b50ebd65e3d11c51a7a8 done
+#11 exporting attestation manifest sha256:2fe8fcaa7c905104257d42584d034a38c6c4e010e3bd7a4be8729ac8f13ba185 done
+#11 exporting manifest list sha256:ad26bf3f516dc33537691dd9295245f245cc53f6d777aa730e8a830615120536 done
+#11 naming to docker.io/library/rubix-config-write-links-g3fixq:latest done
+#11 unpacking to docker.io/library/rubix-config-write-links-g3fixq:latest
+#11 unpacking to docker.io/library/rubix-config-write-links-g3fixq:latest 1.3s done
+#11 DONE 4.7s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/8mfaxn42p7ecg2xtdsx6z0i5u
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/rdna9gbeokj74u15hw0luzprs

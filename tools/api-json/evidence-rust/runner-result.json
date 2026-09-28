@@ -3,50 +3,50 @@
   "cleanup_errors": [],
   "commands": {
     "build": {
-      "log_sha256": "999faaa18a0cb86d5561b44cfe20b982b86fe2136ce68d01a1795b4191d23fde",
-      "receipt_sha256": "1ddb1052602962d7783c2181ecceeb209f206b0bd6ffb2ca946fe8f8101ba9b1"
+      "log_sha256": "448f8b30768f6eff62327f5d7626a4e96664c10ccdeca875a77672a4c6df3405",
+      "receipt_sha256": "3d4c969d251e2089fd0035af3648972540d1bc46ff4673d3ac18cf4c86986ee6"
     },
     "cleanup-1": {
-      "log_sha256": "a9c784e841693eb573fd537d695d5193835deed1978db7dc01598cc5c29f5301",
-      "receipt_sha256": "99ead97cd962d77cfe8bb89e5a6cba4412f8038bd9459cd71e27081948300555"
+      "log_sha256": "c7279605c3b5d68452373d7c1feef04cf0bddaf1a631f9a4c98f22fc2e766691",
+      "receipt_sha256": "825d7b714ee1859f33dc572f8a17eb23a8435f306552c7c0c822372626ebd3c4"
     },
     "cleanup-2": {
-      "log_sha256": "f72e43c2604f5a66d3f09ae714f48c4e0f4206f5415b59711981be7c5b91b6c3",
-      "receipt_sha256": "1ab3620cd4c0dc7e5aa6af1e84bb1ecd14dc2a65662d27351f080a648beb7cc0"
+      "log_sha256": "ea092868fc06f267ef01f1fd95e9f63bbaf5c35e1e52102af7f9df76ccb6ea43",
+      "receipt_sha256": "2197fac3333d848172b93b0a6aee8c5ff3bcbaab25c2b7bb380cba74d9a7efe9"
     },
     "cleanup-3": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "0d3107ec75b3497b4c0dea5ae25c93cd15ca6e6d18ac26598570e1dc51307d42"
+      "receipt_sha256": "c5f00cec92c0315c923985794d4cf3444c58d71584dbbec8fb422a62db2ae53b"
     },
     "cleanup-4": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "7355725968787d1caf1b28e5a0c3dc9d5353ff2ec201f0e2ec8871ab79338891"
+      "receipt_sha256": "ac824dcc17d4c95dd92fb4196402692740ab9b922fa005a115fac5e51f555162"
     },
     "container-inspect": {
-      "log_sha256": "a11ac591d27caa0f2836db994712bc3b3e849b8e417e468ee72a2a805638e41d",
-      "receipt_sha256": "31055d935adc62f6c34b1a1e7acba24289c3770872e5e41ba1058ee41007cab3"
+      "log_sha256": "df0a3f94d45c658a193145d8f34bf520f1fc28da6bc9f3081ce1ea472f6c100f",
+      "receipt_sha256": "84b33ab0ae2cf7ce7b200d091a00742eb48d37a2be5e34ed5da10bbf3beb38e6"
     },
     "copy-evidence": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "2f39287e4c8573383b498d39073ba720b20c044e6902ab89153667babac1fb8f"
+      "receipt_sha256": "f5007f869717a7322b1269a4248c8e714795f7fe265b8cb529800256f9a1997f"
     },
     "create": {
-      "log_sha256": "b6b52fed6f89068f329c035550451b7636fd00c6ad97ee64048ee132cbd8cb14",
-      "receipt_sha256": "4d42d70500984e0e7f50e7c7004a5d5215a52180ba16ea1b2bca196b4f363062"
+      "log_sha256": "66d31756ed5cddbc5e1256da3eeded78a7fbc7982e8bd24dc1a3bd815b52e88e",
+      "receipt_sha256": "42714241c2fbe135269f1460d37612c08094180f3d2849b4ae3675d6e7574af3"
     },
     "execute": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "2242cfa39f8f6438fa17c6dc248d5f1b03fe7ab551960c337353a04b7e48969f"
+      "receipt_sha256": "8c46a1bdd1683506839187aa7a39c2cb87bd720919e9c55e850ec7ad61249dee"
     },
     "image-inspect": {
-      "log_sha256": "3539610bf896b5a236d68a7cacf12858474ced7d239acc4d63985404afe315e2",
-      "receipt_sha256": "684750331065bd57033330ceb4342b23c0b4285343265e349a0c2d5669fd478c"
+      "log_sha256": "7423674d37ac5e54b3fd13b444c3b62e7d8c0675066eb341e7e3a6b3e151b0c1",
+      "receipt_sha256": "052231fad02b0e90a44ee40eadedebb4a96c0c4898fbebb67e126e3c347f952d"
     }
   },
   "errors": [],
   "exit_code": 0,
-  "owned_container": "rubix-api-json-dw29n3-capture",
-  "owned_image": "rubix-api-json-dw29n3",
+  "owned_container": "rubix-api-json-5yq84o-capture",
+  "owned_image": "rubix-api-json-5yq84o",
   "process_cleanup_complete": true,
   "process_failures": [],
   "remaining_containers": [],
@@ -95,7 +95,7 @@
     "tools/dev/src/bin/rubix-prerequisite-fixture.rs": "b308dc52a00230e067aeabe8e151d77c8c53fd2753ebb09e72d06bde1bf7acef",
     "tools/dev/src/bin/rubix-resolved-defaults.rs": "effb0d05062d0f96406b10f984bc095c243e683070bcffe13f6d971274d5df8e",
     "tools/dev/src/bin/rubix-resolved.rs": "1623ca641ecc351ca3760481c28d771b75fc68cd0d8765bb4bcadc8d69826839",
-    "tools/dev/src/bin/rubix-security.rs": "adfe14fd8714d726ed2171405c00b7ce09d413b24702ee998bf62592fd4d80ea",
+    "tools/dev/src/bin/rubix-security.rs": "9467a0ee90714a689062f94306798c4bf499b92caf438e425120ad13437ac773",
     "tools/dev/src/bin/rubix-supervisor-fixture.rs": "a4853a53525c0c5227cb16704ef30e5bc8ebbd3e4be3cee694c654135b16b8d1",
     "tools/dev/src/bin/rubix-upstream.rs": "85bda844f4eb994a9e381c5cebf1e62ab3ffe867bab25d8c85205e9eeaa6a040",
     "tools/dev/src/component_boundary/capture.rs": "b2b1119d3aaf767a01df97211368702fd875c5c8baabba53d1e18a49a4f82966",
@@ -165,7 +165,7 @@
     "tools/dev/src/platform_management/oracle.rs": "dbdd1038455f58eb8f390c67ea681bceee250e9e8f63ba0f42c75b02bb474c3a",
     "tools/dev/src/prerequisite_fixture/mod.rs": "f96459c0cbc39454f6168be1cb80f948ebebec8a0cbcb53e12f7b14991a42ead",
     "tools/dev/src/prerequisite_fixture/qualify.rs": "4ee43deaa94c4b13eba3ee63972228f1718288ff85acd53c08323d622f14586d",
-    "tools/dev/src/prerequisite_fixture/runtime.rs": "df827f05811e26d1c060a17f4de728c263681f6836eb92a79e26114b5d49f98c",
+    "tools/dev/src/prerequisite_fixture/runtime.rs": "90ebb36cfcd6030a2d82bd2afb0133acb4bb8099f74954a8fc5725e885c1403a",
     "tools/dev/src/resolved_capture/capture.rs": "2a9cf4417ab5b4fc4b932a080408bdb9f89cbbde8176aa103c53903dfb1fc309",
     "tools/dev/src/resolved_capture/mod.rs": "2e6c57b8496037e26ac3f86f009113d74ee8d528556e2af591ff869bdb9a7aa8",
     "tools/dev/src/resolved_capture/tests.rs": "f9093991a4fb303835b34e7a1d63af81c0b3379cc0d69e89728bbde326048373",

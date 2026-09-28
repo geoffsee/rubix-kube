@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-constrained-policy-zdony7"
+    "rubix-constrained-policy-hlwx1e"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5855,
+  "owned_pid": 21882,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-vyo45m",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gMbA1x",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "063e8fbed4b12312dc63f97eac9c24632cbdf51da4b9a4cdb67a698e90f0c00c",
+  "stdout_sha256": "9f03ffdd54b7539b92abbdc2d884c7e6e51187fb8989cc6eab30fcced657faba",
   "timeout": false
 }

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-runtime-mapping-mqv9xr-mapping-1"
+    "rubix-runtime-mapping-90ouky-mapping-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 7548,
+  "owned_pid": 22995,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zx8VKY",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-00GBeD",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "02b6ba8e6ca9a23895aaafa08116c72e5a85ffac9b286ce49d83cfb80569eb7a",
+  "stdout_sha256": "7a1e28368eeb2e56c56d4741fa66e89737e78041e38895df6a59ea12e5b88156",
   "timeout": false
 }

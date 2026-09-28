@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-node-config-r7ut1r-containerd-0"
+    "rubix-node-config-nyuske-containerd-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 8863,
+  "owned_pid": 23746,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-8cWILs",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zR2xjs",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "76ecd34414c9df69332b4758af67d4fb2ff15cb50582b21da83e141d05aef5d8",
+  "stdout_sha256": "5cc8b29f2d138ce30fd28838f9e0fd341f6d110417eaa183c229291f3dc3cdc5",
   "timeout": false
 }

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-constrained-policy-zdony7-network-1"
+    "rubix-constrained-policy-hlwx1e-network-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 5848,
+  "owned_pid": 21873,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-EcPiF6",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-V75FTS",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b1cb66f500b42b38ba1ce817d87ff2b0f0a8f17c5b98a137898de3ceeff857f4",
+  "stdout_sha256": "cf9493a1f6d4994f38c5ac36f7a7fe1d0bd3f8ea3af157542104528a653a9622",
   "timeout": false
 }

@@ -15,25 +15,25 @@ test owner_launch_failure_reports_unknown_command_without_ports_or_quiet_exit ..
 test unrequested_ipv6_is_not_a_write_requirement_but_requested_unknown_blocks ... ok
 test cancellation_during_probe_waits_for_provider_stop_acknowledgement ... ok
 
-test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
 
 running 1 test
 RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=11
 RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=11
 RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=11
+RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=12
 RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=11
+RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=12
 RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=11
-RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2023
-RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=17
-RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=271
+RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=22
+RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2026
+RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=18
+RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=272
 RUBIX_NODE_PROBE_COMPLETE cases=11 external_sentinel_preserved=true
 test disposable_fixed_probe ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.41s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.43s
 
 
 running 1 test

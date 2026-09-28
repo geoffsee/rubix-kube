@@ -4,13 +4,13 @@
     "build",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=rubix-decode-3b8b77c622600d316d59a484e60e7882",
+    "QUALIFICATION_NONCE=rubix-decode-58711bccbae69f6eed9e79642b23dba6",
     "--platform=linux/arm64",
     "-t",
-    "rubix-decode-3b8b77c622600d316d59a484e60e7882",
+    "rubix-decode-58711bccbae69f6eed9e79642b23dba6",
     "-f",
-    "/tmp/rubix-asset-context-0OtFWD/tools/assets-decode/Capture.Dockerfile",
-    "/tmp/rubix-asset-context-0OtFWD"
+    "/tmp/rubix-asset-context-qNrJPs/tools/assets-decode/Capture.Dockerfile",
+    "/tmp/rubix-asset-context-qNrJPs"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -19,11 +19,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 6563,
+  "owned_pid": 23857,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-XkFOYu",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-9ViocT",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b885a4a7ab5f201bbaf912d2ee00245158bfa9d1b2f96e51eda7e0f6de27a4cf",
+  "stdout_sha256": "c1756bef8b4363eebafe5a83c59dd23e905537a47d2ed29383317e6ce24136d8",
   "timeout": false
 }
