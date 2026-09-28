@@ -485,8 +485,8 @@ mod sysctl_io {
     use rustix::fs::{Mode, OFlags, open};
     use std::fs::File;
     use std::io::{self, Read, Write};
-    fn error(e: io::Error) -> SysctlError {
-        match e.kind() {
+    fn error(kind: io::ErrorKind) -> SysctlError {
+        match kind {
             io::ErrorKind::NotFound => SysctlError::Missing,
             io::ErrorKind::PermissionDenied => SysctlError::PermissionDenied,
             _ => SysctlError::Io,
@@ -498,9 +498,9 @@ mod sysctl_io {
             access | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::NOCTTY,
             Mode::empty(),
         )
-        .map_err(|e| error(e.into()))?;
+        .map_err(|e| error(io::Error::from(e).kind()))?;
         let file = File::from(fd);
-        if !file.metadata().map_err(error)?.is_file() {
+        if !file.metadata().map_err(|e| error(e.kind()))?.is_file() {
             return Err(SysctlError::NotRegular);
         }
         Ok(file)
@@ -510,12 +510,12 @@ mod sysctl_io {
         file(control, OFlags::RDONLY)?
             .take(65)
             .read_to_end(&mut bytes)
-            .map_err(error)?;
+            .map_err(|e| error(e.kind()))?;
         parse_ipv6_scalar(&bytes)
     }
     pub(super) fn write(control: Ipv6Control) -> Result<(), SysctlError> {
         let mut file = file(control, OFlags::WRONLY)?;
-        if file.write(b"1").map_err(error)? != 1 {
+        if file.write(b"1").map_err(|e| error(e.kind()))? != 1 {
             return Err(SysctlError::Io);
         }
         Ok(())

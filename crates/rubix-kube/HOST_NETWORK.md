@@ -73,3 +73,13 @@ cleanup, cancellation before/during commands and around successful/failed writes
 IPv6 skip/malformed/write/readback decisions, strict scalar parsing and owner-thread
 launch failure. Real Linux modprobe/sysctl behavior still requires dedicated
 source-bound disposable VM evidence; host-safe tests do not claim that qualification.
+
+The explicit `prepare_host_network` example consumes the existing startup parser.
+Help/version/print-config return before signal registration or preparation. A start
+action installs SIGINT/SIGTERM listeners through cleanup, then emits one JSON
+record containing fixed typed outcomes and redacted observations. Cleanup uncertainty
+returns exit 2 quietly. Completed attempts return 0, including typed warnings;
+callers must inspect IPv6 outcomes and must not infer readiness from that exit.
+Guard stops and cancellation return 1. The example uses Rust available parallelism
+for configuration, so it is a diagnostic/preparation consumer rather than the final
+release CLI. Dedicated real-Linux qualification lives in `tools/node-network`.
