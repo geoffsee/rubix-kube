@@ -8,6 +8,7 @@ pub(super) fn binaries(family: &str) -> Result<Vec<&'static str>> {
     match family {
         "decode" => Ok(vec!["decode-tests", "decoded_elf-tests", "fixture"]),
         "archive" => Ok(vec!["producer", "archive-tests", "fixture"]),
+        "layer" => Ok(vec!["producer", "layer-tests", "fixture"]),
         _ => Err("unknown Docker family".into()),
     }
 }
@@ -15,8 +16,10 @@ pub(super) fn command(family: &str, tag: &str, name: &str) -> Result<Vec<String>
     binaries(family)?;
     let script = if family == "decode" {
         "sha256sum /decode-tests /decoded_elf-tests /fixture; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /fixture namespace; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
-    } else {
+    } else if family == "archive" {
         "sha256sum /producer /archive-tests /fixture && /fixture archive-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
+    } else {
+        "sha256sum /producer /layer-tests /fixture && /fixture layer-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
     };
     Ok([
         "docker",
@@ -43,10 +46,11 @@ pub(super) fn command(family: &str, tag: &str, name: &str) -> Result<Vec<String>
     .collect())
 }
 pub(super) fn records(family: &str, path: &Path) -> Result<(Value, Value)> {
-    if family == "decode" {
-        super::native::records(path)
-    } else {
-        super::archive::records(path)
+    match family {
+        "decode" => super::native::records(path),
+        "archive" => super::archive::records(path),
+        "layer" => super::layer::records(path),
+        _ => Err("unknown record family".into()),
     }
 }
 fn receipt_header(report: &Value, family: &str) -> Result<()> {
