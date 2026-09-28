@@ -1,7 +1,9 @@
-//! Strict declared asset inventory and encoded-byte checking only.
+//! Strict declared asset inventory, encoded-byte checks and bounded identity ELF observations.
 //!
-//! Neither result authorizes installation or establishes decoded ELF/OCI integrity.
+//! These results do not authorize installation or prove runtime/ABI compatibility or OCI integrity.
 mod catalog;
+mod elf;
+pub use elf::{ArmFloatAbi, ElfError, ElfInspection, ElfLimits, LoaderFamily, LoaderRelation};
 mod inventory;
 mod verify;
 pub use catalog::{AssetId, CatalogEntry, Encoding, Kind, catalog};
