@@ -1,0 +1,21 @@
+abb88e73fb487b65dba5ee8d93cfa5aae061e3336295a8a560e108421e592c40  /decode-tests
+
+running 14 tests
+test aggregate_budget_is_checked_before_observer_and_retained_on_header_failure ... ok
+test all_truncations_corrupt_checksum_and_trailing_members_fail_after_rehash ... ok
+test empty_frames_still_require_completion_and_consume_one_probe ... ok
+test exact_limit_succeeds_but_excess_and_failed_attempts_retain_budget_charges ... ok
+test gzip_header_fields_are_bounded_before_decoder_allocation ... ok
+test gzip_optional_fields_and_header_crc_are_checked_without_using_names_as_paths ... ok
+test image_limit_and_executable_limit_are_distinct_and_receipt_requires_full_trailer ... ok
+test independent_fixed_vectors_match_decoded_hash_and_binding ... ok
+test invalid_limits_fail_without_a_session ... ok
+test observer_failure_is_typed_provisional_and_display_does_not_leak ... ok
+test same_encoded_slice_must_match_before_any_callback ... ok
+test unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit ... ok
+test unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked ... ok
+test zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+RUBIX_NAMESPACE {"helper": 24, "init": 1, "processes": [1, 7, 24], "shell": 7}
