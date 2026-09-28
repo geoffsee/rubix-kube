@@ -1,4 +1,5 @@
-23d5a7a3785c1fe602e96caea822b9ce0ab17d4a0ce56976331adb74f4728bd8  /out/discovery-fee14ee4b0097263
+27b142228bc2f99b7b041ab2a76e1f31f38675869866af6dda6d04438a347629  /out/discovery-fee14ee4b0097263
+008918bb310ecc7380ce225d2cb60c09c406bd7f33fb4a0f06a7d6fca21e0842  /out/preflight-1998688e0f22a6cc
 55c6e2b14e5b5f30866763097926494e1723410be87a9e6e8f1b8f08eb81fbf0  /out/rubix_platform-91f62fc350dbc229
 
 running 1 test
@@ -18,4 +19,15 @@ test runtime_container_and_installer_environment_keep_distinct_indicators ... ok
 test real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok
 
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test baseline_order_and_real_uid_are_distinct_from_effective_uid ... ok
+test agrees_with_actual_pinned_go_reference_observations ... ok
+test module_indexes_are_not_proof_of_comment_capability ... ok
+test every_required_controller_and_optional_port_has_distinct_evidence ... ok
+test prerequisite_opt_in_plans_require_recheck_and_never_grant_runtime_ownership ... ok
+test unknown_read_errors_and_unprobed_ports_never_claim_success ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
