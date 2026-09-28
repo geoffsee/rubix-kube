@@ -1,11 +1,11 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 357B done
+#1 [build 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #1 DONE 0.0s
 
-#2 [build 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#2 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 357B done
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
@@ -16,8 +16,8 @@
 #4 DONE 0.0s
 
 #5 [internal] load build context
-#5 transferring context: 198.44MB 1.6s done
-#5 DONE 1.6s
+#5 transferring context: 198.44MB 1.4s done
+#5 DONE 1.4s
 
 #6 [2/6] COPY rubix-parity /artifact/rubix-parity
 #6 CACHED
@@ -38,11 +38,11 @@
 #11 exporting layers done
 #11 exporting manifest sha256:44a7dbfc24f9e75286d038ae23d4c32eb23fd46cb525ccb9b2172b0a961ee26f done
 #11 exporting config sha256:91df3675f5cf75c1b19283a7ae9f1dacd1792a2af3f708adfdc8f7f78003bdbf done
-#11 exporting attestation manifest sha256:227443a2fc09b5136a9fad73d4f1fdd40f88a035761680e4b00c918f7c110a90 done
-#11 exporting manifest list sha256:ff0c8d35d5263e7402e497ba1ba56c2057d48ec6017280e4f76e720f1916f5e2 done
-#11 naming to docker.io/library/rubix-parity-a2a62ff5e6460c4334ca1991:test done
-#11 unpacking to docker.io/library/rubix-parity-a2a62ff5e6460c4334ca1991:test
-#11 unpacking to docker.io/library/rubix-parity-a2a62ff5e6460c4334ca1991:test 0.7s done
-#11 DONE 0.8s
+#11 exporting attestation manifest sha256:384530e0193e7e7dd936450faf59702cfec0ca397e0d9d15f978db22463c6e79 0.0s done
+#11 exporting manifest list sha256:68525d79542400b7b23b4c1098f3bb5f94e4c6deb0e58d715362b5194b263c73 0.0s done
+#11 naming to docker.io/library/rubix-parity-6171ae8ac551ade3952601ba:test done
+#11 unpacking to docker.io/library/rubix-parity-6171ae8ac551ade3952601ba:test
+#11 unpacking to docker.io/library/rubix-parity-6171ae8ac551ade3952601ba:test 1.0s done
+#11 DONE 1.1s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/onmu0332zmc8zvcrxt7dce6rt
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/li51sa8a9pxm1hd5eeg8andt3

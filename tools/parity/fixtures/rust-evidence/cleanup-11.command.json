@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-resources-pki-fttffl"
+    "rubix-resources-pki-ix3tkt"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 21957,
+  "owned_pid": 41469,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ez0Abo",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-UtSkkv",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "5f3e74f2335d53020969f1b2560e9170fabc5b41fb03ea7c3fae76c5743c422c",
+  "stdout_sha256": "95fac55462cdc38656207567815f9914fbbcdbcd35514ef322a4641e10ac737c",
   "timeout": false
 }

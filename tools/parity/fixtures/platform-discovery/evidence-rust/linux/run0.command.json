@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-platform-linux-7pemah-0",
+    "rubix-platform-linux-obhyiq-0",
     "--read-only",
     "--network",
     "none",
@@ -19,7 +19,7 @@
     "64",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=16m",
-    "rubix-platform-linux-7pemah"
+    "rubix-platform-linux-obhyiq"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -28,11 +28,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 21826,
+  "owned_pid": 41218,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-B4DuqM",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-yhrtbC",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "7029a8fa180782519a84cf96d6dbf5987db01cb51d0901b199c8be9799aec475",
+  "stdout_sha256": "e40c944e7160ae40d5d143b76381ca8286608d0ca6002a3a511ea66e06ef226b",
   "timeout": false
 }

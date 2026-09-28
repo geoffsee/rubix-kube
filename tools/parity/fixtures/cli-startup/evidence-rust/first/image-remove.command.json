@@ -3,7 +3,7 @@
     "docker",
     "image",
     "rm",
-    "rubix-parity-a2a62ff5e6460c4334ca1991:test"
+    "rubix-parity-6171ae8ac551ade3952601ba:test"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 22846,
+  "owned_pid": 55377,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-8Pp0nb",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SPBCGp",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "535dba0405a5914730e791034e312df71a0a4e7f1e264b99bdcb5a36934fa178",
+  "stdout_sha256": "5c0be9f35fa168afb9fea342ff148d45d717656b6feb9cae843d3b712446f59c",
   "timeout": false
 }

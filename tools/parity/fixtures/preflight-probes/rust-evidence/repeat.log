@@ -2,14 +2,14 @@
 e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566  /out/rubix_platform-a0b7fc1077c686ed
 
 running 8 tests
-test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
 test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
 test preflight_probe::disposable_filesystem::disposable_real_filesystem_limits_errors_and_baseline_candidates ... ignored, actual filesystem fixtures only inside owned disposable Linux container
 test preflight_probe::disposable_filesystem::only_unavailable_ipv6_allows_ipv4_fallback ... ok
+test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
 test preflight_probe::tests::definitive_presence_survives_other_candidate_errors_and_rc_is_exact ... ok
-test preflight_probe::tests::port_phase_is_explicit_and_does_not_probe_unused_pprof ... ok
 test preflight_probe::tests::exact_candidates_and_one_level_glob_match_baseline_existence ... ok
 test preflight_probe::tests::unsafe_release_limits_and_errors_are_unknown_not_absent ... ok
+test preflight_probe::tests::port_phase_is_explicit_and_does_not_probe_unused_pprof ... ok
 
 test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
 

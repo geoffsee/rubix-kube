@@ -1,18 +1,18 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 770B done
+#1 [ 1/13] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #1 DONE 0.0s
 
-#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 770B done
 #2 DONE 0.0s
 
-#3 [internal] load .dockerignore
-#3 transferring context: 2B done
+#3 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 #3 DONE 0.0s
 
-#4 [1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
 #4 DONE 0.0s
 
 #5 [2/6] WORKDIR /src
@@ -23,11 +23,11 @@
 #6 DONE 0.0s
 
 #7 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/detect/detect.go
-#7 0.141   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-#7 0.141                                  Dload  Upload   Total   Spent    Left  Speed
-#7 0.141   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  874k    0  874k    0     0   794k      0 --:--:--  0:00:01 --:--:--  795k
-#7 1.246 /tmp/source.tar.gz: OK
-#7 DONE 1.3s
+#7 0.131   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#7 0.131                                  Dload  Upload   Total   Spent    Left  Speed
+#7 0.131   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 92865    0 92865    0     0   133k      0 --:--:-- --:--:-- --:--:--  133k100  874k    0  874k    0     0   831k      0 --:--:--  0:00:01 --:--:--  832k
+#7 1.188 /tmp/source.tar.gz: OK
+#7 DONE 1.2s
 
 #8 [4/6] COPY detect_capture_test.go .
 #8 DONE 0.0s
@@ -36,18 +36,18 @@
 #9 DONE 5.1s
 
 #10 [6/6] WORKDIR /tmp
-#10 DONE 0.1s
+#10 DONE 0.0s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 1.4s done
-#11 exporting manifest sha256:09f7512cc9f72c64fdda0d13c387a6a632cae9505e525a8652854c1a5b088bb6 0.0s done
-#11 exporting config sha256:502a2399d9cd0c8fe9aa15e06f349208717c4ba1a9b0b6d4b25cb78a0e14ad46 done
-#11 exporting attestation manifest sha256:cc15180a66c598cfdf24003f1b865be9415d9767ef4dabc012e458cb9d3e2b97 done
-#11 exporting manifest list sha256:7f00b42e3f892d9872331a6299736be84666da7f85ce655673fa093c0daad9b7 done
-#11 naming to docker.io/library/rubix-platform-go-aakdxr:latest done
-#11 unpacking to docker.io/library/rubix-platform-go-aakdxr:latest
-#11 unpacking to docker.io/library/rubix-platform-go-aakdxr:latest 0.4s done
-#11 DONE 1.9s
+#11 exporting layers 1.2s done
+#11 exporting manifest sha256:9cf16b80d5312c3a7bded5ba15742f5cacab1a69ba40a4e8388c00bb52d883ba done
+#11 exporting config sha256:e33a54b3833f9c29541fe8cc8700e53d1344b5a92d280eae595e47d5265a3ef9 done
+#11 exporting attestation manifest sha256:5894e1cd9eaa41ba798df885bf33bbf18f17a44384d66d9d4dcc7f2f6c062562 done
+#11 exporting manifest list sha256:fe5299573adbe196b9c4b98e1ad577fadf9813445fd0776d16875c15f3f0af07 done
+#11 naming to docker.io/library/rubix-platform-go-a7zcbz:latest done
+#11 unpacking to docker.io/library/rubix-platform-go-a7zcbz:latest
+#11 unpacking to docker.io/library/rubix-platform-go-a7zcbz:latest 0.3s done
+#11 DONE 1.6s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ikjk4w2vcpqqnqisejevq4isd
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/y901d7jej01qa3q6k1wlzmysv

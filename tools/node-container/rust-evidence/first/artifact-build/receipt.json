@@ -1,19 +1,19 @@
 {
-  "artifact_sha256": "1fb598175f4729c5e21983fc914e52f644d67a5c38f98a6c6dc14c20d6fdf01f",
+  "artifact_sha256": "9a2fada2f54df449530d47bc1cf08ca7d8b4f4b2898463f1398384614d3aa879",
   "build_command": [
     "docker",
     "build",
     "--platform=linux/arm64",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=50b3739f6333c4b7109199a96597a0bc",
+    "QUALIFICATION_NONCE=5692f99cb55610df0b4dd94e37457f7b",
     "-t",
-    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc",
+    "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b",
     "-f",
-    "/tmp/rubix-node-context-Xva4Mp/tools/node-container/Build.Dockerfile",
-    "/tmp/rubix-node-context-Xva4Mp"
+    "/tmp/rubix-node-context-3EHbpm/tools/node-container/Build.Dockerfile",
+    "/tmp/rubix-node-context-3EHbpm"
   ],
-  "build_sha256": "f14372fb39f39d4e147c1a474d7b5d819e3019fc28e631eb377b68cdb2966ab5",
+  "build_sha256": "690863bce747dab498250396170d159198ce4ad5a2734fcd07187a4d13387914",
   "builder_sha256": {
     "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
     "host_preparation": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
@@ -23,32 +23,32 @@
   "cancelled": false,
   "cleanup_errors": [],
   "commands": {
-    "build": "130fd84dde5a15321b669454163fab0c8a959fc4abcb48a4a7f3c291dd2ab8c6",
-    "cleanup-1": "c1793d620ed44d6483c4b9b24767fba6615200472226e51950e865db4dd084c9",
-    "cleanup-2": "9d7630fbfc7c813d1ba63a9b2cdd053f761497d6050a0b4ca62b3631e683e57a",
-    "cleanup-3": "8c9fcf2929fa3198155f91084067a4baad383d67f176e6ec3bd2eb32a7720894",
-    "cleanup-4": "9d60677601bad20e8eeac153e0ba0d2ade53496ae7d6ce832d1c2acab1720976",
-    "cleanup-5": "a71fa5f8373d48f21a539798c96bebc7d2e9c06eba77c33ec9443e3f007cb580",
-    "copy-host_network": "7be2b1a061a9719ac626129b8b610c1d9fa93109e1dea78ecdb9f7fed90fbacb",
-    "copy-host_preparation": "32031542f0a9b54c654acd7a4d3b2b84ae8f3028c72d23b8817ce3d01647de06",
-    "copy-prepare_node_host": "3319968311a9b016cd2351c8187fdc27fd3668b49569eaba4a37b9ef0d0e0cbd",
-    "copy-rubix_kube": "1149558a010ccd95e45c2e967362718b42cc5c3f69a3a2097edd90853051a7b0",
-    "create": "91140df19289558287e632cff0865ab5572dba44924a3be612c42ae9ab9588a6",
-    "image-inspect": "d383acb5219257f905861d28480417c4c78b5cc0e0195c43c0305e651f1fc6c1",
-    "test": "cf7b0a641bc9e38b9f8a9bbd2653b4eb8f66bfecb5228f5bba1736983ad5946f"
+    "build": "fa7329e890719a45fa6d729f5b4a7293422147d908752c812c096f19aea99d7a",
+    "cleanup-1": "b2d3576644689026a484d9119c079a6ace80da2b80d70901a831ad0b4aa9f819",
+    "cleanup-2": "515d2cdceb55466530accb14965c5428684cf91d371e2fc3c080d5740a32fd8b",
+    "cleanup-3": "1b0e948fdf925564dff0e179bb50efc829235498742a7a901957e2c34426d4cb",
+    "cleanup-4": "6120e85adb9c17baf433ae6f01f44ccd4d55aabe12172e42c67cb47c6ee1b0b4",
+    "cleanup-5": "1ffac435ee56fa395b30dfb4e594d147e9e4b97b6ec32c42ab9f8cac3bd910fa",
+    "copy-host_network": "36385dc071309a6e4a6d30e20b4b4b29e2dd86f2074c7a3b9d228f0c6a516155",
+    "copy-host_preparation": "6fbbc558a7551eb910b97fe4b1d3b63de1ccb34da4ddf965cc05121a5e3b2e67",
+    "copy-prepare_node_host": "6babe3979bedbc40e9f5a45ca92ce867c85c2421427456c82659686995ce6f71",
+    "copy-rubix_kube": "5246345b7e1579cbbce419e4d59ef4b73f4e0640b3f8a4d3b718049f3c75c328",
+    "create": "d171a9df59785d6c369ae267ee10756260a5779bfd83df1f8c666fb044283bf8",
+    "image-inspect": "5b2beeebd2eeb699214f5bc25106759639c2b48fe88091fab669bdfc5ee52857",
+    "test": "0b43a1b539077ea391815358916013887b7226c05c66ff0c3fe7201196c095c6"
   },
   "containers": [
-    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc-artifact",
-    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc-test"
+    "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b-artifact",
+    "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b-test"
   ],
   "dirty": false,
   "errors": [],
   "family": "container",
-  "image_id": "sha256:762bb760f6a084d68aab858c8e3b43f40aacd6772eb7b89986805db48e746548",
-  "nonce": "50b3739f6333c4b7109199a96597a0bc",
+  "image_id": "sha256:783cfe66f5f0c3c003f962f44788a26ad185e6eedbac6dc58d2f0c29f9b53633",
+  "nonce": "5692f99cb55610df0b4dd94e37457f7b",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "c582f8427b1585c3c9883268034cda09e8485284",
+  "revision": "a4e5b5aa27814da0a2ca255f24f4c4eb34270c3f",
   "runs": {
     "test": {
       "binary_sha256": {
@@ -61,7 +61,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-node-container-50b3739f6333c4b7109199a96597a0bc-test",
+        "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b-test",
         "--network=none",
         "--read-only",
         "--cap-drop=ALL",
@@ -69,18 +69,18 @@
         "--pids-limit=64",
         "--memory=512m",
         "--cpus=2",
-        "rubix-node-container-50b3739f6333c4b7109199a96597a0bc",
+        "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b",
         "/bin/sh",
         "-c",
         "sha256sum /out/prepare_node_host /out/rubix_kube /out/host_preparation /out/host_network && for binary in rubix_kube host_preparation host_network; do echo TEST_${binary}_BEGIN; /out/$binary || exit 1; echo TEST_${binary}_END; done && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_node_host --container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_node_host --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
       ],
-      "raw_sha256": "619faf11638ed948d5facd31b276c2405c187473ca15be609b6bfec462651c0c",
+      "raw_sha256": "13b97df354bb21dc5ef17ae29afec6f467863bc53e2e655444eb44946a1158f9",
       "records": {
         "safe_tests_and_cli": true
       }
     }
   },
   "schema": 3,
-  "source_sha256": "4dbd8f24d946bae0d90af182835a636fb2f5b39c169070e185f0e8ce61e654ac",
-  "tag": "rubix-node-container-50b3739f6333c4b7109199a96597a0bc"
+  "source_sha256": "0f296cb89959b6cf21f92fd2f113ef050c2f9089014304d3ee0391d175b988e2",
+  "tag": "rubix-node-container-5692f99cb55610df0b4dd94e37457f7b"
 }

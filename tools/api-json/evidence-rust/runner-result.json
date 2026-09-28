@@ -3,50 +3,50 @@
   "cleanup_errors": [],
   "commands": {
     "build": {
-      "log_sha256": "448f8b30768f6eff62327f5d7626a4e96664c10ccdeca875a77672a4c6df3405",
-      "receipt_sha256": "3d4c969d251e2089fd0035af3648972540d1bc46ff4673d3ac18cf4c86986ee6"
+      "log_sha256": "13e3c17a92bc003e680aa011430d47fb648b6349c4685046dd17c2a7a4a0cb2e",
+      "receipt_sha256": "92c687fab34cba2531ef26b5321dcb6300f23d4670d779038ac226c1436b99a1"
     },
     "cleanup-1": {
-      "log_sha256": "c7279605c3b5d68452373d7c1feef04cf0bddaf1a631f9a4c98f22fc2e766691",
-      "receipt_sha256": "825d7b714ee1859f33dc572f8a17eb23a8435f306552c7c0c822372626ebd3c4"
+      "log_sha256": "1d055d6fb1e8e5b00f02e703e246440c0bc62ffe1befde9992b50c6f3aa71910",
+      "receipt_sha256": "087a3a9128891f50158e66cf25253d784237bf63c0aedc455d9b7642f67460e2"
     },
     "cleanup-2": {
-      "log_sha256": "ea092868fc06f267ef01f1fd95e9f63bbaf5c35e1e52102af7f9df76ccb6ea43",
-      "receipt_sha256": "2197fac3333d848172b93b0a6aee8c5ff3bcbaab25c2b7bb380cba74d9a7efe9"
+      "log_sha256": "8332df64588cf7f2c16b7c58db85b0d596045205be15b23203d9876ce9a6b76f",
+      "receipt_sha256": "ca92f5bbaf613b2c0e1d1a5c6bbeef9be580eeb38dbeb6ec9e258ade72ce313f"
     },
     "cleanup-3": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "c5f00cec92c0315c923985794d4cf3444c58d71584dbbec8fb422a62db2ae53b"
+      "receipt_sha256": "c19f26683ea31a2428e312c3092339d27256892dab608e78c837fbac8913c8ff"
     },
     "cleanup-4": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "ac824dcc17d4c95dd92fb4196402692740ab9b922fa005a115fac5e51f555162"
+      "receipt_sha256": "50f8ba8fca3d00d884fb16ae832417736cd93a26d4ef1b0212db1a6a4e66dff0"
     },
     "container-inspect": {
-      "log_sha256": "df0a3f94d45c658a193145d8f34bf520f1fc28da6bc9f3081ce1ea472f6c100f",
-      "receipt_sha256": "84b33ab0ae2cf7ce7b200d091a00742eb48d37a2be5e34ed5da10bbf3beb38e6"
+      "log_sha256": "5b558d5a0dbd0dd04686972b367f091c18f7ac2f8ea241771384b39ade6be8ba",
+      "receipt_sha256": "8ebd944f7b57ed3253dcdd3ef7a92d0ee0d1405790b19c146fb57a994b5d204f"
     },
     "copy-evidence": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "f5007f869717a7322b1269a4248c8e714795f7fe265b8cb529800256f9a1997f"
+      "receipt_sha256": "e2eee708c355ea2a0420487e0c8467190c830778726a85f05dcee4ce4e807a3c"
     },
     "create": {
-      "log_sha256": "66d31756ed5cddbc5e1256da3eeded78a7fbc7982e8bd24dc1a3bd815b52e88e",
-      "receipt_sha256": "42714241c2fbe135269f1460d37612c08094180f3d2849b4ae3675d6e7574af3"
+      "log_sha256": "32f547cf78e305b3199b8efdc8e6973a17a710939340457b444b3c94aefc4785",
+      "receipt_sha256": "7a487dc91555b56c2bc488d7df5e74acb4d2fa7bb9c9b61843d6b125fee16a9c"
     },
     "execute": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "8c46a1bdd1683506839187aa7a39c2cb87bd720919e9c55e850ec7ad61249dee"
+      "receipt_sha256": "59f9fa6cdd036ecdea61af34041fd4c3367917fd06d3e5ab0c7b1831e0fd27b8"
     },
     "image-inspect": {
-      "log_sha256": "7423674d37ac5e54b3fd13b444c3b62e7d8c0675066eb341e7e3a6b3e151b0c1",
-      "receipt_sha256": "052231fad02b0e90a44ee40eadedebb4a96c0c4898fbebb67e126e3c347f952d"
+      "log_sha256": "d60b0ee869ab612cee62beb0d899bed43b7c8bf87e615a03906be8c5fdf21e67",
+      "receipt_sha256": "9e1c0a7f0eb0df08dab594831ead91c66834423d5a191a4af85ab5d400a96c1b"
     }
   },
   "errors": [],
   "exit_code": 0,
-  "owned_container": "rubix-api-json-5yq84o-capture",
-  "owned_image": "rubix-api-json-5yq84o",
+  "owned_container": "rubix-api-json-hul4cl-capture",
+  "owned_image": "rubix-api-json-hul4cl",
   "process_cleanup_complete": true,
   "process_failures": [],
   "remaining_containers": [],
@@ -74,11 +74,15 @@
     "tools/dev/src/api_json/mod.rs": "8bd6118d9541d04a30a36477dcbace51d2f49fdad17aa3d21a4e7a509b3e9512",
     "tools/dev/src/api_json/scenario.rs": "45f2a17428612a8a8c915aeb5182a4e417cd4703d521af257caa198d8da3718a",
     "tools/dev/src/api_json/tests.rs": "e07bba5b75f6ea03328634c8171850cd2363334cdb8f0bb566d964087c71d623",
-    "tools/dev/src/asset_fixture/archive.rs": "7d9f29f9cb6be5b6a0ea772638ec5b9abcfb71ed5076a5f127b505f7567ccded",
-    "tools/dev/src/asset_fixture/capture.rs": "31b2b7d06632d015f201476245c902880806a72f5e2817cb66a7beca2392c2c1",
+    "tools/dev/src/asset_fixture/archive.rs": "0f201bcd3bce78f39a15a0b9cd3716c091b44e502ed32aa0b17c6bb236b7d11f",
+    "tools/dev/src/asset_fixture/capture.rs": "5a81d8751269013db826bf373b97209367df014409d77f6b889c293ae7a14658",
     "tools/dev/src/asset_fixture/common.rs": "df2e5a2b5dbdee1c50a2485f05e7a4862b1546ca283b01b394ef482fecc6120f",
     "tools/dev/src/asset_fixture/elf.rs": "23a1f53af6d93b3860da1a7ad778cec882e4e511dd9f76e8895e249482f1b234",
-    "tools/dev/src/asset_fixture/mod.rs": "bc170a4aa1a64cd144f0ed818c628ce594c7930dc5ed62c1fbb220d04b1ce90f",
+    "tools/dev/src/asset_fixture/layer.rs": "19000975e7ce425028db7edffda5c496ba733997c2d384d896fa940fbaa66df0",
+    "tools/dev/src/asset_fixture/layer_oracle.rs": "a3a15668c3b80f7ce473ec4183efa3fc4d4cbf337f982e2fc84cf9eb05e2ba1c",
+    "tools/dev/src/asset_fixture/layer_oracle_tests.rs": "0bb581063598486ffbd08c70524d99bf39d1074f69a605b17eeab8883c6f379d",
+    "tools/dev/src/asset_fixture/layer_tests.rs": "fc60e999f0adc5ced07c74a04bc441d75f52c3e4c50580e062e0a60cd14c884f",
+    "tools/dev/src/asset_fixture/mod.rs": "252d351deb20e67298f9a16540ad1ffc38e0dfbf4d555a3cfa56a9ac06b9edb2",
     "tools/dev/src/asset_fixture/native.rs": "4b4c9fd7a55326c861af80c3c5a157dcfbc1da18ca5d806285d1b4407eb0dc00",
     "tools/dev/src/asset_fixture/tests.rs": "766052bb742f4fc5e6a9670a4ff263de565b90ef52b9f6d3a258ce479b6110d2",
     "tools/dev/src/bin/rubix-api-json.rs": "c27628a35967e435ba937fc277788d6381e71bf8c0b474db100e2e5ff2dc9b98",
