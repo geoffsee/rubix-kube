@@ -9,7 +9,7 @@ callers own aggregate invocation budgets and the allocation/time used to obtain 
 
 This is a bounded header inspection, not an executable validator or installation
 permit. A malicious ELF can satisfy these checks. No code is executed or loaded,
-no path is opened by this library, and no compression is decoded. The caller's
+no path is opened by this API, and this identity entry point decodes no compression. The caller's
 manifest is still a declaration: matching its digest does not authenticate a publisher.
 
 ELF32/ELF64 little-endian machine/class must match the declared target. Accepted
@@ -57,3 +57,8 @@ object writer. Their manifest hashes are recomputed after malformed mutations so
 checks reach the ELF layer. Four exact published API/Kine artifacts are qualified
 separately by `tools/assets-elf`; the trusted Rust test reads but never executes them,
 and Python struct-based observations supply the independent comparison.
+
+The additive [`DecodeSession::inspect_compressed_elf`](DECODE.md#compressed-executable-elf-composition)
+uses the same private ELF parser after complete bounded decoding of a compressed
+executable. Its aggregate budgets are retained by the decoding session. The shared
+parser does not weaken these observations into a runtime compatibility claim.
