@@ -31,6 +31,12 @@ fn main() -> std::process::ExitCode {
             .into_iter()
             .filter_map(|key| std::env::var(key).ok().map(|value| (key.into(), value)))
             .collect();
+    let parsed = rubixctl::parse_command(&args, &environment);
+    if let Ok(rubixctl::Command::Check(options)) = parsed
+        && options.install_prerequisites
+    {
+        return preparation(options);
+    }
     if let Ok(code) = rubixctl::execute(
         &args,
         &environment,
@@ -43,5 +49,43 @@ fn main() -> std::process::ExitCode {
     } else {
         let _ = writeln!(io::stderr(), "error: management output failed");
         std::process::ExitCode::FAILURE
+    }
+}
+
+fn preparation(options: rubixctl::CheckOptions) -> std::process::ExitCode {
+    let Ok(runtime) = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    else {
+        let _ = writeln!(
+            io::stderr(),
+            "error: prerequisite runtime could not be initialized"
+        );
+        return std::process::ExitCode::FAILURE;
+    };
+    let cancellation = rubixctl::preparation::Cancellation::default();
+    let mut executor = rubixctl::preparation::AlpinePreparation;
+    let mut host = Host;
+    let mut stderr = io::stderr().lock();
+    let workflow = rubixctl::check_workflow::execute_check_with_preparation(
+        options,
+        &mut host,
+        &mut executor,
+        &cancellation,
+        &mut stderr,
+    );
+    match runtime.block_on(rubixctl::preparation::with_signals(&cancellation, workflow)) {
+        Ok(Ok(code)) => code.into(),
+        Ok(Err(_)) => {
+            let _ = writeln!(stderr, "error: management output failed");
+            std::process::ExitCode::FAILURE
+        },
+        Err(_) => {
+            let _ = writeln!(
+                stderr,
+                "error: prerequisite signal listeners could not be installed; no checks or preparation were started"
+            );
+            std::process::ExitCode::FAILURE
+        },
     }
 }
