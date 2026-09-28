@@ -131,3 +131,9 @@ and decoded budget exhaustion, retained parser-failure charges and bounded RLE
 expansion. Existing gzip CRC/FHCRC/trailer/provisional-callback regressions continue
 to exercise the unchanged streaming path. These synthetic tests do not qualify a
 production compressed payload or close E06.01.
+
+The separate [crane archive inspector](ARCHIVE.md) now uses the retained session's
+gzip stream with a private incremental tar parser. It retains bounded metadata and
+hashes/discards layer bodies, with no whole decoded-image allocation. Only complete
+outer decoding plus archive/member/reference closure yields its opaque result;
+nested layer decoding and DiffID verification remain separate.
