@@ -3,7 +3,7 @@
 This fixture exercises the approved `prepare_node_host` example with explicit
 `--no-container-mode --disable-ipv6` and a host-owned Unix endpoint. It adds no
 Rust API, runtime execution, service installation, or production startup behavior.
-No successful actual guest evidence is published yet.
+Two fresh successful guest captures are published below.
 
 The existing `tools/node-container` build verifier validates all four approved
 static artifacts and their original clean build revision, nonce-delimited builder
@@ -89,3 +89,31 @@ Repeat in a second fresh guest, publish complete captures as `evidence/first` an
 all `test_verify.py` tests normally and with Python `-O`. Mandatory published checks
 must pass; synthetic mutation tests never substitute for actual captures. This is
 bounded E05.03 evidence, not closure of E05.02/E05.03 or their parent integration gates.
+
+Published qualification uses clean capture source
+`cb96f5d6ddb8d7ad492b51820104446a04449d0c`. Both fresh guests passed all four
+cases; each real read-only case completed two preparations in the same observed
+live process. Already-disabled values stayed 1; failed writes stayed 0 with all
+three truthful warning outcomes. The live external keeper, socket/configuration,
+service/CNI inventories, outside mounts and cgroup observations remained unchanged
+through real success, failed guard and in-flight cancellation. These observations
+do not establish CRI readiness or an nftables-only kernel.
+
+The executed consumer was built at original revision
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`, SHA256
+`9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c`,
+13,156,744 bytes. Its historical build receipts and current compiled-source bindings
+are retained separately from the new capture revision. Both QEMU processes exited
+0 after guest poweroff, with no cleanup errors; owned process groups and private
+directories were independently absent. All 27 safe regressions and five mandatory
+published-evidence gates pass normally and with Python `-O`, along with the current
+verifier.
+
+The earlier first attempt remains preserved at
+`/tmp/rubix-constrained-qualified-first-20260928-r1` as a failed capture. Its real
+read-only cases passed, but copying large `/usr/sbin` executables to stage a double
+hit the unchanged file-size bound before the guard candidate started. The corrected
+fixture uses a bounded symlink view over a private read-only original bind, resolving
+relative aliases before overlay and replacing only the fixed double. Regression
+tests cover large originals under the original limit and internal/external aliases.
+No production behavior or output/file limit was changed; r1 is not qualifying evidence.

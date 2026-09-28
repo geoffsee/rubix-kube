@@ -1,0 +1,49 @@
+{
+  "build_command": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=7cb6c2e9dde24d719a2939c9ce3ee534",
+    "-t",
+    "rubix-node-container-171534827eae4c07af531d06cb26a92e",
+    "-f",
+    "/tmp/rubix-container-build-bvp_fbiy/tools/node-container/Build.Dockerfile",
+    "/tmp/rubix-container-build-bvp_fbiy"
+  ],
+  "build_nonce": "7cb6c2e9dde24d719a2939c9ce3ee534",
+  "build_sha256": "f67c1a6dcd83896a7b8ad924ad95d5400aa972fd6c4a50133015284609e3becc",
+  "cleanup_errors": [],
+  "command": [
+    "docker",
+    "run",
+    "--name",
+    "rubix-node-container-171534827eae4c07af531d06cb26a92e-test",
+    "--network=none",
+    "--read-only",
+    "--cap-drop=ALL",
+    "--security-opt=no-new-privileges",
+    "--pids-limit=64",
+    "--memory=512m",
+    "--cpus=2",
+    "rubix-node-container-171534827eae4c07af531d06cb26a92e",
+    "/bin/sh",
+    "-c",
+    "sha256sum /out/prepare_node_host /out/rubix_kube /out/host_preparation /out/host_network && for binary in rubix_kube host_preparation host_network; do echo TEST_${binary}_BEGIN; /out/$binary || exit 1; echo TEST_${binary}_END; done && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_node_host --container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_node_host --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
+  ],
+  "containers": [
+    "rubix-node-container-171534827eae4c07af531d06cb26a92e-test"
+  ],
+  "dirty": false,
+  "errors": [],
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "image_id": "sha256:89ecc2274f9164aab5d44d70e4e9fa6fee6a040fd6f3bb4120581728772886eb",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
+  "run_sha256": "f57b960347288b16df6c37ab7ac250f2f0df26cd7d131d8967bbbc2d74597d61",
+  "schema": 1,
+  "source_sha256": "3e2dabca7d1732504d9498fd046a7a4d562b3c7e99a8bef26861b44178a4a566",
+  "tag": "rubix-node-container-171534827eae4c07af531d06cb26a92e"
+}
