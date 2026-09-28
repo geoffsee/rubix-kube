@@ -34,3 +34,9 @@ Committed qualification passed twice on `f2080912285b5857ed59ba3b9f8f57c9b0e26d4
 The stored two-run evidence was refreshed on decoder integration revision
 `ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`; all four existing official
 pins and their independent observations matched. Upstream artifacts were not executed.
+
+The stored evidence was refreshed again for decoded ELF composition revision
+`b431b351a7ca841b0e60153a4d574d7aba2f18c0`. Both runs observed the same
+four pinned artifacts, with independent fields and raw-byte hashes agreeing.
+No artifact was executed; current-source verification and all seven evidence
+regressions pass normally and under optimization.

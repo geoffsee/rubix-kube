@@ -1,4 +1,6 @@
-6646d28e926b028a77ed5317e642a999cf75b953c9ad72b6969dc790d0e8e049  /decode-tests
+cadd95f023f0313f32076c167324cfdb4590f94ad29c2862412c2d618309f581  /decode-tests
+5feed5268d8fbabeff7bd64a8de41c5ff4c44d9d3d3a07f0ce0ed503cb34641f  /decoded_elf-tests
+RUBIX_SUITE decode
 
 running 14 tests
 test aggregate_budget_is_checked_before_observer_and_retained_on_header_failure ... ok
@@ -16,6 +18,22 @@ test unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit ... ok
 test unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked ... ok
 test zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected ... ok
 
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-RUBIX_NAMESPACE {"helper": 24, "init": 1, "processes": [1, 7, 24], "shell": 7}
+RUBIX_SUITE decoded_elf
+
+running 10 tests
+test altered_encoded_slice_fails_before_decode_and_keeps_attempt_charge ... ok
+test every_supported_machine_preserves_header_only_abi_boundary ... ok
+test exact_encoded_hash_does_not_hide_wrong_machine_class_endian_or_loader ... ok
+test failed_elf_parsing_keeps_both_budgets_and_repeated_calls_exhaust_decoded_budget ... ok
+test incomplete_or_corrupt_frames_never_reach_elf_inspection ... ok
+test invalid_limits_identity_and_gzip_image_are_rejected_without_budget_effects ... ok
+test raw_frame_and_independent_elf_share_completed_digest_and_observations ... ok
+test retained_encoded_budget_cannot_be_refreshed_by_composition ... ok
+test rle_expansion_stops_at_tighter_elf_cap_before_parser ... ok
+test tighter_elf_decode_and_session_limits_bound_unknown_size_output ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+RUBIX_NAMESPACE {"helper": 35, "init": 1, "processes": [1, 7, 35], "shell": 7}

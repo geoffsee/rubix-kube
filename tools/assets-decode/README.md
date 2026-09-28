@@ -41,8 +41,14 @@ ABI/CPU/libc combinations, hard RSS/CPU limits or archive/OCI semantics. The new
 suite exercises composed ELF header observations on synthetic compressed vectors;
 it does not establish executable runtime compatibility or installation safety.
 
-Historical schema1 evidence in this branch was captured on
-`ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, with14 decoder cases per run.
-It intentionally cannot satisfy the expanded schema2 verifier. The reviewed new
-harness must be committed and both suites freshly captured before qualification
-is claimed; mandatory stored-evidence tests remain failing until that publication.
+Stored schema2 evidence was captured on
+`b431b351a7ca841b0e60153a4d574d7aba2f18c0`. Both Linuxarm64 release runs
+passed all14 decoder tests and all10 decoded ELF tests. Executable SHA-256 values:
+
+- `decode`: `cadd95f023f0313f32076c167324cfdb4590f94ad29c2862412c2d618309f581`
+- `decoded_elf`: `5feed5268d8fbabeff7bd64a8de41c5ff4c44d9d3d3a07f0ce0ed503cb34641f`
+
+The receipt reports no capture/cleanup errors or remaining owned containers/images;
+those owned names and image tag were independently checked absent after capture.
+All10 evidence regressions and current-source verification pass normally and
+under optimization. Other target ABI/runtime and production-artifact gates remain open.
