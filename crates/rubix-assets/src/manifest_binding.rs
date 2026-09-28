@@ -39,6 +39,11 @@ impl ImageManifestFormat {
 }
 /// Caller-declared expected identities. Construction does not approve or authenticate a pin.
 /// Platform is Linux with the selected architecture, independent of host libc.
+///
+/// `archive_sha256` and `archive_bytes` describe the exact encoded Docker-save archive
+/// previously verified by the decoding session. `manifest_sha256` and `manifest_bytes`
+/// describe the separate raw platform-manifest document, including its whitespace.
+/// Neither identity selects a registry index entry or authenticates a tag or publisher.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DeclaredImageManifestPin {
     pub asset: AssetId,
@@ -49,6 +54,11 @@ pub struct DeclaredImageManifestPin {
     pub manifest_bytes: u64,
     pub format: ImageManifestFormat,
 }
+/// Caller policy for raw manifest bytes, ordered layer references, and JSON depth.
+///
+/// The byte bound applies before hashing or parsing. The reference bound applies
+/// after bounded JSON parsing; repeated references count separately. These are
+/// admission limits, not hard CPU/RSS bounds or recoverable-allocation guarantees.
 #[derive(Clone, Copy, Debug)]
 pub struct ManifestBindingLimits {
     pub manifest_bytes: usize,
@@ -87,6 +97,10 @@ impl fmt::Display for ManifestBindingError {
 }
 impl std::error::Error for ManifestBindingError {}
 /// Complete byte identities match caller declarations, not a trusted publisher or index.
+///
+/// Retains the completed archive/layer observation and its matched declaration.
+/// It does not prove inner-tar safety, ABI compatibility, import permission, or
+/// installation eligibility. No production payload pin is approved by this type.
 /// ```compile_fail
 /// use rubix_assets::{ImageManifestBinding, DeclaredImageManifestPin, LayerDigestArchiveObservation};
 /// fn forge(pin: DeclaredImageManifestPin, observation: LayerDigestArchiveObservation) -> ImageManifestBinding {
@@ -110,6 +124,12 @@ impl LayerDigestArchiveObservation {
     /// Bind this exact completed archive to a separately supplied declared platform-manifest pin.
     /// This performs no further decoding, IO, callbacks, session creation, or budget refunds.
     /// On failure no binding escapes; the consumed completed observation is discarded.
+    ///
+    /// Requires Linux config platform status `DeclaredMatch`, an exact config
+    /// descriptor, and every ordered stored-layer digest, size, and codec media type.
+    /// OCI supports gzip/zstd; Docker schema 2 supports gzip. Only the documented
+    /// image-manifest fields and string annotations are admitted. Indexes, external
+    /// descriptor URLs/data, artifact manifests, and unsupported layer media fail.
     pub fn bind_manifest(
         self,
         pin: &DeclaredImageManifestPin,
@@ -254,7 +274,7 @@ fn descriptor(value: &Value) -> Result<Descriptor<'_>, ManifestBindingError> {
     let size = o
         .get("size")
         .and_then(Value::as_u64)
-        .filter(|n| *n > 0 && *n <= i64::MAX as u64)
+        .filter(|n| *n > 0 && i64::try_from(*n).is_ok())
         .ok_or(ManifestBindingError::Descriptor)?;
     let text = o
         .get("digest")
