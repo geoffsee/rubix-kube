@@ -106,17 +106,7 @@ published-evidence gates. Run the complete test and verification commands above,
 including the published-evidence gate. Investigate any failure or missing evidence;
 the invented mutation records cannot replace the actual capture.
 
-Actual pinned-crane writer qualification passed twice on source
-`90a352c1b720b4a99a235f5bc3ce5d1c6533603f`, including the decoder error-budget
-fix. Each run passed all eight archive cases. The actual producer serialized two
-synthetic tiny images; archive bytes and independent observations matched across
-runs. This is serialization compatibility evidence, not registry payload or
-baseline release provenance. Declared DiffIDs remain unverified by the archive API.
-
-Builder and both runtime hashes match producer SHA-256
-`7434ad637e4fb31b7c89fb4db001eb5678530ebe8c00780a9f4d9ef5b0cb9b9b`
-and Rust consumer SHA-256
-`a5df32ef460ec2f5c9f48a9e59dded4d4a959335b1d4e51c2428357d659a8189`.
-Capture and cleanup errors are empty; independent Docker queries confirmed both
-owned containers and their image tag absent. All 14 Python evidence tests and
-current-source verification pass normally and under optimization.
+Current container-preparation integration qualification was captured at source
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed the eight pinned-crane serialization cases. Producer and consumer hashes match the prior archive qualification; the complete source inventory was refreshed. DiffIDs remain declared-only in the archive API.
+Current-source verification passes normally and with `-O`; exact raw evidence is
+published in `evidence/`. Owned capture resources were independently confirmed absent.
