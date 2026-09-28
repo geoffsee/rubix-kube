@@ -53,7 +53,22 @@ def main():
         oracle.require(bounded is not None, 'owned runtime helper required')
         os.environ['RUBIX_LAYER_FIXTURE'] = temporary
         output_path = directory/'consumer.log'
-        bounded.bounded(CONSUMER, output_path, 20, 65536)
+        try:
+            bounded.bounded(CONSUMER, output_path, 20, 65536)
+        except Exception:
+            # Preserve the already-bounded diagnostic before TemporaryDirectory cleanup.
+            # A failed/partial log is evidence of failure, never parsed as a passing run.
+            try:
+                with output_path.open('rb') as stream:
+                    diagnostic = stream.read(65537)
+                if len(diagnostic) <= 65536:
+                    print(diagnostic.decode('utf-8', errors='replace'), end='', flush=True)
+                else:
+                    print('Consumer diagnostic exceeded its bound; raw output omitted.', flush=True)
+            except OSError:
+                # Missing/unreadable diagnostics must not replace the original command error.
+                pass
+            raise
         output = output_path.read_text()
         observed = parse_consumer(output)
         oracle.require(oracle.same_json(observed, expected), 'independent oracle/consumer equality')
