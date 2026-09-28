@@ -80,6 +80,9 @@ Focused synthetic tests cover OCI/Docker profiles, repeated-layer ordering,
 rehashed descriptor substitutions, role/archive/manifest mismatches, unresolved
 platform variants, malformed JSON/numeric fields, exact limits, and opaque
 construction. These tests establish the API contract, not real registry provenance.
-Independent real-manifest/archive qualification and production pin approval remain
-separate work. The full inventory, platform/ABI and installation consumers required
-by E06.01/#48 remain open.
+The [manifest fixture](../../tools/assets-manifest/README.md) independently checks
+retained CoreDNS raw manifest/config/blob bytes, complete DiffIDs and a separately
+audited pinned-crane archive. Its mandatory gate requires fresh source-bound Rust
+capture receipts. Fixture identities do not authenticate publishers or approve
+production pins. The full inventory, platform/ABI and installation consumers
+required by E06.01/#48 remain open.
