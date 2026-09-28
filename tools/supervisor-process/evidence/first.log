@@ -1,10 +1,10 @@
 61448b2f19953b94d2551f7358af1d75429e2bdaa9a269e074eefce684dc8358  /process-tests
 
 running 1 test
-RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":35,"error":null}
-RUBIX_PROCESS {"case":"family","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":33,"error":null}
-RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30012,"error":null}
-RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":33,"error":null}
+RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":32,"error":null}
+RUBIX_PROCESS {"case":"family","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":32,"error":null}
+RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30013,"error":null}
+RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":35,"error":null}
 RUBIX_PROCESS {"case":"early","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"leader-exits-first","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"oneshot","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0,"error":null}
@@ -16,10 +16,10 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 RUBIX_PROCESS {"case":"worker-panic","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"cancelled","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"spawn-error","spawned":false,"term_attempted":false,"kill_attempted":false,"leader_reaped":false,"thread_joined":true,"complete":false,"exit_code":null,"signal":null,"elapsed_ms":0,"error":"process_spawn_failed"}
-RUBIX_PROCESS {"case":"startup-timeout","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":1126,"error":null}
+RUBIX_PROCESS {"case":"startup-timeout","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":1124,"error":null}
 RUBIX_PROCESS {"case":"sentinel-survived-external-stop","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0,"error":null}
 test disposable_process_cases ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 33.15s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 32.94s
 
 RUBIX_NAMESPACE {"helper": 43, "init": 1, "processes": [1, 7, 43], "shell": 7}
