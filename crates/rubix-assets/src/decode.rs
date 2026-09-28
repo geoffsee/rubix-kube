@@ -15,7 +15,7 @@ use std::{
 pub struct DecodeLimits {
     pub executable_bytes: u64,
     pub image_bytes: u64,
-    /// Decoded bytes plus one EOF/excess probe reservation per admitted attempt.
+    /// Output bytes at every decoded level plus an EOF/excess probe per attempt/frame.
     pub total_bytes: u64,
 }
 impl Default for DecodeLimits {
@@ -287,6 +287,18 @@ impl DecodeSession<'_> {
         cap: u64,
         mut observe: F,
     ) -> Result<DecodedObservation, DecodeError<E>> {
+        self.inspect_compressed_blob_budgeted(id, bytes, cap, |chunk, _| observe(chunk))
+    }
+    pub(crate) fn inspect_compressed_blob_budgeted<
+        E,
+        F: FnMut(&[u8], &mut u64) -> Result<(), E>,
+    >(
+        &mut self,
+        id: AssetId,
+        bytes: &[u8],
+        cap: u64,
+        mut observe: F,
+    ) -> Result<DecodedObservation, DecodeError<E>> {
         let blob = self
             .inventory
             .blobs
@@ -310,14 +322,14 @@ impl DecodeSession<'_> {
             .remaining
             .checked_sub(1)
             .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
-        let maximum = per_blob.min(cap).min(self.remaining);
+        let maximum = per_blob.min(cap);
         let encoded = self
             .encoded
             .verify_encoded_blob(id, bytes)
             .map_err(DecodeError::Encoded)?;
         let (count, sha) = match encoding {
             Encoding::Zstd => {
-                zstd_header(bytes, maximum).map_err(DecodeError::Policy)?;
+                zstd_header(bytes, maximum.min(self.remaining)).map_err(DecodeError::Policy)?;
                 let mut decoder = zstd::stream::read::Decoder::with_buffer(bytes)
                     .map_err(DecodeError::Decoder)?
                     .single_frame();
@@ -349,7 +361,7 @@ impl DecodeSession<'_> {
         })
     }
 }
-fn consume<E, F: FnMut(&[u8]) -> Result<(), E>>(
+fn consume<E, F: FnMut(&[u8], &mut u64) -> Result<(), E>>(
     reader: &mut impl Read,
     maximum: u64,
     remaining: &mut u64,
@@ -360,7 +372,9 @@ fn consume<E, F: FnMut(&[u8]) -> Result<(), E>>(
     let mut buffer = [0u8; 8192];
     loop {
         // maximum excludes the reserved one-byte excess/EOF probe.
-        let capacity = usize::try_from((maximum - count + 1).min(8192))
+        // Nested observers may debit this same budget. Never reuse a pre-callback allowance.
+        let allowance = (maximum - count).min(*remaining);
+        let capacity = usize::try_from((allowance + 1).min(8192))
             .map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
         let read = match reader.read(&mut buffer[..capacity]) {
             Ok(read) => read,
@@ -381,18 +395,18 @@ fn consume<E, F: FnMut(&[u8]) -> Result<(), E>>(
         }
         let read =
             u64::try_from(read).map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
-        let admitted = read.min(maximum - count);
+        let admitted = read.min(allowance);
         *remaining = remaining
             .checked_sub(admitted)
             .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
-        if read > maximum - count {
+        if read > allowance {
             return Err(DecodeError::Policy(DecodePolicyError::ContentLimit));
         }
         count += read;
         let length =
             usize::try_from(read).map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
         hash.update(&buffer[..length]);
-        observe(&buffer[..length]).map_err(DecodeError::Observer)?;
+        observe(&buffer[..length], remaining).map_err(DecodeError::Observer)?;
     }
 }
 fn zstd_header(bytes: &[u8], maximum: u64) -> Result<(), DecodePolicyError> {
