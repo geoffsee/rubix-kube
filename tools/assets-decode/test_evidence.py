@@ -4,18 +4,75 @@ from unittest.mock import patch
 import capture,verify
 
 def raw():
-    cases='\n'.join('test '+name+' ... ok' for name in sorted(verify.EXPECTED))
-    return ('a'*64+'  /decode-tests\n'+cases+'\ntest result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\nRUBIX_NAMESPACE '+json.dumps({'init':1,'shell':7,'helper':8,'processes':[1,7,8]})+'\n').encode()
+    lines=['a'*64+'  /decode-tests','b'*64+'  /decoded_elf-tests']
+    for suite,cases in verify.EXPECTED.items():
+        lines.append('RUBIX_SUITE '+suite)
+        lines.extend('test '+name+' ... ok' for name in sorted(cases))
+        lines.append('test result: ok. '+str(len(cases))+' passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s')
+    lines.append('RUBIX_NAMESPACE '+json.dumps({'init':1,'shell':7,'helper':8,'processes':[1,7,8]}))
+    return ('\n'.join(lines)+'\n').encode()
+def synthetic(directory):
+    inventory=verify.current_inventory()
+    (directory/'source-inventory.json').write_text(json.dumps(inventory))
+    tag='rubix-decode-'+'f'*32
+    report=dict(schema=2,source_revision='0'*40,uncommitted_source_snapshot=False,tag=tag,
+        harness_sha256={name:verify.digest(verify.HERE/name) for name in verify.HARNESS},
+        helper_sha256=verify.digest(verify.ROOT/'tools/defaults/capture.py'),
+        containers=[tag+'-first',tag+'-repeat'],errors=[],cleanup_errors=[],runs={},
+        source_inventory_sha256=verify.digest(directory/'source-inventory.json'),
+        image_id='sha256:'+'1'*64,remaining_containers=[],remaining_images=[])
+    for name in ['first','repeat']:
+        path=directory/(name+'.log');path.write_bytes(raw());cases,binaries=verify.records(path)
+        report['runs'][name]=dict(command=verify.run_command(tag,name),raw_sha256=verify.digest(path),binary_sha256=binaries,records=cases)
+    (directory/'receipt.json').write_text(json.dumps(report))
+    verify.capture(directory)
+    return report
 class Evidence(unittest.TestCase):
     def test_frozen_native_evidence_is_required(self):verify.capture(verify.HERE/'evidence')
     def test_exact_tests_binary_and_namespace(self):
         with tempfile.TemporaryDirectory() as temporary:
             p=Path(temporary)/'raw';p.write_bytes(raw());verify.records(p)
-            first=next(iter(sorted(verify.EXPECTED)))
+            first=next(iter(sorted(verify.DECODE_CASES)))
             variants=[raw().replace(first.encode(),b'unknown'),raw().replace(b'14 passed;',b'13 passed;'),raw().replace(b'... ok',b'... FAILED',1),raw().replace(b'  /decode-tests',b'  /other'),raw().replace(b'"helper": 8',b'"helper": 7'),raw().replace(b'[1, 7, 8]',b'[1, 7, 8, 9]')]
             for value in variants:
                 p.write_bytes(value)
                 with self.assertRaises(ValueError):verify.records(p)
+    def test_both_suites_and_binary_identities_are_required(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'raw'
+            first=sorted(verify.DECODE_CASES)[0].encode()
+            second=sorted(verify.ELF_CASES)[0].encode()
+            variants=[
+                raw().replace(b'RUBIX_SUITE decoded_elf',b'RUBIX_SUITE decode'),
+                raw().replace(b'RUBIX_SUITE decode\n',b''),
+                raw().replace(b'10 passed;',b'9 passed;'),
+                raw().replace(b'b'*64+b'  /decoded_elf-tests\n',b''),
+                raw().replace(b'b'*64+b'  /decoded_elf-tests',b'b'*64+b'  /decode-tests'),
+                raw().replace(first,b'temporary').replace(second,first).replace(b'temporary',second),
+                raw().replace(b'test '+second+b' ... ok',b'test '+second+b' ... ignored'),
+                raw()+b'RUBIX_SUITE decoded_elf\n',
+            ]
+            for value in variants:
+                path.write_bytes(value)
+                with self.assertRaises(ValueError):verify.records(path)
+    def test_rehashed_repeat_binary_substitution_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);report=synthetic(directory)
+            path=directory/'repeat.log';path.write_bytes(raw().replace(b'b'*64,b'c'*64))
+            cases,binaries=verify.records(path)
+            report['runs']['repeat'].update(raw_sha256=verify.digest(path),records=cases,binary_sha256=binaries)
+            (directory/'receipt.json').write_text(json.dumps(report))
+            with self.assertRaisesRegex(ValueError,'repeated executables'):verify.capture(directory)
+    def test_wrong_suite_record_and_command_cannot_be_relabelled(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);original=synthetic(directory)
+            for mutation in ['records','hash','command']:
+                report=copy.deepcopy(original);run=report['runs']['first']
+                if mutation=='records':run['records']['decoded_elf']=run['records']['decode']
+                elif mutation=='hash':run['binary_sha256']['decoded_elf']=run['binary_sha256']['decode']
+                else:run['command'][-1]=run['command'][-1].replace('/decoded_elf-tests --nocapture','/decode-tests --nocapture')
+                (directory/'receipt.json').write_text(json.dumps(report))
+                with self.assertRaises(ValueError):verify.capture(directory)
     def test_strict_json_and_bounded_regular_reads(self):
         for value in ['{"x":1,"x":2}','{"x":NaN}','{"x":1e999}']:
             with self.assertRaises(ValueError):verify.strict(value)

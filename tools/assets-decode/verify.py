@@ -4,7 +4,7 @@ from pathlib import Path
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[1]
 HARNESS=('capture.py','verify.py','test_evidence.py','Capture.Dockerfile')
-EXPECTED={
+DECODE_CASES={
 'aggregate_budget_is_checked_before_observer_and_retained_on_header_failure',
 'all_truncations_corrupt_checksum_and_trailing_members_fail_after_rehash',
 'empty_frames_still_require_completion_and_consume_one_probe',
@@ -19,6 +19,19 @@ EXPECTED={
 'unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit',
 'unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked',
 'zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected'}
+ELF_CASES={
+'altered_encoded_slice_fails_before_decode_and_keeps_attempt_charge',
+'every_supported_machine_preserves_header_only_abi_boundary',
+'exact_encoded_hash_does_not_hide_wrong_machine_class_endian_or_loader',
+'failed_elf_parsing_keeps_both_budgets_and_repeated_calls_exhaust_decoded_budget',
+'incomplete_or_corrupt_frames_never_reach_elf_inspection',
+'invalid_limits_identity_and_gzip_image_are_rejected_without_budget_effects',
+'raw_frame_and_independent_elf_share_completed_digest_and_observations',
+'retained_encoded_budget_cannot_be_refreshed_by_composition',
+'rle_expansion_stops_at_tighter_elf_cap_before_parser',
+'tighter_elf_decode_and_session_limits_bound_unknown_size_output'}
+EXPECTED={'decode':DECODE_CASES,'decoded_elf':ELF_CASES}
+
 def require(value,message):
     if not value:raise ValueError(message)
 def read(path,limit=4*1024*1024):
@@ -35,23 +48,39 @@ def pairs(items):
 def strict(raw):return json.loads(raw,object_pairs_hook=pairs,parse_float=reject,parse_constant=reject)
 def load(path):return strict(read(path))
 def run_command(tag,name):
-    return ['docker','run','--name',tag+'-'+name,'--init','--network=none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--pids-limit=64','--memory=256m','--cpus=2','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',tag,'/bin/sh','-c','sha256sum /decode-tests; /decode-tests --nocapture --test-threads=1; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test "$status" -eq 0 && test "$inventory" -eq 0']
+    return ['docker','run','--name',tag+'-'+name,'--init','--network=none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--pids-limit=64','--memory=256m','--cpus=2','--tmpfs','/tmp:rw,nosuid,nodev,size=16m',tag,'/bin/sh','-c',"sha256sum /decode-tests /decoded_elf-tests; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"]
 def records(path):
     lines=read(path,1024*1024).decode().splitlines()
-    require(sum(line.startswith('test result: ok. 14 passed; 0 failed; 0 ignored;') for line in lines)==1,'test completion')
-    cases=[]
+    cases={}; completed=set(); active=None; binaries={}
     for line in lines:
-        if line.startswith('test ') and not line.startswith('test result:'):
-            match=re.fullmatch(r'test ([a-z0-9_]+) \.\.\. ok',line);require(match is not None,'test outcome');cases.append(match[1])
-    require(len(cases)==len(EXPECTED) and set(cases)==EXPECTED,'exact test inventory')
-    binaries=[line.split()[0] for line in lines if line.endswith('  /decode-tests')]
-    require(len(binaries)==1 and re.fullmatch('[0-9a-f]{64}',binaries[0]) is not None,'binary identity')
+        if line.startswith('RUBIX_SUITE '):
+            suite=line.removeprefix('RUBIX_SUITE ')
+            require(suite in EXPECTED and suite not in cases,'suite identity')
+            require(active is None or active in completed,'previous suite completion')
+            require(suite==list(EXPECTED)[len(cases)],'suite order')
+            cases[suite]=[]; active=suite
+        elif line.startswith('test result:'):
+            require(active is not None and active not in completed,'unique suite completion')
+            require(re.fullmatch(r'test result: ok\. '+str(len(EXPECTED[active]))+r' passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9.]+s',line) is not None,'test completion')
+            completed.add(active)
+        elif line.startswith('test '):
+            require(active is not None and active not in completed,'test suite boundary')
+            match=re.fullmatch(r'test ([a-z0-9_]+) \.\.\. ok',line)
+            require(match is not None,'test outcome');cases[active].append(match[1])
+        elif re.fullmatch(r'[a-f0-9]{64}  /[a-z_-]+',line):
+            digest_,path=line.split();suite=path.removeprefix('/').removesuffix('-tests')
+            require(path=='/'+suite+'-tests' and suite in EXPECTED and suite not in binaries,'binary identity')
+            require(active is None,'binary preflight order');binaries[suite]=digest_
+    require(set(cases)==set(EXPECTED) and completed==set(EXPECTED),'both suites complete')
+    for suite,expected in EXPECTED.items():
+        require(len(cases[suite])==len(expected) and set(cases[suite])==expected,'exact test inventory')
+    require(set(binaries)==set(EXPECTED),'binary inventory')
     ns=[strict(line.removeprefix('RUBIX_NAMESPACE ')) for line in lines if line.startswith('RUBIX_NAMESPACE ')]
     require(len(ns)==1 and set(ns[0])=={'init','shell','helper','processes'},'namespace schema');ns=ns[0]
     identities=[ns[key] for key in ['init','shell','helper']]
     require(all(type(pid) is int and pid>0 for pid in identities) and identities[0]==1 and len(set(identities))==3,'namespace identity')
     require(type(ns['processes']) is list and all(type(pid) is int for pid in ns['processes']) and sorted(ns['processes'])==sorted(identities),'namespace cleanup')
-    return sorted(cases),binaries[0]
+    return {suite:sorted(names) for suite,names in cases.items()},binaries
 def relevant(name):
     return name in {'Cargo.toml','Cargo.lock','rust-toolchain.toml','tools/defaults/capture.py','tools/supervisor-process/namespace_inventory.py'} or name.endswith('/Cargo.toml') or name.startswith('.cargo/') or name.startswith(('crates/rubix-assets/','crates/rubix-platform/')) and name.endswith(('.rs','.json','.bin')) or name in {'tools/assets-decode/'+value for value in HARNESS}
 def current_inventory():
@@ -62,7 +91,7 @@ def current_inventory():
 def capture(directory):
     directory=Path(directory);report=load(directory/'receipt.json')
     require(set(report)=={'schema','source_revision','uncommitted_source_snapshot','tag','harness_sha256','helper_sha256','containers','errors','cleanup_errors','runs','source_inventory_sha256','image_id','remaining_containers','remaining_images'},'receipt schema')
-    require(type(report['schema']) is int and report['schema']==1,'schema');require(type(report['uncommitted_source_snapshot']) is bool,'dirty scope')
+    require(type(report['schema']) is int and report['schema']==2,'schema');require(type(report['uncommitted_source_snapshot']) is bool,'dirty scope')
     require(re.fullmatch('[a-f0-9]{40}',report['source_revision']) is not None,'revision');tag=report['tag'];require(re.fullmatch('rubix-decode-[a-f0-9]{32}',tag) is not None,'owned tag')
     require(report['containers']==[tag+'-first',tag+'-repeat'],'owned containers')
     for key in ['errors','cleanup_errors','remaining_containers','remaining_images']:require(report[key]==[],key)
@@ -75,5 +104,5 @@ def capture(directory):
         require(set(run)=={'command','raw_sha256','binary_sha256','records'},'run schema');require(run['command']==run_command(tag,name),'isolated command')
         require(run['raw_sha256']==digest(directory/(name+'.log')),'raw log binding');cases,binary=records(directory/(name+'.log'))
         require(run['records']==cases and run['binary_sha256']==binary,'raw observation binding');binaries.append(binary)
-    require(binaries[0]==binaries[1],'repeated executable')
+    require(binaries[0]==binaries[1],'repeated executables')
 if __name__=='__main__':capture(Path(sys.argv[1]) if len(sys.argv)>1 else HERE/'evidence');print('Native Linux decoder qualification verified')
