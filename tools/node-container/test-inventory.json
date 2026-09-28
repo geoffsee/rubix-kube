@@ -1,0 +1,46 @@
+{
+  "host_network": [
+    "fixed_backend_lists_and_external_runtime_keep_network_effects",
+    "fresh_root_backend_and_ipv4_unknown_guards_prevent_effects",
+    "settled_module_failures_warn_and_continue_without_loaded_claim",
+    "unjoined_module_owner_stops_all_further_effects",
+    "cancellation_before_start_never_observes_or_mutates_network",
+    "cancellation_during_module_waits_for_stop_acknowledgement",
+    "requested_unknown_ipv6_is_deferred_only_by_preparation",
+    "ipv6_only_zero_writes_and_success_requires_readback",
+    "write_failures_continue_to_all_controls_and_retain_possible_effects",
+    "cancellation_between_ipv6_read_and_write_prevents_write",
+    "cancellation_after_ipv6_write_preserves_possible_effects_without_readback",
+    "complete_bounded_scalars_reject_prefixes_and_binary_data",
+    "owner_launch_failure_has_no_child_and_is_settled",
+    "cancellation_after_failed_write_retains_possible_effects"
+  ],
+  "host_preparation": [
+    "external_runtime_still_prepares_container_after_network_warnings",
+    "resolved_noncontainer_mode_never_acquires_container_session",
+    "fresh_backend_guard_failure_prevents_all_effects",
+    "uncertain_network_owner_stops_before_container_and_retains_effects",
+    "network_cancellation_stops_before_container_and_retains_effects",
+    "initially_cancelled_combined_operation_never_performs_effects"
+  ],
+  "rubix_kube": [
+    "host_container::tests::controller_tokens_reject_operations_duplicates_and_bounds",
+    "host_container::tests::ordered_effects_use_independent_controller_readback",
+    "host_container::tests::mount_failure_and_uncertain_readback_suppress_all_cgroups",
+    "host_container::tests::only_positive_v1_skips_cgroup_operations",
+    "host_container::tests::migration_requires_observed_membership_before_delegation",
+    "host_container::tests::bulk_and_individual_failures_continue_with_truthful_partial_readback",
+    "host_container::tests::successful_write_never_substitutes_for_failed_or_missing_readback",
+    "host_container::tests::changed_context_stops_controller_fallback_and_readback",
+    "host_container::tests::lost_admission_on_final_observation_is_fatal",
+    "host_container::tests::cancellation_future_becoming_ready_between_effects_suppresses_next_effect",
+    "host_container::tests::cancellation_during_failed_controller_write_retains_prior_effects",
+    "host_container::tests::initially_ready_cancellation_never_acquires_a_session",
+    "host_container::tests::cancellation_observed_during_v1_probe_precedes_completed_skip",
+    "host_container::platform::tests::mount_tree_requires_complete_bounded_unique_records",
+    "host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow",
+    "host_container::platform::tests::mount_paths_decode_only_kernel_escapes_and_keep_bytes",
+    "host_container::platform::tests::process_membership_accepts_unordered_duplicates_but_not_truncation_or_bad_tokens",
+    "host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain"
+  ]
+}
