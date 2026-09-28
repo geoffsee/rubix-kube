@@ -1,6 +1,11 @@
 //! Strict declared asset inventory, encoded/decoded-byte checks and bounded ELF observations.
 //!
 //! These results do not authorize installation or prove runtime/ABI compatibility or OCI integrity.
+mod archive;
+pub use archive::{
+    ArchiveError, ArchiveLayerObservation, ArchiveLimits, ArchivePolicyError,
+    DockerArchiveObservation, ImageConfigObservation, ImagePlatformStatus,
+};
 mod catalog;
 mod decode;
 pub use decode::{
