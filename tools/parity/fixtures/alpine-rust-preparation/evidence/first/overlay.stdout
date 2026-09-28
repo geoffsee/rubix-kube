@@ -1,1 +1,1 @@
-Formatting '/tmp/rubix-vm-dm_m3jnt/disk.qcow2', fmt=qcow2 cluster_size=65536 extended_l2=off compression_type=zlib size=8589934592 backing_file=/private/tmp/rubix-vm-image-cache/alpine-3.24.2-aarch64-cloudinit-r0.qcow2 backing_fmt=qcow2 lazy_refcounts=off refcount_bits=16
+Formatting '/tmp/rubix-vm-p_rd9l8p/disk.qcow2', fmt=qcow2 cluster_size=65536 extended_l2=off compression_type=zlib size=8589934592 backing_file=/private/tmp/rubix-vm-image-cache/alpine-3.24.2-aarch64-cloudinit-r0.qcow2 backing_fmt=qcow2 lazy_refcounts=off refcount_bits=16
