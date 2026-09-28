@@ -115,6 +115,9 @@ pub(super) fn inventory(root: &Path, family: &str) -> Result<Value> {
     ] {
         paths.extend(files(&root.join(name))?);
     }
+    if family == "constrained" {
+        paths.extend(files(&root.join("tools/node-container"))?);
+    }
     let mut result = serde_json::Map::new();
     for path in paths {
         let name = path

@@ -1,12 +1,35 @@
 //! Semantic checks on settled command receipts, independent of their hashes.
 use super::{Path, Result, Value, equal, json, load, read, require};
+pub(crate) const CONSTRAINED_LIMIT: u64 = 8 * 1024 * 1024;
+pub(crate) fn constrained_policy(report: &Value, label: &str, command: &str) -> Result<()> {
+    require(
+        report["adapter"] == "qemu-disposable-node-constrained"
+            && label == "constrained-cases"
+            && command == "RUBIX_RUN_PREPARATION=1 sh -s",
+        "exclusive constrained command output bound",
+    )
+}
+pub(crate) fn remote_constrained(directory: &Path, report: &Value) -> Result<(Vec<u8>, Vec<u8>)> {
+    let command = "RUBIX_RUN_PREPARATION=1 sh -s";
+    constrained_policy(report, "constrained-cases", command)?;
+    let mut argv = ssh(report)?;
+    argv.push(command.into());
+    checked_command(
+        directory,
+        "constrained-cases",
+        &argv,
+        &[0],
+        false,
+        Some(CONSTRAINED_LIMIT),
+    )
+}
 pub(crate) fn verify_command(
     directory: &Path,
     label: &str,
     argv: &[String],
     exits: &[i64],
 ) -> Result<(Vec<u8>, Vec<u8>)> {
-    checked_command(directory, label, argv, exits, false)
+    checked_command(directory, label, argv, exits, false, None)
 }
 pub(crate) fn verify_merged_command(
     directory: &Path,
@@ -14,7 +37,7 @@ pub(crate) fn verify_merged_command(
     argv: &[String],
     exits: &[i64],
 ) -> Result<Vec<u8>> {
-    Ok(checked_command(directory, label, argv, exits, true)?.0)
+    Ok(checked_command(directory, label, argv, exits, true, None)?.0)
 }
 fn checked_command(
     directory: &Path,
@@ -22,8 +45,20 @@ fn checked_command(
     argv: &[String],
     exits: &[i64],
     merged: bool,
+    constrained_limit: Option<u64>,
 ) -> Result<(Vec<u8>, Vec<u8>)> {
     let receipt = load(&directory.join(format!("{label}.command.json")))?;
+    let byte_limit = if merged {
+        32 * 1024 * 1024
+    } else {
+        constrained_limit.unwrap_or(256 * 1024)
+    };
+    if constrained_limit.is_some() || receipt.get("byte_limit").is_some() {
+        require(
+            receipt["byte_limit"].as_u64() == Some(byte_limit),
+            "exact command output bound",
+        )?;
+    }
     for (key, value) in [
         ("spawned", json!(true)),
         ("owned_process_group_absent", json!(true)),
@@ -62,12 +97,12 @@ fn checked_command(
     )?;
     let stdout = read(
         &directory.join(format!("{label}.{}", if merged { "log" } else { "stdout" })),
-        if merged { 32 * 1024 * 1024 } else { 256 * 1024 },
+        byte_limit,
     )?;
     let stderr = if merged {
         Vec::new()
     } else {
-        read(&directory.join(format!("{label}.stderr")), 256 * 1024)?
+        read(&directory.join(format!("{label}.stderr")), byte_limit)?
     };
     equal(
         &receipt["stdout_sha256"],
@@ -122,6 +157,11 @@ pub(crate) fn remote(
     command: &str,
     exits: &[i64],
 ) -> Result<(Vec<u8>, Vec<u8>)> {
+    if label == "constrained-cases" {
+        constrained_policy(report, label, command)?;
+        require(exits == [0], "fixed constrained exit policy")?;
+        return remote_constrained(directory, report);
+    }
     let mut args = ssh(report)?;
     args.push(command.into());
     verify_command(directory, label, &args, exits)
@@ -468,6 +508,77 @@ mod tests {
                 "{key}"
             );
         }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod constrained_bounds_tests {
+    use super::*;
+    #[test]
+    fn bounded_constrained_diagnostics_survive_without_default_cap_escalation() -> Result<()> {
+        let directory = tempfile::tempdir()?;
+        let label = "constrained-cases";
+        let argv = vec!["ssh".to_owned(), "RUBIX_RUN_PREPARATION=1 sh -s".to_owned()];
+        // Worst-case JSON escaping of both complete bounded diagnostic snippets,
+        // after a historical-size observation prefix. These are invented records.
+        let diagnostic = json!({"event":"consumer_failure","stdout":{"text":"\0".repeat(65536)},"stderr":{"text":"\0".repeat(65536)}});
+        let mut stdout = vec![b'x'; 235_635];
+        stdout.extend(serde_json::to_vec(&diagnostic)?);
+        assert!(stdout.len() > 256 * 1024);
+        std::fs::write(directory.path().join(format!("{label}.stdout")), &stdout)?;
+        std::fs::write(directory.path().join(format!("{label}.stderr")), b"")?;
+        let receipt = json!({"spawned":true,"owned_pid":123,"owner_directory":"/tmp/synthetic-constrained-owner","owned_process_group_absent":true,"cleanup_complete":true,"output_eof":true,"cleanup_errors":[],"timeout":false,"cancelled":false,"merged_output":false,"output_limit":false,"argv":argv,"exit_code":1,"stdout_sha256":rubix_dev::sha256(&stdout),"stderr_sha256":rubix_dev::sha256(b""),"byte_limit":CONSTRAINED_LIMIT});
+        let path = directory.path().join(format!("{label}.command.json"));
+        crate::parity::write_json(&path, &receipt, true)?;
+        assert_eq!(
+            checked_command(
+                directory.path(),
+                label,
+                &argv,
+                &[1],
+                false,
+                Some(CONSTRAINED_LIMIT)
+            )?
+            .0,
+            stdout
+        );
+        assert!(verify_command(directory.path(), label, &argv, &[1]).is_err());
+        for limit in [
+            json!(null),
+            json!(256 * 1024),
+            json!(CONSTRAINED_LIMIT + 1),
+            json!(true),
+        ] {
+            let mut changed = receipt.clone();
+            changed["byte_limit"] = limit;
+            crate::parity::write_json(&path, &changed, false)?;
+            assert!(
+                checked_command(
+                    directory.path(),
+                    label,
+                    &argv,
+                    &[1],
+                    false,
+                    Some(CONSTRAINED_LIMIT)
+                )
+                .is_err()
+            );
+        }
+        let report = json!({"adapter":"qemu-disposable-node-constrained"});
+        constrained_policy(&report, label, "RUBIX_RUN_PREPARATION=1 sh -s")?;
+        assert!(
+            constrained_policy(&report, "cloud-init", "RUBIX_RUN_PREPARATION=1 sh -s").is_err()
+        );
+        assert!(constrained_policy(&report, label, "other command").is_err());
+        assert!(
+            constrained_policy(
+                &json!({"adapter":"qemu-disposable-node-container"}),
+                label,
+                "RUBIX_RUN_PREPARATION=1 sh -s"
+            )
+            .is_err()
+        );
         Ok(())
     }
 }
