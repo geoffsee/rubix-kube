@@ -1,5 +1,5 @@
-   Compiling rubix-assets v0.1.0 (/private/tmp/rubix-asset-decode-worktree-20260927/crates/rubix-assets)
-    Finished `release` profile [optimized + debuginfo] target(s) in 4.78s
+   Compiling rubix-assets v0.1.0 (/private/tmp/rubix-asset-decoded-elf-worktree-20260928/crates/rubix-assets)
+    Finished `release` profile [optimized + debuginfo] target(s) in 4.99s
      Running tests/elf_real.rs (target/release/deps/elf_real-cd444e63e2fb17a8)
 
 running 1 test
@@ -9,5 +9,5 @@ RUBIX_ELF {"architecture":"amd64","bytes":85778616,"elf_type":2,"entry":4747104,
 RUBIX_ELF {"architecture":"amd64","bytes":47431544,"elf_type":2,"entry":25569792,"flags":0,"interpreter":null,"loader":"Unknown","loader_relation":"Unresolved","machine":62,"needed":[],"role":"kine","sha256":"1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976"}
 test four_locked_release_executables ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
 

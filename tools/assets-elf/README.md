@@ -37,3 +37,8 @@ The corrected oracle was also qualified against all four pins twice on integrate
 decoder source `436a871e77da04ea6ebeeff8dfb64a94c3c66d1b`. Current-source
 verification and all seven evidence regressions pass normally and under optimization.
 The raw upstream executables were read only and never executed.
+
+Corrected oracle field/limit checks were also qualified against all four pins twice
+on decoded ELF composition source `a45e635357eafb086fde62aaa0ed5d43ff217f59`.
+Current-source verification and all seven evidence regressions pass normally and
+under optimization. Upstream artifacts were read only and never executed.

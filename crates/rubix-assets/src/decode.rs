@@ -1,10 +1,12 @@
 //! Bounded decoding of exactly hash-matched immutable encoded bytes.
 use crate::{
-    AssetId, DeclaredInventory, EncodedBlobMatch, Encoding, Kind, VerificationError,
-    VerificationSession, catalog,
+    AssetId, DeclaredInventory, ElfError, ElfInspection, ElfLimits, EncodedBlobMatch, Encoding,
+    Kind, VerificationError, VerificationSession, catalog,
 };
 use sha2::{Digest, Sha256};
 use std::{
+    collections::TryReserveError,
+    convert::Infallible,
     fmt,
     io::{self, Read},
 };
@@ -101,6 +103,88 @@ impl DecodedObservation {
         &self.decoded_sha256
     }
 }
+/// Complete compressed-byte and ELF observations of the same decoded bytes.
+/// Does not establish runtime ABI compatibility, production decoded pins or install permission.
+///
+/// The observations cannot be assembled from unrelated prior results:
+/// ```compile_fail
+/// use rubix_assets::{DecodedElfInspection, DecodedObservation, ElfInspection};
+/// fn combine(decoded: DecodedObservation, elf: ElfInspection) -> DecodedElfInspection {
+///     DecodedElfInspection { decoded, elf }
+/// }
+/// ```
+#[derive(Debug)]
+pub struct DecodedElfInspection {
+    decoded: DecodedObservation,
+    elf: ElfInspection,
+}
+impl DecodedElfInspection {
+    pub fn decoded_observation(&self) -> &DecodedObservation {
+        &self.decoded
+    }
+    pub fn elf(&self) -> &ElfInspection {
+        &self.elf
+    }
+}
+#[derive(Debug)]
+pub enum CompressedElfError {
+    NotExecutable,
+    Decode(DecodeError<Infallible>),
+    Elf(ElfError),
+    BufferLimit,
+    Allocation(TryReserveError),
+}
+impl fmt::Display for CompressedElfError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::NotExecutable => "asset is not an executable role",
+            Self::Decode(_) => "compressed executable decoding failed",
+            Self::Elf(_) => "decoded executable ELF inspection failed",
+            Self::BufferLimit => "decoded executable buffer limit exceeded",
+            Self::Allocation(_) => "decoded executable buffer allocation failed",
+        })
+    }
+}
+impl std::error::Error for CompressedElfError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Decode(error) => Some(error),
+            Self::Elf(error) => Some(error),
+            Self::Allocation(error) => Some(error),
+            Self::NotExecutable | Self::BufferLimit => None,
+        }
+    }
+}
+enum BufferError {
+    Limit,
+    Allocation(TryReserveError),
+}
+impl From<DecodeError<BufferError>> for CompressedElfError {
+    fn from(error: DecodeError<BufferError>) -> Self {
+        match error {
+            DecodeError::Policy(error) => Self::Decode(DecodeError::Policy(error)),
+            DecodeError::Encoded(error) => Self::Decode(DecodeError::Encoded(error)),
+            DecodeError::Decoder(error) => Self::Decode(DecodeError::Decoder(error)),
+            DecodeError::Observer(BufferError::Limit) => Self::BufferLimit,
+            DecodeError::Observer(BufferError::Allocation(error)) => Self::Allocation(error),
+        }
+    }
+}
+fn append_bounded(buffer: &mut Vec<u8>, chunk: &[u8], limit: u64) -> Result<(), BufferError> {
+    let length = buffer
+        .len()
+        .checked_add(chunk.len())
+        .ok_or(BufferError::Limit)?;
+    if u64::try_from(length).map_err(|_| BufferError::Limit)? > limit {
+        return Err(BufferError::Limit);
+    }
+    // Grow only for actual returned bytes, never for an advertised frame size/full policy cap.
+    buffer
+        .try_reserve_exact(chunk.len())
+        .map_err(BufferError::Allocation)?;
+    buffer.extend_from_slice(chunk);
+    Ok(())
+}
 /// The caller owns session lifetime, execution time and any provisional observer effects.
 #[derive(Debug)]
 pub struct DecodeSession<'a> {
@@ -140,12 +224,50 @@ impl DecodeSession<'_> {
     pub fn remaining_encoded_budget(&self) -> u64 {
         self.encoded.remaining_budget()
     }
+    /// Privately collect bounded provisional bytes, then inspect only a completed stream.
+    /// All charged encoded/decoded budget survives collection, decoder and ELF errors.
+    /// No caller callback, filesystem write or executable launch occurs.
+    pub fn inspect_compressed_elf(
+        &mut self,
+        id: AssetId,
+        bytes: &[u8],
+        limits: ElfLimits,
+    ) -> Result<DecodedElfInspection, CompressedElfError> {
+        limits.validate().map_err(CompressedElfError::Elf)?;
+        if !catalog()
+            .iter()
+            .any(|entry| entry.id == id && entry.kind == Kind::Executable)
+        {
+            return Err(CompressedElfError::NotExecutable);
+        }
+        let limit = u64::try_from(limits.bytes)
+            .map_err(|_| CompressedElfError::BufferLimit)?
+            .min(self.limits.executable_bytes);
+        let mut buffer = Vec::new();
+        let decoded = self.inspect_compressed_blob_capped(id, bytes, limit, |chunk| {
+            append_bounded(&mut buffer, chunk, limit)
+        })?;
+        // The decoder has reached EOF and checked checksum/framing; hash and parser see
+        // the same owned bytes, with no reopen or public provisional effects in between.
+        let elf = crate::elf::inspect_elf_bytes(self.inventory, id, &buffer, limits)
+            .map_err(CompressedElfError::Elf)?;
+        Ok(DecodedElfInspection { decoded, elf })
+    }
     /// Chunks are provisional until this returns Ok. Discard them on any error.
     /// Does not flush/commit/undo observer side effects or catch observer panics.
     pub fn inspect_compressed_blob<E, F: FnMut(&[u8]) -> Result<(), E>>(
         &mut self,
         id: AssetId,
         bytes: &[u8],
+        observe: F,
+    ) -> Result<DecodedObservation, DecodeError<E>> {
+        self.inspect_compressed_blob_capped(id, bytes, u64::MAX, observe)
+    }
+    fn inspect_compressed_blob_capped<E, F: FnMut(&[u8]) -> Result<(), E>>(
+        &mut self,
+        id: AssetId,
+        bytes: &[u8],
+        cap: u64,
         mut observe: F,
     ) -> Result<DecodedObservation, DecodeError<E>> {
         let blob = self
@@ -171,7 +293,7 @@ impl DecodeSession<'_> {
             .remaining
             .checked_sub(1)
             .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
-        let maximum = per_blob.min(self.remaining);
+        let maximum = per_blob.min(cap).min(self.remaining);
         let encoded = self
             .encoded
             .verify_encoded_blob(id, bytes)
