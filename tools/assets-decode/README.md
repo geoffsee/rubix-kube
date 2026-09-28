@@ -44,11 +44,11 @@ missing evidence fails rather than silently skipping. This qualifies Linuxarm64
 native decoder execution for the tested inputs, not production payloads, other
 ABI/CPU/libc combinations, hard RSS/CPU limits or archive/OCI/ELF semantics.
 
-Stored evidence was captured on `ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`.
-Both Linuxarm64 release runs passed all14 tests with executable SHA-256
-`6646d28e926b028a77ed5317e642a999cf75b953c9ad72b6969dc790d0e8e049`.
-The receipt reports no capture/cleanup errors or remaining owned containers/images.
-
-The added builder binding requires a fresh capture after review/commit. Older
-receipts lacking the build-log digest and builder observation fail verification;
-they must not be relabelled or treated as qualification of the revised harness.
+Stored evidence was captured on `436a871e77da04ea6ebeeff8dfb64a94c3c66d1b`.
+Both Linuxarm64 release runs passed all14 tests. The builder and both runtime
+executables have SHA-256 `abb88e73fb487b65dba5ee8d93cfa5aae061e3336295a8a560e108421e592c40`.
+The receipt binds the fresh nonce-controlled checksum output and build log hash,
+and reports no capture/cleanup errors or remaining owned containers/images.
+The owned names and image tag were independently confirmed absent. All10 Python
+evidence regressions and current-source verification pass normally and under
+optimization. Older receipts without builder/log bindings are historical only.
