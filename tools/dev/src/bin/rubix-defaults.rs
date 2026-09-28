@@ -11,18 +11,23 @@ fn main() {
     }
     let args: Vec<_> = std::env::args().skip(1).collect();
     let result = match args.split_first() {
+        Some((command, rest))
+            if command == "prepare-archives" && rest.len() == 2 && rest[0] == "--cache" =>
+        {
+            rubix_dev::defaults::archives::prepare(std::path::Path::new(&rest[1]))
+        },
         Some((command, rest)) if command == "verify" => rubix_dev::defaults::verify_cli(rest),
         Some((command, rest)) if command == "capture" => rubix_dev::defaults::capture::cli(rest),
-        Some((command, rest)) if command == "verify-evidence" && rest.is_empty() => {
+        Some((command, rest)) if command == "verify-evidence" && rest.len() <= 1 => {
             let directory = rubix_dev::defaults::directory();
             rubix_dev::defaults::capture::verify_evidence(
                 &directory,
-                &directory.join("evidence"),
+                &rest.first().map_or_else(|| directory.join("evidence"), std::path::PathBuf::from),
                 false,
             )
             .map(|()| 0)
         },
-        _ => Err("usage: rubix-defaults <capture|verify|verify-evidence> ...".into()),
+        _ => Err("usage: rubix-defaults <prepare-archives --cache DIR|capture|verify|verify-evidence [DIR]> ...".into()),
     };
     match result {
         Ok(code) => std::process::exit(code),

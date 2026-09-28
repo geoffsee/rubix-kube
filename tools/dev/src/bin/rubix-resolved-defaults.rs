@@ -17,11 +17,13 @@ fn main() {
         Some((command, rest)) if command == "capture" => {
             rubix_dev::resolved_capture::capture_cli(rest)
         },
-        Some((command, rest)) if command == "verify-evidence" && rest.is_empty() => {
+        Some((command, rest)) if command == "verify-evidence" && rest.len() <= 1 => {
             let directory = rubix_dev::resolved_capture::directory();
             rubix_dev::defaults::capture::verify_evidence(
                 &directory,
-                &directory.join("evidence"),
+                &rest
+                    .first()
+                    .map_or_else(|| directory.join("evidence"), std::path::PathBuf::from),
                 true,
             )
             .map(|()| 0)

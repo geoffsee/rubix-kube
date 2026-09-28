@@ -5,6 +5,7 @@ use std::{
     collections::BTreeSet,
     path::{Path, PathBuf},
 };
+pub mod archives;
 pub mod capture;
 #[cfg(test)]
 mod tests;
