@@ -29,7 +29,7 @@ RUBIX_ARCHIVE {"archive_sha256":"bcdc5028abeb13c3e5f1a99a1e90f56843fe557cfe2ac83
 successes:
     inspect_pinned_crane_serialization
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
 RUBIX_COMPLETE {"cases":["amd64-repeated","armv7-unresolved","outer-crc","member-digest","unsafe-name","missing-reference","duplicate-json","wrong-platform"],"consumer_command":["/archive-tests","--ignored","--exact","inspect_pinned_crane_serialization","--show-output","--test-threads=1"]}
-RUBIX_NAMESPACE {"helper": 17, "init": 1, "processes": [1, 7, 17], "shell": 7}
+RUBIX_NAMESPACE {"helper": 16, "init": 1, "processes": [1, 6, 16], "shell": 6}

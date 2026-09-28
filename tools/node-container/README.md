@@ -1,7 +1,8 @@
 # Disposable container host-preparation qualification
 
 This fixture exercises the explicit `prepare_node_host` example. Production startup
-still does not prepare a node. No successful guest capture is published yet.
+still does not prepare a node. Two fresh disposable Alpine captures are published
+from clean source `fb24f95f20d1152fc5921c4f0377add1051f42cb`.
 
 The fixed preparation order is fresh assessment, actual network attempts, container
 root propagation, actual process migration to `init`, and controller delegation.
@@ -70,3 +71,22 @@ changed source/artifacts, unresolved VM cleanup and credential leakage. Two fres
 captures and mandatory frozen-evidence checks are required before publication. The
 inherited lifecycle helper owns QEMU by its original process handle/group, records
 bounded logs, suppresses private credentials and removes the exact private directory.
+
+Both captures completed first and repeat preparation in the same independently
+observed live process. The kernel readbacks confirmed recursive shared mounts,
+actual PID migration into `init`, and all seven advertised controllers enabled:
+`cpu`, `cpuset`, `dmem`, `hugetlb`, `io`, `memory`, and `pids`. The repeat reused
+`init`. Parent/sibling cgroup controls, the observer mount namespace, and external
+runtime sentinel remained unchanged. Each capture also passed all 38 separately
+labeled injected tests and the pre-effect protocol rejection cases.
+
+The static consumer SHA256 is
+`9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c`,
+13,156,744 bytes, target `aarch64-unknown-linux-musl`. All four artifact hashes,
+clean build receipts, complete source inventories, and 62 captured files are
+bound by the published evidence. All 25 synthetic rejection tests and five
+mandatory published-evidence tests pass under normal Python and `-O`, as do the
+current build and guest verifiers. Both guests powered off with QEMU exit 0;
+owned process groups, private directories, and builder resources were independently
+confirmed absent. This qualifies the explicit preparation boundary on this pinned
+Linux fixture; production startup and full cluster operation remain outside scope.
