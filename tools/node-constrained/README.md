@@ -3,16 +3,16 @@
 This fixture exercises the approved `prepare_node_host` example with explicit
 `--no-container-mode --disable-ipv6` and a host-owned Unix endpoint. It adds no
 Rust API, runtime execution, service installation, or production startup behavior.
-Two fresh successful guest captures are published below.
+Historical guest captures are preserved below. Current Rust qualification is required separately before this draft can pass its publication gates.
 
-The existing `tools/node-container` build verifier validates all four approved
-static artifacts and their original clean build revision, nonce-delimited builder
-hashes, isolated-runtime hashes, source inventory and cleanup. This fixture neither
-relabels that historical build nor rebuilds it implicitly. The current compiled
-source must still match that approved inventory. New fixture sources, delegated
-builder/verifier sources, actual executable bytes, pinned image/APKs/namespace tool,
-guest inputs and raw observations are bound separately in each capture receipt.
-Publication README/provenance are metadata; executable fixture/test files are bound.
+The Rust `rubix-node-fixture constrained` adapter reuses the reviewed container
+builder, tests, command proofs and owned VM lifecycle. Its pinned builder produces
+four approved candidate/test artifacts plus the static `constrained-guest` observer.
+All five bytes are bound by the builder nonce, isolated runtime hashes, clean current
+source inventory, image identity, command receipts and cleanup. The observer does
+not require an interpreter in the guest. Exact Debian musl 1.2.3-1 arm64 package
+hashes are pinned in `build-packages.sha256`; the base Rust image binds the C compiler.
+Only the musl target receives `CC_aarch64_unknown_linux_musl=musl-gcc`.
 
 The VM driver reuses the pinned Alpine 3.24.2 aarch64 image, signed 31-APK closure,
 util-linux-misc 2.42.3-r1 and owned QEMU lifecycle from container qualification.
@@ -78,17 +78,27 @@ exact private resources; cleanup errors remain failures.
 After independent review and a clean source commit, run:
 
 ```sh
-python3 tools/node-constrained/capture.py --allow-privileged-vm \
-  --artifact-directory /tmp/rubix-layer-inherited-container-build-20260928-r1 \
+cargo build -p rubix-dev --bin rubix-node-fixture --locked
+# Builds and verifies all five current-source artifacts in an owned builder.
+target/debug/rubix-node-fixture constrained build /tmp/constrained-build
+target/debug/rubix-node-fixture constrained capture-vm --allow-privileged-vm \
+  --artifact-directory /tmp/constrained-build \
   --input-cache /tmp/rubix-container-input-cache \
   --image-cache /tmp/rubix-vm-image-cache --output /tmp/constrained-first
+target/debug/rubix-node-fixture constrained verify /tmp/constrained-first
 ```
 
-Repeat in a second fresh guest, publish complete captures as `evidence/first` and
-`evidence/repeat`, bind every raw file in `provenance.json`, then run `verify.py` and
-all `test_verify.py` tests normally and with Python `-O`. Mandatory published checks
-must pass; synthetic mutation tests never substitute for actual captures. This is
-bounded E05.03 evidence, not closure of E05.02/E05.03 or their parent integration gates.
+Repeat in a second fresh guest, publish complete captures as `rust-evidence/first`
+and `rust-evidence/repeat`, and bind every raw file in `rust-provenance.json` using
+the shared evidence inventory. Then run `constrained verify-published` and the
+workspace debug/release tests. Five mandatory build/guest/provenance gates fail
+when current evidence is missing or stale. Synthetic regression tests never replace
+actual captures. The constrained command alone has an 8 MiB SSH output cap, recorded in its raw command receipt and checked by the verifier. Other commands retain the 256 KiB default. This preserves bounded failure diagnostics after the 235,635-byte historical observation stream; excess output fails rather than truncates success.
+This is bounded #47/E05.03 evidence, not closure of cluster/runtime readiness or
+nftables-only-kernel qualification.
+
+The following publication is historical and is never accepted as Rust execution
+evidence. Its bytes and original revisions remain unchanged.
 
 Published qualification uses clean capture source
 `895ff1e92ad079afb08abb14df0ea7c4f1e7501d`. Both fresh guests passed all four
