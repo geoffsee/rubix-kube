@@ -10,60 +10,63 @@
 #3 [internal] load .dockerignore
 #3 transferring context:
 #3 transferring context: 2B done
-#3 DONE 0.0s
+#3 DONE 0.1s
 
-#4 [build 1/4] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 #4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
 #4 DONE 0.0s
 
-#5 [build 2/4] WORKDIR /source
+#5 [2/5] WORKDIR /source
 #5 CACHED
 
 #6 [internal] load build context
 #6 transferring context: 2.25MB 0.1s done
-#6 DONE 0.1s
+#6 DONE 0.2s
 
 #7 [3/5] COPY . .
-#7 DONE 0.1s
+#7 DONE 0.2s
 
 #8 [4/5] RUN cargo clippy -p rubix-platform --all-targets --locked -- -D warnings  && cargo test -p rubix-platform --locked --release --lib --test preflight_probe --no-run  && mkdir /out  && for binary in target/release/deps/rubix_platform-* target/release/deps/preflight_probe-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/; fi; done  && sha256sum /out/* > /out/binaries.sha256
-#8 0.295 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#8 2.165 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#8 2.173 info: downloading 3 components
-#8 23.92     Updating crates.io index
-#8 34.74  Downloading crates ...
-#8 35.07   Downloaded errno v0.3.14
-#8 35.28   Downloaded bitflags v2.13.2
-#8 36.05   Downloaded rustix v1.1.5
-#8 36.50   Downloaded libc v0.2.189
-#8 38.19   Downloaded linux-raw-sys v0.12.1
-#8 38.29    Compiling rustix v1.1.5
-#8 38.29     Checking bitflags v2.13.2
-#8 38.29     Checking linux-raw-sys v0.12.1
-#8 41.15     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#8 41.65     Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.76s
-#8 41.81    Compiling rustix v1.1.5
-#8 41.82    Compiling bitflags v2.13.2
-#8 41.82    Compiling linux-raw-sys v0.12.1
-#8 44.42    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#8 50.63     Finished `release` profile [optimized + debuginfo] target(s) in 8.89s
-#8 50.64   Executable unittests src/lib.rs (target/release/deps/rubix_platform-a0b7fc1077c686ed)
-#8 50.64   Executable tests/preflight_probe.rs (target/release/deps/preflight_probe-232dbf13efeef0e5)
-#8 DONE 50.8s
+#8 0.345 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#8 5.529 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#8 5.537 info: downloading 3 components
+#8 84.01     Updating crates.io index
+#8 96.78  Downloading crates ...
+#8 97.48   Downloaded errno v0.3.14
+#8 97.86   Downloaded bitflags v2.13.2
+#8 100.1   Downloaded rustix v1.1.5
+#8 100.8   Downloaded libc v0.2.189
+#8 102.7   Downloaded linux-raw-sys v0.12.1
+#8 102.9    Compiling rustix v1.1.5
+#8 102.9     Checking bitflags v2.13.2
+#8 102.9     Checking linux-raw-sys v0.12.1
+#8 105.6     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#8 106.4     Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.43s
+#8 106.7    Compiling rustix v1.1.5
+#8 106.7    Compiling linux-raw-sys v0.12.1
+#8 106.7    Compiling bitflags v2.13.2
+#8 110.4    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#8 127.5     Finished `release` profile [optimized + debuginfo] target(s) in 20.91s
+#8 127.5   Executable unittests src/lib.rs (target/release/deps/rubix_platform-a0b7fc1077c686ed)
+#8 127.5   Executable tests/preflight_probe.rs (target/release/deps/preflight_probe-232dbf13efeef0e5)
+#8 DONE 127.7s
 
 #9 [5/5] WORKDIR /tmp
-#9 DONE 0.1s
+#9 DONE 0.5s
 
 #10 exporting to image
 #10 exporting layers
-#10 exporting layers 7.5s done
-#10 exporting manifest sha256:626de71a613600340865d82f755f6c9fdaf4c63f9531aeefbc6f59ea486e219d done
-#10 exporting config sha256:87a80a52473179363106ee48a82d3e74b015d9d4db951f7e8cdb917084ead6a2 done
-#10 exporting attestation manifest sha256:528e025a2a68edd9249ec1f41e7703ac0d91c36442ff8c6fdb49678749f51d51 done
-#10 exporting manifest list sha256:0c618aabe3c1160091aa3d8fc192cc094d3073934488f6037410395e560cc10e 0.0s done
-#10 naming to docker.io/library/rubix-preflight-probes-d2a64aebdd124269b29cebecf62dd589:latest done
-#10 unpacking to docker.io/library/rubix-preflight-probes-d2a64aebdd124269b29cebecf62dd589:latest
-#10 unpacking to docker.io/library/rubix-preflight-probes-d2a64aebdd124269b29cebecf62dd589:latest 2.1s done
-#10 DONE 9.7s
+#10 exporting layers 19.8s done
+#10 exporting manifest sha256:126bb6f6693896ca09d10cf81ea152cffbf69e1dc2329b7218a2a1f04fcbf547 0.0s done
+#10 exporting config sha256:24632309927e0bb7901f0ec9da6cf5d29f91d4c378163a8e6d1ae61de820f856 0.1s done
+#10 exporting attestation manifest sha256:8ba2c217357c461a348d47b74dcc91a1b527693413cd7084d04918fa043f2cbc
+#10 exporting attestation manifest sha256:8ba2c217357c461a348d47b74dcc91a1b527693413cd7084d04918fa043f2cbc 0.3s done
+#10 exporting manifest list sha256:0b40deb4ba38e87bda119afd89849ea51ed110c71a9edd72696ea86de89f1ccc
+#10 exporting manifest list sha256:0b40deb4ba38e87bda119afd89849ea51ed110c71a9edd72696ea86de89f1ccc 0.2s done
+#10 naming to docker.io/library/rubix-preflight-probes-6b364329a77e40058dcedd3711d38205:latest
+#10 naming to docker.io/library/rubix-preflight-probes-6b364329a77e40058dcedd3711d38205:latest 0.0s done
+#10 unpacking to docker.io/library/rubix-preflight-probes-6b364329a77e40058dcedd3711d38205:latest
+#10 unpacking to docker.io/library/rubix-preflight-probes-6b364329a77e40058dcedd3711d38205:latest 8.4s done
+#10 DONE 29.8s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/7sw718jz0pfrww07org6y17lm
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/tvkc73jfft3mm7i4bnbxwcu91

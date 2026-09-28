@@ -154,7 +154,7 @@
   "crates/rubix-supervisor/src/diagnostics.rs": "4fd88c7f2dbf00603dfc4129ae1da77da7c0fb7ef0430691d5021dad3c9d5ae7",
   "crates/rubix-supervisor/src/lib.rs": "1a5166e8a8820a28a870b42c51643b554dfd081364635870e8338a003b16ee3b",
   "crates/rubix-supervisor/src/model.rs": "c23f23dde1ef236cf54d3905fa0a35355afc66207cf2880c0eaa949f8a8a6441",
-  "crates/rubix-supervisor/src/process.rs": "ed1ae195720373c2d7eee914167befa42afdff6d1524e477db1b3cbfa4b1adfa",
+  "crates/rubix-supervisor/src/process.rs": "b383e6d02d4ce8a9c98ebb121202a7b9c6d532ff86ae586bba6394e12994deb5",
   "crates/rubix-supervisor/src/process_output.rs": "5a71bbbee7c839589a13a0eee7ccf24d10ab63f26da59aad9c04c84ef8423546",
   "crates/rubix-supervisor/src/signals.rs": "27c7605663061d431f834f052e5e09d6f2b54b17bb8b2de1d761671b1d3dfa85",
   "crates/rubix-supervisor/tests/diagnostics.rs": "16404164747a8f3ab8529b392d13b8e92a7766758850dff78aa6b4e26caf8255",

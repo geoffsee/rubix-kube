@@ -1,8 +1,8 @@
 b38a62e39625cff33fac4e925133d642638d0880f3986f7e6c7bf8d780807470  /out/check-tests
 fbc2a36e9901665e248750e1481d64530b9df244aea13a2f20e23dbcce2e8074  /out/fixture-command
-cf97e64a48da20e83e3d01697e4d11c834ce1055032d624fed50a7606d3b9c7a  /out/preparation-tests
-54b41bea422f74f46938fec2ed8e4ca4ab7698b61d28a9bb93325b3672c011fc  /out/rubixctl
-34d3df0951f9dfe838f6115e1b1e20851c98fea2de31dc58f4642f1d03ff5f77  /out/rubixctl-tests
+45bd9a0373b8bcc454334c11b012b55872332a8f4b93638cbedc769c1701e188  /out/preparation-tests
+1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa  /out/rubixctl
+2046e4224f7c13cc51c2dcec22b52cca3446b2ffc14069050d07fdfafef15749  /out/rubixctl-tests
 
 running 6 tests
 test preparation::tests::active_stop_is_latched_and_bridge_waits_for_cleanup ... ok
@@ -17,9 +17,9 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 7 tests
 test earlier_failure_prevents_ports_and_required_port_failure_remains_nonzero ... ok
-test help_version_parse_failure_and_unsupported_preparation_have_no_effects ... ok
 test actual_cobra_cases_match_independent_parser_expectations ... ok
 test output_failure_precedes_host_effects_and_input_budget_is_explicit ... ok
+test help_version_parse_failure_and_unsupported_preparation_have_no_effects ... ok
 test probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress ... ok
 test successful_pprof_check_reports_only_observed_prerequisites ... ok
 test real_help_and_version_executable_do_not_need_host_support ... ok
@@ -29,10 +29,10 @@ test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 7 tests
 test failure_or_gap_cancellation_prevents_next_action_and_ports ... ok
-test earlier_nonroot_or_unknown_blocks_all_preparation ... ok
 test pre_cancelled_invocation_has_no_host_effects ... ok
-test repairs_in_order_and_requires_fresh_observation_before_ports ... ok
+test earlier_nonroot_or_unknown_blocks_all_preparation ... ok
 test shared_effects_warning_survives_successful_action_and_failed_recheck ... ok
+test repairs_in_order_and_requires_fresh_observation_before_ports ... ok
 test success_without_repair_never_passes_or_repeats_action ... ok
 test uncertain_cleanup_returns_two_without_further_output_or_effects ... ok
 
