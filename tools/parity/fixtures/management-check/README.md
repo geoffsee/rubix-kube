@@ -28,7 +28,23 @@ port-phase guarding and truthful failure/success diagnostics. Real executable ch
 require the subsequently integrated supplemental probes and disposable qualification.
 
 ```sh
-python3 tools/parity/fixtures/management-check/capture.py --output /tmp/new-management-capture
-python3 tools/parity/fixtures/management-check/verify.py tools/parity/fixtures/management-check/evidence
-python3 -m unittest discover -s tools/parity/fixtures/management-check -p 'test_*.py'
 ```
+
+Rust maintenance commands replace the former scripts:
+
+```sh
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify management
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- capture-go management --output /tmp/new-management-go
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- qualify-linux management --output /tmp/new-management-linux
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify-go management /tmp/new-management-go
+cargo run --locked -p rubix-dev --bin rubix-platform-management -- verify-linux management /tmp/new-management-linux
+```
+
+Historical provenance and raw captures remain immutable. Their Python harness hashes
+identify the old execution; they do not qualify the current Rust tooling. Mandatory
+current qualification tests require `evidence-rust/go` and `evidence-rust/linux`.
+Fresh captures remain pending a combined source review. The current verifier binds
+all copied workspace inputs, exact literal Docker commands, raw output and process
+settlement receipts, independent semantic expectations, and empty cleanup inventories.
+The Linux management fixture uses Rust-owned private chroot inputs and bounded
+children, with no host mounts. The pinned Rust image replaces the Python runtime.
