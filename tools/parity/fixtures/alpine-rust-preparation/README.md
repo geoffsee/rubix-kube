@@ -48,7 +48,7 @@ individual CLI limit. The production command's own deadlines remain active.
 python3 tools/parity/fixtures/alpine-rust-preparation/capture.py \
   --allow-privileged-vm --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache \
-  --artifact-directory /tmp/rubix-preparation-linux-20260927-r3 \
+  --artifact-directory /tmp/rubix-preparation-linux-20260927-r4 \
   --output /tmp/alpine-rust-fresh
 python3 tools/parity/fixtures/alpine-rust-preparation/verify.py
 python3 -m unittest discover -s tools/parity/fixtures/alpine-rust-preparation
@@ -69,5 +69,5 @@ no stage errors. The verifier binds each raw JSON response independently to its 
 Fresh SSH keys use fixed fixture comments rather than local account/hostname comments.
 
 Both stored guest captures were refreshed after this harness correction and bind source
-revision `2c18767b89a29f571cc7fec1e254bb49f299eb04`. Earlier temporary receipts remain
+revision `da03404513f8b407ec8109a64038f1acad302139`. Earlier temporary receipts remain
 historical; their revision and observations were not relabeled.
