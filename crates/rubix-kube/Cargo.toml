@@ -11,8 +11,9 @@ workspace = true
 [dependencies]
 rubix-config = { version = "=0.1.0", path = "../rubix-config" }
 serde_json = "=1.0.151"
+rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
-tokio = { version = "=1.53.1", features = ["rt", "sync", "time", "macros"] }
+tokio = { version = "=1.53.1", features = ["rt", "sync", "time", "macros", "signal"] }
 
 [dev-dependencies]
 tokio = { version = "=1.53.1", features = ["test-util"] }
