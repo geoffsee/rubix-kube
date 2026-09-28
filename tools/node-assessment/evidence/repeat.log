@@ -1,6 +1,6 @@
 b2631989a3a0ed0cedb1268ef1e45c61a60f96c752a597ad854ebb0b51d955bb  /out/host_preflight
 498c046c1b19bcc5b5fcd210c80c5a99453ce9fa29503fdbc4326e9fa8bd78ab  /out/iptables_probe
-f9d19abb23fbefe2215db5819d7b717435f354176182d7b2b8197cacaa4f5b13  /out/assess_host
+11b0554df039e7a98905d3d78503387a0b0d70172195f70a1304a7855950e36c  /out/assess_host
 
 running 10 tests
 test cancellation_before_start_and_between_phases_latches_without_send_bound ... ok
@@ -14,25 +14,25 @@ test owner_launch_failure_reports_unknown_command_without_ports_or_quiet_exit ..
 test unrequested_ipv6_is_not_a_write_requirement_but_requested_unknown_blocks ... ok
 test cancellation_during_probe_waits_for_provider_stop_acknowledgement ... ok
 
-test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.04s
 
 
 running 1 test
-RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=67
-RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=71
-RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=64
-RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=73
-RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=71
-RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=12
-RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=13
-RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=68
-RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2025
-RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=67
-RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=327
+RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=90
+RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=73
+RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=73
+RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=70
+RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=93
+RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=13
+RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=11
+RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=72
+RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2028
+RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=82
+RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=319
 RUBIX_NODE_PROBE_COMPLETE cases=11 external_sentinel_preserved=true
 test disposable_fixed_probe ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.87s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.94s
 
 
 running 1 test
