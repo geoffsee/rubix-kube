@@ -38,7 +38,7 @@ decoder source `436a871e77da04ea6ebeeff8dfb64a94c3c66d1b`. Current-source
 verification and all seven evidence regressions pass normally and under optimization.
 The raw upstream executables were read only and never executed.
 
-Corrected oracle field/limit checks were also qualified against all four pins twice
-on decoded ELF composition source `a45e635357eafb086fde62aaa0ed5d43ff217f59`.
-Current-source verification and all seven evidence regressions pass normally and
-under optimization. Upstream artifacts were read only and never executed.
+Current integrated network qualification inspected all four pins twice on source
+`77e7fff321ddc3481ab84d85e5c0129fa2e6592e`. All seven evidence tests and
+current-source verification pass normally and under optimization. Each artifact
+remains read-only; these observations do not establish runtime ABI compatibility.
