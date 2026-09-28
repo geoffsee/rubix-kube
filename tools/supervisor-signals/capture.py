@@ -23,7 +23,7 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=False)
     tag='rubix-signal-capture-'+uuid.uuid4().hex
-    report={'schema_version':1,'platform':'linux/arm64','scope':'cooperative task signals and owned process adapter signals; no cluster or escaped-daemon qualification','source_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'uncommitted_implementation':True,'builder':'rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97','containers':[],'errors':[],'cleanup_errors':[],'source_sha256':{},'helper_sha256':digest(ROOT/'tools/defaults/capture.py')}
+    report={'schema_version':1,'platform':'linux/arm64','scope':'cooperative task signals and owned process adapter signals; no cluster or escaped-daemon qualification','source_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True,timeout=30).strip(),'uncommitted_implementation':True,'builder':'rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97','containers':[],'errors':[],'cleanup_errors':[],'source_sha256':{},'helper_sha256':digest(ROOT/'tools/defaults/capture.py')}
     try:
         with tempfile.TemporaryDirectory(prefix='rubix-signal-build-') as temporary:
             context=Path(temporary)
