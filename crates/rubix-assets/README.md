@@ -92,9 +92,14 @@ encodings, the full matrix and the remaining content-validation/asset-resolution
 gates. Ordinary builds perform no upstream refresh and embed no third-party assets.
 
 The additive [identity ELF inspection](ELF.md) now checks the exact identity bytes and
-reports bounded header/loader/dependency facts. Compression and runtime ABI closure
-remain separate; this addition does not close #48.
+reports bounded header/loader/dependency facts. Runtime ABI closure remains
+separate; this addition does not close #48.
 
 The additive [bounded compressed-byte inspector](DECODE.md) now streams one zstd
 frame or gzip member with explicit budgets. Its decoded digest/count observations
 do not establish ELF/archive/OCI semantics or authenticate a publisher.
+
+`DecodeSession::inspect_compressed_elf` now composes complete compressed executable
+inspection with the same bounded ELF parser, using a private provisional buffer
+and retained aggregate budgets. Its combined observation still leaves production
+decoded pins, archive/OCI content, ABI qualification and materialization open.

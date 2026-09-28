@@ -140,20 +140,7 @@ impl DeclaredInventory {
         bytes: &[u8],
         limits: ElfLimits,
     ) -> Result<ElfInspection, ElfError> {
-        if [
-            limits.bytes,
-            limits.program_headers,
-            limits.section_headers,
-            limits.dynamic_entries,
-            limits.interpreter_bytes,
-            limits.dependency_names,
-            limits.dependency_name_bytes,
-            limits.arm_attribute_bytes,
-        ]
-        .contains(&0)
-        {
-            return Err(ElfError::InvalidLimits);
-        }
+        limits.validate()?;
         if bytes.len() > limits.bytes {
             return Err(ElfError::Limit);
         }
@@ -168,23 +155,57 @@ impl DeclaredInventory {
         self.verification_session()
             .verify_encoded_blob(id, bytes)
             .map_err(ElfError::Encoded)?;
-        if bytes.get(..4) != Some(b"\x7fELF") {
-            return Err(ElfError::Malformed);
-        }
-        if bytes.get(5) != Some(&elf::ELFDATA2LSB) {
-            return Err(ElfError::TargetMismatch);
-        }
-        match bytes.get(4) {
-            Some(&elf::ELFCLASS32) => {
-                inspect::<elf::FileHeader32<LittleEndian>>(self, id, bytes, limits, 32)
-            },
-            Some(&elf::ELFCLASS64) => {
-                inspect::<elf::FileHeader64<LittleEndian>>(self, id, bytes, limits, 64)
-            },
-            _ => Err(ElfError::Malformed),
-        }
+        inspect_elf_bytes(self, id, bytes, limits)
     }
 }
+impl ElfLimits {
+    pub(crate) fn validate(self) -> Result<(), ElfError> {
+        if [
+            self.bytes,
+            self.program_headers,
+            self.section_headers,
+            self.dynamic_entries,
+            self.interpreter_bytes,
+            self.dependency_names,
+            self.dependency_name_bytes,
+            self.arm_attribute_bytes,
+        ]
+        .contains(&0)
+        {
+            return Err(ElfError::InvalidLimits);
+        }
+        Ok(())
+    }
+}
+// Callers must bind these immutable bytes to their completed verification/decoding path.
+// Kept private to the crate so arbitrary bytes cannot acquire a public combined observation.
+pub(crate) fn inspect_elf_bytes(
+    inventory: &DeclaredInventory,
+    id: AssetId,
+    bytes: &[u8],
+    limits: ElfLimits,
+) -> Result<ElfInspection, ElfError> {
+    limits.validate()?;
+    if bytes.len() > limits.bytes {
+        return Err(ElfError::Limit);
+    }
+    if bytes.get(..4) != Some(b"\x7fELF") {
+        return Err(ElfError::Malformed);
+    }
+    if bytes.get(5) != Some(&elf::ELFDATA2LSB) {
+        return Err(ElfError::TargetMismatch);
+    }
+    match bytes.get(4) {
+        Some(&elf::ELFCLASS32) => {
+            inspect::<elf::FileHeader32<LittleEndian>>(inventory, id, bytes, limits, 32)
+        },
+        Some(&elf::ELFCLASS64) => {
+            inspect::<elf::FileHeader64<LittleEndian>>(inventory, id, bytes, limits, 64)
+        },
+        _ => Err(ElfError::Malformed),
+    }
+}
+
 fn bounded_range(bytes: &[u8], offset: u64, size: u64) -> Result<&[u8], ElfError> {
     let end = offset.checked_add(size).ok_or(ElfError::Malformed)?;
     let start = usize::try_from(offset).map_err(|_| ElfError::Malformed)?;
