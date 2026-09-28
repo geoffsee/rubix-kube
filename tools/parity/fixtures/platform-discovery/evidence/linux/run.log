@@ -1,13 +1,20 @@
-a2d660ee23c0a9d93e129db9ba982f8ec4f40e53be0bb7b4f3b4aceacea06ca1  /out/constrained-ed89db06948c9148
-d7c4baa6b6b40aeca1d6a1f4688ae11ac8255f6f4a3549b29b80734fd76bad74  /out/discovery-fee14ee4b0097263
-008918bb310ecc7380ce225d2cb60c09c406bd7f33fb4a0f06a7d6fca21e0842  /out/preflight-1998688e0f22a6cc
-184b3f1bb24676dce56e4fe2a50c9b290a0ee9921fdefdea8a7eb08bdc1c77f1  /out/rubix_platform-91f62fc350dbc229
+8a41c7772399203528efa12b68a78f95469dd486e723d7eed1fcce93b49a5824  /out/constrained-103eea116147f732
+32423ebe96ec95439b001695d793067ff25b8ceccc6ae32dd53ae15b6928f54a  /out/discovery-36f26188ef46671a
+688d0ec2481dbeda732a3aaef182dec9080bb5a634e4b0d65d4d0a7e09a02516  /out/preflight-17ca696c0614e8c8
+3caa2de08bade8d276620830482b5af8caa9f65392c173787a67be011fd3a41a  /out/preflight_probe-232dbf13efeef0e5
+e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566  /out/rubix_platform-a0b7fc1077c686ed
 
-running 2 tests
-test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
+running 8 tests
 test discover::tests::bounded_reader_distinguishes_missing_directory_and_oversize ... ok
+test preflight_probe::disposable_filesystem::disposable_real_filesystem_limits_errors_and_baseline_candidates ... ignored, actual filesystem fixtures only inside owned disposable Linux container
+test constrained::tests::directory_observations_are_bounded_and_preserve_unknown_names ... ok
+test preflight_probe::disposable_filesystem::only_unavailable_ipv6_allows_ipv4_fallback ... ok
+test preflight_probe::tests::definitive_presence_survives_other_candidate_errors_and_rc_is_exact ... ok
+test preflight_probe::tests::port_phase_is_explicit_and_does_not_probe_unused_pprof ... ok
+test preflight_probe::tests::unsafe_release_limits_and_errors_are_unknown_not_absent ... ok
+test preflight_probe::tests::exact_candidates_and_one_level_glob_match_baseline_existence ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 8 tests
@@ -36,9 +43,16 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 4 tests
 test backend_hints_remain_independent_and_never_waive_xtables ... ok
-test correct_values_require_no_writes_and_missing_ipv4_is_not_optional ... ok
 test collector_never_claims_unsupported_platform_or_invalid_limits ... ok
+test correct_values_require_no_writes_and_missing_ipv4_is_not_optional ... ok
 test external_responsibility_does_not_adopt_host_resources ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test disposable_wildcard_ports_detect_both_families_and_release_all_owned_sockets ... ignored, opens fixed wildcard ports; disposable Linux namespace only
+test invalid_limits_fail_before_filesystem_observation ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
