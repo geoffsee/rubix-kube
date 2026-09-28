@@ -2,13 +2,13 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-resolved-9daom9-0",
-    "rubix-resolved-9daom9-1"
+    "rubix-resolved-dinzp1-0",
+    "rubix-resolved-dinzp1-1"
   ],
   "errors": [],
   "identical_repeats": true,
-  "image": "rubix-resolved-9daom9",
-  "image_id": "sha256:e5c40e2bc9003efa769ed9a80b562015e484be732d40de45f6dc13c7710de8f0",
+  "image": "rubix-resolved-dinzp1",
+  "image_id": "sha256:c1ee56e3e53f653be78224c8cdf021802166d7bfe018aec2c4915644500a0066",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -23,38 +23,38 @@
         "User": "65532:65532",
         "WorkingDir": "/"
       },
-      "Created": "2026-09-28T15:41:32.010109219Z",
+      "Created": "2026-09-28T16:35:08.335791846Z",
       "Descriptor": {
-        "digest": "sha256:e5c40e2bc9003efa769ed9a80b562015e484be732d40de45f6dc13c7710de8f0",
+        "digest": "sha256:c1ee56e3e53f653be78224c8cdf021802166d7bfe018aec2c4915644500a0066",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 855
       },
-      "Id": "sha256:e5c40e2bc9003efa769ed9a80b562015e484be732d40de45f6dc13c7710de8f0",
+      "Id": "sha256:c1ee56e3e53f653be78224c8cdf021802166d7bfe018aec2c4915644500a0066",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T15:41:34.21156897Z",
-            "Ref": "j14p0mqd85ifb5ct0980hx9yc"
+            "CreatedAt": "2026-09-28T16:35:10.101572083Z",
+            "Ref": "qna1olidzwix29wm6mpwwazwi"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T15:41:33.974689428Z"
+        "LastTagTime": "2026-09-28T16:35:09.888376875Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-resolved-9daom9@sha256:e5c40e2bc9003efa769ed9a80b562015e484be732d40de45f6dc13c7710de8f0"
+        "rubix-resolved-dinzp1@sha256:c1ee56e3e53f653be78224c8cdf021802166d7bfe018aec2c4915644500a0066"
       ],
       "RepoTags": [
-        "rubix-resolved-9daom9:latest"
+        "rubix-resolved-dinzp1:latest"
       ],
       "RootFS": {
         "Layers": [
-          "sha256:99874a3ef4fad1203d4ac4ec552d64b8889cf34777d572272bf152dd73366728"
+          "sha256:ef7a56f39ed7467126fff7b6c9bd990f1bdc5a58a5e954a5cdc9dc3d5127ab2b"
         ],
         "Type": "layers"
       },
-      "Size": 36451570
+      "Size": 36451571
     }
   ],
   "inputs": {
@@ -94,14 +94,18 @@
     "tools/dev/src/api_json/scenario.rs": "45f2a17428612a8a8c915aeb5182a4e417cd4703d521af257caa198d8da3718a",
     "tools/dev/src/api_json/tests.rs": "e07bba5b75f6ea03328634c8171850cd2363334cdb8f0bb566d964087c71d623",
     "tools/dev/src/asset_fixture/archive.rs": "0f201bcd3bce78f39a15a0b9cd3716c091b44e502ed32aa0b17c6bb236b7d11f",
-    "tools/dev/src/asset_fixture/capture.rs": "5a81d8751269013db826bf373b97209367df014409d77f6b889c293ae7a14658",
-    "tools/dev/src/asset_fixture/common.rs": "df2e5a2b5dbdee1c50a2485f05e7a4862b1546ca283b01b394ef482fecc6120f",
+    "tools/dev/src/asset_fixture/capture.rs": "7f98c39165ce4cfbb5eb3d36713a78ba20cd694868e5b23e7af4bd2752ec44fc",
+    "tools/dev/src/asset_fixture/common.rs": "e04a63face2460d77f3d8647d7f33f096c96431e441a0a43e13b7e1ea6d690c9",
     "tools/dev/src/asset_fixture/elf.rs": "23a1f53af6d93b3860da1a7ad778cec882e4e511dd9f76e8895e249482f1b234",
     "tools/dev/src/asset_fixture/layer.rs": "19000975e7ce425028db7edffda5c496ba733997c2d384d896fa940fbaa66df0",
     "tools/dev/src/asset_fixture/layer_oracle.rs": "a3a15668c3b80f7ce473ec4183efa3fc4d4cbf337f982e2fc84cf9eb05e2ba1c",
     "tools/dev/src/asset_fixture/layer_oracle_tests.rs": "0bb581063598486ffbd08c70524d99bf39d1074f69a605b17eeab8883c6f379d",
     "tools/dev/src/asset_fixture/layer_tests.rs": "fc60e999f0adc5ced07c74a04bc441d75f52c3e4c50580e062e0a60cd14c884f",
-    "tools/dev/src/asset_fixture/mod.rs": "252d351deb20e67298f9a16540ad1ffc38e0dfbf4d555a3cfa56a9ac06b9edb2",
+    "tools/dev/src/asset_fixture/manifest.rs": "09998935b40804dbc5b3347fc403c965dd5f8fd5cdaa556b80db51254616e9cb",
+    "tools/dev/src/asset_fixture/manifest_oracle.rs": "a00fa8a51e0ae5aaef150e13fe929cdf1cb3c88b262aba62dc6c9a6d64a76125",
+    "tools/dev/src/asset_fixture/manifest_oracle_tests.rs": "865ab7b53d7f9ee3912b8060662323cb626a640983f660429d7755a374786055",
+    "tools/dev/src/asset_fixture/manifest_tests.rs": "d4af2dd9e3fd23876d45802a314d57d51a1841a83e28b92934d1a96e462f0d8c",
+    "tools/dev/src/asset_fixture/mod.rs": "9b996f6f00d420aa48a310eae43694e2c7138c0efa741cf31b55dface087311d",
     "tools/dev/src/asset_fixture/native.rs": "4b4c9fd7a55326c861af80c3c5a157dcfbc1da18ca5d806285d1b4407eb0dc00",
     "tools/dev/src/asset_fixture/tests.rs": "766052bb742f4fc5e6a9670a4ff263de565b90ef52b9f6d3a258ce479b6110d2",
     "tools/dev/src/bin/rubix-api-json.rs": "c27628a35967e435ba937fc277788d6381e71bf8c0b474db100e2e5ff2dc9b98",

@@ -185,16 +185,27 @@ executables use zstd and image archives use gzip. `DeclaredInventory` validates
 metadata only; `EncodedBlobMatch` adds only encoded length/SHA-256 verification.
 Bounded ELF header/loader observations are described in ELF.md, with complete
 compressed-executable decoding composition in DECODE.md. Full ELF/ABI qualification,
-production decoded pins, archive/OCI content, provenance, immutable image resolution
-and install safety remain unimplemented. This bounded layer does not close #48.
+production decoded pins, general archive/OCI semantics, authenticated provenance,
+immutable image resolution and install safety remain open. The narrow observations
+and declared-manifest binding below do not close #48.
 
 The narrow single-image Docker-save profile emitted by crane v0.21.5 now has
 streaming outer archive/member/reference and config-platform observations; see
 [ARCHIVE.md](ARCHIVE.md). Stored layer blob hashes are checked against archive
-member names, while declared DiffIDs, nested layer integrity and original registry
-manifest/index identity remain unverified. No production image pin is introduced.
+member names; this API alone leaves declared DiffIDs, nested layer integrity and
+original registry manifest/index identity unverified. No production image pin is
+introduced.
 
 An optional stronger `verify_crane_image_layer_digests` call now verifies complete
 bounded gzip/zstd layer-stream hashes against the declared DiffIDs; see
 [LAYER-INTEGRITY.md](LAYER-INTEGRITY.md). It adds no production pins or authenticity
 claim, and does not close unsupported-layer, inner-tar safety or install gates.
+
+`LayerDigestArchiveObservation::bind_manifest` additionally binds the completed
+observation to exact caller-declared archive and raw platform-manifest identities,
+config and ordered stored-layer descriptors, and a declared Linux platform match;
+see [MANIFEST-BINDING.md](MANIFEST-BINDING.md). Its OCI/Docker profiles are narrow.
+The declaration remains unapproved policy input: index/tag resolution, publisher
+authentication and production image pin approval are not established. Synthetic
+contract tests do not substitute for independent real-manifest qualification or
+the remaining inventory/ABI/materialization gates.

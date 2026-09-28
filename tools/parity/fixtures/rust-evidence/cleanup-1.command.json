@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-resources-pki-ix3tkt-coredns-0"
+    "rubix-resources-pki-4gisqv-coredns-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41457,
+  "owned_pid": 78274,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-1ceR4f",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-19Eyj2",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "392fba451d4272ecdf1121ba9562ffe7057301d222809988aa56bc1c4a05cbcc",
+  "stdout_sha256": "2d85bd0ffa11aba02aab53430c053dedc43c22f6d958b35ab20e0fc9dfed685b",
   "timeout": false
 }

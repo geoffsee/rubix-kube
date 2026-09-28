@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-management-linux-5tlycu-0",
+    "rubix-management-linux-myqpot-0",
     "--hostname",
     "fixture",
     "--init",
@@ -26,7 +26,7 @@
     "64",
     "--tmpfs",
     "/tmp:rw,exec,nosuid,nodev,size=32m",
-    "rubix-management-linux-5tlycu"
+    "rubix-management-linux-myqpot"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -35,11 +35,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41643,
+  "owned_pid": 78552,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-GMSTlH",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-sGd8bd",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f5e4172f7d42afe8d22874d2b98b309321cc49a3f30d918cae1ec0fb249089a0",
+  "stdout_sha256": "c71d93fe8a7465deb1732f57980f0b8c533c941668d6db2c3f1788c231232a8f",
   "timeout": false
 }

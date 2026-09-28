@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-constrained-policy-ws87o8-embedded-1"
+    "rubix-constrained-policy-i7wypt-embedded-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41359,
+  "owned_pid": 78217,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-fIofY5",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zZwgU4",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a17b017961a62397d2f236d1a32815175bf4213602bfcbcf6b02347616e4d6c5",
+  "stdout_sha256": "7067ae4386fd9368b3248f747dcdbff6b63b4040d9dc8fe40c7371f306a61b81",
   "timeout": false
 }

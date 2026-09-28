@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 57264,
+  "owned_pid": 78354,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Px7l0W",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ZL56iG",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "dfbc0698d6102f76a0a6dffb6e7dc066fbbd276650b82a5dcb66b198bb9e5eb8",
+  "stdout_sha256": "3723d2417ce545adca93ab64e57e7ad6803e0f98854819ba3e79014114f52db3",
   "timeout": false
 }

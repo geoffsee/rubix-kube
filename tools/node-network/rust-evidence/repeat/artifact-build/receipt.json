@@ -1,19 +1,19 @@
 {
-  "artifact_sha256": "28649d22bbfb713d5dbaf2cfa9981bff2d4d1d5529e4d668ec67675f95f8bcab",
+  "artifact_sha256": "c3b68330349a46d604e8a3a092bf2101680cff26a61bcbee80565aec27d2d26d",
   "build_command": [
     "docker",
     "build",
     "--platform=linux/arm64",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=744d7162ae9eaadcaddbd0281df3167a",
+    "QUALIFICATION_NONCE=96f5b49654d24c39dc7d0aefa4c3b22e",
     "-t",
-    "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a",
+    "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e",
     "-f",
-    "/tmp/rubix-node-context-ZAmpGw/tools/node-network/Build.Dockerfile",
-    "/tmp/rubix-node-context-ZAmpGw"
+    "/tmp/rubix-node-context-fWj0o9/tools/node-network/Build.Dockerfile",
+    "/tmp/rubix-node-context-fWj0o9"
   ],
-  "build_sha256": "38dba22bf7286988d30bf911291397e6833baa655c3f8ad7c6135f1910c61566",
+  "build_sha256": "310d28c0ff8d154ef19a657f54540414b1a089c16c8627dea696cb98f082ff59",
   "builder_sha256": {
     "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
     "prepare_host_network": "e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca"
@@ -21,30 +21,30 @@
   "cancelled": false,
   "cleanup_errors": [],
   "commands": {
-    "build": "1300f593ee0bd32a15afe0c62c2905fb16f55bc2913cf5fed8afeb81cd9626fd",
-    "cleanup-1": "7e15bd8736fbd1173ae9275411256d6a6c3419f12e45d34413023c291dfa785c",
-    "cleanup-2": "f7219f2b99dd8b0e42869b29152892f2c2f4cabf8b3c0c83c67855592e396367",
-    "cleanup-3": "8f5db1da2e56e1928f3274d81d570fdf84766ceb4be5a0e92bae7bc9563fe991",
-    "cleanup-4": "be809bdd4e4e40a35f7c7a693e912e4cd4e50de2d70738d967f7f6aafe8f5384",
-    "cleanup-5": "8acf4d44b3861f59f388523451f8171e88be02412e967adb144f312bd75da714",
-    "copy-host_network": "6ff17a37c9bbcf0f005ad32fe88d0874f407f0cf2534f4fe95fadf1430c4c286",
-    "copy-prepare_host_network": "d7ce72787629266724d56103dc40dcca30d4484209e037dad6386f8862517828",
-    "create": "743031313efa3c35ae34e4e68b55f0ebd6ae954c80f52218114faa53fff1e113",
-    "image-inspect": "2aed05cc499e8178a7ffedb4b298b4b80f3578a0ea9fadaa888bdb30677070b2",
-    "test": "bb102b611c92ed192733380df677411cf7314d04a02adaae7f473994a8153e14"
+    "build": "da59b78376c6fddfc05783c6d985191a58bc5fd5fdaac6dfaaff455ebb060f87",
+    "cleanup-1": "dbed9df7f5d2f8bf5ee10182925e76ff311c2f579b39c86f33d06d3113e4702e",
+    "cleanup-2": "42d0a19fccad8e17f53ba67342d4dbbfd880b93d8278a1da0c8cb60e46b76d1b",
+    "cleanup-3": "457f2fb303ec2ea4393760cc94f4ddcf5d8de097316009008e1e32e69677a382",
+    "cleanup-4": "baed6e71958abbb8ad2cef5602209c09c9ce4ce2acaa3470ef8e12c024e5381c",
+    "cleanup-5": "4731ac8dbbc083a018b743cc25d611b67f6aa106f0e5a6006e59d89da3f67687",
+    "copy-host_network": "374297beaf541a84386c44d39af770c7a872b810af35174b268d429c3cab1ed1",
+    "copy-prepare_host_network": "41e0d71ec5c409c03d19f7ffcf8c4b0c21b6be27ff58de79d002ed719774f82a",
+    "create": "b61eb2f74695d9f0307f0a235ba055228ad2e427f9217d8bb7c2cc8c9f20d58f",
+    "image-inspect": "b6309f79a619bc31c3ae6418088bab12740866353f61e6530006210830e49e2e",
+    "test": "200e8c5aca05018e5760a1c5c47d9281275378ee49f78afb1240a432cfc60771"
   },
   "containers": [
-    "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a-artifact",
-    "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a-test"
+    "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e-artifact",
+    "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e-test"
   ],
   "dirty": false,
   "errors": [],
   "family": "network",
-  "image_id": "sha256:3e8be1e796818ac28f0d66dcd749c57ea81d4cd451abb149213b6118ac6075ba",
-  "nonce": "744d7162ae9eaadcaddbd0281df3167a",
+  "image_id": "sha256:7936545208a01189dfefe2f06c933a9618f59b9adf52294871c2ca5101f6b6d9",
+  "nonce": "96f5b49654d24c39dc7d0aefa4c3b22e",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "a4e5b5aa27814da0a2ca255f24f4c4eb34270c3f",
+  "revision": "d0f66fede8ee8449e59c5e5553557b1d0fff5c0e",
   "runs": {
     "test": {
       "binary_sha256": {
@@ -55,7 +55,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a-test",
+        "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e-test",
         "--network=none",
         "--read-only",
         "--cap-drop=ALL",
@@ -63,18 +63,18 @@
         "--pids-limit=64",
         "--memory=512m",
         "--cpus=2",
-        "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a",
+        "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e",
         "/bin/sh",
         "-c",
         "sha256sum /out/prepare_host_network /out/host_network && /out/host_network && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_host_network --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_host_network --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
       ],
-      "raw_sha256": "b9a6e5d9ff33bc4850c96b487794474bb862ff65b9b45880b5fe5758de9ec910",
+      "raw_sha256": "5226a78d377272fd445ffeaa4d55a0efea0eb7671ce5557fc1f7eefa1c67485d",
       "records": {
         "safe_tests_and_cli": true
       }
     }
   },
   "schema": 3,
-  "source_sha256": "92be274e3651de0de91ec5b87edff91b1278dcaf766b137b515c65d666065b7e",
-  "tag": "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a"
+  "source_sha256": "d455e9c2c358b093f625d8e252edcc535d3f27fe3f85f3d596e4b860c48da052",
+  "tag": "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e"
 }

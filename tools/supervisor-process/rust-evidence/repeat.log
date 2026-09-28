@@ -2,10 +2,10 @@
 e0c4c04c79658c6fd36fd8099df8c5f226dbde3d0dab6a6d5b2b03929ceeb697  /fixture
 
 running 1 test
-RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":12,"error":null}
+RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":22,"error":null}
 RUBIX_PROCESS {"case":"family","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":22,"error":null}
-RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30012,"error":null}
-RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":11,"error":null}
+RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30013,"error":null}
+RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":22,"error":null}
 RUBIX_PROCESS {"case":"early","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"leader-exits-first","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"oneshot","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0,"error":null}

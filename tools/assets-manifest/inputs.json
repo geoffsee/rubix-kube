@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "reference": "docker.io/coredns/coredns:1.14.4",
+  "observed_at": "2026-09-28T05:09:35.955824+00:00",
+  "repo_tag": "coredns-fixture:manifest-binding",
+  "manifest_sha256": "18f34dc0909c41ffc499684a992898376c58d0ec8460d59ce676a35a0df5ccd0",
+  "manifest_bytes": 3023,
+  "config_sha256": "ce6e7269eeceaa15a84e15a0f00accd36a00c4933d5892011523f423c6cdea33",
+  "config_bytes": 3070,
+  "layers": [
+    {
+      "stored_sha256": "9af3d0cec0be2acf896256672d0a732e989b6e394af339e495ad0cf29f33639f",
+      "stored_bytes": 84753,
+      "diff_id": "a0ff877a11d72f1832840a3cddfeeb3962d2b3fae4e11aca8de212cb24ced9f3",
+      "decoded_bytes": 327680,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "2e4cf50eeb92ac3a7afe75e15d96a26dee99449f86b46c75b5d95f4418a5bca0",
+      "stored_bytes": 12579,
+      "diff_id": "8fa10c0194df9b7c054c90dbe482585f768a54428fc90a5b78a0066a123b1bba",
+      "decoded_bytes": 40960,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "c36c4b61cfbac73652d6a28923cd773657fa593c6ba5634672941f33bd8b3656",
+      "stored_bytes": 463397,
+      "diff_id": "35b5ba6e08cdd034b8d1920f9c7203e5d66f258e1915f164a01de0af14f34710",
+      "decoded_bytes": 2416640,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "e1089d61b200106053b1717881bf0c1c47551478f01569d9224d33cccf3e4692",
+      "stored_bytes": 28389,
+      "diff_id": "114dde0fefebbca13165d0da9c500a66190e497a82a53dcaabc3172d630be1e9",
+      "decoded_bytes": 102400,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "0f8b424aa0b96c1c388a5fd4d90735604459256336853082afb61733438872b5",
+      "stored_bytes": 75,
+      "diff_id": "4d049f83d9cf21d1f5cc0e11deaf36df02790d0e60c1a3829538fb4b61685368",
+      "decoded_bytes": 1536,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "d557676654e572af3e3173c90e7874644207fda32cd87e9d3d66b5d7b98a7b21",
+      "stored_bytes": 193,
+      "diff_id": "af5aa97ebe6ce1604747ec1e21af7136ded391bcabe4acef882e718a87c86bcc",
+      "decoded_bytes": 2560,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "d82bc7a76a838c9a4a6025192429c2fed58f73742ef1fb9c8bb7b995fc3b7213",
+      "stored_bytes": 130,
+      "diff_id": "6f1cdceb6a3146f0ccb986521156bef8a422cdbb0863396f7f751f575ba308f4",
+      "decoded_bytes": 2560,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "68e4cd60e60fed4486d5b4b40b079e57781e828d93d80a7411e8760dcccfbbf7",
+      "stored_bytes": 168,
+      "diff_id": "bd3cdfae1d3fdd83a2231d608969b38b82349777c2fff9a7c12d54f8ac5c9b38",
+      "decoded_bytes": 2560,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "0783a66ae7492bb16937c7723c534e431404aa3ebbdcaaed65d264a95a266b9e",
+      "stored_bytes": 84,
+      "diff_id": "4cde6b0bb6f50a5f255eef7b2a42162c661cf776b803225dcac9a659e396bb6b",
+      "decoded_bytes": 1536,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "efae86a3fb38e05e6e2584bc2f48534a0d82f8d9e9a4163d04885d5c65423105",
+      "stored_bytes": 358,
+      "diff_id": "ad51d0769d16ba578106a177987dfe3d2e02c1668c852b795b2f6b024068242a",
+      "decoded_bytes": 2048,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "6b72b81ed96620b324f40ade069bbd3fcee69d62182bb03681c3976b6909eec4",
+      "stored_bytes": 320,
+      "diff_id": "6e7fbcf090d09b73a4aa85f9dce690d0ace73877c150b7c56955487b6e7a822a",
+      "decoded_bytes": 3072,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "6cdd517ba90571b01009637268b5fddb4e3eea409bb6dae0bf40ed8ad9e33ef4",
+      "stored_bytes": 130874,
+      "diff_id": "33b37ab0b0901175c2699d81c10b0c887f0dff944de74763cca00c155904d6fb",
+      "decoded_bytes": 241664,
+      "codec": "gzip",
+      "frames": 1
+    },
+    {
+      "stored_sha256": "a17e7b8f014ad1665e6b0cb0b1100536924dc7e104b6a949264088d48832ff08",
+      "stored_bytes": 20453626,
+      "diff_id": "ba5b1d81f9993f384b8f032914e5491306f056088821c2dba1c366bcb0893169",
+      "decoded_bytes": 69864448,
+      "codec": "gzip",
+      "frames": 1
+    }
+  ]
+}

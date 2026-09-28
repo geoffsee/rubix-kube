@@ -1,7 +1,7 @@
-[36mINFO[0m[2026-09-28T15:33:12.075982876Z] Configuring sqlite3 database connection pooling: maxIdle=3, maxOpen=5, maxLifetime=1m0s, maxIdleTime=2m0s 
-[36mINFO[0m[2026-09-28T15:33:12.076174418Z] Kine built with sqlite from github.com/mattn/go-sqlite3 version 3.53.2 
-[36mINFO[0m[2026-09-28T15:33:12.076180084Z] Configuring database table schema and indexes, this may take a moment... 
-[36mINFO[0m[2026-09-28T15:33:12.080164751Z] Database tables and indexes are up to date   
-[36mINFO[0m[2026-09-28T15:33:12.080177709Z] Running startup VACUUM to reclaim disk space, this may take a moment... 
-[36mINFO[0m[2026-09-28T15:33:12.082212501Z] Startup VACUUM completed successfully        
-[36mINFO[0m[2026-09-28T15:33:12.085130043Z] Kine available at http://127.0.0.1:2379      
+[36mINFO[0m[2026-09-28T16:30:12.002623126Z] Configuring sqlite3 database connection pooling: maxIdle=3, maxOpen=5, maxLifetime=1m0s, maxIdleTime=2m0s 
+[36mINFO[0m[2026-09-28T16:30:12.002849334Z] Kine built with sqlite from github.com/mattn/go-sqlite3 version 3.53.2 
+[36mINFO[0m[2026-09-28T16:30:12.002854834Z] Configuring database table schema and indexes, this may take a moment... 
+[36mINFO[0m[2026-09-28T16:30:12.008551167Z] Database tables and indexes are up to date   
+[36mINFO[0m[2026-09-28T16:30:12.008572501Z] Running startup VACUUM to reclaim disk space, this may take a moment... 
+[36mINFO[0m[2026-09-28T16:30:12.010554042Z] Startup VACUUM completed successfully        
+[36mINFO[0m[2026-09-28T16:30:12.013265792Z] Kine available at http://127.0.0.1:2379      

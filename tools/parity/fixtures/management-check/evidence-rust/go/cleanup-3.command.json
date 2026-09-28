@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-management-go-facnk8"
+    "rubix-management-go-26aaje"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41676,
+  "owned_pid": 78630,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Fmjdgr",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-W1tlIi",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f2e2374ccd8f3da7a5d7b48d560a113f448451311e7209ee3d78190d471a6649",
+  "stdout_sha256": "7532ff9d0c09091823bcce727acbc5e5987e66d6c8cbe359add3fa9900d35420",
   "timeout": false
 }

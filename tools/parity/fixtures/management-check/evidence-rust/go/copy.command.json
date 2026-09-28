@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-management-go-facnk8-0:/source.sha256",
-    "/private/tmp/rubix-layer-qualification-a4e5b5a/upstream/management-go/source.sha256"
+    "rubix-management-go-26aaje-0:/source.sha256",
+    "/private/tmp/rubix-manifest-qualification-d0f66fe/upstream/management-go/source.sha256"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 41671,
+  "owned_pid": 78625,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-9mMY43",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-yOL56i",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

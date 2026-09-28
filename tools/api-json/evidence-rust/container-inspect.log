@@ -1,7 +1,7 @@
 [
     {
-        "Id": "00dc5c47748aab73852bb2db73747ad0849b24dd08f768a294e3c685ff120f77",
-        "Created": "2026-09-28T09:12:56.267816843Z",
+        "Id": "0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f",
+        "Created": "2026-09-28T16:28:49.407735129Z",
         "Path": "/fixture",
         "Args": [
             "runtime"
@@ -16,15 +16,15 @@
             "Pid": 0,
             "ExitCode": 0,
             "Error": "",
-            "StartedAt": "2026-09-28T09:12:56.638060259Z",
-            "FinishedAt": "2026-09-28T09:13:15.934909588Z"
+            "StartedAt": "2026-09-28T16:28:49.572332546Z",
+            "FinishedAt": "2026-09-28T16:29:08.83686893Z"
         },
-        "Image": "sha256:5da8a61173afcab10722020e9fc016cd9fb5034095f68adba38e4efda7cf7e21",
-        "ResolvConfPath": "/var/lib/docker/containers/00dc5c47748aab73852bb2db73747ad0849b24dd08f768a294e3c685ff120f77/resolv.conf",
-        "HostnamePath": "/var/lib/docker/containers/00dc5c47748aab73852bb2db73747ad0849b24dd08f768a294e3c685ff120f77/hostname",
-        "HostsPath": "/var/lib/docker/containers/00dc5c47748aab73852bb2db73747ad0849b24dd08f768a294e3c685ff120f77/hosts",
-        "LogPath": "/var/lib/docker/containers/00dc5c47748aab73852bb2db73747ad0849b24dd08f768a294e3c685ff120f77/00dc5c47748aab73852bb2db73747ad0849b24dd08f768a294e3c685ff120f77-json.log",
-        "Name": "/rubix-api-json-hul4cl-capture",
+        "Image": "sha256:55c4acf9d418fa302b6b37134866d7790f3be68df14459edbf56552315b94353",
+        "ResolvConfPath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/hostname",
+        "HostsPath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/hosts",
+        "LogPath": "/var/lib/docker/containers/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f/0fe2f21682233bb85c01b04dc084497857cdde55adb07f79b33db2a56f284c4f-json.log",
+        "Name": "/rubix-api-json-mpk83d-capture",
         "RestartCount": 0,
         "Driver": "overlayfs",
         "Platform": "linux",
@@ -138,7 +138,7 @@
         },
         "Mounts": [],
         "Config": {
-            "Hostname": "00dc5c47748a",
+            "Hostname": "0fe2f2168223",
             "Domainname": "",
             "User": "65532:65532",
             "AttachStdin": false,
@@ -156,7 +156,7 @@
                 "RUBIX_DISPOSABLE_FIXTURE=api-json"
             ],
             "Cmd": null,
-            "Image": "rubix-api-json-hul4cl",
+            "Image": "rubix-api-json-mpk83d",
             "Volumes": null,
             "WorkingDir": "/experiment",
             "Entrypoint": [
@@ -193,7 +193,7 @@
         },
         "ImageManifestDescriptor": {
             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "digest": "sha256:a1ffda63bdc0c6ad9d101ed8450bff606f094426a4e0204dc9ec26a274c876cb",
+            "digest": "sha256:a06740a356820cd7fe5226d3c9c49486669f8b37752464543258f35975719b70",
             "size": 2400,
             "platform": {
                 "architecture": "arm64",

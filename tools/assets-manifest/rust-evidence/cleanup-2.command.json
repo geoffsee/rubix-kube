@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rm",
+    "-f",
+    "rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7-repeat"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 77388,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-n9oP0G",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "b838237ddf702b23742a459d645ffdfe33e9e16cfbbf1ebbef454c37b0d699c0",
+  "timeout": false
+}

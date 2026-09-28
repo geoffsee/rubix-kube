@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-api-zetzdk-config-1"
+    "rubix-config-api-burl1r-config-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 40340,
+  "owned_pid": 77759,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-5jh9g3",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-1w52cG",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "db52589e5025b060e25a86fd3999f5a04a1f241dcdeb352c216f83544e6720f2",
+  "stdout_sha256": "7ab0f5fe4d3547e25a24b7713aaa2bc4f295749cec4e43a83687b198d8e8ded8",
   "timeout": false
 }

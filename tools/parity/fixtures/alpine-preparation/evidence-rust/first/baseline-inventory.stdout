@@ -262,7 +262,7 @@ PASS
 RUBIX_NO_OPT_IN_UNCHANGED
 === RUN   TestOwnedGuestPreparation
 RUBIX_ALPINE_BASELINE {"action":"network","error":"","install":true}
---- PASS: TestOwnedGuestPreparation (0.41s)
+--- PASS: TestOwnedGuestPreparation (0.07s)
 PASS
 PACKAGES_installed_BEGIN
 alpine-base-3.24.2-r0
@@ -486,7 +486,7 @@ PASS
 RUBIX_PACKAGE_REPEAT_UNCHANGED
 === RUN   TestOwnedGuestPreparation
 RUBIX_ALPINE_BASELINE {"action":"cgroups","error":"","install":true}
---- PASS: TestOwnedGuestPreparation (0.27s)
+--- PASS: TestOwnedGuestPreparation (0.06s)
 PASS
 CONTROLLERS_after cpuset cpu io memory hugetlb pids dmem
  * status: started

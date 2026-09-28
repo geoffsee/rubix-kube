@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-archive-216510cf7220862e589abe278440028e-repeat",
+    "rubix-archive-c67f0f61089a9ef2222727412eb24aaa-repeat",
     "--init",
     "--network=none",
     "--read-only",
@@ -14,7 +14,7 @@
     "--cpus=2",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=16m",
-    "rubix-archive-216510cf7220862e589abe278440028e",
+    "rubix-archive-c67f0f61089a9ef2222727412eb24aaa",
     "/bin/sh",
     "-c",
     "sha256sum /producer /archive-tests /fixture && /fixture archive-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -26,11 +26,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 57688,
+  "owned_pid": 78017,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-FZwAif",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-vtjjqz",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "cb64b1b53b88a5f13ba48071a91eced840f608dc3d2e484007be81194d7b6235",
+  "stdout_sha256": "c22c89d7367c07dde08b7f3df514ecaecc7ed1fb04e2d4d30722479b3858e96c",
   "timeout": false
 }

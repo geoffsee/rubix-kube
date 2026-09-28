@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a-test",
+    "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e-test",
     "--network=none",
     "--read-only",
     "--cap-drop=ALL",
@@ -11,7 +11,7 @@
     "--pids-limit=64",
     "--memory=512m",
     "--cpus=2",
-    "rubix-node-network-744d7162ae9eaadcaddbd0281df3167a",
+    "rubix-node-network-96f5b49654d24c39dc7d0aefa4c3b22e",
     "/bin/sh",
     "-c",
     "sha256sum /out/prepare_host_network /out/host_network && /out/host_network && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_host_network --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_host_network --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
@@ -23,11 +23,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 42066,
+  "owned_pid": 80290,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-MuTl7q",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qnDMSU",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b9a6e5d9ff33bc4850c96b487794474bb862ff65b9b45880b5fe5758de9ec910",
+  "stdout_sha256": "5226a78d377272fd445ffeaa4d55a0efea0eb7671ce5557fc1f7eefa1c67485d",
   "timeout": false
 }
