@@ -183,6 +183,7 @@ with registry-required or unavailable delivery where appropriate. Seven newly
 supervised executables use identity encoding initially; the baseline six compressed
 executables use zstd and image archives use gzip. `DeclaredInventory` validates
 metadata only; `EncodedBlobMatch` adds only encoded length/SHA-256 verification.
-Bounded identity ELF header/loader observations are described in ELF.md; full
-ELF/OCI/decoded integrity, provenance, immutable image resolution and install safety
-remain unimplemented. This bounded layer does not close #48.
+Bounded ELF header/loader observations are described in ELF.md, with complete
+compressed-executable decoding composition in DECODE.md. Full ELF/ABI qualification,
+production decoded pins, archive/OCI content, provenance, immutable image resolution
+and install safety remain unimplemented. This bounded layer does not close #48.

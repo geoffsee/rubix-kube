@@ -1,30 +1,36 @@
 {
-  "build_binary_sha256": "abb88e73fb487b65dba5ee8d93cfa5aae061e3336295a8a560e108421e592c40",
-  "build_log_sha256": "ebcae452f1f3a47e68dc328590b40983b097c49ff15a080226e9c0ebe0aaa5e7",
+  "build_binary_sha256": {
+    "decode": "5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b",
+    "decoded_elf": "0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001"
+  },
+  "build_log_sha256": "9cbd8dd60fcbe30473bdae92dde85b25465844d585baae39f80f5c2201e75f75",
   "cleanup_errors": [],
   "containers": [
-    "rubix-decode-f64f4e0080984c348bb3bfba484eb6be-first",
-    "rubix-decode-f64f4e0080984c348bb3bfba484eb6be-repeat"
+    "rubix-decode-69ca21df6424477e9cbd3c646a17a742-first",
+    "rubix-decode-69ca21df6424477e9cbd3c646a17a742-repeat"
   ],
   "errors": [],
   "harness_sha256": {
-    "Capture.Dockerfile": "55cffb2a305adbe00d065376e183cb36c4ed3e8ef3a54393c020a412ab220418",
-    "capture.py": "ff590c569b8ca30d8e530c32f6539b92b8a907b1bb7894ce990de5e14894b343",
-    "test_evidence.py": "61a7c9cafd800b1f264fe3ba594c5eca3b4e5793422b00e9c715e3efcc9a4676",
-    "verify.py": "a589efe4810436e462f8c8ff0882ffdbe12de96388d4907d781609c6a2b4e8e4"
+    "Capture.Dockerfile": "b2c46105c1ce6de7e334c45f14bdb579cab1802ead3e1beddd41ec64845ac549",
+    "capture.py": "9cc46c0d911da3f0a8f65e9023b83469cd35e7fb837b4c2e84a0c84c3857ccb9",
+    "test_evidence.py": "d6d9ee2b3915d19ab46ffdbe11da879bb8526fb6f85ab0afa6a4eb63ebf812a2",
+    "verify.py": "f1e227e1354e4da935a38bac16b1d682e679fe8510649cf1eae7d25b9f677852"
   },
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:4b58ac8746934813be368c0041a33c546b9b67af5bb5cea5d3351077a445dead",
+  "image_id": "sha256:d90ae9874fd00f6aa45fc5b8710cff6d1f0d294a7cb41b2c8505565f27133655",
   "remaining_containers": [],
   "remaining_images": [],
   "runs": {
     "first": {
-      "binary_sha256": "abb88e73fb487b65dba5ee8d93cfa5aae061e3336295a8a560e108421e592c40",
+      "binary_sha256": {
+        "decode": "5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b",
+        "decoded_elf": "0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001"
+      },
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-decode-f64f4e0080984c348bb3bfba484eb6be-first",
+        "rubix-decode-69ca21df6424477e9cbd3c646a17a742-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -35,36 +41,53 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-decode-f64f4e0080984c348bb3bfba484eb6be",
+        "rubix-decode-69ca21df6424477e9cbd3c646a17a742",
         "/bin/sh",
         "-c",
-        "sha256sum /decode-tests; /decode-tests --nocapture --test-threads=1; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+        "sha256sum /decode-tests /decoded_elf-tests; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "6cf41805557de6e99bb0644e6cae0a6dd602bee667ddea665ec12b275fa0b8b2",
-      "records": [
-        "aggregate_budget_is_checked_before_observer_and_retained_on_header_failure",
-        "all_truncations_corrupt_checksum_and_trailing_members_fail_after_rehash",
-        "empty_frames_still_require_completion_and_consume_one_probe",
-        "exact_limit_succeeds_but_excess_and_failed_attempts_retain_budget_charges",
-        "gzip_header_fields_are_bounded_before_decoder_allocation",
-        "gzip_optional_fields_and_header_crc_are_checked_without_using_names_as_paths",
-        "image_limit_and_executable_limit_are_distinct_and_receipt_requires_full_trailer",
-        "independent_fixed_vectors_match_decoded_hash_and_binding",
-        "invalid_limits_fail_without_a_session",
-        "observer_failure_is_typed_provisional_and_display_does_not_leak",
-        "same_encoded_slice_must_match_before_any_callback",
-        "unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit",
-        "unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked",
-        "zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected"
-      ]
+      "raw_sha256": "d877598c0b17e209a0f079749fe7c1dc374e08085bf2e8a115ea269407178339",
+      "records": {
+        "decode": [
+          "aggregate_budget_is_checked_before_observer_and_retained_on_header_failure",
+          "all_truncations_corrupt_checksum_and_trailing_members_fail_after_rehash",
+          "empty_frames_still_require_completion_and_consume_one_probe",
+          "exact_limit_succeeds_but_excess_and_failed_attempts_retain_budget_charges",
+          "gzip_header_fields_are_bounded_before_decoder_allocation",
+          "gzip_optional_fields_and_header_crc_are_checked_without_using_names_as_paths",
+          "image_limit_and_executable_limit_are_distinct_and_receipt_requires_full_trailer",
+          "independent_fixed_vectors_match_decoded_hash_and_binding",
+          "invalid_limits_fail_without_a_session",
+          "observer_failure_is_typed_provisional_and_display_does_not_leak",
+          "same_encoded_slice_must_match_before_any_callback",
+          "unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit",
+          "unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked",
+          "zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected"
+        ],
+        "decoded_elf": [
+          "altered_encoded_slice_fails_before_decode_and_keeps_attempt_charge",
+          "every_supported_machine_preserves_header_only_abi_boundary",
+          "exact_encoded_hash_does_not_hide_wrong_machine_class_endian_or_loader",
+          "failed_elf_parsing_keeps_both_budgets_and_repeated_calls_exhaust_decoded_budget",
+          "incomplete_or_corrupt_frames_never_reach_elf_inspection",
+          "invalid_limits_identity_and_gzip_image_are_rejected_without_budget_effects",
+          "raw_frame_and_independent_elf_share_completed_digest_and_observations",
+          "retained_encoded_budget_cannot_be_refreshed_by_composition",
+          "rle_expansion_stops_at_tighter_elf_cap_before_parser",
+          "tighter_elf_decode_and_session_limits_bound_unknown_size_output"
+        ]
+      }
     },
     "repeat": {
-      "binary_sha256": "abb88e73fb487b65dba5ee8d93cfa5aae061e3336295a8a560e108421e592c40",
+      "binary_sha256": {
+        "decode": "5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b",
+        "decoded_elf": "0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001"
+      },
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-decode-f64f4e0080984c348bb3bfba484eb6be-repeat",
+        "rubix-decode-69ca21df6424477e9cbd3c646a17a742-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -75,33 +98,47 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-decode-f64f4e0080984c348bb3bfba484eb6be",
+        "rubix-decode-69ca21df6424477e9cbd3c646a17a742",
         "/bin/sh",
         "-c",
-        "sha256sum /decode-tests; /decode-tests --nocapture --test-threads=1; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+        "sha256sum /decode-tests /decoded_elf-tests; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "6cf41805557de6e99bb0644e6cae0a6dd602bee667ddea665ec12b275fa0b8b2",
-      "records": [
-        "aggregate_budget_is_checked_before_observer_and_retained_on_header_failure",
-        "all_truncations_corrupt_checksum_and_trailing_members_fail_after_rehash",
-        "empty_frames_still_require_completion_and_consume_one_probe",
-        "exact_limit_succeeds_but_excess_and_failed_attempts_retain_budget_charges",
-        "gzip_header_fields_are_bounded_before_decoder_allocation",
-        "gzip_optional_fields_and_header_crc_are_checked_without_using_names_as_paths",
-        "image_limit_and_executable_limit_are_distinct_and_receipt_requires_full_trailer",
-        "independent_fixed_vectors_match_decoded_hash_and_binding",
-        "invalid_limits_fail_without_a_session",
-        "observer_failure_is_typed_provisional_and_display_does_not_leak",
-        "same_encoded_slice_must_match_before_any_callback",
-        "unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit",
-        "unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked",
-        "zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected"
-      ]
+      "raw_sha256": "cc4fcca709c46048ac454aa36405fac386246c09d70c7f0158a1cd1bfe0f7887",
+      "records": {
+        "decode": [
+          "aggregate_budget_is_checked_before_observer_and_retained_on_header_failure",
+          "all_truncations_corrupt_checksum_and_trailing_members_fail_after_rehash",
+          "empty_frames_still_require_completion_and_consume_one_probe",
+          "exact_limit_succeeds_but_excess_and_failed_attempts_retain_budget_charges",
+          "gzip_header_fields_are_bounded_before_decoder_allocation",
+          "gzip_optional_fields_and_header_crc_are_checked_without_using_names_as_paths",
+          "image_limit_and_executable_limit_are_distinct_and_receipt_requires_full_trailer",
+          "independent_fixed_vectors_match_decoded_hash_and_binding",
+          "invalid_limits_fail_without_a_session",
+          "observer_failure_is_typed_provisional_and_display_does_not_leak",
+          "same_encoded_slice_must_match_before_any_callback",
+          "unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit",
+          "unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked",
+          "zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected"
+        ],
+        "decoded_elf": [
+          "altered_encoded_slice_fails_before_decode_and_keeps_attempt_charge",
+          "every_supported_machine_preserves_header_only_abi_boundary",
+          "exact_encoded_hash_does_not_hide_wrong_machine_class_endian_or_loader",
+          "failed_elf_parsing_keeps_both_budgets_and_repeated_calls_exhaust_decoded_budget",
+          "incomplete_or_corrupt_frames_never_reach_elf_inspection",
+          "invalid_limits_identity_and_gzip_image_are_rejected_without_budget_effects",
+          "raw_frame_and_independent_elf_share_completed_digest_and_observations",
+          "retained_encoded_budget_cannot_be_refreshed_by_composition",
+          "rle_expansion_stops_at_tighter_elf_cap_before_parser",
+          "tighter_elf_decode_and_session_limits_bound_unknown_size_output"
+        ]
+      }
     }
   },
-  "schema": 1,
-  "source_inventory_sha256": "dd6a7bb85dc06fbcf317c3430485315f3fcfafabc9b18dd4174918a6d2d5f2c6",
-  "source_revision": "436a871e77da04ea6ebeeff8dfb64a94c3c66d1b",
-  "tag": "rubix-decode-f64f4e0080984c348bb3bfba484eb6be",
+  "schema": 2,
+  "source_inventory_sha256": "0b4a774632ed4893e02941fd2191bd1537dd02d714f2a6a0922a6d5ec22ff7c1",
+  "source_revision": "a45e635357eafb086fde62aaa0ed5d43ff217f59",
+  "tag": "rubix-decode-69ca21df6424477e9cbd3c646a17a742",
   "uncommitted_source_snapshot": false
 }

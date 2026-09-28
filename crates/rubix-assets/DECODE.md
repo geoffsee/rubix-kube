@@ -79,3 +79,51 @@ sizes/checksum/dictionaries/windows, truncations, expansion, concatenation and
 trailing data. Production decoded hashes/sizes and actual baseline compressed
 payload qualification remain absent. E06.01 remains open pending those inputs and
 further content/ABI/OCI validation; E06.02 separately owns atomic installation.
+
+## Compressed executable ELF composition
+
+`DecodeSession::inspect_compressed_elf(id, encoded_slice, ElfLimits)` accepts the
+six catalogued zstd executable roles. It validates all ELF limits before any
+hashing/decoding effects and rejects image roles and identity encodings before
+starting an attempt. Gzip images keep the streaming interface; their decoded bytes
+are not passed to an executable parser. No catalog encoding exception is introduced.
+
+The method uses the session's retained encoded and decoded budgets. Its effective
+output cap is the minimum of `DecodeLimits.executable_bytes`, `ElfLimits.bytes`
+and the remaining decoded budget after reserving the completion probe. Unknown
+frame sizes receive the same cap as advertised sizes. Checked length arithmetic
+and integer conversions precede fallible buffer growth. Only actually returned
+chunks are retained, with no full-limit or advertised-size allocation up front.
+The logical buffer length is bounded; allocator capacity and native decoder
+context remain additional resources, so this is not a hard RSS/time guarantee.
+
+Chunks are held in a private provisional buffer. Decoding must finish and pass
+checksum/framing checks before the shared ELF parser sees that same owned decoded
+content. No external observer runs, no provisional bytes escape, and no path is
+opened or executable started. On any failure the buffer is dropped and no combined
+observation is returned. All already-charged bytes and completion/encoded-attempt
+reservations remain spent, including allocation and later ELF-parser failures.
+The existing streaming callback contract is unchanged.
+
+Success returns opaque `DecodedElfInspection` with `decoded_observation()` and
+`elf()` getters. This binds the encoded digest/length, observed decoded digest/length
+and bounded ELF facts to one attempt. It neither compares the decoded digest with
+a production pin nor authorizes installation. The existing `KnownMismatch` and
+`Unresolved` loader relations and unresolved ARM/RISC-V ABI requirements remain.
+A correct header with no interpreter is still not proof of static linkage or
+runtime compatibility. Materialization must reverify the actual output it commits.
+
+`CompressedElfError` distinguishes nonexecutable roles, decoding, ELF parsing,
+checked buffer bounds and allocation failure. Display uses fixed descriptions;
+structured sources retain decoder/verification/allocation errors. No raw decoder
+source messages are included in Debug. Tests do not induce host memory exhaustion.
+
+`tests/decoded_elf.rs` uses independently assembled zstd raw/RLE frames and
+handwritten ELF layouts, with a fixed independent decoded SHA-256 vector. Coverage
+includes four machine headers, same-hash wrong-target inputs, opposite-libc loader
+observations, corrupt/truncated/trailing frames taking precedence over ELF parsing,
+role/limit rejection before effects, exact/tighter/aggregate caps, repeated encoded
+and decoded budget exhaustion, retained parser-failure charges and bounded RLE
+expansion. Existing gzip CRC/FHCRC/trailer/provisional-callback regressions continue
+to exercise the unchanged streaming path. These synthetic tests do not qualify a
+production compressed payload or close E06.01.
