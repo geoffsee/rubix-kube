@@ -87,3 +87,10 @@ Guest ownership is root, with directories 0555 and files 0444; ordinary artifact
 users can read them without reopening the driver's private stdin descriptor. There
 is no shell/environment interpolation or host-file import through fixture tokens.
 This adapter revision requires the shared driver revision that provides these helpers.
+
+QEMU termination signals are sent only while the adapter still owns the unreaped
+leader. After it has been reaped, the numeric process group is inspected for absence
+without sending further signals. If absence cannot be confirmed, qualification fails
+and private files remain for investigation; the adapter does not signal a potentially
+reused group. This preserves the existing bounded TERM/KILL fallback for a live owned
+leader, without claiming escaped-descendant containment or a bounded kernel wait.

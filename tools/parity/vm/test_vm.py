@@ -68,6 +68,87 @@ class VMContractTests(unittest.TestCase):
             self.assertFalse(result["owned_temporary_directory_removed"])
             self.assertTrue(private.exists())
 
+    def test_reaped_leader_with_present_group_is_not_signalled_and_keeps_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "output"
+            output.mkdir()
+            private = root / "vm-owned"
+            private.mkdir()
+            vm = mock.Mock(pid=43210, returncode=0)
+            vm.poll.return_value = 0
+            report = {"status": "passed", "errors": [], "cases": []}
+            with mock.patch.object(adapter.os, "killpg") as signal_group:
+                adapter.finish(report, output, vm, None, private, None, None, None, None)
+            signal_group.assert_called_once_with(vm.pid, 0)
+            result = json.loads((output / "result.json").read_text())
+            self.assertEqual(result["status"], "failed")
+            self.assertFalse(result.get("owned_process_group_absent", False))
+            self.assertFalse(result["owned_temporary_directory_removed"])
+            self.assertTrue(private.exists())
+            self.assertTrue(any("no post-reap signal" in error for error in result["errors"]))
+
+    def test_reaped_leader_with_absent_group_allows_file_cleanup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "output"
+            output.mkdir()
+            private = root / "vm-owned"
+            private.mkdir()
+            vm = mock.Mock(pid=43210, returncode=0)
+            vm.poll.return_value = 0
+            report = {"status": "passed", "errors": [], "cases": []}
+            with mock.patch.object(adapter.os, "killpg", side_effect=ProcessLookupError) as signal_group:
+                adapter.finish(report, output, vm, None, private, None, None, None, None)
+            signal_group.assert_called_once_with(vm.pid, 0)
+            self.assertTrue(report["owned_process_group_absent"])
+            self.assertTrue(report["owned_temporary_directory_removed"])
+            self.assertEqual(report["errors"], [])
+
+    def test_failed_powerdown_does_not_signal_a_leader_reaped_before_fallback(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            vm = mock.Mock(pid=43210, returncode=0)
+            vm.poll.side_effect = [None, 0, 0]
+            vm.wait.return_value = 0
+            report = {"status": "passed", "errors": [], "cases": []}
+            with mock.patch.object(adapter.socket, "socket", side_effect=OSError("QMP unavailable")), \
+                 mock.patch.object(adapter.os, "killpg", side_effect=ProcessLookupError) as signal_group:
+                adapter.finish(report, output, vm, None, None, None, [], output / "qmp", mock.Mock())
+            signal_group.assert_called_once_with(vm.pid, 0)
+            self.assertTrue(report["owned_process_group_absent"])
+
+    def test_unreaped_leader_still_receives_bounded_term_then_kill(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            vm = mock.Mock(pid=43210, returncode=None)
+            vm.poll.side_effect = lambda: vm.returncode
+            waits = 0
+            def wait(timeout):
+                nonlocal waits
+                waits += 1
+                if waits <= 2:
+                    raise adapter.subprocess.TimeoutExpired("owned-qemu", timeout)
+                vm.returncode = 0
+                return 0
+            vm.wait.side_effect = wait
+            def signal_group(pid, value):
+                self.assertEqual(pid, vm.pid)
+                if value == 0:
+                    raise ProcessLookupError
+                self.assertIsNone(vm.returncode)
+            report = {"status": "passed", "errors": [], "cases": []}
+            with mock.patch.object(adapter.socket, "socket"), \
+                 mock.patch.object(adapter.os, "killpg", side_effect=signal_group) as signals:
+                adapter.finish(report, output, vm, None, None, None, [], output / "qmp", mock.Mock())
+            self.assertEqual(signals.call_args_list, [
+                mock.call(vm.pid, adapter.signal.SIGTERM),
+                mock.call(vm.pid, adapter.signal.SIGKILL),
+                mock.call(vm.pid, 0),
+            ])
+            self.assertTrue(report["owned_process_group_absent"])
+            self.assertEqual(report["status"], "failed")
+
     def test_vm_uses_shared_fixture_paths_without_inline_interpolation(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
