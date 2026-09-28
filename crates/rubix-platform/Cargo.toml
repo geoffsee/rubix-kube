@@ -11,4 +11,4 @@ workspace = true
 [dependencies]
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "=1.1.5", features = ["system", "process", "fs"] }
+rustix = { version = "=1.1.5", features = ["system", "process", "fs", "net"] }
