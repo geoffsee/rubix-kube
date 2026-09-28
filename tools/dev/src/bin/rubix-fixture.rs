@@ -32,7 +32,17 @@ fn run(args: &[OsString]) -> Result<()> {
 }
 
 fn main() -> ExitCode {
-    match run(&std::env::args_os().skip(1).collect::<Vec<_>>()) {
+    let args = std::env::args_os().skip(1).collect::<Vec<_>>();
+    if args.first().is_some_and(|arg| arg == "__exec") {
+        return match rubix_dev::process::child_exec(&args) {
+            Ok(code) => ExitCode::from(code),
+            Err(error) => {
+                eprintln!("{error}");
+                ExitCode::from(2)
+            },
+        };
+    }
+    match run(&args) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("{error}");
