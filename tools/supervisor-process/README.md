@@ -23,7 +23,13 @@ also incrementally bounded. Runtime has init reaping, an isolated PID namespace,
 fixtures use synthetic values and ordinary unprivileged subprocesses. No real
 Kubernetes components, credentials, host services or cluster startup are used.
 
-Eleven cases include actual 30-second TERM escalation. Readiness markers,
+Thirteen cases include actual 30-second TERM escalation, an executable spawn
+failure, and a live process whose readiness never completes before its one-second
+startup deadline. Both startup failures retain the original cause, stop a previously
+ready provider and leave a dependent unstarted. Spawn failure joins its owner
+thread without claiming a spawned/reaped process; its explicit adapter error means
+`complete` is false. The live timeout checks real readiness-marker production,
+absence of supervisor Ready state, TERM cleanup and reaping. Readiness markers,
 parent-reaped descendant markers, heartbeat advancement and process exit statuses
 are asserted by the Rust integration test. Independent Python assertions fix the
 expected status/signal/cleanup facts for every case. Final namespace enumeration
