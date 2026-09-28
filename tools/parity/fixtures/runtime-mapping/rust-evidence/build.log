@@ -2,70 +2,65 @@
 
 #1 [internal] load build definition from Capture.Dockerfile
 #1 transferring dockerfile: 826B done
-#1 DONE 0.1s
+#1 DONE 0.0s
 
 #2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 #2 DONE 0.0s
 
 #3 [internal] load .dockerignore
-#3 transferring context: 2B 0.0s done
-#3 DONE 0.1s
+#3 transferring context: 2B done
+#3 DONE 0.0s
 
-#4 [internal] load build context
+#4 [build 1/5] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
 #4 DONE 0.0s
 
-#5 [build 1/5] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#5 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#5 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.1s done
-#5 DONE 0.1s
+#5 [build 2/5] WORKDIR /src
+#5 CACHED
 
-#6 [build 2/5] WORKDIR /src
+#6 [build 3/5] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
 #6 CACHED
 
-#7 [build 3/5] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
-#7 CACHED
-
-#4 [internal] load build context
-#4 transferring context: 3.72kB done
-#4 DONE 0.1s
+#7 [internal] load build context
+#7 transferring context: 3.72kB done
+#7 DONE 0.0s
 
 #8 [build 4/5] COPY mapping_capture_test.go /src/internal/config/rubix_capture_test.go
-#8 DONE 0.2s
+#8 DONE 0.1s
 
 #9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/mapping.test ./internal/config
-#9 0.426 go: downloading github.com/distribution/reference v0.6.0
-#9 0.433 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.452 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.452 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 0.454 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 0.459 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 1.559 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 1.559 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 1.559 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 1.559 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 1.641 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 1.782 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 1.782 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 1.782 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 1.825 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 2.039 go: downloading golang.org/x/sys v0.47.0
-#9 2.039 go: downloading github.com/x448/float16 v0.8.4
-#9 DONE 9.4s
+#9 0.237 go: downloading sigs.k8s.io/yaml v1.6.0
+#9 0.237 go: downloading github.com/distribution/reference v0.6.0
+#9 0.243 go: downloading github.com/rs/zerolog v1.33.0
+#9 0.244 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#9 0.244 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#9 0.246 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#9 1.555 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#9 1.555 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#9 1.655 go: downloading github.com/opencontainers/go-digest v1.0.0
+#9 1.655 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#9 1.693 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 1.867 go: downloading gopkg.in/inf.v0 v0.9.1
+#9 1.867 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#9 1.867 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#9 1.924 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 2.163 go: downloading github.com/x448/float16 v0.8.4
+#9 2.163 go: downloading golang.org/x/sys v0.47.0
+#9 DONE 8.7s
 
 #10 [capture 1/1] WORKDIR /tmp
 #10 DONE 0.0s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 3.0s done
-#11 exporting manifest sha256:261d28906b70d86577f271028580cdc65e2b75a1f98168109349ba816ea0ca79 0.0s done
-#11 exporting config sha256:f25dc2096df49eedc83e33aa1ec27d5b12233cc5711f835039e0d7fbf39d8118 done
-#11 exporting attestation manifest sha256:cdb6e9a16f833952e30404e1554c71d860bceaf362ae2517d147ad55104b9f21 0.1s done
-#11 exporting manifest list sha256:9fe585f74f91a17d617787cd35be64701771417a5f5141fb93b015ba6d226661
-#11 exporting manifest list sha256:9fe585f74f91a17d617787cd35be64701771417a5f5141fb93b015ba6d226661 0.0s done
-#11 naming to docker.io/library/rubix-runtime-mapping-mqv9xr:latest done
-#11 unpacking to docker.io/library/rubix-runtime-mapping-mqv9xr:latest
-#11 unpacking to docker.io/library/rubix-runtime-mapping-mqv9xr:latest 0.8s done
-#11 DONE 3.9s
+#11 exporting layers 2.3s done
+#11 exporting manifest sha256:6fa734c17dfaea5a73998d8cb995a9626fa9b668be6a52f6d4632483815e53d0 done
+#11 exporting config sha256:1effdf292d74b1f5a68618cd612b4c1b6ae34a6d12b09452b2d4e5223d715ead done
+#11 exporting attestation manifest sha256:cf1815f2c1b9745d3235dd2a883ac2aa229005d9f23b0f0cf41fbc9b682e0c37 done
+#11 exporting manifest list sha256:3b61bc67607163c7121ca70fc36fae1639c34337e4881d2a55891402789a6d73 done
+#11 naming to docker.io/library/rubix-runtime-mapping-90ouky:latest done
+#11 unpacking to docker.io/library/rubix-runtime-mapping-90ouky:latest
+#11 unpacking to docker.io/library/rubix-runtime-mapping-90ouky:latest 0.7s done
+#11 DONE 3.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/xdgcfv875mv1akp8iawt58el1
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/gem313ksun1rd4qlo30pso986

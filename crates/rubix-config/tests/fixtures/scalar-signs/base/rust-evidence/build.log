@@ -12,7 +12,7 @@
 #3 DONE 0.0s
 
 #4 [build 1/5] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
 #4 DONE 0.0s
 
 #5 [build 2/5] WORKDIR /src
@@ -29,24 +29,24 @@
 #8 DONE 0.0s
 
 #9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/scalar.test ./internal/config
-#9 0.168 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.174 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 0.175 go: downloading github.com/distribution/reference v0.6.0
-#9 0.175 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.176 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 0.179 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 1.528 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 1.528 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 1.642 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 1.644 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 1.769 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 1.974 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 1.978 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 1.979 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 1.980 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 2.189 go: downloading golang.org/x/sys v0.47.0
-#9 2.254 go: downloading github.com/x448/float16 v0.8.4
-#9 DONE 10.9s
+#9 0.183 go: downloading github.com/distribution/reference v0.6.0
+#9 0.183 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#9 0.183 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#9 0.186 go: downloading sigs.k8s.io/yaml v1.6.0
+#9 0.186 go: downloading github.com/rs/zerolog v1.33.0
+#9 0.188 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#9 1.426 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#9 1.426 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#9 1.546 go: downloading github.com/opencontainers/go-digest v1.0.0
+#9 1.546 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#9 1.588 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 1.733 go: downloading gopkg.in/inf.v0 v0.9.1
+#9 1.734 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#9 1.734 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#9 1.801 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 1.994 go: downloading github.com/x448/float16 v0.8.4
+#9 1.994 go: downloading golang.org/x/sys v0.47.0
+#9 DONE 9.9s
 
 #10 [capture 1/1] WORKDIR /tmp
 #10 DONE 0.0s
@@ -54,13 +54,13 @@
 #11 exporting to image
 #11 exporting layers
 #11 exporting layers 2.5s done
-#11 exporting manifest sha256:f5c397b74855ac817493dea5e5e8984e3a0cbf812c0ecec021163a75b7acda78 done
-#11 exporting config sha256:074b1ce7ade13a0636f6e90d5a58494b40921277ab0b8bffe73cb9862e88b208 done
-#11 exporting attestation manifest sha256:2733c93c1b0660cd788d63b6f2d2f6894e8edc4ecb5d6548930f0504bf27343c done
-#11 exporting manifest list sha256:c6daa71265bf88f283d9201dbe970850d7882d2bce5b3ce849f6380d60c77995 done
-#11 naming to docker.io/library/rubix-config-scalar-base-kbkug2:latest done
-#11 unpacking to docker.io/library/rubix-config-scalar-base-kbkug2:latest
-#11 unpacking to docker.io/library/rubix-config-scalar-base-kbkug2:latest 0.7s done
-#11 DONE 3.2s
+#11 exporting manifest sha256:80a0d91b8f699fdbf9f0efc0af94b38a13f08944f520429d5f96c04b35283f59 done
+#11 exporting config sha256:de85a7aa6f0c6160e2c004fd7ae8e601c7a22f9d1fcb380362cb7c69d2d94489 done
+#11 exporting attestation manifest sha256:a9b05e8e40b78474d53555b0d89a1bcf51935a506eb160ced0a03f86f6345a8b done
+#11 exporting manifest list sha256:364d10b69ceff69477106b065f7287a2c8437a9fc778fca3576ada1561f32607 done
+#11 naming to docker.io/library/rubix-config-scalar-base-s1nqwy:latest done
+#11 unpacking to docker.io/library/rubix-config-scalar-base-s1nqwy:latest
+#11 unpacking to docker.io/library/rubix-config-scalar-base-s1nqwy:latest 1.4s done
+#11 DONE 4.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/fe86irmi4m79m3p9upnjcyomh
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/2eym42eezbjdoo5faltb1d1um

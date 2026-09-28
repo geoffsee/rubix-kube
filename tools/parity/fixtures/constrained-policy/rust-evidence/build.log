@@ -16,7 +16,7 @@
 #4 DONE 0.0s
 
 #5 [internal] load build context
-#5 transferring context: 8.14kB 0.0s done
+#5 transferring context: 8.14kB done
 #5 DONE 0.0s
 
 #6 [ 2/13] WORKDIR /source
@@ -26,10 +26,10 @@
 #7 CACHED
 
 #8 [ 4/13] COPY extract.go /extract.go
-#8 DONE 0.0s
+#8 DONE 0.1s
 
 #9 [ 5/13] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/network /oracle/system  && cp internal/runtime/network/ipv6.go /oracle/network/source.go  && cp internal/system/modules.go /oracle/system/source.go  && cp go.sum /oracle/go.sum  && sha256sum internal/runtime/network/ipv6.go internal/system/modules.go pkg/kubernetes/kubeproxy/flags.go internal/core/embedded/host.go types/const.go > /source.sha256
-#9 DONE 3.6s
+#9 DONE 3.8s
 
 #10 [ 6/13] WORKDIR /oracle
 #10 DONE 0.0s
@@ -50,25 +50,25 @@
 #15 DONE 0.0s
 
 #16 [12/13] RUN for pkg in network system proxy embedded; do go test -mod=readonly -c -trimpath -o /$pkg.test ./$pkg || exit; sha256sum /$pkg.test >> /source.sha256; done
-#16 0.089 go: downloading github.com/rs/zerolog v1.33.0
-#16 0.937 go: downloading github.com/mattn/go-colorable v0.1.13
-#16 1.143 go: downloading github.com/mattn/go-isatty v0.0.20
-#16 1.329 go: downloading golang.org/x/sys v0.47.0
-#16 DONE 8.0s
+#16 0.099 go: downloading github.com/rs/zerolog v1.33.0
+#16 1.037 go: downloading github.com/mattn/go-colorable v0.1.13
+#16 1.257 go: downloading github.com/mattn/go-isatty v0.0.20
+#16 1.467 go: downloading golang.org/x/sys v0.47.0
+#16 DONE 9.5s
 
 #17 [13/13] WORKDIR /tmp
 #17 DONE 0.0s
 
 #18 exporting to image
 #18 exporting layers
-#18 exporting layers 2.0s done
-#18 exporting manifest sha256:8f1c722ff23ef469fc410bf61da67174eacd44e3e5833a60d7590d76eec06b48 done
-#18 exporting config sha256:aee7e7deb45e89365c8f564ead70dcb52b0fba11b5554cde54ee72693b081a72 done
-#18 exporting attestation manifest sha256:06e08f4de1c6b4cb4e815e2f64177e5e262d288ed350945200c57b1ba1cea3b6 done
-#18 exporting manifest list sha256:2a8f8e0fa3f2ff43397c1ff41b28d81e786e16d41f8d62482112f0c923d87aa1 done
-#18 naming to docker.io/library/rubix-constrained-policy-zdony7:latest done
-#18 unpacking to docker.io/library/rubix-constrained-policy-zdony7:latest
-#18 unpacking to docker.io/library/rubix-constrained-policy-zdony7:latest 0.7s done
-#18 DONE 2.8s
+#18 exporting layers 2.2s done
+#18 exporting manifest sha256:3543b9ba8628cbb1ef1578b11d749bfc3672f478918ec628f7ebe5229aabcb78 done
+#18 exporting config sha256:81675f8538f2e4c8b16e084139f329ad366b8f902523792cb9122c61a1403b37 done
+#18 exporting attestation manifest sha256:a051b5957d179326ca1df2984b2bebf4d467a791ff648384ab4dd74bf2a7c61e done
+#18 exporting manifest list sha256:975581b71b31278465e523c40dc19b857694055a0b2850027408b24f4677c1a5 done
+#18 naming to docker.io/library/rubix-constrained-policy-hlwx1e:latest done
+#18 unpacking to docker.io/library/rubix-constrained-policy-hlwx1e:latest
+#18 unpacking to docker.io/library/rubix-constrained-policy-hlwx1e:latest 1.6s done
+#18 DONE 3.8s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/m31e79zxqhej6rd0lkzen0dyw
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ubt68mfhi8jtep7ho2ya0z9hw

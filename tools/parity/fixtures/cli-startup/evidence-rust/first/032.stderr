@@ -1,1 +1,1 @@
-{"level":"fatal","error":"read /tmp: read /tmp: is a directory","time":"2026-09-28T08:01:59Z","message":"failed to create service. check the logs for more information. exiting..."}
+{"level":"fatal","error":"read /tmp: read /tmp: is a directory","time":"2026-09-28T08:33:50Z","message":"failed to create service. check the logs for more information. exiting..."}

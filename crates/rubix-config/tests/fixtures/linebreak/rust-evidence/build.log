@@ -32,38 +32,38 @@
 #9 DONE 0.0s
 
 #10 [build 6/6] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config
-#10 0.227 go: downloading github.com/distribution/reference v0.6.0
-#10 0.229 go: downloading sigs.k8s.io/yaml v1.6.0
-#10 0.238 go: downloading github.com/rs/zerolog v1.33.0
-#10 0.238 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#10 0.244 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#10 0.249 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#10 1.318 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#10 1.319 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#10 1.320 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#10 1.376 go: downloading github.com/opencontainers/go-digest v1.0.0
-#10 1.541 go: downloading github.com/mattn/go-colorable v0.1.13
-#10 1.652 go: downloading gopkg.in/inf.v0 v0.9.1
-#10 1.652 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#10 1.652 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#10 1.765 go: downloading github.com/mattn/go-isatty v0.0.20
-#10 1.889 go: downloading github.com/x448/float16 v0.8.4
-#10 1.985 go: downloading golang.org/x/sys v0.47.0
-#10 DONE 9.3s
+#10 0.167 go: downloading sigs.k8s.io/yaml v1.6.0
+#10 0.168 go: downloading github.com/distribution/reference v0.6.0
+#10 0.170 go: downloading github.com/rs/zerolog v1.33.0
+#10 0.170 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#10 0.172 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#10 0.175 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#10 1.315 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#10 1.316 go: downloading github.com/opencontainers/go-digest v1.0.0
+#10 1.317 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#10 1.320 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#10 1.371 go: downloading github.com/mattn/go-colorable v0.1.13
+#10 1.582 go: downloading github.com/mattn/go-isatty v0.0.20
+#10 1.662 go: downloading gopkg.in/inf.v0 v0.9.1
+#10 1.663 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#10 1.665 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#10 1.811 go: downloading golang.org/x/sys v0.47.0
+#10 2.072 go: downloading github.com/x448/float16 v0.8.4
+#10 DONE 14.7s
 
 #11 [capture 1/1] WORKDIR /tmp
 #11 DONE 0.0s
 
 #12 exporting to image
 #12 exporting layers
-#12 exporting layers 3.5s done
-#12 exporting manifest sha256:0684a755a43fedaea6da903ae279a50c8a1a7652ee93450c3d10ece94de8bc63 0.1s done
-#12 exporting config sha256:c2cb460ee046b75e50b45a668ac4bb64994d81c13fa1fb74ad7fa96f391d695e 0.1s done
-#12 exporting attestation manifest sha256:7f5a7c1dd766cf20d9161eaf7629e4345b12a571e87b76740c6551d5b2ed1e62 0.1s done
-#12 exporting manifest list sha256:89025ffa8e558dc2744a081518d3899fb578d73724667d252a6e484e54ae4870 done
-#12 naming to docker.io/library/rubix-config-linebreak-ekw6n9:latest done
-#12 unpacking to docker.io/library/rubix-config-linebreak-ekw6n9:latest
-#12 unpacking to docker.io/library/rubix-config-linebreak-ekw6n9:latest 0.7s done
-#12 DONE 4.6s
+#12 exporting layers 2.7s done
+#12 exporting manifest sha256:fd797d880949f99db342ec59ba8883d8098705cc7dedd4ff0e7947e9428eec97 done
+#12 exporting config sha256:7c2f359511b500e5047ec4f2c9779c5a0f1b4d8e815168ccc138a3bf8e6bb4fe done
+#12 exporting attestation manifest sha256:00ea0b9530cf68f5a5a9bf0e8aaec0441f6af4fb59b8ca8762b86ca42e33935e done
+#12 exporting manifest list sha256:4ec5f0507df3e1ef12c8acdbbe6929e3941d7fb0a486bddd57583593c1842245 done
+#12 naming to docker.io/library/rubix-config-linebreak-kj2xbk:latest done
+#12 unpacking to docker.io/library/rubix-config-linebreak-kj2xbk:latest
+#12 unpacking to docker.io/library/rubix-config-linebreak-kj2xbk:latest 0.7s done
+#12 DONE 3.4s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/r9mat7aih7al26ecadgnd45ph
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/aowh1h1doua3npg80l5y8sbu0

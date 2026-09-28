@@ -17,18 +17,18 @@
 
 #5 [internal] load build context
 #5 transferring context: 198.44MB 1.5s done
-#5 DONE 1.6s
+#5 DONE 1.5s
 
-#6 [2/6] COPY rubix-parity /artifact/rubix-parity
+#6 [4/6] COPY executable artifact.json suite.json ./
 #6 CACHED
 
-#7 [3/6] WORKDIR /artifact
+#7 [5/6] COPY fixtures /fixtures
 #7 CACHED
 
-#8 [4/6] COPY executable artifact.json suite.json ./
+#8 [2/6] COPY rubix-parity /artifact/rubix-parity
 #8 CACHED
 
-#9 [5/6] COPY fixtures /fixtures
+#9 [3/6] WORKDIR /artifact
 #9 CACHED
 
 #10 [6/6] RUN mkdir /evidence && chmod 0700 /evidence
@@ -38,11 +38,12 @@
 #11 exporting layers done
 #11 exporting manifest sha256:44a7dbfc24f9e75286d038ae23d4c32eb23fd46cb525ccb9b2172b0a961ee26f done
 #11 exporting config sha256:91df3675f5cf75c1b19283a7ae9f1dacd1792a2af3f708adfdc8f7f78003bdbf done
-#11 exporting attestation manifest sha256:b4ae515c20a8c799e976814fac17a606da76a0d6a9313b6b5bd78b3c7c172712 done
-#11 exporting manifest list sha256:f0430f41b896e2cee1ea3ac50aede1c5cbd6190a78ff07e30922b348ff14b592 done
-#11 naming to docker.io/library/rubix-parity-9794df4c852ef817ddc27d1a:test done
-#11 unpacking to docker.io/library/rubix-parity-9794df4c852ef817ddc27d1a:test
-#11 unpacking to docker.io/library/rubix-parity-9794df4c852ef817ddc27d1a:test 0.8s done
-#11 DONE 1.0s
+#11 exporting attestation manifest sha256:0fac6bfe708ea7b23ea0222a50a751f7466ce7fad99abba206bd22dd8a44cb05
+#11 exporting attestation manifest sha256:0fac6bfe708ea7b23ea0222a50a751f7466ce7fad99abba206bd22dd8a44cb05 0.0s done
+#11 exporting manifest list sha256:6184b1ca5f9f6fb04c98ab69e9fa59bdd6d1a011d00ef59c37656c49a98eb840 0.0s done
+#11 naming to docker.io/library/rubix-parity-0b3aa58588a5147d3bad1ca4:test done
+#11 unpacking to docker.io/library/rubix-parity-0b3aa58588a5147d3bad1ca4:test
+#11 unpacking to docker.io/library/rubix-parity-0b3aa58588a5147d3bad1ca4:test 1.0s done
+#11 DONE 1.5s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/q6nlqlvebi0zhlxdhxs88jp2e
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/y5uvgsvwrx97h35u8texknfuw
