@@ -125,12 +125,15 @@ pub(super) fn process(mode: &str, root: &Path) -> Result<u8> {
 }
 
 pub(super) fn output(mode: &str, root: &Path) -> Result<u8> {
+    // This finite byte-only mode is safe for the host launcher regression too.
+    if mode == "merged" {
+        std::io::stdout().write_all(b"out\xff")?;
+        std::io::stdout().flush()?;
+        std::io::stderr().write_all(b"err\0")?;
+        return Ok(0);
+    }
     disposable()?;
     match mode {
-        "merged" => {
-            std::io::stdout().write_all(b"out\xff")?;
-            std::io::stderr().write_all(b"err\0")?;
-        },
         "exact" | "overflow" => {
             std::io::stdout().write_all(&vec![b'x'; if mode == "exact" { 64 } else { 65 }])?;
         },
@@ -146,6 +149,7 @@ pub(super) fn output(mode: &str, root: &Path) -> Result<u8> {
             let mut signal =
                 tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
             std::io::stdout().write_all(b"prefix")?;
+            std::io::stdout().flush()?;
             fs::write(root.join("ready"), "ready")?;
             signal.recv().await.ok_or("termination signal closed")?;
             std::io::stderr().write_all(b"term-handler-output")?;
