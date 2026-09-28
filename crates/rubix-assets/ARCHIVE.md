@@ -117,3 +117,9 @@ names, reference closure, corrupt final gzip trailers, and retained failure budg
 A compile-fail doctest prevents constructing unrelated observations as a success.
 They do not replace pinned-crane qualification, production image pins, nested
 layer verification, E06.02 materialization or E09 runtime import evidence.
+
+The separate `verify_crane_image_layer_digests` API adds bounded nested gzip/zstd
+stream completion and ordered DiffID matching; see [LAYER-INTEGRITY.md](LAYER-INTEGRITY.md).
+It reuses these outer archive checks and leaves this inspector's original
+stored-byte/declared-DiffID contract unchanged. Neither API validates inner tar
+filesystem semantics or grants import/materialization permission.
