@@ -50,10 +50,20 @@ it does not establish executable runtime compatibility or installation safety.
 
 Historical schema1 evidence in this branch was captured on
 `ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, with14 decoder cases per run.
-It intentionally cannot satisfy the expanded schema2 verifier. The reviewed new
-harness must be committed and both suites freshly captured before qualification
-is claimed; mandatory stored-evidence tests remain failing until that publication.
+It intentionally cannot satisfy the expanded schema2 verifier and remains
+historical; the current receipts below replace it without relabeling that capture.
 
 Fresh schema2 receipts must also bind the build log and both builder-produced
 binary digests. Older receipts without those fields require recapture and cannot
 be relabelled as qualification of this combined harness.
+
+Current schema2 qualification was captured twice on integrated network source
+`77e7fff321ddc3481ab84d85e5c0129fa2e6592e`. Both Linux arm64 release runs passed
+all 14 decoder and 10 compressed ELF tests. Builder and both runtime observations
+agree on decoder SHA-256
+`5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b`
+and compressed ELF test SHA-256
+`0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001`.
+Capture and cleanup error arrays are empty; independent Docker inventory checks
+confirmed both owned containers and the image tag absent. All 13 evidence tests
+and current-source verification pass normally and under optimization.
