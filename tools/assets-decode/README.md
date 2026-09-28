@@ -1,76 +1,59 @@
 # Native Linux decoder qualification
 
-This fixture builds only `cargo test -p rubix-assets --release --locked --test decode
---test decoded_elf --no-run` in the exact pinned Rust image. A second pinned Python image contains
-two copied test executables. Two newly named linux/arm64 containers run all14
-independent decoder tests and all10 decoded-executable ELF tests with network disabled, UID65532, read-only root,
-capabilities dropped, no-new-privileges,2CPUs,256MiB memory and64PIDs. No production
-artifact is executed; these tests include small fixed gzip/zstd vectors and native
-zstd library code. A Python process-namespace inventory must contain only init,
-the driver shell and that helper after tests exit. Both runs bind the same two
-binary SHA256 values and the exact14+10 source-reviewed test names in separate
-ordered suite sections; skipped/failed/missing or swapped cases cannot pass.
-Receipt schema2 records named binary hashes and case sets, retaining the original
-native decoder checks. A rehashed substitution of either repeated binary fails.
+The pinned Rust image builds two release integration-test executables and the
+Rust fixture runner. Two freshly named Linux arm64 containers run exactly 14
+decoder tests followed by exactly 10 decoded-ELF tests. Missing, repeated,
+failed, swapped or additional test cases fail verification. Fixed gzip/zstd
+vectors exercise native decoding without executing upstream artifacts.
 
-The capture uses the existing bounded trusted-command helper (source hashed), with
-1800second/16MiB build and100second/1MiB per-run bounds. Metadata/helper inputs are
-resolved before output creation. The driver always attempts independent owned
-container/image removal, records cleanup failures and writes a receipt. This is
-not an arbitrary untrusted-executable sandbox; no host directories or Docker
-socket are mounted into test containers. No host software/settings are changed.
+Both runtime invocations must match a nonce-framed builder checksum for each of
+`decode-tests`, `decoded_elf-tests` and `fixture`. A consistent substitution in
+both runtime logs still fails against builder output. The namespace record must
+contain only init, the shell and the Rust inventory helper after tests exit.
 
-The current verifier binds all manifests/lock/toolchain, .cargo, relevant asset and
-platform sources/fixtures, native dependency graph through Cargo.lock, exact build
-recipe/helper and runtime namespace helper, complete copied-source inventory,
-run commands, raw logs and binary hashes. The builder prints the SHA-256 of the
-copied `/out/decode-tests` and `/out/decoded_elf-tests` executables. Builds use `--progress=plain` and pass the
-unique owned image tag as `QUALIFICATION_NONCE`. That build argument is declared
-and consumed only in a separate checksum step after compilation/copying, forcing
-fresh checksum output while preserving compilation cache reuse. The receipt
-binds the bounded build log's SHA-256 and exactly one builder-produced digest
-per suite; each runtime digest in both runs must equal its suite's builder digest. This is build/run consistency,
-not cryptographic authenticity of editable local evidence. JSON duplicate/nonintegral values and
-oversized/nonregular evidence are rejected. Evidence revision and dirty-state
-metadata describe the actual snapshot; later commits never relabel receipts.
+## Rust harness migration status
+
+The Rust harness is under review; fresh qualification has not run yet. Existing
+`evidence/` files remain the unchanged historical capture from source
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Their original source hashes and Python
+harness identities are preserved. They are not current Rust-harness evidence and
+schema-3 verification intentionally rejects them. Do not relabel these receipts.
+
+The maintenance binary is `rubix-asset-fixture` in `tools/dev`. Its independent
+oracles do not call the production asset parser. JSON rejects duplicate keys and
+non-integer numbers; input reads reject symlinks and nonregular files and impose
+byte limits. Exact test names, record order, typed values, commands, source
+inventory, raw log hashes and cleanup outcomes are verified.
+
+The default Rust test suite includes three mandatory published-evidence checks;
+these remain failing until reviewed, clean-source Rust captures are published.
+Synthetic mutation tests cannot satisfy those checks.
 
 ```sh
-python3 tools/assets-decode/capture.py --output /tmp/rubix-assets-decode-linux
-python3 tools/assets-decode/verify.py /tmp/rubix-assets-decode-linux
-python3 -m unittest discover -s tools/assets-decode -p 'test_*.py'
+cargo test -p rubix-dev --bin rubix-asset-fixture --locked
+cargo test -p rubix-dev --bin rubix-asset-fixture --release --locked
 ```
 
-After reviewed source freeze and commit, publish build.log, first.log, repeat.log,
-source-inventory.json and receipt.json only. Stored evidence tests are mandatory;
-missing evidence fails rather than silently skipping. This qualifies Linuxarm64
-native decoder execution for the tested inputs, not production payloads, other
-ABI/CPU/libc combinations, hard RSS/CPU limits or archive/OCI semantics. The new
-suite exercises composed ELF header observations on synthetic compressed vectors;
-it does not establish executable runtime compatibility or installation safety.
+Capture commands below are for use after source and process-ownership review.
+Every capture requires a new output directory and a clean relevant source tree.
+Publication changes only the exact raw receipts/logs and factual documentation.
 
-Historical schema1 evidence in this branch was captured on
-`ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, with14 decoder cases per run.
-It intentionally cannot satisfy the expanded schema2 verifier and remains
-historical; the current receipts below replace it without relabeling that capture.
+```sh
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode capture /tmp/rubix-decode-UNIQUE
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode verify /tmp/rubix-decode-UNIQUE
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- decode verify tools/assets-decode/evidence
+```
 
-Fresh schema2 receipts must also bind the build log and both builder-produced
-binary digests. Older receipts without those fields require recapture and cannot
-be relabelled as qualification of this combined harness.
+The build has an 1800-second/16 MiB limit and each runtime a 100-second/2 MiB
+limit. Containers use UID65532, no network, read-only root, no capabilities,
+no-new-privileges, init, 64 PIDs, 256 MiB memory, two CPUs and a 16 MiB tmpfs.
+No host bind mounts are used. The driver records the copied relevant inventory,
+actual revision, exact build/run commands, image identity and log hashes. It
+removes only its owned container names and image and records cleanup failures
+and remaining resources. Independently query the exact owned tag after capture.
 
-Current schema2 qualification was captured twice on decoder error-budget source
-`7be6768673263c26cf6fc3407b6650b239e41cf8`. Both Linux arm64 release runs passed
-all 14 decoder and 10 compressed ELF integration tests. Builder and both runtime
-observations agree on decoder SHA-256
-`0a27bdd86dd617e5a971482a073020f78951f4ab00ded4dab212e28321b6d2a8`
-and compressed ELF test SHA-256
-`d34ebfb20488e19aced666b2eab1147957aeaf5ea56e4a6cd879ebed5c53c2ac`.
-Capture and cleanup error arrays are empty; independent Docker inventory checks
-confirmed both owned containers and the image tag absent. All 13 evidence tests
-and current-source verification pass normally and under optimization. This fixture
-runs the two integration executables; the private failed-read error-accounting
-regression passed separately as a library test, not in these Docker runs.
-
-Current container-preparation integration qualification was captured at source
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed all 14 decoder and 10 compressed-ELF integration tests. Builder and runtime binary hashes match the prior archive qualification; the full source binding was refreshed.
-Current-source verification passes normally and with `-O`; exact raw evidence is
-published in `evidence/`. Owned capture resources were independently confirmed absent.
+The build and both runtime logs have hash-bound `*.command.json` records proving
+exit zero, EOF, process-group absence and no timeout, cancellation or overflow.
+Unconfirmed command settlement stops further actions, retains its input context
+and records resource inventories as unknown. Settled cancellation permits only
+owned cleanup with a fresh cancellation latch.
