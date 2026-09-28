@@ -11,7 +11,7 @@
   ],
   "source_sha256": {
     "capture.py": "fa0c39a91070538cd8b7dc39a14ceea5037f78ab29a859f0d2976981c28ada97",
-    "inputs.json": "574d97bd4c3881eeea68c1816af1b2b42b4479b5366bfaceefa05fcc9257767f",
+    "inputs.json": "7195abbbde15421f0900390bc259194a29d147eb021a691df59148cefd14eb88",
     "guest.sh": "2de3d5fc83048fc4d9b2a3b1012e00a37aa2778942ccb39ae103ba22fedb26aa",
     "reboot.sh": "61d882c9cb68cf89f15b455d4ad614aa0163283d7073c0e7419d9c3eea8fcdcf",
     "verify.py": "d8ce32751f8d82328270ba918c354ebaa9b876432cbc7c83c9e8eb113a6a416d",
@@ -22,7 +22,7 @@
   "build_verifier_sha256": "52a15c23a9ad363097139bdad9d6d26c3e0943050bd9b4ba3cc6beb9f1f00a22",
   "build_support_sha256": "e0cf2ff2eccb1e4bda10161bd1cbc9f5e584edcbc8dc2a450c096bd3aff59e74",
   "artifact_sha256": "8e512766d58cdf39cce89c484414718908403aa324a28ae17e26c4d2b023defb",
-  "revision": "da03404513f8b407ec8109a64038f1acad302139",
+  "revision": "0fb3357e276377a639458e9719c464cc6dac68fe",
   "working_tree_snapshot": true,
   "inputs": {
     "image": {
@@ -168,7 +168,7 @@
       "sha256": "8e512766d58cdf39cce89c484414718908403aa324a28ae17e26c4d2b023defb",
       "size": 5352968,
       "target": "aarch64-unknown-linux-musl",
-      "revision": "e9d4235d781219a635d03171fec2cc0f806be757"
+      "revision": "3ea7303716e0b98455c0d9781e3552da75e0f431"
     },
     "openrc_service_sha256": "8b56a0712bff950b23696699e5ba76f895b448ef8f7a77412edb8e8f28571e7a"
   },
@@ -199,8 +199,8 @@
     "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
   },
   "qemu_version": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n",
-  "owned_temporary_directory": "/tmp/rubix-vm-e5cl1ro0",
-  "guest_host_public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFTmdQ1TfE7SW17XOrvoQEl27GUWCcdZGFzQngQMu9NX rubix-alpine-fixture-host",
+  "owned_temporary_directory": "/tmp/rubix-vm-gcdbnmva",
+  "guest_host_public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPaCvSputD3CjzJnvTBbb8hlDYbAwNYLpQsXVKfy07SL rubix-alpine-fixture-host",
   "owned_resources": [
     "disk.qcow2",
     "vars.fd",
@@ -213,7 +213,7 @@
     "known_hosts",
     "qmp.sock"
   ],
-  "ssh_forward": "127.0.0.1:55508",
+  "ssh_forward": "127.0.0.1:55785",
   "qemu_argv": [
     "qemu-system-aarch64",
     "-machine",
@@ -231,22 +231,22 @@
     "-monitor",
     "none",
     "-qmp",
-    "unix:/tmp/rubix-vm-e5cl1ro0/qmp.sock,server=on,wait=off",
+    "unix:/tmp/rubix-vm-gcdbnmva/qmp.sock,server=on,wait=off",
     "-drive",
     "if=pflash,format=raw,readonly=on,file=/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
     "-drive",
-    "if=pflash,format=raw,file=/tmp/rubix-vm-e5cl1ro0/vars.fd",
+    "if=pflash,format=raw,file=/tmp/rubix-vm-gcdbnmva/vars.fd",
     "-drive",
-    "if=virtio,format=qcow2,file=/tmp/rubix-vm-e5cl1ro0/disk.qcow2",
+    "if=virtio,format=qcow2,file=/tmp/rubix-vm-gcdbnmva/disk.qcow2",
     "-drive",
-    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-e5cl1ro0/seed.iso",
+    "if=virtio,format=raw,readonly=on,file=/tmp/rubix-vm-gcdbnmva/seed.iso",
     "-netdev",
-    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:55508-:22",
+    "user,id=n0,restrict=on,hostfwd=tcp:127.0.0.1:55785-:22",
     "-device",
     "virtio-net-pci,netdev=n0"
   ],
-  "owned_pid": 15695,
-  "ssh_readiness_seconds": 25.40754520900373,
+  "owned_pid": 16560,
+  "ssh_readiness_seconds": 25.38114187499741,
   "cloud_init_exit": 2,
   "cloud_init": {
     "boot_status_code": "enabled-by-sysvinit",
@@ -256,32 +256,32 @@
     "extended_status": "degraded done",
     "init": {
       "errors": [],
-      "finished": 7.31,
+      "finished": 8.24,
       "recoverable_errors": {},
-      "start": 6.73
+      "start": 7.8
     },
     "init-local": {
       "errors": [],
-      "finished": 1.88,
+      "finished": 1.75,
       "recoverable_errors": {},
-      "start": 1.82
+      "start": 1.69
     },
-    "last_update": "Thu, 01 Jan 1970 00:00:07 +0000",
+    "last_update": "Thu, 01 Jan 1970 00:00:08 +0000",
     "modules-config": {
       "errors": [],
-      "finished": 7.49,
+      "finished": 8.41,
       "recoverable_errors": {},
-      "start": 7.48
+      "start": 8.4
     },
     "modules-final": {
       "errors": [],
-      "finished": 7.69,
+      "finished": 8.6,
       "recoverable_errors": {
         "WARNING": [
           "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
         ]
       },
-      "start": 7.67
+      "start": 8.58
     },
     "recoverable_errors": {
       "WARNING": [
@@ -303,28 +303,28 @@
     "extended_status": "done",
     "init": {
       "errors": [],
-      "finished": 7.91,
+      "finished": 9.08,
       "recoverable_errors": {},
-      "start": 7.85
+      "start": 9.03
     },
     "init-local": {
       "errors": [],
-      "finished": 1.85,
+      "finished": 1.79,
       "recoverable_errors": {},
-      "start": 1.78
+      "start": 1.73
     },
-    "last_update": "Thu, 01 Jan 1970 00:00:08 +0000",
+    "last_update": "Thu, 01 Jan 1970 00:00:09 +0000",
     "modules-config": {
       "errors": [],
-      "finished": 8.11,
+      "finished": 9.27,
       "recoverable_errors": {},
-      "start": 8.09
+      "start": 9.25
     },
     "modules-final": {
       "errors": [],
-      "finished": 8.32,
+      "finished": 9.46,
       "recoverable_errors": {},
-      "start": 8.3
+      "start": 9.44
     },
     "recoverable_errors": {},
     "stage": null,

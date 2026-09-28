@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "target": {
+    "os": "linux",
+    "architecture": "amd64",
+    "libc": "glibc"
+  },
+  "variant": "online",
+  "scope": "supervised-bundle",
+  "assets": [
+    {
+      "id": "kube-apiserver",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/kube-apiserver",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "kube-controller-manager",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/kube-controller-manager",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "kubelet",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/kubelet",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "kube-proxy",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/kube-proxy",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "kine",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/kine",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "containerd",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/containerd",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "fuse-overlayfs-snapshotter",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/fuse-overlayfs-snapshotter",
+        "encoding": "identity",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "containerd-shim-runc-v2",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/containerd-shim-runc-v2",
+        "encoding": "zstd",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "crun",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/crun",
+        "encoding": "zstd",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "cni-bridge",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/cni-bridge",
+        "encoding": "zstd",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "cni-host-local",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/cni-host-local",
+        "encoding": "zstd",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "cni-portmap",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/cni-portmap",
+        "encoding": "zstd",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "cni-loopback",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/cni-loopback",
+        "encoding": "zstd",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "image-coredns",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/image-coredns",
+        "encoding": "gzip",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "image-pause",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/image-pause",
+        "encoding": "gzip",
+        "encoded_bytes": 3,
+        "sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+      }
+    },
+    {
+      "id": "image-local-path",
+      "delivery": {
+        "kind": "registry-required"
+      }
+    },
+    {
+      "id": "image-local-path-helper",
+      "delivery": {
+        "kind": "registry-required"
+      }
+    },
+    {
+      "id": "image-portainer-agent",
+      "delivery": {
+        "kind": "registry-required"
+      }
+    },
+    {
+      "id": "image-d2k",
+      "delivery": {
+        "kind": "registry-required"
+      }
+    }
+  ]
+}
