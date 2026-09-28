@@ -26,10 +26,10 @@
 #7 CACHED
 
 #8 [ 4/13] COPY extract.go /extract.go
-#8 DONE 0.1s
+#8 DONE 0.0s
 
 #9 [ 5/13] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/network /oracle/system  && cp internal/runtime/network/ipv6.go /oracle/network/source.go  && cp internal/system/modules.go /oracle/system/source.go  && cp go.sum /oracle/go.sum  && sha256sum internal/runtime/network/ipv6.go internal/system/modules.go pkg/kubernetes/kubeproxy/flags.go internal/core/embedded/host.go types/const.go > /source.sha256
-#9 DONE 3.8s
+#9 DONE 4.1s
 
 #10 [ 6/13] WORKDIR /oracle
 #10 DONE 0.0s
@@ -50,25 +50,25 @@
 #15 DONE 0.0s
 
 #16 [12/13] RUN for pkg in network system proxy embedded; do go test -mod=readonly -c -trimpath -o /$pkg.test ./$pkg || exit; sha256sum /$pkg.test >> /source.sha256; done
-#16 0.099 go: downloading github.com/rs/zerolog v1.33.0
-#16 1.037 go: downloading github.com/mattn/go-colorable v0.1.13
-#16 1.257 go: downloading github.com/mattn/go-isatty v0.0.20
-#16 1.467 go: downloading golang.org/x/sys v0.47.0
-#16 DONE 9.5s
+#16 0.130 go: downloading github.com/rs/zerolog v1.33.0
+#16 0.990 go: downloading github.com/mattn/go-colorable v0.1.13
+#16 1.200 go: downloading github.com/mattn/go-isatty v0.0.20
+#16 1.401 go: downloading golang.org/x/sys v0.47.0
+#16 DONE 9.4s
 
 #17 [13/13] WORKDIR /tmp
 #17 DONE 0.0s
 
 #18 exporting to image
 #18 exporting layers
-#18 exporting layers 2.2s done
-#18 exporting manifest sha256:3543b9ba8628cbb1ef1578b11d749bfc3672f478918ec628f7ebe5229aabcb78 done
-#18 exporting config sha256:81675f8538f2e4c8b16e084139f329ad366b8f902523792cb9122c61a1403b37 done
-#18 exporting attestation manifest sha256:a051b5957d179326ca1df2984b2bebf4d467a791ff648384ab4dd74bf2a7c61e done
-#18 exporting manifest list sha256:975581b71b31278465e523c40dc19b857694055a0b2850027408b24f4677c1a5 done
-#18 naming to docker.io/library/rubix-constrained-policy-hlwx1e:latest done
-#18 unpacking to docker.io/library/rubix-constrained-policy-hlwx1e:latest
-#18 unpacking to docker.io/library/rubix-constrained-policy-hlwx1e:latest 1.6s done
-#18 DONE 3.8s
+#18 exporting layers 2.1s done
+#18 exporting manifest sha256:0d21f89622d1dbed6a629569e619d3f938dc26a365e148184329e089cfe10682 done
+#18 exporting config sha256:2e76de537d2cec1b1490f487928370b591510b84875a5f365376deb544f19589 done
+#18 exporting attestation manifest sha256:65a74fc434f34d5ce990fd450681d1a771a0a53ac870011536f5c36908388a17 done
+#18 exporting manifest list sha256:945fd701dd34cd3090997947d8166e6e1d01c7e47fdce4dec2c669c1d70849ee done
+#18 naming to docker.io/library/rubix-constrained-policy-ws87o8:latest done
+#18 unpacking to docker.io/library/rubix-constrained-policy-ws87o8:latest
+#18 unpacking to docker.io/library/rubix-constrained-policy-ws87o8:latest 0.7s done
+#18 DONE 3.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ubt68mfhi8jtep7ho2ya0z9hw
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/kh55hzfophq8b3wm4mhnxhdor
