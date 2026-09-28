@@ -751,7 +751,7 @@ impl<'de> Visitor<'de> for JsonVisitor {
         Ok(Value::Object(out))
     }
 }
-fn strict_json(bytes: &[u8], depth: usize) -> Result<Value, ArchivePolicyError> {
+pub(crate) fn strict_json(bytes: &[u8], depth: usize) -> Result<Value, ArchivePolicyError> {
     let mut de = serde_json::Deserializer::from_slice(bytes);
     let value = JsonSeed { depth }
         .deserialize(&mut de)
