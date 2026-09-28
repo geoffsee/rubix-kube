@@ -20,7 +20,8 @@ fn gather(root: &Path, path: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
             if matches!(
                 entry.file_name().to_str(),
                 Some("target" | ".git" | "__pycache__" | ".DS_Store" | "rust-evidence")
-            ) || entry.file_name().to_string_lossy().starts_with("evidence")
+            ) || (entry.file_type()?.is_dir()
+                && entry.file_name().to_string_lossy().starts_with("evidence"))
             {
                 continue;
             }
@@ -526,6 +527,27 @@ pub fn verify(root: &Path, family: &str, linux: bool, output: &Path) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn source_inventory_keeps_evidence_modules_and_excludes_evidence_directories() {
+        let directory = tempfile::tempdir().unwrap();
+        let sources = directory.path().join("tools/dev/src/defaults");
+        fs::create_dir_all(sources.join("evidence-rust")).unwrap();
+        fs::write(sources.join("evidence.rs"), b"pub fn verify() {}\n").unwrap();
+        fs::write(sources.join("evidence-rust/receipt.json"), b"{}").unwrap();
+        let mut files = Vec::new();
+        gather(directory.path(), directory.path(), &mut files).unwrap();
+        assert_eq!(files, [PathBuf::from("tools/dev/src/defaults/evidence.rs")]);
+        let actual = inventory(&root(), "management").unwrap();
+        assert_eq!(
+            actual["tools/dev/src/defaults/evidence.rs"],
+            digest(&root().join("tools/dev/src/defaults/evidence.rs")).unwrap()
+        );
+        assert!(
+            actual.as_object().unwrap().keys().all(|name| {
+                !name.starts_with("tools/parity/fixtures/management-check/evidence")
+            })
+        );
+    }
     fn root() -> PathBuf {
         crate::repository_root(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap()
     }

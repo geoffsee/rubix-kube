@@ -66,7 +66,14 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
     receipt["commands"]["create"] = record(
         directory,
         "create",
-        &json!(["docker", "create", "--name", format!("{tag}-artifact"), tag]),
+        &json!([
+            "docker",
+            "create",
+            "--name",
+            format!("{tag}-artifact"),
+            tag,
+            "/bin/true"
+        ]),
     )?
     .into();
     for name in build::binaries(family)? {
@@ -98,6 +105,36 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
     save(&directory.join("receipt.json"), &receipt)?;
     docker::verify(&root()?, family, directory, true)?;
     Ok(receipt)
+}
+#[test]
+fn artifact_creation_requires_explicit_inert_command_after_rehash() -> Result<()> {
+    for family in ["network", "container"] {
+        let directory = tempfile::tempdir()?;
+        let original = staged(directory.path(), family)?;
+        let path = directory.path().join("create.command.json");
+        let command = load(&path)?;
+        assert_eq!(
+            command["argv"].as_array().ok_or("argv")?.last(),
+            Some(&json!("/bin/true"))
+        );
+        for replacement in [None, Some("/bin/sh")] {
+            let mut changed = command.clone();
+            let argv = changed["argv"].as_array_mut().ok_or("argv")?;
+            argv.pop();
+            if let Some(value) = replacement {
+                argv.push(json!(value));
+            }
+            save(&path, &changed)?;
+            let mut receipt = original.clone();
+            receipt["commands"]["create"] = digest(&path)?.into();
+            save(&directory.path().join("receipt.json"), &receipt)?;
+            assert!(
+                docker::verify(&root()?, family, directory.path(), true).is_err(),
+                "{family}/{replacement:?}"
+            );
+        }
+    }
+    Ok(())
 }
 #[test]
 fn complete_build_receipts_bind_every_field_and_artifact() -> Result<()> {

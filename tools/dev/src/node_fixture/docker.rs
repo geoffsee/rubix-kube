@@ -348,7 +348,14 @@ fn verify_artifact(
     .map(str::to_owned)
     .to_vec();
     let tag = text(&report["tag"])?;
-    let create = json!(["docker", "create", "--name", format!("{tag}-artifact"), tag]);
+    let create = json!([
+        "docker",
+        "create",
+        "--name",
+        format!("{tag}-artifact"),
+        tag,
+        "/bin/true"
+    ]);
     require(
         report["commands"]["create"] == commands::verify(directory, "create", &create)?,
         "artifact container",
@@ -589,7 +596,14 @@ fn export_artifacts(
     cancellation: &Cancellation,
 ) -> Result<()> {
     let tag = text(&report["tag"])?.to_owned();
-    let create = json!(["docker", "create", "--name", format!("{tag}-artifact"), tag]);
+    let create = json!([
+        "docker",
+        "create",
+        "--name",
+        format!("{tag}-artifact"),
+        tag,
+        "/bin/true"
+    ]);
     commands::run(directory, "create", &create, 30, 65536, cancellation)?;
     report["commands"]["create"] = commands::verify(directory, "create", &create)?.into();
     let mut metadata =
