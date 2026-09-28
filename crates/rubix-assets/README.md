@@ -2,7 +2,7 @@
 
 This is the first bounded layer of E06.01/#48. It is a synchronous, read-only
 library shared by future runtime and release consumers. It does not open paths,
-fetch inputs, start commands, parse OCI content, install
+fetch inputs, start commands, parse general OCI content, install
 files, import images or authorize any of those actions.
 
 `Manifest::decode(bytes, limits)` is the sole public construction route and parses
@@ -103,3 +103,8 @@ do not establish ELF/archive/OCI semantics or authenticate a publisher.
 inspection with the same bounded ELF parser, using a private provisional buffer
 and retained aggregate budgets. Its combined observation still leaves production
 decoded pins, archive/OCI content, ABI qualification and materialization open.
+
+The additive [single-image crane archive inspector](ARCHIVE.md) streams gzip/tar
+structure and stored-member digests with bounded metadata. Config platform and
+reference observations leave nested layer codecs/DiffIDs, original registry
+manifest identity, production pins and safe materialization unresolved.
