@@ -14,6 +14,20 @@ use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::UnixStream;
 use std::process::Stdio;
 use std::time::{Duration, Instant};
+// Both reviewed edk2-aarch64-code.fd and edk2-arm-vars.fd images are exactly 64 MiB.
+const FIRMWARE_BYTES: u64 = 64 * 1024 * 1024;
+fn firmware_bytes(path: &Path, expected_sha256: &str) -> Result<Vec<u8>> {
+    let bytes = read(path, FIRMWARE_BYTES)?;
+    require(
+        bytes.len() as u64 == FIRMWARE_BYTES,
+        "exact reviewed firmware size",
+    )?;
+    require(
+        rubix_dev::sha256(&bytes) == expected_sha256,
+        "firmware digest mismatch",
+    )?;
+    Ok(bytes)
+}
 pub(crate) struct GuestSpec<'a> {
     pub output: &'a Path,
     pub image_cache: &'a Path,
@@ -178,6 +192,18 @@ impl Guest {
             &spec.inputs["firmware"],
             "firmware pins",
         )?;
+        firmware_bytes(
+            firmware,
+            spec.inputs["firmware"]["code_sha256"]
+                .as_str()
+                .ok_or("firmware code pin")?,
+        )?;
+        let variables_bytes = firmware_bytes(
+            variables,
+            spec.inputs["firmware"]["vars_template_sha256"]
+                .as_str()
+                .ok_or("firmware vars pin")?,
+        )?;
         self.report["qemu_version"] = json!(
             self.commands
                 .run(
@@ -198,7 +224,7 @@ impl Guest {
             .keep();
         self.private = Some(private.clone());
         self.report["owned_temporary_directory"] = json!(private);
-        write_new(&private.join("vars.fd"), &read(variables, 8 * 1024 * 1024)?)?;
+        write_new(&private.join("vars.fd"), &variables_bytes)?;
         self.commands.run(
             "overlay",
             &[
@@ -774,6 +800,31 @@ pub(crate) fn evidence_inventory(output: &Path) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pinned_firmware_accepts_exact_64_mib_and_rejects_size_hash_and_symlink_changes() -> Result<()>
+    {
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("vars.fd");
+        let mut file = File::create(&path)?;
+        file.write_all(b"reviewed firmware fixture")?;
+        file.set_len(FIRMWARE_BYTES)?;
+        let expected = digest(&path)?;
+        let bytes = firmware_bytes(&path, &expected)?;
+        assert_eq!(bytes.len() as u64, FIRMWARE_BYTES);
+        assert!(bytes.starts_with(b"reviewed firmware fixture"));
+        drop(bytes);
+        assert!(firmware_bytes(&path, &"0".repeat(64)).is_err());
+        let link = directory.path().join("alias.fd");
+        std::os::unix::fs::symlink(&path, &link)?;
+        assert!(firmware_bytes(&link, &expected).is_err());
+        file.set_len(FIRMWARE_BYTES + 1)?;
+        assert!(firmware_bytes(&path, &expected).is_err());
+        file.set_len(FIRMWARE_BYTES - 1)?;
+        assert!(firmware_bytes(&path, &expected).is_err());
+        file.set_len(8 * 1024 * 1024)?;
+        assert!(firmware_bytes(&path, &digest(&path)?).is_err());
+        Ok(())
+    }
     #[test]
     fn credential_suppression_recurses_and_preserves_failure() -> Result<()> {
         let dir = tempfile::tempdir()?;
