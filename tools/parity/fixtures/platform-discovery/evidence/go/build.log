@@ -1,0 +1,49 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 778B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 2.99kB done
+#5 DONE 0.0s
+
+#6 [2/6] WORKDIR /src
+#6 CACHED
+
+#7 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/detect/detect.go
+#7 CACHED
+
+#8 [4/6] COPY detect_capture_test.go .
+#8 DONE 0.0s
+
+#9 [5/6] RUN sha256sum detect.go > /source.sha256 && go test -c -trimpath -o /detect.test .
+#9 DONE 4.0s
+
+#10 [6/6] WORKDIR /tmp
+#10 DONE 0.0s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 1.1s done
+#11 exporting manifest sha256:edbd78ead356cf91f8c77345f2a1314226591c7f3111acaa92377ec7a8947714 done
+#11 exporting config sha256:6541591d5452e5ab450c0f6f9fa23b15922b52c5bdca0c1c81354468e02cb3f4 done
+#11 exporting attestation manifest sha256:31fb2b4b73c68f437e2bc92c0ab08cfb946f4f6d7e578629714b076ce21155d6 done
+#11 exporting manifest list sha256:4ebbb9bf172a50ec3a8a5a2096e676a550716bad1cbae21250af0bc8c9242e54 done
+#11 naming to docker.io/library/rubix-platform-capture-08eb0b845d39483d8f4c27d3a8639bbf:latest done
+#11 unpacking to docker.io/library/rubix-platform-capture-08eb0b845d39483d8f4c27d3a8639bbf:latest
+#11 unpacking to docker.io/library/rubix-platform-capture-08eb0b845d39483d8f4c27d3a8639bbf:latest 0.2s done
+#11 DONE 1.4s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/e7579jcn4md1a5xhatsjfpmpp
