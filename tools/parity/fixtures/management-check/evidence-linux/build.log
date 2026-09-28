@@ -1,129 +1,141 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#1 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 done
-#1 DONE 0.0s
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.15kB done
+#1 DONE 0.1s
 
-#2 [2/5] WORKDIR /source
-#2 CACHED
+#2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#2 DONE 1.6s
 
-#3 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
-#3 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.0s done
-#3 DONE 0.0s
+#3 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#3 DONE 1.6s
 
-#4 [internal] load build definition from Dockerfile
-#4 transferring dockerfile: 1.15kB done
+#4 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
 #4 DONE 0.0s
 
-#5 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
 #5 DONE 0.0s
 
-#6 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#6 DONE 0.0s
+#6 [2/5] WORKDIR /source
+#6 CACHED
 
-#7 [internal] load .dockerignore
-#7 transferring context: 2B done
-#7 DONE 0.0s
+#7 [internal] load build context
+#7 ...
 
-#8 [internal] load build context
-#8 transferring context: 2.16MB 0.0s done
-#8 DONE 0.0s
+#8 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#8 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d 0.2s done
+#8 DONE 0.2s
+
+#7 [internal] load build context
+#7 transferring context: 2.19MB 0.0s done
+#7 DONE 0.2s
 
 #9 [build 3/4] COPY . .
-#9 DONE 0.1s
+#9 DONE 0.2s
 
 #10 [build 4/4] RUN rustup target add aarch64-unknown-linux-musl  && cargo clippy -p rubixctl --all-targets --target aarch64-unknown-linux-musl --locked -- -D warnings  && cargo test -p rubixctl --locked --release --target aarch64-unknown-linux-musl --test check --no-run  && mkdir /out && cp target/aarch64-unknown-linux-musl/release/rubixctl /out/rubixctl  && for binary in target/aarch64-unknown-linux-musl/release/deps/check-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/check-tests; fi; done  && test -x /out/check-tests && sha256sum /out/* > /out/binaries.sha256
-#10 0.118 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 1.475 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 1.482 info: downloading 3 components
-#10 5.406 info: downloading component rust-std
-#10 50.71     Updating crates.io index
-#10 53.86  Downloading crates ...
-#10 54.34   Downloaded itoa v1.0.18
-#10 54.36   Downloaded tokio-macros v2.7.1
-#10 54.40   Downloaded errno v0.3.14
-#10 54.52   Downloaded zmij v1.0.23
-#10 54.52   Downloaded signal-hook-registry v1.4.8
-#10 54.52   Downloaded quote v1.0.47
-#10 54.60   Downloaded pin-project-lite v0.2.17
-#10 54.61   Downloaded serde_core v1.0.228
-#10 54.67   Downloaded proc-macro2 v1.0.107
-#10 54.67   Downloaded unicode-ident v1.0.26
-#10 54.69   Downloaded bitflags v2.13.2
-#10 54.90   Downloaded memchr v2.8.3
-#10 54.90   Downloaded mio v1.2.3
-#10 55.07   Downloaded serde_json v1.0.151
-#10 55.54   Downloaded syn v2.0.119
-#10 55.73   Downloaded rustix v1.1.5
-#10 56.94   Downloaded libc v0.2.189
-#10 57.13   Downloaded tokio v1.53.1
-#10 59.62   Downloaded linux-raw-sys v0.12.1
-#10 59.69    Compiling libc v0.2.189
-#10 59.69    Compiling proc-macro2 v1.0.107
-#10 59.69    Compiling quote v1.0.47
-#10 59.69    Compiling unicode-ident v1.0.26
-#10 59.69    Compiling rustix v1.1.5
-#10 59.69     Checking bitflags v2.13.2
-#10 59.69     Checking linux-raw-sys v0.12.1
-#10 59.69     Checking pin-project-lite v0.2.17
-#10 59.69    Compiling serde_core v1.0.228
-#10 59.69    Compiling zmij v1.0.23
-#10 59.70    Compiling serde_json v1.0.151
-#10 59.70     Checking memchr v2.8.3
-#10 59.70     Checking itoa v1.0.18
-#10 60.20    Compiling syn v2.0.119
-#10 60.29     Checking errno v0.3.14
-#10 60.29     Checking mio v1.2.3
-#10 60.33     Checking signal-hook-registry v1.4.8
-#10 61.11     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#10 62.54    Compiling tokio-macros v2.7.1
-#10 63.36     Checking tokio v1.53.1
-#10 64.02     Checking rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 64.22     Checking rubixctl v0.1.0 (/source/crates/rubixctl)
-#10 64.42     Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.73s
-#10 64.53    Compiling libc v0.2.189
-#10 64.53    Compiling proc-macro2 v1.0.107
-#10 64.53    Compiling unicode-ident v1.0.26
-#10 64.53    Compiling quote v1.0.47
-#10 64.53    Compiling rustix v1.1.5
-#10 64.53    Compiling linux-raw-sys v0.12.1
-#10 64.53    Compiling bitflags v2.13.2
-#10 64.53    Compiling pin-project-lite v0.2.17
-#10 64.53    Compiling serde_core v1.0.228
-#10 64.54    Compiling zmij v1.0.23
-#10 64.54    Compiling serde_json v1.0.151
-#10 64.54    Compiling memchr v2.8.3
-#10 64.54    Compiling itoa v1.0.18
-#10 64.93    Compiling syn v2.0.119
-#10 65.04    Compiling errno v0.3.14
-#10 65.04    Compiling mio v1.2.3
-#10 65.07    Compiling signal-hook-registry v1.4.8
-#10 65.95    Compiling tokio-macros v2.7.1
-#10 66.23    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
-#10 66.26    Compiling tokio v1.53.1
-#10 67.18    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 67.41    Compiling rubixctl v0.1.0 (/source/crates/rubixctl)
-#10 71.07     Finished `release` profile [optimized + debuginfo] target(s) in 6.60s
-#10 71.07   Executable tests/check.rs (target/aarch64-unknown-linux-musl/release/deps/check-2e467eb460320e19)
-#10 DONE 71.3s
+#10 0.280 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 5.425 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 5.432 info: downloading 3 components
+#10 24.82 info: downloading component rust-std
+#10 ...
 
-#11 [stage-1 3/4] COPY --from=build /out/rubixctl /source/target/aarch64-unknown-linux-musl/release/rubixctl
-#11 CACHED
+#8 [stage-1 1/4] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#8 CACHED
 
-#12 [stage-1 2/4] COPY --from=build /out/ /
-#12 CACHED
+#10 [build 4/4] RUN rustup target add aarch64-unknown-linux-musl  && cargo clippy -p rubixctl --all-targets --target aarch64-unknown-linux-musl --locked -- -D warnings  && cargo test -p rubixctl --locked --release --target aarch64-unknown-linux-musl --test check --no-run  && mkdir /out && cp target/aarch64-unknown-linux-musl/release/rubixctl /out/rubixctl  && for binary in target/aarch64-unknown-linux-musl/release/deps/check-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/check-tests; fi; done  && test -x /out/check-tests && sha256sum /out/* > /out/binaries.sha256
+#10 59.17     Updating crates.io index
+#10 155.4  Downloading crates ...
+#10 156.2   Downloaded pin-project-lite v0.2.17
+#10 156.5   Downloaded itoa v1.0.18
+#10 156.5   Downloaded signal-hook-registry v1.4.8
+#10 156.7   Downloaded tokio-macros v2.7.1
+#10 156.9   Downloaded errno v0.3.14
+#10 156.9   Downloaded zmij v1.0.23
+#10 156.9   Downloaded quote v1.0.47
+#10 157.3   Downloaded unicode-ident v1.0.26
+#10 157.5   Downloaded bitflags v2.13.2
+#10 157.5   Downloaded proc-macro2 v1.0.107
+#10 157.7   Downloaded serde_core v1.0.228
+#10 158.3   Downloaded memchr v2.8.3
+#10 158.3   Downloaded mio v1.2.3
+#10 159.0   Downloaded serde_json v1.0.151
+#10 160.7   Downloaded syn v2.0.119
+#10 161.6   Downloaded rustix v1.1.5
+#10 165.4   Downloaded libc v0.2.189
+#10 166.0   Downloaded tokio v1.53.1
+#10 172.1   Downloaded linux-raw-sys v0.12.1
+#10 172.2    Compiling libc v0.2.189
+#10 172.2    Compiling proc-macro2 v1.0.107
+#10 172.2    Compiling unicode-ident v1.0.26
+#10 172.2    Compiling quote v1.0.47
+#10 172.2    Compiling rustix v1.1.5
+#10 172.2     Checking bitflags v2.13.2
+#10 172.2     Checking linux-raw-sys v0.12.1
+#10 172.2     Checking pin-project-lite v0.2.17
+#10 172.2    Compiling zmij v1.0.23
+#10 172.2    Compiling serde_core v1.0.228
+#10 172.2    Compiling serde_json v1.0.151
+#10 172.2     Checking memchr v2.8.3
+#10 172.2     Checking itoa v1.0.18
+#10 173.0    Compiling syn v2.0.119
+#10 173.1     Checking errno v0.3.14
+#10 173.1     Checking mio v1.2.3
+#10 173.2     Checking signal-hook-registry v1.4.8
+#10 174.2     Checking rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#10 176.0    Compiling tokio-macros v2.7.1
+#10 176.9     Checking tokio v1.53.1
+#10 177.6     Checking rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 177.9     Checking rubixctl v0.1.0 (/source/crates/rubixctl)
+#10 178.1     Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 58s
+#10 178.2    Compiling libc v0.2.189
+#10 178.2    Compiling proc-macro2 v1.0.107
+#10 178.2    Compiling unicode-ident v1.0.26
+#10 178.2    Compiling quote v1.0.47
+#10 178.2    Compiling rustix v1.1.5
+#10 178.2    Compiling linux-raw-sys v0.12.1
+#10 178.2    Compiling bitflags v2.13.2
+#10 178.2    Compiling pin-project-lite v0.2.17
+#10 178.2    Compiling zmij v1.0.23
+#10 178.2    Compiling serde_core v1.0.228
+#10 178.2    Compiling serde_json v1.0.151
+#10 178.2    Compiling memchr v2.8.3
+#10 178.2    Compiling itoa v1.0.18
+#10 178.7    Compiling syn v2.0.119
+#10 178.9    Compiling errno v0.3.14
+#10 178.9    Compiling mio v1.2.3
+#10 179.1    Compiling signal-hook-registry v1.4.8
+#10 181.1    Compiling tokio-macros v2.7.1
+#10 181.5    Compiling rubix-platform v0.1.0 (/source/crates/rubix-platform)
+#10 181.9    Compiling tokio v1.53.1
+#10 184.1    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 184.9    Compiling rubixctl v0.1.0 (/source/crates/rubixctl)
+#10 205.4     Finished `release` profile [optimized + debuginfo] target(s) in 27.23s
+#10 205.4   Executable tests/check.rs (target/aarch64-unknown-linux-musl/release/deps/check-2e467eb460320e19)
+#10 DONE 206.5s
+
+#11 [stage-1 2/4] COPY --from=build /out/ /
+#11 DONE 2.2s
+
+#12 [stage-1 3/4] COPY --from=build /out/rubixctl /source/target/aarch64-unknown-linux-musl/release/rubixctl
+#12 DONE 0.3s
 
 #13 [stage-1 4/4] COPY tools/parity/fixtures/management-check/linux_fixture.py /linux_fixture.py
-#13 CACHED
+#13 DONE 0.2s
 
 #14 exporting to image
-#14 exporting layers done
-#14 exporting manifest sha256:b66c9407850509c89848f42bceb1be308ca312f93742ca56af2247b48f951980 done
-#14 exporting config sha256:602c67aaab08e3d335073aa2544545b43c43b5b2d299a7d11a1a44d5abf40c63 done
-#14 exporting attestation manifest sha256:a1a874d2073ee5e901012313be97c753c9a512e1fc0eb209ca764b4df0d7fac5 done
-#14 exporting manifest list sha256:2ea492b66f63fd650f18f5ea2c0397b1c576255df7ba1475bbd8090c06c85f05 done
-#14 naming to docker.io/library/rubix-management-linux-e7c8474951444eaaa0ecbe9e002cf7d0:latest done
-#14 unpacking to docker.io/library/rubix-management-linux-e7c8474951444eaaa0ecbe9e002cf7d0:latest 0.1s done
-#14 DONE 0.1s
+#14 exporting layers
+#14 exporting layers 1.2s done
+#14 exporting manifest sha256:3fdbc9b884250da5028b150e0ff414dca686d86c82c345d10a12556f6c266674 0.0s done
+#14 exporting config sha256:923b14d489212db7d90582e78826b7c3c74eaadd467a2b46368597369e071f7b 0.1s done
+#14 exporting attestation manifest sha256:e43314e5b4711b20666704cb683710171b5a4e5e424b073d79e5da21055e8386
+#14 exporting attestation manifest sha256:e43314e5b4711b20666704cb683710171b5a4e5e424b073d79e5da21055e8386 0.0s done
+#14 exporting manifest list sha256:151d9293666dd1c4d37b2de380878e658d621946afea5dbc0cdb52735384e845 0.0s done
+#14 naming to docker.io/library/rubix-management-linux-0f52cffde40c47f18a39c633004b2547:latest 0.0s done
+#14 unpacking to docker.io/library/rubix-management-linux-0f52cffde40c47f18a39c633004b2547:latest
+#14 unpacking to docker.io/library/rubix-management-linux-0f52cffde40c47f18a39c633004b2547:latest 1.0s done
+#14 DONE 2.5s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/omvk08t7e96oocehvwyxsapt9
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/8xmtwuzwbif35ffya0qr157nt

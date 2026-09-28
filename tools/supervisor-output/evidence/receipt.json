@@ -1,0 +1,263 @@
+{
+  "cleanup_errors": [],
+  "containers": [
+    "rubix-output-0eb8a7509aea4e00a9bc3486a599b703-first",
+    "rubix-output-0eb8a7509aea4e00a9bc3486a599b703-repeat"
+  ],
+  "errors": [],
+  "harness_sha256": {
+    "Capture.Dockerfile": "e80057cd8c5b333f8501d2bca1683832fbe156b040c68e0c313033f02f190e90",
+    "capture.py": "a530967743753a2b253a0466ba5c44923f410759c45be86505d6fbfeea81a8a2",
+    "fixture.py": "5500db6e78d9f4b25dda79195904354fb04eb20b996d86bef8ba132f6d3a0615",
+    "verify.py": "ae12b61d247aa3e1927f4147f02f76c2bf909fd0eef62e92567e3b0eb0e9e9de"
+  },
+  "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
+  "image_id": "sha256:e06f851b34a4a8def253ec819b69d8e83cc3087400e5c55a4344d75f00979dc3",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "runs": {
+    "first": {
+      "binary_sha256": "0bcd5b2bebcdbd92c7258920fceb0b212a56cee9278466d7b598f09ff62eb20d",
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-output-0eb8a7509aea4e00a9bc3486a599b703-first",
+        "--init",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=96",
+        "--memory=512m",
+        "--cpus=2",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--env",
+        "RUBIX_OUTPUT_DISPOSABLE=1",
+        "rubix-output-0eb8a7509aea4e00a9bc3486a599b703",
+        "/bin/sh",
+        "-c",
+        "sha256sum /output-tests; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+      ],
+      "raw_sha256": "f58f29d78b23c8ab622227f828989840bc27b4add48fe831786bbc518657bbfa",
+      "records": {
+        "abort": {
+          "bytes": 0,
+          "elapsed_ms": 84,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "descendant": {
+          "bytes": 6,
+          "elapsed_ms": 100,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "empty": {
+          "bytes": 0,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "escaped": {
+          "bytes": 6,
+          "elapsed_ms": 330,
+          "joined": true,
+          "reaped": true,
+          "status": "IncompleteAfterExit"
+        },
+        "exact": {
+          "bytes": 64,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "flood": {
+          "bytes": 64,
+          "elapsed_ms": 89,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "merged": {
+          "bytes": 8,
+          "elapsed_ms": 88,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "missing": {
+          "bytes": 0,
+          "elapsed_ms": 11,
+          "joined": true,
+          "reaped": false,
+          "status": "SpawnFailed"
+        },
+        "overflow": {
+          "bytes": 64,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "probe-failure": {
+          "bytes": 0,
+          "elapsed_ms": 91,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "simultaneous": {
+          "bytes": 2000,
+          "elapsed_ms": 77,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "stop": {
+          "bytes": 0,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "timeout": {
+          "bytes": 6,
+          "elapsed_ms": 212,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        }
+      }
+    },
+    "repeat": {
+      "binary_sha256": "0bcd5b2bebcdbd92c7258920fceb0b212a56cee9278466d7b598f09ff62eb20d",
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-output-0eb8a7509aea4e00a9bc3486a599b703-repeat",
+        "--init",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=96",
+        "--memory=512m",
+        "--cpus=2",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--env",
+        "RUBIX_OUTPUT_DISPOSABLE=1",
+        "rubix-output-0eb8a7509aea4e00a9bc3486a599b703",
+        "/bin/sh",
+        "-c",
+        "sha256sum /output-tests; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+      ],
+      "raw_sha256": "d8cdf9540965e750c037f0602e1da8fbd1bdf987abea1ec32937a4728db4e0ba",
+      "records": {
+        "abort": {
+          "bytes": 6,
+          "elapsed_ms": 83,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "descendant": {
+          "bytes": 6,
+          "elapsed_ms": 101,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "empty": {
+          "bytes": 0,
+          "elapsed_ms": 77,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "escaped": {
+          "bytes": 6,
+          "elapsed_ms": 340,
+          "joined": true,
+          "reaped": true,
+          "status": "IncompleteAfterExit"
+        },
+        "exact": {
+          "bytes": 64,
+          "elapsed_ms": 77,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "flood": {
+          "bytes": 64,
+          "elapsed_ms": 103,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "merged": {
+          "bytes": 8,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "missing": {
+          "bytes": 0,
+          "elapsed_ms": 11,
+          "joined": true,
+          "reaped": false,
+          "status": "SpawnFailed"
+        },
+        "overflow": {
+          "bytes": 64,
+          "elapsed_ms": 88,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "probe-failure": {
+          "bytes": 0,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "simultaneous": {
+          "bytes": 2000,
+          "elapsed_ms": 101,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "stop": {
+          "bytes": 0,
+          "elapsed_ms": 83,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "timeout": {
+          "bytes": 6,
+          "elapsed_ms": 212,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        }
+      }
+    }
+  },
+  "schema": 1,
+  "source_inventory_sha256": "5a680cdb392fc32be3ea568ec093c462d9cfefa988429600f9a2cda3d564374a",
+  "source_revision": "5f4064d987ba5dd4f334c3d6ac0bd18c71d3e0f1",
+  "tag": "rubix-output-0eb8a7509aea4e00a9bc3486a599b703",
+  "uncommitted_source_snapshot": false
+}

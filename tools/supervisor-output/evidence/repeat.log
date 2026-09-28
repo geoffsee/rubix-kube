@@ -1,0 +1,22 @@
+0bcd5b2bebcdbd92c7258920fceb0b212a56cee9278466d7b598f09ff62eb20d  /output-tests
+
+running 1 test
+RUBIX_OUTPUT case=merged status=Complete bytes=8 reaped=true joined=true elapsed_ms=78
+RUBIX_OUTPUT case=empty status=Complete bytes=0 reaped=true joined=true elapsed_ms=77
+RUBIX_OUTPUT case=exact status=Complete bytes=64 reaped=true joined=true elapsed_ms=77
+RUBIX_OUTPUT case=overflow status=LimitExceeded bytes=64 reaped=true joined=true elapsed_ms=88
+RUBIX_OUTPUT case=simultaneous status=Complete bytes=2000 reaped=true joined=true elapsed_ms=101
+RUBIX_OUTPUT case=flood status=LimitExceeded bytes=64 reaped=true joined=true elapsed_ms=103
+RUBIX_OUTPUT case=missing status=SpawnFailed bytes=0 reaped=false joined=true elapsed_ms=11
+RUBIX_OUTPUT case=stop status=Cancelled bytes=0 reaped=true joined=true elapsed_ms=83
+RUBIX_OUTPUT case=timeout status=Cancelled bytes=6 reaped=true joined=true elapsed_ms=212
+RUBIX_OUTPUT case=abort status=Cancelled bytes=6 reaped=true joined=true elapsed_ms=83
+RUBIX_OUTPUT case=probe-failure status=Cancelled bytes=0 reaped=true joined=true elapsed_ms=78
+RUBIX_OUTPUT case=descendant status=Complete bytes=6 reaped=true joined=true elapsed_ms=101
+RUBIX_OUTPUT case=escaped status=IncompleteAfterExit bytes=6 reaped=true joined=true elapsed_ms=340
+RUBIX_OUTPUT_COMPLETE cases=13
+test disposable_output_cases ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 4.44s
+
+RUBIX_NAMESPACE {"helper": 40, "init": 1, "processes": [1, 7, 40], "shell": 7}

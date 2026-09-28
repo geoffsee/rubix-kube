@@ -139,10 +139,10 @@
     "vars_template_sha256": "b3b855c5a80310168051164986855692d1bdb06e67619856177965cd87c6774f"
   },
   "artifact": {
-    "sha256": "8e512766d58cdf39cce89c484414718908403aa324a28ae17e26c4d2b023defb",
-    "size": 5352968,
+    "sha256": "1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa",
+    "size": 5388504,
     "target": "aarch64-unknown-linux-musl",
-    "revision": "3ea7303716e0b98455c0d9781e3552da75e0f431"
+    "revision": "5f4064d987ba5dd4f334c3d6ac0bd18c71d3e0f1"
   },
   "openrc_service_sha256": "8b56a0712bff950b23696699e5ba76f895b448ef8f7a77412edb8e8f28571e7a"
 }
