@@ -6,6 +6,23 @@ pub(crate) fn verify_command(
     argv: &[String],
     exits: &[i64],
 ) -> Result<(Vec<u8>, Vec<u8>)> {
+    checked_command(directory, label, argv, exits, false)
+}
+pub(crate) fn verify_merged_command(
+    directory: &Path,
+    label: &str,
+    argv: &[String],
+    exits: &[i64],
+) -> Result<Vec<u8>> {
+    Ok(checked_command(directory, label, argv, exits, true)?.0)
+}
+fn checked_command(
+    directory: &Path,
+    label: &str,
+    argv: &[String],
+    exits: &[i64],
+    merged: bool,
+) -> Result<(Vec<u8>, Vec<u8>)> {
     let receipt = load(&directory.join(format!("{label}.command.json")))?;
     for (key, value) in [
         ("spawned", json!(true)),
@@ -15,7 +32,7 @@ pub(crate) fn verify_command(
         ("cleanup_errors", json!([])),
         ("timeout", json!(false)),
         ("cancelled", json!(false)),
-        ("merged_output", json!(false)),
+        ("merged_output", json!(merged)),
         ("output_limit", json!(false)),
     ] {
         equal(&receipt[key], &value, &format!("{label} {key}"))?;
@@ -43,8 +60,15 @@ pub(crate) fn verify_command(
             .is_some_and(|code| exits.contains(&code)),
         format!("{label} expected exit"),
     )?;
-    let stdout = read(&directory.join(format!("{label}.stdout")), 256 * 1024)?;
-    let stderr = read(&directory.join(format!("{label}.stderr")), 256 * 1024)?;
+    let stdout = read(
+        &directory.join(format!("{label}.{}", if merged { "log" } else { "stdout" })),
+        if merged { 32 * 1024 * 1024 } else { 256 * 1024 },
+    )?;
+    let stderr = if merged {
+        Vec::new()
+    } else {
+        read(&directory.join(format!("{label}.stderr")), 256 * 1024)?
+    };
     equal(
         &receipt["stdout_sha256"],
         &json!(rubix_dev::sha256(&stdout)),
@@ -409,6 +433,15 @@ mod tests {
         let valid = json!({"spawned":true,"owned_process_group_absent":true,"cleanup_complete":true,"output_eof":true,"cleanup_errors":[],"timeout":false,"cancelled":false,"merged_output":false,"output_limit":false,"owned_pid":1234,"owner_directory":"/tmp/test-owner","argv":argv,"exit_code":0,"stdout_sha256":rubix_dev::sha256(b"observed\n"),"stderr_sha256":rubix_dev::sha256(b"")});
         crate::parity::write_json(&dir.path().join("probe.command.json"), &valid, true)?;
         verify_command(dir.path(), "probe", &argv, &[0])?;
+        std::fs::write(dir.path().join("probe.log"), b"observed\n")?;
+        assert!(verify_merged_command(dir.path(), "probe", &argv, &[0]).is_err());
+        let mut merged = valid.clone();
+        merged["merged_output"] = json!(true);
+        crate::parity::write_json(&dir.path().join("probe.command.json"), &merged, false)?;
+        verify_merged_command(dir.path(), "probe", &argv, &[0])?;
+        merged["exit_code"] = json!(1);
+        crate::parity::write_json(&dir.path().join("probe.command.json"), &merged, false)?;
+        assert!(verify_merged_command(dir.path(), "probe", &argv, &[0]).is_err());
         for (key, value) in [
             ("argv", json!(["ssh", "false"])),
             ("exit_code", json!(1)),

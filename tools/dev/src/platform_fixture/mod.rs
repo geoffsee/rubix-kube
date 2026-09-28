@@ -39,7 +39,7 @@ fn text(path: &Path) -> Result<String> {
 fn fixture(root: &Path, name: &str) -> PathBuf {
     root.join("tools/parity/fixtures").join(name)
 }
-fn source_inventory(root: &Path, profile: &str) -> Result<Value> {
+pub(crate) fn source_inventory(root: &Path, profile: &str) -> Result<Value> {
     fn add(root: &Path, path: &Path, map: &mut BTreeMap<String, String>) -> Result<()> {
         let metadata = std::fs::symlink_metadata(path)?;
         require(!metadata.is_symlink(), "source symlink rejected")?;
