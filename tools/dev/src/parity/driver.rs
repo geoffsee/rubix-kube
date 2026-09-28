@@ -12,6 +12,14 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
+fn stream_filename(path: &Path) -> Result<Value> {
+    Ok(json!(
+        path.file_name()
+            .and_then(|name| name.to_str())
+            .ok_or("UTF-8 stream filename required")?
+    ))
+}
+
 fn escaped() -> Result<Vec<u32>> {
     let mut found = Vec::new();
     let mut entries = 0usize;
@@ -151,8 +159,8 @@ fn execute(case: &Case, index: usize, output: &Path, cancellation: &Cancellation
         report["cancelled"] = json!(cancelled);
         report["exit_code"] = json!(code);
         report["failures"] = json!(failures);
-        report["stdout_file"] = json!(out.file_name());
-        report["stderr_file"] = json!(err.file_name());
+        report["stdout_file"] = stream_filename(&out)?;
+        report["stderr_file"] = stream_filename(&err)?;
         report["stdout_sha256"] = json!(rubix_dev::sha256(&outbytes));
         report["stderr_sha256"] = json!(rubix_dev::sha256(&errbytes));
         if failures.is_empty() && errors.is_empty() {
@@ -269,6 +277,19 @@ pub(crate) fn run(cancellation: &Cancellation) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::ffi::OsStrExt;
+    #[test]
+    fn stream_filenames_are_json_strings_without_os_tags() -> Result<()> {
+        for name in ["000.stdout", "038.stderr"] {
+            let value = stream_filename(&Path::new("/evidence").join(name))?;
+            assert_eq!(value.as_str(), Some(name));
+            assert_eq!(serde_json::to_string(&value)?, format!("\"{name}\""));
+        }
+        assert!(stream_filename(Path::new("/")).is_err());
+        assert!(stream_filename(Path::new(std::ffi::OsStr::from_bytes(b"bad-\xff"))).is_err());
+        Ok(())
+    }
+
     #[test]
     fn privileged_case_returns_gap_before_any_process_or_file_effect() {
         let case: Case = serde_json::from_value(
