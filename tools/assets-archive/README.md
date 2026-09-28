@@ -3,8 +3,10 @@
 This fixture qualifies `DecodeSession::inspect_crane_image_archive` against actual
 `crane.Save` serialization of two **synthetic, tiny** images. It does not fetch a
 registry image, establish baseline release payload provenance, execute an image,
-extract members, or import into a runtime. No successful capture is recorded yet. The mandatory `PublishedEvidence` test
-therefore fails until real evidence is published.
+extract members, or import into a runtime. Stored evidence records two successful runtime runs from clean source
+`bc614a3373d97f740b7f2a496157fb85f841967e`. Each run passed the two positive
+serialization cases and six corruption cases; the mandatory `PublishedEvidence`
+test now verifies the published raw proof.
 
 The producer imports `github.com/google/go-containerregistry` **v0.21.5**, whose
 module proxy origin identifies commit `5b80281da727dae218e1697ab8529b631b9efa64`.
@@ -105,3 +107,19 @@ they never substitute for a real capture. The separate `verify.py` command and `
 published-evidence gates and fail when evidence is absent. Before capture, run
 `python3 -m unittest test_evidence.Evidence` (and `python3 -O`) from this directory
 for the mutation checks alone.
+
+## Recorded capture
+
+The output originated at `/tmp/rubix-crane-archive-network-20260928-r1`; the two bounded
+raw logs are 41,027 bytes each. Builder-produced and both runtime hashes agree:
+
+- Producer: `7434ad637e4fb31b7c89fb4db001eb5678530ebe8c00780a9f4d9ef5b0cb9b9b`
+- Rust consumer: `9d93e8cf5c0e226a8fa11309393e7dc25990ff5f140d3cf89126620e61a3a61f`
+
+Both runs produced identical encoded archives and observations. The capture
+receipt records no errors, cleanup failures, remaining owned containers or
+remaining owned image. The exact owned resources were also independently queried
+after cleanup. All 13 mutation tests, the mandatory stored-evidence test and
+current verification pass normally and under Python optimization. This confirms
+the stated synthetic writer profile only; the open production-payload, nested
+layer/DiffID and runtime import gates are unchanged.

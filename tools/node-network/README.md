@@ -75,7 +75,8 @@ exceptions rather than removable assertions. Synthetic mutation tests exercise
 verifier rejection and do not substitute for captured VM evidence.
 
 Published qualification uses frozen source
-`5799b93cf85ff5e28f8f0da18472122e0fa424b3`. Both fresh Alpine guests completed
+`bc614a3373d97f740b7f2a496157fb85f841967e`, including the image archive
+source and fixture additions. Both fresh Alpine guests completed
 all nine cases and orderly shutdown, with no recorded cleanup errors. The first
 real pass in each guest returned 13 successful fixed nft-family command attempts;
 loaded/built-in/available observations are separately retained, so successful exit
