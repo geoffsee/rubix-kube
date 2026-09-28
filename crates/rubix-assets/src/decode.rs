@@ -253,6 +253,23 @@ impl DecodeSession<'_> {
             .map_err(CompressedElfError::Elf)?;
         Ok(DecodedElfInspection { decoded, elf })
     }
+    pub(crate) fn archive_target(
+        &self,
+        id: AssetId,
+    ) -> Result<rubix_platform::Architecture, crate::archive::ArchivePolicyError> {
+        if !catalog()
+            .iter()
+            .any(|entry| entry.id == id && entry.kind == Kind::Image)
+            || !self
+                .inventory
+                .blobs
+                .iter()
+                .any(|blob| blob.id == id && blob.encoding == Encoding::Gzip)
+        {
+            return Err(crate::archive::ArchivePolicyError::NotGzipImage);
+        }
+        Ok(self.inventory.request.target.architecture)
+    }
     /// Chunks are provisional until this returns Ok. Discard them on any error.
     /// Does not flush/commit/undo observer side effects or catch observer panics.
     pub fn inspect_compressed_blob<E, F: FnMut(&[u8]) -> Result<(), E>>(
@@ -263,7 +280,7 @@ impl DecodeSession<'_> {
     ) -> Result<DecodedObservation, DecodeError<E>> {
         self.inspect_compressed_blob_capped(id, bytes, u64::MAX, observe)
     }
-    fn inspect_compressed_blob_capped<E, F: FnMut(&[u8]) -> Result<(), E>>(
+    pub(crate) fn inspect_compressed_blob_capped<E, F: FnMut(&[u8]) -> Result<(), E>>(
         &mut self,
         id: AssetId,
         bytes: &[u8],
