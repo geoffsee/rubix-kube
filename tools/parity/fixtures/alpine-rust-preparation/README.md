@@ -68,5 +68,6 @@ exit 2 is accepted only with the exact pinned missing fingerprint-helper warning
 no stage errors. The verifier binds each raw JSON response independently to its receipt.
 Fresh SSH keys use fixed fixture comments rather than local account/hostname comments.
 
-The earlier stored guest evidence is intentionally stale after this harness correction.
-It must be replaced by two authorized fresh captures; historical receipts are not relabeled.
+Both stored guest captures were refreshed after this harness correction and bind source
+revision `2c18767b89a29f571cc7fec1e254bb49f299eb04`. Earlier temporary receipts remain
+historical; their revision and observations were not relabeled.
