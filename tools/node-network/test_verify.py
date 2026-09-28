@@ -52,7 +52,7 @@ def results():
                         family='Present(NfTables)', shared_effects_possible=True,
                         modules=[module_row(n) for n in NAMES],
                         ipv6=[dict(path=p,outcome='AlreadyDisabled' if case=='real_repeat'
-                                   else 'ObservedDisabled') for p in PATHS])
+                                   else ('ObservedDisabled' if p==PATHS[0] else 'AlreadyDisabled')) for p in PATHS])
     rows['guard_failed'].update(status='GuardStopped', assessment='Unknown',
                                 family='Unknown(Io)', shared_effects_possible=False,
                                 modules=[], ipv6=[])
@@ -62,6 +62,12 @@ def results():
                                  modules=[module_row(NAMES[0], 'Cancelled', None, False)])
     return rows
 
+def config_text():
+    # apiVersion intentionally follows another emitted top-level section.
+    return ('api:\n  enabled: false\napiVersion: kubesolo.io/v1alpha1\nkind: Config\n'
+            'network:\n  disableIPv6: true\nruntime:\n  containerMode: false\n'
+            '  endpoint: unix:///tmp/external-runtime/containerd.sock\n')
+
 def semantic_log(rows=None):
     rows=results() if rows is None else rows
     parts=['SETUP_BEGIN\nSETUP_END\n']
@@ -69,7 +75,7 @@ def semantic_log(rows=None):
         stdout=stderr=''
         if case=='help': stderr='usage: kubesolo\n'
         elif case=='version': stderr=json.dumps(dict(level='info',message='kubesolo version',version='0.1.0'))+'\n'
-        elif case=='print': stdout='apiVersion: kubesolo.io/v1alpha1\n'
+        elif case=='print': stdout=config_text()
         else: stdout=json.dumps(rows[case])+'\n'
         parts.append(f'CASE_{case}_BEGIN\nEXIT {code}\nSTDOUT_BEGIN\n{stdout}STDOUT_END\nSTDERR_BEGIN\n{stderr}STDERR_END\nCASE_{case}_END\n')
     for case in ['double_failed','double_limits','double_cancel']:
@@ -101,7 +107,10 @@ def build_log():
     text+=''.join('test '+name+' ... ok\n' for name in TESTS)
     text+='test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n'
     for case in ['version','help','print-config']:
-        text+=f'CLI_{case}_BEGIN\nsynthetic {case} output\nCLI_{case}_END\n'
+        if case=='version':body=json.dumps(dict(level='info',message='kubesolo version',version='0.1.0'))+'\n'
+        elif case=='help':body=support.read(support.ROOT/'crates/rubix-kube/src/help.txt').decode()
+        else:body=config_text()
+        text+=f'CLI_{case}_BEGIN\n{body}CLI_{case}_END\n'
     return text.encode()
 
 def build_fixture(directory):
@@ -174,6 +183,15 @@ class SemanticMutations(unittest.TestCase):
             else:mods[-1]=copy.deepcopy(mods[0])
             with self.subTest(change=change),self.assertRaises(ValueError):verify.semantic(semantic_log(rows))
 
+    def test_kernel_propagation_requires_fresh_skip_for_default_and_loopback(self):
+        self.assertEqual([r['outcome'] for r in results()['real_first']['ipv6']],
+                         ['ObservedDisabled','AlreadyDisabled','AlreadyDisabled'])
+        for case in ['double_failed','double_limits','real_first']:
+            for index in [1,2]:
+                rows=results();rows[case]['ipv6'][index]['outcome']='ObservedDisabled'
+                with self.subTest(case=case,index=index),self.assertRaises(ValueError):
+                    verify.semantic(semantic_log(rows))
+
     def test_readback_wrong_or_missing_rejected(self):
         rows=results();rows['real_first']['ipv6'][0]['outcome']='Readback(Ok(Enabled))'
         with self.assertRaises(ValueError):verify.semantic(semantic_log(rows))
@@ -222,12 +240,23 @@ class SemanticMutations(unittest.TestCase):
         with self.assertRaises(ValueError):verify.semantic(semantic_log(rows))
 
 class BuildMutations(unittest.TestCase):
+    def test_print_config_fields_belong_to_unique_expected_sections(self):
+        verify_build.verify_config(config_text())
+        for text in [config_text().replace('network:', 'storage:'),
+                     config_text().replace('runtime:', 'other:'),
+                     config_text().replace('  disableIPv6: true', '  disableIPv6: false'),
+                     config_text().replace('  containerMode: false', '  containerMode: true'),
+                     config_text().replace('  disableIPv6: true', '  disableIPv6: true\n  disableIPv6: true'),
+                     config_text()+'network:\n',
+                     config_text().replace('  endpoint:', '    endpoint:')]:
+            with self.subTest(text=text),self.assertRaises(ValueError):verify_build.verify_config(text)
+
     def test_exact_safe_test_inventory_and_cli_completion(self):
         self.assertTrue(verify_build.verify_run(build_log()))
         for raw in [build_log().replace(TESTS[0].encode(),b'unrelated_test'),
                     build_log().replace(TESTS[0].encode(),TESTS[1].encode()),
                     build_log().replace(b'CLI_help_END\n',b''),
-                    build_log().replace(b'synthetic help output',b'')]:
+                    build_log().replace(support.read(support.ROOT/'crates/rubix-kube/src/help.txt'),b'')]:
             with self.assertRaises(ValueError):verify_build.verify_run(raw)
 
     def test_build_receipt_source_artifact_and_cleanup_mutations(self):

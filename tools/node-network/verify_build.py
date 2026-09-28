@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 import hashlib
 import sys
-from support import HERE, ROOT, digest, load, read, require, inventory
+from support import HERE, ROOT, digest, load, loads, read, require, inventory
 TARGET = 'aarch64-unknown-linux-musl'
 
 TESTS = {
@@ -22,6 +22,32 @@ TESTS = {
     'settled_module_failures_warn_and_continue_without_loaded_claim',
     'cancellation_during_module_waits_for_stop_acknowledgement',
 }
+GUEST_FLAGS = '--disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock'
+
+def verify_config(text):
+    # Validate the deterministic emitter's top-level sections without inventing a
+    # general YAML parser. apiVersion need not be the first key.
+    lines=text.splitlines()
+    for expected in ['apiVersion: kubesolo.io/v1alpha1', 'kind: Config']:
+        require(lines.count(expected)==1,'root configuration field '+expected)
+    sections={}
+    current=None
+    for line in lines:
+        if line and not line[0].isspace():
+            match=re.fullmatch(r'([A-Za-z][A-Za-z0-9]*):',line)
+            current=match.group(1) if match else None
+            if current is not None:
+                require(current not in sections,'duplicate configuration section')
+                sections[current]=[]
+        elif current is not None:
+            sections[current].append(line)
+    for section,expected in [('network','  disableIPv6: true'),
+                             ('runtime','  containerMode: false'),
+                             ('runtime','  endpoint: unix:///tmp/external-runtime/containerd.sock')]:
+        require(lines.count(expected)==1 and sections.get(section,[]).count(expected)==1,
+                'effective guest configuration '+section+'.'+expected.strip())
+    require('"shared_effects_possible"' not in text,'configuration exits before preparation')
+
 def verify_run(raw):
     text=raw.decode();lines=text.splitlines()
     require(sum(line.startswith('test result: ok. 14 passed; 0 failed;') for line in lines)==1,'14 safe tests')
@@ -31,14 +57,19 @@ def verify_run(raw):
         begin='CLI_'+name+'_BEGIN\n';end='CLI_'+name+'_END\n'
         require(text.count(begin)==1 and text.count(end)==1,'CLI complete frames')
         body=text.split(begin)[1].split(end)[0]
-        require(bool(body.strip()) and '"shared_effects_possible"' not in body,'effect-free CLI output')
+        if name=='version':
+            require(loads(body)=={'level':'info','message':'kubesolo version','version':'0.1.0'},'version output')
+        elif name=='help':
+            require(body==read(ROOT/'crates/rubix-kube/src/help.txt').decode(),'complete help output')
+        else:
+            verify_config(body)
     return lines
 
 def command(tag):
     return ['docker', 'run', '--name', tag+'-test', '--network=none', '--read-only',
             '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=64',
             '--memory=512m', '--cpus=2', tag, '/bin/sh', '-c',
-            'sha256sum /out/prepare_host_network /out/host_network && /out/host_network && for case in version help print-config; do echo CLI_${case}_BEGIN; /out/prepare_host_network --$case 2>&1 || exit 1; echo CLI_${case}_END; done']
+            'sha256sum /out/prepare_host_network /out/host_network && /out/host_network && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ "$case" = print-config ]; then /out/prepare_host_network '+GUEST_FLAGS+' --print-config 2>&1 || exit 1; else /out/prepare_host_network --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done']
 
 def verify(directory, binary=True, frozen=True):
     report = load(directory/'receipt.json')

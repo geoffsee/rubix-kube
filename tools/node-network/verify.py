@@ -78,7 +78,8 @@ def semantic(text):
         elif name=='version':
             require(stdout=='' and loads(stderr)=={'level':'info','message':'kubesolo version','version':'0.1.0'},'effect-free version')
         elif name=='print':
-            require(stderr=='' and stdout.startswith('apiVersion: kubesolo.io/v1alpha1\n'),'effect-free configuration')
+            require(stderr=='','configuration stderr')
+            verify_build.verify_config(stdout)
         else:
             require(stderr=='','no unexpected consumer stderr')
             results[name]=outcome(stdout)
@@ -97,7 +98,8 @@ def semantic(text):
         require([step.get('path') for step in result['ipv6']]==CONTROLS,'all fixed IPv6 controls')
         for step in result['ipv6']:
             require(set(step)=={'path','outcome'},'IPv6 fields')
-            require(step['outcome']==('AlreadyDisabled' if name=='real_repeat' else 'ObservedDisabled'),'actual IPv6 write/readback or idempotent skip')
+            expected='ObservedDisabled' if name!='real_repeat' and step['path']==CONTROLS[0] else 'AlreadyDisabled'
+            require(step['outcome']==expected,'kernel all-control propagation and fresh per-step read')
         for step in result['modules']:
             require(step['outcome'] in ['Success','Failed','Deadline','CaptureFailed'],'ordinary settled outcome')
             if name=='double_failed':

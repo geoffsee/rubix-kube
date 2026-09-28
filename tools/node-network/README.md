@@ -9,7 +9,9 @@ main remains unchanged.
 The pinned toolchain builds `aarch64-unknown-linux-musl`; strict Linux Clippy covers
 the library, network tests and consumer. Fourteen injected host-safe tests and
 help/version/print-config execute as an unprivileged user in a read-only container
-without networking or capabilities. The artifact receipt binds the exact binary,
+without networking or capabilities. The print-config path uses the same explicit
+IPv6/container/runtime arguments as the guest effects and verifies their resolved
+values before any VM is launched. The artifact receipt binds the exact binary,
 compiled inputs, toolchain/manifests/lockfile, example, tests and fixture sources.
 `--allow-dirty-hostsafe-build` is only for exploratory compilation. VM captures
 reject dirty build receipts and changed inventories.
@@ -48,8 +50,11 @@ owned cleanup before any further permitted work; cancellation suppresses later
 module attempts and IPv6 writes.
 
 Real first preparation starts all three guest IPv6 controls at `0`, records each
-fixed module attempt and bounded after-observations, then requires `ObservedDisabled`
-and independent kernel reads of `1`. Real repetition requires `AlreadyDisabled` for
+fixed module attempt and bounded after-observations, then requires `ObservedDisabled` for `all`, followed by `AlreadyDisabled` for `default`
+and `lo`, and independent reads of all three control values as `1`. Linux propagates
+the `all` write to `default` and each existing interface; subsequent fresh reads
+correctly avoid redundant writes. See the [kernel sysctl documentation](https://www.kernel.org/doc/html/latest/networking/ip-sysctl.html#conf-all-disable-ipv6-boolean).
+Reading `all=1` alone is not proof that IPv6 is disabled everywhere. Real repetition requires `AlreadyDisabled` for
 all controls. Module failures can be warnings: successful command exit is never
 interpreted as proof of loading. An external-runtime sentinel remains byte-identical
 throughout. No reboot or persistence claim is made.

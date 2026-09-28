@@ -89,26 +89,26 @@ zero
 scalars initial
 run help 0 --help
 run version 0 --version
-run print 0 --print-config
+run print 0 --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config
 test ! -e /tmp/rubix-network-attempts
-run guard_failed 1 --disable-ipv6 --container-mode=false --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
+run guard_failed 1 --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
 test ! -e /tmp/rubix-network-attempts
 scalars guard_failed
 restore iptables
 # Failed module doubles settle and continue, while IPv6 operations remain real.
-run double_failed 0 --disable-ipv6 --container-mode=false --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
+run double_failed 0 --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
 printf 'ATTEMPTS_double_failed_BEGIN\n'; cat /tmp/rubix-network-attempts; printf 'ATTEMPTS_double_failed_END\n'
 scalars double_failed
 rm /tmp/rubix-network-attempts
 zero
 printf 'limits\n' > /tmp/rubix-network-mode
-run double_limits 0 --disable-ipv6 --container-mode=false --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
+run double_limits 0 --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
 printf 'ATTEMPTS_double_limits_BEGIN\n'; cat /tmp/rubix-network-attempts; printf 'ATTEMPTS_double_limits_END\n'
 scalars double_limits
 rm /tmp/rubix-network-attempts
 zero
 printf 'wait\n' > /tmp/rubix-network-mode
-PRIVATE_SENTINEL=must-not-reach-modprobe "$binary" --disable-ipv6 --container-mode=false --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock > /tmp/network-out 2> /tmp/network-err &
+PRIVATE_SENTINEL=must-not-reach-modprobe "$binary" --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock > /tmp/network-out 2> /tmp/network-err &
 consumer=$!
 tries=0
 until test -f /tmp/rubix-network-waiting; do
@@ -128,9 +128,9 @@ restore modprobe
 # Genuine execution begins only after the original command bytes/links are restored.
 printf 'MODULES_BEFORE_BEGIN\n'; cat /proc/modules; printf 'MODULES_BEFORE_END\n'
 zero
-run real_first 0 --disable-ipv6 --container-mode=false --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
+run real_first 0 --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
 scalars real_first
-run real_repeat 0 --disable-ipv6 --container-mode=false --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
+run real_repeat 0 --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock
 scalars real_repeat
 printf 'MODULES_AFTER_BEGIN\n'; cat /proc/modules; printf 'MODULES_AFTER_END\n'
 sha256sum /tmp/external-runtime/* > /tmp/external-runtime-after
