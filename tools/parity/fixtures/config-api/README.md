@@ -12,11 +12,6 @@ uses baseline test helpers to construct real services and Unix HTTP clients. No
 implementation functions are patched. Every configuration and socket path is in
 a test-owned container temporary directory; all secrets are fixed synthetic strings.
 
-```sh
-python3 tools/parity/fixtures/config-api/capture.py --output /tmp/unique-config-api-capture
-python3 tools/parity/fixtures/config-api/verify.py /tmp/unique-config-api-capture
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity/fixtures/config-api -p 'test_*.py'
-```
 
 The Dockerfile pins the same Go 1.26.5 builder digest and reference archive SHA256
 as the earlier parity captures (`-mod=readonly`, baseline go.sum). This is distinct
@@ -42,7 +37,7 @@ are not permission policy recommendations. Failure preservation is demonstrated 
 this concrete pre-rename error, not power-loss durability or every filesystem fault.
 
 `configapi.json` retains status, parsed body, raw HTTP body and ETag per scenario.
-Independent `verify.py` checks complete expected configuration objects, source-derived
+Independent `tools/dev/src/fixture_oracles/config_api.rs` checks complete expected configuration objects, source-derived
 defaults, redaction, unredacted ETag hashing, stored-versus-environment-effective state,
 PATCH merge/null, PUT replacement, DELETE defaults, restart-required paths, no-op
 responses, malformed/type/content/body-limit errors, immutable/invalid edits, rejected
@@ -74,3 +69,16 @@ not close #36 or qualify full node lifecycle.
 
 The no-op case asserts response semantics; it does not prove that the backing file
 was not rewritten. Full raw-body comparisons preserve JSON scalar types.
+
+Current maintenance commands are Rust:
+
+```sh
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture config-api --output /tmp/unique-config-api
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify config-api /tmp/unique-config-api
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence config-api /tmp/unique-config-api
+cargo test --locked -p rubix-dev fixture_oracles::config_api
+```
+
+Historical captures remain unchanged. New captures run both components twice and
+publish into `rust-evidence/` only after real execution. The current evidence gate
+requires the Rust source inventory, command settlement and verified owned cleanup.
