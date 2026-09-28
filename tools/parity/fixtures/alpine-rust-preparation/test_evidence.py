@@ -87,7 +87,7 @@ class EvidenceTests(unittest.TestCase):
    with self.assertRaisesRegex(ValueError,'raw evidence digest'):v.verify(root)
  def test_missing_build_revision_rejected_before_output(self):
   with tempfile.TemporaryDirectory() as tmp:
-   root=Path(tmp);binary=root/'rubixctl';binary.write_bytes(b'x'*5352968)
+   root=Path(tmp);binary=root/'rubixctl';binary.write_bytes(b'x'*5388504)
    pin=json.loads((HERE/'inputs.json').read_text())['artifact'];metadata=dict(pin);metadata['revision']='0'*40
    (root/'artifact.json').write_text(json.dumps(metadata));(root/'receipt.json').write_text(json.dumps({'revision':pin['revision']}))
    with patch.object(capture.subprocess,'run'),patch.object(capture,'digest',return_value=pin['sha256']):
