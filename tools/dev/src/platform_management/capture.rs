@@ -19,7 +19,7 @@ fn gather(root: &Path, path: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
             let entry = entry?;
             if matches!(
                 entry.file_name().to_str(),
-                Some("target" | ".git" | "__pycache__" | ".DS_Store")
+                Some("target" | ".git" | "__pycache__" | ".DS_Store" | "rust-evidence")
             ) || entry.file_name().to_string_lossy().starts_with("evidence")
             {
                 continue;
@@ -359,9 +359,14 @@ fn verify_inner(root: &Path, family: &str, linux: bool, output: &Path) -> Result
     let build = command(output, "build", None)?;
     let context = build["argv"][6].as_str().ok_or("context")?;
     require(
-        context.starts_with("/tmp/rubix-platform-context-")
-            && !context.contains("..")
-            && !context.trim_start_matches('/').contains("//"),
+        Path::new(context).is_absolute()
+            && Path::new(context).file_name().is_some_and(|name| {
+                name.to_string_lossy()
+                    .starts_with("rubix-platform-context-")
+            })
+            && !Path::new(context)
+                .components()
+                .any(|part| matches!(part, std::path::Component::ParentDir)),
         "owned context",
     )?;
     command(
@@ -411,6 +416,18 @@ fn verify_inner(root: &Path, family: &str, linux: bool, output: &Path) -> Result
         }
     }
     if !linux {
+        let copy = command(output, "copy", None)?;
+        let destination = copy["argv"][3].as_str().ok_or("copy destination")?;
+        require(
+            Path::new(destination).is_absolute()
+                && Path::new(destination)
+                    .file_name()
+                    .is_some_and(|name| name == "source.sha256")
+                && !Path::new(destination)
+                    .components()
+                    .any(|part| matches!(part, std::path::Component::ParentDir)),
+            "owned source inventory destination",
+        )?;
         command(
             output,
             "copy",
@@ -418,11 +435,7 @@ fn verify_inner(root: &Path, family: &str, linux: bool, output: &Path) -> Result
                 "docker",
                 "cp",
                 &format!("{}:/source.sha256", containers[0]),
-                output
-                    .canonicalize()?
-                    .join("source.sha256")
-                    .to_str()
-                    .ok_or("output")?,
+                destination,
             ])),
         )?;
         verify_source_pins(
@@ -727,6 +740,29 @@ mod tests {
                 assert!(verify(&root(), family, linux, output).is_err());
             }
         }
+    }
+    #[test]
+    fn evidence_can_move_and_build_context_uses_the_host_temporary_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let original = directory.path().join("original");
+        fs::create_dir(&original).unwrap();
+        synthetic(&root(), "platform", false, &original);
+        let path = original.join("build.command.json");
+        let mut facts = load(&path).unwrap();
+        facts["argv"][6] = "/private/var/folders/test/rubix-platform-context-example".into();
+        fs::write(&path, serde_json::to_vec(&facts).unwrap()).unwrap();
+        fs::write(
+            original.join("qualification.json"),
+            serde_json::to_vec(&json!({
+                "schema_version": 2, "cancelled": false,
+                "files": evidence_inventory(&original, false).unwrap()
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let relocated = directory.path().join("published");
+        fs::rename(&original, &relocated).unwrap();
+        verify(&root(), "platform", false, &relocated).unwrap();
     }
     #[test]
     fn unavailable_source_metadata_precedes_output_creation() {
