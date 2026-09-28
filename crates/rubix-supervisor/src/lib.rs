@@ -9,3 +9,6 @@ pub use model::*;
 pub mod process;
 #[cfg(unix)]
 pub mod signals;
+
+mod diagnostics;
+pub use diagnostics::{ComponentDiagnostic, LifecycleObserver, LifecycleSnapshot, ObserverClosed};
