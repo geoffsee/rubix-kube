@@ -27,3 +27,9 @@ pub use layer::{
     LayerCodec, LayerDecodeLimits, LayerDigestArchiveObservation, LayerDigestObservation,
     LayerPolicyError,
 };
+
+mod manifest_binding;
+pub use manifest_binding::{
+    DeclaredImageManifestPin, ImageManifestBinding, ImageManifestFormat, ManifestBindingError,
+    ManifestBindingLimits,
+};

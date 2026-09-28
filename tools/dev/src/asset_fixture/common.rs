@@ -170,6 +170,7 @@ pub(super) fn inventory(root: &Path, family: &str) -> Result<Value> {
         ".cargo",
         "crates",
         "tools/dev",
+        "tools/assets-manifest",
         &format!("tools/assets-{family}"),
     ] {
         for path in files(&root.join(dir))? {
@@ -186,7 +187,8 @@ pub(super) fn inventory(root: &Path, family: &str) -> Result<Value> {
                         .any(|e| path.extension().is_some_and(|x| x == *e))
                 || name.starts_with("crates/rubix-platform/")
                     && path.extension().is_some_and(|x| x == "rs")
-                || name.starts_with(&format!("tools/assets-{family}/"))
+                || (name.starts_with(&format!("tools/assets-{family}/"))
+                    || name.starts_with("tools/assets-manifest/"))
                     && !["README.md", "provenance.json"]
                         .iter()
                         .any(|n| path.file_name().is_some_and(|v| v == *n))
