@@ -177,3 +177,5 @@ pub fn execute(
 pub mod lifecycle_logs;
 
 pub mod lifecycle_policy;
+
+pub mod host_preflight;
