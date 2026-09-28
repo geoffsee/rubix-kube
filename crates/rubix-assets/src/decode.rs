@@ -1,0 +1,343 @@
+//! Bounded decoding of exactly hash-matched immutable encoded bytes.
+use crate::{
+    AssetId, DeclaredInventory, EncodedBlobMatch, Encoding, Kind, VerificationError,
+    VerificationSession, catalog,
+};
+use sha2::{Digest, Sha256};
+use std::{
+    fmt,
+    io::{self, Read},
+};
+
+#[derive(Clone, Copy, Debug)]
+pub struct DecodeLimits {
+    pub executable_bytes: u64,
+    pub image_bytes: u64,
+    /// Decoded bytes plus one EOF/excess probe reservation per admitted attempt.
+    pub total_bytes: u64,
+}
+impl Default for DecodeLimits {
+    fn default() -> Self {
+        Self {
+            executable_bytes: 256 * 1024 * 1024,
+            image_bytes: 8 * 1024 * 1024 * 1024,
+            total_bytes: 32 * 1024 * 1024 * 1024,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DecodePolicyError {
+    InvalidLimits,
+    NotCompressed,
+    Header,
+    HeaderLimit,
+    Dictionary,
+    Window,
+    ContentLimit,
+    Budget,
+    Trailing,
+}
+pub enum DecodeError<E> {
+    Policy(DecodePolicyError),
+    Encoded(VerificationError),
+    Decoder(io::Error),
+    Observer(E),
+}
+impl<E> fmt::Debug for DecodeError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Policy(policy) => f.debug_tuple("Policy").field(policy).finish(),
+            Self::Encoded(_) => f.write_str("Encoded(<source retained>)"),
+            Self::Decoder(_) => f.write_str("Decoder(<source retained>)"),
+            Self::Observer(_) => f.write_str("Observer(<source retained>)"),
+        }
+    }
+}
+impl<E> fmt::Display for DecodeError<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Policy(p) => write!(f, "asset decode policy: {p:?}"),
+            Self::Encoded(_) => f.write_str("asset encoded verification failed"),
+            Self::Decoder(_) => f.write_str("asset decoder failed"),
+            Self::Observer(_) => f.write_str("asset decoded-byte observer failed"),
+        }
+    }
+}
+impl<E: std::error::Error + 'static> std::error::Error for DecodeError<E> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Encoded(e) => Some(e),
+            Self::Decoder(e) => Some(e),
+            Self::Observer(e) => Some(e),
+            Self::Policy(_) => None,
+        }
+    }
+}
+impl fmt::Display for DecodePolicyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "asset decode policy: {self:?}")
+    }
+}
+impl std::error::Error for DecodePolicyError {}
+/// Successful decompression/checksum/framing observations, not ELF/archive/OCI validation.
+#[derive(Clone, Debug)]
+pub struct DecodedObservation {
+    encoded: EncodedBlobMatch,
+    encoding: Encoding,
+    decoded_bytes: u64,
+    decoded_sha256: [u8; 32],
+}
+impl DecodedObservation {
+    pub fn encoded(&self) -> &EncodedBlobMatch {
+        &self.encoded
+    }
+    pub fn encoding(&self) -> Encoding {
+        self.encoding
+    }
+    pub fn decoded_bytes(&self) -> u64 {
+        self.decoded_bytes
+    }
+    pub fn decoded_sha256(&self) -> &[u8; 32] {
+        &self.decoded_sha256
+    }
+}
+/// The caller owns session lifetime, execution time and any provisional observer effects.
+#[derive(Debug)]
+pub struct DecodeSession<'a> {
+    inventory: &'a DeclaredInventory,
+    encoded: VerificationSession<'a>,
+    limits: DecodeLimits,
+    remaining: u64,
+}
+impl DeclaredInventory {
+    pub fn decoding_session(
+        &self,
+        limits: DecodeLimits,
+    ) -> Result<DecodeSession<'_>, DecodePolicyError> {
+        if [
+            limits.executable_bytes,
+            limits.image_bytes,
+            limits.total_bytes,
+        ]
+        .contains(&0)
+            || limits.executable_bytes == u64::MAX
+            || limits.image_bytes == u64::MAX
+        {
+            return Err(DecodePolicyError::InvalidLimits);
+        }
+        Ok(DecodeSession {
+            inventory: self,
+            encoded: self.verification_session(),
+            limits,
+            remaining: limits.total_bytes,
+        })
+    }
+}
+impl DecodeSession<'_> {
+    pub fn remaining_decoded_budget(&self) -> u64 {
+        self.remaining
+    }
+    pub fn remaining_encoded_budget(&self) -> u64 {
+        self.encoded.remaining_budget()
+    }
+    /// Chunks are provisional until this returns Ok. Discard them on any error.
+    /// Does not flush/commit/undo observer side effects or catch observer panics.
+    pub fn inspect_compressed_blob<E, F: FnMut(&[u8]) -> Result<(), E>>(
+        &mut self,
+        id: AssetId,
+        bytes: &[u8],
+        mut observe: F,
+    ) -> Result<DecodedObservation, DecodeError<E>> {
+        let blob = self
+            .inventory
+            .blobs
+            .iter()
+            .find(|b| b.id == id)
+            .ok_or(DecodeError::Encoded(VerificationError::NotBundled(id)))?;
+        if blob.encoding == Encoding::Identity {
+            return Err(DecodeError::Policy(DecodePolicyError::NotCompressed));
+        }
+        let encoding = blob.encoding;
+        let per_blob = if catalog()
+            .iter()
+            .any(|entry| entry.id == id && entry.kind == Kind::Image)
+        {
+            self.limits.image_bytes
+        } else {
+            self.limits.executable_bytes
+        };
+        // Reserve a probe before hashing, header parsing, decoder allocation or callbacks.
+        self.remaining = self
+            .remaining
+            .checked_sub(1)
+            .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
+        let maximum = per_blob.min(self.remaining);
+        let encoded = self
+            .encoded
+            .verify_encoded_blob(id, bytes)
+            .map_err(DecodeError::Encoded)?;
+        let (count, sha) = match encoding {
+            Encoding::Zstd => {
+                zstd_header(bytes, maximum).map_err(DecodeError::Policy)?;
+                let mut decoder = zstd::stream::read::Decoder::with_buffer(bytes)
+                    .map_err(DecodeError::Decoder)?
+                    .single_frame();
+                decoder.window_log_max(26).map_err(DecodeError::Decoder)?;
+                let result = consume(&mut decoder, maximum, &mut self.remaining, &mut observe)?;
+                if !decoder.finish().is_empty() {
+                    return Err(DecodeError::Policy(DecodePolicyError::Trailing));
+                }
+                result
+            },
+            Encoding::Gzip => {
+                gzip_header(bytes).map_err(DecodeError::Policy)?;
+                let mut decoder = flate2::bufread::GzDecoder::new(bytes);
+                let result = consume(&mut decoder, maximum, &mut self.remaining, &mut observe)?;
+                if !decoder.into_inner().is_empty() {
+                    return Err(DecodeError::Policy(DecodePolicyError::Trailing));
+                }
+                result
+            },
+            Encoding::Identity => {
+                return Err(DecodeError::Policy(DecodePolicyError::NotCompressed));
+            },
+        };
+        Ok(DecodedObservation {
+            encoded,
+            encoding,
+            decoded_bytes: count,
+            decoded_sha256: sha,
+        })
+    }
+}
+fn consume<E, F: FnMut(&[u8]) -> Result<(), E>>(
+    reader: &mut impl Read,
+    maximum: u64,
+    remaining: &mut u64,
+    observe: &mut F,
+) -> Result<(u64, [u8; 32]), DecodeError<E>> {
+    let mut count = 0u64;
+    let mut hash = Sha256::new();
+    let mut buffer = [0u8; 8192];
+    loop {
+        // maximum excludes the reserved one-byte excess/EOF probe.
+        let capacity = usize::try_from((maximum - count + 1).min(8192))
+            .map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
+        let read = reader
+            .read(&mut buffer[..capacity])
+            .map_err(DecodeError::Decoder)?;
+        if read == 0 {
+            return Ok((count, hash.finalize().into()));
+        }
+        let read =
+            u64::try_from(read).map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
+        let admitted = read.min(maximum - count);
+        *remaining = remaining
+            .checked_sub(admitted)
+            .ok_or(DecodeError::Policy(DecodePolicyError::Budget))?;
+        if read > maximum - count {
+            return Err(DecodeError::Policy(DecodePolicyError::ContentLimit));
+        }
+        count += read;
+        let length =
+            usize::try_from(read).map_err(|_| DecodeError::Policy(DecodePolicyError::Budget))?;
+        hash.update(&buffer[..length]);
+        observe(&buffer[..length]).map_err(DecodeError::Observer)?;
+    }
+}
+fn zstd_header(bytes: &[u8], maximum: u64) -> Result<(), DecodePolicyError> {
+    if bytes.get(..4) != Some(&[0x28, 0xb5, 0x2f, 0xfd]) {
+        return Err(DecodePolicyError::Header);
+    }
+    let descriptor = *bytes.get(4).ok_or(DecodePolicyError::Header)?;
+    if descriptor & 0x18 != 0 {
+        return Err(DecodePolicyError::Header);
+    }
+    let single = descriptor & 0x20 != 0;
+    let mut position = 5;
+    let window = if single {
+        None
+    } else {
+        let descriptor = *bytes.get(position).ok_or(DecodePolicyError::Header)?;
+        position += 1;
+        let base = 1u64 << (10 + u32::from(descriptor >> 3));
+        Some(base + (base / 8) * u64::from(descriptor & 7))
+    };
+    let dictionary_length = match descriptor & 3 {
+        0 => 0,
+        1 => 1,
+        2 => 2,
+        _ => 4,
+    };
+    let dictionary = bytes
+        .get(position..position + dictionary_length)
+        .ok_or(DecodePolicyError::Header)?;
+    if dictionary.iter().any(|byte| *byte != 0) {
+        return Err(DecodePolicyError::Dictionary);
+    }
+    position += dictionary_length;
+    let size_length = match descriptor >> 6 {
+        0 => usize::from(single),
+        1 => 2,
+        2 => 4,
+        _ => 8,
+    };
+    let field = bytes
+        .get(position..position + size_length)
+        .ok_or(DecodePolicyError::Header)?;
+    let mut size = [0u8; 8];
+    size[..size_length].copy_from_slice(field);
+    let size = u64::from_le_bytes(size) + if size_length == 2 { 256 } else { 0 };
+    if size_length > 0 && size > maximum {
+        return Err(DecodePolicyError::ContentLimit);
+    }
+    if window.unwrap_or(size) > 64 * 1024 * 1024 {
+        return Err(DecodePolicyError::Window);
+    }
+    Ok(())
+}
+fn gzip_header(bytes: &[u8]) -> Result<(), DecodePolicyError> {
+    const LIMIT: usize = 8192;
+    if bytes.get(..3) != Some(&[0x1f, 0x8b, 8]) || bytes.len() < 10 {
+        return Err(DecodePolicyError::Header);
+    }
+    let flags = bytes[3];
+    if flags & 0xe0 != 0 {
+        return Err(DecodePolicyError::Header);
+    }
+    let mut position = 10usize;
+    if flags & 4 != 0 {
+        let field = bytes
+            .get(position..position + 2)
+            .ok_or(DecodePolicyError::Header)?;
+        position += 2 + usize::from(u16::from_le_bytes([field[0], field[1]]));
+        if position > LIMIT {
+            return Err(DecodePolicyError::HeaderLimit);
+        }
+        if position > bytes.len() {
+            return Err(DecodePolicyError::Header);
+        }
+    }
+    for flag in [8, 16] {
+        if flags & flag != 0 {
+            let bounded = bytes
+                .get(position..bytes.len().min(LIMIT))
+                .ok_or(DecodePolicyError::HeaderLimit)?;
+            let length = bounded
+                .iter()
+                .position(|byte| *byte == 0)
+                .ok_or(DecodePolicyError::HeaderLimit)?;
+            position += length + 1;
+        }
+    }
+    if flags & 2 != 0 {
+        position += 2;
+    }
+    if position > LIMIT {
+        return Err(DecodePolicyError::HeaderLimit);
+    }
+    if position > bytes.len() {
+        return Err(DecodePolicyError::Header);
+    }
+    Ok(())
+}
