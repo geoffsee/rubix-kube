@@ -44,12 +44,14 @@ shows eight added packages and no removals. Resolving dependencies does not impl
 all 20 packages were installed: the cloud image already supplies the remainder.
 
 The cloud image reports `done` with a recoverable missing
-`write-ssh-key-fingerprints` helper warning. That exact warning is admitted;
-other warnings or stage errors fail verification. Root login requires an unlocked
+`write-ssh-key-fingerprints` helper warning. Exit2 is admitted only with that exact warning, completed status and no top-level
+or stage errors. The same structured validation runs after reboot; other warnings,
+missing warnings for exit2, incomplete status or errors fail qualification. Root login requires an unlocked
 account on this image. A fresh random password unlocks the private guest account,
 while SSH password authentication remains disabled. Seed bytes, passwords and
 private keys are deleted during teardown and excluded from evidence. Only the
-fresh public SSH host key is retained. Diagnostic publication additionally rejects
+fresh public SSH host key is retained, with an explicit fixture comment; local
+user and host names are never used as key comments. Diagnostic publication additionally rejects
 private credential material.
 
 After the QEMU leader is reaped, process-group absence is inspected without sending
@@ -74,7 +76,8 @@ python3 -m unittest discover -s tools/parity/fixtures/alpine-preparation
 python3 -O -m unittest discover -s tools/parity/fixtures/alpine-preparation
 ```
 
-Preparation requires the checksum-pinned index already in the dedicated cache;
+The input-cache argument is mandatory: an observation-only run cannot report
+preparation success. Preparation requires the checksum-pinned index already in the dedicated cache;
 the URL/hash and package closure are in `inputs.json`. Cache additions and evidence
 are retained, while containers/images and private guest state are removed. Receipts
 identify the actual Git revision plus full relevant working-source hashes; they

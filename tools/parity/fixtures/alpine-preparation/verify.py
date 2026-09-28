@@ -47,6 +47,13 @@ def semantic(before,reboot):
  require(package_section(reboot,'reboot')==installed,'reboot package inventory')
  require({'openrc-0.63.2-r0','apk-tools-3.0.8-r0','linux-virt-6.18.52-r0','alpine-release-3.24.2-r0'}<=initial,'guest system version pins')
  return {'initial':sorted(initial),'installed':sorted(installed),'records':expected,'controllers':controllers}
+def verify_cloud(code,cloud):
+ require(type(code) is int and code in [0,2],'cloud exit classification')
+ require(cloud.get('status')=='done' and cloud.get('errors')==[],'cloud bootstrap completion')
+ warnings=cloud.get('recoverable_errors')
+ require(warnings in ({},{'WARNING':[WARNING]}),'only known bootstrap warning')
+ require(code!=2 or warnings=={'WARNING':[WARNING]},'exit2 requires exact admitted warning')
+ for stage in ['init-local','init','modules-config','modules-final']:require(cloud[stage]['errors']==[],'cloud stage error')
 def verify_guest(directory,here=HERE):
  report=loads(read(directory/'result.json'))
  require(report.get('status')=='passed' and report.get('errors')==[],'successful guest receipt')
@@ -63,10 +70,9 @@ def verify_guest(directory,here=HERE):
  equal(report['inputs'],loads(read(here/'inputs.json')),'accepted inputs')
  equal({name:tool['sha256'] for name,tool in report['tools'].items()},report['inputs']['host_tools'],'exact host tool pins')
  equal(report['firmware'],report['inputs']['firmware'],'exact firmware pins')
- cloud=report['cloud_init'];require(cloud.get('status')=='done' and cloud.get('errors')==[],'cloud bootstrap completion')
- require(cloud.get('recoverable_errors') in ({},{'WARNING':[WARNING]}),'only known bootstrap warning')
- require(report['cloud_init_exit'] in [0,2] and type(report['cloud_init_exit']) is int,'cloud exit classification')
- for stage in ['init-local','init','modules-config','modules-final']:require(cloud[stage]['errors']==[],'cloud stage error')
+ for label,key in [('cloud-init','cloud_init'),('reboot-cloud-init','reboot_cloud_init')]:
+  equal(report[key],loads(read(directory/(label+'.stdout'))),'raw cloud-init observation')
+  verify_cloud(report[key+'_exit'],report[key])
  require(report.get('serial_log_truncated',False) is False,'complete bounded console')
  private=report['owned_temporary_directory'];require(private.startswith('/tmp/rubix-vm-'),'owned private prefix')
  port=report['ssh_forward'];require(re.fullmatch(r'127\.0\.0\.1:[0-9]+',port),'loopback SSH only')
@@ -77,7 +83,7 @@ def verify_guest(directory,here=HERE):
   '-drive','if=virtio,format=raw,readonly=on,file='+private+'/seed.iso','-netdev',
   'user,id=n0,restrict=on,hostfwd=tcp:'+port+'-:22','-device','virtio-net-pci,netdev=n0']
  equal(report['qemu_argv'],qemu,'exact owned VM resources and restricted network')
- require(report.get('guest_host_public_key','').startswith('ssh-ed25519 '),'explicit guest public host identity')
+ require(re.fullmatch(r'ssh-ed25519 [A-Za-z0-9+/=]+ rubix-alpine-fixture-host',report.get('guest_host_public_key','')) is not None,'fixture-only public host key comment')
  old=read(directory/'before-reboot-id.stdout').strip();new=read(directory/'reboot-readiness.stdout').strip()
  require(old!=new and all(re.fullmatch(rb'[0-9a-f-]{36}',value) for value in [old,new]),'actual fresh kernel boot')
  before=read(directory/'baseline-inventory.stdout').decode();equal(report['observation'],before,'raw observation binding')
