@@ -278,17 +278,17 @@ TEST_rubix_kube_BEGIN
 
 running 18 tests
 test host_container::platform::tests::mount_paths_decode_only_kernel_escapes_and_keep_bytes ... ok
+test host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow ... ok
 test host_container::platform::tests::mount_tree_requires_complete_bounded_unique_records ... ok
 test host_container::platform::tests::process_membership_accepts_unordered_duplicates_but_not_truncation_or_bad_tokens ... ok
 test host_container::tests::bulk_and_individual_failures_continue_with_truthful_partial_readback ... ok
 test host_container::tests::cancellation_during_failed_controller_write_retains_prior_effects ... ok
-test host_container::tests::cancellation_future_becoming_ready_between_effects_suppresses_next_effect ... ok
 test host_container::tests::cancellation_observed_during_v1_probe_precedes_completed_skip ... ok
-test host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow ... ok
+test host_container::tests::cancellation_future_becoming_ready_between_effects_suppresses_next_effect ... ok
 test host_container::tests::changed_context_stops_controller_fallback_and_readback ... ok
 test host_container::tests::controller_tokens_reject_operations_duplicates_and_bounds ... ok
-test host_container::tests::initially_ready_cancellation_never_acquires_a_session ... ok
 test host_container::tests::lost_admission_on_final_observation_is_fatal ... ok
+test host_container::tests::initially_ready_cancellation_never_acquires_a_session ... ok
 test host_container::tests::migration_requires_observed_membership_before_delegation ... ok
 test host_container::tests::mount_failure_and_uncertain_readback_suppress_all_cgroups ... ok
 test host_container::tests::only_positive_v1_skips_cgroup_operations ... ok
@@ -302,8 +302,8 @@ TEST_rubix_kube_END
 TEST_host_preparation_BEGIN
 
 running 6 tests
-test external_runtime_still_prepares_container_after_network_warnings ... ok
 test fresh_backend_guard_failure_prevents_all_effects ... ok
+test external_runtime_still_prepares_container_after_network_warnings ... ok
 test initially_cancelled_combined_operation_never_performs_effects ... ok
 test network_cancellation_stops_before_container_and_retains_effects ... ok
 test resolved_noncontainer_mode_never_acquires_container_session ... ok
@@ -317,8 +317,8 @@ TEST_host_network_BEGIN
 running 14 tests
 test cancellation_after_failed_write_retains_possible_effects ... ok
 test cancellation_after_ipv6_write_preserves_possible_effects_without_readback ... ok
-test cancellation_between_ipv6_read_and_write_prevents_write ... ok
 test cancellation_before_start_never_observes_or_mutates_network ... ok
+test cancellation_between_ipv6_read_and_write_prevents_write ... ok
 test complete_bounded_scalars_reject_prefixes_and_binary_data ... ok
 test fixed_backend_lists_and_external_runtime_keep_network_effects ... ok
 test fresh_root_backend_and_ipv4_unknown_guards_prevent_effects ... ok
@@ -351,7 +351,7 @@ PROTOCOL_wrong_END
 OBS_signal_READY_BEGIN
 PID 2580
 STAT_BEGIN
-2580 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 279 195 0 0 0 0 0 0 20 0 1 0 1142 2666496 539 18446744073709551615 4194304 6372816 281473999124080 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 972980224 281473999126074 281473999126201 281473999126201 281473999126484 0
+2580 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 280 195 0 0 0 0 0 0 20 0 1 0 1042 2666496 539 18446744073709551615 4194304 6372816 281474803915584 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 315150336 281474803916346 281474803916473 281474803916473 281474803916756 0
 STAT_END
 EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2580/exe
 MNT_NS mnt:[4026532175]
@@ -460,7 +460,7 @@ PID_ABSENT 2580
 OBS_real_READY_BEGIN
 PID 2617
 STAT_BEGIN
-2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 284 198 0 0 0 0 0 0 20 0 1 0 1150 2666496 539 18446744073709551615 4194304 6372816 281474176147376 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 11649024 281474176151098 281474176151225 281474176151225 281474176151508 0
+2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 281 195 0 0 0 0 0 0 20 0 1 0 1050 2666496 539 18446744073709551615 4194304 6372816 281474929264544 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 103280640 281474929266234 281474929266361 281474929266361 281474929266644 0
 STAT_END
 EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2617/exe
 MNT_NS mnt:[4026532175]
@@ -539,7 +539,7 @@ OBS_real_READY_END
 OBS_real_FIRST_BEGIN
 PID 2617
 STAT_BEGIN
-2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 3145 3471 0 1 1 0 1 1 20 0 1 0 1150 2777088 578 18446744073709551615 4194304 6372816 281474176147376 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 11649024 281474176151098 281474176151225 281474176151225 281474176151508 0
+2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 3143 3532 0 1 1 1 0 2 20 0 1 0 1050 2777088 554 18446744073709551615 4194304 6372816 281474929264544 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 103280640 281474929266234 281474929266361 281474929266361 281474929266644 0
 STAT_END
 EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2617/exe
 MNT_NS mnt:[4026532175]
@@ -625,7 +625,7 @@ OBS_real_FIRST_END
 OBS_real_SECOND_BEGIN
 PID 2617
 STAT_BEGIN
-2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 6029 6194 0 1 3 1 1 1 20 0 1 0 1150 2777088 616 18446744073709551615 4194304 6372816 281474176147376 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 11649024 281474176151098 281474176151225 281474176151225 281474176151508 0
+2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 6028 6258 0 1 2 2 1 2 20 0 1 0 1050 2777088 588 18446744073709551615 4194304 6372816 281474929264544 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 103280640 281474929266234 281474929266361 281474929266361 281474929266644 0
 STAT_END
 EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2617/exe
 MNT_NS mnt:[4026532175]

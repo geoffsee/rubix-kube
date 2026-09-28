@@ -1,6 +1,6 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [ 1/13] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 [build 1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 #1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #1 DONE 0.0s
 
@@ -15,7 +15,7 @@
 #4 transferring context: 2B done
 #4 DONE 0.0s
 
-#5 [2/6] WORKDIR /src
+#5 [build 2/6] WORKDIR /src
 #5 CACHED
 
 #6 [internal] load build context
@@ -23,31 +23,31 @@
 #6 DONE 0.0s
 
 #7 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/detect/detect.go
-#7 0.131   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-#7 0.131                                  Dload  Upload   Total   Spent    Left  Speed
-#7 0.131   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 92865    0 92865    0     0   133k      0 --:--:-- --:--:-- --:--:--  133k100  874k    0  874k    0     0   831k      0 --:--:--  0:00:01 --:--:--  832k
-#7 1.188 /tmp/source.tar.gz: OK
-#7 DONE 1.2s
+#7 0.110   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#7 0.110                                  Dload  Upload   Total   Spent    Left  Speed
+#7 0.110   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 34818    0 34818    0     0  48235      0 --:--:-- --:--:-- --:--:-- 48224100  874k    0  874k    0     0   654k      0 --:--:--  0:00:01 --:--:--  654k
+#7 1.451 /tmp/source.tar.gz: OK
+#7 DONE 1.5s
 
 #8 [4/6] COPY detect_capture_test.go .
 #8 DONE 0.0s
 
 #9 [5/6] RUN sha256sum detect.go > /source.sha256 && go test -c -trimpath -o /detect.test .
-#9 DONE 5.1s
+#9 DONE 4.4s
 
 #10 [6/6] WORKDIR /tmp
 #10 DONE 0.0s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 1.2s done
-#11 exporting manifest sha256:9cf16b80d5312c3a7bded5ba15742f5cacab1a69ba40a4e8388c00bb52d883ba done
-#11 exporting config sha256:e33a54b3833f9c29541fe8cc8700e53d1344b5a92d280eae595e47d5265a3ef9 done
-#11 exporting attestation manifest sha256:5894e1cd9eaa41ba798df885bf33bbf18f17a44384d66d9d4dcc7f2f6c062562 done
-#11 exporting manifest list sha256:fe5299573adbe196b9c4b98e1ad577fadf9813445fd0776d16875c15f3f0af07 done
-#11 naming to docker.io/library/rubix-platform-go-a7zcbz:latest done
-#11 unpacking to docker.io/library/rubix-platform-go-a7zcbz:latest
-#11 unpacking to docker.io/library/rubix-platform-go-a7zcbz:latest 0.3s done
-#11 DONE 1.6s
+#11 exporting layers 1.1s done
+#11 exporting manifest sha256:9ce7c50dd17959b8e0fd108f35c4b566811a2f08271dc18ddeb17d68717f4d8f done
+#11 exporting config sha256:ee5141d3d7efc948fffdebf2e2c6009049df83e803ea77f05454242570558040 done
+#11 exporting attestation manifest sha256:52ef5e501ba703d34dee20d47382e37d233e91e52b6ce5ed1e1943570c15eb78 done
+#11 exporting manifest list sha256:e04997101bbbb68dcb69144a28bd2e05c134c8e1df6cea07a398b957c48b68ed done
+#11 naming to docker.io/library/rubix-platform-go-ow79mg:latest done
+#11 unpacking to docker.io/library/rubix-platform-go-ow79mg:latest
+#11 unpacking to docker.io/library/rubix-platform-go-ow79mg:latest 0.3s done
+#11 DONE 1.4s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/y901d7jej01qa3q6k1wlzmysv
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/m291fdxamgae8w9yhrdx8tj7a

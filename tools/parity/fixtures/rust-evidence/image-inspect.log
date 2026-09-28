@@ -1,11 +1,11 @@
 [
     {
-        "Id": "sha256:ef0c45225511286eeebe960e04ff78fce80ad735ca56d060498638ec893fbea3",
+        "Id": "sha256:51ca43c2199564670739ebabe2494bd1568144588bdd9eb72ae61801d8455c1c",
         "RepoTags": [
-            "rubix-resources-pki-ix3tkt:latest"
+            "rubix-resources-pki-4gisqv:latest"
         ],
         "RepoDigests": [
-            "rubix-resources-pki-ix3tkt@sha256:ef0c45225511286eeebe960e04ff78fce80ad735ca56d060498638ec893fbea3"
+            "rubix-resources-pki-4gisqv@sha256:51ca43c2199564670739ebabe2494bd1568144588bdd9eb72ae61801d8455c1c"
         ],
         "Comment": "buildkit.dockerfile.v0",
         "Created": "2026-09-28T07:31:08.603042126Z",
@@ -46,18 +46,18 @@
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-28T09:09:42.829010503Z"
+            "LastTagTime": "2026-09-28T16:23:38.323256305Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:ef0c45225511286eeebe960e04ff78fce80ad735ca56d060498638ec893fbea3",
+            "digest": "sha256:51ca43c2199564670739ebabe2494bd1568144588bdd9eb72ae61801d8455c1c",
             "size": 856
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "m4h7j2hqdjsilfza4tjbbyzgv",
-                    "CreatedAt": "2026-09-28T09:09:49.075678631Z"
+                    "Ref": "g4uepgsmwm0y3ugpahv1o6fkl",
+                    "CreatedAt": "2026-09-28T16:23:42.136068584Z"
                 }
             ]
         }

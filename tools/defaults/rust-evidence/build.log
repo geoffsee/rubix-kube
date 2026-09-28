@@ -1,9 +1,6 @@
 #0 building with "desktop-linux" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile
-#1 DONE 0.0s
-
-#1 [internal] load build definition from Dockerfile
 #1 transferring dockerfile: 1.20kB done
 #1 DONE 0.0s
 
@@ -15,23 +12,23 @@
 #3 DONE 0.0s
 
 #4 [build 1/8] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #4 DONE 0.0s
 
 #5 [internal] load build context
 #5 transferring context: 103.05MB 0.7s done
 #5 DONE 0.7s
 
-#6 [build 2/8] COPY go.tar.gz /tmp/go.tar.gz
+#6 [build 3/8] RUN echo '211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0  /tmp/go.tar.gz' | sha256sum -c - && mkdir /toolchain && tar -xzf /tmp/go.tar.gz -C /toolchain
 #6 CACHED
 
-#7 [build 3/8] RUN echo '211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0  /tmp/go.tar.gz' | sha256sum -c - && mkdir /toolchain && tar -xzf /tmp/go.tar.gz -C /toolchain
+#7 [build 4/8] COPY source.tar.gz /tmp/source.tar.gz
 #7 CACHED
 
-#8 [build 4/8] COPY source.tar.gz /tmp/source.tar.gz
+#8 [build 5/8] RUN echo "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
 #8 CACHED
 
-#9 [build 5/8] RUN echo "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
+#9 [build 2/8] COPY go.tar.gz /tmp/go.tar.gz
 #9 CACHED
 
 #10 [build 6/8] WORKDIR /src
@@ -41,22 +38,22 @@
 #11 DONE 0.1s
 
 #12 [build 8/8] RUN go version && mkdir /out && go build -mod=vendor -p 2 -trimpath -o /out/extract ./cmd/rubix-defaults && go build -tags rubix_apiserver -mod=vendor -p 2 -trimpath -o /out/extract-apiserver ./cmd/rubix-defaults && sha256sum go.mod go.sum go.work vendor/modules.txt > /out/modules.sha256 && find staging -type f ( -name go.mod -o -name go.sum ) -print | sort | xargs sha256sum >> /out/modules.sha256
-#12 0.100 go version go1.26.8 linux/arm64
-#12 DONE 67.1s
+#12 0.047 go version go1.26.8 linux/arm64
+#12 DONE 59.3s
 
 #13 [stage-1 1/1] COPY --from=build /out/ /out/
 #13 DONE 0.1s
 
 #14 exporting to image
 #14 exporting layers
-#14 exporting layers 3.1s done
-#14 exporting manifest sha256:f775fcd14fd012177640d8a229895660735a2c81ee8baf43b9ff34439ea83b69 done
-#14 exporting config sha256:4e99fe30f0f4b445bcb4f3c75536be614fa6a7c2e59426296ad14706885cd767 done
-#14 exporting attestation manifest sha256:d57829718177757c46dee7e28a0d2e76a729e59202591208c22280fb18802b7f done
-#14 exporting manifest list sha256:e3a7e957c468ca2eb2dbce1d38a52f85576386ae9e90f5a1cb0787d37b7a1640 done
-#14 naming to docker.io/library/rubix-official-defaults-jt3knr:latest done
-#14 unpacking to docker.io/library/rubix-official-defaults-jt3knr:latest
-#14 unpacking to docker.io/library/rubix-official-defaults-jt3knr:latest 0.4s done
-#14 DONE 3.5s
+#14 exporting layers 2.8s done
+#14 exporting manifest sha256:083e46d888f26898b21d22169047b01a269f9aadbf4923c8b845d9452f8fe614 done
+#14 exporting config sha256:14180a7f3f8809e62c3744dba79b5c01b4ec98bb92d71a1fed1bdc5db0ddcbe8 done
+#14 exporting attestation manifest sha256:49297f153388f134d1758141dcf3c739479aa690f8c95e48470390c23b9e9cbb done
+#14 exporting manifest list sha256:6710afa083dc22308b34041489a8977e15452b6bc205e77806c06ac4c76d9bf7 done
+#14 naming to docker.io/library/rubix-official-defaults-bkbxpj:latest done
+#14 unpacking to docker.io/library/rubix-official-defaults-bkbxpj:latest
+#14 unpacking to docker.io/library/rubix-official-defaults-bkbxpj:latest 0.4s done
+#14 DONE 3.2s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/xbpaoethhfj1vpcxlbgbnf3d9
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/llf400r12g5uxwoa9e6blurlv
