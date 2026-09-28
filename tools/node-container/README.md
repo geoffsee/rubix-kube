@@ -2,7 +2,7 @@
 
 This fixture exercises the explicit `prepare_node_host` example. Production startup
 still does not prepare a node. Two fresh disposable Alpine captures are published
-from clean source `fb24f95f20d1152fc5921c4f0377add1051f42cb`.
+from clean source `bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`.
 
 The fixed preparation order is fresh assessment, actual network attempts, container
 root propagation, actual process migration to `init`, and controller delegation.
@@ -90,3 +90,9 @@ current build and guest verifiers. Both guests powered off with QEMU exit 0;
 owned process groups, private directories, and builder resources were independently
 confirmed absent. This qualifies the explicit preparation boundary on this pinned
 Linux fixture; production startup and full cluster operation remain outside scope.
+
+The current refresh includes nested-layer inspection source in the complete
+compiled inventory. Both fresh guests and the independent nonce-bound clean build
+use source `bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`; all four artifact hashes
+remain unchanged. Actual PID/starttime, namespace, delegated-root and kernel
+readback observations were renewed in each VM; previous guest logs were not reused.

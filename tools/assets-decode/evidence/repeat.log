@@ -1,5 +1,5 @@
-b0534ce94c8bf8fb9f61ff76254e0f0775ad98e6bbcc5abe9ef9f046f87d2229  /decode-tests
-b1ba571471b454ed7b5172373582cd54980dc37a0b0efae1e6d779777bbc3eb7  /decoded_elf-tests
+71643138b63beb75903665b62c2aba5b9631555bea1ce71a3d0e2d4ece4a0799  /decode-tests
+e0baaddca78061be29eb058ed7c1561a4dece60ff5d5deb82f3bb7ce479024eb  /decoded_elf-tests
 RUBIX_SUITE decode
 
 running 14 tests

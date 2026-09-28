@@ -75,7 +75,7 @@ exceptions rather than removable assertions. Synthetic mutation tests exercise
 verifier rejection and do not substitute for captured VM evidence.
 
 Published qualification uses frozen source
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both fresh Alpine guests completed
+`bfb31a1914e0d8a365e5b32ab320d4131f5d8d12`. Both fresh Alpine guests completed
 all nine cases and orderly shutdown, with no recorded cleanup errors. The first
 real pass in each guest returned 13 successful fixed nft-family command attempts;
 loaded/built-in/available observations are separately retained, so successful exit
@@ -99,7 +99,10 @@ boolean CLI syntax and stopped before preparation effects. Both failed guests
 also shut down cleanly. The corrected capture changes only fixture expectations
 and arguments; production preparation behavior was unchanged.
 
-The current refresh binds the container preparation additions and Rust dependency
-features into the complete compiled source inventory. Both guest captures were
-rerun from this clean revision. This evidence qualifies the network boundary;
-`tools/node-container` separately qualifies the explicit combined preparation API.
+The current refresh binds the nested-layer inspection source into the complete
+compiled source inventory. Both guests were rerun from this clean revision; the
+network candidate bytes remain unchanged. The network harness binds current
+source, hashed build/run logs, runtime digest and exact candidate bytes. It does
+not provide the separate nonce-framed builder hash comparison used by the
+container fixture. This evidence qualifies the network boundary;
+`tools/node-container` separately qualifies explicit combined preparation.
