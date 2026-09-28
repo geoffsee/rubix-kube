@@ -634,8 +634,12 @@ pub(crate) fn capture(
         },
     }
     scrub_value(&mut guest.report, &guest.secrets);
-    let publication =
-        crate::parity::write_json(&spec.output.join("result.json"), &guest.report, true);
+    let publication = publish_cancellable(
+        &spec.output.join("result.json"),
+        &mut guest.report,
+        &guest.commands.cancellation,
+        true,
+    );
     if !absent {
         return Err(Box::new(Retained {
             commands: retained,
@@ -645,6 +649,41 @@ pub(crate) fn capture(
     }
     publication?;
     Ok(guest.report)
+}
+pub(crate) fn publish_cancellable(
+    path: &Path,
+    report: &mut Value,
+    cancellation: &Cancellation,
+    create: bool,
+) -> Result<()> {
+    publish_with_checkpoint(path, report, cancellation, create, || {})
+}
+fn publish_with_checkpoint(
+    path: &Path,
+    report: &mut Value,
+    cancellation: &Cancellation,
+    create: bool,
+    checkpoint: impl FnOnce(),
+) -> Result<()> {
+    mark_cancellation(report, cancellation)?;
+    crate::parity::write_json(path, report, create)?;
+    checkpoint();
+    if cancellation.requested() && report["cancelled"] != true {
+        mark_cancellation(report, cancellation)?;
+        crate::parity::write_json(path, report, false)?;
+    }
+    Ok(())
+}
+fn mark_cancellation(report: &mut Value, cancellation: &Cancellation) -> Result<()> {
+    report["cancelled"] = json!(cancellation.requested());
+    if cancellation.requested() {
+        report["status"] = json!("failed");
+        report["errors"]
+            .as_array_mut()
+            .ok_or("report errors")?
+            .push(json!("cancelled through final publication"));
+    }
+    Ok(())
 }
 fn secret(raw: &[u8], secrets: &[Vec<u8>]) -> bool {
     raw.windows(b"BEGIN OPENSSH PRIVATE KEY".len())
@@ -766,6 +805,35 @@ mod tests {
         assert_ne!(before, evidence_inventory(dir.path())?);
         std::os::unix::fs::symlink(dir.path().join("nested/a"), dir.path().join("alias"))?;
         assert!(evidence_inventory(dir.path()).is_err());
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod publication_tests {
+    use super::*;
+    #[test]
+    fn cancellation_during_scrubbing_or_publication_cannot_leave_success() -> Result<()> {
+        for during_write in [false, true] {
+            let directory = tempfile::tempdir()?;
+            let path = directory.path().join("result.json");
+            let mut report = json!({"status":"passed","errors":[]});
+            let cancellation = Cancellation::default();
+            if !during_write {
+                cancellation.request();
+            }
+            publish_with_checkpoint(&path, &mut report, &cancellation, true, || {
+                if during_write {
+                    cancellation.request();
+                }
+            })?;
+            let saved = super::super::load(&path)?;
+            require(
+                saved["status"] == "failed"
+                    && saved["cancelled"] == true
+                    && !saved["errors"].as_array().ok_or("errors")?.is_empty(),
+                "late cancellation persisted",
+            )?;
+        }
         Ok(())
     }
 }

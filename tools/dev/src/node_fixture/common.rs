@@ -74,6 +74,7 @@ pub(super) fn files(path: &Path) -> Result<Vec<std::path::PathBuf>> {
             "target",
             "evidence",
             "rust-evidence",
+            "evidence-rust",
             ".git",
             "__pycache__",
             ".DS_Store",

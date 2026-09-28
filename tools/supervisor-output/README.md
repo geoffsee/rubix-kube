@@ -5,7 +5,7 @@ Use the Rust capture tool after reviewing and committing source inputs:
 ```sh
 cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output capture /tmp/unique-output-capture
 cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output verify /tmp/unique-output-capture
-cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output verify tools/supervisor-output/evidence --relevant-current
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output verify tools/supervisor-output/rust-evidence --relevant-current
 ```
 
 Thirteen adverse cases run twice in separate owned disposable Linux containers.
@@ -32,3 +32,7 @@ Existing evidence remains historical. The mandatory Rust schema-3 evidence gate
 fails until reviewed fresh captures are published. Run `cargo test -p rubix-dev
 --bin rubix-supervisor-fixture --locked` for mutation checks and current evidence
 gates. Ignored supervisor effects tests run only inside the disposable container.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

@@ -146,9 +146,17 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
     for entry in fs::read_dir(source)? {
         let entry = entry?;
         let name = entry.file_name();
-        if ["target", "evidence", ".git", "__pycache__", ".DS_Store"]
-            .iter()
-            .any(|n| name == *n)
+        if [
+            "target",
+            "evidence",
+            "rust-evidence",
+            "evidence-rust",
+            ".git",
+            "__pycache__",
+            ".DS_Store",
+        ]
+        .iter()
+        .any(|n| name == *n)
         {
             continue;
         }

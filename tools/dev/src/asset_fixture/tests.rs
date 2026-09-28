@@ -528,14 +528,18 @@ fn archive_runtime_records_require_exact_oracle_cases_and_completion() -> Result
 
 #[test]
 fn published_elf_evidence_is_required() -> Result<()> {
-    super::capture::verify(&root()?, "elf", &root()?.join("tools/assets-elf/evidence"))
+    super::capture::verify(
+        &root()?,
+        "elf",
+        &root()?.join("tools/assets-elf/rust-evidence"),
+    )
 }
 #[test]
 fn published_decode_evidence_is_required() -> Result<()> {
     super::capture::verify(
         &root()?,
         "decode",
-        &root()?.join("tools/assets-decode/evidence"),
+        &root()?.join("tools/assets-decode/rust-evidence"),
     )
 }
 #[test]
@@ -543,7 +547,7 @@ fn published_archive_evidence_is_required() -> Result<()> {
     super::capture::verify(
         &root()?,
         "archive",
-        &root()?.join("tools/assets-archive/evidence"),
+        &root()?.join("tools/assets-archive/rust-evidence"),
     )
 }
 
@@ -630,5 +634,22 @@ fn failed_daemon_cleanup_preserves_original_failure_and_unknown_resources() -> R
     let directory = tempfile::tempdir()?;
     save(&directory.path().join("receipt.json"), &report)?;
     assert_eq!(load(&directory.path().join("receipt.json"))?, report);
+    Ok(())
+}
+
+#[test]
+fn publishing_current_receipts_does_not_change_the_source_file_inventory() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    std::fs::write(directory.path().join("harness.rs"), b"reviewed source")?;
+    let before = super::common::files(directory.path())?;
+    for name in ["evidence", "rust-evidence", "evidence-rust"] {
+        std::fs::create_dir_all(directory.path().join(name).join("first"))?;
+        std::fs::write(
+            directory.path().join(name).join("first/receipt.json"),
+            b"{}",
+        )?;
+    }
+    assert_eq!(before, super::common::files(directory.path())?);
+    assert_eq!(before, vec![directory.path().join("harness.rs")]);
     Ok(())
 }

@@ -391,7 +391,7 @@ fn published_process_evidence_is_required() -> Result<()> {
     verify(
         &root()?,
         "process",
-        &root()?.join("tools/supervisor-process/evidence"),
+        &root()?.join("tools/supervisor-process/rust-evidence"),
         false,
     )
 }
@@ -400,7 +400,7 @@ fn published_output_evidence_is_required() -> Result<()> {
     verify(
         &root()?,
         "output",
-        &root()?.join("tools/supervisor-output/evidence"),
+        &root()?.join("tools/supervisor-output/rust-evidence"),
         false,
     )
 }
@@ -409,7 +409,7 @@ fn published_signal_evidence_is_required() -> Result<()> {
     verify(
         &root()?,
         "signals",
-        &root()?.join("tools/supervisor-signals/evidence"),
+        &root()?.join("tools/supervisor-signals/rust-evidence"),
         false,
     )
 }
