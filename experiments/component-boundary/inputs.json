@@ -1,7 +1,7 @@
 {
   "kubernetes_version": "v1.35.7",
   "kine_version": "v0.16.3",
-  "base_image": "python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d",
+  "base_image": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
   "checksum_sources": [
     "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver.sha256",
     "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver.sha256",
