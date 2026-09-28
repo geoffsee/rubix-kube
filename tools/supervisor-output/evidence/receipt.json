@@ -1,8 +1,8 @@
 {
   "cleanup_errors": [],
   "containers": [
-    "rubix-output-fa54da1ce85248118df2a94fb4619f7d-first",
-    "rubix-output-fa54da1ce85248118df2a94fb4619f7d-repeat"
+    "rubix-output-420cc7dbaf5a43178745ca2770f220ea-first",
+    "rubix-output-420cc7dbaf5a43178745ca2770f220ea-repeat"
   ],
   "errors": [],
   "harness_sha256": {
@@ -12,7 +12,7 @@
     "verify.py": "ae12b61d247aa3e1927f4147f02f76c2bf909fd0eef62e92567e3b0eb0e9e9de"
   },
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:6a071d1a38f0650e3ef5e43d032f733a54507c630c6509b06a59b6c3dcba5068",
+  "image_id": "sha256:2f18590952aebcb9425d3df752e0a21faaefa457ccd682f42687d196e635da6f",
   "remaining_containers": [],
   "remaining_images": [],
   "runs": {
@@ -22,7 +22,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-output-fa54da1ce85248118df2a94fb4619f7d-first",
+        "rubix-output-420cc7dbaf5a43178745ca2770f220ea-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -35,15 +35,134 @@
         "/tmp:rw,nosuid,nodev,size=16m",
         "--env",
         "RUBIX_OUTPUT_DISPOSABLE=1",
-        "rubix-output-fa54da1ce85248118df2a94fb4619f7d",
+        "rubix-output-420cc7dbaf5a43178745ca2770f220ea",
         "/bin/sh",
         "-c",
         "sha256sum /output-tests; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "e9b4926a67e6816e438dd55dc01be545bdec29211d40730d445233e899eec774",
+      "raw_sha256": "f59b007f6905dce83d5c1c83d3f8cb25f9a57eab4c8673d38740de9b61c3ac17",
       "records": {
         "abort": {
+          "bytes": 6,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "descendant": {
+          "bytes": 6,
+          "elapsed_ms": 91,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "empty": {
           "bytes": 0,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "escaped": {
+          "bytes": 6,
+          "elapsed_ms": 335,
+          "joined": true,
+          "reaped": true,
+          "status": "IncompleteAfterExit"
+        },
+        "exact": {
+          "bytes": 64,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "flood": {
+          "bytes": 64,
+          "elapsed_ms": 81,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "merged": {
+          "bytes": 8,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "missing": {
+          "bytes": 0,
+          "elapsed_ms": 11,
+          "joined": true,
+          "reaped": false,
+          "status": "SpawnFailed"
+        },
+        "overflow": {
+          "bytes": 64,
+          "elapsed_ms": 70,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "probe-failure": {
+          "bytes": 0,
+          "elapsed_ms": 76,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "simultaneous": {
+          "bytes": 2000,
+          "elapsed_ms": 67,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "stop": {
+          "bytes": 0,
+          "elapsed_ms": 72,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        },
+        "timeout": {
+          "bytes": 6,
+          "elapsed_ms": 212,
+          "joined": true,
+          "reaped": true,
+          "status": "Cancelled"
+        }
+      }
+    },
+    "repeat": {
+      "binary_sha256": "0bcd5b2bebcdbd92c7258920fceb0b212a56cee9278466d7b598f09ff62eb20d",
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-output-420cc7dbaf5a43178745ca2770f220ea-repeat",
+        "--init",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=96",
+        "--memory=512m",
+        "--cpus=2",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--env",
+        "RUBIX_OUTPUT_DISPOSABLE=1",
+        "rubix-output-420cc7dbaf5a43178745ca2770f220ea",
+        "/bin/sh",
+        "-c",
+        "sha256sum /output-tests; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+      ],
+      "raw_sha256": "d2d64fe9f4fcec250d451d046814c024e486bccc771a05a72669b43209e9e70e",
+      "records": {
+        "abort": {
+          "bytes": 6,
           "elapsed_ms": 74,
           "joined": true,
           "reaped": true,
@@ -65,7 +184,7 @@
         },
         "escaped": {
           "bytes": 6,
-          "elapsed_ms": 364,
+          "elapsed_ms": 326,
           "joined": true,
           "reaped": true,
           "status": "IncompleteAfterExit"
@@ -78,33 +197,33 @@
           "status": "Complete"
         },
         "flood": {
+          "bytes": 64,
+          "elapsed_ms": 77,
+          "joined": true,
+          "reaped": true,
+          "status": "LimitExceeded"
+        },
+        "merged": {
+          "bytes": 8,
+          "elapsed_ms": 78,
+          "joined": true,
+          "reaped": true,
+          "status": "Complete"
+        },
+        "missing": {
+          "bytes": 0,
+          "elapsed_ms": 11,
+          "joined": true,
+          "reaped": false,
+          "status": "SpawnFailed"
+        },
+        "overflow": {
           "bytes": 64,
           "elapsed_ms": 80,
           "joined": true,
           "reaped": true,
           "status": "LimitExceeded"
         },
-        "merged": {
-          "bytes": 8,
-          "elapsed_ms": 90,
-          "joined": true,
-          "reaped": true,
-          "status": "Complete"
-        },
-        "missing": {
-          "bytes": 0,
-          "elapsed_ms": 11,
-          "joined": true,
-          "reaped": false,
-          "status": "SpawnFailed"
-        },
-        "overflow": {
-          "bytes": 64,
-          "elapsed_ms": 78,
-          "joined": true,
-          "reaped": true,
-          "status": "LimitExceeded"
-        },
         "probe-failure": {
           "bytes": 0,
           "elapsed_ms": 78,
@@ -120,134 +239,15 @@
           "status": "Complete"
         },
         "stop": {
-          "bytes": 6,
-          "elapsed_ms": 77,
-          "joined": true,
-          "reaped": true,
-          "status": "Cancelled"
-        },
-        "timeout": {
-          "bytes": 6,
-          "elapsed_ms": 212,
-          "joined": true,
-          "reaped": true,
-          "status": "Cancelled"
-        }
-      }
-    },
-    "repeat": {
-      "binary_sha256": "0bcd5b2bebcdbd92c7258920fceb0b212a56cee9278466d7b598f09ff62eb20d",
-      "command": [
-        "docker",
-        "run",
-        "--name",
-        "rubix-output-fa54da1ce85248118df2a94fb4619f7d-repeat",
-        "--init",
-        "--network=none",
-        "--read-only",
-        "--cap-drop=ALL",
-        "--security-opt=no-new-privileges",
-        "--pids-limit=96",
-        "--memory=512m",
-        "--cpus=2",
-        "--tmpfs",
-        "/tmp:rw,nosuid,nodev,size=16m",
-        "--env",
-        "RUBIX_OUTPUT_DISPOSABLE=1",
-        "rubix-output-fa54da1ce85248118df2a94fb4619f7d",
-        "/bin/sh",
-        "-c",
-        "sha256sum /output-tests; /output-tests --ignored --exact disposable_output_cases --nocapture; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
-      ],
-      "raw_sha256": "849c5bb7b2b2d9fa3d1532886a745a1a075defc616774e9ce591b09b62fcba4e",
-      "records": {
-        "abort": {
-          "bytes": 6,
-          "elapsed_ms": 84,
-          "joined": true,
-          "reaped": true,
-          "status": "Cancelled"
-        },
-        "descendant": {
-          "bytes": 6,
-          "elapsed_ms": 111,
-          "joined": true,
-          "reaped": true,
-          "status": "Complete"
-        },
-        "empty": {
           "bytes": 0,
-          "elapsed_ms": 79,
-          "joined": true,
-          "reaped": true,
-          "status": "Complete"
-        },
-        "escaped": {
-          "bytes": 6,
-          "elapsed_ms": 350,
-          "joined": true,
-          "reaped": true,
-          "status": "IncompleteAfterExit"
-        },
-        "exact": {
-          "bytes": 64,
-          "elapsed_ms": 79,
-          "joined": true,
-          "reaped": true,
-          "status": "Complete"
-        },
-        "flood": {
-          "bytes": 64,
-          "elapsed_ms": 100,
-          "joined": true,
-          "reaped": true,
-          "status": "LimitExceeded"
-        },
-        "merged": {
-          "bytes": 8,
           "elapsed_ms": 78,
           "joined": true,
           "reaped": true,
-          "status": "Complete"
-        },
-        "missing": {
-          "bytes": 0,
-          "elapsed_ms": 11,
-          "joined": true,
-          "reaped": false,
-          "status": "SpawnFailed"
-        },
-        "overflow": {
-          "bytes": 64,
-          "elapsed_ms": 101,
-          "joined": true,
-          "reaped": true,
-          "status": "LimitExceeded"
-        },
-        "probe-failure": {
-          "bytes": 0,
-          "elapsed_ms": 77,
-          "joined": true,
-          "reaped": true,
-          "status": "Cancelled"
-        },
-        "simultaneous": {
-          "bytes": 2000,
-          "elapsed_ms": 123,
-          "joined": true,
-          "reaped": true,
-          "status": "Complete"
-        },
-        "stop": {
-          "bytes": 6,
-          "elapsed_ms": 97,
-          "joined": true,
-          "reaped": true,
           "status": "Cancelled"
         },
         "timeout": {
           "bytes": 6,
-          "elapsed_ms": 211,
+          "elapsed_ms": 213,
           "joined": true,
           "reaped": true,
           "status": "Cancelled"
@@ -256,8 +256,8 @@
     }
   },
   "schema": 1,
-  "source_inventory_sha256": "6c1c39dadfc02ab82a236a49f14fd2e07574b4e6931b0f82bf64e126c166600c",
-  "source_revision": "ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f",
-  "tag": "rubix-output-fa54da1ce85248118df2a94fb4619f7d",
+  "source_inventory_sha256": "ac3fad7c9cdd674a4d59aa8752ae98eb9a289ea70142d2b2751cc49da9d74c7a",
+  "source_revision": "45e727574ff8b2c8ec0c760a16e4f110a188343a",
+  "tag": "rubix-output-420cc7dbaf5a43178745ca2770f220ea",
   "uncommitted_source_snapshot": false
 }

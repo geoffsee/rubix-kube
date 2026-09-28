@@ -48,17 +48,22 @@ ABI/CPU/libc combinations, hard RSS/CPU limits or archive/OCI semantics. The new
 suite exercises composed ELF header observations on synthetic compressed vectors;
 it does not establish executable runtime compatibility or installation safety.
 
-Stored schema2 evidence was captured on
-`a45e635357eafb086fde62aaa0ed5d43ff217f59`. Both Linuxarm64 release runs
-passed all14 decoder tests and all10 decoded ELF tests. Both builder-produced
-executable hashes match both runtime observations:
+Historical schema1 evidence in this branch was captured on
+`ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f`, with14 decoder cases per run.
+It intentionally cannot satisfy the expanded schema2 verifier and remains
+historical; the current receipts below replace it without relabeling that capture.
 
-- `decode`: `5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b`
-- `decoded_elf`: `0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001`
+Fresh schema2 receipts must also bind the build log and both builder-produced
+binary digests. Older receipts without those fields require recapture and cannot
+be relabelled as qualification of this combined harness.
 
-The receipt binds the nonce-controlled build output and build log hash, and reports
-no capture/cleanup errors or remaining owned containers/images. The owned names
-and image tag were independently confirmed absent. All13 evidence regressions and
-current-source verification pass normally and under optimization. Older receipts
-without builder/log bindings are historical only. Production-payload and other
-ABI/runtime qualification remains open.
+Current schema2 qualification was captured twice on integrated network source
+`77e7fff321ddc3481ab84d85e5c0129fa2e6592e`. Both Linux arm64 release runs passed
+all 14 decoder and 10 compressed ELF tests. Builder and both runtime observations
+agree on decoder SHA-256
+`5ac83f9a3073729c58ae41bb52a8f6f3bc85017bd0b4b49829dd80cfb5239c1b`
+and compressed ELF test SHA-256
+`0549733c3be392b162d46d8f79ecc8e72675031f4424036622b172ba2e237001`.
+Capture and cleanup error arrays are empty; independent Docker inventory checks
+confirmed both owned containers and the image tag absent. All 13 evidence tests
+and current-source verification pass normally and under optimization.

@@ -1,0 +1,6 @@
+{
+  "revision": "5799b93cf85ff5e28f8f0da18472122e0fa424b3",
+  "sha256": "0214a3de0383f0ec03427bf922e27913577808125f8f372420bb78e1de9a8377",
+  "size": 12883656,
+  "target": "aarch64-unknown-linux-musl"
+}

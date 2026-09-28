@@ -18,7 +18,7 @@ test unknown_size_rle_bomb_is_streamed_in_fixed_chunks_and_stops_at_limit ... ok
 test unknown_zstd_content_size_is_still_bounded_and_checksum_is_checked ... ok
 test zstd_skippable_dictionary_large_window_and_reserved_headers_are_rejected ... ok
 
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
 RUBIX_SUITE decoded_elf
 

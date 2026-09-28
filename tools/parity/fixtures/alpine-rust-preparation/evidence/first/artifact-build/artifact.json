@@ -1,9 +1,6 @@
 {
-  "path": "/tmp/rubix-decode-integrated-prerequisite-20260927-r1/rubixctl",
-  "receipt": "/tmp/rubix-decode-integrated-prerequisite-20260927-r1/receipt.json",
-  "revision": "ec6f19e6c32ef5cdb5276d6b5794ccfd9bdfd12f",
+  "revision": "45e727574ff8b2c8ec0c760a16e4f110a188343a",
   "sha256": "1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa",
   "size": 5388504,
-  "source_inventory": "/tmp/rubix-decode-integrated-prerequisite-20260927-r1/source-hashes.json",
   "target": "aarch64-unknown-linux-musl"
 }

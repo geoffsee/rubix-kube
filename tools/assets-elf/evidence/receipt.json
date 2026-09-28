@@ -55,14 +55,14 @@
   },
   "errors": [],
   "logs": {
-    "run0.log": "9c9d3ed5916734802ffffb0b3b03e8578a5ad3cf4f17bba86dfcc330eb3297ce",
-    "run1.log": "cd695623234a32f2f2eb9181d99127be61b40cebc363cba9a67821b20770581c"
+    "run0.log": "b005c05a75ba84566b3fa442025557c20d1df5d50b6e1ed91e721ef735949e7b",
+    "run1.log": "64741f8dace09316ac9f2469202326d88117b3438935388c7fe9cf58e27be261"
   },
   "qualification": "read-only ELF inspection; no artifact execution",
-  "revision": "a45e635357eafb086fde62aaa0ed5d43ff217f59",
+  "revision": "77e7fff321ddc3481ab84d85e5c0129fa2e6592e",
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "48cd58fa43c34b0abfa04f9c8c8c81d73e2b72249ff9577d1c060405a1646224",
+    "Cargo.lock": "0524f600f6c7b4da58a242c3c8b4a6699f1b5ac744b31123ffdea9b23eecd185",
     "Cargo.toml": "04ef1c937243f8b63653e63ab740508f1ce31994dff1d595a7de851944ee93ee",
     "crates/rubix-assets/Cargo.toml": "fa6e114813b77bd1cabd0cd5649beb3f5e4596523ded506d2559643a7a845837",
     "crates/rubix-assets/src/catalog.rs": "7154b10c0af78735fbae4b55e1f4e19370b6898819b9a4db7d524ffc77ffdc43",
@@ -83,7 +83,7 @@
     "crates/rubix-config/Cargo.toml": "1006c70dd15cdc9989a5fa5bd3afd31aff521bd4bf8544604abfdf59cfa7b5e3",
     "crates/rubix-containerd-api/Cargo.toml": "fabe2671f66933b38f470738230e6da84c9ac7e011ba6260efad2058a258cb48",
     "crates/rubix-cri/Cargo.toml": "0e2325f0054e50a30895d4ec08796e73a93818822f9b123aafc83680526d443c",
-    "crates/rubix-kube/Cargo.toml": "762f58772294b394861a6caf3c62c3c201f0aeeccd54244c8650b2889fcf0f27",
+    "crates/rubix-kube/Cargo.toml": "69d753592720cf36055887cfcec29f66af7f848e946ef52e8e4ac0b6a2b942d9",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-platform/src/classify.rs": "e3e62d4aad48ee8087ad94fac258305814ecbf93a428af10a5437d0f1788da01",
     "crates/rubix-platform/src/constrained.rs": "6953a432c5f2ec734c73df23d5aaa757e88944aa4c842b2d8f222ad14568e6b3",

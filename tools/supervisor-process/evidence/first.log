@@ -1,10 +1,10 @@
 cca227535a65110443a6ddfd02fe1f94f9cf584b9404cdabc7a11ba60f83965d  /process-tests
 
 running 1 test
-RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":23,"error":null}
+RUBIX_PROCESS {"case":"delayed","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":40,"error":null}
 RUBIX_PROCESS {"case":"family","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":33,"error":null}
-RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30011,"error":null}
-RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":23,"error":null}
+RUBIX_PROCESS {"case":"ignore","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":30018,"error":null}
+RUBIX_PROCESS {"case":"term-error","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":24,"error":null}
 RUBIX_PROCESS {"case":"early","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"leader-exits-first","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":17,"signal":null,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"oneshot","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0,"error":null}
@@ -16,10 +16,10 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 RUBIX_PROCESS {"case":"worker-panic","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"cancelled","spawned":true,"term_attempted":false,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":null,"signal":9,"elapsed_ms":0,"error":null}
 RUBIX_PROCESS {"case":"spawn-error","spawned":false,"term_attempted":false,"kill_attempted":false,"leader_reaped":false,"thread_joined":true,"complete":false,"exit_code":null,"signal":null,"elapsed_ms":0,"error":"process_spawn_failed"}
-RUBIX_PROCESS {"case":"startup-timeout","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":1117,"error":null}
+RUBIX_PROCESS {"case":"startup-timeout","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":1113,"error":null}
 RUBIX_PROCESS {"case":"sentinel-survived-external-stop","spawned":true,"term_attempted":true,"kill_attempted":true,"leader_reaped":true,"thread_joined":true,"complete":true,"exit_code":0,"signal":null,"elapsed_ms":0,"error":null}
 test disposable_process_cases ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 32.91s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 32.97s
 
 RUBIX_NAMESPACE {"helper": 43, "init": 1, "processes": [1, 7, 43], "shell": 7}
