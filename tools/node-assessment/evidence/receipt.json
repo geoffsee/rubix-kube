@@ -1,8 +1,8 @@
 {
   "cleanup_errors": [],
   "containers": [
-    "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37-first",
-    "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37-repeat"
+    "rubix-node-assessment-30189f147bbe4066870a153b9c271111-first",
+    "rubix-node-assessment-30189f147bbe4066870a153b9c271111-repeat"
   ],
   "errors": [],
   "harness_sha256": {
@@ -13,21 +13,21 @@
     "verify.py": "81b58125c02a4b9da98411cc90ec33675c18333b6b6319cca6a8b420d95d599e"
   },
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:8e66815020a948edfc504d23b11d4d2c7bc7088bef3cb4441980d9e794948ff6",
+  "image_id": "sha256:5fdadea45e39f0b5ee38a2158273c2493ee1a39023e59aef85a0a2b118895363",
   "remaining_containers": [],
   "remaining_images": [],
   "runs": {
     "first": {
       "binary_sha256": {
-        "assess_host": "90efd8dac876659bb9821cc49e3b92c766477115ec145234b0a2df35dea30fc9",
-        "host_preflight": "22b587d5db6425da75b1dd47e5d49a639c34333feea96637e7a638c54a93a0d4",
-        "iptables_probe": "c35be5e2f753defb0964710a1c2bba00632eb8010affb6f53890f8480a4c4a3d"
+        "assess_host": "9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581",
+        "host_preflight": "096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76",
+        "iptables_probe": "9608e41b0e0c3f65ebd9e81bac321a5278ff0de2f1eb2a86fd5fd6c65d9cef50"
       },
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37-first",
+        "rubix-node-assessment-30189f147bbe4066870a153b9c271111-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -44,20 +44,20 @@
         "RUBIX_NODE_DISPOSABLE=1",
         "--env",
         "PRIVATE_SENTINEL=must-not-reach-probe",
-        "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37",
+        "rubix-node-assessment-30189f147bbe4066870a153b9c271111",
         "/bin/sh",
         "-c",
         "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /usr/local/bin/python3 /consumer.py; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "873a4a5479eb8e28cbccba2df42849470b3313ac6fcb392598af36564601b565",
+      "raw_sha256": "78ffbb5df917e10f89499f39e23d42d99cece58e59fbcefe571162cb7e529271",
       "records": {
         "cancel": {
-          "elapsed_ms": 141,
+          "elapsed_ms": 78,
           "reaped": true,
           "status": "Some(Cancelled)"
         },
         "deadline": {
-          "elapsed_ms": 2024,
+          "elapsed_ms": 2023,
           "reaped": true,
           "status": "Some(Deadline)"
         },
@@ -67,32 +67,32 @@
           "status": "Some(Command)"
         },
         "empty": {
-          "elapsed_ms": 123,
+          "elapsed_ms": 89,
           "reaped": true,
           "status": "None"
         },
         "held": {
-          "elapsed_ms": 415,
+          "elapsed_ms": 328,
           "reaped": true,
           "status": "Some(Capture)"
         },
         "invalid-utf8": {
-          "elapsed_ms": 90,
+          "elapsed_ms": 102,
           "reaped": true,
           "status": "None"
         },
         "legacy": {
-          "elapsed_ms": 79,
+          "elapsed_ms": 89,
           "reaped": true,
           "status": "None"
         },
         "missing": {
-          "elapsed_ms": 12,
+          "elapsed_ms": 11,
           "reaped": false,
           "status": "Some(Command)"
         },
         "nft": {
-          "elapsed_ms": 100,
+          "elapsed_ms": 89,
           "reaped": true,
           "status": "None"
         },
@@ -102,7 +102,7 @@
           "status": "Some(Command)"
         },
         "overflow": {
-          "elapsed_ms": 111,
+          "elapsed_ms": 101,
           "reaped": true,
           "status": "Some(Capture)"
         }
@@ -110,15 +110,15 @@
     },
     "repeat": {
       "binary_sha256": {
-        "assess_host": "90efd8dac876659bb9821cc49e3b92c766477115ec145234b0a2df35dea30fc9",
-        "host_preflight": "22b587d5db6425da75b1dd47e5d49a639c34333feea96637e7a638c54a93a0d4",
-        "iptables_probe": "c35be5e2f753defb0964710a1c2bba00632eb8010affb6f53890f8480a4c4a3d"
+        "assess_host": "9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581",
+        "host_preflight": "096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76",
+        "iptables_probe": "9608e41b0e0c3f65ebd9e81bac321a5278ff0de2f1eb2a86fd5fd6c65d9cef50"
       },
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37-repeat",
+        "rubix-node-assessment-30189f147bbe4066870a153b9c271111-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -135,20 +135,20 @@
         "RUBIX_NODE_DISPOSABLE=1",
         "--env",
         "PRIVATE_SENTINEL=must-not-reach-probe",
-        "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37",
+        "rubix-node-assessment-30189f147bbe4066870a153b9c271111",
         "/bin/sh",
         "-c",
         "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /usr/local/bin/python3 /consumer.py; status=$?; /usr/local/bin/python3 /namespace_inventory.py; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "92ae3d87d1506b9424c3cd20726a95e10a48e6533b4fa8c01d2a68de1cba3306",
+      "raw_sha256": "ffb7aed477541aaca57188c22612885efde9a6c5e4df6d526d2025989476901c",
       "records": {
         "cancel": {
-          "elapsed_ms": 78,
+          "elapsed_ms": 79,
           "reaped": true,
           "status": "Some(Cancelled)"
         },
         "deadline": {
-          "elapsed_ms": 2034,
+          "elapsed_ms": 2026,
           "reaped": true,
           "status": "Some(Deadline)"
         },
@@ -158,42 +158,42 @@
           "status": "Some(Command)"
         },
         "empty": {
-          "elapsed_ms": 78,
+          "elapsed_ms": 68,
           "reaped": true,
           "status": "None"
         },
         "held": {
-          "elapsed_ms": 341,
+          "elapsed_ms": 323,
           "reaped": true,
           "status": "Some(Capture)"
         },
         "invalid-utf8": {
-          "elapsed_ms": 67,
+          "elapsed_ms": 69,
           "reaped": true,
           "status": "None"
         },
         "legacy": {
-          "elapsed_ms": 66,
+          "elapsed_ms": 72,
           "reaped": true,
           "status": "None"
         },
         "missing": {
-          "elapsed_ms": 11,
+          "elapsed_ms": 14,
           "reaped": false,
           "status": "Some(Command)"
         },
         "nft": {
-          "elapsed_ms": 67,
+          "elapsed_ms": 70,
           "reaped": true,
           "status": "None"
         },
         "nonzero": {
-          "elapsed_ms": 76,
+          "elapsed_ms": 79,
           "reaped": true,
           "status": "Some(Command)"
         },
         "overflow": {
-          "elapsed_ms": 77,
+          "elapsed_ms": 75,
           "reaped": true,
           "status": "Some(Capture)"
         }
@@ -201,8 +201,8 @@
     }
   },
   "schema": 1,
-  "source_inventory_sha256": "979e951d6134ef96a3a4a5b30612f9078cc70f5d56a6cd3c5b2492cdc34f20cb",
-  "source_revision": "45e727574ff8b2c8ec0c760a16e4f110a188343a",
-  "tag": "rubix-node-assessment-6aa968a85eda4255bc00fcae52efdd37",
+  "source_inventory_sha256": "11436e31c710ebb3cdfb6a2f91c8e922418455cce092ece3a10a4f7a0cf244b2",
+  "source_revision": "fb24f95f20d1152fc5921c4f0377add1051f42cb",
+  "tag": "rubix-node-assessment-30189f147bbe4066870a153b9c271111",
   "uncommitted_source_snapshot": false
 }
