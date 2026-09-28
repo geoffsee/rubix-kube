@@ -22,13 +22,42 @@ closure/rebind and preservation of competing listeners. The explicitly labeled
 result and then really binds/conflicts/closes IPv4. Detection on a kernel without
 IPv6 remains unqualified; no host IPv6 setting is changed.
 
-Run only the bounded capture driver for live qualification:
+The verifier checks the committed `evidence/` directory and `provenance.json`.
+To refresh it, run the following from the repository root. The shell stops if
+capture or installation fails; verification then checks the newly installed run.
+Review the resulting evidence diff before committing it.
 
-```
+```sh
+set -e
 python3 tools/parity/fixtures/preflight-probes/capture.py --output /tmp/new-probe-evidence
+python3 - <<'INSTALL'
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+capture = Path('/tmp/new-probe-evidence')
+fixture = Path('tools/parity/fixtures/preflight-probes')
+names = {'build.log', 'run0.log', 'run1.log', 'source-hashes.json', 'receipt.json'}
+if {path.name for path in capture.iterdir()} != names:
+    raise SystemExit('unexpected capture file inventory')
+receipt = json.loads((capture / 'receipt.json').read_text())
+for key in ['errors', 'cleanup_errors', 'remaining_containers', 'remaining_images']:
+    if receipt.get(key) != []:
+        raise SystemExit('capture did not finish cleanly: ' + key)
+(fixture / 'evidence').mkdir(exist_ok=True)
+for name in names:
+    shutil.copyfile(capture / name, fixture / 'evidence' / name)
+hashes = {name: hashlib.sha256((fixture / 'evidence' / name).read_bytes()).hexdigest()
+          for name in sorted(names)}
+(fixture / 'provenance.json').write_text(json.dumps({'files': hashes}, indent=2) + '\n')
+INSTALL
 python3 tools/parity/fixtures/preflight-probes/verify.py
 python3 -m unittest discover -s tools/parity/fixtures/preflight-probes -p 'test_*.py'
 ```
+
+To verify existing committed evidence without capturing or replacing files, run
+only the final verifier and test commands.
 
 A capture build is bounded to 900 seconds/8 MiB, each run to 60 seconds/1 MiB, and
 metadata/cleanup commands to 30 seconds/64 KiB. Every cleanup inspection is attempted
