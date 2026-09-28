@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify bounded native decoding only in owned disposable Linux containers."""
+"""Qualify native decoding and decoded ELF inspection only in owned disposable Linux containers."""
 import argparse
 import importlib.util
 import json
@@ -29,7 +29,7 @@ def main():
     hashes = {name: verify.digest(HERE/name) for name in verify.HARNESS}
     helper_hash = verify.digest(ROOT/'tools/defaults/capture.py')
     tag = 'rubix-decode-'+uuid.uuid4().hex
-    report = dict(schema=1, source_revision=revision, uncommitted_source_snapshot=dirty, tag=tag,
+    report = dict(schema=2, source_revision=revision, uncommitted_source_snapshot=dirty, tag=tag,
                   harness_sha256=hashes, helper_sha256=helper_hash, containers=[],
                   errors=[], cleanup_errors=[], runs={})
     args.output.mkdir(parents=True, exist_ok=False)
@@ -52,8 +52,8 @@ def main():
             report['containers'].append(container)
             command = verify.run_command(tag, name)
             helper.bounded(command,args.output/(name+'.log'),100,1024*1024)
-            records, binary = verify.records(args.output/(name+'.log'))
-            report['runs'][name] = dict(command=command, raw_sha256=verify.digest(args.output/(name+'.log')), binary_sha256=binary, records=records)
+            records, binaries = verify.records(args.output/(name+'.log'))
+            report['runs'][name] = dict(command=command, raw_sha256=verify.digest(args.output/(name+'.log')), binary_sha256=binaries, records=records)
         for name, digest in inventory.items():
             if verify.digest(ROOT/name) != digest: raise ValueError('source changed during capture: '+name)
     except Exception as error:
