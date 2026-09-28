@@ -159,6 +159,34 @@ fn bounded_dynamic_table_resolves_names_through_load_segments() {
     b[400..412].copy_from_slice(b"libc.so.6\0\0\0");
     assert_eq!(inspect(&b).unwrap().needed(), &[b"libc.so.6".to_vec()]);
     let inv = inventory(&b, Architecture::Amd64, Libc::Glibc);
+    let separate_limits = ElfLimits {
+        interpreter_bytes: 1,
+        dependency_name_bytes: 9,
+        ..ElfLimits::default()
+    };
+    assert_eq!(
+        inv.inspect_identity_elf(AssetId::KubeApiserver, &b, separate_limits)
+            .unwrap()
+            .needed(),
+        &[b"libc.so.6".to_vec()]
+    );
+    for (bytes, invalid) in [(8, false), (0, true)] {
+        let error = inv
+            .inspect_identity_elf(
+                AssetId::KubeApiserver,
+                &b,
+                ElfLimits {
+                    dependency_name_bytes: bytes,
+                    ..separate_limits
+                },
+            )
+            .unwrap_err();
+        if invalid {
+            assert!(matches!(error, ElfError::InvalidLimits));
+        } else {
+            assert!(matches!(error, ElfError::Limit));
+        }
+    }
     let limits = ElfLimits {
         dynamic_entries: 3,
         ..ElfLimits::default()
@@ -210,6 +238,17 @@ fn section_counts_and_arm_attribute_bytes_are_bounded() {
 fn interpreter_termination_duplicates_and_limit_are_checked() {
     let mut b = with_loader(b"/lib64/ld-linux-x86-64.so.2");
     let inv = inventory(&b, Architecture::Amd64, Libc::Glibc);
+    assert!(
+        inv.inspect_identity_elf(
+            AssetId::KubeApiserver,
+            &b,
+            ElfLimits {
+                dependency_name_bytes: 1,
+                ..ElfLimits::default()
+            }
+        )
+        .is_ok()
+    );
     assert!(
         inv.inspect_identity_elf(
             AssetId::KubeApiserver,

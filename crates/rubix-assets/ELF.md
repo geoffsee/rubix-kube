@@ -28,7 +28,8 @@ tags are decoded directly from bounded little-endian entries.
 
 Default limits: 256MiB borrowed executable, 128 program headers, 4096 section
 headers, 4096 dynamic entries, 4096 interpreter bytes, 64 dependency names (each
-at most4096 bytes), and256KiB aggregate ARM attribute section bytes. These are
+at most4096 bytes, controlled independently by `dependency_name_bytes`),
+and256KiB aggregate ARM attribute section bytes. These are
 selected engineering policies, not measured release requirements. Counts are
 checked before iteration/allocation; additions and ranges are checked. Extended
 ELF counts use the parser's checked section-zero access, then the same limits.

@@ -15,6 +15,7 @@ pub struct ElfLimits {
     pub dynamic_entries: usize,
     pub interpreter_bytes: usize,
     pub dependency_names: usize,
+    pub dependency_name_bytes: usize,
     pub arm_attribute_bytes: usize,
 }
 impl Default for ElfLimits {
@@ -26,6 +27,7 @@ impl Default for ElfLimits {
             dynamic_entries: 4096,
             interpreter_bytes: 4096,
             dependency_names: 64,
+            dependency_name_bytes: 4096,
             arm_attribute_bytes: 256 * 1024,
         }
     }
@@ -145,6 +147,7 @@ impl DeclaredInventory {
             limits.dynamic_entries,
             limits.interpreter_bytes,
             limits.dependency_names,
+            limits.dependency_name_bytes,
             limits.arm_attribute_bytes,
         ]
         .contains(&0)
@@ -445,7 +448,7 @@ fn dependencies(
             let offset = usize::try_from(offset).map_err(|_| ElfError::Malformed)?;
             string(
                 strings.get(offset..).ok_or(ElfError::Malformed)?,
-                limits.interpreter_bytes,
+                limits.dependency_name_bytes,
             )
         })
         .collect()
