@@ -8,9 +8,8 @@
     "build": "20260923-2610"
   },
   "seed_builder": {
-    "name": "pycdlib",
-    "version": "1.14.0",
-    "url": "https://files.pythonhosted.org/packages/0c/dd/95557c0e3bad0e8ba10c0f17d9deffb139b106eda528a744e544799cbbfb/pycdlib-1.14.0-py2.py3-none-any.whl",
-    "sha256": "a905827335f0066af3fd416c5cf9b1f29dffaf4d0914b714555213d1809f38d4"
+    "name": "rubix-dev",
+    "format": "ISO9660 with Joliet",
+    "source": "tools/dev/src/parity/seed.rs"
   }
 }
