@@ -35,6 +35,21 @@ class EvidenceTests(unittest.TestCase):
             with self.subTest(old=old), self.assertRaises(ValueError):
                 verify.validate_receipt(receipt, log)
 
+    def test_owned_process_mutations(self):
+        for old,new in [(b'combined_cases=61',b'combined_cases=60'),(b'owner_joined=true',b'owner_joined=false'),(b'dependent_started=false',b'dependent_started=true'),(b'sentinel_survived=true',b'sentinel_survived=false'),(b'case=force iteration=20',b'case=full iteration=20'),(b'RUBIX_NAMESPACE ',b'INVALID_NAMESPACE ')]:
+            changed=self.log.replace(old,new,1)
+            self.assertNotEqual(changed,self.log)
+            with self.assertRaises(ValueError):verify.validate_owned(changed.decode().splitlines())
+
+    def test_namespace_identities_must_be_distinct_positive_processes(self):
+        lines=self.log.decode().splitlines()
+        index=next(i for i,line in enumerate(lines) if line.startswith('RUBIX_NAMESPACE '))
+        import json
+        for shell,helper,processes in [(2,2,[1,2,2]),(-2,3,[1,-2,3]),(2,0,[1,2,0]),(2,3,[1,2,2])]:
+            changed=list(lines)
+            changed[index]='RUBIX_NAMESPACE '+json.dumps(dict(init=1,shell=shell,helper=helper,processes=processes))
+            with self.assertRaises(ValueError):verify.validate_owned(changed)
+
     def test_parser_rejects_duplicate_and_nonfinite_values(self):
         for value in ['{"a":1,"a":2}', 'NaN', 'Infinity', '1e400', '-1e400']:
             with self.subTest(value=value), self.assertRaises(ValueError):

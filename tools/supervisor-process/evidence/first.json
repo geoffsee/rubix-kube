@@ -26,7 +26,7 @@
   {
     "case": "ignore",
     "complete": true,
-    "elapsed_ms": 30023,
+    "elapsed_ms": 30014,
     "exit_code": null,
     "kill_attempted": true,
     "leader_reaped": true,

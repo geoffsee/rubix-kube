@@ -1,76 +1,110 @@
 #0 building with "desktop-linux" instance using docker driver
 
-#1 [build 1/4] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#1 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.15kB done
 #1 DONE 0.0s
 
-#2 [build 2/4] WORKDIR /source
-#2 CACHED
+#2 [internal] load metadata for docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#2 DONE 0.0s
 
-#3 [internal] load build definition from Dockerfile
-#3 transferring dockerfile: 540B done
+#3 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 #3 DONE 0.0s
 
-#4 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
 #4 DONE 0.0s
 
-#5 [internal] load .dockerignore
-#5 transferring context: 2B done
+#5 [stage-1 1/6] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#5 resolve docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d done
 #5 DONE 0.0s
 
-#6 [internal] load build context
-#6 transferring context: 1.73MB 0.0s done
+#6 [build 1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#6 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 done
 #6 DONE 0.0s
 
-#7 [3/5] COPY . .
-#7 DONE 0.2s
+#7 [internal] load build context
+#7 transferring context: 1.63MB 0.0s done
+#7 DONE 0.0s
 
-#8 [4/5] RUN cargo test -p rubix-supervisor --locked --release --test signals --no-run -j 2     && mkdir /out     && for binary in target/release/deps/signals-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/signals.test; fi; done     && test -x /out/signals.test     && sha256sum /out/signals.test > /out/signals.sha256
-#8 0.144 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#8 1.391 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#8 1.400 info: downloading 3 components
-#8 5.337     Updating crates.io index
-#8 8.570  Downloading crates ...
-#8 8.914   Downloaded errno v0.3.14
-#8 9.145   Downloaded tokio-macros v2.7.1
-#8 9.177   Downloaded pin-project-lite v0.2.17
-#8 9.253   Downloaded quote v1.0.47
-#8 9.267   Downloaded proc-macro2 v1.0.107
-#8 9.268   Downloaded unicode-ident v1.0.26
-#8 9.273   Downloaded signal-hook-registry v1.4.8
-#8 9.359   Downloaded mio v1.2.3
-#8 9.486   Downloaded syn v2.0.119
-#8 9.968   Downloaded libc v0.2.189
-#8 10.04   Downloaded tokio v1.53.1
-#8 10.10    Compiling proc-macro2 v1.0.107
-#8 10.10    Compiling libc v0.2.189
-#8 10.26    Compiling quote v1.0.47
-#8 10.28    Compiling unicode-ident v1.0.26
-#8 10.60    Compiling syn v2.0.119
-#8 10.72    Compiling errno v0.3.14
-#8 10.77    Compiling signal-hook-registry v1.4.8
-#8 10.91    Compiling mio v1.2.3
-#8 11.13    Compiling pin-project-lite v0.2.17
-#8 11.83    Compiling tokio-macros v2.7.1
-#8 12.15    Compiling tokio v1.53.1
-#8 13.55    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#8 18.07     Finished `release` profile [optimized + debuginfo] target(s) in 12.75s
-#8 18.09   Executable tests/signals.rs (target/release/deps/signals-d77bc5f7e957280d)
-#8 DONE 18.1s
+#8 [build 2/5] WORKDIR /source
+#8 CACHED
 
-#9 [5/5] WORKDIR /tmp
+#9 [build 3/5] COPY . .
 #9 DONE 0.0s
 
-#10 exporting to image
-#10 exporting layers
-#10 exporting layers 3.1s done
-#10 exporting manifest sha256:3c6ed5585d36e395195a8420d6de8b23d79e2a724afa9023ec660d8b30113e08 done
-#10 exporting config sha256:ce1382b6d55a2ce5dcf12d3d6f4a7c9d3678b65295c64562bbaaa9adc7c4eac2 done
-#10 exporting attestation manifest sha256:c8511038a90f3aba8e4763a8773b4c851e9ff5797f0350328523b823cd3339f9 done
-#10 exporting manifest list sha256:f3fb0a332c31a5c195e38880e1ed5740dc6fa486c5bb607b2619059d60483e36 done
-#10 naming to docker.io/library/rubix-signal-capture-d563519671c44ae4afd1b6532751b576:latest done
-#10 unpacking to docker.io/library/rubix-signal-capture-d563519671c44ae4afd1b6532751b576:latest
-#10 unpacking to docker.io/library/rubix-signal-capture-d563519671c44ae4afd1b6532751b576:latest 1.1s done
-#10 DONE 4.2s
+#10 [build 4/5] RUN cargo test -p rubix-supervisor --locked --release --test signals --test owned_signals --no-run -j 2     && mkdir /out     && for binary in target/release/deps/signals-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/signals.test; fi; done     && test -x /out/signals.test     && sha256sum /out/signals.test > /out/signals.sha256
+#10 0.110 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 1.329 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 1.337 info: downloading 3 components
+#10 5.358     Updating crates.io index
+#10 7.451  Downloading crates ...
+#10 7.907   Downloaded tokio-macros v2.7.1
+#10 8.037   Downloaded errno v0.3.14
+#10 8.230   Downloaded quote v1.0.47
+#10 8.415   Downloaded signal-hook-registry v1.4.8
+#10 8.503   Downloaded pin-project-lite v0.2.17
+#10 8.601   Downloaded proc-macro2 v1.0.107
+#10 8.655   Downloaded unicode-ident v1.0.26
+#10 8.815   Downloaded bitflags v2.13.2
+#10 9.064   Downloaded mio v1.2.3
+#10 10.08   Downloaded syn v2.0.119
+#10 10.38   Downloaded rustix v1.1.5
+#10 11.73   Downloaded tokio v1.53.1
+#10 11.81   Downloaded libc v0.2.189
+#10 14.61   Downloaded linux-raw-sys v0.12.1
+#10 14.67    Compiling proc-macro2 v1.0.107
+#10 14.67    Compiling libc v0.2.189
+#10 14.81    Compiling unicode-ident v1.0.26
+#10 14.83    Compiling quote v1.0.47
+#10 15.11    Compiling syn v2.0.119
+#10 15.29    Compiling errno v0.3.14
+#10 15.33    Compiling rustix v1.1.5
+#10 15.54    Compiling signal-hook-registry v1.4.8
+#10 15.70    Compiling mio v1.2.3
+#10 16.03    Compiling pin-project-lite v0.2.17
+#10 16.04    Compiling bitflags v2.13.2
+#10 16.14    Compiling linux-raw-sys v0.12.1
+#10 16.62    Compiling tokio-macros v2.7.1
+#10 16.94    Compiling tokio v1.53.1
+#10 17.77    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 ...
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/rujnnyulhkaskt3ctkvqsiqmo
+#5 [stage-1 1/6] FROM docker.io/library/python:3.13.7-slim-bookworm@sha256:adafcc17694d715c905b4c7bebd96907a1fd5cf183395f0ebc4d3428bd22d92d
+#5 CACHED
+
+#10 [build 4/5] RUN cargo test -p rubix-supervisor --locked --release --test signals --test owned_signals --no-run -j 2     && mkdir /out     && for binary in target/release/deps/signals-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/signals.test; fi; done     && test -x /out/signals.test     && sha256sum /out/signals.test > /out/signals.sha256
+#10 25.24     Finished `release` profile [optimized + debuginfo] target(s) in 19.90s
+#10 25.26   Executable tests/owned_signals.rs (target/release/deps/owned_signals-b72dd01eb7a2d897)
+#10 25.26   Executable tests/signals.rs (target/release/deps/signals-e6f000f36fdd5355)
+#10 DONE 25.3s
+
+#11 [build 5/5] RUN for binary in target/release/deps/owned_signals-*; do if [ -f "$binary" ] && [ -x "$binary" ]; then cp "$binary" /out/owned_signals.test; fi; done && test -x /out/owned_signals.test && sha256sum /out/owned_signals.test > /out/owned_signals.sha256
+#11 DONE 0.1s
+
+#12 [stage-1 2/6] COPY --from=build /out /out
+#12 DONE 0.0s
+
+#13 [stage-1 3/6] COPY tools/supervisor-process/fixture.py /fixture.py
+#13 DONE 0.0s
+
+#14 [stage-1 4/6] COPY tools/supervisor-process/namespace_inventory.py /namespace_inventory.py
+#14 DONE 0.0s
+
+#15 [stage-1 5/6] COPY --chmod=755 tools/supervisor-signals/kill.sh /usr/local/bin/kill
+#15 DONE 0.0s
+
+#16 [stage-1 6/6] WORKDIR /tmp
+#16 DONE 0.0s
+
+#17 exporting to image
+#17 exporting layers
+#17 exporting layers 0.3s done
+#17 exporting manifest sha256:af80016d5995bc242816f7f84d1d9e0fa2821c42957bcdff009d7bc2f4b85fce done
+#17 exporting config sha256:d1409144fddc6628b611e396274596ce5e585eda817432daf395e52e1923a100 done
+#17 exporting attestation manifest sha256:45884f6b75ef5923cdeb04bbb827341f76e91976b088cc7c388be512d0e25d66 done
+#17 exporting manifest list sha256:77fc1a7d5229f4b5ed33efa8ac643e32cb4a49776f7e1f356d1a85846c804489 done
+#17 naming to docker.io/library/rubix-signal-capture-ea21ed08435d4fe38d3315ae23881ae4:latest done
+#17 unpacking to docker.io/library/rubix-signal-capture-ea21ed08435d4fe38d3315ae23881ae4:latest 0.1s done
+#17 DONE 0.4s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/5vt0m7fvqgqchfviip0rdboi0

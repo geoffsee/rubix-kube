@@ -1,28 +1,31 @@
 {
   "builder": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
   "cleanup_errors": [],
+  "combined_cases": 61,
   "containers": [
-    "rubix-signal-capture-d563519671c44ae4afd1b6532751b576-test"
+    "rubix-signal-capture-ea21ed08435d4fe38d3315ae23881ae4-test"
   ],
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:f3fb0a332c31a5c195e38880e1ed5740dc6fa486c5bb607b2619059d60483e36",
+  "image_id": "sha256:77fc1a7d5229f4b5ed33efa8ac643e32cb4a49776f7e1f356d1a85846c804489",
+  "owned_binary_sha256": "c09078f15760be16ff648d8480fb54256c0104369aeb0ae2d78dcc003c80e7da",
   "owned_subprocesses_reaped": true,
   "platform": "linux/arm64",
   "remaining_containers": [],
   "remaining_images": [],
   "repetitions": 20,
-  "run_sha256": "abc125683fe76c791100f055914cc1039d18aaf9dadf071aea99a2aa9b0169f9",
+  "run_sha256": "d7d5d64e8c7d5e5c90275e6e16eb72c4355d83221e97200d5a2491ee87d2c921",
   "schema_version": 1,
-  "scope": "cooperative task adapters and owned test subprocesses; no production process-adapter or cluster qualification",
+  "scope": "cooperative task signals and owned process adapter signals; no cluster or escaped-daemon qualification",
   "signal_cases": 160,
-  "source_revision": "a93c3d9ecaae68717751f4609376705ddee7046e",
+  "source_revision": "8a4866d656045528dd087faa0adc8cc29bcd8abe",
   "source_sha256": {
-    "Capture.Dockerfile": "ac3bc58c8959abfe556426160f1088c56c67836dd2d0b4c2982c89a5ba52294e",
-    "capture.py": "fccf01c4b82e3c5ed6c14f0732eb4c7542209dce241293eb2bb3204adc6d61c6",
-    "source-hashes.json": "84fe3c64be38f5bfda9a52375f9a446a580ea724782ef43605212732a49a3895"
+    "Capture.Dockerfile": "bd45c4342d9c3cfde684ceed3dda7598a825536cec6c0900c377e883e1b6cd30",
+    "capture.py": "33110abc2add0308ba6afbbc5eec82a021b26aa28648f58823234f7be8413126",
+    "source-hashes.json": "acf41a04b4328714b02e5fed5d60b67e83b8a464732c53bff28fdb1a21f809f8",
+    "verify.py": "d172113a3928b4d8609dd35e7dc2d902780c12450e91575f8c6f12c42cdb5847"
   },
-  "test_binary_sha256": "63b067c5cf4420da232a36dcf4ef9b8915765f574ea787a33bf49844a8046a95",
+  "test_binary_sha256": "8c8043e760bf3ad3054826cb6ff573daaa9c98aab1d54b18a9ee7481384bc994",
   "uncommitted_implementation": true,
   "worker_failure_cases": 20
 }
