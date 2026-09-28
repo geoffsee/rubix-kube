@@ -43,7 +43,7 @@ def validate_artifact(directory):
     subprocess.run([sys.executable, str(HERE.parent / "prerequisite-preparation/verify_linux.py"), str(directory)], check=True, timeout=30, stdout=subprocess.DEVNULL)
     metadata = json.loads((directory / "artifact.json").read_text())
     artifact = directory / "rubixctl"
-    if artifact.is_symlink() or artifact.stat().st_size != 5388512 or digest(artifact) != "54b41bea422f74f46938fec2ed8e4ca4ab7698b61d28a9bb93325b3672c011fc":
+    if artifact.is_symlink() or artifact.stat().st_size != 5388504 or digest(artifact) != "1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa":
         raise ValueError("Rust artifact pin mismatch")
     if metadata["sha256"] != digest(artifact) or metadata["size"] != artifact.stat().st_size or metadata["target"] != "aarch64-unknown-linux-musl":
         raise ValueError("artifact metadata mismatch")
