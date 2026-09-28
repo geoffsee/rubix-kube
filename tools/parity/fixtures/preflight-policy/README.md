@@ -35,12 +35,19 @@ completion records. Tests mutate expectations, raw claims, source hashes, receip
 parser edge cases and cleanup failure. No Rust behavior is used as the Go oracle.
 
 ```sh
-python3 tools/parity/fixtures/preflight-policy/capture.py --output /tmp/new-preflight
-python3 -O tools/parity/fixtures/preflight-policy/verify.py
-python3 -m unittest discover -s tools/parity/fixtures/preflight-policy -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture preflight-policy --output /tmp/new-preflight-policy
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify preflight-policy /tmp/new-preflight-policy
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence preflight-policy /tmp/new-preflight-policy
+cargo test --locked -p rubix-dev --lib fixture_oracles::policy
 ```
 
 Capture creates a new directory and never rewrites accepted expectations. Publishing
 new evidence/provenance is an explicit review step. These files qualify bounded
 policy observations, not privileged preparation, installer completion, external CRI,
 nftables-only operation or a working node. See `crates/rubix-platform/PREFLIGHT.md`.
+
+Historical `evidence/` captures and provenance remain unchanged. Current maintenance
+uses the Rust runner and independent `tools/dev/src/fixture_oracles/policy.rs`
+expectations. Fresh captures belong in `rust-evidence/`; current qualification
+requires the complete Rust source inventory, exact owned command arguments, raw
+image and cleanup inventories, and settled child processes.

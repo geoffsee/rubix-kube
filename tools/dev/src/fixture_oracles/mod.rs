@@ -13,6 +13,7 @@ pub mod credentials;
 pub mod mapping;
 pub mod node_config;
 pub mod pki;
+pub mod policy;
 pub mod resources;
 pub mod webhook;
 

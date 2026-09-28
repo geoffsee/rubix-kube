@@ -20,11 +20,14 @@ fn run(args: &[OsString]) -> Result<()> {
     }
     if args.len() != 3 || args[0] != "verify" {
         return Err(
-            "usage: rubix-fixture verify <credentials|runtime-mapping|webhooks|node-config|pki|resources|config-api|config-write-links> PATH".into(),
+            "usage: rubix-fixture verify <credentials|runtime-mapping|webhooks|node-config|pki|resources|config-api|config-write-links|preflight-policy|constrained-policy> PATH".into(),
         );
     }
     let path = PathBuf::from(&args[2]);
     match args[1].to_str() {
+        Some(family @ ("preflight-policy" | "constrained-policy")) => {
+            oracle::policy::verify(family, &path)?;
+        },
         Some("config-api") => {
             oracle::config_api::verify_file(&oracle::load(&path.join("config.json"))?)?;
             oracle::config_api::verify_api(&oracle::load(&path.join("configapi.json"))?)?;

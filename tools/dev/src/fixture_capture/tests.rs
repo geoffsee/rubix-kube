@@ -1,4 +1,5 @@
 use super::*;
+use std::fmt::Write as _;
 
 fn root() -> Result<PathBuf> {
     crate::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))
@@ -17,6 +18,54 @@ fn rebind_artifacts(output: &Path) -> Result<()> {
     publish_provenance(output)
 }
 
+fn synthetic_policy_sources(
+    profile: &Profile,
+    output: &Path,
+    outputs: &mut serde_json::Map<String, Value>,
+    labels: &mut Vec<String>,
+) -> Result<()> {
+    if let Some(family) = policy_family(profile) {
+        let pins = oracle::policy::pins(family)?;
+        let mut raw = String::new();
+        for (name, hash) in pins.as_object().ok_or("source map")? {
+            writeln!(&mut raw, "{}  {name}", hash.as_str().ok_or("digest")?)?;
+        }
+        for component in profile.components {
+            writeln!(&mut raw, "{}  /{component}.test", "a".repeat(64))?;
+        }
+        fs::write(output.join("source.sha256"), raw)?;
+        outputs.insert(
+            "source.sha256".into(),
+            capture::digest(&output.join("source.sha256"))?.into(),
+        );
+        fs::write(output.join("source-copy.log"), b"")?;
+        labels.push("source-copy".into());
+    }
+    Ok(())
+}
+
+fn synthetic_records(family: &str, profile: &Profile, expected: &Value) -> Result<String> {
+    let rows = if profile.multiple_records {
+        expected.as_array().ok_or("record array")?.clone()
+    } else {
+        vec![expected.clone()]
+    };
+    let mut raw = rows
+        .iter()
+        .map(|row| Ok(format!("RUBIX_CAPTURE {}\n", serde_json::to_string(row)?)))
+        .collect::<Result<Vec<_>>>()?
+        .concat();
+    if policy_family(profile).is_some() {
+        let name = if family == "preflight-policy" {
+            "TestRubixCapture"
+        } else {
+            "TestCapture"
+        };
+        writeln!(&mut raw, "--- PASS: {name} (0.01s)")?;
+    }
+    Ok(raw)
+}
+
 /// Synthetic success is used only to test the verifier, never as qualification evidence.
 fn synthetic(family: &str) -> Result<tempfile::TempDir> {
     let root = root()?;
@@ -26,7 +75,8 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
     let tag = format!("rubix-{family}-synthetic");
     let mut labels = vec!["build".to_owned(), "image-inspect".to_owned()];
     fs::write(output.join("build.log"), b"synthetic build")?;
-    fs::write(output.join("image-inspect.log"), b"synthetic inspect")?;
+    let image_id = format!("sha256:{}", "a".repeat(64));
+    replace(&output.join("image-inspect.log"), &json!([{"Id":image_id}]))?;
     let mut outputs = serde_json::Map::new();
     let mut containers = Vec::new();
     for component in profile.components {
@@ -37,16 +87,7 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
         for index in 0..profile.repeats {
             let label = format!("{component}-{index}");
             containers.push(format!("{tag}-{label}"));
-            let rows = if profile.multiple_records {
-                expected.as_array().ok_or("record array")?.clone()
-            } else {
-                vec![expected.clone()]
-            };
-            let raw = rows
-                .iter()
-                .map(|row| Ok(format!("RUBIX_CAPTURE {}\n", serde_json::to_string(row)?)))
-                .collect::<Result<Vec<_>>>()?
-                .concat();
+            let raw = synthetic_records(family, &profile, &expected)?;
             fs::write(output.join(format!("{label}.log")), raw)?;
             labels.push(label);
         }
@@ -56,11 +97,45 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
         fs::write(output.join(format!("{label}.log")), b"")?;
         labels.push(label);
     }
+    synthetic_policy_sources(&profile, output, &mut outputs, &mut labels)?;
     for label in labels {
         let mut facts = json!({"spawned":true,"exit_code":0,"timeout":false,"cancelled":false,
             "output_limit":false,"merged_output":true,"cleanup_complete":true,"owned_process_group_absent":true,
             "cleanup_errors":[],"output_eof":true,"stdout_sha256":capture::digest(&output.join(format!("{label}.log")))?,
             "stderr_sha256":crate::sha256(b"")});
+        let control = if label == "source-copy" {
+            Some(vec![
+                "docker".into(),
+                "cp".into(),
+                format!("{}:/source.sha256", containers[0]).into(),
+                output.join("source.sha256").into_os_string(),
+            ])
+        } else if label == "build" {
+            Some(capture::arguments(&[
+                "docker",
+                "build",
+                "--platform",
+                "linux/arm64",
+                "--tag",
+                &tag,
+                "--file",
+                &format!("/tmp/rubix-fixture-build-synthetic/{}", profile.dockerfile),
+                "/tmp/rubix-fixture-build-synthetic",
+            ]))
+        } else if label == "image-inspect" {
+            Some(capture::arguments(&["docker", "image", "inspect", &tag]))
+        } else if let Some(index) = label.strip_prefix("cleanup-") {
+            Some(cleanup_commands(&tag, &containers)[index.parse::<usize>()? - 1].clone())
+        } else {
+            None
+        };
+        if let Some(argv) = control {
+            facts["argv"] = json!(
+                argv.iter()
+                    .map(|arg| arg.to_string_lossy().into_owned())
+                    .collect::<Vec<_>>()
+            );
+        }
         for component in profile.components {
             if label.starts_with(&format!("{component}-")) {
                 facts["argv"] = json!(
@@ -73,7 +148,6 @@ fn synthetic(family: &str) -> Result<tempfile::TempDir> {
         }
         capture::write_json(&output.join(format!("{label}.command.json")), &facts)?;
     }
-    let image_id = format!("sha256:{}", "a".repeat(64));
     let receipt = json!({"schema_version":2,"family":family,"revision":REVISION,
         "source_archive_sha256":SOURCE,"builder":BUILDER,"source_sha256":sources(&root,&profile)?,
         "baseline_source_sha256":baseline(&root,&profile)?,"image":tag,"containers":containers,
@@ -206,10 +280,61 @@ fn resource_capture_checks_multirecord_output_and_node_dns_arguments() -> Result
 }
 
 #[test]
+fn policy_captures_reject_rehashed_commands_inventory_and_baseline_weakness_changes() -> Result<()>
+{
+    for family in ["preflight-policy", "constrained-policy"] {
+        let directory = synthetic(family)?;
+        let output = directory.path();
+        for label in ["build", "image-inspect", "source-copy", "cleanup-1"] {
+            let path = output.join(format!("{label}.command.json"));
+            let original = oracle::load(&path)?;
+            let mut changed = original.clone();
+            changed["argv"] = json!(["true"]);
+            replace(&path, &changed)?;
+            rebind_artifacts(output)?;
+            assert!(
+                verify_evidence(&root()?, family, output).is_err(),
+                "{label}"
+            );
+            replace(&path, &original)?;
+        }
+        let profile = profile(family)?;
+        let label = format!("cleanup-{}", profile.components.len() * 2 + 2);
+        fs::write(
+            output.join(format!("{label}.log")),
+            b"remaining-container\n",
+        )?;
+        let path = output.join(format!("{label}.command.json"));
+        let original = oracle::load(&path)?;
+        let mut changed = original.clone();
+        changed["stdout_sha256"] = capture::digest(&output.join(format!("{label}.log")))?.into();
+        replace(&path, &changed)?;
+        rebind_artifacts(output)?;
+        assert!(verify_evidence(&root()?, family, output).is_err());
+        fs::write(output.join(format!("{label}.log")), b"")?;
+        replace(&path, &original)?;
+        let component = profile.components[0];
+        let path = output.join(format!("{component}.json"));
+        let mut changed = oracle::load(&path)?;
+        changed[0] = json!("invented\ttrue");
+        replace(&path, &changed)?;
+        let receipt_path = output.join("receipt.json");
+        let mut receipt = oracle::load(&receipt_path)?;
+        receipt["outputs"][format!("{component}.json")] = capture::digest(&path)?.into();
+        replace(&receipt_path, &receipt)?;
+        rebind_artifacts(output)?;
+        assert!(verify_evidence(&root()?, family, output).is_err());
+    }
+    Ok(())
+}
+
+#[test]
 fn published_rust_fixture_captures_bind_current_sources_and_commands() -> Result<()> {
     let root = root()?;
     for family in [
         "credentials",
+        "preflight-policy",
+        "constrained-policy",
         "runtime-mapping",
         "webhooks",
         "node-config",
