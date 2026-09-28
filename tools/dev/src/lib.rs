@@ -6,6 +6,9 @@ use std::process::Command;
 
 use sha2::{Digest, Sha256};
 
+pub mod json;
+pub mod resolved_report;
+
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
 
