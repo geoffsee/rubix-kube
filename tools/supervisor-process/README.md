@@ -69,3 +69,13 @@ Normal Python test discovery verifies the real frozen evidence in this mode and
 rejects mutated raw output, failed runs, missing historical inventory entries,
 changed current process inputs and removed process tests. A narrower source scope
 never bypasses historical provenance or relaxes runtime assertions.
+
+The ordinary Python acceptance tests separately require every recorded elapsed
+sample to be at most 35,000 ms, and reject a 35,001 ms mutation. They first verify
+the frozen evidence and its current relevant inputs. The 37/38-second Rust
+watchdogs and the structural verifier's wider timing tolerance retain overdue
+results for diagnosis; they do not replace this stricter engineering gate.
+This qualifies the observed samples, not a universal kernel cleanup bound.
+Some process records use zero as an untimed placeholder. Those cases establish
+behavior and cleanup, not a measured shutdown deadline; the gate does not turn
+these placeholders into timing evidence.

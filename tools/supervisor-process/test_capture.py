@@ -7,7 +7,29 @@ import unittest
 import capture
 import verify
 
+
+def require_engineering_budget(measurements):
+    """Acceptance of captured elapsed samples, distinct from diagnostic watchdogs."""
+    if not measurements:
+        raise ValueError('missing measured elapsed samples')
+    for elapsed in measurements:
+        if type(elapsed) is not int or not 0 <= elapsed <= 35000:
+            raise ValueError('measured shutdown exceeds 35000 ms engineering gate')
+
+
 class Capture(unittest.TestCase):
+
+    def test_frozen_elapsed_samples_meet_engineering_gate(self):
+        verify.verify_capture(verify.HERE/'evidence', current=False)
+        for name in ['first','repeat']:
+            rows=verify.load(verify.HERE/'evidence'/(name+'.json'))
+            require_engineering_budget([row['elapsed_ms'] for row in rows])
+
+    def test_engineering_gate_rejects_one_millisecond_overrun(self):
+        require_engineering_budget([35000])
+        with self.assertRaisesRegex(ValueError, '35000 ms engineering gate'):
+            require_engineering_budget([35001])
+
     def test_strict_json(self):
         for text in [b'{"a":1,"a":2}',b'NaN',b'1e400',b'-Infinity']:
             with self.assertRaises(ValueError):verify.strict(text)
