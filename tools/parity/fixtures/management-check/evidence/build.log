@@ -1,0 +1,70 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 1.16kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ 1/11] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 11.78kB done
+#5 DONE 0.0s
+
+#6 [ 7/11] COPY go.mod ./
+#6 CACHED
+
+#7 [ 3/11] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=1
+#7 CACHED
+
+#8 [ 6/11] WORKDIR /oracle
+#8 CACHED
+
+#9 [ 4/11] COPY extract.go /extract.go
+#9 CACHED
+
+#10 [ 2/11] WORKDIR /source
+#10 CACHED
+
+#11 [ 5/11] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/internal/cli/ui && cp internal/cli/ui/ui.go /oracle/internal/cli/ui/  && cp go.sum /oracle/  && sha256sum internal/cli/cmd_check.go internal/cli/root.go internal/cli/helpers.go internal/cli/config/config.go internal/cli/cmd_version.go internal/cli/ui/ui.go > /source.sha256
+#11 CACHED
+
+#12 [ 8/11] COPY capture_test.go cli/capture_test.go
+#12 CACHED
+
+#13 [ 9/11] COPY cases.json /cases.json
+#13 DONE 0.0s
+
+#14 [10/11] RUN go test -mod=readonly -c -trimpath -o /capture.test ./cli && sha256sum /capture.test >> /source.sha256
+#14 0.083 go: downloading github.com/rs/zerolog v1.33.0
+#14 1.069 go: downloading github.com/spf13/cobra v1.10.2
+#14 1.081 go: downloading github.com/mattn/go-colorable v0.1.13
+#14 1.402 go: downloading github.com/mattn/go-isatty v0.0.20
+#14 1.402 go: downloading github.com/spf13/pflag v1.0.10
+#14 1.634 go: downloading golang.org/x/sys v0.47.0
+#14 DONE 7.4s
+
+#15 [11/11] WORKDIR /tmp
+#15 DONE 0.0s
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 1.7s done
+#16 exporting manifest sha256:9689d18c4da39d5c0173409156bd36aa8a01b74b6e2620665af8b920b5533a1d done
+#16 exporting config sha256:3370ac3a3c1f05e6a87e49db5608df7c4cd2a9338c7dfbe7e16402c33f686162 done
+#16 exporting attestation manifest sha256:06b1ccce08bf581687318e136d81f44fb2d2847de1dd3f412bc0e25476e3073f done
+#16 exporting manifest list sha256:58f4dac2a627f2af2441afa6044b4d0a513ce7a29c5769c9d39b9d74501ed30c done
+#16 naming to docker.io/library/rubix-management-60ed5ffc058248fb95458d282097824a:latest done
+#16 unpacking to docker.io/library/rubix-management-60ed5ffc058248fb95458d282097824a:latest
+#16 unpacking to docker.io/library/rubix-management-60ed5ffc058248fb95458d282097824a:latest 0.6s done
+#16 DONE 2.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/u0p1zkg9khpjmfqndbfrj4ow4
