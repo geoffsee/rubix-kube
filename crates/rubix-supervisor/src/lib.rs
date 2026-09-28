@@ -4,3 +4,6 @@ mod coordinator;
 mod model;
 pub use coordinator::Supervisor;
 pub use model::*;
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+pub mod process;
