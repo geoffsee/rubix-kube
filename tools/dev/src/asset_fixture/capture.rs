@@ -9,6 +9,7 @@ pub(super) fn binaries(family: &str) -> Result<Vec<&'static str>> {
         "decode" => Ok(vec!["decode-tests", "decoded_elf-tests", "fixture"]),
         "archive" => Ok(vec!["producer", "archive-tests", "fixture"]),
         "layer" => Ok(vec!["producer", "layer-tests", "fixture"]),
+        "manifest" => Ok(vec!["producer", "manifest-tests", "fixture"]),
         _ => Err("unknown Docker family".into()),
     }
 }
@@ -18,6 +19,8 @@ pub(super) fn command(family: &str, tag: &str, name: &str) -> Result<Vec<String>
         "sha256sum /decode-tests /decoded_elf-tests /fixture; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /fixture namespace; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
     } else if family == "archive" {
         "sha256sum /producer /archive-tests /fixture && /fixture archive-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
+    } else if family == "manifest" {
+        "sha256sum /producer /manifest-tests /fixture && /fixture manifest-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
     } else {
         "sha256sum /producer /layer-tests /fixture && /fixture layer-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
     };
@@ -35,7 +38,11 @@ pub(super) fn command(family: &str, tag: &str, name: &str) -> Result<Vec<String>
         "--memory=256m",
         "--cpus=2",
         "--tmpfs",
-        "/tmp:rw,nosuid,nodev,size=16m",
+        if family == "manifest" {
+            "/tmp:rw,nosuid,nodev,size=96m"
+        } else {
+            "/tmp:rw,nosuid,nodev,size=16m"
+        },
         tag,
         "/bin/sh",
         "-c",
@@ -50,6 +57,7 @@ pub(super) fn records(family: &str, path: &Path) -> Result<(Value, Value)> {
         "decode" => super::native::records(path),
         "archive" => super::archive::records(path),
         "layer" => super::layer::records(path),
+        "manifest" => super::manifest::records(path),
         _ => Err("unknown record family".into()),
     }
 }
@@ -320,12 +328,42 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
     }
     Ok(())
 }
-fn execute(root: &Path, family: &str, directory: &Path, report: &mut Value) -> Result<()> {
+fn execute(
+    root: &Path,
+    family: &str,
+    directory: &Path,
+    report: &mut Value,
+    cache: Option<&Path>,
+) -> Result<()> {
     let context = tempfile::Builder::new()
         .prefix("rubix-asset-context-")
         .tempdir_in("/tmp")?;
-    let result = execute_in(root, family, directory, report, context.path());
+    let result = (|| {
+        if family == "manifest" {
+            super::manifest::copy_inputs(
+                cache.ok_or("manifest input cache required")?,
+                &context.path().join("manifest-inputs"),
+            )?;
+        }
+        execute_in(root, family, directory, report, context.path())
+    })();
     super::common::retain(context, result)
+}
+pub(super) fn context_directories(family: &str) -> Vec<String> {
+    let mut names = [
+        ".cargo",
+        "crates",
+        "third_party",
+        "tools/upstream",
+        "tools/dev",
+        "tools/assets-manifest",
+    ]
+    .map(str::to_owned)
+    .to_vec();
+    if family != "manifest" {
+        names.push(format!("tools/assets-{family}"));
+    }
+    names
 }
 fn execute_in(
     root: &Path,
@@ -340,15 +378,8 @@ fn execute_in(
     for name in ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml"] {
         fs::copy(root.join(name), context.join(name))?;
     }
-    for name in [
-        ".cargo",
-        "crates",
-        "third_party",
-        "tools/upstream",
-        "tools/dev",
-        &format!("tools/assets-{family}"),
-    ] {
-        copy_tree(&root.join(name), &context.join(name))?;
+    for name in context_directories(family) {
+        copy_tree(&root.join(&name), &context.join(&name))?;
     }
     check(
         inventory(context, family)? == sources,
@@ -433,6 +464,14 @@ fn execute_in(
     Ok(())
 }
 pub(super) fn docker(root: &Path, family: &str, directory: &Path) -> Result<()> {
+    docker_cached(root, family, directory, None)
+}
+pub(super) fn docker_cached(
+    root: &Path,
+    family: &str,
+    directory: &Path,
+    cache: Option<&Path>,
+) -> Result<()> {
     binaries(family)?;
     let sources = inventory(root, family)?;
     let revision = super::common::clean_revision(root, &sources)?;
@@ -443,7 +482,7 @@ pub(super) fn docker(root: &Path, family: &str, directory: &Path) -> Result<()> 
     fs::create_dir(directory)?;
     save(&directory.join("source-inventory.json"), &sources)?;
     let mut report = json!({"schema":3,"family":family,"revision":revision,"dirty":false,"tag":tag,"source_sha256":sources,"source_inventory_sha256":digest(&directory.join("source-inventory.json"))?,"containers":[],"errors":[],"cleanup_errors":[],"remaining_containers":null,"remaining_images":null,"image_id":null,"build_command":[],"build_log_sha256":null,"build_binary_sha256":null,"command_sha256":{},"runs":{}});
-    let result = execute(root, family, directory, &mut report);
+    let result = execute(root, family, directory, &mut report, cache);
 
     if let Err(error) = &result {
         report["errors"] = json!([error.to_string()]);

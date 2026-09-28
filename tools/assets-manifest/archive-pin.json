@@ -1,0 +1,8 @@
+{
+  "archive_sha256": "546ffb720afb37c1c537c5113c366b9cd3f7a714a4f80e5c3ca11843eedc6124",
+  "archive_bytes": 21071411,
+  "outer_sha256": "a6e5f7353a7137141760b1d01f31a345351b56f7bc34aa8b6bff70bd662631f6",
+  "outer_bytes": 21192192,
+  "archive_manifest_sha256": "f895a1e7d6a9c2336c8d6bcfa8b0976949b05408f8c416042317ee0929e6c5ad",
+  "repo_tags": ["coredns-fixture:manifest-binding"]
+}
