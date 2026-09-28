@@ -1,5 +1,7 @@
 //! Read-only management command boundary, independent from node startup parsing.
+pub mod check_workflow;
 mod parse;
+pub mod preparation;
 pub use parse::{CheckOptions, Command, HelpTopic, ParseError, parse_command};
 use rubix_platform::preflight::{
     CheckId, CheckStatus, Finding, PortAvailability, PreflightInputs, RuntimeOwnership,
@@ -19,10 +21,10 @@ pub trait CheckInputs {
 fn help(topic: HelpTopic) -> &'static str {
     match topic {
         HelpTopic::Root => {
-            "Rubix Kube management commands\n\nUsage:\n  rubixctl [command]\n\nCommands:\n  check    Run host pre-flight checks without installing\n  version  Print version information\n\nUse rubixctl check --help for check options.\n"
+            "Rubix Kube management commands\n\nUsage:\n  rubixctl [command]\n\nCommands:\n  check    Check host prerequisites\n  version  Print version information\n\nUse rubixctl check --help for check options.\n"
         },
         HelpTopic::Check => {
-            "Run Linux host pre-flight checks without installing.\n\nUsage:\n  rubixctl check [flags]\n\nFlags:\n  -h, --help             Help for check\n      --install-prereqs  Request prerequisite preparation (currently unsupported)\n      --pprof-server     Include pprof port 6060 in port checks\n"
+            "Check Linux host prerequisites; preparation requires explicit opt-in.\n\nUsage:\n  rubixctl check [flags]\n\nFlags:\n  -h, --help             Help for check\n      --install-prereqs  Install missing Alpine networking packages and enable its cgroups service\n      --pprof-server     Include pprof port 6060 in port checks\n"
         },
         HelpTopic::Version => "Print rubixctl version information\n\nUsage:\n  rubixctl version\n",
     }
@@ -85,7 +87,7 @@ pub fn execute_check(
     if options.install_prerequisites {
         writeln!(
             stderr,
-            "error: prerequisite preparation is not implemented; rerun with --install-prereqs=false for read-only checks"
+            "error: the synchronous check API does not execute preparation; use the rubixctl executable or async preparation workflow"
         )?;
         return Ok(1);
     }
@@ -145,13 +147,87 @@ fn render_finding(finding: &Finding, stderr: &mut dyn Write) -> io::Result<bool>
     } else {
         writeln!(
             stderr,
-            "  [fail] pre-flight checks: {}: {:?}; remediation={:?}; missing={:?}; uncertainty={:?}",
+            "  [fail] pre-flight checks: {}: {}",
             check_name(finding.check),
-            finding.reason,
-            finding.remediation,
-            finding.missing,
-            finding.uncertainty
+            reason_text(finding.reason)
         )?;
+        if let Some(remediation) = finding.remediation {
+            writeln!(stderr, "     {}", remediation_text(remediation))?;
+        }
+        for requirement in &finding.missing {
+            writeln!(
+                stderr,
+                "     Missing or unavailable: {}",
+                requirement_text(*requirement)
+            )?;
+        }
+        if finding.uncertainty.is_some() {
+            writeln!(
+                stderr,
+                "     The host observation is uncertain; verify it before proceeding."
+            )?;
+        }
         Ok(false)
+    }
+}
+
+fn reason_text(reason: rubix_platform::preflight::Reason) -> &'static str {
+    use rubix_platform::preflight::Reason;
+    match reason {
+        Reason::Satisfied => "requirements observed",
+        Reason::NotAlpine => "not applicable on this system",
+        Reason::MissingObservation => "required host information is missing",
+        Reason::ProbeFailed => "required host information could not be read",
+        Reason::RootRequired => "root privileges required",
+        Reason::HostnameEmpty => "hostname is empty",
+        Reason::HostnameTooLong => "hostname exceeds the length limit",
+        Reason::HostnameEmptyLabel => "hostname contains an empty label",
+        Reason::HostnameLabelTooLong => "hostname label exceeds the length limit",
+        Reason::HostnameInvalidLabel => "hostname label is invalid",
+        Reason::DockerSocketPresent => "Docker socket exists",
+        Reason::DockerBinaryPresent => "Docker executable landmark exists",
+        Reason::CommentSupportMissing => "xt_comment support was not observed",
+        Reason::AlpineToolsMissing => "required Alpine networking tools are missing",
+        Reason::AlpineCgroupsSetup => "Alpine cgroups service requires preparation",
+        Reason::CgroupsAbsent => "cgroups filesystem was not observed",
+        Reason::ControllersMissing => "required cgroup controllers are missing",
+        Reason::PortsBindFailed => "a required TCP port could not be bound",
+    }
+}
+fn remediation_text(remediation: rubix_platform::preflight::Remediation) -> &'static str {
+    use rubix_platform::preflight::Remediation;
+    match remediation {
+        Remediation::RunAsRoot => "Run the check as root.",
+        Remediation::ConfigureHostname => "Configure an RFC 1123 compliant hostname.",
+        Remediation::ResolveDockerConflict => "Resolve the Docker conflict before proceeding.",
+        Remediation::ProvideCommentSupport => "Provide kernel xt_comment support.",
+        Remediation::InstallAlpineNetworking => {
+            "Install the missing networking packages, or opt in with --install-prereqs."
+        },
+        Remediation::EnableAlpineCgroups => {
+            "Enable Alpine's cgroups service, or opt in with --install-prereqs."
+        },
+        Remediation::EnableKernelControllers => "Enable the required kernel cgroup controllers.",
+        Remediation::ResolvePortConflict => {
+            "Resolve the port conflict or permissions problem; this check does not stop listeners."
+        },
+        Remediation::ObtainObservation => "Obtain a readable host observation and retry.",
+        Remediation::RecheckAfterPreparation => "Recheck host observations after preparation.",
+    }
+}
+fn requirement_text(requirement: rubix_platform::preflight::Requirement) -> &'static str {
+    use rubix_platform::preflight::Requirement;
+    match requirement {
+        Requirement::Nftables => "nftables",
+        Requirement::Iptables => "iptables",
+        Requirement::Cpuset => "cpuset controller",
+        Requirement::Cpu => "cpu controller",
+        Requirement::Io => "io controller",
+        Requirement::Memory => "memory controller",
+        Requirement::Pids => "pids controller",
+        Requirement::Port2379 => "TCP port 2379",
+        Requirement::Port6443 => "TCP port 6443",
+        Requirement::Port10443 => "TCP port 10443",
+        Requirement::Port6060 => "TCP port 6060",
     }
 }

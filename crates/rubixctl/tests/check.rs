@@ -177,14 +177,14 @@ fn earlier_failure_prevents_ports_and_required_port_failure_remains_nonzero() {
     let result = execute(&["check"], &mut fake);
     assert_eq!(result.0, 1);
     assert_eq!(fake.calls, ["discover", "supplemental"]);
-    assert!(result.2.contains("RootRequired"));
+    assert!(result.2.contains("root privileges required"));
     assert!(!result.2.contains("All 7"));
     let mut fake = Fake::new();
     fake.port_result = Observation::Present(PortAvailability::BindFailed);
     let result = execute(&["check"], &mut fake);
     assert_eq!(result.0, 1);
     assert_eq!(fake.calls, ["discover", "supplemental", "ports"]);
-    assert!(result.2.contains("PortsBindFailed"));
+    assert!(result.2.contains("required TCP port could not be bound"));
     assert!(!result.2.contains("All 7"));
 }
 #[test]
@@ -263,6 +263,6 @@ fn probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress() {
     fake.port_result = Observation::Unknown(ProbeFailure::Io);
     let result = execute(&["check"], &mut fake);
     assert_eq!(result.0, 1);
-    assert!(result.2.contains("ProbeFailed"));
+    assert!(result.2.contains("host information could not be read"));
     assert!(!result.2.contains("All 7 checks passed"));
 }

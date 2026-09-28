@@ -2,7 +2,7 @@ import pathlib,re,hashlib
 from verify import HERE,ROOT,require,equal,load,strict,read,digest
 HARNESS=['qualify.py','Linux.Dockerfile','linux_fixture.py','verify_linux.py','capture.py']
 NAMES=['help','version','root_pass','nonroot','preparation','pprof_off','pprof_conflict','repeat_0','repeat_1']
-EXITS=[0,0,0,1,1,0,1,0,0]
+EXITS=[0,0,0,1,0,0,1,0,0]
 def verify_run(raw):
  text=raw.decode();require(text.count('test result: ok. 7 passed;')==1,'Rust test completion')
  binaries=re.findall(r'^([a-f0-9]{64})  /out/(rubixctl|check-tests)$',text,re.M)
@@ -20,13 +20,13 @@ def verify_run(raw):
    require(row['stdout']=='','check stdout')
    if code==0:require('All 7 checks passed' in row['stderr'] and 'ports are not reserved' in row['stderr'],'qualified success')
    else:require('All 7 checks passed' not in row['stderr'],'false success')
- require('RootRequired' in record['cases'][3]['stderr'],'root failure')
- require('preparation is not implemented' in record['cases'][4]['stderr'],'preparation gate')
- require('Port6060' in record['cases'][6]['stderr'],'pprof conflict')
+ require('root privileges required' in record['cases'][3]['stderr'],'root failure')
+ require('All 7 checks passed' in record['cases'][4]['stderr'],'already prepared host')
+ require('TCP port 6060' in record['cases'][6]['stderr'],'pprof conflict')
  return record
 
 def relevant(name):
- return name in {'Cargo.toml','Cargo.lock','rust-toolchain.toml'} or name.endswith('/Cargo.toml') or name.startswith('.cargo/') or name.startswith(('crates/rubix-platform/','crates/rubixctl/')) and name.endswith('.rs') or name in {'tools/parity/fixtures/management-check/'+n for n in ['cases.json','expected.json','linux_fixture.py']}
+ return name in {'Cargo.toml','Cargo.lock','rust-toolchain.toml'} or name.endswith('/Cargo.toml') or name.startswith('.cargo/') or name.startswith(('crates/rubix-platform/','crates/rubixctl/','crates/rubix-supervisor/')) and name.endswith('.rs') or name in {'tools/parity/fixtures/management-check/'+n for n in ['cases.json','expected.json','linux_fixture.py']}
 def verify(directory):
  directory=pathlib.Path(directory);r=load(directory/'receipt.json')
  require(set(r)=={'revision','uncommitted_implementation','platform','target','containers','errors','cleanup_errors','helper_sha256','source_sha256','inventory_sha256','image_id','command','run_sha256','remaining_containers','remaining_images'},'receipt schema')
@@ -45,7 +45,7 @@ def verify(directory):
  for directory_name in ['crates','third_party','tools/upstream']:
   current.update(str(p.relative_to(ROOT)) for p in (ROOT/directory_name).rglob('Cargo.toml') if 'target' not in p.parts)
  current.update(str(p.relative_to(ROOT)) for p in (ROOT/'.cargo').rglob('*') if p.is_file())
- for crate in ['rubixctl','rubix-platform']:current.update(str(p.relative_to(ROOT)) for p in (ROOT/'crates'/crate).rglob('*.rs') if 'target' not in p.parts)
+ for crate in ['rubixctl','rubix-platform','rubix-supervisor']:current.update(str(p.relative_to(ROOT)) for p in (ROOT/'crates'/crate).rglob('*.rs') if 'target' not in p.parts)
  current.update('tools/parity/fixtures/management-check/'+n for n in ['cases.json','expected.json','linux_fixture.py'])
  equal(sorted(n for n in inventory if relevant(n)),sorted(current),'compiled inventory')
  for name in current:equal(inventory[name],digest(ROOT/name),'compiled source '+name)
