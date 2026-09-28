@@ -2,7 +2,7 @@
   {
     "case": "delayed",
     "complete": true,
-    "elapsed_ms": 11,
+    "elapsed_ms": 22,
     "exit_code": 0,
     "kill_attempted": true,
     "leader_reaped": true,
@@ -26,7 +26,7 @@
   {
     "case": "ignore",
     "complete": true,
-    "elapsed_ms": 30014,
+    "elapsed_ms": 30024,
     "exit_code": null,
     "kill_attempted": true,
     "leader_reaped": true,
@@ -38,7 +38,7 @@
   {
     "case": "term-error",
     "complete": true,
-    "elapsed_ms": 11,
+    "elapsed_ms": 33,
     "exit_code": 17,
     "kill_attempted": true,
     "leader_reaped": true,
