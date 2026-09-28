@@ -9,7 +9,7 @@ privileged runtime/lifecycle adapters.
 ## Prepare the pinned reference
 
 ```sh
-python3 tools/parity/prepare-upstream.py --output /tmp/kubesolo-reference
+cargo run --locked -p rubix-dev --bin rubix-parity -- prepare-upstream --output /tmp/kubesolo-reference
 ```
 
 The new output directory receives the Linux binary, artifact descriptor, Go build
@@ -33,7 +33,7 @@ has a separate bounded timeout. Ordinary Docker build caches remain Docker-manag
 ## Run a shared suite
 
 ```sh
-python3 tools/parity/run.py \
+cargo run --locked -p rubix-dev --bin rubix-parity -- run \
   --artifact /tmp/kubesolo-reference/artifact.json \
   --suite tools/parity/startup.json \
   --output /tmp/parity-reference
@@ -100,9 +100,9 @@ The result always lists unsupported capabilities even for a passing startup-only
 Use separate new output directories:
 
 ```sh
-python3 tools/parity/run.py --artifact /tmp/kubesolo-reference/artifact.json \
+cargo run --locked -p rubix-dev --bin rubix-parity -- run --artifact /tmp/kubesolo-reference/artifact.json \
   --suite tools/parity/startup.json --output /tmp/parity-setup-failure --inject-failure setup
-python3 tools/parity/run.py --artifact /tmp/kubesolo-reference/artifact.json \
+cargo run --locked -p rubix-dev --bin rubix-parity -- run --artifact /tmp/kubesolo-reference/artifact.json \
   --suite tools/parity/startup.json --output /tmp/parity-test-failure --inject-failure test
 ```
 
@@ -127,7 +127,7 @@ metadata and raw command outputs remain in the output directory. Archive the ent
 directory with the tested repository revision when attaching issue/PR evidence.
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity -p 'test_*.py' -v
+cargo test --locked -p rubix-dev --bin rubix-parity --test parity_process
 ```
 
 The unit checks exercise assertion failures, language-independent expectations and

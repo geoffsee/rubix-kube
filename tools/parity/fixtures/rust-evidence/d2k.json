@@ -1,0 +1,451 @@
+[
+  {
+    "checks": {
+      "injected_error_propagated": true,
+      "missing_tls_input_rejected": true,
+      "repeat_success": true,
+      "tls_secret_updated": true
+    },
+    "component": "d2k",
+    "objects": {
+      "clusterrolebindings": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k-node-reader"
+          },
+          "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "ClusterRole",
+            "name": "d2k-node-reader"
+          },
+          "subjects": [
+            {
+              "kind": "ServiceAccount",
+              "name": "d2k",
+              "namespace": "fixture-d2k"
+            }
+          ]
+        }
+      ],
+      "clusterroles": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k-node-reader"
+          },
+          "rules": [
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "nodes"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch"
+              ]
+            },
+            {
+              "apiGroups": [
+                "storage.k8s.io"
+              ],
+              "resources": [
+                "storageclasses"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch"
+              ]
+            }
+          ]
+        }
+      ],
+      "configmaps": null,
+      "deployments": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k",
+            "namespace": "fixture-d2k"
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "d2k"
+              }
+            },
+            "strategy": {},
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "d2k",
+                  "app.kubernetes.io/managed-by": "kubesolo",
+                  "app.kubernetes.io/name": "d2k"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "env": [
+                      {
+                        "name": "D2K_NAMESPACE",
+                        "valueFrom": {
+                          "fieldRef": {
+                            "fieldPath": "metadata.namespace"
+                          }
+                        }
+                      },
+                      {
+                        "name": "D2K_PORT",
+                        "value": "2376"
+                      },
+                      {
+                        "name": "D2K_SWARM_MODE",
+                        "value": "true"
+                      },
+                      {
+                        "name": "D2K_LOG_LEVEL",
+                        "value": "info"
+                      }
+                    ],
+                    "image": "fixture/d2k:fixed",
+                    "imagePullPolicy": "IfNotPresent",
+                    "name": "d2k",
+                    "ports": [
+                      {
+                        "containerPort": 2376,
+                        "name": "docker-api",
+                        "protocol": "TCP"
+                      }
+                    ],
+                    "resources": {
+                      "limits": {
+                        "cpu": "200m",
+                        "memory": "128Mi"
+                      },
+                      "requests": {
+                        "cpu": "50m",
+                        "memory": "32Mi"
+                      }
+                    },
+                    "volumeMounts": [
+                      {
+                        "mountPath": "/etc/d2k/tls",
+                        "name": "tls",
+                        "readOnly": true
+                      }
+                    ]
+                  }
+                ],
+                "serviceAccountName": "d2k",
+                "volumes": [
+                  {
+                    "name": "tls",
+                    "secret": {
+                      "secretName": "d2k-tls"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "status": {}
+        }
+      ],
+      "namespaces": [
+        {
+          "metadata": {
+            "name": "fixture-d2k"
+          },
+          "spec": {},
+          "status": {}
+        }
+      ],
+      "rolebindings": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k",
+            "namespace": "fixture-d2k"
+          },
+          "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "Role",
+            "name": "d2k"
+          },
+          "subjects": [
+            {
+              "kind": "ServiceAccount",
+              "name": "d2k",
+              "namespace": "fixture-d2k"
+            }
+          ]
+        }
+      ],
+      "roles": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k",
+            "namespace": "fixture-d2k"
+          },
+          "rules": [
+            {
+              "apiGroups": [
+                "apps"
+              ],
+              "resources": [
+                "deployments"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch",
+                "delete"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "pods"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "pods/log"
+              ],
+              "verbs": [
+                "get"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "pods/exec"
+              ],
+              "verbs": [
+                "create"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "services"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch",
+                "delete"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "configmaps"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch",
+                "delete"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "secrets"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch",
+                "delete"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "persistentvolumeclaims"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "delete"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "namespaces"
+              ],
+              "verbs": [
+                "get"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "resourcequotas"
+              ],
+              "verbs": [
+                "get",
+                "list"
+              ]
+            },
+            {
+              "apiGroups": [
+                "metrics.k8s.io"
+              ],
+              "resources": [
+                "pods"
+              ],
+              "verbs": [
+                "get",
+                "list"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "events"
+              ],
+              "verbs": [
+                "get",
+                "list"
+              ]
+            }
+          ]
+        }
+      ],
+      "secrets": [
+        {
+          "data": {
+            "tls.crt": "Uk9UQVRFRCBTWU5USEVUSUMgQ0VSVA==",
+            "tls.key": "U1lOVEhFVElDIEtFWSBOT1QgU0VDUkVU"
+          },
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k-tls",
+            "namespace": "fixture-d2k"
+          },
+          "type": "kubernetes.io/tls"
+        }
+      ],
+      "serviceaccounts": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k",
+            "namespace": "fixture-d2k"
+          }
+        }
+      ],
+      "services": [
+        {
+          "metadata": {
+            "labels": {
+              "app": "d2k",
+              "app.kubernetes.io/managed-by": "kubesolo",
+              "app.kubernetes.io/name": "d2k"
+            },
+            "name": "d2k",
+            "namespace": "fixture-d2k"
+          },
+          "spec": {
+            "ports": [
+              {
+                "name": "docker-api",
+                "port": 2376,
+                "protocol": "TCP",
+                "targetPort": 2376
+              }
+            ],
+            "selector": {
+              "app": "d2k"
+            },
+            "type": "LoadBalancer"
+          },
+          "status": {
+            "loadBalancer": {}
+          }
+        }
+      ],
+      "storageclasses": null
+    },
+    "variant": "custom-namespace"
+  }
+]

@@ -3,8 +3,7 @@
 This fixture qualifies `DecodeSession::inspect_crane_image_archive` against actual
 `crane.Save` serialization of two **synthetic, tiny** images. It does not fetch a
 registry image, establish baseline release payload provenance, execute an image,
-extract members, or import into a runtime. Two successful runs are recorded below;
-the mandatory `PublishedEvidence` test verifies their published raw proof.
+extract members, or import into a runtime. Existing historical runs are described under capture qualification below.
 
 The producer imports `github.com/google/go-containerregistry` **v0.21.5**, whose
 module proxy origin identifies commit `5b80281da727dae218e1697ab8529b631b9efa64`.
@@ -25,14 +24,14 @@ Primary sources:
 
 The pinned Go builder image is
 `golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19`.
-The Dockerfile also pins Rust and Python images by digest. Runtime qualification
+The Dockerfile also pins Rust images by digest. Runtime qualification
 is Linux arm64 only; the image configuration fields include amd64 and ARM and do
 not cause execution or emulation of either image.
 
 ## Cases and independent oracle
 
 The producer makes valid small tar/gzip layers A and B, then asks crane to save
-references A, B, A for each image. The independent Python oracle verifies four
+references A, B, A for each image. The independent Rust oracle verifies four
 archive members: one `sha256:<config>` member, two unique `<hash>.tar.gz` members,
 and `manifest.json` last. It checks actual stored hashes, sizes, config platform,
 ordered references, tag metadata, gzip completion, and tar structure. For these
@@ -56,57 +55,65 @@ original registry manifest. No registry manifest digest, publisher authenticity,
 role authenticity, ABI compatibility, import permission, or deployment readiness
 is established.
 
-## Capture and verification
 
-After the harness and source are reviewed and committed, use a new output path:
+## Rust capture qualification
+
+Current qualification requires reviewed Rust captures. Existing
+`evidence/` files remain the unchanged historical capture from source
+`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Their original source hashes and Python
+harness identities are preserved. They are not current Rust-harness evidence and
+schema-3 verification intentionally rejects them. Do not relabel these receipts.
+
+The maintenance binary is `rubix-asset-fixture` in `tools/dev`. Its independent
+oracles do not call the production asset parser. JSON rejects duplicate keys and
+non-integer numbers; input reads reject symlinks and nonregular files and impose
+byte limits. Exact test names, record order, typed values, commands, source
+inventory, raw log hashes and cleanup outcomes are verified.
+
+The default Rust test suite includes three mandatory published-evidence checks;
+these require published, verified captures from reviewed, clean Rust source.
+Synthetic mutation tests cannot satisfy those checks.
 
 ```sh
-python3 tools/assets-archive/capture.py --output /tmp/rubix-archive-UNIQUE
-python3 tools/assets-archive/verify.py /tmp/rubix-archive-UNIQUE
-python3 -O tools/assets-archive/verify.py /tmp/rubix-archive-UNIQUE
-python3 -m unittest discover -s tools/assets-archive -p 'test_*.py'
-python3 -O -m unittest discover -s tools/assets-archive -p 'test_*.py'
+cargo test -p rubix-dev --bin rubix-asset-fixture --locked
+cargo test -p rubix-dev --bin rubix-asset-fixture --release --locked
 ```
 
-The driver rejects dirty relevant source before creating output. It copies a
-source snapshot, records every copied file, and rechecks that snapshot after two
-runs. Current verification binds the workspace manifests/lockfile/toolchain,
-Cargo configuration, assets/platform Rust and fixture inputs, this complete
-harness including Go graph pins, and the capture/namespace helpers. Publication
-README and evidence files are excluded from current-input comparison; copied
-README files must still remain unchanged during capture. The receipt records the
-actual commit, full copied inventory hash, image ID, build log hash, commands,
-per-run raw log hashes and independently recomputed observations.
+Capture commands below are for use after source and process-ownership review.
+Every capture requires a new output directory and a clean relevant source tree.
+Publication changes only the exact raw receipts/logs and factual documentation.
 
-A fresh per-capture checksum build step binds both producer and Rust consumer
-bytes to both runtime invocations; compilation cache is retained. Two runs must
-have identical archive bytes/hashes and observations. This is local
-build/run-consistency evidence, not an authenticity guarantee against someone
-who can rewrite all raw records and receipts.
+```sh
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive capture /tmp/rubix-archive-UNIQUE
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive verify /tmp/rubix-archive-UNIQUE
+cargo run -p rubix-dev --bin rubix-asset-fixture --locked -- archive verify tools/assets-archive/rust-evidence
+```
 
-Builds may fetch pinned dependencies and images. Runtime containers have no
-network, use user 65532, read-only rootfs, all capabilities dropped,
-no-new-privileges, Docker init, 64 PIDs, 256 MiB memory, two CPUs and a 16 MiB
-`nosuid,nodev` temporary filesystem. No host bind mounts are used. The host driver
-bounds build time/output to 1800 seconds/16 MiB and each runtime to 100 seconds/
-2 MiB; producer and consumer also have 20-second subprocess deadlines. Consumer output
-is drained incrementally into a file capped at 64 KiB by the source-bound helper. The tiny
-fixture oracle caps decoded and encoded inputs at 1 MiB. These are fixture
-controls, not production archive cancellation or hard-memory guarantees.
+The build binds all three executable hashes (`producer`, `archive-tests`,
+`fixture`) in one fresh nonce-delimited checksum frame. Both runtime hashes must
+match that frame. Source inventory, pinned full Go graph, exact commands, image
+ID, raw hashes and independently recomputed observations are receipt-bound.
+Two runs must have identical input bytes and observations. This proves local
+build/run consistency, not authenticity against an author who can replace all
+receipts and logs.
 
-After each run the namespace inventory must contain only init, the shell and the
-inventory helper. The driver's `finally` cleanup removes only its unique owned
-containers/image and records failures plus remaining-resource queries. A failed
-build, run, source recheck or cleanup cannot produce passing evidence. After
-capture, independently inspect Docker for that exact owned tag before release.
+Builds can fetch pinned dependencies. Runtime containers use UID65532, no
+network, read-only root, no capabilities, no-new-privileges, init, 64 PIDs,
+256 MiB memory, two CPUs and a 16 MiB tmpfs. No host mounts are used. Build
+limits are 1800 seconds/16 MiB and runtime limits are 100 seconds/2 MiB. Producer
+and consumer each have a 20-second/64 KiB bound; archive input and decoded tar
+are capped at 1 MiB. These fixture limits make no production hard-RSS/CPU claim.
 
-The `Evidence` Python mutation class uses explicitly invented records to test verifier rejection;
-they never substitute for a real capture. The separate `verify.py` command and `PublishedEvidence` class are mandatory
-published-evidence gates. Run the complete test and verification commands above,
-including the published-evidence gate. Investigate any failure or missing evidence;
-the invented mutation records cannot replace the actual capture.
+Namespace completion requires only init, shell and the Rust helper. Failed
+builds/runs/source rechecks/cleanup remain failed receipts. Only owned container
+names and image are removed; independently query their absence after capture.
 
-Current container-preparation integration qualification was captured at source
-`fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both Linux arm64 runs passed the eight pinned-crane serialization cases. Producer and consumer hashes match the prior archive qualification; the complete source inventory was refreshed. DiffIDs remain declared-only in the archive API.
-Current-source verification passes normally and with `-O`; exact raw evidence is
-published in `evidence/`. Owned capture resources were independently confirmed absent.
+Publish the build and runtime `*.command.json` records with their logs. Verification
+requires exact arguments and hashes, exit zero, EOF, process-group absence and no
+timeout, cancellation or overflow. Unconfirmed settlement stops further actions
+and retains input contexts; resource inventories remain unknown. Settled
+cancellation permits only owned cleanup with a fresh cancellation latch.
+
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

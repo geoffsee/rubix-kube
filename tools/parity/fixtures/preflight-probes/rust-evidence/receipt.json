@@ -1,0 +1,173 @@
+{
+  "artifact_sha256": null,
+  "build_command": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=a30ab97a1204da1ae9031791bc49b52d",
+    "-t",
+    "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d",
+    "-f",
+    "/tmp/rubix-node-context-20e8hp/tools/parity/fixtures/preflight-probes/Capture.Dockerfile",
+    "/tmp/rubix-node-context-20e8hp"
+  ],
+  "build_sha256": "0f7214150a9c1151e683b91c34c66bcb951b425dfa12da89c71150ac01281c87",
+  "builder_sha256": {
+    "preflight_probe": "3caa2de08bade8d276620830482b5af8caa9f65392c173787a67be011fd3a41a",
+    "rubix_platform": "e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566"
+  },
+  "cancelled": false,
+  "cleanup_errors": [],
+  "commands": {
+    "build": "48a47479380f219ea0711d1f6f2c10f6c7a6682b6a037e3509e48d4d78667cd5",
+    "cleanup-1": "4826649bdc7f9e728a667f8bb8a1de2c711d2516102442f610c7bbf125a999cb",
+    "cleanup-2": "d08b078406252dea3f1ca0da021f2b52d9c3520af4e13e377ff2b1a6c4ee9c3b",
+    "cleanup-3": "140fbce3d7bba5260fcd0787993f9bb6f57f9f7547743abf02e4aa2bc40a1cbb",
+    "cleanup-4": "ddbec1cc20ddd14cbf7b2a5160b932cacc92f40c3b50c9ccf494f33812f9c75e",
+    "cleanup-5": "e4b534f29eb13d8bf8ae4ca57040bc374a6cff8d2d9cf9755551663c9387615a",
+    "first": "1e5183e9982156ed2a8164a913a9d2d51a59a8637449677f1fe56325c53fb0c5",
+    "image-inspect": "7c4e68dbb796833288cf0c5e32cdb47aa1165bce40745e5c97583185139ed587",
+    "repeat": "471f5410486b04545ae223c00e57058f88f5f21c16b4910218f6ae59d2105729"
+  },
+  "containers": [
+    "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d-first",
+    "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d-repeat"
+  ],
+  "dirty": false,
+  "errors": [],
+  "family": "probes",
+  "image_id": "sha256:cf0f88df95b2b0f4edbcb988f6a49e431c18b43f5f02a4bbc9c30716f736f3c9",
+  "nonce": "a30ab97a1204da1ae9031791bc49b52d",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "c582f8427b1585c3c9883268034cda09e8485284",
+  "runs": {
+    "first": {
+      "binary_sha256": {
+        "preflight_probe": "3caa2de08bade8d276620830482b5af8caa9f65392c173787a67be011fd3a41a",
+        "rubix_platform": "e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d-first",
+        "--read-only",
+        "--network=none",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--memory=256m",
+        "--cpus=2",
+        "--pids-limit=64",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--env",
+        "RUBIX_PREFLIGHT_DISPOSABLE=1",
+        "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d",
+        "/bin/sh",
+        "-c",
+        "cat /out/binaries.sha256; for binary in /out/rubix_platform-* /out/preflight_probe-*; do \"$binary\" --nocapture || exit; \"$binary\" --ignored --nocapture || exit; done"
+      ],
+      "raw_sha256": "9b841c07a6171bb580fb2a1e282463b19af2543f6966fcdc8492ce303093d52e",
+      "records": {
+        "families": [
+          "ipv4",
+          "ipv6"
+        ],
+        "files": [
+          "missing_version",
+          "no_candidates",
+          "exact",
+          "exact.xz",
+          "exact.zst",
+          "exact.gz",
+          "glob_broken_symlink",
+          "glob_non_utf8_name",
+          "not_recursive",
+          "entry_limit",
+          "byte_limit",
+          "non_utf8_version",
+          "unsafe_release",
+          "permission_denied",
+          "fifo_nonblocking",
+          "rc_service_exact",
+          "injected_ipv6_unsupported_real_ipv4"
+        ],
+        "invocations": 4,
+        "ports": [
+          2379,
+          6443,
+          10443,
+          6060
+        ],
+        "pprof_disabled": "unprobed"
+      }
+    },
+    "repeat": {
+      "binary_sha256": {
+        "preflight_probe": "3caa2de08bade8d276620830482b5af8caa9f65392c173787a67be011fd3a41a",
+        "rubix_platform": "e1b3f364e1564066b802187588e0ea181142d54301f78c2b13e6e21ca2e95566"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d-repeat",
+        "--read-only",
+        "--network=none",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--memory=256m",
+        "--cpus=2",
+        "--pids-limit=64",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--env",
+        "RUBIX_PREFLIGHT_DISPOSABLE=1",
+        "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d",
+        "/bin/sh",
+        "-c",
+        "cat /out/binaries.sha256; for binary in /out/rubix_platform-* /out/preflight_probe-*; do \"$binary\" --nocapture || exit; \"$binary\" --ignored --nocapture || exit; done"
+      ],
+      "raw_sha256": "547cc953a110b30d805b4533fd9ab34adfded1ff22c7cdf7e3a252e141a86ae7",
+      "records": {
+        "families": [
+          "ipv4",
+          "ipv6"
+        ],
+        "files": [
+          "missing_version",
+          "no_candidates",
+          "exact",
+          "exact.xz",
+          "exact.zst",
+          "exact.gz",
+          "glob_broken_symlink",
+          "glob_non_utf8_name",
+          "not_recursive",
+          "entry_limit",
+          "byte_limit",
+          "non_utf8_version",
+          "unsafe_release",
+          "permission_denied",
+          "fifo_nonblocking",
+          "rc_service_exact",
+          "injected_ipv6_unsupported_real_ipv4"
+        ],
+        "invocations": 4,
+        "ports": [
+          2379,
+          6443,
+          10443,
+          6060
+        ],
+        "pprof_disabled": "unprobed"
+      }
+    }
+  },
+  "schema": 3,
+  "source_sha256": "9a599ad1b7309d0a0ab4e76618dfe7461cb76b656ac572960682c4e7366bf931",
+  "tag": "rubix-node-probes-a30ab97a1204da1ae9031791bc49b52d"
+}

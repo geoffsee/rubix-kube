@@ -6,7 +6,7 @@ The first backend supports Darwin arm64, QEMU with HVF and the local
 QEMU EDK2 aarch64 firmware. It does not install host software or request host root.
 
 ```sh
-python3 tools/parity/vm/run.py --allow-privileged-vm \
+cargo run --locked -p rubix-dev --bin rubix-parity -- vm --allow-privileged-vm \
   --artifact /tmp/kubesolo-reference/artifact.json \
   --suite tools/parity/startup.json \
   --output /tmp/parity-new-vm \
@@ -14,11 +14,10 @@ python3 tools/parity/vm/run.py --allow-privileged-vm \
 ```
 
 The explicit `--allow-privileged-vm` flag is required. Output must be a new directory.
-The input cache retains the verified public base image and pinned pure-Python
-`pycdlib 1.14.0` wheel for later runs. The verified wheel creates the cloud-init ISO
-without installing a host package or mounting an image; native `hdiutil makehybrid`
-was observed to fail with `Operation not permitted` in the initial preparation trial. It
-is not a test VM and is never booted writable. Every run allocates an owned qcow2
+The input cache retains the verified public base image for later runs. The Rust
+runner creates the two-file ISO9660/Joliet cloud-init seed directly, without installing
+a host package or mounting an image. The base image is never booted writable.
+Every run allocates an owned qcow2
 8 GiB overlay, copied firmware variables, cloud-init ISO, SSH credentials and QMP
 socket in a new private temporary directory. That directory is removed after QEMU
 has exited. No existing disk, cluster, service, guest or host directory is attached.
@@ -70,14 +69,15 @@ networking, recovery and conformance require their actual scenario implementatio
 assets and acceptance evidence. Passing `--version` in a VM cannot satisfy those
 criteria. Initial support is Darwin arm64/HVF; other hosts remain explicit gaps.
 
-Cache entries reject symlinks, and newly verified wheel content is published by
-atomic replacement. Cleanup errors are aggregated; failure of one step does not
-skip remaining diagnostics/termination/report attempts. Writable VM files remain
+Cache entries reject symlinks, and verified downloads are published atomically without
+overwriting an existing entry. Cleanup errors are aggregated. If command settlement
+is uncertain, additional diagnostic commands are suppressed and their typed owners
+are retained. Writable VM files remain
 available for recovery if QEMU termination cannot be confirmed, rather than deleting
 a still-open guest disk.
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity/vm -p 'test_*.py' -v
+cargo test --locked -p rubix-dev --bin rubix-parity --test parity_process
 ```
 
 The VM adapter uses the shared `case.files` validation, staging and full-argument

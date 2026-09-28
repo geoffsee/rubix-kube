@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "cp",
+    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc-artifact:/out/prepare_node_host",
+    "/private/tmp/rubix-rust-qualification-c582f84/assets/node-container-build/prepare_node_host"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22638,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-E22ebX",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "timeout": false
+}

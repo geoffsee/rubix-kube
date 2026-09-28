@@ -47,17 +47,18 @@ helpers, shell integration, startup with no command, native non-Linux behavior,
 and actual runtime startup remain outside this bounded suite.
 
 ```sh
-python3 tools/parity/fixtures/cli-startup/capture.py \
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- startup capture --driver /path/to/linux/rubix-parity \
   --artifact /path/to/pinned/artifact.json --output /tmp/new-startup-capture
-python3 -O tools/parity/fixtures/cli-startup/verify.py /tmp/new-startup-capture
-python3 -m unittest discover -s tools/parity/fixtures/cli-startup -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- startup verify --directory /tmp/new-startup-capture
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture
 ```
 
-`--runner PATH` selects an explicit existing parity runner; the default is the
-repository's `tools/parity/run.py`. Tests normally bind that runner's current source.
-When inspecting from an older detached tree, `RUBIX_PARITY_RUNNER` can select the
-exact current-main runner used for capture. This does not bypass hash checks.
-Capture never refreshes expectations. Initial r1 used an older runner and four
+The Rust capture command runs the repository's parity orchestration directly and
+requires `--driver` to identify the Linux Rust driver binary. Its digest must match
+the driver observed inside the container. Current source hashes, all raw files and
+both runner and driver identities are bound in `capture.json` schema 2.
+Capture never refreshes expectations. Historical r1 used an older runner and four
 help-fragment assertions missed Kingpin's `--[no-]` display form; r2 corrected those
-assertions. Final r3/r4 use the current main runner, and only those are qualification
-evidence. This is startup/configuration compatibility, not runtime conformance.
+assertions. Historical r3/r4 remain immutable prior evidence. New Rust captures
+belong in `evidence-rust/first` and `evidence-rust/repeat`; mandatory tests fail until
+both are freshly captured and verified. This covers startup/configuration compatibility.

@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "ls",
+    "--all",
+    "--filter",
+    "reference=rubix-parity-a2a62ff5e6460c4334ca1991:test",
+    "--quiet"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22845,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-CSWM1g",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "abd67fac71fc4b9631d3b52e78cf0065bb88e0fbe6a871e340d776090e241788",
+  "timeout": false
+}

@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "qemu-img",
+    "create",
+    "-f",
+    "qcow2",
+    "-F",
+    "qcow2",
+    "-b",
+    "/private/tmp/rubix-vm-image-cache/alpine-3.24.2-aarch64-cloudinit-r0.qcow2",
+    "/tmp/rubix-vm-FQI5hM/disk.qcow2",
+    "8G"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22745,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-5X2EpA",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "b9ca315ab6bd80ad85bba7ca800c1afb33c39cfdb03bd88d27c65b89f0033415",
+  "timeout": false
+}

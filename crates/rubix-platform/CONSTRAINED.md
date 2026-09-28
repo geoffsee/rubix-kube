@@ -61,7 +61,7 @@ no xtables waiver, name bounds and non-mutating directory observation. Commands:
 
 ```sh
 cargo test -p rubix-platform --locked
-python3 tools/parity/fixtures/constrained-policy/verify.py tools/parity/fixtures/constrained-policy/evidence
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence constrained-policy tools/parity/fixtures/constrained-policy/rust-evidence
 ```
 
 Remaining consumers include bounded command probes, actual CRI/socket validation,

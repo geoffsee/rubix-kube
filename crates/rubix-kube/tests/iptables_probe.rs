@@ -22,7 +22,7 @@ async fn case(mode: &str) {
         std::fs::remove_file(executable).unwrap();
     }
     if mode != "missing" {
-        std::fs::copy("/iptables.py", executable).unwrap();
+        std::fs::copy("/iptables.sh", executable).unwrap();
         std::fs::set_permissions(
             executable,
             std::fs::Permissions::from_mode(if mode == "denied" { 0o644 } else { 0o755 }),
@@ -92,8 +92,8 @@ async fn case(mode: &str) {
 async fn disposable_fixed_probe() {
     assert_eq!(std::env::var("RUBIX_NODE_DISPOSABLE").as_deref(), Ok("1"));
     let mut sentinel = Sentinel(
-        Command::new("/usr/local/bin/python3")
-            .args(["-c", "import time; time.sleep(60)"])
+        Command::new("/node-fixture")
+            .arg("sentinel")
             .spawn()
             .unwrap(),
     );

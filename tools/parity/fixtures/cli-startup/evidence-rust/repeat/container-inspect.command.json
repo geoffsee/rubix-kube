@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "container",
+    "inspect",
+    "rubix-parity-0b3aa58588a5147d3bad1ca4"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22918,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-B2YRM7",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "a1cbaf221dabca2ec6a1638afcc01f0e42d7b4c8953de0a54bbda7898c6f5095",
+  "timeout": false
+}

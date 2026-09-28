@@ -13,7 +13,7 @@ explicit `SYNTHETIC-*` strings; those bytes are not certificates and this slice
 makes no TLS authentication claim. The baseline's static token is checked inside
 the harness, then removed from exported configuration; its user/context remain
 observable. Kubelet credentials are fixed file references whose absence is also
-characterized. Full structures are independently specified in verify.py, including
+characterized. Full structures are independently specified in the Rust fixture oracle, including
 context selection, certificate references and synthetic embedded bytes.
 
 Two independent containers per executable must produce identical public records.
@@ -26,9 +26,10 @@ E07 should explicitly reject or repair corrupt keys with trust preservation.
 Run:
 
 ```sh
-python3 tools/parity/fixtures/credentials/capture.py --output /tmp/unique-credentials
-python3 -O tools/parity/fixtures/credentials/verify.py /tmp/unique-credentials
-python3 -m unittest discover -s tools/parity/fixtures/credentials -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture credentials --output /tmp/unique-credentials
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify credentials /tmp/unique-credentials
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence credentials /tmp/unique-credentials
+cargo test --locked -p rubix-dev fixture_oracles
 ```
 
 The immutable source archive and Go 1.26.5 builder digest match the distribution
@@ -38,13 +39,17 @@ behavior capture, separate from the official Go 1.26.8 generation extractor.
 The build is limited to 30 minutes and 8 MiB diagnostics; each trusted runtime to 90 seconds
 plus 110-second client deadline, 1 MiB output, 512 MiB RAM, 2 CPUs, 128 PIDs and 64 MiB private
 tmpfs. Runtime has no network, host mounts, capabilities or writable root filesystem.
-The shared defaults capture helper is imported read-only and hashed in the receipt;
+The shared Rust capture helper is hashed in the receipt;
 it bounds subprocess output and independently attempts each owned-resource cleanup
 and inventory before publishing errors. Docker build cache remains reusable.
 
 Receipt and provenance bind executed harness/source/helper inputs to public outputs.
 Semantic mutations cover identity, trust reference, permissions, key size, restart,
-missing checks and forbidden token export; explicit checks remain active under -O.
+missing checks and forbidden token export in debug and release builds.
+
+Historical `evidence/` and `provenance.json` remain unchanged. Current Rust captures
+are published under `rust-evidence/`; their mandatory gate binds current tooling,
+baseline source identities, complete artifacts, repeated records and process cleanup.
 No Rust consumer, live authentication/token issuance, host-user kubeconfig merging,
 atomic interruption/repair, or full node lifecycle is claimed. These remain separate
 component or fixture work. Webhook fixtures are a separate family.

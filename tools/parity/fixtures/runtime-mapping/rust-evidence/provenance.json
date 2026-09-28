@@ -1,0 +1,28 @@
+{
+  "fixture_sha256": {
+    "build.command.json": "34001aa82ea82afa11323cd04e7c55e99aec3e2c57aef201c7a3a1f261e0eb83",
+    "build.log": "e63d26ef455fe1707a32b06d05d5bc541acd2af37516ef7e9f6aa70e32e0a1ba",
+    "cleanup-1.command.json": "5c0a970bea125cc0616f950506fcf08d82e793f172648d90041823c5e5a5d8f3",
+    "cleanup-1.log": "b141c13ec15dd9653ad764ec6a76d0da5b509202e8e856b7a93354adfeec4e6e",
+    "cleanup-2.command.json": "d9724ff88ee5f3cd54f182ec0da8d9cc93e53fe1b360a1165c49df0d5438bd42",
+    "cleanup-2.log": "7a1e28368eeb2e56c56d4741fa66e89737e78041e38895df6a59ea12e5b88156",
+    "cleanup-3.command.json": "7959579e3dc01fd4598fc74d85453157e95155f1b50466c00831d884e9b73fd7",
+    "cleanup-3.log": "c2b20bbe09d120c2e8469c763ff855eedb441e73a541a20ef8cad616bf64f0b0",
+    "cleanup-4.command.json": "6130804f1494cbc1c5957b3cdc7229ab7b6ca2c9952a8940aad6b12628e4a4ac",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-5.command.json": "f6db842d25021f593a5c1131f2038a7e3f399a300be7e0c75fed701b1736e8c0",
+    "cleanup-5.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-6.command.json": "033ba1a37a5c5a5f8218fdfc8f88f34620b793e752d4712cded26119be286b74",
+    "cleanup-6.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image-inspect.command.json": "2d067f46b195db3f6f60a0afc20c37fe94ca2348b17ab05f959a6b7684e65129",
+    "image-inspect.log": "2503d5e266c30d1ea13cc02d0eba2fd9994386706de1b66aadd9931cc4eff572",
+    "mapping-0.command.json": "8add55303356c97eff7f2db9532b0d4dcfa086f0bb1f9690aaa010effb068b05",
+    "mapping-0.log": "20ef21c21588e40f08a46f56f3950f4f48a23810eddaa8477d6ecea96d16f03d",
+    "mapping-1.command.json": "2c38818f2fd0e905cc5a8b1a4f72b27443c166b142b575bbdd6161e8447c9c9e",
+    "mapping-1.log": "20ef21c21588e40f08a46f56f3950f4f48a23810eddaa8477d6ecea96d16f03d",
+    "mapping.json": "83e725dbe912dd1da59cff532ebc5186da3d3b49b21a205562d781e2982ef0ba",
+    "receipt.json": "51b8b23cad8cde0bcd9a9158ac49c45e7d5579d25ebbfd4d6cfa86d44a4bee99"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "schema_version": 2
+}

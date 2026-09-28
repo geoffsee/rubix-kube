@@ -1,0 +1,48 @@
+[
+    {
+        "Id": "sha256:36238015cbadc473ab5b244e5e3a6c7537f305208d6f4bd7c98cb95e195690d4",
+        "RepoTags": [
+            "rubix-resolved-40aqin:latest"
+        ],
+        "RepoDigests": [
+            "rubix-resolved-40aqin@sha256:36238015cbadc473ab5b244e5e3a6c7537f305208d6f4bd7c98cb95e195690d4"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-28T08:42:15.182019421Z",
+        "Config": {
+            "User": "65532:65532",
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Entrypoint": [
+                "/out/extract"
+            ],
+            "WorkingDir": "/"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 36451567,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:c7b8480f7ccc0d7c2bf05a39ab5bf1e2a5d9cf2014493c5f55e5564c3c4e445d"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-28T08:42:16.87145938Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:36238015cbadc473ab5b244e5e3a6c7537f305208d6f4bd7c98cb95e195690d4",
+            "size": 855
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "tui5ja5qfb7w0sf1cfcxxlqf9",
+                    "CreatedAt": "2026-09-28T08:42:17.118096213Z"
+                }
+            ]
+        }
+    }
+]

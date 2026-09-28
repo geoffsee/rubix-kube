@@ -1,0 +1,14 @@
+{
+  "files": {
+    "host_network": {
+      "sha256": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+      "size": 13749896
+    },
+    "prepare_host_network": {
+      "sha256": "e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca",
+      "size": 12883248
+    }
+  },
+  "revision": "c582f8427b1585c3c9883268034cda09e8485284",
+  "target": "aarch64-unknown-linux-musl"
+}

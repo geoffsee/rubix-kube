@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "volume",
+    "rm",
+    "rubix-parity-0b3aa58588a5147d3bad1ca4-evidence"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22931,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-CPmqRN",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "28071e5adc6e616f8c92f69b184f5033fee3c62665e0fee8458ba7ab27756a8a",
+  "timeout": false
+}

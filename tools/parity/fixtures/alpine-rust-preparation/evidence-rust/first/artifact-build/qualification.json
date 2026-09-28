@@ -1,0 +1,28 @@
+{
+  "cancelled": false,
+  "files": {
+    "artifact-copy.command.json": "d21ad05172bd17ab5f5b698c72c9376e867af821831464f268ed0b616581c89e",
+    "artifact-copy.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifact.json": "14ec559a1a19b691e3ca9eb862451356c1c0dac78051a26e12db8de6fc6ae646",
+    "build.command.json": "05e71e012d58e5c40f3b033c791940e0be1c28687e6cad0b36b07fb97aedcae6",
+    "build.log": "424974d6f0fb68de7c84a6e15628a5faf4ddc6edadbd4fa0ae1e700cb586cc53",
+    "cleanup-1.command.json": "68dc6123f17e22798ee6e5501b45817b35827ae0ba666e7a7db6ed670c7837e7",
+    "cleanup-1.log": "99c12b26bb0f732822e57a9f9c4dba08fa64f796b00f2d896da705cd68b5788a",
+    "cleanup-2.command.json": "7663ef6d578e7b860633a4afba66abf26892972a31b0ba6df2b78da2000ccc08",
+    "cleanup-2.log": "e19882965f6d417848d4d5d8d6dad1d2c95f72bbdee845ad962fb11b034c2502",
+    "cleanup-3.command.json": "8f46bdf8a4d7eddbc6e021b1a0a6f711a6f1986485ab2c9089a5296fd70de60f",
+    "cleanup-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-4.command.json": "d047d1c7da30a191077769b15d21698122a283ec97ba738ba88af9ea6b3fb785",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image-inspect.command.json": "231d0e077fe7e3ae82f842d2d75225bd35ef5e405110496b6c68306244ef82c0",
+    "image-inspect.log": "35349d536ea6f6098d931431bb6be45c96150b17493054198890d2f29c7a7391",
+    "receipt.json": "5216960da7f3c039152a6652e149ec342a226684a7b9a6774a20946bf4322d94",
+    "revision.command.json": "656f2cbd96eed7afbf4d7b32647abee05bc5cae242df940a3acd0a63de697d33",
+    "revision.log": "e9d55625fe3834e52ce6ef97dc162759682d0dd47d5f72de93e4401ea3565562",
+    "rubixctl": "1989a32474bcbc1e6064e0c7093903da769d240021d66b51aa1fa31ac47515fa",
+    "run.command.json": "4244103efecdfb62d0224d19917985f80e6aa581d4357d1f0aa8c8559e5e0a41",
+    "run.log": "4aa7124c1c61fb86a4d76885204a8cd5c67b543c4799dafdc4533492e91bbe03",
+    "source-hashes.json": "70dda38029196e3f8e2f8e5ef8f35ace4777f77a92b8a5e912e423c064a967e7"
+  },
+  "schema_version": 2
+}

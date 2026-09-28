@@ -72,15 +72,15 @@ to limit repeated validation across stack descendants. A cache hit does not repl
 
 ## Local security tools
 
-`Security` runs Semgrep Community Edition and zizmor alongside the existing CI, without a
-Rust build or hosted analysis service. Tool versions and transitive package hashes are pinned
-in `security/pyproject.toml` and `security/uv.lock`. Installation downloads packages; analysis
-uses only local files. Semgrep metrics/version checks are disabled, no registry rules are
-fetched, and zizmor runs explicitly offline. No scanner API token or SARIF upload is required.
+`Security` runs the Rust `rubix-security` maintenance binary with Semgrep Community
+Edition and zizmor. Semgrep 1.178.0 uses its pinned multi-platform OCI image digest;
+the container scans a read-only source mount with networking disabled. Zizmor 1.30.1
+uses a checksum-pinned release executable and runs explicitly offline. The runner
+disables Semgrep metrics/version checks, uses repository-owned rules and checks
+that every selected Rust source was scanned. No hosted scanner API is required.
 
 ```sh
-uv sync --project .github/security --locked --python 3.12
-uv run --project .github/security --frozen --offline --no-sync python .github/security/check.py
+cargo run --locked -p rubix-dev --bin rubix-security
 ```
 
 The repository-owned Semgrep rules initially detect TLS verification bypasses, common MD5/SHA-1
@@ -88,6 +88,10 @@ calls, and directly formatted shell commands. Positive/negative fixtures run bef
 All findings, scanner errors and unscanned Rust inputs fail the check; inline `nosemgrep`
 suppression is disabled. Refine rules and their fixtures in a reviewed PR when an intentional
 use needs different treatment. The workflow writes tool caches only on default-branch pushes.
+
+Install the selected zizmor release on `PATH` and provide Docker for the local command.
+The workflow installs the pinned Linux executable after verifying its archive SHA-256.
+Scanner implementations remain external dependencies; repository-owned orchestration is Rust.
 
 zizmor audits local workflow and composite-action definitions for permission, injection and
 other workflow risks. Offline mode excludes checks requiring GitHub API history, such as
@@ -124,7 +128,9 @@ The debug test job explicitly prepares verified upstream inputs, builds the main
 generator, compares committed CRI/containerd clients, checks published Kubernetes binding
 provenance, and compares independent official schema/protocol inventories. These operations
 are CI checks and explicit refresh commands; ordinary Rust builds still consume committed
-clients. Python regressions run afterward, so prepared-parser integration tests execute.
+clients. Rust tooling regressions run with workspace tests. The prepared-parser integration test
+runs explicitly after input preparation against the verified compiler. Clippy CI also enforces
+the repository policy rejecting Python sources, packaging and interpreter invocations.
 
 Prepared inputs have a manifest/OS/architecture cache key. Every restored byte is reverified;
 only successful default-branch push jobs save caches. Cold caches download the same pinned

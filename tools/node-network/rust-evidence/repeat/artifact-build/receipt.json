@@ -1,0 +1,80 @@
+{
+  "artifact_sha256": "cd8554b570729b75d2e3dfea4fa8219ccc82f8a8cd54582ccc14d14c7f209483",
+  "build_command": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=9561fb570c84c3b6f3045e5a3e4bd59b",
+    "-t",
+    "rubix-node-network-9561fb570c84c3b6f3045e5a3e4bd59b",
+    "-f",
+    "/tmp/rubix-node-context-gp2XrK/tools/node-network/Build.Dockerfile",
+    "/tmp/rubix-node-context-gp2XrK"
+  ],
+  "build_sha256": "1c6c1de03ed2c2229ef732b34b9cb777dbf60954adad7c96d11f4747b9b052f1",
+  "builder_sha256": {
+    "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+    "prepare_host_network": "e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca"
+  },
+  "cancelled": false,
+  "cleanup_errors": [],
+  "commands": {
+    "build": "9deb9d00bb1142f8c1b9ac34f6288d95144bead363aa9424e248be5d7ca315c4",
+    "cleanup-1": "383df1f75931c3cb61ae5b50bee55a7b53ee31b83a13a104e9db013abaee849f",
+    "cleanup-2": "45a4e38e6a33f17d182a370b73ba7876e5f37184780ed6c1ff5d566bb564f724",
+    "cleanup-3": "6bc83ef9863747140942aebbb8bb6ccf86480e597c8769f82e78a8d1ba46cb45",
+    "cleanup-4": "889eac10c3b1310e48f2e76701f2dabfd3696b93e4ec280215efad66bda5542e",
+    "cleanup-5": "88640957c93f3e67041daefab84f9189cc02f23302cea2b01bd4f14f10fdce80",
+    "copy-host_network": "d0226be2c59839d872efffcbb969cd6a1e8e9a48e9df94060ea2ab3832516f76",
+    "copy-prepare_host_network": "28524ba12a184374289c6f840b2fc9b14da14fc31a5c544ef83627446c24261b",
+    "create": "b2e22a2b7af6983777d70368ff53867cd914573293f74dd0f0ceb702789f348f",
+    "image-inspect": "95a35a753a0d8d82cb9fbcc0c40d43fb937e52f7f80700ac4b158e5e0a2dbb53",
+    "test": "4220cbe5395c445053f2f187545200d77a6b4c47115cab58c424156d45df3e47"
+  },
+  "containers": [
+    "rubix-node-network-9561fb570c84c3b6f3045e5a3e4bd59b-artifact",
+    "rubix-node-network-9561fb570c84c3b6f3045e5a3e4bd59b-test"
+  ],
+  "dirty": false,
+  "errors": [],
+  "family": "network",
+  "image_id": "sha256:77089a12bf4741e58261e37b92a8fc2e520dc0122f395e4ffa6f2294e551ed18",
+  "nonce": "9561fb570c84c3b6f3045e5a3e4bd59b",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "c582f8427b1585c3c9883268034cda09e8485284",
+  "runs": {
+    "test": {
+      "binary_sha256": {
+        "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+        "prepare_host_network": "e9d43d8f1105c4a22547e5e3bcb1264b80f65127cd5efb8c04192ad70930ddca"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-network-9561fb570c84c3b6f3045e5a3e4bd59b-test",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=64",
+        "--memory=512m",
+        "--cpus=2",
+        "rubix-node-network-9561fb570c84c3b6f3045e5a3e4bd59b",
+        "/bin/sh",
+        "-c",
+        "sha256sum /out/prepare_host_network /out/host_network && /out/host_network && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_host_network --disable-ipv6 --no-container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_host_network --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
+      ],
+      "raw_sha256": "5226a78d377272fd445ffeaa4d55a0efea0eb7671ce5557fc1f7eefa1c67485d",
+      "records": {
+        "safe_tests_and_cli": true
+      }
+    }
+  },
+  "schema": 3,
+  "source_sha256": "ce7f91a94a7eefb7b453b4508a4ca054f9f5522b9b9b3cf3d9e87177f8e89480",
+  "tag": "rubix-node-network-9561fb570c84c3b6f3045e5a3e4bd59b"
+}

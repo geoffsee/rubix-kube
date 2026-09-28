@@ -12,7 +12,8 @@ backslash continuations. Escaped CR, CRLF, tab, NUL and BEL provide control case
 files, and records verified empty owned Docker inventories. The vendored source
 was unchanged; harnesses were added only to the disposable fetched source copy.
 
-Reproduce with `python3 capture.py --output /tmp/<unique-owned-output>` from this
-directory. It requires Docker and network access while building, then executes
+Reproduce from the repository root with
+`cargo run --locked -p rubix-dev --bin rubix-fixture -- capture config-linebreak --output /tmp/unique-linebreak`.
+It requires Docker and network access while building, then executes
 without network, host mounts or capabilities, on a read-only filesystem with a
 bounded temporary filesystem. This tests configuration parsing, not service startup.

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "docker",
+    "create",
+    "--name",
+    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc-artifact",
+    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc",
+    "/bin/true"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22637,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-2seqoG",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "c7ebf4de3115b9c2d7c9cc3ee04838b9dfdc68b9a3c3aaebba8065fcb303d57e",
+  "timeout": false
+}

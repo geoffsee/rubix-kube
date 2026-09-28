@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "rm",
+    "--force",
+    "rubix-resources-pki-fttffl"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 21957,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ez0Abo",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "5f3e74f2335d53020969f1b2560e9170fabc5b41fb03ea7c3fae76c5743c422c",
+  "timeout": false
+}

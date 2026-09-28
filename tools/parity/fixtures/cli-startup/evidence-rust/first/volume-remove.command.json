@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "volume",
+    "rm",
+    "rubix-parity-a2a62ff5e6460c4334ca1991-evidence"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22849,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-KWFRb6",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "e1bbf34bf1e4c32bf1413db1fdf778e7c3365f9c5aa5f0df7fe2c4e0d3fe93f9",
+  "timeout": false
+}

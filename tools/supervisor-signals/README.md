@@ -1,80 +1,53 @@
 # Unix signal bridge qualification
 
-This fixture runs real Unix signal tests in a disposable Linux arm64 container.
-It retains twenty repetitions of the cooperative task cases (160 signal cases and
-20 fatal-worker cases). A separate test exercises the production signal bridge and
-owned-process adapter together: twenty repetitions each of full startup, partial
-startup and fatal readiness failure, plus one real 30-second TERM-ignore escalation.
-Full and partial cases alternate SIGINT/SIGTERM and send a second mixed signal.
-A separate owned sentinel stays alive throughout; external-service stop must leave
-its heartbeat advancing. Every launched owner is joined and its leader reaped.
-A final PID-namespace inventory rejects residue. This does not qualify escaped
-process groups, a cluster, or a hard kernel shutdown deadline.
-See `crates/rubix-supervisor/SIGNALS.md` for interface and handler limitations.
+The Rust fixture qualifies real signals exclusively in owned disposable Linux
+containers. Each of two runs retains twenty cooperative repetitions (160 signal
+and 20 fatal-worker cases), twenty repetitions each of full/partial/fatal owned
+startup and one actual 30-second TERM-ignore escalation. A separate sentinel must
+survive external-service stop with advancing heartbeat. Every owner is joined and
+leader reaped; namespace inventory rejects residue. This is no cluster, escaped
+daemon or hard kernel shutdown guarantee. See `crates/rubix-supervisor/SIGNALS.md`.
 
-Run from the repository root with Docker available:
+After reviewing and committing source inputs:
 
 ```sh
-python3 tools/supervisor-signals/capture.py --output /tmp/rubix-signals-new-capture
-python3 -m unittest discover -s tools/supervisor-signals -p 'test_*.py'
-python3 -O -m unittest discover -s tools/supervisor-signals -p 'test_*.py'
-python3 -O tools/supervisor-signals/verify.py
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals capture /tmp/unique-signal-capture
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals verify /tmp/unique-signal-capture
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- signals verify tools/supervisor-signals/rust-evidence --relevant-current
 ```
 
-The build uses a digest-pinned official Rust image and a pinned Python runtime image and locked Cargo resolution.
-The runtime container has no network or host mounts, runs as UID 65532, drops all
-capabilities, and has a read-only filesystem, 16 MiB temporary filesystem, 512 MiB
-memory, two CPUs and 128 process limit, with an init reaper. Build output is bounded to 16 MiB and 30
-minutes; runtime output is bounded to 1 MiB and three minutes. Metadata and each
-cleanup command have separate 30-second bounds. The test's line reader consumes a
-trusted finite fixture; it does not offer hostile-output containment. The outer
-capture helper enforces its byte limit while streaming.
+Rust signal streams and synthetic process children replace the interpreter fixture.
+Existing production tests still require the full-startup coordinator gate, partial
+and fatal dependent absence, exact primary adapter error and explicit Forced
+cleanup for escalation. Independent expectations require exact ordered 61 owner
+records, both completion summaries and every measured sample at or below 35,000 ms;
+forced escalation must also take at least 29 seconds. Wider production watchdogs
+retain diagnostic failures and cannot replace this engineering gate.
 
-The committed `evidence/` contains the raw build/run logs, full historical copied
-source inventory and cleanup receipt. `provenance.json` binds their exact file set
-and hashes. The receipt records the actual test binary hash, image identity,
-platform, source revision and source/helper hashes. Its
-`uncommitted_implementation: true` accurately records that the added signal code
-was tested before its implementation commit; copied source hashes identify those
-bytes. Cooperative child output is summarized by the original test, not individually
-retained. The combined test emits all 61 owner results, timing and completion flags. Failure output propagates to the bounded run log.
+Both supervisor test binaries and the fixture are nonce-bound to builder hashes and
+actual runtime hashes. Source inventory binds all workspace manifests, lock/toolchain,
+Cargo configuration, supervisor Rust inputs and Rust maintenance implementation.
+Default verification compares every copied input; `--relevant-current` permits
+unrelated historical source changes while preserving exact relevant inventories.
+Every raw log, command and command settlement record is hash-bound. The verifier
+requires exactly 20 evidence files: the capture receipt, source inventory, and
+raw log plus settled receipt for each of nine commands (build, two runs, image
+inspection, and five cleanup commands). Old four-file provenance remains
+historical and must never be relabeled as new Rust execution.
 
-Verification reads the real historical evidence and independently requires its
-expected repetition counts, completion marker, binary digest and empty cleanup
-inventories. It binds current supervisor Rust inputs, all copied Cargo manifests,
-the complete lockfile, toolchain and Cargo config to the tested bytes. Changes to
-these inputs require recapture, including dependency changes elsewhere in the
-workspace. Unrelated implementation source remains visible in the historical
-inventory without requiring current equality. Documentation added after capture
-is not presented as an input to the captured binary. Mutation tests reject changed
-counts, cleanup status, raw completion/binary claims, dependency/source drift and
-nonfinite or duplicate-key JSON; the tests also exercise receipt publication when
-every Docker cleanup/inspection fails. Checks remain active under `python -O`.
+The pinned Rust container runs as UID 65532 with no network or host mounts,
+read-only root, no capabilities, init reaping, 16 MiB temporary storage, 512 MiB
+memory, two CPUs and 128 PIDs. Build bounds are 1800 seconds/16 MiB; each run is
+180 seconds/1 MiB. Control commands have independent 30-second/64 KiB bounds.
+Cancellation, incomplete settlement and failed cleanup cannot publish success;
+unknown settlement retains context and stops further actions. Only owned resources
+are removed. The source-bound `kill.sh` preserves the shell builtin signal helper.
 
-`verify.py` validates trusted repository evidence; it does not authenticate an
-external publisher or execute artifacts. To refresh evidence, review a new
-successful capture, replace the four evidence files and regenerate the four-file
-SHA-256 provenance inventory. Never rewrite a failed receipt as success.
+Historical evidence remains unchanged. The mandatory schema-3 gate requires
+a separate fresh Rust capture. Run `cargo test -p rubix-dev
+--bin rubix-supervisor-fixture --locked`; mutation checks remain active in release.
+Never rewrite failed receipts or generate expected semantics from captured results.
 
-The combined cases reuse `tools/supervisor-process/fixture.py` unchanged. The receipt
-binds both executed binaries; the source inventory binds the shared fixture and
-namespace helper. Force timing is checked between 29 and 38 seconds as an observed
-scheduler tolerance, not a guarantee that every kernel will finish cleanup.
-Both process and signal evidence must be refreshed after supervisor source, tests,
-features or dependency inputs change. Runtime signal delivery occurs only inside
-the disposable container; ordinary host test discovery leaves the combined test ignored.
-
-Full-startup signal delivery waits for a one-shot graph gate that depends on the
-owned dependent process: this proves the coordinator accepted its readiness,
-not merely that the Python fixture wrote a marker. Partial and fatal cases prove
-that gate and dependent owner never start. Fatal cases preserve the exact primary
-adapter error; force cases require the explicit `Forced` cleanup record rather
-than claiming ordinary graceful cleanup. The slim runtime's source-bound `kill.sh`
-invokes the shell's kill builtin for the unchanged original signal fixture.
-
-The ordinary Python acceptance tests separately require every recorded elapsed
-sample to be at most 35,000 ms, and reject a 35,001 ms mutation. They first verify
-the frozen evidence and its current relevant inputs. The 37/38-second Rust
-watchdogs and the structural verifier's wider timing tolerance retain overdue
-results for diagnosis; they do not replace this stricter engineering gate.
-This qualifies the observed samples, not a universal kernel cleanup bound.
+Publish fresh Rust captures under `rust-evidence/`. Keep historical `evidence/`
+and its provenance unchanged. The mandatory current-capture gate reads only
+`rust-evidence/`; source inventories exclude both historical and current outputs.

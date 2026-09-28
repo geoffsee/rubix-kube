@@ -1,4 +1,4 @@
-//! Internal code generator. `upstream.py` verifies all inputs before invoking it.
+//! Internal code generator. `rubix-upstream` verifies all inputs before invoking it.
 
 use std::{error::Error, path::PathBuf};
 

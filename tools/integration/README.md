@@ -1,11 +1,16 @@
 # Live integration evidence consumption
 
+Rust maintenance binaries replace the former script entry points. Retained captures remain
+historical: current-source validation requires new schema-2 Rust receipts, both source
+inventories, raw command receipts and confirmed cleanup. API and boundary qualification
+tests intentionally fail until fresh `evidence-rust` captures are published.
+
 Run the official API-server/Kine fixture in a new disposable container, validate its
 fresh output, then point the published-binding Rust tests at that same capture:
 
 ```sh
-python3 tools/api-json/run.py --output "$RUNNER_TEMP/api-json-capture"
-python3 tools/integration/check_api_capture.py "$RUNNER_TEMP/api-json-capture"
+cargo run --locked -p rubix-dev --bin rubix-api-json -- capture --output "$RUNNER_TEMP/api-json-capture"
+cargo run --locked -p rubix-dev --bin rubix-api-json -- check-capture "$RUNNER_TEMP/api-json-capture"
 RUBIX_API_JSON_CAPTURE_DIR="$RUNNER_TEMP/api-json-capture" \
   cargo test -p rubix-upstream-codegen --test api_json --locked
 ```
@@ -16,15 +21,15 @@ new temporary path. Follow `tools/api-json/README.md` for the isolated Docker bo
 preparation/network requirements and existing platform limitations. This helper starts
 no processes or services and changes no fixture, capture, cache or expectation files.
 
-`check_api_capture.py CAPTURE_DIR` requires `fixtures.json`, `result.json` and
+`rubix-api-json check-capture CAPTURE_DIR` requires `fixtures.json`, `result.json` and
 `runner-result.json`. It checks independent semantic assertions and strict, complete,
 type-sensitive equality against the reviewed frozen fixture, whose content digest must
 match its committed provenance. It also checks successful raw result and runner status,
 exact current harness/source hashes in both receipts, component pins, raw HTTP parsing,
 raw-to-normalized resource/watch consistency, API authentication/RBAC rejection, datastore
 TLS rejection reasons and clean component shutdown. Missing, duplicate-key, malformed or
-nonfinite JSON fails. Each input JSON is bounded to 8MiB. Checks use explicit exceptions
-and remain active under `python -O`. The CLI returns nonzero on failure and does not print
+nonfinite JSON fails. Each input JSON is bounded to 8MiB. Checks use explicit Rust errors
+and remain active in release builds. The CLI returns nonzero on failure and does not print
 raw responses, TLS diagnostics or credential-like input bytes.
 
 Runner exit zero with no errors is the current runner's evidence that Docker cleanup and
@@ -38,14 +43,14 @@ checks existing evidence; it does not independently re-query Docker or recapture
 continue using the committed frozen fixture and raw capture. When present, both JSON inputs
 come from that directory. A missing or malformed explicitly selected input fails with its
 path; it never silently falls back to historical evidence. This selection does not itself
-perform the Python provenance checks, so live CI must execute the helper first.
+perform the complete capture provenance checks, so live CI must execute the helper first.
 
 Local verification used the real corrected r7 capture at
 `/tmp/rubix-api-json-20260927-r7`: the helper passed and all eight Rust tests passed using
-that capture. All eight also passed with the frozen fallback. Twelve Python regressions
+that capture. All eight also passed with the frozen fallback. The historical twelve verifier regressions
 cover current source hashes, frozen provenance, full-document differences beyond selected
 semantic anchors, raw boolean/integer mismatches, raw watch drift, failed shutdown/TLS,
-missing data and optimized-mode failure. An explicitly selected empty capture directory
+missing data and optimized-mode failure. Rust mutation and CLI tests retain these checks and add raw command-log, process-settlement and cancellation bindings. An explicitly selected empty capture directory
 was also rejected by the Rust test with a clear input-path error.
 
 This gate retains the published binding's documented limits: typed initial CRD null

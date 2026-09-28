@@ -11,19 +11,7 @@ runs:
     - name: Install rust-toolchain.toml
       shell: bash
       run: |
-        python3 - <<'PY'
-        import subprocess
-        import tomllib
-        with open("rust-toolchain.toml", "rb") as source:
-            toolchain = tomllib.load(source)["toolchain"]
-        args = ["rustup", "toolchain", "install", toolchain["channel"],
-                "--profile", toolchain.get("profile", "minimal")]
-        for component in toolchain.get("components", []):
-            args.extend(["--component", component])
-        for target in toolchain.get("targets", []):
-            args.extend(["--target", target])
-        subprocess.run(args, check=True)
-        PY
+        rustup toolchain install --no-self-update
         rustc --version --verbose
     - name: Restore Rust dependencies
       if: inputs.cache-key != ''

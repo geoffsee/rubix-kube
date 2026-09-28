@@ -1,0 +1,28 @@
+{
+  "fixture_sha256": {
+    "build.command.json": "f0b3a8403c5f3a1f84a10fe75504d3c7945ee1c6c4b1da0dcce6643f43630fae",
+    "build.log": "cd99bc9a105fcde817bcde877d6c2920806988b641f7e1db298a1502cb14e967",
+    "cleanup-1.command.json": "058b6137752cc408e69b7bef78ece9ab57fbd2eb9a5010d3072fd00bed8ee193",
+    "cleanup-1.log": "a61a5e49688ef5d8468794c4b971bf0ee15429a1809d0ff4e615847756b877f4",
+    "cleanup-2.command.json": "6ef40482059939aa5f8fea577b996da67159ae4873008b9e50d774d7136338dd",
+    "cleanup-2.log": "03f78a08128c03a840b3ff38337d45e78af425e25ce168f9708e8e94449e1c7b",
+    "cleanup-3.command.json": "6f235257f5dcd6587a5609b18b65610f7c5edaa2b148c3b1e8843009099ff6c3",
+    "cleanup-3.log": "999765eb0ca56f7e2e17381e554956f169a4f9da71a80be2343206e8b8e7f8ab",
+    "cleanup-4.command.json": "14bb2fe41d101e01b34037ac0d902b22bd64337fcc3810ea321b59410e3cf846",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-5.command.json": "4fb8cf1086bce1909169896efacbd232804013f0fcf2aa8a41533a226a7addb5",
+    "cleanup-5.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-6.command.json": "7f7789a5dd212a470c85b22460123a2fa3d983b76d30b267e99d68473b97f6b6",
+    "cleanup-6.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "config-0.command.json": "fe6b1bdf1b54b07132d75f332df3c6543c04828713eeefe1929483cf0681a1df",
+    "config-0.log": "f414d4ab6de67df206a7653212963c0f018900f5038051a0795b092c38e9c506",
+    "config-1.command.json": "f8bb0fb705f60312a386e114780415f326e6227233305b86de92046f115e8221",
+    "config-1.log": "f414d4ab6de67df206a7653212963c0f018900f5038051a0795b092c38e9c506",
+    "config.json": "d5d209badd508183620bb9ec6408520f6615793587044cc80d4a307c8ad50d65",
+    "image-inspect.command.json": "5b0837191e854f430bb51e163a634f8290bba0c337e5359de8ebb63af95e1451",
+    "image-inspect.log": "16bdbf62ae22212a9ff9fd6ef18da264575408528b8555d3e34eb6cc0a5e895f",
+    "receipt.json": "647482d0e8c9dfc93dd62df41696c0f18bd394196b98db7283d7f3082a0e845c"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "schema_version": 2
+}

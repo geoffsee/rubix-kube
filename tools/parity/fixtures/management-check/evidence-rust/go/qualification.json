@@ -1,0 +1,31 @@
+{
+  "cancelled": false,
+  "files": {
+    "build.command.json": "00d03261eefecffa0d1ef8e497a1975939d215828847bdae122fd72083c108b1",
+    "build.log": "7ecb0be133c018d58fe509d9f84a36279193aa11c02b909aac3ecacba6a7e723",
+    "cleanup-1.command.json": "95f1ce9b3309824876425569702141bd5ca35afcf8812eabb3501e96332f53f1",
+    "cleanup-1.log": "57d9f5563e3f4b15928a3be02cf55c3e58d937db1e8cfc73f9f3a07afb7f526b",
+    "cleanup-2.command.json": "a6fdf71c0bf3bff776e09136e0bb3535b961f9e3789113c96367e5d0854ec2e7",
+    "cleanup-2.log": "b5e7ab6e89768c76f45c2fb78e57e8572c04fa8c4c03b75d4dac86cdd515ed82",
+    "cleanup-3.command.json": "5828606b2adc0089503cc87ee4c98d4e5e9cab430254da15050827f95b77f815",
+    "cleanup-3.log": "0da60e599da82cd0a0a1643113469dc1ca74178340e679a208efe71c33356be4",
+    "cleanup-4.command.json": "f0d3c371db24e38d3713491f4f8f832762c6f8da155cb2a30293097ad2ef113e",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-5.command.json": "d7917990ad4a1430661b1922508db20058f73cff1f871c28ae84b11b3ccc4380",
+    "cleanup-5.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-6.command.json": "04bc68d3373c17622f7d4078e4da37b5c611ccf1ced759838a0c416969beb75b",
+    "cleanup-6.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "copy.command.json": "90fc1ee1729b76d056583a599f5ffd88da3468cf07b19e93bdee78cc280587a1",
+    "copy.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image.command.json": "958b711260e048e79ec805103ba5cb407353588d8fbdfe6702ae5868038f9248",
+    "image.log": "1ba1c27b2d90cc6fe89524ba761cc5f47d38570c087071329be29f15672a4ec2",
+    "receipt.json": "e6d7dbd461076b77cd7e7a7dbcade8d5c2e2b9b1c7b1b73c1f0d556a322cdaab",
+    "run0.command.json": "702f7745880583b232087ac47a5e23449d87cebb0706730b9f6b203520d38d46",
+    "run0.log": "51beb733fd8ae172779b4c2ffc3fc65afb7316ee7e9bcbbfa03c6c391b4f6de0",
+    "run1.command.json": "ce08f1d969a1dfd4419652a49de63f6b4418dba993678eec16ec1d91684459be",
+    "run1.log": "51beb733fd8ae172779b4c2ffc3fc65afb7316ee7e9bcbbfa03c6c391b4f6de0",
+    "source-hashes.json": "ff6d7379d998e92d0e306847394327393672cc7cac3b2c445bc91bb1a6e639cb",
+    "source.sha256": "27bf9bb9f8641db9035ad2fe8e9478be32073ca38e8300fe1a9efde1785dfa49"
+  },
+  "schema_version": 2
+}

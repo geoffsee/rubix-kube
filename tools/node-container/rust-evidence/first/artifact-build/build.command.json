@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=50b3739f6333c4b7109199a96597a0bc",
+    "-t",
+    "rubix-node-container-50b3739f6333c4b7109199a96597a0bc",
+    "-f",
+    "/tmp/rubix-node-context-Xva4Mp/tools/node-container/Build.Dockerfile",
+    "/tmp/rubix-node-context-Xva4Mp"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 22406,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-4tx3CT",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "f14372fb39f39d4e147c1a474d7b5d819e3019fc28e631eb377b68cdb2966ab5",
+  "timeout": false
+}

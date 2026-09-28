@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "curl",
+    "--fail",
+    "--location",
+    "--proto",
+    "=https",
+    "--max-time",
+    "30",
+    "--max-filesize",
+    "16777216",
+    "--output",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-gL8334/musl-1.2.6-r2.apk",
+    "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/musl-1.2.6-r2.apk"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 21222,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gMJr2O",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "876946c58a0d1682d02b64aed6504c5dd6971dde254a7a5e1322f20c48ad2e77",
+  "timeout": false
+}

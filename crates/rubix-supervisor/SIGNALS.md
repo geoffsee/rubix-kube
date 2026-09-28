@@ -64,7 +64,7 @@ cargo test -p rubix-supervisor --locked --lib
 cargo test -p rubix-supervisor --locked --test signals -- --nocapture
 cargo test -p rubix-supervisor --locked --release
 cargo clippy -p rubix-supervisor --locked --all-targets --all-features -- -D warnings
-python3 tools/supervisor-signals/capture.py --output /tmp/new-signal-capture
+cargo run --locked -p rubix-dev --bin rubix-supervisor-fixture -- signals capture /tmp/new-signal-capture
 ```
 
 Three injected tests check install failure, unexpected listener closure and repeated

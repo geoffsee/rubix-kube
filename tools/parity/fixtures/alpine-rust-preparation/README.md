@@ -1,5 +1,10 @@
 # Actual Rust preparation in an owned Alpine guest
 
+The capture and verifier now run in Rust. Historical `evidence/` receipts remain
+unchanged. Current schema 2 qualification requires fresh `evidence-rust/first` and
+`evidence-rust/repeat`, plus a current Rust prerequisite artifact-build receipt.
+Mandatory tests fail until those independently checked captures exist.
+
 This sibling fixture preserves the frozen Go baseline evidence. It runs the actual
 static `rubixctl` candidate through the complete `check` command, including Linux
 host discovery, ordered policy, preparation, reobservation and port probes. It uses
@@ -45,15 +50,29 @@ the reviewed Alpine boundary, with a180-second guest script limit and40-second
 individual CLI limit. The production command's own deadlines remain active.
 
 ```sh
-python3 tools/parity/fixtures/alpine-rust-preparation/capture.py \
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine-rust capture \
   --allow-privileged-vm --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache \
-  --artifact-directory /tmp/rubix-decode-integrated-prerequisite-20260927-r1 \
+  --artifact-directory /tmp/current-verified-prerequisite \
+  --baseline-directory /tmp/current-verified-alpine-first \
   --output /tmp/alpine-rust-fresh
-python3 tools/parity/fixtures/alpine-rust-preparation/verify.py
-python3 -m unittest discover -s tools/parity/fixtures/alpine-rust-preparation
-python3 -O -m unittest discover -s tools/parity/fixtures/alpine-rust-preparation
+cargo run --locked -p rubix-dev --bin rubix-platform-fixture -- alpine-rust verify \
+  --directory /tmp/alpine-rust-fresh --baseline-directory /tmp/current-verified-alpine-first
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture
+cargo test --locked -p rubix-dev --bin rubix-platform-fixture --release
 ```
+
+The prerequisite capture must pass its complete current-source verification and
+its artifact revision must match the guest capture revision. Artifact bytes, size,
+musl target and the verified Docker build recipe remain pinned. An old build
+revision is not a substitute for a fresh qualified build.
+
+The explicit baseline directory is fully verified before VM creation and again
+before successful publication. Its exact `result.json` digest is bound in the
+Rust guest report. This permits qualification outside the source tree. Read-only
+verification accepts the same external input; without the option it uses the
+published baseline at `alpine-preparation/evidence-rust/first`. Repeated Rust
+captures should use the same verified first baseline.
 
 This is one pinned Alpine/aarch64/musl/OpenRC kernel environment. It does not close
 whole E05.02, qualify other distributions/ABIs, establish runtime/API readiness,

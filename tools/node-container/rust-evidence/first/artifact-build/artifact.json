@@ -1,0 +1,22 @@
+{
+  "files": {
+    "host_network": {
+      "sha256": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+      "size": 13749896
+    },
+    "host_preparation": {
+      "sha256": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
+      "size": 13540288
+    },
+    "prepare_node_host": {
+      "sha256": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+      "size": 13156744
+    },
+    "rubix_kube": {
+      "sha256": "06e8bc7b0a10267aa1e245c1bad8d6ed94cac9446eb83e56d2920c396e40c379",
+      "size": 7169624
+    }
+  },
+  "revision": "c582f8427b1585c3c9883268034cda09e8485284",
+  "target": "aarch64-unknown-linux-musl"
+}

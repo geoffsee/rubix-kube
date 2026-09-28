@@ -24,9 +24,6 @@ jobs:
             # No 2026.1 release image exists. Root lets rustup install rust-toolchain.toml.
             image: jetbrains/qodana-rust:2026.1-eap
             extra-args: --user root
-          - linter: qodana-python
-            image: jetbrains/qodana-python:2026.1
-            extra-args: ""
           - linter: qodana-go
             image: jetbrains/qodana-go:2026.1
             extra-args: ""
