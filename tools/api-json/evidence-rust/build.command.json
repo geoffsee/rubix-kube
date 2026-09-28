@@ -4,10 +4,10 @@
     "build",
     "--progress=plain",
     "--tag",
-    "rubix-api-json-5yq84o",
+    "rubix-api-json-hul4cl",
     "-f",
-    "/tmp/rubix-component-context-duiF4Q/tools/api-json/Dockerfile",
-    "/tmp/rubix-component-context-duiF4Q"
+    "/tmp/rubix-component-context-ZRZ3c3/tools/api-json/Dockerfile",
+    "/tmp/rubix-component-context-ZRZ3c3"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -16,11 +16,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 22192,
+  "owned_pid": 41693,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-8MN5QN",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-7jCJry",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "448f8b30768f6eff62327f5d7626a4e96664c10ccdeca875a77672a4c6df3405",
+  "stdout_sha256": "13e3c17a92bc003e680aa011430d47fb648b6349c4685046dd17c2a7a4a0cb2e",
   "timeout": false
 }

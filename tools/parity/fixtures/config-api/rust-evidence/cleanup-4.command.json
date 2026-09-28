@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-api-datgje-configapi-1"
+    "rubix-config-api-zetzdk-configapi-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 21281,
+  "owned_pid": 40342,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Wgw1Nm",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-eeAdRV",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "4ebbedd7ea64417d4f31dcb7fcf4910298364739d54a01500d1f98017b68189a",
+  "stdout_sha256": "bb386d01bd5aa3a29aabee190b8615727e695d5f74cd6b2f86a2d6ab806553a0",
   "timeout": false
 }

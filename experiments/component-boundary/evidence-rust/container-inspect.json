@@ -1,7 +1,7 @@
 [
     {
-        "Id": "e5b9b84f5d8955da15ab490722b43128de40033ba572f4a7f9e7b98ee7f8c538",
-        "Created": "2026-09-28T08:33:40.023970752Z",
+        "Id": "1a65923f6d198996ceaadf4d420b4d8509d62a0785d7555e823f74ba998efd77",
+        "Created": "2026-09-28T15:33:06.896749888Z",
         "Path": "/fixture",
         "Args": [
             "runtime"
@@ -16,15 +16,15 @@
             "Pid": 0,
             "ExitCode": 0,
             "Error": "",
-            "StartedAt": "2026-09-28T08:33:40.28863596Z",
-            "FinishedAt": "2026-09-28T08:33:59.213457094Z"
+            "StartedAt": "2026-09-28T15:33:07.128064305Z",
+            "FinishedAt": "2026-09-28T15:33:24.786923257Z"
         },
-        "Image": "sha256:c283ef064078699d8a5a23e234a7765cc40ca51ebfe6c2082c3cefc647b9c3e1",
-        "ResolvConfPath": "/var/lib/docker/containers/e5b9b84f5d8955da15ab490722b43128de40033ba572f4a7f9e7b98ee7f8c538/resolv.conf",
-        "HostnamePath": "/var/lib/docker/containers/e5b9b84f5d8955da15ab490722b43128de40033ba572f4a7f9e7b98ee7f8c538/hostname",
-        "HostsPath": "/var/lib/docker/containers/e5b9b84f5d8955da15ab490722b43128de40033ba572f4a7f9e7b98ee7f8c538/hosts",
-        "LogPath": "/var/lib/docker/containers/e5b9b84f5d8955da15ab490722b43128de40033ba572f4a7f9e7b98ee7f8c538/e5b9b84f5d8955da15ab490722b43128de40033ba572f4a7f9e7b98ee7f8c538-json.log",
-        "Name": "/rubix-component-boundary-oxy0jo-capture",
+        "Image": "sha256:de63b80480ad345ae1399037d7e546353a9546ac6365d2a92cf1d6c1daea8f6b",
+        "ResolvConfPath": "/var/lib/docker/containers/1a65923f6d198996ceaadf4d420b4d8509d62a0785d7555e823f74ba998efd77/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/1a65923f6d198996ceaadf4d420b4d8509d62a0785d7555e823f74ba998efd77/hostname",
+        "HostsPath": "/var/lib/docker/containers/1a65923f6d198996ceaadf4d420b4d8509d62a0785d7555e823f74ba998efd77/hosts",
+        "LogPath": "/var/lib/docker/containers/1a65923f6d198996ceaadf4d420b4d8509d62a0785d7555e823f74ba998efd77/1a65923f6d198996ceaadf4d420b4d8509d62a0785d7555e823f74ba998efd77-json.log",
+        "Name": "/rubix-component-boundary-acbbmc-capture",
         "RestartCount": 0,
         "Driver": "overlayfs",
         "Platform": "linux",
@@ -138,7 +138,7 @@
         },
         "Mounts": [],
         "Config": {
-            "Hostname": "e5b9b84f5d89",
+            "Hostname": "1a65923f6d19",
             "Domainname": "",
             "User": "65532:65532",
             "AttachStdin": false,
@@ -156,7 +156,7 @@
                 "RUBIX_DISPOSABLE_FIXTURE=component-boundary"
             ],
             "Cmd": null,
-            "Image": "rubix-component-boundary-oxy0jo",
+            "Image": "rubix-component-boundary-acbbmc",
             "Volumes": null,
             "WorkingDir": "/experiment",
             "Entrypoint": [
@@ -193,7 +193,7 @@
         },
         "ImageManifestDescriptor": {
             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "digest": "sha256:99f6fc2417e6d85e7ecab656bef59547f084b1002270d10e5b718d947b206541",
+            "digest": "sha256:d2f74b428ff31902dae1a31b0aec88d11adcf820616e12522e3c66595208116a",
             "size": 2400,
             "platform": {
                 "architecture": "arm64",

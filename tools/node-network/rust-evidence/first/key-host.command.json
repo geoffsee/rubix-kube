@@ -9,7 +9,7 @@
     "-C",
     "rubix-alpine-fixture-host",
     "-f",
-    "/tmp/rubix-vm-q9Cr1L/host"
+    "/tmp/rubix-vm-1BUVVZ/host"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -18,9 +18,9 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 22132,
+  "owned_pid": 42083,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-NxRo18",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-4iyFvq",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

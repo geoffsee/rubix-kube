@@ -1,1 +1,1 @@
-{"level":"fatal","error":"KUBESOLO_DEBUG: expected a boolean, got \"invalid\"","time":"2026-09-28T08:34:03Z","message":"failed to create service. check the logs for more information. exiting..."}
+{"level":"fatal","error":"KUBESOLO_DEBUG: expected a boolean, got \"invalid\"","time":"2026-09-28T15:33:13Z","message":"failed to create service. check the logs for more information. exiting..."}

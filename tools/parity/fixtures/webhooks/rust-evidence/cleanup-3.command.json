@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-webhooks-flubrm"
+    "rubix-webhooks-sa2xaq"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 23171,
+  "owned_pid": 56595,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-j5bs8x",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-7dRuqW",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "f5ee6e5aba89516317d35c80a89cc1c9c30c6f30fff0634e4c525e7d45ed00e7",
+  "stdout_sha256": "bb3099d67e9b834465a566a377e6b2bb024c9c7e8651d33452e76433d531fb97",
   "timeout": false
 }

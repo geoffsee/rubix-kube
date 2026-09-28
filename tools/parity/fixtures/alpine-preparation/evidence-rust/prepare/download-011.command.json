@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-gL8334/libnftnl-1.3.1-r0.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-aZkwVH/libnftnl-1.3.1-r0.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libnftnl-1.3.1-r0.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 21218,
+  "owned_pid": 40190,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-lx1VvN",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-R864gN",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "8f9de6f700f697083e73261b370155d1cea6af7b376557ffa09aa49e485fbd59",
+  "stdout_sha256": "838105802e3a3a77efed859d629a1e0afb6fb5ca9c19284fcd005b05bf953c09",
   "timeout": false
 }

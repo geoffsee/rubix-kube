@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-official-defaults-92oyfb-run-0:/out/modules.sha256",
-    "/private/tmp/rubix-rust-qualification-c582f84/generic/defaults/modules.sha256"
+    "rubix-official-defaults-jt3knr-run-0:/out/modules.sha256",
+    "/private/tmp/rubix-layer-qualification-a4e5b5a/generic/defaults/modules.sha256"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 23993,
+  "owned_pid": 57454,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-IVARGl",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-9ccj8I",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

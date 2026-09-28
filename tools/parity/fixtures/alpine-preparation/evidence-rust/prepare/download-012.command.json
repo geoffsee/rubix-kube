@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-gL8334/libxtables-1.8.13-r0.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-aZkwVH/libxtables-1.8.13-r0.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libxtables-1.8.13-r0.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 21219,
+  "owned_pid": 40191,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-mTXsx9",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-PWAPXl",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "edde4d32d36875a5c33ebba6e9337e8306d862e68fb729a1cafc607debe6fe60",
+  "stdout_sha256": "259f4e077d944c6eb252692c54004873f1933c215359febd13c63ea9e670c67d",
   "timeout": false
 }

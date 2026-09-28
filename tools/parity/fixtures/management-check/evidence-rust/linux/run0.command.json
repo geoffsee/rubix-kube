@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-management-linux-kw6lyc-0",
+    "rubix-management-linux-5tlycu-0",
     "--hostname",
     "fixture",
     "--init",
@@ -26,7 +26,7 @@
     "64",
     "--tmpfs",
     "/tmp:rw,exec,nosuid,nodev,size=32m",
-    "rubix-management-linux-kw6lyc"
+    "rubix-management-linux-5tlycu"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -35,11 +35,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 22147,
+  "owned_pid": 41643,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-xJ6apK",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-GMSTlH",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "fb113d8113c0f7c1236df3916d7aa5fb3c883f6986f956392d5902f7371cb598",
+  "stdout_sha256": "f5e4172f7d42afe8d22874d2b98b309321cc49a3f30d918cae1ec0fb249089a0",
   "timeout": false
 }

@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-gL8334/iptables-1.8.13-r0.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-aZkwVH/iptables-1.8.13-r0.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/iptables-1.8.13-r0.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 21208,
+  "owned_pid": 40151,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-VUURIH",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-NwMiWq",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "2304208142f9154aeefaa4140af77c0940cc518f4eb3da19f9a8f1dcafa8b565",
+  "stdout_sha256": "fc25c3146eb46920257351f2b85858cb78a27310c463f64ea6f6a9239c1d0cb2",
   "timeout": false
 }
