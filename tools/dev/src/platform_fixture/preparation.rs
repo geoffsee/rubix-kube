@@ -396,7 +396,7 @@ pub(crate) fn verify_core(root: &Path, directory: &Path) -> Result<Value> {
             "exported size",
         )?;
     }
-    verify_commands(root, directory, &receipt, tag, container)?;
+    verify_commands(directory, &receipt, tag, container)?;
     Ok(receipt)
 }
 pub(crate) fn evidence_inventory(directory: &Path) -> Result<Value> {
@@ -444,15 +444,20 @@ pub(crate) fn verify(root: &Path, directory: &Path) -> Result<Value> {
     )?;
     verify_core(root, directory)
 }
-fn verify_commands(
-    root: &Path,
-    directory: &Path,
-    receipt: &Value,
-    tag: &str,
-    container: &str,
-) -> Result<()> {
+fn verify_commands(directory: &Path, receipt: &Value, tag: &str, container: &str) -> Result<()> {
     use super::command_evidence::verify_merged_command as command;
-    let root = root.canonicalize()?;
+    let recorded = load(&directory.join("revision.command.json"))?;
+    let original_root = recorded["argv"][2]
+        .as_str()
+        .ok_or("recorded checkout path")?;
+    require(
+        Path::new(original_root).is_absolute()
+            && !Path::new(original_root)
+                .components()
+                .any(|part| matches!(part, std::path::Component::ParentDir)),
+        "absolute original checkout without traversal",
+    )?;
+
     let output = Path::new(
         receipt["output_directory"]
             .as_str()
@@ -465,7 +470,7 @@ fn verify_commands(
         &[
             "git".into(),
             "-C".into(),
-            root.to_str().ok_or("root UTF8")?.into(),
+            original_root.into(),
             "rev-parse".into(),
             "HEAD".into(),
         ],
@@ -641,10 +646,10 @@ mod tests {
         let report =
             json!({"revision":revision,"image":image,"image_id":id,"output_directory":output});
         synthetic_commands(&root, &output, &tag, &container, &report)?;
-        verify_commands(&root, &output, &report, &tag, &container)?;
+        verify_commands(&output, &report, &tag, &container)?;
         let mut changed = report.clone();
         changed["image_id"] = json!(format!("sha256:{}", "d".repeat(64)));
-        assert!(verify_commands(&root, &output, &changed, &tag, &container).is_err());
+        assert!(verify_commands(&output, &changed, &tag, &container).is_err());
         for label in ["cleanup-3", "cleanup-4"] {
             let path = output.join(format!("{label}.command.json"));
             let original = load(&path)?;
@@ -652,13 +657,56 @@ mod tests {
             std::fs::write(output.join(format!("{label}.log")), b"leftover\n")?;
             changed["stdout_sha256"] = json!(rubix_dev::sha256(b"leftover\n"));
             crate::parity::write_json(&path, &changed, false)?;
-            assert!(verify_commands(&root, &output, &report, &tag, &container).is_err());
+            assert!(verify_commands(&output, &report, &tag, &container).is_err());
             std::fs::write(output.join(format!("{label}.log")), b"")?;
             crate::parity::write_json(&path, &original, false)?;
         }
         std::fs::remove_file(output.join("build.command.json"))?;
-        assert!(verify_commands(&root, &output, &report, &tag, &container).is_err());
+        assert!(verify_commands(&output, &report, &tag, &container).is_err());
         assert!(evidence_inventory(&output).is_err());
+        Ok(())
+    }
+    #[test]
+    fn recorded_checkout_and_output_paths_survive_evidence_relocation() -> Result<()> {
+        let original = tempfile::tempdir()?;
+        let moved = tempfile::tempdir()?;
+        let output = original.path().canonicalize()?;
+        let tag = format!("rubix-preparation-linux-{}", "a".repeat(32));
+        let container = format!("{tag}-test");
+        let image_id = format!("sha256:{}", "b".repeat(64));
+        let report = json!({"revision":"c".repeat(40),"image":[{"Id":image_id,"RepoTags":[format!("{tag}:latest")]}],"image_id":image_id,"output_directory":output});
+        // This source checkout need not exist on the machine replaying the receipt.
+        synthetic_commands(
+            Path::new("/original/build/checkout"),
+            &output,
+            &tag,
+            &container,
+            &report,
+        )?;
+        for entry in std::fs::read_dir(&output)? {
+            let entry = entry?;
+            std::fs::copy(entry.path(), moved.path().join(entry.file_name()))?;
+        }
+        verify_commands(moved.path(), &report, &tag, &container)?;
+        let path = moved.path().join("revision.command.json");
+        let receipt = load(&path)?;
+        for original_root in ["relative/checkout", "/original/../different"] {
+            let mut changed = receipt.clone();
+            changed["argv"][2] = json!(original_root);
+            crate::parity::write_json(&path, &changed, false)?;
+            assert!(verify_commands(moved.path(), &report, &tag, &container).is_err());
+        }
+        for (index, value) in [
+            (0, "not-git"),
+            (1, "--git-dir"),
+            (3, "status"),
+            (4, "other-revision"),
+        ] {
+            let mut changed = receipt.clone();
+            changed["argv"][index] = json!(value);
+            crate::parity::write_json(&path, &changed, false)?;
+            assert!(verify_commands(moved.path(), &report, &tag, &container).is_err());
+        }
         Ok(())
     }
     fn synthetic_commands(
