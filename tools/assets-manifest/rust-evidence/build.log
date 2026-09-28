@@ -1,0 +1,90 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 2.09kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#3 DONE 0.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [build 1/7] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#5 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
+#5 DONE 0.0s
+
+#6 [producer 1/6] FROM docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19
+#6 resolve docker.io/library/golang:1.26.2-bookworm@sha256:47ce5636e9936b2c5cbf708925578ef386b4f8872aec74a67bd13a627d242b19 0.0s done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 24.92MB 0.2s done
+#7 DONE 0.2s
+
+#8 [build 2/7] WORKDIR /source
+#8 CACHED
+
+#9 [producer 2/6] WORKDIR /source
+#9 CACHED
+
+#10 [producer 6/6] RUN test "$(go version)" = "go version go1.26.2 linux/arm64" && go test -timeout 20s . && go list -m -json all > /out/modules-actual.json && go build -trimpath -buildvcs=false -o /out/producer . && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#10 CACHED
+
+#11 [producer 5/6] COPY tools/assets-manifest/main.go tools/assets-manifest/main_test.go tools/assets-manifest/inputs.json ./
+#11 CACHED
+
+#12 [build 3/7] COPY . .
+#12 CACHED
+
+#13 [producer 3/6] COPY tools/assets-manifest/go.mod tools/assets-manifest/go.sum ./
+#13 CACHED
+
+#14 [producer 4/6] RUN mkdir /out && cp go.mod go.sum /out/ && go mod download all && go mod verify && cmp go.mod /out/go.mod && cmp go.sum /out/go.sum
+#14 CACHED
+
+#15 [build 4/7] COPY --from=producer /out/ /producer-build/
+#15 CACHED
+
+#16 [build 5/7] RUN cargo build -p rubix-dev --bin rubix-asset-fixture --release --locked && target/release/rubix-asset-fixture manifest-graph /producer-build/modules-actual.json tools/assets-manifest/modules.json
+#16 CACHED
+
+#17 [build 6/7] RUN set -eu; cargo test -p rubix-assets --release --locked --test manifest_fixture --no-run && mkdir /out && cp target/release/rubix-asset-fixture /out/fixture && cp /producer-build/producer /out/producer && count=0; for executable in target/release/deps/manifest_fixture-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/manifest-tests; count=$((count + 1)); fi; done; test "$count" -eq 1 && test -x /out/manifest-tests
+#17 CACHED
+
+#18 [build 7/7] RUN test -n "rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7" && echo "RUBIX_BUILD_BEGIN rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7" && sha256sum /out/producer /out/manifest-tests /out/fixture && echo "RUBIX_BUILD_END rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7"
+#18 0.077 RUBIX_BUILD_BEGIN rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7
+#18 0.098 d564e922b99904ecb7d50eef539042eb6641c05f86077f3f8198babe8fd2dd44  /out/producer
+#18 0.119 fce0fb721351bb2d07985931ee5cab263b3b646b2f119a6dce3bbcc979301e41  /out/manifest-tests
+#18 0.138 f91d30c683255b5b82a0b480084e3c8a0068cf4d17cc7f27b566b84b002bf351  /out/fixture
+#18 0.139 RUBIX_BUILD_END rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7
+#18 DONE 0.2s
+
+#19 [stage-2 2/5] COPY --from=build /out/producer /producer
+#19 CACHED
+
+#20 [stage-2 3/5] COPY --from=build /out/manifest-tests /manifest-tests
+#20 CACHED
+
+#21 [stage-2 4/5] COPY --from=build /out/fixture /fixture
+#21 CACHED
+
+#22 [stage-2 5/5] COPY manifest-inputs /inputs
+#22 CACHED
+
+#23 exporting to image
+#23 exporting layers done
+#23 exporting manifest sha256:8c8ef2aa1c76c65e20661787ab51330b6bbf3a8bb9631d87cd12c12c3f7164b6 done
+#23 exporting config sha256:d29fc9eb2e9bd6e11286d94663eb554252acf28fb8f93121f34dad797e1fab63 done
+#23 exporting attestation manifest sha256:90306fe32fda7f9d24a38425e2a35743b93640ddc85430d71a0484f9af3feec8 done
+#23 exporting manifest list sha256:1e5749b61cd58e3b3e283fe5fc17fcd993653697be454bc5d0f0dcfa6334cefb
+#23 exporting manifest list sha256:1e5749b61cd58e3b3e283fe5fc17fcd993653697be454bc5d0f0dcfa6334cefb done
+#23 naming to docker.io/library/rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7:latest done
+#23 unpacking to docker.io/library/rubix-manifest-b2ea467fb9b3838f05abbb053ba9c3d7:latest 0.1s done
+#23 DONE 0.2s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/531n7dtv6dnfl5s0khugrme0c

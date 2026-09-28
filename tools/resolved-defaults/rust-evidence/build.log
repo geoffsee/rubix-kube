@@ -11,27 +11,24 @@
 #3 transferring context: 2B done
 #3 DONE 0.0s
 
-#4 [internal] load build context
+#4 [build 1/8] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #4 DONE 0.0s
 
-#5 [build 1/8] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#5 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
-#5 DONE 0.0s
+#5 [internal] load build context
+#5 transferring context: 103.04MB 0.7s done
+#5 DONE 0.7s
 
-#4 [internal] load build context
-#4 transferring context: 103.04MB 0.8s done
-#4 DONE 0.8s
-
-#6 [build 3/8] RUN echo '211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0  /tmp/go.tar.gz' | sha256sum -c - && mkdir /toolchain && tar -xzf /tmp/go.tar.gz -C /toolchain
+#6 [build 2/8] COPY go.tar.gz /tmp/go.tar.gz
 #6 CACHED
 
-#7 [build 4/8] COPY source.tar.gz /tmp/source.tar.gz
+#7 [build 5/8] RUN echo "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
 #7 CACHED
 
-#8 [build 2/8] COPY go.tar.gz /tmp/go.tar.gz
+#8 [build 3/8] RUN echo '211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0  /tmp/go.tar.gz' | sha256sum -c - && mkdir /toolchain && tar -xzf /tmp/go.tar.gz -C /toolchain
 #8 CACHED
 
-#9 [build 5/8] RUN echo "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
+#9 [build 4/8] COPY source.tar.gz /tmp/source.tar.gz
 #9 CACHED
 
 #10 [build 6/8] WORKDIR /src
@@ -41,22 +38,22 @@
 #11 DONE 0.1s
 
 #12 [build 8/8] RUN go version && mkdir /out && go build -mod=vendor -p 2 -trimpath -o /out/extract ./cmd/rubix-resolved && sha256sum go.mod go.sum go.work vendor/modules.txt > /out/modules.sha256
-#12 0.042 go version go1.26.8 linux/arm64
-#12 DONE 60.0s
+#12 0.038 go version go1.26.8 linux/arm64
+#12 DONE 78.8s
 
 #13 [stage-1 1/1] COPY --from=build /out/ /out/
 #13 DONE 0.0s
 
 #14 exporting to image
 #14 exporting layers
-#14 exporting layers 1.9s done
-#14 exporting manifest sha256:4c0e2b9db2a5c9ea5de3e3dfbe7489fe5beea5997a59c3d07930bc7c879aac63 done
-#14 exporting config sha256:59b3959c178cdbb015b065d514af2dbe0ed9098cc59eaab672da90d6320a77a0 done
-#14 exporting attestation manifest sha256:feabee497f1be5ac5f79fab8e8801920752a9ec30f0e0da79f3ceacddf912bd3 0.0s done
-#14 exporting manifest list sha256:e5c40e2bc9003efa769ed9a80b562015e484be732d40de45f6dc13c7710de8f0 done
-#14 naming to docker.io/library/rubix-resolved-9daom9:latest done
-#14 unpacking to docker.io/library/rubix-resolved-9daom9:latest
-#14 unpacking to docker.io/library/rubix-resolved-9daom9:latest 0.2s done
-#14 DONE 2.2s
+#14 exporting layers 1.5s done
+#14 exporting manifest sha256:3f8f723ddb0ac9ea6e9662c9ed2537ac3990f175cf881ca31d3f0ddf7321df14 done
+#14 exporting config sha256:eb4e95d71e20eebfd8c6c8dd3b1db8185ad797e1094f2a9e1ba8539e7da98431 done
+#14 exporting attestation manifest sha256:a4970fcccb56e05a693f56db801edd30df26e34593997624438c6385b1f3ac45 done
+#14 exporting manifest list sha256:c1ee56e3e53f653be78224c8cdf021802166d7bfe018aec2c4915644500a0066 done
+#14 naming to docker.io/library/rubix-resolved-dinzp1:latest done
+#14 unpacking to docker.io/library/rubix-resolved-dinzp1:latest
+#14 unpacking to docker.io/library/rubix-resolved-dinzp1:latest 0.2s done
+#14 DONE 1.8s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/j14p0mqd85ifb5ct0980hx9yc
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/qna1olidzwix29wm6mpwwazwi

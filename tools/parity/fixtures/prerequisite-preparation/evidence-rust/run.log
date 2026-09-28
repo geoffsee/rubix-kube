@@ -19,20 +19,20 @@ running 7 tests
 test earlier_failure_prevents_ports_and_required_port_failure_remains_nonzero ... ok
 test help_version_parse_failure_and_unsupported_preparation_have_no_effects ... ok
 test actual_cobra_cases_match_independent_parser_expectations ... ok
-test probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress ... ok
 test output_failure_precedes_host_effects_and_input_budget_is_explicit ... ok
+test probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress ... ok
 test successful_pprof_check_reports_only_observed_prerequisites ... ok
 test real_help_and_version_executable_do_not_need_host_support ... ok
 
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 7 tests
 test earlier_nonroot_or_unknown_blocks_all_preparation ... ok
-test failure_or_gap_cancellation_prevents_next_action_and_ports ... ok
 test pre_cancelled_invocation_has_no_host_effects ... ok
-test shared_effects_warning_survives_successful_action_and_failed_recheck ... ok
 test repairs_in_order_and_requires_fresh_observation_before_ports ... ok
+test shared_effects_warning_survives_successful_action_and_failed_recheck ... ok
+test failure_or_gap_cancellation_prevents_next_action_and_ports ... ok
 test success_without_repair_never_passes_or_repeats_action ... ok
 test uncertain_cleanup_returns_two_without_further_output_or_effects ... ok
 

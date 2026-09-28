@@ -8,7 +8,7 @@
 #2 DONE 0.0s
 
 #3 [internal] load metadata for docker.io/library/alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
-#3 DONE 0.0s
+#3 DONE 0.1s
 
 #4 [internal] load .dockerignore
 #4 transferring context: 2B done
@@ -26,28 +26,28 @@
 #7 transferring context: 530.57kB done
 #7 DONE 0.0s
 
-#8 [stage-1 3/5] COPY --from=0 /source.sha256 /source.sha256
+#8 [stage-0 4/6] COPY go.mod baseline_test.go ./
 #8 CACHED
 
-#9 [stage-0 2/6] WORKDIR /src
+#9 [stage-1 3/5] COPY --from=0 /source.sha256 /source.sha256
 #9 CACHED
 
-#10 [stage-0 3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/preflight/preflight.go  && tar -xOf /tmp/source.tar.gz kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.sum > go.sum
+#10 [stage-1 4/5] COPY APKINDEX.tar.gz /repo/aarch64/APKINDEX.tar.gz
 #10 CACHED
 
-#11 [stage-0 5/6] RUN sha256sum preflight.go > /source.sha256 && go test -mod=readonly -c -trimpath -o /preflight.test . && sha256sum /preflight.test >> /source.sha256
+#11 [stage-0 2/6] WORKDIR /src
 #11 CACHED
 
-#12 [stage-0 4/6] COPY go.mod baseline_test.go ./
+#12 [stage-0 5/6] RUN sha256sum preflight.go > /source.sha256 && go test -mod=readonly -c -trimpath -o /preflight.test . && sha256sum /preflight.test >> /source.sha256
 #12 CACHED
 
-#13 [stage-1 4/5] COPY APKINDEX.tar.gz /repo/aarch64/APKINDEX.tar.gz
+#13 [stage-0 6/6] WORKDIR /tmp
 #13 CACHED
 
 #14 [stage-1 2/5] COPY --from=0 /preflight.test /preflight.test
 #14 CACHED
 
-#15 [stage-0 6/6] WORKDIR /tmp
+#15 [stage-0 3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/preflight/preflight.go  && tar -xOf /tmp/source.tar.gz kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.sum > go.sum
 #15 CACHED
 
 #16 [stage-1 5/5] RUN printf "/repo\n" > /repositories
@@ -57,10 +57,10 @@
 #17 exporting layers done
 #17 exporting manifest sha256:02f728215c008e837dfd0a3a7d1b3edc80f64b207a01ec3dd604951f612f341f done
 #17 exporting config sha256:e0ef6d48883c0a1b1fb4dcf3e250ffc9d25bde1d62379c2c0b2bf9836f45957b done
-#17 exporting attestation manifest sha256:9564284b312d514042436c7fee3bdb6adfbe2632bfcc078981e20e3b6bb46ddd done
-#17 exporting manifest list sha256:dad036b1831e0975282fe4ef321bfa8092c3acceec2c8dfdf22242e092d52f6b done
-#17 naming to docker.io/library/rubix-alpine-prepareaawl37:latest done
-#17 unpacking to docker.io/library/rubix-alpine-prepareaawl37:latest 0.0s done
+#17 exporting attestation manifest sha256:a018123d1e4a6a3a9b89f6a17f5ee51baf4e7210fa219081ef53308d88a776b9 done
+#17 exporting manifest list sha256:15f87c6a60db2664422680374e777b7d34c6f2e05ca1d24d2dabeece8a1e1018 done
+#17 naming to docker.io/library/rubix-alpine-preparew1slot:latest done
+#17 unpacking to docker.io/library/rubix-alpine-preparew1slot:latest 0.0s done
 #17 DONE 0.1s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/9wyaja05cbjko8r2199cb2vhv
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/6adf3qkk6dri46nu0nc4377iy

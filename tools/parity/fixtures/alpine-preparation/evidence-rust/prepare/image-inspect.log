@@ -1,11 +1,11 @@
 [
     {
-        "Id": "sha256:dad036b1831e0975282fe4ef321bfa8092c3acceec2c8dfdf22242e092d52f6b",
+        "Id": "sha256:15f87c6a60db2664422680374e777b7d34c6f2e05ca1d24d2dabeece8a1e1018",
         "RepoTags": [
-            "rubix-alpine-prepareaawl37:latest"
+            "rubix-alpine-preparew1slot:latest"
         ],
         "RepoDigests": [
-            "rubix-alpine-prepareaawl37@sha256:dad036b1831e0975282fe4ef321bfa8092c3acceec2c8dfdf22242e092d52f6b"
+            "rubix-alpine-preparew1slot@sha256:15f87c6a60db2664422680374e777b7d34c6f2e05ca1d24d2dabeece8a1e1018"
         ],
         "Comment": "buildkit.dockerfile.v0",
         "Created": "2026-09-28T00:59:35.786715085Z",
@@ -29,18 +29,18 @@
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-28T09:06:56.617793593Z"
+            "LastTagTime": "2026-09-28T16:21:31.819765552Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:dad036b1831e0975282fe4ef321bfa8092c3acceec2c8dfdf22242e092d52f6b",
+            "digest": "sha256:15f87c6a60db2664422680374e777b7d34c6f2e05ca1d24d2dabeece8a1e1018",
             "size": 856
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "9wyaja05cbjko8r2199cb2vhv",
-                    "CreatedAt": "2026-09-28T09:06:56.664152468Z"
+                    "Ref": "6adf3qkk6dri46nu0nc4377iy",
+                    "CreatedAt": "2026-09-28T16:21:31.863160885Z"
                 }
             ]
         }
