@@ -159,12 +159,30 @@ def finish(report, output, vm, serial, private, log_thread, ssh, qmp, command, p
         output.write("\n")
 
 
+CLOUD_WARNING = "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
+
+def validate_cloud_init(code, cloud):
+    warning = {"WARNING": [CLOUD_WARNING]}
+    if type(code) is not int or code not in (0, 2):
+        raise ValueError("cloud-init exit classification")
+    if cloud.get("status") != "done" or cloud.get("errors") != []:
+        raise ValueError("cloud-init did not complete")
+    warnings = cloud.get("recoverable_errors")
+    if warnings not in ({}, warning) or (code == 2 and warnings != warning):
+        raise ValueError("unrecognized cloud-init degradation")
+    for stage in ("init-local", "init", "modules-config", "modules-final"):
+        if cloud[stage].get("errors") != []:
+            raise ValueError("cloud-init stage failed")
+
+def keygen_arguments(name, destination):
+    return ["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "rubix-alpine-fixture-" + name, "-f", str(destination)]
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--allow-privileged-vm", action="store_true", required=True)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--image-cache", required=True, type=Path)
-    parser.add_argument("--input-cache", type=Path)
+    parser.add_argument("--input-cache", type=Path, required=True)
     parser.add_argument("--inject-failure", choices=("setup", "test"))
     args = parser.parse_args()
     revision = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], timeout=10, text=True).strip()
@@ -281,7 +299,7 @@ def main():
         command("overlay", ["qemu-img", "create", "-f", "qcow2", "-F", "qcow2", "-b",
                             str(image.resolve()), str(private / "disk.qcow2"), "8G"])
         for name in ("client", "host"):
-            command(f"key-{name}", ["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(private / name)])
+            command(f"key-{name}", keygen_arguments(name, private / name))
         seed = private / "seed"
         seed.mkdir()
         host_private = (private / "host").read_text()
@@ -354,12 +372,7 @@ def main():
         cloud_code, cloud_output, _ = command("cloud-init", [*ssh, "cloud-init status --wait --long --format json"], timeout=60, required=False)
         report["cloud_init_exit"] = cloud_code
         report["cloud_init"] = json.loads(cloud_output)
-        warning = "Unable to activate module keys_to_console, helper tool not found at /usr/lib/cloud-init/write-ssh-key-fingerprints"
-        warnings = report["cloud_init"].get("recoverable_errors", {})
-        if warnings not in ({}, {"WARNING": [warning]}) or report["cloud_init"].get("errors"):
-            raise RuntimeError("unrecognized cloud-init degradation")
-        if cloud_code not in (0, 2) or report["cloud_init"].get("status") != "done":
-            raise RuntimeError("cloud-init did not complete")
+        validate_cloud_init(cloud_code, report["cloud_init"])
         _, environment, _ = command("environment", [*ssh, "uname -a; id; cat /etc/os-release; cat /proc/self/cgroup"])
         report["environment"] = environment
         # Prove privileged host preparation in this new guest only, then revert it.
@@ -391,7 +404,10 @@ def main():
                 if code == 0 and current_boot.strip() and current_boot != old_boot: break
                 time.sleep(1)
             else: raise RuntimeError("reboot deadline")
-            command("reboot-cloud-init", [*ssh, "cloud-init status --wait"], timeout=60, required=False)
+            reboot_code, reboot_output, _ = command("reboot-cloud-init", [*ssh, "cloud-init status --wait --long --format json"], timeout=60, required=False)
+            report["reboot_cloud_init_exit"] = reboot_code
+            report["reboot_cloud_init"] = json.loads(reboot_output)
+            validate_cloud_init(reboot_code, report["reboot_cloud_init"])
             command("reboot-verification", [*ssh, "sh -s"], timeout=60, data=(HERE / "reboot.sh").read_bytes())
         if args.inject_failure == "test":
             raise RuntimeError("intentional test failure after diagnostics")

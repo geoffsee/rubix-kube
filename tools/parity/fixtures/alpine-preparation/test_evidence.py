@@ -1,5 +1,5 @@
 """Read-only evidence regressions plus mocked owned-resource cleanup."""
-import copy, importlib.util, json, tempfile, unittest
+import copy, importlib.util, json, tempfile, unittest, subprocess, sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 HERE=Path(__file__).resolve().parent
@@ -7,6 +7,24 @@ def module(name):
  spec=importlib.util.spec_from_file_location('alpine_'+name,HERE/(name+'.py'));result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
 v=module('verify');capture=module('capture')
 class EvidenceTests(unittest.TestCase):
+ def test_input_cache_required_before_effects(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   output=Path(tmp)/'uncreated'
+   result=subprocess.run([sys.executable,str(HERE/'capture.py'),'--allow-privileged-vm','--image-cache',tmp,'--output',str(output)],capture_output=True,timeout=10)
+   self.assertEqual(result.returncode,2);self.assertIn(b'--input-cache',result.stderr);self.assertFalse(output.exists())
+ def test_explicit_fixture_key_comments(self):
+  for name in ['client','host']:
+   argv=capture.keygen_arguments(name,Path('/private/key'))
+   self.assertEqual(argv[argv.index('-C')+1],'rubix-alpine-fixture-'+name)
+ def test_cloud_validation_for_initial_and_reboot(self):
+  cloud={'status':'done','errors':[],'recoverable_errors':{'WARNING':[capture.CLOUD_WARNING]}}
+  for stage in ['init-local','init','modules-config','modules-final']:cloud[stage]={'errors':[]}
+  for validate in [capture.validate_cloud_init,v.verify_cloud]:
+   validate(2,cloud)
+   for change in [lambda c:c.update(recoverable_errors={}),lambda c:c.update(status='running'),lambda c:c.update(errors=['failure']),lambda c:c['modules-final'].update(errors=['failure'])]:
+    bad=copy.deepcopy(cloud);change(bad)
+    with self.assertRaises(ValueError):validate(2,bad)
+ def test_reboot_error_cannot_pass(self):self.mutate_report(lambda r:r['reboot_cloud_init'].update(status='running'))
  def test_duplicate_and_nonfinite_json(self):
   for raw in ['{"a":1,"a":2}','NaN','1e999']:
    with self.assertRaises(ValueError):v.loads(raw)
