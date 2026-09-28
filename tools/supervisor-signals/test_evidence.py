@@ -7,7 +7,30 @@ from unittest.mock import patch
 import capture
 import verify
 
+
+def require_engineering_budget(measurements):
+    """Acceptance of captured elapsed samples, distinct from diagnostic watchdogs."""
+    if not measurements:
+        raise ValueError('missing measured elapsed samples')
+    for elapsed in measurements:
+        if type(elapsed) is not int or not 0 <= elapsed <= 35000:
+            raise ValueError('measured shutdown exceeds 35000 ms engineering gate')
+
+
 class EvidenceTests(unittest.TestCase):
+
+    def test_frozen_elapsed_samples_meet_engineering_gate(self):
+        verify.verify()
+        lines=self.log.decode().splitlines()
+        samples=[int(line.rsplit('elapsed_ms=',1)[1]) for line in lines if line.startswith('RUBIX_OWNED_SIGNAL ')]
+        self.assertEqual(len(samples),61)
+        require_engineering_budget(samples)
+
+    def test_engineering_gate_rejects_one_millisecond_overrun(self):
+        require_engineering_budget([35000])
+        with self.assertRaisesRegex(ValueError, '35000 ms engineering gate'):
+            require_engineering_budget([35001])
+
     def setUp(self):
         self.receipt = verify.loads(verify.read(verify.HERE / 'evidence/receipt.json'))
         self.log = verify.read(verify.HERE / 'evidence/run.log')
