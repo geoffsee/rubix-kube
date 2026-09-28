@@ -24,3 +24,5 @@ impl std::error::Error for PlatformError {}
 pub mod preflight;
 
 pub mod constrained;
+
+pub mod preflight_probe;
