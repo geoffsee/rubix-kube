@@ -128,7 +128,9 @@ The debug test job explicitly prepares verified upstream inputs, builds the main
 generator, compares committed CRI/containerd clients, checks published Kubernetes binding
 provenance, and compares independent official schema/protocol inventories. These operations
 are CI checks and explicit refresh commands; ordinary Rust builds still consume committed
-clients. Python regressions run afterward, so prepared-parser integration tests execute.
+clients. Rust tooling regressions run with workspace tests. The prepared-parser integration test
+runs explicitly after input preparation against the verified compiler. Clippy CI also enforces
+the repository policy rejecting Python sources, packaging and interpreter invocations.
 
 Prepared inputs have a manifest/OS/architecture cache key. Every restored byte is reverified;
 only successful default-branch push jobs save caches. Cold caches download the same pinned
