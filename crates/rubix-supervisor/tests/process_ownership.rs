@@ -53,11 +53,12 @@ fn spec(id: &str) -> ComponentSpec {
     }
 }
 fn command(mode: &str, root: &Path) -> ProcessCommand {
-    ProcessCommand::new("/usr/local/bin/python3")
-        .arg("/fixture.py")
+    ProcessCommand::new("/fixture")
+        .arg("process-child")
         .arg(mode)
         .arg(root)
         .env_clear()
+        .env("RUBIX_PROCESS_DISPOSABLE", "1")
         .env("PATH", "/usr/local/bin:/usr/bin:/bin")
 }
 async fn ready(root: PathBuf) -> Result<(), AdapterError> {

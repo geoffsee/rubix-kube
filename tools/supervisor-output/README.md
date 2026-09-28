@@ -1,16 +1,34 @@
-# Bounded merged-output qualification
+# Bounded merged output qualification
 
-After committing reviewed source, run `python3 tools/supervisor-output/capture.py
---output /tmp/<unique-output>` from this worktree. It builds pinned Linux arm64
-images and runs 13 adverse process cases twice in separate owned, nonroot,
-network-disabled containers with no host bind mounts. The escaped-writer case is
-finite and deliberately shows incomplete capture; namespace inventory requires it
-to have exited before qualification ends. No raw captured child bytes are logged.
+Use the Rust capture tool after reviewing and committing source inputs:
 
-`verify.py <output>` verifies exact cases, byte budgets, terminal owner facts,
-namespace cleanup, binary/raw hashes and current relevant source inventory.
-Cargo.lock, root build configuration, all supervisor source/tests and executable fixture files are
-bound; other workspace sources remain in the historical full build inventory.
-`python3 -m unittest discover -s tools/supervisor-output` requires frozen evidence. Use `python3 -O` to confirm checks do not depend on assert.
-The isolated cases are not permission to run ignored tests on the host. Successful qualification requires both reviewed-source runs and the frozen-evidence
-test; this document alone does not assert that qualification has passed.
+```sh
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output capture /tmp/unique-output-capture
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output verify /tmp/unique-output-capture
+cargo run -p rubix-dev --bin rubix-supervisor-fixture --locked -- output verify tools/supervisor-output/evidence --relevant-current
+```
+
+Thirteen adverse cases run twice in separate owned disposable Linux containers.
+They preserve merged non-UTF8/NUL bytes, exact/excess budgets, simultaneous writes,
+infinite output, empty/spawn-failed children, cancellation/readiness failures and
+finite descendants. Safe Rust re-exec replaces the old forked fixture; the escaped
+writer creates its own session, exits after two seconds, and must disappear before
+namespace completion. No raw captured child bytes are published.
+
+Independent Rust expectations require exact output status and size, owner join and
+leader reaping facts, sub-five-second samples and namespace cleanup. Both test and
+fixture binaries are bound to a fresh build nonce and both runtime hashes. Full
+historical copied inputs and exact current relevant input inventories remain
+verified; see the process fixture README for the source scopes and cleanup model.
+
+The pinned Rust image runs as UID 65532 with no network or host mounts, read-only
+root, no capabilities, init, 96 PIDs, 512 MiB memory, two CPUs and 16 MiB temporary
+storage. Build bounds are 1800 seconds/16 MiB; each runtime is 100 seconds/1 MiB.
+Commands have exact argument/log bindings and must settle successfully without
+cancellation, timeout or overflow. Unsettled commands retain context and stop new
+actions; cleanup inventories remain unknown and qualification fails.
+
+Existing evidence remains historical. The mandatory Rust schema-3 evidence gate
+fails until reviewed fresh captures are published. Run `cargo test -p rubix-dev
+--bin rubix-supervisor-fixture --locked` for mutation checks and current evidence
+gates. Ignored supervisor effects tests run only inside the disposable container.
