@@ -43,7 +43,9 @@ def main():
             inventory = {str(path.relative_to(context)): verify.digest(path) for path in sorted(context.rglob('*')) if path.is_file()}
             (args.output/'source-inventory.json').write_text(json.dumps(inventory, sort_keys=True, indent=2)+'\n')
             report['source_inventory_sha256'] = verify.digest(args.output/'source-inventory.json')
-            helper.bounded(['docker','build','--platform=linux/arm64','-t',tag,'-f',str(context/'tools/assets-decode/Capture.Dockerfile'),str(context)], args.output/'build.log',1800,16*1024*1024)
+            helper.bounded(['docker','build','--progress=plain','--build-arg','QUALIFICATION_NONCE='+tag,'--platform=linux/arm64','-t',tag,'-f',str(context/'tools/assets-decode/Capture.Dockerfile'),str(context)], args.output/'build.log',1800,16*1024*1024)
+        report['build_log_sha256'] = verify.digest(args.output/'build.log')
+        report['build_binary_sha256'] = verify.build_binary(args.output/'build.log')
         report['image_id'] = control(['docker','image','inspect','--format','{{.Id}}',tag])
         for name in ['first','repeat']:
             container = tag+'-'+name
