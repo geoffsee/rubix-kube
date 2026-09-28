@@ -813,6 +813,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rubix-dev"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "zstd",
+]
+
+[[package]]
 name = "rubix-kube"
 version = "0.1.0"
 dependencies = [
