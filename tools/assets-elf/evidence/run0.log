@@ -1,5 +1,4 @@
-   Compiling rubix-assets v0.1.0 (/private/tmp/rubix-node-network-worktree-20260927/crates/rubix-assets)
-    Finished `release` profile [optimized + debuginfo] target(s) in 4.91s
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.28s
      Running tests/elf_real.rs (target/release/deps/elf_real-cd444e63e2fb17a8)
 
 running 1 test
