@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rm",
+    "--force",
+    "rubix-webhooks-mluu2m-webhook-1"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7764,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qBDvqX",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "7d200d38bc43458e20669ad42a44909be8a8cfa20cbec2ddf48ae5ba34f178f6",
+  "timeout": false
+}

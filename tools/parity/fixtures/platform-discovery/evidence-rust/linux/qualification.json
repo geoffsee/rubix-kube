@@ -1,0 +1,22 @@
+{
+  "cancelled": false,
+  "files": {
+    "build.command.json": "8df9dc576d3eea95133da0bc76c65fdac48d6cfe7fec010015f29cf930cf840f",
+    "build.log": "03948b5d552b09693fe4b1dac0a347ed06d17d2d0e2f8b038f525b1c8f543ca4",
+    "cleanup-1.command.json": "0bcba2431d5d38ab74382832e98ed8155bf6ee7ff3c8e61a352d7b2a321031fb",
+    "cleanup-1.log": "8d9eec82c67d6101c3335644fb5b2c10c06d351ab49b46e53feebd81a10667a0",
+    "cleanup-2.command.json": "b943aad842734dce8b8d809834e8ed992cbe7f821431c88da7d9c06568b2e1cc",
+    "cleanup-2.log": "3b400536488bce32b32cbc8b920a2b470b1dc06cef542ac29fc6dd3b91bbb885",
+    "cleanup-3.command.json": "7398b0e55ad84c14d46bf3a0178a1b00533e9f798d3f55d710d23f856f2bd897",
+    "cleanup-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-4.command.json": "1ff1d915605fb1f866d34313f7f5f89395c60bc30f7fc22556904494017d90a2",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image.command.json": "7feeb664d71f9ff2d7a200d4dc438faca6b2a7f278005d2e123b83e0da1b6329",
+    "image.log": "9e0f4b38f6daecda669577551ca4a703f9d1e94902b1b45a7371d70371b0a4ba",
+    "receipt.json": "d609efe2980700ab4b65c406d0964596a8da8858c1eb60708b54b9738643cf58",
+    "run0.command.json": "f67e94248c383f73b87fb35b36e73cc8ac56fd8ca49e60166b0db5bc373cb640",
+    "run0.log": "e8a9fc32e67db1fdc881fc49de3d953dfecfe05ec37ebec625f2e877e995db78",
+    "source-hashes.json": "55b46e018049dc671120d62e270d44437d855b5b5d99a771cb22b9ecfa090f1e"
+  },
+  "schema_version": 2
+}

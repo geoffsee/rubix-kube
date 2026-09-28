@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "inspect",
+    "rubix-parity-a383d9344808b901f26d538c:test"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7389,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-odCuUC",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "a9b84c4e03dd1a040abf6280e84b46469ebe1ba4eb8c7fcfb7de29875c49c0a1",
+  "timeout": false
+}

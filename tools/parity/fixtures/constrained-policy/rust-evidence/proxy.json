@@ -1,0 +1,5 @@
+[
+  "absent\tnftables",
+  "present\tiptables",
+  "unreadable\tnftables"
+]

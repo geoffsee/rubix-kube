@@ -1,0 +1,48 @@
+[
+    {
+        "Id": "sha256:01c185c8910660b33820528b3ad13cfa684cba589112920251d953217228f9cd",
+        "RepoTags": [
+            "rubix-resolved-gklia5:latest"
+        ],
+        "RepoDigests": [
+            "rubix-resolved-gklia5@sha256:01c185c8910660b33820528b3ad13cfa684cba589112920251d953217228f9cd"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-28T08:10:12.348826128Z",
+        "Config": {
+            "User": "65532:65532",
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Entrypoint": [
+                "/out/extract"
+            ],
+            "WorkingDir": "/"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 36451571,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:3653d1a7f4a5fa45bd6ab8fe8c0cd63ab63fe4b9ea03a65132a07f7eb9529bf7"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-28T08:10:13.933582254Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:01c185c8910660b33820528b3ad13cfa684cba589112920251d953217228f9cd",
+            "size": 855
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "92x7qqbe5nf406afzplt1e1tv",
+                    "CreatedAt": "2026-09-28T08:10:14.15953617Z"
+                }
+            ]
+        }
+    }
+]

@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "rm",
+    "--force",
+    "rubix-platform-go-relyn1"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 6135,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-WDnyEh",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "65b05be1142261ce2ac78b6a98229bfe6b5b4080d4ad8d5f1680014ed037e244",
+  "timeout": false
+}

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "inspect",
+    "--format",
+    "{{.Id}}",
+    "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 9063,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ADH7X6",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "53083f83e7b5c6d2a6b4b94938d5c79ff434e1022dee01b05e45c219a4d27ec4",
+  "timeout": false
+}

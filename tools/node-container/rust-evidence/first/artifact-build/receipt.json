@@ -1,0 +1,86 @@
+{
+  "artifact_sha256": "14691ca8b383c04937278a7d1b6b640f58425216a56062def7fd79a70276868b",
+  "build_command": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=5127a530d6c9a30b79aa64f66a43e4ed",
+    "-t",
+    "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed",
+    "-f",
+    "/tmp/rubix-node-context-lbQ6Iy/tools/node-container/Build.Dockerfile",
+    "/tmp/rubix-node-context-lbQ6Iy"
+  ],
+  "build_sha256": "6e8c5f3969980a28decadf974080ba482e7fbbdd36a2d04b0f4f14cc214cdcac",
+  "builder_sha256": {
+    "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+    "host_preparation": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
+    "prepare_node_host": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+    "rubix_kube": "06e8bc7b0a10267aa1e245c1bad8d6ed94cac9446eb83e56d2920c396e40c379"
+  },
+  "cancelled": false,
+  "cleanup_errors": [],
+  "commands": {
+    "build": "7e75db864af89d4a3d953c0138431906d2b649d43aafeafa8b1cfa5b5ccbebf2",
+    "cleanup-1": "06819c8bfb2771ac65c0098b14132e7adff131cf8f9c17517c4f863d1a182d1c",
+    "cleanup-2": "79c9ff97037816b3b48d83271144a1886f19335351cdafa52b8f0550b94f65d5",
+    "cleanup-3": "ed705aff8c61a631776c7b0a3cba1a57b68de66a018343490da83f3a90db0ee3",
+    "cleanup-4": "846a90d10df4a8ec2774b9517d77bfa9fa2b4475d50061ce3900466855ebec23",
+    "cleanup-5": "4d4a6d9dcc8f45c64a84915d22cae333d32e4e1a35a075d6ce433c5052b86008",
+    "copy-host_network": "48810725f08d3158b61e3e2e1064011d9053a0db7b5d4e0c97a2c77a42046a09",
+    "copy-host_preparation": "78f4c242cdcea2d356bb0741bcda75826247e59dc6d1c22b708de5ba9e425d9c",
+    "copy-prepare_node_host": "1db206fb1c0591244166fb4e6ae474282dc2622c653c485ef2d6256611071b67",
+    "copy-rubix_kube": "e77f68d682452e3de2474956751b043b5fe893953c69343831bf3614c7c62b5f",
+    "create": "f78f757d1a5ad8945f7b16be433e1e1289bd2552241605750449687571828055",
+    "image-inspect": "1e20ac1988dee5b705a05c9136c9029bbf00acb53637a2c17be8185b0f397149",
+    "test": "1b898c06d0eb6dd9407c1f73d271dd123166aef2f49e41eb976ddbb363b06228"
+  },
+  "containers": [
+    "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed-artifact",
+    "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed-test"
+  ],
+  "dirty": false,
+  "errors": [],
+  "family": "container",
+  "image_id": "sha256:6a7a657ccbaad2fec86a53c935b3d22689da8d733c12936177a9b51ee630b57e",
+  "nonce": "5127a530d6c9a30b79aa64f66a43e4ed",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "29a048efda28167cba128c18fa0ac883524c1e8b",
+  "runs": {
+    "test": {
+      "binary_sha256": {
+        "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+        "host_preparation": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
+        "prepare_node_host": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+        "rubix_kube": "06e8bc7b0a10267aa1e245c1bad8d6ed94cac9446eb83e56d2920c396e40c379"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed-test",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=64",
+        "--memory=512m",
+        "--cpus=2",
+        "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed",
+        "/bin/sh",
+        "-c",
+        "sha256sum /out/prepare_node_host /out/rubix_kube /out/host_preparation /out/host_network && for binary in rubix_kube host_preparation host_network; do echo TEST_${binary}_BEGIN; /out/$binary || exit 1; echo TEST_${binary}_END; done && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_node_host --container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_node_host --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
+      ],
+      "raw_sha256": "69b6c5514eb58d134d236e0442cbffea98abdd4f1cb64b3221afcf1b3a9b8658",
+      "records": {
+        "safe_tests_and_cli": true
+      }
+    }
+  },
+  "schema": 3,
+  "source_sha256": "330671d8f39beec1a6d8bb9403cc22a732a50a4ef9f635bc46bd62b83840aa2a",
+  "tag": "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed"
+}

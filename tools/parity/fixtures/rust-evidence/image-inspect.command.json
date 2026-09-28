@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "inspect",
+    "rubix-resources-pki-a0jwgh"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 5884,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-VyGP2Y",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "0f0216b9d4f272414e98eab5dabc1bf7e423a27f1287f4fd57137f8b3321b4b4",
+  "timeout": false
+}

@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform",
+    "linux/arm64",
+    "--tag",
+    "rubix-runtime-mapping-mqv9xr",
+    "--file",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-sgCBzd/Capture.Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-sgCBzd"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7493,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-OB5l9F",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "1cb03d83be98702bbba5c08314db8f6b700bb242c0b18c5d9de51a52d32be4cd",
+  "timeout": false
+}

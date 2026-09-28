@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rm",
+    "--force",
+    "rubix-platform-go-relyn1-0"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 6131,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-fiXOnu",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "f9eea167352473f2ece810a0340011a09953cfab704a9b85c62a9a6d924bb85f",
+  "timeout": false
+}

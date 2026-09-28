@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "docker",
+    "container",
+    "ls",
+    "--all",
+    "--filter",
+    "name=^/rubix-parity-a383d9344808b901f26d538c$",
+    "--quiet"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7400,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-GLX94B",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "49968aa49005ff9d60f60fbba306d2d81d766c8f482f8c03f38989c6575cea85",
+  "timeout": false
+}

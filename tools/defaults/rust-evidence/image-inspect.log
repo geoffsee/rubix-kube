@@ -1,0 +1,48 @@
+[
+    {
+        "Id": "sha256:36f34ac2d49226b8d43fb906bb57d05311ef0ad2e95c58e93dcb5f8fcdf9756b",
+        "RepoTags": [
+            "rubix-official-defaults-ircoue:latest"
+        ],
+        "RepoDigests": [
+            "rubix-official-defaults-ircoue@sha256:36f34ac2d49226b8d43fb906bb57d05311ef0ad2e95c58e93dcb5f8fcdf9756b"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-28T08:08:53.703923842Z",
+        "Config": {
+            "User": "65532:65532",
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Entrypoint": [
+                "/out/extract"
+            ],
+            "WorkingDir": "/"
+        },
+        "Architecture": "arm64",
+        "Os": "linux",
+        "Size": 66059596,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:01ebb3c1cacdd40a53c529847f0cbc6fc868050e9bd7eeb444b88bd57f71f207"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-28T08:08:56.635125968Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "digest": "sha256:36f34ac2d49226b8d43fb906bb57d05311ef0ad2e95c58e93dcb5f8fcdf9756b",
+            "size": 855
+        },
+        "Identity": {
+            "Build": [
+                {
+                    "Ref": "8k9cch8o6eer9ks3i6o9zlz3u",
+                    "CreatedAt": "2026-09-28T08:08:57.029306885Z"
+                }
+            ]
+        }
+    }
+]

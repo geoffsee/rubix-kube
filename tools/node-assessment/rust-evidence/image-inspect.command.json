@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "docker",
+    "image",
+    "inspect",
+    "--format",
+    "{{.Id}}",
+    "rubix-node-assessment-6fedb21313489a8c11fc796340ed15c3"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7826,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-rElYgV",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "a3e7d30eaab1f1510b42137d6d40c18efe035b2964363ffd90771c58fc25f426",
+  "timeout": false
+}

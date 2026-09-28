@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rm",
+    "--force",
+    "rubix-constrained-policy-zdony7-proxy-0"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 5851,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-YGtE32",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "adc97f8948bfa686543a6afc3c85b65835f9fc9f0088528326c61d6211499dd7",
+  "timeout": false
+}

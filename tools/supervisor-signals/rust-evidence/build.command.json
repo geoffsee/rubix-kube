@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=rubix-supervisor-signals-b8a5c4df2ddee76fcb2cc5f67eb68fc2",
+    "--platform=linux/arm64",
+    "-t",
+    "rubix-supervisor-signals-b8a5c4df2ddee76fcb2cc5f67eb68fc2",
+    "-f",
+    "/tmp/rubix-supervisor-context-BUkFZB/tools/supervisor-signals/Capture.Dockerfile",
+    "/tmp/rubix-supervisor-context-BUkFZB"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 5110,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-cmq3Ib",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "f089425bed963e0f89413b735418071424126e1012777e46307052127a0eec51",
+  "timeout": false
+}

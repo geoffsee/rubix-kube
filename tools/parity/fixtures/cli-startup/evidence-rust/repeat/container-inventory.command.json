@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "docker",
+    "container",
+    "ls",
+    "--all",
+    "--filter",
+    "name=^/rubix-parity-9794df4c852ef817ddc27d1a$",
+    "--quiet"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7475,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SVW49m",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "4929daf8f10e0bee750748961de68fa144eec53f9f0a7f58d639a9348ebef7f3",
+  "timeout": false
+}

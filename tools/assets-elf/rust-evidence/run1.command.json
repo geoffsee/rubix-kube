@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "-p",
+    "rubix-assets",
+    "--release",
+    "--locked",
+    "--offline",
+    "--test",
+    "elf_real",
+    "--",
+    "--ignored",
+    "--nocapture"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 6551,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-GwsTPX",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "4c1a2dca912f5a993744ec4fd9ef4b448fc52447986f4297489f055013b73cef",
+  "timeout": false
+}

@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "volume",
+    "rm",
+    "rubix-parity-a383d9344808b901f26d538c-evidence"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7407,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gr5dFA",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "a990f3b0d7c90c0b3da35759c707b514849d30301c4235550662706a9a81426e",
+  "timeout": false
+}

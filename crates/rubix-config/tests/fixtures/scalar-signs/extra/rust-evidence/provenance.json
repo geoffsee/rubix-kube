@@ -1,0 +1,22 @@
+{
+  "fixture_sha256": {
+    "build.command.json": "ad6a62d7147c5444c2f8df8913bd90b05e74e77c081a7b14698d0faa55d637ca",
+    "build.log": "067fdd8dac32a93f7a28d6ea76e94e179e51b8be00107eaf0d8a6ef1c5dde02b",
+    "cleanup-1.command.json": "32424c27c6b64c9f5dd2371f566c5c7d3be8ca6e48e228c27cdc14f98ba2a706",
+    "cleanup-1.log": "9d3a519ae4e78c066486c9622b54b39193e1fe8908f3a0da355a5782c31ab265",
+    "cleanup-2.command.json": "24333132f31bc138d62cb3413cb217229be53c4adb0039092e94783e6cd4bc88",
+    "cleanup-2.log": "2332631e37760b172ca44953eaf587b99336eb000970a893d66b4a9c41cd2f7a",
+    "cleanup-3.command.json": "6d3cf606727ada16c7ecff96eeea72edd927aa2e742273f17ca12b3a60d751dc",
+    "cleanup-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-4.command.json": "f5b79ab5e58ccd17c2c893c3f091fe7dfed5c942905bc9f333e4a800a157da4b",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image-inspect.command.json": "0e41489338f93a044277f96563c828da4ee9431eadeb8835b3a791fce1bb078f",
+    "image-inspect.log": "8f4bebfe154c8540bface5dc02ec1dcb721a19237462e3a82267bb7ae977fb1a",
+    "receipt.json": "40f98c865388150c3e65b4c166c96096ecc12b4bfff21e3167e822b398023e67",
+    "scalar-0.command.json": "a5c7b0b83f96293b6fd06bdcb077bcb03fafb7d49c19ad46e4b772efcc5d1187",
+    "scalar-0.log": "fbb0d0a0951c370bdf2ec2501233798a330e7e85959f9fd6341c05424e531b9c",
+    "scalar.json": "93b0c5f515325da61aba38d6f27e25844f94db2fe463722f3ee1be137cc0421b"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "schema_version": 2
+}

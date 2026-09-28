@@ -1,0 +1,18 @@
+{
+  "cleanup_uncertain": false,
+  "errors": [],
+  "exit_code": 0,
+  "owned_container": "rubix-parity-a383d9344808b901f26d538c",
+  "owned_context": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-parity-context-SXhQWy",
+  "owned_context_removed": true,
+  "owned_image": "rubix-parity-a383d9344808b901f26d538c:test",
+  "owned_volume": "rubix-parity-a383d9344808b901f26d538c-evidence",
+  "retained_commands": [],
+  "schema_version": 1,
+  "source_sha256": {
+    "Dockerfile": "da2cd573e16484c2e400f2bf057aaf2b928570a49731fc1e7f808becb8128e72",
+    "artifact_descriptor": "8116cd99591c295d0253d265bc0dde3063c7ccce321600dc6cbd01431bd33bef",
+    "runner": "5109d6dec5222bd96536654d288aad9949752a82cab841b0724d06487886585f",
+    "suite": "ee47ffdca0e0de0725ac5fd1682683997cf90a2552b96614253195a943670c0c"
+  }
+}

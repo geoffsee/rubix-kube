@@ -1,0 +1,930 @@
+{
+  "component": "webhook",
+  "configurations": {
+    "false": {
+      "metadata": {
+        "name": "webhook.kubesolo.io"
+      },
+      "webhooks": [
+        {
+          "admissionReviewVersions": [
+            "v1"
+          ],
+          "clientConfig": {
+            "caBundle": "U1lOVEhFVElDLVdFQkhPT0stQ0VSVA==",
+            "url": "https://127.0.0.1:10443/mutate"
+          },
+          "failurePolicy": "Ignore",
+          "name": "webhook.kubesolo.io",
+          "reinvocationPolicy": "IfNeeded",
+          "rules": [
+            {
+              "apiGroups": [
+                "",
+                "apps",
+                "batch"
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "operations": [
+                "CREATE"
+              ],
+              "resources": [
+                "pods",
+                "persistentvolumeclaims",
+                "jobs"
+              ]
+            }
+          ],
+          "sideEffects": "NoneOnDryRun",
+          "timeoutSeconds": 30
+        }
+      ]
+    },
+    "missing_certificate_fails": true,
+    "true": {
+      "metadata": {
+        "name": "webhook.kubesolo.io"
+      },
+      "webhooks": [
+        {
+          "admissionReviewVersions": [
+            "v1"
+          ],
+          "clientConfig": {
+            "caBundle": "U1lOVEhFVElDLVdFQkhPT0stQ0VSVA==",
+            "url": "https://127.0.0.1:10443/mutate"
+          },
+          "failurePolicy": "Ignore",
+          "name": "webhook.kubesolo.io",
+          "reinvocationPolicy": "IfNeeded",
+          "rules": [
+            {
+              "apiGroups": [
+                "",
+                "apps",
+                "batch"
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "operations": [
+                "CREATE"
+              ],
+              "resources": [
+                "pods",
+                "persistentvolumeclaims",
+                "jobs"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "operations": [
+                "CREATE",
+                "UPDATE"
+              ],
+              "resources": [
+                "services"
+              ]
+            }
+          ],
+          "sideEffects": "NoneOnDryRun",
+          "timeoutSeconds": 30
+        }
+      ]
+    }
+  },
+  "fake_client_status": {
+    "already_correct": {
+      "actions": [
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        }
+      ],
+      "error": "",
+      "get_count": 1,
+      "patch_count": 0
+    },
+    "assign": {
+      "actions": [
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "patch": {
+            "status": {
+              "loadBalancer": {
+                "ingress": [
+                  {
+                    "ip": "192.0.2.9"
+                  }
+                ]
+              }
+            }
+          },
+          "patch_type": "application/merge-patch+json",
+          "resource": "services",
+          "subresource": "status",
+          "verb": "patch"
+        }
+      ],
+      "error": "",
+      "get_count": 1,
+      "patch_count": 1
+    },
+    "exhausted": {
+      "actions": [
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        }
+      ],
+      "error": "timed out waiting for the condition",
+      "get_count": 5,
+      "patch_count": 0
+    },
+    "get_failure": {
+      "actions": [
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "patch": {
+            "status": {
+              "loadBalancer": {
+                "ingress": [
+                  {
+                    "ip": "192.0.2.9"
+                  }
+                ]
+              }
+            }
+          },
+          "patch_type": "application/merge-patch+json",
+          "resource": "services",
+          "subresource": "status",
+          "verb": "patch"
+        }
+      ],
+      "error": "",
+      "get_count": 2,
+      "patch_count": 1
+    },
+    "patch_failure": {
+      "actions": [
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "patch": {
+            "status": {
+              "loadBalancer": {
+                "ingress": [
+                  {
+                    "ip": "192.0.2.9"
+                  }
+                ]
+              }
+            }
+          },
+          "patch_type": "application/merge-patch+json",
+          "resource": "services",
+          "subresource": "status",
+          "verb": "patch"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "patch": {
+            "status": {
+              "loadBalancer": {
+                "ingress": [
+                  {
+                    "ip": "192.0.2.9"
+                  }
+                ]
+              }
+            }
+          },
+          "patch_type": "application/merge-patch+json",
+          "resource": "services",
+          "subresource": "status",
+          "verb": "patch"
+        }
+      ],
+      "error": "",
+      "get_count": 2,
+      "patch_count": 2
+    },
+    "stale_type": {
+      "actions": [
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "resource": "services",
+          "subresource": "",
+          "verb": "get"
+        },
+        {
+          "name": "svc",
+          "namespace": "default",
+          "patch": {
+            "status": {
+              "loadBalancer": {
+                "ingress": [
+                  {
+                    "ip": "192.0.2.9"
+                  }
+                ]
+              }
+            }
+          },
+          "patch_type": "application/merge-patch+json",
+          "resource": "services",
+          "subresource": "status",
+          "verb": "patch"
+        }
+      ],
+      "error": "",
+      "get_count": 2,
+      "patch_count": 1
+    }
+  },
+  "handler_requests": {
+    "job_empty": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Job",
+            "version": "v1"
+          },
+          "object": {
+            "spec": {
+              "template": {
+                "spec": {}
+              }
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL3NwZWMvdGVtcGxhdGUvc3BlYy9ub2RlU2VsZWN0b3IiLCJ2YWx1ZSI6eyJrdWJlcm5ldGVzLmlvL2hvc3RuYW1lIjoiZml4dHVyZS1ub2RlIn19XQ==",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "job_existing_selector": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Job",
+            "version": "v1"
+          },
+          "object": {
+            "spec": {
+              "template": {
+                "spec": {
+                  "nodeSelector": {
+                    "keep": "value"
+                  }
+                }
+              }
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL3NwZWMvdGVtcGxhdGUvc3BlYy9ub2RlU2VsZWN0b3IiLCJ2YWx1ZSI6eyJrdWJlcm5ldGVzLmlvL2hvc3RuYW1lIjoiZml4dHVyZS1ub2RlIn19XQ==",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "malformed_body": {
+      "content_type": "text/plain; charset=utf-8",
+      "error": "error decoding admission review: couldn't get version/kind; json parse error: unexpected end of JSON input\n",
+      "scheduled_status_update": false,
+      "status": 400
+    },
+    "malformed_typed_object": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Pod",
+            "version": "v1"
+          },
+          "object": {
+            "spec": "invalid"
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "missing_request": {
+      "content_type": "text/plain; charset=utf-8",
+      "error": "admission review with no request\n",
+      "scheduled_status_update": false,
+      "status": 400
+    },
+    "pod_assigned": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Pod",
+            "version": "v1"
+          },
+          "object": {
+            "spec": {
+              "nodeName": "other-node"
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "pod_unassigned": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Pod",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "name": "pod"
+            },
+            "spec": {}
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL3NwZWMvbm9kZU5hbWUiLCJ2YWx1ZSI6ImZpeHR1cmUtbm9kZSJ9XQ==",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "pod_update_direct": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Pod",
+            "version": "v1"
+          },
+          "object": {
+            "spec": {}
+          },
+          "oldObject": null,
+          "operation": "UPDATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL3NwZWMvbm9kZU5hbWUiLCJ2YWx1ZSI6ImZpeHR1cmUtbm9kZSJ9XQ==",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "pvc_assigned": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "PersistentVolumeClaim",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "annotations": {
+                "volume.kubernetes.io/selected-node": "other-node"
+              }
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "pvc_empty": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "PersistentVolumeClaim",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {}
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL21ldGFkYXRhL2Fubm90YXRpb25zIiwidmFsdWUiOnsidm9sdW1lLmt1YmVybmV0ZXMuaW8vc2VsZWN0ZWQtbm9kZSI6ImZpeHR1cmUtbm9kZSJ9fV0=",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "pvc_existing_annotation": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "PersistentVolumeClaim",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "annotations": {
+                "keep": "value"
+              }
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL21ldGFkYXRhL2Fubm90YXRpb25zIiwidmFsdWUiOnsidm9sdW1lLmt1YmVybmV0ZXMuaW8vc2VsZWN0ZWQtbm9kZSI6ImZpeHR1cmUtbm9kZSJ9fV0=",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "read_failure": {
+      "content_type": "text/plain; charset=utf-8",
+      "error": "error reading request body: synthetic read failure\n",
+      "scheduled_status_update": false,
+      "status": 400
+    },
+    "service_clusterip": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Service",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "name": "svc",
+              "namespace": "default"
+            },
+            "spec": {
+              "type": "ClusterIP"
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "service_disabled": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Service",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "name": "svc",
+              "namespace": "default"
+            },
+            "spec": {
+              "type": "LoadBalancer"
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "service_dry_run": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": true,
+          "kind": {
+            "group": "",
+            "kind": "Service",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "name": "svc",
+              "namespace": "default"
+            },
+            "spec": {
+              "type": "LoadBalancer"
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "service_no_address": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Service",
+            "version": "v1"
+          },
+          "object": {
+            "metadata": {
+              "name": "svc",
+              "namespace": "default"
+            },
+            "spec": {
+              "type": "LoadBalancer"
+            }
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "unknown_kind": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Unknown",
+            "version": "v1"
+          },
+          "object": {},
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "wrong_content_type": {
+      "admission_review": {
+        "apiVersion": "admission.k8s.io/v1",
+        "kind": "AdmissionReview",
+        "request": {
+          "dryRun": false,
+          "kind": {
+            "group": "",
+            "kind": "Pod",
+            "version": "v1"
+          },
+          "object": {
+            "spec": {}
+          },
+          "oldObject": null,
+          "operation": "CREATE",
+          "options": null,
+          "resource": {
+            "group": "",
+            "resource": "fixture",
+            "version": "v1"
+          },
+          "uid": "fixture-uid",
+          "userInfo": {}
+        },
+        "response": {
+          "allowed": true,
+          "patch": "W3sib3AiOiJhZGQiLCJwYXRoIjoiL3NwZWMvbm9kZU5hbWUiLCJ2YWx1ZSI6ImZpeHR1cmUtbm9kZSJ9XQ==",
+          "patchType": "JSONPatch",
+          "uid": "fixture-uid"
+        }
+      },
+      "content_type": "application/json",
+      "scheduled_status_update": false,
+      "status": 200
+    },
+    "wrong_method": {
+      "content_type": "text/plain; charset=utf-8",
+      "error": "method not allowed\n",
+      "scheduled_status_update": false,
+      "status": 405
+    }
+  }
+}

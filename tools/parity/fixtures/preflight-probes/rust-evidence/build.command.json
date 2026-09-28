@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=cdb4f7ce789f8795518fd34d8bafa930",
+    "-t",
+    "rubix-node-probes-cdb4f7ce789f8795518fd34d8bafa930",
+    "-f",
+    "/tmp/rubix-node-context-NMbluh/tools/parity/fixtures/preflight-probes/Capture.Dockerfile",
+    "/tmp/rubix-node-context-NMbluh"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7889,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Mru39c",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "65ed8055b7d0c51fca4d1defa41130b4e9385eb4078180c4f70e9a993619ff70",
+  "timeout": false
+}

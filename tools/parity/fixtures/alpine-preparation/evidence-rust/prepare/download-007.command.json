@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "curl",
+    "--fail",
+    "--location",
+    "--proto",
+    "=https",
+    "--max-time",
+    "30",
+    "--max-filesize",
+    "16777216",
+    "--output",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-j0XA8w/jansson-2.15.0-r0.apk",
+    "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/jansson-2.15.0-r0.apk"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 4811,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-l4JJjq",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "0a8bbe1fb213cf04beb44e344d08e80da79785eb294f0a4bf30f8d6fa8fcb2b2",
+  "timeout": false
+}

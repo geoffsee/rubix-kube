@@ -1,0 +1,4 @@
+=== RUN   TestCapture
+RUBIX_CAPTURE ["owned\t10-bridge.conflist","plugins\tbridge,host-local,portmap,loopback","default_missing_warning\ttrue","ordering\t3,1","files_unchanged\ttrue"]
+--- PASS: TestCapture (0.00s)
+PASS

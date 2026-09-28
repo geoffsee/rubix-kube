@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform",
+    "linux/arm64",
+    "--tag",
+    "rubix-config-scalar-base-kbkug2",
+    "--file",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-4NTCVp/Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-4NTCVp"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 5148,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-6eP2SE",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "4abda8aa91354d4c7c966d0e3fae3b1e15eaa8fe5cef879ca6fc5a0383eebbb4",
+  "timeout": false
+}

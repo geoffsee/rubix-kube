@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform",
+    "linux/arm64",
+    "-t",
+    "rubix-management-go-tsbfgp",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-platform-context-phjQ9Z"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 6809,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-K3hMWp",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "e94f54e2a57104a85a2fe7d6d132a288c2b04d714321a0087fb3933c55463cdb",
+  "timeout": false
+}

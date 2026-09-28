@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rmi",
+    "-f",
+    "rubix-supervisor-signals-b8a5c4df2ddee76fcb2cc5f67eb68fc2"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 6525,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-RTBmNZ",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "49aa95d331fef4606e4091ff5a040fb253d38ada4e3692f1886be3193a740ad0",
+  "timeout": false
+}

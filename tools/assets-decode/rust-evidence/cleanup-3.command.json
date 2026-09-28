@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rmi",
+    "-f",
+    "rubix-decode-3b8b77c622600d316d59a484e60e7882"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7024,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-go2ufD",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "a06fa0e4b8ee34dda1a4926021ae231ca83fdfb983f6840747da227b3d0192df",
+  "timeout": false
+}

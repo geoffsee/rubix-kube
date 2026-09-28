@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform",
+    "linux/arm64",
+    "--tag",
+    "rubix-config-linebreak-ekw6n9",
+    "--file",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-B7YDcH/Capture.Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-B7YDcH"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 5032,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qA978B",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "2213f1aa1e23f8388563606d626dbe34ac9f9b248593aee474e3bdd2e3414f93",
+  "timeout": false
+}

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "docker",
+    "create",
+    "--name",
+    "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed-artifact",
+    "rubix-node-container-5127a530d6c9a30b79aa64f66a43e4ed",
+    "/bin/true"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 9064,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-wOldqf",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "d8e825edd2ca594684626447cf65e275f93b68e57ea56f94443f5c4a94d993a0",
+  "timeout": false
+}

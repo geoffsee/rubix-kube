@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--platform",
+    "linux/arm64",
+    "--tag",
+    "rubix-config-api-ythmfh",
+    "--file",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-GT3RK5/Capture.Dockerfile",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-fixture-build-GT3RK5"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 4756,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-t38ujw",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "498be2f7e5260cd95631b6330a47d763c9cd472682a95187203f9f015a0f3e2a",
+  "timeout": false
+}

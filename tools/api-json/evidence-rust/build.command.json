@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--progress=plain",
+    "--tag",
+    "rubix-api-json-dw29n3",
+    "-f",
+    "/tmp/rubix-component-context-7745X7/tools/api-json/Dockerfile",
+    "/tmp/rubix-component-context-7745X7"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 7004,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-mOHHfg",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "999faaa18a0cb86d5561b44cfe20b982b86fe2136ce68d01a1795b4191d23fde",
+  "timeout": false
+}

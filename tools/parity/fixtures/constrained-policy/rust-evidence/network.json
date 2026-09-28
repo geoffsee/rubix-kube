@@ -1,0 +1,13 @@
+[
+  "correct_readonly\ttrue",
+  "correct_readonly_bytes\t310a",
+  "incorrect_readonly\tfalse",
+  "incorrect_readonly_bytes\t300a",
+  "absent\ttrue",
+  "unreadable_skipped\ttrue",
+  "unreadable_skipped_bytes\t300a",
+  "prefix_one_accepted\ttrue",
+  "prefix_one_accepted_bytes\t313067617262616765",
+  "incorrect_writable\ttrue",
+  "incorrect_writable_bytes\t31"
+]

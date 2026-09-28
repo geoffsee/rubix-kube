@@ -1,0 +1,22 @@
+{
+  "fixture_sha256": {
+    "build.command.json": "e047d478c9d2e26c365dc1e7b517546878e3ef3a7229aa1aa26f7b91780d054b",
+    "build.log": "6f7ee42e4a194a052da3f26890a420b1ef3dc7ae088911838b20043dfbd05c4a",
+    "cleanup-1.command.json": "11f8d8f224634dca61b5f21499f9055e4a0b6acd4eda945a826d5164309cdca8",
+    "cleanup-1.log": "2671f72bd437e5317045d5262fd6e30021b4c596aff989db52d6eea270652c01",
+    "cleanup-2.command.json": "4d74703681b0b076fc857879c7948d77385defb65b9559ed35387004de69fefa",
+    "cleanup-2.log": "4fc32909ab5ec49e8e4b1ec7e3b14cbbee2f395179556a5a0ffd0372ed130801",
+    "cleanup-3.command.json": "7057da2c5d3e9f908639e37a8f07a73a0eee021de24832a0d325699101756d8e",
+    "cleanup-3.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-4.command.json": "21c58c7e7c061acc0abe9f7b92cc03f6c08634d415fbfdab800f2df1dcc72479",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "config-0.command.json": "764cb467b1f1708530eb97d2fb900a0339c0871be62bf518b3c7b6ac50b164a0",
+    "config-0.log": "03c115676dca8a9cccf6cc2f1e49a3e55d56369f6e9bb7d0ac6dbab109461bf2",
+    "config.json": "18e8880417b14b5434c7d6d172c9a82e4f601b5a69692560e4077cc11707ea45",
+    "image-inspect.command.json": "0125b7b2c3068de65ac2f100dc5a78002bc854f9e2380b8e925f8bae8dec44cb",
+    "image-inspect.log": "29ac63599c20f934330090b77131a5c0b38fc8c261885c08bb0adcbd94058b82",
+    "receipt.json": "4566738517eff21bcf1b6fa463bb4c4fd2cf24d0ea47c07931ee2957d164d1d9"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "schema_version": 2
+}

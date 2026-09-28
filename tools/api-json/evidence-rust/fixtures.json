@@ -1,0 +1,321 @@
+{
+  "cases": {
+    "custom-create": {
+      "apiVersion": "fixture.rubix.test/v1",
+      "kind": "Sample",
+      "metadata": {
+        "generation": 1,
+        "name": "arbitrary",
+        "namespace": "serialization-fixture"
+      },
+      "spec": {
+        "unknown": {
+          "bool": false,
+          "decimal": 1.25,
+          "integer": 17,
+          "list": [
+            null,
+            true,
+            "7",
+            7,
+            {
+              "nested": "value"
+            }
+          ],
+          "metadata": {
+            "uid": "user-value"
+          },
+          "null": null
+        }
+      }
+    },
+    "custom-read": {
+      "apiVersion": "fixture.rubix.test/v1",
+      "kind": "Sample",
+      "metadata": {
+        "generation": 1,
+        "name": "arbitrary",
+        "namespace": "serialization-fixture"
+      },
+      "spec": {
+        "unknown": {
+          "bool": false,
+          "decimal": 1.25,
+          "integer": 17,
+          "list": [
+            null,
+            true,
+            "7",
+            7,
+            {
+              "nested": "value"
+            }
+          ],
+          "metadata": {
+            "uid": "user-value"
+          },
+          "null": null
+        }
+      }
+    },
+    "pod-create": {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "annotations": {
+          "example.test/text": "literal: null"
+        },
+        "generation": 1,
+        "labels": {
+          "fixture": "json"
+        },
+        "name": "quantities",
+        "namespace": "serialization-fixture"
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "image": "example.invalid/fixture:v1",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "main",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "2Gi"
+              },
+              "requests": {
+                "cpu": "500m",
+                "ephemeral-storage": "1e3",
+                "memory": "1536Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          },
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          }
+        ]
+      },
+      "status": {
+        "phase": "Pending",
+        "qosClass": "Burstable"
+      }
+    },
+    "pod-read": {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "annotations": {
+          "example.test/text": "literal: null"
+        },
+        "generation": 1,
+        "labels": {
+          "fixture": "json"
+        },
+        "name": "quantities",
+        "namespace": "serialization-fixture"
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "image": "example.invalid/fixture:v1",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "main",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "2Gi"
+              },
+              "requests": {
+                "cpu": "500m",
+                "ephemeral-storage": "1e3",
+                "memory": "1536Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          },
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          }
+        ]
+      },
+      "status": {
+        "phase": "Pending",
+        "qosClass": "Burstable"
+      }
+    },
+    "service-create": {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "ports",
+        "namespace": "serialization-fixture"
+      },
+      "spec": {
+        "clusterIP": "None",
+        "clusterIPs": [
+          "None"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "name": "named",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": "http"
+          },
+          {
+            "name": "numeric",
+            "port": 81,
+            "protocol": "TCP",
+            "targetPort": 8080
+          }
+        ],
+        "selector": {
+          "fixture": "json"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    "service-read": {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "ports",
+        "namespace": "serialization-fixture"
+      },
+      "spec": {
+        "clusterIP": "None",
+        "clusterIPs": [
+          "None"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "name": "named",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": "http"
+          },
+          {
+            "name": "numeric",
+            "port": 81,
+            "protocol": "TCP",
+            "targetPort": 8080
+          }
+        ],
+        "selector": {
+          "fixture": "json"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    }
+  },
+  "schema_version": 1,
+  "watch": [
+    {
+      "object": {
+        "apiVersion": "v1",
+        "data": {
+          "value": "first"
+        },
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "watched",
+          "namespace": "serialization-fixture"
+        }
+      },
+      "type": "ADDED"
+    },
+    {
+      "object": {
+        "apiVersion": "v1",
+        "data": {
+          "value": "second"
+        },
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "watched",
+          "namespace": "serialization-fixture"
+        }
+      },
+      "type": "MODIFIED"
+    },
+    {
+      "object": {
+        "apiVersion": "v1",
+        "data": {
+          "value": "second"
+        },
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "watched",
+          "namespace": "serialization-fixture"
+        }
+      },
+      "type": "DELETED"
+    }
+  ]
+}

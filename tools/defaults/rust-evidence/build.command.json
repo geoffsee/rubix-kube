@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "docker",
+    "build",
+    "--network",
+    "none",
+    "--platform",
+    "linux/arm64",
+    "--tag",
+    "rubix-official-defaults-ircoue",
+    "--build-arg",
+    "SOURCE_SHA256=933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-official-build-S8dZEF"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 8913,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-0Q0VB0",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "34ad3a161410f2e2a06aa1b10e29a8b5ef5d2a939f10387e40836d9797f0d86a",
+  "timeout": false
+}

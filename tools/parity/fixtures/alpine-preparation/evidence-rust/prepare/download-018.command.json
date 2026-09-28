@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "curl",
+    "--fail",
+    "--location",
+    "--proto",
+    "=https",
+    "--max-time",
+    "30",
+    "--max-filesize",
+    "16777216",
+    "--output",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-j0XA8w/openrc-user-0.63.2-r0.apk",
+    "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/openrc-user-0.63.2-r0.apk"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 4831,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-2jHOL6",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "0ab992452ef58488f1ce0350a24c691c81368bf5e073c628b689bd92648dfa90",
+  "timeout": false
+}

@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "docker",
+    "rmi",
+    "-f",
+    "rubix-node-probes-cdb4f7ce789f8795518fd34d8bafa930"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": true,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 8052,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-hLvz3v",
+  "spawned": true,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "1e6e5611a84a515300cd3b3c93718c0d036672002c3b6820e5aaf047093c03e4",
+  "timeout": false
+}

@@ -1,0 +1,31 @@
+{
+  "fixture_sha256": {
+    "build.command.json": "362a5de5d233566a025e8ab1d5d2abb1d802e7928514f6572c079031431104d9",
+    "build.log": "cfe18a5699e77324fb7543bc0e4ef50650e6e2a40c2584a884f986daa6d914cf",
+    "cleanup-1.command.json": "41e8b7d401aa925f8e1700d2e0e0cdfa9c25646af80599546c82c4b31d9e742c",
+    "cleanup-1.log": "2c547e32a7785f0087629492dfc7a4ca3b5052066ead6774b11738e79c8c6a99",
+    "cleanup-2.command.json": "c0939e2dab9566cbbf96db3fe81b080891a2708b36bc9c9ee54ec614d265d0b2",
+    "cleanup-2.log": "b0c5c7cabbc2b232bab9a3437f2ec5f6526dee06f9d7902dc7bf0f2a7a4efb7c",
+    "cleanup-3.command.json": "536d08b8583c37f1937ee40a7398736b9aec47379447995d78c27cb0ed685780",
+    "cleanup-3.log": "cf3beba45083857ae3b851098d6a89a9d552826fd9dce97fdc4f8fb597e2316a",
+    "cleanup-4.command.json": "ef7decabd9c37f6a77c3cb2dfd2040c03d58e5c668aed200d3a515a8d2e03f9b",
+    "cleanup-4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-5.command.json": "6a19074bf6c95ad8625830a9ee3a3e98bdd74df27fc8701dd8d1a5d8a85679b8",
+    "cleanup-5.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cleanup-6.command.json": "e4faf6fb53a65c7936510cc6a952f8512680f6f3bd9ef1da20f0c67c71553f83",
+    "cleanup-6.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "image-inspect.command.json": "19f0ce34c4ddcc8259ea895f19fa91c7a72ad78c1b946136191362a919055c1a",
+    "image-inspect.log": "469f800a2f709360d059da13cc2d123df57d89c7158f2eb30a5058fb564e2610",
+    "preflight-0.command.json": "a49c00af18d0125815730bb8d803738624c97e587722fa602efe86d708c63177",
+    "preflight-0.log": "3fb9b05c04997050a5c0fe312983393b5117d1895bdfc851410b8b2ee5be34ca",
+    "preflight-1.command.json": "ee6047bf67d72d5c74e39fba6e443af01a9fb4fcf21d9c320fe05fceccd97be1",
+    "preflight-1.log": "08a784ceac60f121ad347654de6fb4876cc263c48160f3983b77ee98e8b811ce",
+    "preflight.json": "e8c052644ae4d9fd7ec0773a76b981e16e3f02d1c309883c90207f1c5ad8e805",
+    "receipt.json": "c54a1538dccaf196da42ad80f95ddcc650c4f2af37ddb328d1c4e912dd243e22",
+    "source-copy.command.json": "0a2f5c154baa1412e03ac70cb14a8c755fde8d4fb489887511532f49194a9d54",
+    "source-copy.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source.sha256": "4d2e527de784fff6c5d7d95bc9d4e69a91c4d21957580525e639341982da4944"
+  },
+  "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "schema_version": 2
+}
