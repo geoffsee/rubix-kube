@@ -1,0 +1,57 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Capture.Dockerfile
+#1 transferring dockerfile: 946B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#4 DONE 0.0s
+
+#5 [2/6] WORKDIR /src
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 5.50kB done
+#6 DONE 0.0s
+
+#7 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/preflight/preflight.go  && tar -xOf /tmp/source.tar.gz kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.sum > go.sum
+#7 0.124   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#7 0.124                                  Dload  Upload   Total   Spent    Left  Speed
+#7 0.124   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  8915    0  8915    0     0  10433      0 --:--:-- --:--:-- --:--:-- 10426100  725k    0  725k    0     0   452k      0 --:--:--  0:00:01 --:--:--  452k100  874k    0  874k    0     0   496k      0 --:--:--  0:00:01 --:--:--  496k
+#7 1.891 /tmp/source.tar.gz: OK
+#7 DONE 1.9s
+
+#8 [4/6] COPY go.mod preflight_capture_test.go ./
+#8 DONE 0.0s
+
+#9 [5/6] RUN sha256sum preflight.go > /source.sha256 && go test -mod=readonly -c -trimpath -o /preflight.test . && sha256sum /preflight.test >> /source.sha256
+#9 0.150 go: downloading github.com/rs/zerolog v1.33.0
+#9 1.197 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 1.409 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 1.618 go: downloading golang.org/x/sys v0.47.0
+#9 DONE 8.3s
+
+#10 [6/6] WORKDIR /tmp
+#10 DONE 0.0s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 1.9s done
+#11 exporting manifest sha256:f189f8049caf18b985c20480a0391543aa223c16fb64e9f73c626c667c583970 done
+#11 exporting config sha256:d210692b9132055b7f22c2cd0c9750c907d6ce0db44250e701bd090c12795ab4 done
+#11 exporting attestation manifest sha256:0c8ca8888ac3d157cd1f91ce84959beb9cc8f2e5dcfcb44af070105268929d8f done
+#11 exporting manifest list sha256:f3cda3b7ca30c6c6abe66e85967a3267afb990728292e152c709c41eaa5096a3 done
+#11 naming to docker.io/library/rubix-preflight-policy-u6lt1g:latest done
+#11 unpacking to docker.io/library/rubix-preflight-policy-u6lt1g:latest
+#11 unpacking to docker.io/library/rubix-preflight-policy-u6lt1g:latest 0.4s done
+#11 DONE 2.4s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/kgt0ejpq04vhe36ov41jmeole

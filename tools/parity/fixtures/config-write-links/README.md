@@ -35,7 +35,7 @@ own documented policy if changed. No cross-process locking, adversarial director
 replacement, crash recovery, power-loss durability, or arbitrary filesystem fault
 coverage is claimed.
 
-`verify.py` independently constructs exact expected names, types, modes, contents,
+`tools/dev/src/fixture_oracles/config_links.rs` independently constructs exact expected names, types, modes, contents,
 link text, success/failure, and inode relationships from the reviewed writer's
 operations. Expected replacement YAML comes from the earlier independently
 captured `config-api/config.json` first document with the identical synthetic
@@ -50,12 +50,12 @@ digests, raw-to-normalized record equality, and verified empty cleanup inventori
 The frozen-evidence test additionally requires the complete local/source hash
 inventories and binds replacement YAML to its earlier config-api oracle. Mutation tests
 reject failed/missing runs, missing provenance entries, stale hashes and tampered
-raw or normalized records, including under `python -O`, and cover each consequential link, mode, failure, byte preservation and cleanup claim.
+raw or normalized records, in debug and release Rust builds, and cover each consequential link, mode, failure, byte preservation and cleanup claim.
 
 ```sh
-python3 tools/parity/fixtures/config-write-links/capture.py --output /tmp/unique-writer-links
-python3 tools/parity/fixtures/config-write-links/verify.py /tmp/unique-writer-links
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/parity/fixtures/config-write-links -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture config-write-links --output /tmp/unique-writer-links
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence config-write-links /tmp/unique-writer-links
+cargo test --locked -p rubix-dev fixture_oracles::config_links
 ```
 
 The builder image, source archive, and revision are pinned in `Capture.Dockerfile`.
@@ -63,7 +63,7 @@ Build timeout is 30 minutes. Each trusted finite seven-case test run has a 90-se
 Go timeout, 110-second Docker deadline, 512MiB memory, 128 PID limit, two CPUs,
 private 64MiB temporary filesystem, read-only root, no network, no capabilities,
 and no-new-privileges. File output and streamed test logs are limited to 1MiB; streamed build logs
-are limited to 16MiB. A deadline or output-budget failure kills/reaps the client
+are limited to 8MiB. A deadline or output-budget failure kills/reaps the client
 process before owned Docker resource cleanup. This runner executes trusted pinned
 source tests, not hostile submitted executables. Cleanup
 independently removes and inventories owned containers/images, always attempts a
@@ -74,3 +74,7 @@ the second identical run. The receipt binds driver, harness, verifier and expect
 YAML hashes. Raw logs retain diagnostic timing. All reported filesystem state is
 unmodified observation; only owned random directory names and inode numbers are
 represented through stable relative names and independently observed equality.
+
+Historical captures and provenance remain unchanged. Current Rust captures belong
+in `rust-evidence/`; their mandatory gate binds the current Rust runner sources and
+owned command settlement. Historical source hashes describe the original run.

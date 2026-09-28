@@ -8,7 +8,7 @@ the distribution's explicit overrides and rendering.
 
 Five kubelet cases capture host/default, container/default, static CPU policy with
 options/reservations, and reported systemd/cgroupfs drivers. Full source-reviewed
-configuration maps are independently specified in verify.py. The actual writer's
+configuration maps are independently specified in `tools/dev/src/fixture_oracles/node_config.rs`. The actual writer's
 YAML, parsed written document and repeated byte identity are retained. Four argument
 cases use the actual configureKubeletArgs with an inert Cobra command to capture
 IPv4/IPv6 overrides and omission for loopback/invalid IP. Six private-file restart
@@ -40,10 +40,15 @@ No host files, credentials or private keys are mounted or exported.
 Run explicitly:
 
 ```sh
-python3 tools/parity/fixtures/node-config/capture.py --output /tmp/unique-node-config
-python3 -O tools/parity/fixtures/node-config/verify.py /tmp/unique-node-config
-python3 -m unittest discover -s tools/parity/fixtures/node-config -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-fixture -- capture node-config --output /tmp/unique-node-config
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify node-config /tmp/unique-node-config
+cargo run --locked -p rubix-dev --bin rubix-fixture -- verify-evidence node-config /tmp/unique-node-config
+cargo test --locked -p rubix-dev fixture_oracles::node_config
 ```
+
+Historical `evidence/` remains unchanged. Current Rust capture evidence belongs in
+`rust-evidence/`; the default evidence test requires a fresh receipt bound to the
+current Rust runner and command settlement records.
 
 The immutable source archive, digest-pinned Go 1.26.5 builder, unchanged module pins,
 external_deps build, and exact harness/helper/output hashes are recorded. The shared

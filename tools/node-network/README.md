@@ -5,7 +5,7 @@ host-network effects only in fresh owned Alpine virtual machines. It does not
 start Kubernetes or qualify an existing developer host. Production `rubix-kube`
 main remains unchanged.
 
-`build.py` uses the repository's digest-pinned Rust builder and Alpine runtime.
+The Rust fixture build command uses the repository's digest-pinned Rust builder and Alpine runtime.
 The pinned toolchain builds `aarch64-unknown-linux-musl`; strict Linux Clippy covers
 the library, network tests and consumer. Fourteen injected host-safe tests and
 help/version/print-config execute as an unprivileged user in a read-only container
@@ -13,18 +13,17 @@ without networking or capabilities. The print-config path uses the same explicit
 IPv6/container/runtime arguments as the guest effects and verifies their resolved
 values before any VM is launched. The artifact receipt binds the exact binary,
 compiled inputs, toolchain/manifests/lockfile, example, tests and fixture sources.
-`--allow-dirty-hostsafe-build` is only for exploratory compilation. VM captures
-reject dirty build receipts and changed inventories.
+Builds and VM captures reject dirty source and changed inventories.
 
 After source review and commit, run the build and two independent captures:
 
 ```sh
-python3 tools/node-network/build.py --output /tmp/network-build-UNIQUE
-python3 tools/node-network/capture.py --allow-privileged-vm \
+cargo run -p rubix-dev --bin rubix-node-fixture --locked -- network build /tmp/network-build-UNIQUE
+cargo run -p rubix-dev --bin rubix-node-fixture --locked -- network capture-vm --allow-privileged-vm \
   --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache \
   --artifact-directory /tmp/network-build-UNIQUE --output /tmp/network-first-UNIQUE
-python3 tools/node-network/capture.py --allow-privileged-vm \
+cargo run -p rubix-dev --bin rubix-node-fixture --locked -- network capture-vm --allow-privileged-vm \
   --image-cache /tmp/rubix-vm-image-cache \
   --input-cache /tmp/rubix-alpine-input-cache \
   --artifact-directory /tmp/network-build-UNIQUE --output /tmp/network-repeat-UNIQUE
@@ -66,15 +65,13 @@ Successful evidence requires orderly QEMU exit, absent owned process group, remo
 private directory and no cleanup errors. The reviewed helper refuses destructive
 post-reap signaling and retains uncertain resources instead of claiming cleanup.
 
-Publish the complete first/repeat capture directories under `evidence/first` and
-`evidence/repeat` without the external binary, then hash every published raw file in
-`provenance.json`. `verify.py` checks exact inventory, build/source bindings, guest
-input checks, typed outcomes, independent readbacks and cleanup. Run Python tests
-and the verifier under both normal Python and `python3 -O`; checks use explicit
-exceptions rather than removable assertions. Synthetic mutation tests exercise
+Publish the complete first/repeat capture directories under `rust-evidence/first` and
+`rust-evidence/repeat` without the external binary, then hash every published raw file in
+`rust-provenance.json`. `network verify-published` checks exact inventory, build/source bindings, guest
+input checks, typed outcomes, independent readbacks and cleanup. Run `cargo test -p rubix-dev --bin rubix-node-fixture --locked` for independent semantic and mutation checks. Synthetic mutation tests exercise
 verifier rejection and do not substitute for captured VM evidence.
 
-Published qualification uses frozen source
+Historical qualification used frozen source
 `fb24f95f20d1152fc5921c4f0377add1051f42cb`. Both fresh Alpine guests completed
 all nine cases and orderly shutdown, with no recorded cleanup errors. The first
 real pass in each guest returned 13 successful fixed nft-family command attempts;
@@ -90,8 +87,7 @@ The static candidate SHA256 is
 same frozen revision and includes all 14 safe Rust tests plus effect-free CLI
 checks with actual guest flags. Published first/repeat evidence retains exact
 build receipts and source inventories along with every captured guest file.
-Twenty synthetic rejection tests and four mandatory frozen-evidence tests pass
-under normal Python and `-O`; current build and guest verifiers also pass.
+Those historical results do not satisfy the new mandatory Rust receipt gates.
 
 Earlier failed exploratory guests remain outside the publication at
 `/tmp/rubix-network-reviewed-{first,repeat}-20260928-r1`: the fixture used invalid
@@ -99,7 +95,21 @@ boolean CLI syntax and stopped before preparation effects. Both failed guests
 also shut down cleanly. The corrected capture changes only fixture expectations
 and arguments; production preparation behavior was unchanged.
 
-The current refresh binds the container preparation additions and Rust dependency
+The historical refresh bound the container preparation additions and Rust dependency
 features into the complete compiled source inventory. Both guest captures were
 rerun from this clean revision. This evidence qualifies the network boundary;
 `tools/node-container` separately qualifies the explicit combined preparation API.
+
+Current qualification requires schema 3 artifact receipts and schema 2 owned-VM
+receipts from reviewed source. Preserve historical raw evidence unchanged and
+publish verified Rust captures separately. Use `network verify DIRECTORY` for one
+new guest or `network verify-published` for installed first/repeat evidence,
+through the same `cargo run` prefix above.
+Builder nonce frames and settled raw command receipts bind every execution.
+The guest lifecycle uses the shared Rust ISO seed builder and process owner;
+family verification additionally binds SCP argv, exact stdin scripts/input hashes,
+restoration and independent kernel observations. Guest command output is bounded
+to 256 KiB. Install whole output directories under `rust-evidence/first` and
+`rust-evidence/repeat`, retaining historical `evidence/` bytes. Include every raw
+command receipt and record the complete inventory in `rust-provenance.json`
+only after review.

@@ -63,8 +63,8 @@ fn fixture_command(mode: &str, root: &std::path::Path) -> ProcessCommand {
     if mode == "missing" {
         ProcessCommand::new("/missing-output-fixture")
     } else {
-        ProcessCommand::new("/usr/local/bin/python3")
-            .arg("/fixture.py")
+        ProcessCommand::new("/fixture")
+            .arg("output-child")
             .arg(mode)
             .arg(root)
     }

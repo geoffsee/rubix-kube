@@ -1,0 +1,608 @@
+UEFI firmware (version edk2-stable202408-prebuilt.qemu.org built at 16:28:50 on Sep 12 2024)
+ArmTrngLib could not be correctly initialized.
+Error: Image at 000BFDB6000 start failed: 00000001
+Error: Image at 000BFD6D000 start failed: Not Found
+Error: Image at 000BFCBA000 start failed: Unsupported
+Error: Image at 000BFC3F000 start failed: Not Found
+Error: Image at 000BFB65000 start failed: Aborted
+Tpm2SubmitCommand - Tcg2 - Not Found
+Tpm2GetCapabilityPcrs fail!
+Tpm2SubmitCommand - Tcg2 - Not Found
+Image type X64 can't be loaded on AARCH64 UEFI system.
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+BdsDxe: starting Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+ConvertPages: Incompatible memory types, the pages to allocate have been allocated
+ConvertPages: Incompatible memory types, the pages to allocate have been allocated
+[01;01H[01;01H[01;01H[2J[01;01H[01;01H[01;01H[01;01H[02;01H[02;26HL[02;27Hi[02;28Hm[02;29Hi[02;30Hn[02;31He[02;32H [02;33H1[02;34H2[02;35H.[02;36H9[02;37H.[02;38H0[02;39H [02;40H([02;41Ha[02;42Ha[02;43Hr[02;44Hc[02;45Hh[02;46H6[02;47H4[02;48H,[02;49H [02;50HU[02;51HE[02;52HF[02;53HI[02;54H)[02;55H[02;01H[03;01H[03;01H[04;01H[04;01H[05;01H[05;01H[06;01H[12;01H [12;02H [12;03H [12;04H [12;05H [12;06H [12;07H [12;08H [12;09H [12;10H [12;11H [12;12H [12;13H [12;14H [12;15H [12;16H [12;17H [12;18H [12;19H [12;20H [12;21H [12;22H [12;23H [12;24H [12;25H [12;26H [12;27H [12;28H [12;29H [12;30H [12;31H [12;32H [12;33H [12;34H[0m[30m[47m [12;35HA[12;36Hl[12;37Hp[12;38Hi[12;39Hn[12;40He[12;41H [12;42HL[12;43Hi[12;44Hn[12;45Hu[12;46Hx[12;47H [12;48H[0m[37m[40m[12;01H[13;01H[04;22HA[04;23HR[04;24HR[04;25HO[04;26HW[04;27HS[04;28H [04;29HS[04;30He[04;31Hl[04;32He[04;33Hc[04;34Ht[04;35H [04;36H [04;37H [04;38H [04;39HE[04;40HN[04;41HT[04;42HE[04;43HR[04;44H [04;45HB[04;46Ho[04;47Ho[04;48Ht[04;49H [04;50H [04;51H [04;52H [04;53HE[04;54H [04;55HE[04;56Hd[04;57Hi[04;58Ht[04;59H[06;24HS[06;25H [06;26HF[06;27Hi[06;28Hr[06;29Hm[06;30Hw[06;31Ha[06;32Hr[06;33He[06;34H [06;35HS[06;36He[06;37Ht[06;38Hu[06;39Hp[06;40H [06;41H [06;42H [06;43H [06;44HB[06;45H [06;46HB[06;47Hl[06;48Ha[06;49Hn[06;50Hk[06;51H [06;52HE[06;53Hn[06;54Ht[06;55Hr[06;56Hy[06;57H[13;01H[13;01H[14;01H[14;01H[15;01H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H1[23;52H0[23;53H.[23;54H.[23;55H.[23;56H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H9[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H8[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H7[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H6[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H5[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H4[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H3[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H2[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H1[23;52H.[23;53H.[23;54H.[23;55H[01;01H[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x610f0000]
+[    0.000000] Linux version 6.18.52-0-virt (buildozer@build-3-24-aarch64) (cc (Alpine 15.2.0) 15.2.0, GNU ld (GNU Binutils) 2.45.1) #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48
+[    0.000000] efi: EFI v2.7 by EDK II
+[    0.000000] efi: SMBIOS 3.0=0xbfed0000 MEMATTR=0xbea35018 ACPI 2.0=0xbcb43018 INITRD=0xbc716f18 MEMRESERVE=0xbc716f98 
+[    0.000000] ACPI: Early table checksum verification disabled
+[    0.000000] ACPI: RSDP 0x00000000BCB43018 000024 (v02 BOCHS )
+[    0.000000] ACPI: XSDT 0x00000000BCB43F18 000064 (v01 BOCHS  BXPC     00000001      01000013)
+[    0.000000] ACPI: FACP 0x00000000BCB43B18 000114 (v06 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: DSDT 0x00000000BCB41018 001517 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: APIC 0x00000000BCB43C98 00010C (v04 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: PPTT 0x00000000BCB43E18 000074 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: GTDT 0x00000000BCB43098 000068 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: MCFG 0x00000000BCB43A98 00003C (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: SPCR 0x00000000BCB43818 000050 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: DBG2 0x00000000BCB43A18 000057 (v00 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: IORT 0x00000000BCB43898 000054 (v05 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: SPCR: console: pl011,mmio32,0x9000000,9600
+[    0.000000] NUMA: Faking a node at [mem 0x0000000040000000-0x00000000bfffffff]
+[    0.000000] NODE_DATA(0) allocated [mem 0xbf855b40-0xbf857fff]
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000040000000-0x00000000bfffffff]
+[    0.000000]   DMA32    empty
+[    0.000000]   Normal   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000040000000-0x00000000bc76ffff]
+[    0.000000]   node   0: [mem 0x00000000bc770000-0x00000000bcb3ffff]
+[    0.000000]   node   0: [mem 0x00000000bcb40000-0x00000000bfe1ffff]
+[    0.000000]   node   0: [mem 0x00000000bfe20000-0x00000000bfeaffff]
+[    0.000000]   node   0: [mem 0x00000000bfeb0000-0x00000000bfebffff]
+[    0.000000]   node   0: [mem 0x00000000bfec0000-0x00000000bffdffff]
+[    0.000000]   node   0: [mem 0x00000000bffe0000-0x00000000bfffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000040000000-0x00000000bfffffff]
+[    0.000000] psci: probing for conduit method from ACPI.
+[    0.000000] psci: PSCIv1.1 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: Trusted OS migration not required
+[    0.000000] psci: SMC Calling Convention v1.0
+[    0.000000] percpu: Embedded 34 pages/cpu s99544 r8192 d31528 u139264
+[    0.000000] Detected PIPT I-cache on CPU0
+[    0.000000] CPU features: detected: Address authentication (IMP DEF algorithm)
+[    0.000000] CPU features: detected: Spectre-v4
+[    0.000000] CPU features: detected: Spectre-BHB
+[    0.000000] alternatives: applying boot alternatives
+[    0.000000] Kernel command line: initrd=\\initramfs-virt root=LABEL=/ modules=sd-mod,usb-storage,ext4,gpio_pl061,ena,gve,mana console=ttyS0,115200n8 console=ttyAMA0,115200n8 console=tty0 autodetect_serial=setconsole=[Aa]mazon,Google,dmi.chassis_asset_tag=^(7783-7084-3265-9085-8269-3286-77|OracleCloud[.]com)$
+[    0.000000] Unknown kernel command line parameters "modules=sd-mod,usb-storage,ext4,gpio_pl061,ena,gve,mana autodetect_serial=setconsole=[Aa]mazon,Google,dmi.chassis_asset_tag=^(7783-7084-3265-9085-8269-3286-77|OracleCloud[.]com)$", will be passed to user space.
+[    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[    0.000000] Dentry cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.000000] software IO TLB: SWIOTLB bounce buffer size adjusted to 2MB
+[    0.000000] software IO TLB: area num 2.
+[    0.000000] software IO TLB: mapped [mem 0x00000000bf2fa000-0x00000000bf4fa000] (2MB)
+[    0.000000] Fallback order for Node 0: 0 
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 524288
+[    0.000000] Policy zone: DMA
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[    0.000000] Dynamic Preempt: none
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=4096 to nr_cpu_ids=2.
+[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000] 	Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.000000] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.000000] RCU Tasks Trace: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] GICv3: 988 SPIs implemented
+[    0.000000] GICv3: 0 Extended SPIs implemented
+[    0.000000] Root IRQ handler: gic_handle_irq
+[    0.000000] GICv3: GICv3 features: 16 PPIs, RSS
+[    0.000000] GICv3: GICD_CTLR.DS=1, SCR_EL3.FIQ=0
+[    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[    0.000000] GICv2m: ACPI overriding V2M MSI_TYPER (base:80, num:64)
+[    0.000000] GICv2m: range[mem 0x08020000-0x08020fff], SPI[80:143]
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.000000] arch_timer: cp15 timer running at 24.00MHz (virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
+[    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
+[    0.002276] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.002476] Console: colour dummy device 80x25
+[    0.002478] printk: legacy console [tty0] enabled
+[    0.003675] ACPI: Core revision 20250807
+[    0.004924] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=24000)
+[    0.004932] pid_max: default: 32768 minimum: 301
+[    0.007469] LSM: initializing lsm=lockdown,capability,landlock,yama
+[    0.008945] landlock: Up and running.
+[    0.008946] Yama: becoming mindful.
+[    0.009829] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.009837] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.016868] rcu: Hierarchical SRCU implementation.
+[    0.016872] rcu: 	Max phase no-delay instances is 400.
+[    0.016995] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.017258] Remapping and enabling EFI services.
+[    0.017379] smp: Bringing up secondary CPUs ...
+[    0.018117] Detected PIPT I-cache on CPU1
+[    0.018149] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[    0.018228] CPU1: Booted secondary processor 0x0000000001 [0x610f0000]
+[    0.018700] smp: Brought up 1 node, 2 CPUs
+[    0.018710] SMP: Total of 2 processors activated.
+[    0.018712] CPU: All CPU(s) started at EL1
+[    0.018716] CPU features: detected: Branch Target Identification
+[    0.018718] CPU features: detected: ARMv8.4 Translation Table Level
+[    0.018720] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.018722] CPU features: detected: Common not Private translations
+[    0.018724] CPU features: detected: CRC32 instructions
+[    0.018725] CPU features: detected: Data independent timing control (DIT)
+[    0.018727] CPU features: detected: E0PD
+[    0.018729] CPU features: detected: Enhanced Privileged Access Never
+[    0.018731] CPU features: detected: Generic authentication (IMP DEF algorithm)
+[    0.018733] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.018735] CPU features: detected: LSE atomic instructions
+[    0.018736] CPU features: detected: Privileged Access Never
+[    0.018738] CPU features: detected: RAS Extension Support
+[    0.018740] CPU features: detected: Speculation barrier (SB)
+[    0.018741] CPU features: detected: TLB range maintenance instructions
+[    0.019273] alternatives: applying system-wide alternatives
+[    0.020077] Memory: 1996100K/2097152K available (13312K kernel code, 1994K rwdata, 8420K rodata, 2048K init, 9282K bss, 96680K reserved, 0K cma-reserved)
+[    0.022947] devtmpfs: initialized
+[    0.027497] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.027516] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.027543] 23920 pages in range for non-PLT usage
+[    0.027544] 515440 pages in range for PLT usage
+[    0.027693] pinctrl core: initialized pinctrl subsystem
+[    0.027780] SMBIOS 3.0.0 present.
+[    0.027785] DMI: QEMU QEMU Virtual Machine, BIOS edk2-stable202408-prebuilt.qemu.org 08/13/2024
+[    0.027792] DMI: Memory slots populated: 1/1
+[    0.031309] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.031533] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
+[    0.031593] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.031669] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.031684] audit: initializing netlink subsys (disabled)
+[    0.031948] audit: type=2000 audit(0.027:1): state=initialized audit_enabled=0 res=1
+[    0.032001] thermal_sys: Registered thermal governor 'step_wise'
+[    0.032265] cpuidle: using governor ladder
+[    0.032381] cpuidle: using governor menu
+[    0.032430] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.032542] ASID allocator initialised with 256 entries
+[    0.032550] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.032681] Serial: AMBA PL011 UART driver
+[    0.033691] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.033696] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.033698] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.033700] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[    0.033701] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.033703] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.033705] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.033706] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[    0.034603] ACPI: Added _OSI(Module Device)
+[    0.034607] ACPI: Added _OSI(Processor Device)
+[    0.034609] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.035589] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.038495] ACPI: Interpreter enabled
+[    0.038501] ACPI: Using GIC for interrupt routing
+[    0.038523] ACPI: MCFG table detected, 1 entries
+[    0.043555] ACPI: CPU0 has been hot-added
+[    0.043594] ACPI: CPU1 has been hot-added
+[    0.043745] ARMH0011:00: ttyAMA0 at MMIO 0x9000000 (irq = 12, base_baud = 0) is a SBSA
+[    0.043807] printk: console [ttyAMA0] enabled
+[    0.046050] ACPI: PCI: Interrupt link L000 configured for IRQ 35
+[    0.046057] ACPI: PCI: Interrupt link L001 configured for IRQ 36
+[    0.046061] ACPI: PCI: Interrupt link L002 configured for IRQ 37
+[    0.046064] ACPI: PCI: Interrupt link L003 configured for IRQ 38
+[    0.046069] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.046088] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
+[    0.046117] acpi PNP0A08:00: _OSC: platform does not support [LTR]
+[    0.046144] acpi PNP0A08:00: _OSC: OS now controls [PCIeHotplug PME PCIeCapability]
+[    0.046212] acpi PNP0A08:00: ECAM area [mem 0x4010000000-0x401fffffff] reserved by PNP0C02:00
+[    0.046220] acpi PNP0A08:00: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
+[    0.046226] ACPI: Remapped I/O 0x000000003eff0000 to [io  0x0000-0xffff window]
+[    0.046292] PCI host bridge to bus 0000:00
+[    0.046298] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff window]
+[    0.046300] pci_bus 0000:00: root bus resource [io  0x0000-0xffff window]
+[    0.046301] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff window]
+[    0.046302] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.046314] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000 conventional PCI endpoint
+[    0.046433] pci 0000:00:01.0: [1af4:1000] type 00 class 0x020000 conventional PCI endpoint
+[    0.046690] pci 0000:00:01.0: BAR 0 [io  0x0100-0x011f]
+[    0.046693] pci 0000:00:01.0: BAR 1 [mem 0x10042000-0x10042fff]
+[    0.046698] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]
+[    0.046701] pci 0000:00:01.0: ROM [mem 0xfffc0000-0xffffffff pref]
+[    0.046824] pci 0000:00:02.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.048277] pci 0000:00:02.0: BAR 0 [io  0x0080-0x00ff]
+[    0.048287] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]
+[    0.048298] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]
+[    0.048547] pci 0000:00:03.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.049940] pci 0000:00:03.0: BAR 0 [io  0x0000-0x007f]
+[    0.049950] pci 0000:00:03.0: BAR 1 [mem 0x10040000-0x10040fff]
+[    0.049960] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]
+[    0.050244] pci 0000:00:01.0: ROM [mem 0x10000000-0x1003ffff pref]: assigned
+[    0.050250] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]: assigned
+[    0.050270] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]: assigned
+[    0.050288] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]: assigned
+[    0.050306] pci 0000:00:01.0: BAR 1 [mem 0x10040000-0x10040fff]: assigned
+[    0.050313] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]: assigned
+[    0.050320] pci 0000:00:03.0: BAR 1 [mem 0x10042000-0x10042fff]: assigned
+[    0.050327] pci 0000:00:02.0: BAR 0 [io  0x1000-0x107f]: assigned
+[    0.050527] pci 0000:00:03.0: BAR 0 [io  0x1080-0x10ff]: assigned
+[    0.050717] pci 0000:00:01.0: BAR 0 [io  0x1100-0x111f]: assigned
+[    0.051044] pci_bus 0000:00: resource 4 [mem 0x10000000-0x3efeffff window]
+[    0.051049] pci_bus 0000:00: resource 5 [io  0x0000-0xffff window]
+[    0.051051] pci_bus 0000:00: resource 6 [mem 0x8000000000-0xffffffffff window]
+[    0.051529] iommu: Default domain type: Translated
+[    0.051533] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.052559] efivars: Registered efivars operations
+[    0.053249] clocksource: Switched to clocksource arch_sys_counter
+[    0.053820] VFS: Disk quotas dquot_6.6.0
+[    0.053849] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.056151] pnp: PnP ACPI init
+[    0.056251] system 00:00: [mem 0x4010000000-0x401fffffff window] could not be reserved
+[    0.056269] pnp: PnP ACPI: found 1 devices
+[    0.057643] NET: Registered PF_INET protocol family
+[    0.057734] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.068014] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.068025] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.068030] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.068046] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
+[    0.068060] TCP: Hash tables configured (established 16384 bind 16384)
+[    0.068094] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
+[    0.068111] UDP hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.068115] UDP-Lite hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.068148] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.068152] NET: Registered PF_XDP protocol family
+[    0.068183] PCI: CLS 0 bytes, default 64
+[    0.068261] Unpacking initramfs...
+[    0.071331] kvm [1]: HYP mode not available
+[    0.071578] Initialise system trusted keyrings
+[    0.083119] workingset: timestamp_bits=44 max_order=19 bucket_order=0
+[    0.088797] Key type asymmetric registered
+[    0.088802] Asymmetric key parser 'x509' registered
+[    0.088841] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    0.119033] io scheduler mq-deadline registered
+[    0.119039] io scheduler kyber registered
+[    0.119063] io scheduler bfq registered
+[    0.126049] ACPI: \_SB_.L001: Enabled at IRQ 36
+[    0.126073] virtio-pci 0000:00:01.0: enabling device (0005 -> 0007)
+[    0.126479] ACPI: \_SB_.L002: Enabled at IRQ 37
+[    0.126489] virtio-pci 0000:00:02.0: enabling device (0005 -> 0007)
+[    0.126790] ACPI: \_SB_.L003: Enabled at IRQ 38
+[    0.126795] virtio-pci 0000:00:03.0: enabling device (0005 -> 0007)
+[    0.130670] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.135302] hv_vmbus: registering driver hyperv_keyboard
+[    0.135562] rtc-efi rtc-efi.0: registered as rtc0
+[    0.135612] rtc-efi rtc-efi.0: setting system clock to 2026-09-28T08:27:58 UTC (1790584078)
+[    0.135933] NET: Registered PF_INET6 protocol family
+[    0.137273] Segment Routing with IPv6
+[    0.137304] In-situ OAM (IOAM) with IPv6
+[    0.139005] Freeing initrd memory: 10940K
+[    0.141968] registered taskstats version 1
+[    0.142058] Loading compiled-in X.509 certificates
+[    0.148488] Loaded X.509 cert 'alpinelinux.org: Alpine Linux kernel key: 87fa969a47f3e2a6aa35859eb932a17c95abcd82'
+[    0.150245] Demotion targets for Node 0: null
+[    0.150733] Key type .fscrypt registered
+[    0.150750] Key type fscrypt-provisioning registered
+[    0.154509] clk: Disabling unused clocks
+[    0.154527] PM: genpd: Disabling unused power domains
+[    0.154670] Freeing unused kernel memory: 2048K
+[    0.154710] Run /init as init process
+[    0.169506] Alpine Init 3.14.1-r0
+[    0.169820] Loading boot drivers...
+[    0.178665] SCSI subsystem initialized
+[    0.188363] ACPI: bus type USB registered
+[    0.188426] usbcore: registered new interface driver usbfs
+[    0.188436] usbcore: registered new interface driver hub
+[    0.188445] usbcore: registered new device driver usb
+[    0.191058] usbcore: registered new interface driver usb-storage
+[    0.205117] pps_core: LinuxPPS API ver. 1 registered
+[    0.205129] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.206195] PTP clock support registered
+[    0.219049] loop: module loaded
+[    0.234078] ACPI: bus type drm_connector registered
+[    0.245563] Loading boot drivers: ok.
+[    0.247133] Mounting root...
+[    0.310934] virtio_blk virtio1: 2/0/0 default/read/poll queues
+[    0.313116] virtio_blk virtio1: [vda] 16777216 512-byte logical blocks (8.59 GB/8.00 GiB)
+[    0.327367] GPT:Primary header thinks Alt. header is not at the end of the disk.
+[    0.327396] GPT:673791 != 16777215
+[    0.327408] GPT:Alternate GPT header not at the end of the disk.
+[    0.327416] GPT:673791 != 16777215
+[    0.327424] GPT: Use GNU Parted to correct GPT errors.
+[    0.327439]  vda: vda1 vda2
+[    0.327674] virtio_blk virtio2: 2/0/0 default/read/poll queues
+[    0.330201] virtio_blk virtio2: [vdb] 108 512-byte logical blocks (55.3 kB/54.0 KiB)
+[    0.508302] EXT4-fs (vda2): mounted filesystem 53fa5455-9314-4990-97ab-91488d6924a9 ro with ordered data mode. Quota mode: none.
+[    0.508457] Mounting root: ok.
+[    2.002534] random: crng init done
+
+Welcome to Alpine Linux 3.24
+Kernel 6.18.52-0-virt on aarch64 (/dev/ttyAMA0)
+
+rubix-parity login: [   16.617735] reboot: Restarting system
+UEFI firmware (version edk2-stable202408-prebuilt.qemu.org built at 16:28:50 on Sep 12 2024)
+ArmTrngLib could not be correctly initialized.
+Error: Image at 000BFDB6000 start failed: 00000001
+Error: Image at 000BFD6D000 start failed: Not Found
+Error: Image at 000BFCBA000 start failed: Unsupported
+Error: Image at 000BFC3F000 start failed: Not Found
+Error: Image at 000BFB65000 start failed: Aborted
+Tpm2SubmitCommand - Tcg2 - Not Found
+Tpm2GetCapabilityPcrs fail!
+Tpm2SubmitCommand - Tcg2 - Not Found
+Image type X64 can't be loaded on AARCH64 UEFI system.
+[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01HBdsDxe: loading Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+BdsDxe: starting Boot0001 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x2,0x0)
+ConvertPages: Incompatible memory types, the pages to allocate have been allocated
+ConvertPages: Incompatible memory types, the pages to allocate have been allocated
+[01;01H[01;01H[01;01H[2J[01;01H[01;01H[01;01H[01;01H[02;01H[02;26HL[02;27Hi[02;28Hm[02;29Hi[02;30Hn[02;31He[02;32H [02;33H1[02;34H2[02;35H.[02;36H9[02;37H.[02;38H0[02;39H [02;40H([02;41Ha[02;42Ha[02;43Hr[02;44Hc[02;45Hh[02;46H6[02;47H4[02;48H,[02;49H [02;50HU[02;51HE[02;52HF[02;53HI[02;54H)[02;55H[02;01H[03;01H[03;01H[04;01H[04;01H[05;01H[05;01H[06;01H[12;01H [12;02H [12;03H [12;04H [12;05H [12;06H [12;07H [12;08H [12;09H [12;10H [12;11H [12;12H [12;13H [12;14H [12;15H [12;16H [12;17H [12;18H [12;19H [12;20H [12;21H [12;22H [12;23H [12;24H [12;25H [12;26H [12;27H [12;28H [12;29H [12;30H [12;31H [12;32H [12;33H [12;34H[0m[30m[47m [12;35HA[12;36Hl[12;37Hp[12;38Hi[12;39Hn[12;40He[12;41H [12;42HL[12;43Hi[12;44Hn[12;45Hu[12;46Hx[12;47H [12;48H[0m[37m[40m[12;01H[13;01H[04;22HA[04;23HR[04;24HR[04;25HO[04;26HW[04;27HS[04;28H [04;29HS[04;30He[04;31Hl[04;32He[04;33Hc[04;34Ht[04;35H [04;36H [04;37H [04;38H [04;39HE[04;40HN[04;41HT[04;42HE[04;43HR[04;44H [04;45HB[04;46Ho[04;47Ho[04;48Ht[04;49H [04;50H [04;51H [04;52H [04;53HE[04;54H [04;55HE[04;56Hd[04;57Hi[04;58Ht[04;59H[06;24HS[06;25H [06;26HF[06;27Hi[06;28Hr[06;29Hm[06;30Hw[06;31Ha[06;32Hr[06;33He[06;34H [06;35HS[06;36He[06;37Ht[06;38Hu[06;39Hp[06;40H [06;41H [06;42H [06;43H [06;44HB[06;45H [06;46HB[06;47Hl[06;48Ha[06;49Hn[06;50Hk[06;51H [06;52HE[06;53Hn[06;54Ht[06;55Hr[06;56Hy[06;57H[13;01H[13;01H[14;01H[14;01H[15;01H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H1[23;52H0[23;53H.[23;54H.[23;55H.[23;56H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H9[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H8[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H7[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H6[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H5[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H4[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H3[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H2[23;52H.[23;53H.[23;54H.[23;55H[23;26H[23;01H [23;02H [23;03H [23;04H [23;05H [23;06H [23;07H [23;08H [23;09H [23;10H [23;11H [23;12H [23;13H [23;14H [23;15H [23;16H [23;17H [23;18H [23;19H [23;20H [23;21H [23;22H [23;23H [23;24H [23;25H [23;26H [23;27H [23;28H [23;29H [23;30H [23;31H [23;32H [23;33H [23;34H [23;35H [23;36H [23;37H [23;38H [23;39H [23;40H [23;41H [23;42H [23;43H [23;44H [23;45H [23;46H [23;47H [23;48H [23;49H [23;50H [23;51H [23;52H [23;53H [23;54H [23;55H [23;56H [23;57H [23;58H [23;59H [23;60H [23;61H [23;62H [23;63H [23;64H [23;65H [23;66H [23;67H [23;68H [23;69H [23;70H [23;71H [23;72H [23;73H [23;74H [23;75H [23;76H [23;77H [23;78H [23;79H [23;80H [24;01H[23;26HB[23;27Ho[23;28Ho[23;29Ht[23;30Hi[23;31Hn[23;32Hg[23;33H [23;34Ha[23;35Hu[23;36Ht[23;37Ho[23;38Hm[23;39Ha[23;40Ht[23;41Hi[23;42Hc[23;43Ha[23;44Hl[23;45Hl[23;46Hy[23;47H [23;48Hi[23;49Hn[23;50H [23;51H1[23;52H.[23;53H.[23;54H.[23;55H[01;01H[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x610f0000]
+[    0.000000] Linux version 6.18.52-0-virt (buildozer@build-3-24-aarch64) (cc (Alpine 15.2.0) 15.2.0, GNU ld (GNU Binutils) 2.45.1) #1-Alpine SMP PREEMPT_DYNAMIC 2026-09-15 05:37:48
+[    0.000000] efi: EFI v2.7 by EDK II
+[    0.000000] efi: SMBIOS 3.0=0xbfed0000 MEMATTR=0xbea35018 ACPI 2.0=0xbcb43018 INITRD=0xbc716f18 MEMRESERVE=0xbc716f98 
+[    0.000000] ACPI: Early table checksum verification disabled
+[    0.000000] ACPI: RSDP 0x00000000BCB43018 000024 (v02 BOCHS )
+[    0.000000] ACPI: XSDT 0x00000000BCB43F18 000064 (v01 BOCHS  BXPC     00000001      01000013)
+[    0.000000] ACPI: FACP 0x00000000BCB43B18 000114 (v06 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: DSDT 0x00000000BCB41018 001517 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: APIC 0x00000000BCB43C98 00010C (v04 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: PPTT 0x00000000BCB43E18 000074 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: GTDT 0x00000000BCB43098 000068 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: MCFG 0x00000000BCB43A98 00003C (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: SPCR 0x00000000BCB43818 000050 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: DBG2 0x00000000BCB43A18 000057 (v00 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: IORT 0x00000000BCB43898 000054 (v05 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.000000] ACPI: SPCR: console: pl011,mmio32,0x9000000,9600
+[    0.000000] NUMA: Faking a node at [mem 0x0000000040000000-0x00000000bfffffff]
+[    0.000000] NODE_DATA(0) allocated [mem 0xbf855b40-0xbf857fff]
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000040000000-0x00000000bfffffff]
+[    0.000000]   DMA32    empty
+[    0.000000]   Normal   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000040000000-0x00000000bc76ffff]
+[    0.000000]   node   0: [mem 0x00000000bc770000-0x00000000bcb3ffff]
+[    0.000000]   node   0: [mem 0x00000000bcb40000-0x00000000bfe1ffff]
+[    0.000000]   node   0: [mem 0x00000000bfe20000-0x00000000bfeaffff]
+[    0.000000]   node   0: [mem 0x00000000bfeb0000-0x00000000bfebffff]
+[    0.000000]   node   0: [mem 0x00000000bfec0000-0x00000000bffdffff]
+[    0.000000]   node   0: [mem 0x00000000bffe0000-0x00000000bfffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000040000000-0x00000000bfffffff]
+[    0.000000] psci: probing for conduit method from ACPI.
+[    0.000000] psci: PSCIv1.1 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: Trusted OS migration not required
+[    0.000000] psci: SMC Calling Convention v1.0
+[    0.000000] percpu: Embedded 34 pages/cpu s99544 r8192 d31528 u139264
+[    0.000000] Detected PIPT I-cache on CPU0
+[    0.000000] CPU features: detected: Address authentication (IMP DEF algorithm)
+[    0.000000] CPU features: detected: Spectre-v4
+[    0.000000] CPU features: detected: Spectre-BHB
+[    0.000000] alternatives: applying boot alternatives
+[    0.000000] Kernel command line: initrd=\\initramfs-virt root=LABEL=/ modules=sd-mod,usb-storage,ext4,gpio_pl061,ena,gve,mana console=ttyS0,115200n8 console=ttyAMA0,115200n8 console=tty0 autodetect_serial=setconsole=[Aa]mazon,Google,dmi.chassis_asset_tag=^(7783-7084-3265-9085-8269-3286-77|OracleCloud[.]com)$
+[    0.000000] Unknown kernel command line parameters "modules=sd-mod,usb-storage,ext4,gpio_pl061,ena,gve,mana autodetect_serial=setconsole=[Aa]mazon,Google,dmi.chassis_asset_tag=^(7783-7084-3265-9085-8269-3286-77|OracleCloud[.]com)$", will be passed to user space.
+[    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[    0.000000] Dentry cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.000000] software IO TLB: SWIOTLB bounce buffer size adjusted to 2MB
+[    0.000000] software IO TLB: area num 2.
+[    0.000000] software IO TLB: mapped [mem 0x00000000bf2fa000-0x00000000bf4fa000] (2MB)
+[    0.000000] Fallback order for Node 0: 0 
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 524288
+[    0.000000] Policy zone: DMA
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[    0.000000] Dynamic Preempt: none
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=4096 to nr_cpu_ids=2.
+[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000] 	Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.000000] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.000000] RCU Tasks Trace: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] GICv3: 988 SPIs implemented
+[    0.000000] GICv3: 0 Extended SPIs implemented
+[    0.000000] Root IRQ handler: gic_handle_irq
+[    0.000000] GICv3: GICv3 features: 16 PPIs, RSS
+[    0.000000] GICv3: GICD_CTLR.DS=1, SCR_EL3.FIQ=0
+[    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[    0.000000] GICv2m: ACPI overriding V2M MSI_TYPER (base:80, num:64)
+[    0.000000] GICv2m: range[mem 0x08020000-0x08020fff], SPI[80:143]
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.000000] arch_timer: cp15 timer running at 24.00MHz (virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
+[    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
+[    0.002270] kfence: initialized - using 2097152 bytes for 255 objects at 0x(____ptrval____)-0x(____ptrval____)
+[    0.002470] Console: colour dummy device 80x25
+[    0.002473] printk: legacy console [tty0] enabled
+[    0.003240] ACPI: Core revision 20250807
+[    0.004023] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=24000)
+[    0.004027] pid_max: default: 32768 minimum: 301
+[    0.006408] LSM: initializing lsm=lockdown,capability,landlock,yama
+[    0.007892] landlock: Up and running.
+[    0.007893] Yama: becoming mindful.
+[    0.008773] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.008776] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.015818] rcu: Hierarchical SRCU implementation.
+[    0.015825] rcu: 	Max phase no-delay instances is 400.
+[    0.015965] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.016239] Remapping and enabling EFI services.
+[    0.016379] smp: Bringing up secondary CPUs ...
+[    0.016773] Detected PIPT I-cache on CPU1
+[    0.016793] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[    0.016844] CPU1: Booted secondary processor 0x0000000001 [0x610f0000]
+[    0.016928] smp: Brought up 1 node, 2 CPUs
+[    0.016933] SMP: Total of 2 processors activated.
+[    0.016934] CPU: All CPU(s) started at EL1
+[    0.016936] CPU features: detected: Branch Target Identification
+[    0.016937] CPU features: detected: ARMv8.4 Translation Table Level
+[    0.016938] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.016940] CPU features: detected: Common not Private translations
+[    0.016941] CPU features: detected: CRC32 instructions
+[    0.016941] CPU features: detected: Data independent timing control (DIT)
+[    0.016942] CPU features: detected: E0PD
+[    0.016943] CPU features: detected: Enhanced Privileged Access Never
+[    0.016944] CPU features: detected: Generic authentication (IMP DEF algorithm)
+[    0.016945] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.016946] CPU features: detected: LSE atomic instructions
+[    0.016947] CPU features: detected: Privileged Access Never
+[    0.016948] CPU features: detected: RAS Extension Support
+[    0.016948] CPU features: detected: Speculation barrier (SB)
+[    0.016949] CPU features: detected: TLB range maintenance instructions
+[    0.017050] alternatives: applying system-wide alternatives
+[    0.017243] Memory: 1996100K/2097152K available (13312K kernel code, 1994K rwdata, 8420K rodata, 2048K init, 9282K bss, 96680K reserved, 0K cma-reserved)
+[    0.017610] devtmpfs: initialized
+[    0.018068] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.018079] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.018104] 23920 pages in range for non-PLT usage
+[    0.018105] 515440 pages in range for PLT usage
+[    0.018234] pinctrl core: initialized pinctrl subsystem
+[    0.018292] SMBIOS 3.0.0 present.
+[    0.018294] DMI: QEMU QEMU Virtual Machine, BIOS edk2-stable202408-prebuilt.qemu.org 08/13/2024
+[    0.018299] DMI: Memory slots populated: 1/1
+[    0.019257] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.019383] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
+[    0.019395] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.019405] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.019414] audit: initializing netlink subsys (disabled)
+[    0.019595] audit: type=2000 audit(0.017:1): state=initialized audit_enabled=0 res=1
+[    0.019633] thermal_sys: Registered thermal governor 'step_wise'
+[    0.019678] cpuidle: using governor ladder
+[    0.019735] cpuidle: using governor menu
+[    0.019797] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.019849] ASID allocator initialised with 256 entries
+[    0.019855] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.019929] Serial: AMBA PL011 UART driver
+[    0.023390] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.023396] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.023397] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.023398] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[    0.023399] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.023400] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.023401] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.023402] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[    0.025818] ACPI: Added _OSI(Module Device)
+[    0.025821] ACPI: Added _OSI(Processor Device)
+[    0.025823] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.026170] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.026485] ACPI: Interpreter enabled
+[    0.026486] ACPI: Using GIC for interrupt routing
+[    0.026492] ACPI: MCFG table detected, 1 entries
+[    0.027222] ACPI: CPU0 has been hot-added
+[    0.027244] ACPI: CPU1 has been hot-added
+[    0.027330] ARMH0011:00: ttyAMA0 at MMIO 0x9000000 (irq = 12, base_baud = 0) is a SBSA
+[    0.027440] printk: console [ttyAMA0] enabled
+[    0.027884] ACPI: PCI: Interrupt link L000 configured for IRQ 35
+[    0.027888] ACPI: PCI: Interrupt link L001 configured for IRQ 36
+[    0.027891] ACPI: PCI: Interrupt link L002 configured for IRQ 37
+[    0.027894] ACPI: PCI: Interrupt link L003 configured for IRQ 38
+[    0.027898] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.027909] acpi PNP0A08:00: _OSC: OS supports [ExtendedConfig ASPM ClockPM Segments MSI HPX-Type3]
+[    0.027935] acpi PNP0A08:00: _OSC: platform does not support [LTR]
+[    0.027963] acpi PNP0A08:00: _OSC: OS now controls [PCIeHotplug PME PCIeCapability]
+[    0.028023] acpi PNP0A08:00: ECAM area [mem 0x4010000000-0x401fffffff] reserved by PNP0C02:00
+[    0.028033] acpi PNP0A08:00: ECAM at [mem 0x4010000000-0x401fffffff] for [bus 00-ff]
+[    0.028039] ACPI: Remapped I/O 0x000000003eff0000 to [io  0x0000-0xffff window]
+[    0.028118] PCI host bridge to bus 0000:00
+[    0.028125] pci_bus 0000:00: root bus resource [mem 0x10000000-0x3efeffff window]
+[    0.028126] pci_bus 0000:00: root bus resource [io  0x0000-0xffff window]
+[    0.028128] pci_bus 0000:00: root bus resource [mem 0x8000000000-0xffffffffff window]
+[    0.028129] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.028140] pci 0000:00:00.0: [1b36:0008] type 00 class 0x060000 conventional PCI endpoint
+[    0.028562] pci 0000:00:01.0: [1af4:1000] type 00 class 0x020000 conventional PCI endpoint
+[    0.029136] pci 0000:00:01.0: BAR 0 [io  0x0100-0x011f]
+[    0.029181] pci 0000:00:01.0: BAR 1 [mem 0x10042000-0x10042fff]
+[    0.029206] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]
+[    0.029223] pci 0000:00:01.0: ROM [mem 0xfffc0000-0xffffffff pref]
+[    0.029733] pci 0000:00:02.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.029935] pci 0000:00:02.0: BAR 0 [io  0x0080-0x00ff]
+[    0.029939] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]
+[    0.029945] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]
+[    0.030184] pci 0000:00:03.0: [1af4:1001] type 00 class 0x010000 conventional PCI endpoint
+[    0.030439] pci 0000:00:03.0: BAR 0 [io  0x0000-0x007f]
+[    0.030443] pci 0000:00:03.0: BAR 1 [mem 0x10040000-0x10040fff]
+[    0.030449] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]
+[    0.030675] pci 0000:00:01.0: ROM [mem 0x10000000-0x1003ffff pref]: assigned
+[    0.030680] pci 0000:00:01.0: BAR 4 [mem 0x8000000000-0x8000003fff 64bit pref]: assigned
+[    0.030694] pci 0000:00:02.0: BAR 4 [mem 0x8000004000-0x8000007fff 64bit pref]: assigned
+[    0.030706] pci 0000:00:03.0: BAR 4 [mem 0x8000008000-0x800000bfff 64bit pref]: assigned
+[    0.030717] pci 0000:00:01.0: BAR 1 [mem 0x10040000-0x10040fff]: assigned
+[    0.030721] pci 0000:00:02.0: BAR 1 [mem 0x10041000-0x10041fff]: assigned
+[    0.030725] pci 0000:00:03.0: BAR 1 [mem 0x10042000-0x10042fff]: assigned
+[    0.030729] pci 0000:00:02.0: BAR 0 [io  0x1000-0x107f]: assigned
+[    0.030833] pci 0000:00:03.0: BAR 0 [io  0x1080-0x10ff]: assigned
+[    0.031069] pci 0000:00:01.0: BAR 0 [io  0x1100-0x111f]: assigned
+[    0.031348] pci_bus 0000:00: resource 4 [mem 0x10000000-0x3efeffff window]
+[    0.031351] pci_bus 0000:00: resource 5 [io  0x0000-0xffff window]
+[    0.031352] pci_bus 0000:00: resource 6 [mem 0x8000000000-0xffffffffff window]
+[    0.032063] iommu: Default domain type: Translated
+[    0.032066] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.035328] efivars: Registered efivars operations
+[    0.035569] clocksource: Switched to clocksource arch_sys_counter
+[    0.035996] VFS: Disk quotas dquot_6.6.0
+[    0.036011] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.036708] pnp: PnP ACPI init
+[    0.036876] system 00:00: [mem 0x4010000000-0x401fffffff window] could not be reserved
+[    0.036890] pnp: PnP ACPI: found 1 devices
+[    0.037375] NET: Registered PF_INET protocol family
+[    0.037395] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.041693] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.041700] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.041703] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.041717] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
+[    0.041731] TCP: Hash tables configured (established 16384 bind 16384)
+[    0.041761] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
+[    0.041776] UDP hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.041780] UDP-Lite hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.041810] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.041814] NET: Registered PF_XDP protocol family
+[    0.041839] PCI: CLS 0 bytes, default 64
+[    0.041907] Unpacking initramfs...
+[    0.043690] kvm [1]: HYP mode not available
+[    0.043812] Initialise system trusted keyrings
+[    0.055808] workingset: timestamp_bits=44 max_order=19 bucket_order=0
+[    0.061904] Key type asymmetric registered
+[    0.061909] Asymmetric key parser 'x509' registered
+[    0.061948] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    0.086842] io scheduler mq-deadline registered
+[    0.086852] io scheduler kyber registered
+[    0.086878] io scheduler bfq registered
+[    0.088041] ACPI: \_SB_.L001: Enabled at IRQ 36
+[    0.088060] virtio-pci 0000:00:01.0: enabling device (0005 -> 0007)
+[    0.089184] ACPI: \_SB_.L002: Enabled at IRQ 37
+[    0.089198] virtio-pci 0000:00:02.0: enabling device (0005 -> 0007)
+[    0.090247] ACPI: \_SB_.L003: Enabled at IRQ 38
+[    0.090270] virtio-pci 0000:00:03.0: enabling device (0005 -> 0007)
+[    0.092437] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.093182] hv_vmbus: registering driver hyperv_keyboard
+[    0.093749] rtc-efi rtc-efi.0: registered as rtc0
+[    0.093932] rtc-efi rtc-efi.0: setting system clock to 2026-09-28T08:28:31 UTC (1790584111)
+[    0.094058] NET: Registered PF_INET6 protocol family
+[    0.095860] Segment Routing with IPv6
+[    0.095875] In-situ OAM (IOAM) with IPv6
+[    0.097078] Freeing initrd memory: 10940K
+[    0.098099] registered taskstats version 1
+[    0.098163] Loading compiled-in X.509 certificates
+[    0.100034] Loaded X.509 cert 'alpinelinux.org: Alpine Linux kernel key: 87fa969a47f3e2a6aa35859eb932a17c95abcd82'
+[    0.100958] Demotion targets for Node 0: null
+[    0.101019] Key type .fscrypt registered
+[    0.101021] Key type fscrypt-provisioning registered
+[    0.103209] clk: Disabling unused clocks
+[    0.103218] PM: genpd: Disabling unused power domains
+[    0.103326] Freeing unused kernel memory: 2048K
+[    0.103344] Run /init as init process
+[    0.112175] Alpine Init 3.14.1-r0
+[    0.112355] Loading boot drivers...
+[    0.116893] SCSI subsystem initialized
+[    0.121668] ACPI: bus type USB registered
+[    0.121698] usbcore: registered new interface driver usbfs
+[    0.121707] usbcore: registered new interface driver hub
+[    0.121717] usbcore: registered new device driver usb
+[    0.123736] usbcore: registered new interface driver usb-storage
+[    0.138444] pps_core: LinuxPPS API ver. 1 registered
+[    0.138456] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.139641] PTP clock support registered
+[    0.151676] loop: module loaded
+[    0.161173] ACPI: bus type drm_connector registered
+[    0.168981] Loading boot drivers: ok.
+[    0.169525] Mounting root...
+[    0.189170] virtio_blk virtio1: 2/0/0 default/read/poll queues
+[    0.189923] virtio_blk virtio1: [vda] 16777216 512-byte logical blocks (8.59 GB/8.00 GiB)
+[    0.192486]  vda: vda1 vda2
+[    0.192733] virtio_blk virtio2: 2/0/0 default/read/poll queues
+[    0.193554] virtio_blk virtio2: [vdb] 108 512-byte logical blocks (55.3 kB/54.0 KiB)
+[    0.291282] EXT4-fs (vda2): mounted filesystem 53fa5455-9314-4990-97ab-91488d6924a9 ro with ordered data mode. Quota mode: none.
+[    0.291342] Mounting root: ok.
+
+Welcome to Alpine Linux 3.24
+Kernel 6.18.52-0-virt on aarch64 (/dev/ttyAMA0)
+
+rubix-parity login: [   15.649819] reboot: Power down

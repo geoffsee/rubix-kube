@@ -8,13 +8,13 @@ extensions and descriptions are retained. Description edits therefore also requi
 
 ```sh
 # Explicit preparation; checks never fetch or build tools implicitly.
-python3 tools/upstream/upstream.py fetch
-python3 tools/drift/drift.py check > /tmp/rubix-source-diff.json
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/drift -p 'test_*.py' -v
+cargo run -p rubix-dev --bin rubix-upstream --locked -- fetch
+cargo run -p rubix-dev --bin rubix-drift --locked -- check > /tmp/rubix-source-diff.json
+cargo test -p rubix-dev drift --locked
 # Inspect the accepted inventory without a special viewer.
-gzip -dc tools/drift/inventory.json.gz | python3 -m json.tool
+gzip -dc tools/drift/inventory.json.gz
 # Only during a reviewed upstream adoption, regenerate the acceptance baseline.
-python3 tools/drift/drift.py extract
+cargo run -p rubix-dev --bin rubix-drift --locked -- extract
 ```
 
 `--cache-dir` selects a prepared upstream cache. Sources, the protoc archive, compiler
@@ -65,15 +65,15 @@ not establish full cluster, conformance or distribution parity.
 
 ## Combined upstream adoption report
 
-`report.py` compares explicit before/after snapshots of the independent source inventory
+`rubix-drift report` compares explicit before/after snapshots of the independent source inventory
 and executed Go defaults. It never runs a generator, fetches inputs, starts components,
 changes accepted fixtures, or treats newly generated Rust as its oracle. Each directory
 must contain all three files:
 
 | Snapshot file | Producer |
 | --- | --- |
-| `inventory.json.gz` | `drift.py extract`, schema version 2 (CRI, containerd and OpenAPI definitions) |
-| `defaults.json` | `tools/defaults/capture.py` base `run0.json`, schema version 1 |
+| `inventory.json.gz` | `rubix-drift extract`, schema version 2 (CRI, containerd and OpenAPI definitions) |
+| `defaults.json` | the [defaults capture](../defaults/README.md) base `run0.json`, schema version 1 |
 | `apiserver-defaults.json` | Same capture's `apiserver0.json`, schema version 1 |
 
 For a local review, first preserve the accepted snapshot in a new directory:
@@ -86,24 +86,23 @@ cp tools/defaults/apiserver.expected.json /tmp/adoption-before/apiserver-default
 ```
 
 In the candidate worktree, prepare its proposed checksum-locked inputs explicitly with
-`python3 tools/upstream/upstream.py fetch --cache-dir target/upstream`. Then create a
+`cargo run -p rubix-dev --bin rubix-upstream --locked -- fetch --cache-dir target/upstream`. Then create a
 candidate source inventory at the new destination; this does not replace the accepted one:
 
 ```sh
-python3 tools/drift/drift.py extract --cache-dir target/upstream \
+cargo run -p rubix-dev --bin rubix-drift --locked -- extract --cache-dir target/upstream \
   --inventory /tmp/adoption-after/inventory.json.gz
 cp /tmp/candidate-default-capture/run0.json /tmp/adoption-after/defaults.json
 cp /tmp/candidate-default-capture/apiserver0.json /tmp/adoption-after/apiserver-defaults.json
-python3 tools/drift/report.py --before /tmp/adoption-before --after /tmp/adoption-after \
+cargo run -p rubix-dev --bin rubix-drift --locked -- report --before /tmp/adoption-before --after /tmp/adoption-after \
   --format json > /tmp/adoption-report.json
-python3 tools/drift/report.py --before /tmp/adoption-before --after /tmp/adoption-after \
+cargo run -p rubix-dev --bin rubix-drift --locked -- report --before /tmp/adoption-before --after /tmp/adoption-after \
   --format markdown > /tmp/adoption-report.md
 ```
 
 The candidate defaults must come from a separately executed, source-pinned capture using
-`tools/defaults/capture.py`; see its README for explicit Go/source archive preparation.
-The reporter itself needs only Python and these local snapshots, with no compiler or
-prepared cache. Use distinct snapshot directories and review each producer's receipts;
+the [defaults capture](../defaults/README.md); see its README for explicit Go/source archive preparation.
+The built Rust reporter needs only these local snapshots, with no compiler or prepared cache. Use distinct snapshot directories and review each producer's receipts;
 source pins here are reported claims from those inputs, not independent attestation that
 a newly supplied snapshot was produced by its claimed source. Comparing candidates does
 not authorize updating the accepted baseline or waive changed security/runtime behavior.
@@ -134,7 +133,7 @@ Constructor flags and actual `Complete()` results remain separate report categor
 For an adoption review, include both resolved captures explicitly:
 
 ```sh
-python3 tools/drift/report.py --before /tmp/before --after /tmp/after \
+cargo run -p rubix-dev --bin rubix-drift --locked -- report --before /tmp/before --after /tmp/after \
   --before-resolved /tmp/resolved-before --after-resolved /tmp/resolved-after \
   --format markdown
 ```
@@ -150,6 +149,24 @@ Three additional categories show completed values/flags, completion errors, and
 resolved source/control metadata. Changed or removed defaults yield exit 1 even
 when constructor defaults stay unchanged. Success-to-error transitions appear as
 removal from one domain and addition to the other. The standalone comparator is
-`tools/resolved-defaults/report.py` with the same `--before`, `--after`, and
+the [resolved defaults comparator](../resolved-defaults/README.md) with the same `--before`, `--after`, and
 `--format` arguments. These commands compare explicit snapshots without fetching,
 executing components, accepting a new baseline, or writing evidence.
+
+## Rust maintenance migration
+
+`rubix-drift` provides `check`, `extract`, and `report`. Descriptor parsing, duplicate-key JSON
+validation, snapshot bounds, categorized changes, Markdown escaping, and paired resolved-input
+binding execute in Rust. `cargo test -p rubix-dev drift --locked` runs independent mutations;
+`cargo test -p rubix-dev --test upstream_drift_cli --locked` tests CLI exit codes and unchanged input
+bytes. The prepared-compiler mutation test is explicit:
+
+```sh
+RUBIX_UPSTREAM_CACHE=/path/to/prepared/cache cargo test -p rubix-dev --lib \
+  actual_verified_protoc --locked -- --ignored
+```
+
+That test freshly parses field-number, field-type, RPC-name, and streaming mutations through the
+verified compiler. On Darwin arm64 the Rust `check` returned `unchanged` against the complete
+committed semantic inventory using an existing explicitly selected cache. Historical qualification
+receipts remain unchanged and do not claim this newly migrated tool produced their old outputs.

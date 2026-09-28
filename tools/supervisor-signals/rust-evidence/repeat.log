@@ -1,0 +1,80 @@
+55b95ba802562db389bb30abf807bdcc0d92d01d2a4d4738ac0071fbb7299c8c  /signals.test
+a4ca492cc8a5e86c32839ff23f0e0035a9bbd54f5693cdb0465dd6c1f4e722d2  /owned_signals.test
+e0c4c04c79658c6fd36fd8099df8c5f226dbde3d0dab6a6d5b2b03929ceeb697  /fixture
+
+running 2 tests
+test signal_child ... ignored, invoked only by the owned-subprocess qualification test
+RUBIX_QUALIFICATION repetitions=20 full_partial_signal_cases=160 worker_failure_cases=20 all_children_reaped=true
+test real_unix_signals_and_worker_failure_in_owned_subprocesses ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 16.77s
+
+
+running 1 test
+RUBIX_OWNED_SIGNAL case=full iteration=0 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=0 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=10
+RUBIX_OWNED_SIGNAL case=fatal iteration=0 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=26
+RUBIX_OWNED_SIGNAL case=full iteration=1 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=1 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=fatal iteration=1 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=2 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=2 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=2 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=15
+RUBIX_OWNED_SIGNAL case=full iteration=3 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=3 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=10
+RUBIX_OWNED_SIGNAL case=fatal iteration=3 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=4 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=23
+RUBIX_OWNED_SIGNAL case=partial iteration=4 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=fatal iteration=4 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=27
+RUBIX_OWNED_SIGNAL case=full iteration=5 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=5 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=12
+RUBIX_OWNED_SIGNAL case=fatal iteration=5 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=6 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=6 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=6 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=7 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=7 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=7 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=8 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=8 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=fatal iteration=8 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=9 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=9 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=10
+RUBIX_OWNED_SIGNAL case=fatal iteration=9 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=17
+RUBIX_OWNED_SIGNAL case=full iteration=10 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=10 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=10 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=11 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=11 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=11 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=12 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=24
+RUBIX_OWNED_SIGNAL case=partial iteration=12 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=12 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=15
+RUBIX_OWNED_SIGNAL case=full iteration=13 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=13 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=13 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=14 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=14 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=14 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=15
+RUBIX_OWNED_SIGNAL case=full iteration=15 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=15 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=15 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=16 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=16 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=10
+RUBIX_OWNED_SIGNAL case=fatal iteration=16 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=17 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=17 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=17 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=full iteration=18 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=21
+RUBIX_OWNED_SIGNAL case=partial iteration=18 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=18 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=15
+RUBIX_OWNED_SIGNAL case=full iteration=19 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=22
+RUBIX_OWNED_SIGNAL case=partial iteration=19 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=11
+RUBIX_OWNED_SIGNAL case=fatal iteration=19 leader_reaped=true owner_joined=true dependent_started=false elapsed_ms=16
+RUBIX_OWNED_SIGNAL case=force iteration=20 leader_reaped=true owner_joined=true dependent_started=true elapsed_ms=30014
+RUBIX_OWNED_QUALIFICATION repetitions=20 combined_cases=61 sentinel_survived=true all_owners_joined=true
+test disposable_owned_signals ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 31.91s
+
+RUBIX_NAMESPACE {"helper":1038,"init":1,"processes":[1,6,1038],"shell":6}

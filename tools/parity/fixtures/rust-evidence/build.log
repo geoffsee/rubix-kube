@@ -1,0 +1,61 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#1 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#1 DONE 0.0s
+
+#2 [2/6] WORKDIR /src
+#2 CACHED
+
+#3 [internal] load build definition from Capture.Dockerfile
+#3 transferring dockerfile: 1.40kB done
+#3 DONE 0.0s
+
+#4 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 20.08kB done
+#6 DONE 0.0s
+
+#7 [build 6/9] COPY resources/portainer_capture_test.go /src/pkg/components/portainer/rubix_capture_test.go
+#7 CACHED
+
+#8 [build 9/9] RUN mkdir /out && for component in coredns localpath portainer d2k; do go test -c -p 2 -tags external_deps -trimpath -o /out/$component.test ./pkg/components/$component || exit 1; done     && go test -c -p 2 -tags external_deps -trimpath -o /out/pki.test ./internal/core/pki     && go version > /out/go-version.txt
+#8 CACHED
+
+#9 [build 8/9] COPY pki/pki_capture_test.go /src/internal/core/pki/rubix_capture_test.go
+#9 CACHED
+
+#10 [build 5/9] COPY resources/localpath_capture_test.go /src/pkg/components/localpath/rubix_capture_test.go
+#10 CACHED
+
+#11 [build 4/9] COPY resources/coredns_capture_test.go /src/pkg/components/coredns/rubix_capture_test.go
+#11 CACHED
+
+#12 [build 7/9] COPY resources/d2k_capture_test.go /src/pkg/components/d2k/rubix_capture_test.go
+#12 CACHED
+
+#13 [build 3/9] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
+#13 CACHED
+
+#14 [capture 1/1] WORKDIR /tmp
+#14 CACHED
+
+#15 exporting to image
+#15 exporting layers done
+#15 exporting manifest sha256:d69b4640b83289103d1f46d686c714ea49a6bbe3f4cc369777fe1b05b3408685 done
+#15 exporting config sha256:f1733f1b6be119a8bc445cee8e2c0af19b21a245dabf7a7b4f6e85aa18d03698 done
+#15 exporting attestation manifest sha256:3fda8ebdebb50dcda1140a9b0f0d63e47ee0a8906b8632d01757762c236c287a 0.0s done
+#15 exporting manifest list sha256:5d8c77a5166beb26e4a0730cb137f81c3ad496449e07a4d1b2ef60806a96075b done
+#15 naming to docker.io/library/rubix-resources-pki-fttffl:latest
+#15 naming to docker.io/library/rubix-resources-pki-fttffl:latest done
+#15 unpacking to docker.io/library/rubix-resources-pki-fttffl:latest
+#15 unpacking to docker.io/library/rubix-resources-pki-fttffl:latest 4.3s done
+#15 DONE 4.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ne0klgqj7lsjxu066ah59wlix

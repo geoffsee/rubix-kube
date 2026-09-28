@@ -12,10 +12,3 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-  - package-ecosystem: uv
-    directory: /.github/security
-    schedule:
-      interval: weekly
-    groups:
-      security-tools:
-        patterns: ['*']

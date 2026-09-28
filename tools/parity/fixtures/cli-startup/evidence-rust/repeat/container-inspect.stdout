@@ -1,0 +1,225 @@
+[
+    {
+        "Id": "69cc5fdd0d0e857af169fa6e0f9128f007a145866f8461cb786ca9519a90b07a",
+        "Created": "2026-09-28T08:34:01.18721822Z",
+        "Path": "/artifact/rubix-parity",
+        "Args": [
+            "driver"
+        ],
+        "State": {
+            "Status": "exited",
+            "Running": false,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 0,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-09-28T08:34:01.560286804Z",
+            "FinishedAt": "2026-09-28T08:34:03.64774668Z"
+        },
+        "Image": "sha256:6184b1ca5f9f6fb04c98ab69e9fa59bdd6d1a011d00ef59c37656c49a98eb840",
+        "ResolvConfPath": "/var/lib/docker/containers/69cc5fdd0d0e857af169fa6e0f9128f007a145866f8461cb786ca9519a90b07a/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/69cc5fdd0d0e857af169fa6e0f9128f007a145866f8461cb786ca9519a90b07a/hostname",
+        "HostsPath": "/var/lib/docker/containers/69cc5fdd0d0e857af169fa6e0f9128f007a145866f8461cb786ca9519a90b07a/hosts",
+        "LogPath": "/var/lib/docker/containers/69cc5fdd0d0e857af169fa6e0f9128f007a145866f8461cb786ca9519a90b07a/69cc5fdd0d0e857af169fa6e0f9128f007a145866f8461cb786ca9519a90b07a-json.log",
+        "Name": "/rubix-parity-0b3aa58588a5147d3bad1ca4",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "none",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": [
+                "CAP_KILL",
+                "CAP_SETGID",
+                "CAP_SETUID"
+            ],
+            "CapDrop": [
+                "ALL"
+            ],
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": true,
+            "SecurityOpt": [
+                "no-new-privileges"
+            ],
+            "Tmpfs": {
+                "/tmp": "rw,nosuid,nodev,noexec,size=64m,mode=1777"
+            },
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 1073741824,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 2147483648,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": 128,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "Mounts": [
+                {
+                    "Type": "volume",
+                    "Source": "rubix-parity-0b3aa58588a5147d3bad1ca4-evidence",
+                    "Target": "/evidence"
+                }
+            ],
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "rubix-parity-0b3aa58588a5147d3bad1ca4-evidence",
+                "Source": "/var/lib/docker/volumes/rubix-parity-0b3aa58588a5147d3bad1ca4-evidence/_data",
+                "Destination": "/evidence",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "69cc5fdd0d0e",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GOLANG_VERSION=1.26.5",
+                "GOTOOLCHAIN=local",
+                "GOPATH=/go"
+            ],
+            "Cmd": null,
+            "Image": "rubix-parity-0b3aa58588a5147d3bad1ca4:test",
+            "Volumes": null,
+            "WorkingDir": "/artifact",
+            "Entrypoint": [
+                "/artifact/rubix-parity",
+                "driver"
+            ],
+            "Labels": {}
+        },
+        "NetworkSettings": {
+            "SandboxID": "",
+            "SandboxKey": "",
+            "Ports": {},
+            "Networks": {
+                "none": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "ba7c4dc8394c60889a1c071301db19ac34d13e531fcf0a4fda9a13ee22e07b46",
+                    "EndpointID": "",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "MacAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:44a7dbfc24f9e75286d038ae23d4c32eb23fd46cb525ccb9b2172b0a961ee26f",
+            "size": 2575,
+            "platform": {
+                "architecture": "arm64",
+                "os": "linux"
+            }
+        }
+    }
+]

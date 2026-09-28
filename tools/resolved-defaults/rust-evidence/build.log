@@ -1,0 +1,59 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 965B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [build 1/8] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 103.04MB 0.7s done
+#5 DONE 0.7s
+
+#6 [build 2/8] COPY go.tar.gz /tmp/go.tar.gz
+#6 CACHED
+
+#7 [build 3/8] RUN echo '211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0  /tmp/go.tar.gz' | sha256sum -c - && mkdir /toolchain && tar -xzf /tmp/go.tar.gz -C /toolchain
+#7 CACHED
+
+#8 [build 4/8] COPY source.tar.gz /tmp/source.tar.gz
+#8 CACHED
+
+#9 [build 5/8] RUN echo "933b3b2dff0013ca42e33f984c026ce8a83ca8c2fd5f5c055177bcc0196a1592  /tmp/source.tar.gz" | sha256sum -c - && mkdir /src && tar -xzf /tmp/source.tar.gz -C /src --strip-components=1
+#9 CACHED
+
+#10 [build 6/8] WORKDIR /src
+#10 CACHED
+
+#11 [build 7/8] COPY main.go /src/cmd/rubix-resolved/
+#11 DONE 0.1s
+
+#12 [build 8/8] RUN go version && mkdir /out && go build -mod=vendor -p 2 -trimpath -o /out/extract ./cmd/rubix-resolved && sha256sum go.mod go.sum go.work vendor/modules.txt > /out/modules.sha256
+#12 0.041 go version go1.26.8 linux/arm64
+#12 DONE 72.9s
+
+#13 [stage-1 1/1] COPY --from=build /out/ /out/
+#13 DONE 0.1s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 1.7s done
+#14 exporting manifest sha256:514cbc670e20cf6dd3a2fa08c36271eb949b89488ed9b6762ea79c63d5c442f5 done
+#14 exporting config sha256:f3e1c7eefee7079c8e9c0a3c47844ea9afa33ca285ecf503f5224b96015744d8 done
+#14 exporting attestation manifest sha256:ca87d8a862854e1f532d0737c08fc7bc3dd58cfc9ed88c47c07905b8a1e68bc4 done
+#14 exporting manifest list sha256:36238015cbadc473ab5b244e5e3a6c7537f305208d6f4bd7c98cb95e195690d4 done
+#14 naming to docker.io/library/rubix-resolved-40aqin:latest done
+#14 unpacking to docker.io/library/rubix-resolved-40aqin:latest
+#14 unpacking to docker.io/library/rubix-resolved-40aqin:latest 0.2s done
+#14 DONE 1.9s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/tui5ja5qfb7w0sf1cfcxxlqf9

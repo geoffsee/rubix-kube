@@ -20,13 +20,33 @@ and a read-only root. Teardown records exact owned container/image identities an
 errors. Historical management/parser captures are preserved separately.
 
 ```
-python3 qualify.py --output /tmp/new-preparation-evidence
-python3 verify_linux.py /tmp/new-preparation-evidence
-python3 -m unittest discover -s . -p 'test_*.py'
-python3 -O -m unittest discover -s . -p 'test_*.py'
+cargo run --locked -p rubix-dev --bin rubix-prerequisite-fixture -- qualify --output /tmp/new-preparation-evidence
+cargo run --locked -p rubix-dev --bin rubix-prerequisite-fixture -- verify --directory /tmp/new-preparation-evidence
+cargo test --locked -p rubix-dev --bin rubix-prerequisite-fixture
+cargo test --locked -p rubix-dev --bin rubix-prerequisite-fixture --release
 ```
 
 The real Alpine package/OpenRC oracle is a separate disposable VM qualification.
 This slice does not claim full node readiness, broader installers, modprobe or
 external runtime/CNI ownership. Strict replay requires the current relevant
 compiled source; a changed dependency/manifest legitimately requires recapture.
+
+The Rust maintenance helper is built for the builder's native glibc target and runs
+in the same digest-pinned Rust image. The tested rubixctl executable, its test
+binaries, and the synthetic command helper remain statically compiled for
+`aarch64-unknown-linux-musl`. The maintenance helper enters each private chroot
+through a single-threaded reexec. Its sole process waiter retains
+uncertain owners and their directories. Historical `evidence-linux` remains an
+immutable archive; the mandatory current-source gate requires schema-2 evidence
+under `evidence-rust` and fails until a reviewed fresh qualification is published.
+
+The outer runtime image supplies glibc for the maintenance helper. Each fresh
+chroot supplies its own `/etc/alpine-release` (`3.24.2`), simulated `/proc` and
+`/sys` files, and static `apk`/`rc-update`/`rc-service` command doubles. No outer
+image package manager or service manager participates in these observations.
+The outer image is larger than the former Alpine runtime; the existing capability,
+network, filesystem, resource and deadline restrictions still apply.
+
+The native helper builds its C dependencies with the image's existing compiler.
+New captures must first use external output directories and pass verification
+before publication into `evidence-rust`.
