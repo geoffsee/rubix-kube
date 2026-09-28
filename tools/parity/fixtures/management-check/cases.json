@@ -1,0 +1,479 @@
+[
+  {
+    "name": "check",
+    "args": [
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "check_help",
+    "args": [
+      "check",
+      "--help"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_check",
+    "args": [
+      "help",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "root_help_check",
+    "args": [
+      "--help",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_false",
+    "args": [
+      "check",
+      "--help=false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_then_bad",
+    "args": [
+      "check",
+      "--help",
+      "--bad"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bad_then_help",
+    "args": [
+      "check",
+      "--bad",
+      "--help"
+    ],
+    "env": {}
+  },
+  {
+    "name": "check_version",
+    "args": [
+      "check",
+      "--version"
+    ],
+    "env": {}
+  },
+  {
+    "name": "version",
+    "args": [
+      "version"
+    ],
+    "env": {}
+  },
+  {
+    "name": "version_help",
+    "args": [
+      "version",
+      "--help"
+    ],
+    "env": {}
+  },
+  {
+    "name": "extra",
+    "args": [
+      "check",
+      "extra"
+    ],
+    "env": {}
+  },
+  {
+    "name": "dashdash",
+    "args": [
+      "check",
+      "--",
+      "--bad"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bool_bare",
+    "args": [
+      "check",
+      "--pprof-server"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bool_false",
+    "args": [
+      "check",
+      "--pprof-server=false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bool_separated",
+    "args": [
+      "check",
+      "--pprof-server",
+      "false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bool_upper",
+    "args": [
+      "check",
+      "--pprof-server=TRUE"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bool_yes",
+    "args": [
+      "check",
+      "--pprof-server=yes"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bool_empty",
+    "args": [
+      "check",
+      "--pprof-server="
+    ],
+    "env": {}
+  },
+  {
+    "name": "repeat",
+    "args": [
+      "check",
+      "--pprof-server",
+      "--pprof-server=false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "install",
+    "args": [
+      "check",
+      "--install-prereqs"
+    ],
+    "env": {}
+  },
+  {
+    "name": "install_false",
+    "args": [
+      "check",
+      "--install-prereqs=false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "shorthand",
+    "args": [
+      "check",
+      "-h"
+    ],
+    "env": {}
+  },
+  {
+    "name": "shorthand_false",
+    "args": [
+      "check",
+      "-h=false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "shorthand_bundle",
+    "args": [
+      "check",
+      "-hh"
+    ],
+    "env": {}
+  },
+  {
+    "name": "unknown_before",
+    "args": [
+      "--bad",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "flag_before",
+    "args": [
+      "--pprof-server",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "no_command",
+    "args": [],
+    "env": {}
+  },
+  {
+    "name": "unknown_command",
+    "args": [
+      "wrong"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_unknown",
+    "args": [
+      "help",
+      "wrong"
+    ],
+    "env": {}
+  },
+  {
+    "name": "env_'true'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "true",
+      "KUBESOLO_PPROF_SERVER": "true"
+    }
+  },
+  {
+    "name": "env_'1'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "1",
+      "KUBESOLO_PPROF_SERVER": "1"
+    }
+  },
+  {
+    "name": "env_'yes'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "yes",
+      "KUBESOLO_PPROF_SERVER": "yes"
+    }
+  },
+  {
+    "name": "env_'false'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "false",
+      "KUBESOLO_PPROF_SERVER": "false"
+    }
+  },
+  {
+    "name": "env_'0'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "0",
+      "KUBESOLO_PPROF_SERVER": "0"
+    }
+  },
+  {
+    "name": "env_'no'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "no",
+      "KUBESOLO_PPROF_SERVER": "no"
+    }
+  },
+  {
+    "name": "env_'TRUE'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "TRUE",
+      "KUBESOLO_PPROF_SERVER": "TRUE"
+    }
+  },
+  {
+    "name": "env_'Yes'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "Yes",
+      "KUBESOLO_PPROF_SERVER": "Yes"
+    }
+  },
+  {
+    "name": "env_'bad'",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "bad",
+      "KUBESOLO_PPROF_SERVER": "bad"
+    }
+  },
+  {
+    "name": "env_''",
+    "args": [
+      "check"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "",
+      "KUBESOLO_PPROF_SERVER": ""
+    }
+  },
+  {
+    "name": "env_override",
+    "args": [
+      "check",
+      "--install-prereqs=false",
+      "--pprof-server=false"
+    ],
+    "env": {
+      "KUBESOLO_INSTALL_PREREQS": "true",
+      "KUBESOLO_PPROF_SERVER": "yes"
+    }
+  },
+  {
+    "name": "attached_help_before",
+    "args": [
+      "--help=true",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "false_help_before",
+    "args": [
+      "--help=false",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "root_dashdash",
+    "args": [
+      "--",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_check_unknown_flag",
+    "args": [
+      "help",
+      "check",
+      "--bad"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_unknown_flag",
+    "args": [
+      "help",
+      "--bad"
+    ],
+    "env": {}
+  },
+  {
+    "name": "bad_unknown_command",
+    "args": [
+      "--bad",
+      "wrong"
+    ],
+    "env": {}
+  },
+  {
+    "name": "short_attached",
+    "args": [
+      "check",
+      "-hfalse"
+    ],
+    "env": {}
+  },
+  {
+    "name": "short_bundle_value",
+    "args": [
+      "check",
+      "-hh=false"
+    ],
+    "env": {}
+  },
+  {
+    "name": "check_help_badbool",
+    "args": [
+      "check",
+      "--help",
+      "--pprof-server=no"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_version",
+    "args": [
+      "help",
+      "version"
+    ],
+    "env": {}
+  },
+  {
+    "name": "version_extra",
+    "args": [
+      "version",
+      "extra"
+    ],
+    "env": {}
+  },
+  {
+    "name": "flag_both_before",
+    "args": [
+      "--help",
+      "--pprof-server",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_dashdash_check",
+    "args": [
+      "help",
+      "--",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_false_check",
+    "args": [
+      "help",
+      "--help=false",
+      "check"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_short_false_version",
+    "args": [
+      "help",
+      "-h=false",
+      "version"
+    ],
+    "env": {}
+  },
+  {
+    "name": "help_dashdash",
+    "args": [
+      "help",
+      "--"
+    ],
+    "env": {}
+  }
+]
