@@ -40,6 +40,10 @@ def verify(directory):
  tag=r['containers'][0][:-5]
  equal(r['command'],['docker','run','--name',tag+'-test','--hostname','fixture','--init','--read-only','--network','none','--cap-drop','ALL','--cap-add','SYS_CHROOT','--cap-add','SETUID','--security-opt','no-new-privileges','--memory','256m','--cpus','2','--pids-limit','64','--tmpfs','/tmp:rw,exec,nosuid,nodev,size=32m',tag],'isolated command')
  equal(digest(directory/'run.log'),r['run_sha256'],'run hash');verify_run(read(directory/'run.log'))
+ artifact=directory/'rubixctl'
+ if artifact.exists():
+  require(artifact.is_file(),'exported artifact is a regular file')
+  equal(digest(artifact),r['artifact_sha256'],'exported artifact identity')
  equal(r['artifact_sha256'],re.search(r'^([a-f0-9]{64})  /out/rubixctl$',read(directory/'run.log').decode(),re.M).group(1),'exported artifact identity')
  equal(digest(directory/'source-hashes.json'),r['inventory_sha256'],'inventory hash');inventory=load(directory/'source-hashes.json')
  equal(inventory.get('Dockerfile'),digest(HERE/'Linux.Dockerfile'),'builder')
