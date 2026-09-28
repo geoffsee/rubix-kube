@@ -137,3 +137,15 @@ gzip stream with a private incremental tar parser. It retains bounded metadata a
 hashes/discards layer bodies, with no whole decoded-image allocation. Only complete
 outer decoding plus archive/member/reference closure yields its opaque result;
 nested layer decoding and DiffID verification remain separate.
+
+The additive [layer digest verifier](LAYER-INTEGRITY.md) shares this retained budget
+between outer tar output and every nested layer's decoded output. A private
+budget-aware observer lets the driver recompute its allowance after nested work;
+the public callback API is unchanged. Each admitted nested frame/member reserves
+its own excess/EOF probe, and all failure charges survive retries. No decoded
+layer bytes are retained or exposed provisionally.
+
+Nested raw decoder failures conservatively retain the offered output-buffer
+capacity within the available allowance, in addition to prior admitted output and
+reserved probes. Error positions can underreport mutated bytes; failed buffers
+are not hashed. This reservation does not measure hidden internal codec work.

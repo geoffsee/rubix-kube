@@ -1,14 +1,14 @@
 [
     {
-        "Id": "sha256:364d10b69ceff69477106b065f7287a2c8437a9fc778fca3576ada1561f32607",
+        "Id": "sha256:078c07cbf64d995fb9e31b6706820022fbae3eb64d2d9df719f1156b2316f4d9",
         "RepoTags": [
-            "rubix-config-scalar-base-s1nqwy:latest"
+            "rubix-config-scalar-base-qu6qz1:latest"
         ],
         "RepoDigests": [
-            "rubix-config-scalar-base-s1nqwy@sha256:364d10b69ceff69477106b065f7287a2c8437a9fc778fca3576ada1561f32607"
+            "rubix-config-scalar-base-qu6qz1@sha256:078c07cbf64d995fb9e31b6706820022fbae3eb64d2d9df719f1156b2316f4d9"
         ],
         "Comment": "buildkit.dockerfile.v0",
-        "Created": "2026-09-28T08:28:37.009289084Z",
+        "Created": "2026-09-28T09:08:47.002173963Z",
         "Config": {
             "User": "65532:65532",
             "Env": [
@@ -23,7 +23,7 @@
         },
         "Architecture": "arm64",
         "Os": "linux",
-        "Size": 324057598,
+        "Size": 324057822,
         "RootFS": {
             "Type": "layers",
             "Layers": [
@@ -36,24 +36,24 @@
                 "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
                 "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
                 "sha256:89e8c1a498d66a2155a581feb21a032650ac64b05d4c00fec6594ac27484aa0e",
-                "sha256:681216831f82333d57233ccef0e4baf38864355e1abe0436f4d73d66858ca9ff",
-                "sha256:d5d22c63f2765b3be1fd0b82791b7fc992b8c160b64b88320d3f1f41ea424c4d",
+                "sha256:696226a6a47aa238eb407984d2fb801c8104cb4ecfadf75847cd21854bd0b766",
+                "sha256:f2c01200527a3f54db7fc43444b131a34aaa4e87b269621b6de4f78c72bf9011",
                 "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-28T08:28:39.599860418Z"
+            "LastTagTime": "2026-09-28T09:08:49.603846173Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:364d10b69ceff69477106b065f7287a2c8437a9fc778fca3576ada1561f32607",
+            "digest": "sha256:078c07cbf64d995fb9e31b6706820022fbae3eb64d2d9df719f1156b2316f4d9",
             "size": 856
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "2eym42eezbjdoo5faltb1d1um",
-                    "CreatedAt": "2026-09-28T08:28:40.971665835Z"
+                    "Ref": "5bb8tiuc2bet2b0r3dc2bvrnu",
+                    "CreatedAt": "2026-09-28T09:08:50.506520715Z"
                 }
             ]
         }
