@@ -5,7 +5,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-preparation-linux-95e7bc7762704d3883674cf687b6ac85-test",
+    "rubix-preparation-linux-a602b57b81524042b069dd7baa1f2d57-test",
     "--hostname",
     "fixture",
     "--init",
@@ -28,20 +28,20 @@
     "64",
     "--tmpfs",
     "/tmp:rw,exec,nosuid,nodev,size=32m",
-    "rubix-preparation-linux-95e7bc7762704d3883674cf687b6ac85"
+    "rubix-preparation-linux-a602b57b81524042b069dd7baa1f2d57"
   ],
   "containers": [
-    "rubix-preparation-linux-95e7bc7762704d3883674cf687b6ac85-test"
+    "rubix-preparation-linux-a602b57b81524042b069dd7baa1f2d57-test"
   ],
   "errors": [],
   "helper_sha256": "3e023b416915ca05cd1858755ab265fdfa5bc675219abff6579ef8ae4854682f",
-  "image_id": "sha256:da32e25a38df9983645e100a6661e70d9cd12f8311875ca0c042963f8f3ff857",
+  "image_id": "sha256:f2226a09f7af281a3830f5769cc0abf159e2befa2c3a919afede51009f9805dc",
   "inventory_sha256": "b57db42e6aa62669718fd6448b9f7cd5fd54e1f214ee938a2e6dfe76c622ebb4",
   "platform": "linux/arm64",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "e7d8844e599b959ed39ffaadb6ea265fd6edb5b7",
-  "run_sha256": "477a91bd1fe8541e24ccecc2201e9e4f59309cd0b17f7eff907eb3eb0cd62adf",
+  "revision": "e9d4235d781219a635d03171fec2cc0f806be757",
+  "run_sha256": "b4842a6962d5d2c8e73270603003c4ba4762f1f7a8156ef31e31d02c53ae88c6",
   "source_sha256": {
     "../management-check/capture.py": "67e654124f9eb3ef9a539be2fb850da84fe29ffec0b84438d88ad2947eee213d",
     "../management-check/verify.py": "c461b4af18830bc3044f08d164251c29ce1bca533ca1765dc944207890d8bdab",
@@ -50,7 +50,7 @@
     "linux_fixture.py": "8bc8b26469bb4ebc1a72ccfb306cc934a186d815acf54c84feb1bc55bd52db7d",
     "qualify.py": "326e0a91b8da74027c96fa4666e333570a08225a5d977724baef4771bb5caee8",
     "support.py": "e0cf2ff2eccb1e4bda10161bd1cbc9f5e584edcbc8dc2a450c096bd3aff59e74",
-    "verify_linux.py": "a5d77ae734a82a97ef23baafd93fbd77827223c024507d9cb16d417838111d10"
+    "verify_linux.py": "52a15c23a9ad363097139bdad9d6d26c3e0943050bd9b4ba3cc6beb9f1f00a22"
   },
   "target": "aarch64-unknown-linux-musl",
   "uncommitted_implementation": true
