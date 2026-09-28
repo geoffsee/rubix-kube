@@ -7,3 +7,5 @@ pub use model::*;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 pub mod process;
+#[cfg(unix)]
+pub mod signals;

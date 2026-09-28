@@ -1,9 +1,10 @@
 # Supervisor core
 
-This bounded E04 slice coordinates injected, cooperative async adapters. It implements
-validated startup dependencies, readiness deadlines, fatal/degraded outcomes, and
-bounded cancellation with one task-joining coordinator. It does not launch OS
-processes, install signal handlers, start Kubernetes, or wire the production CLI.
+The core coordinates injected, cooperative async adapters with validated startup
+dependencies, readiness deadlines, fatal/degraded outcomes, and bounded cancellation
+through one task-joining coordinator. The crate also provides an opt-in
+[owned-process adapter](PROCESS.md) and [Unix signal bridge](SIGNALS.md). Kubernetes
+component assembly and production CLI startup remain separate integration work.
 It does not close issues #42, #43, #44, or their parent epic.
 
 The selected external-component boundary is documented in the
@@ -94,10 +95,12 @@ No async library can interrupt blocking code in a future poll or blocking destru
 Abort/join proves only that the registered task future was dropped; it proves nothing
 about detached tasks, owner threads, OS processes, sockets or files an adapter created.
 Adapters must not detach untracked work. `AbortedAtDeadline` is incomplete adapter
-cleanup evidence, never successful process reaping. The next process layer needs
-explicit child identity, termination/escalation, reap and surviving-resource evidence;
-its ownership must survive cancellation of its async waiter. No arbitrary descendant,
-process-group, signal, or whole-node shutdown qualification is claimed here.
+cleanup evidence, never successful process reaping. The owned-process adapter
+provides separate child identity, termination/escalation, reaping and cancellation
+ownership guarantees, with disposable evidence described in [PROCESS.md](PROCESS.md).
+[SIGNALS.md](SIGNALS.md) covers real signal delivery through that adapter. These
+interfaces do not claim arbitrary escaped-descendant containment or whole-node
+shutdown qualification.
 
 `SupervisorReport` contains the original cause, terminal component outcomes,
 component failures, cleanup failures and timestamped transitions. This slice returns
@@ -118,6 +121,7 @@ optional isolation and dependency propagation; partial startup; repeated stop;
 worker-originated failure and original-cause preservation; reverse transitive stop
 ordering; force-aware and stalled cleanup; and deadline overflow. A Drop sentinel
 proves registered futures have been dropped after abort/join. No sleeps consume
-30 seconds of wall time, no host state is changed, and no real-process result is
-inferred from these tests. Actual disposable-process and component protocol tests
-remain necessary before the lifecycle issues can close.
+30 seconds of wall time in the core tests, and no real-process result is inferred
+from them. Separate disposable process and signal tests are documented in the
+linked adapter guides. Configuration-to-supervision policy and component protocol
+integration require their own evidence before the relevant issues close.
