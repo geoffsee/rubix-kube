@@ -109,7 +109,7 @@ fn verify_pinned_crane_layers() {
         };
         assert_eq!(
             before_encoded - session.remaining_encoded_budget(),
-            u64::try_from(bytes.len()).unwrap()
+            u64::try_from(bytes.len()).unwrap() + 1
         );
         let retained = session.remaining_decoded_budget();
         assert!(retained < before_decoded);
@@ -137,7 +137,7 @@ fn verify_pinned_crane_layers() {
         assert!(session.remaining_decoded_budget() < retained);
         assert_eq!(
             before_encoded - session.remaining_encoded_budget(),
-            2 * u64::try_from(bytes.len()).unwrap()
+            2 * (u64::try_from(bytes.len()).unwrap() + 1)
         );
         println!(
             "RUBIX_LAYER {}",

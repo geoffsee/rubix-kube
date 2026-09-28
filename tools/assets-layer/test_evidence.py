@@ -1,6 +1,9 @@
 """Mutation tests use invented evidence and do not claim a pinned crane capture occurred."""
 import base64
 import copy
+import contextlib
+import io
+import types
 import json
 from pathlib import Path
 import tempfile
@@ -192,6 +195,27 @@ class Evidence(unittest.TestCase):
             with self.assertRaises(ValueError):oracle.ungzip(encoded)
         for bad in [dict(list(inputs.items())[:-1]),dict(inputs,extra=inputs['gzip'])]:
             with self.assertRaisesRegex(ValueError,'exact ordered cases'):oracle.observations(bad,upstream)
+    def test_wrong_diffid_preserves_repeated_reference_closure_and_stored_hashes(self):
+        positives, upstream = invented()
+        cases = oracle.cases(positives, upstream)
+        before = oracle.unpack(oracle.ungzip(positives['gzip']))
+        changed = oracle.unpack(oracle.ungzip(cases['wrong-diffid']))
+        self.assertEqual(changed[1:3], before[1:3])
+        config = verify.strict(changed[0][1])
+        manifest = verify.strict(changed[-1][1])[0]
+        declarations = config['rootfs']['diff_ids']
+        self.assertEqual(declarations[0], 'sha256:'+'0'*64)
+        self.assertEqual(declarations[2], declarations[0])
+        self.assertEqual(declarations[1], 'sha256:'+upstream['gzip'][1]['diff_id'])
+        self.assertNotEqual(declarations[0], 'sha256:'+upstream['gzip'][0]['diff_id'])
+        self.assertEqual(changed[0][0], 'sha256:'+oracle.sha(changed[0][1]))
+        self.assertEqual(manifest['Config'], changed[0][0])
+        self.assertEqual(manifest['Layers'], [changed[1][0], changed[2][0], changed[1][0]])
+        for name, body, _ in changed[1:3]:
+            self.assertEqual(name, oracle.sha(body)+'.tar.gz')
+        observed = oracle.observations(cases, upstream)['wrong-diffid']['observed']
+        self.assertEqual(observed, {'status':'policy:Layer(DiffId)'})
+
     def test_upstream_raw_bytes_digests_and_member_binding(self):
         positives,upstream=invented()
         for field,value in [('decoded_base64',base64.b64encode(b'wrong').decode()),('diff_id','0'*64),('frames',7),('codec','identity')]:
@@ -230,6 +254,40 @@ class Evidence(unittest.TestCase):
             with patch.object(capture,'control',side_effect=['0'*40,' M relevant']),patch('sys.argv',['capture','--output',str(out)]),patch.object(capture.helper,'bounded') as bounded_call:
                 with self.assertRaisesRegex(ValueError,'clean source required'):capture.main()
             self.assertFalse(out.exists());bounded_call.assert_not_called()
+    def test_failed_consumer_preserves_bounded_output_without_completion(self):
+        positives, upstream = invented()
+        def producer(command, **kwargs):
+            directory = Path(command[1])
+            (directory/'upstream.json').write_text(json.dumps(upstream))
+            for name, data in positives.items():
+                (directory/(name+'.tar.gz')).write_bytes(data)
+        for diagnostic in [b'FAILED_CONSUMER_ASSERTION: exact budget mismatch\n',
+                           b'FAILED_LOG_START\n'+b'x'*65536+b'FORBIDDEN_OVERSIZE_TAIL', None, 'unreadable']:
+            with self.subTest(length=None if diagnostic is None else len(diagnostic)):
+                failure = RuntimeError('consumer exited 101')
+                def failed_consumer(command, path, deadline, limit):
+                    self.assertEqual(command, runtime.CONSUMER)
+                    self.assertEqual((deadline, limit), (20, 65536))
+                    if diagnostic == 'unreadable':
+                        path.mkdir()
+                    elif diagnostic is not None:
+                        path.write_bytes(diagnostic)
+                    raise failure
+                output = io.StringIO()
+                with patch.object(runtime.subprocess, 'run', side_effect=producer), \
+                     patch.object(runtime, 'bounded', types.SimpleNamespace(bounded=failed_consumer)), \
+                     patch.dict(runtime.os.environ), contextlib.redirect_stdout(output):
+                    with self.assertRaises(RuntimeError) as raised:
+                        runtime.main()
+                self.assertIs(raised.exception, failure)
+                if isinstance(diagnostic, bytes) and len(diagnostic) <= 65536:
+                    self.assertTrue(output.getvalue().endswith(diagnostic.decode()))
+                elif isinstance(diagnostic, bytes):
+                    self.assertNotIn('FAILED_LOG_START', output.getvalue())
+                    self.assertIn('Consumer diagnostic exceeded its bound', output.getvalue())
+                self.assertNotIn('FORBIDDEN_OVERSIZE_TAIL', output.getvalue())
+                self.assertNotIn('RUBIX_COMPLETE ', output.getvalue())
+
     def test_failed_cleanup_records_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory=Path(tmp);report={'containers':['owned'],'cleanup_errors':[]}

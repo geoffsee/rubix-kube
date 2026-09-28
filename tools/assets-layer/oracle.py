@@ -170,7 +170,8 @@ def rewrite(encoded, transform_layer=None, wrong_diff=False):
         old,body,h=entries[1];body=transform_layer(body);new=sha(body)+'.tar.gz';entries[1]=(new,body,h)
         m[0]['Layers']=[new if n==old else n for n in m[0]['Layers']]
     if wrong_diff:
-        cfg['rootfs']['diff_ids'][0]='sha256:'+'0'*64
+        # Repeated A references must retain equal declarations to reach nested DiffID validation.
+        cfg['rootfs']['diff_ids'][0]=cfg['rootfs']['diff_ids'][2]='sha256:'+'0'*64
         body=json.dumps(cfg,separators=(',',':')).encode();new='sha256:'+sha(body)
         entries[0]=(new,body,entries[0][2]);m[0]['Config']=new
     entries[-1]=('manifest.json',json.dumps(m,separators=(',',':')).encode(),entries[-1][2])
