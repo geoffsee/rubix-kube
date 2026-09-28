@@ -173,3 +173,5 @@ pub fn execute(
     }
     Ok(StartupAction::Start(Box::new(resolved.validated)))
 }
+
+pub mod lifecycle_logs;
