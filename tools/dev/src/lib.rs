@@ -8,6 +8,9 @@ use sha2::{Digest, Sha256};
 
 pub mod fixture_oracles;
 pub mod json;
+pub mod language_policy;
+#[path = "parity/process.rs"]
+pub mod process;
 pub mod resolved_report;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
