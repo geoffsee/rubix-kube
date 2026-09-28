@@ -226,7 +226,14 @@ pub async fn prepare_node_network_with(
         future: Box::pin(cancel),
         stopped: false,
     };
-    let assessment = assess_with_cancel(config, &mut cancel, inputs, true).await;
+    prepare_with_cancel(config, &mut cancel, inputs).await
+}
+pub(crate) async fn prepare_with_cancel<F: Future<Output = ()>>(
+    config: &ValidatedConfig,
+    cancel: &mut Cancellation<F>,
+    inputs: &mut impl NetworkPreparationInputs,
+) -> NetworkPreparation {
+    let assessment = assess_with_cancel(config, cancel, inputs, true).await;
     let status = match assessment.status {
         AssessmentStatus::Cancelled => NetworkStatus::Cancelled,
         AssessmentStatus::CleanupIncomplete => NetworkStatus::CleanupIncomplete,
@@ -291,7 +298,7 @@ pub async fn prepare_node_network_with(
         }
     }
     if config.config().network.disable_ipv6 {
-        prepare_ipv6(&mut report, &mut cancel, inputs).await;
+        prepare_ipv6(&mut report, cancel, inputs).await;
         if report.status == NetworkStatus::Cancelled {
             return report;
         }
