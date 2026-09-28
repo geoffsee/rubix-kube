@@ -2,7 +2,7 @@
 
 #1 [internal] load build definition from Capture.Dockerfile
 #1 transferring dockerfile: 766B done
-#1 DONE 0.1s
+#1 DONE 0.0s
 
 #2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 #2 DONE 0.0s
@@ -11,8 +11,9 @@
 #3 DONE 0.0s
 
 #4 [internal] load .dockerignore
+#4 transferring context:
 #4 transferring context: 2B done
-#4 DONE 0.1s
+#4 DONE 0.0s
 
 #5 [1/5] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
 #5 resolve docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 0.0s done
@@ -26,50 +27,50 @@
 #7 CACHED
 
 #8 [internal] load build context
-#8 transferring context: 2.03MB 0.1s done
-#8 DONE 0.2s
+#8 transferring context: 2.07MB 0.0s done
+#8 DONE 0.1s
 
 #9 [build 3/4] COPY . .
-#9 DONE 0.2s
+#9 DONE 0.4s
 
 #10 [build 4/4] RUN cargo test -p rubix-supervisor --test process_ownership --locked --no-run && mkdir /out && for executable in target/debug/deps/process_ownership-*; do if [ -f "$executable" ] && [ -x "$executable" ]; then cp "$executable" /out/process-tests; fi; done && test -x /out/process-tests
-#10 0.280 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 20.34 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 20.35 info: downloading 3 components
-#10 51.67     Updating crates.io index
-#10 74.80  Downloading crates ...
-#10 75.18   Downloaded errno v0.3.14
-#10 75.39   Downloaded tokio-macros v2.7.1
-#10 75.49   Downloaded pin-project-lite v0.2.17
-#10 75.50   Downloaded signal-hook-registry v1.4.8
-#10 75.57   Downloaded quote v1.0.47
-#10 75.60   Downloaded bitflags v2.13.2
-#10 75.60   Downloaded unicode-ident v1.0.26
-#10 75.68   Downloaded proc-macro2 v1.0.107
-#10 75.70   Downloaded mio v1.2.3
-#10 76.08   Downloaded syn v2.0.119
-#10 76.27   Downloaded rustix v1.1.5
-#10 76.74   Downloaded libc v0.2.189
-#10 76.93   Downloaded tokio v1.53.1
-#10 78.80   Downloaded linux-raw-sys v0.12.1
-#10 78.93    Compiling proc-macro2 v1.0.107
-#10 78.96    Compiling libc v0.2.189
-#10 78.96    Compiling quote v1.0.47
-#10 78.96    Compiling unicode-ident v1.0.26
-#10 78.96    Compiling rustix v1.1.5
-#10 78.96    Compiling bitflags v2.13.2
-#10 78.96    Compiling pin-project-lite v0.2.17
-#10 78.96    Compiling linux-raw-sys v0.12.1
-#10 81.16    Compiling syn v2.0.119
-#10 85.39    Compiling errno v0.3.14
-#10 85.39    Compiling mio v1.2.3
-#10 85.47    Compiling signal-hook-registry v1.4.8
-#10 107.3    Compiling tokio-macros v2.7.1
-#10 113.9    Compiling tokio v1.53.1
-#10 117.2    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
-#10 123.0     Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 10s
-#10 123.0   Executable tests/process_ownership.rs (target/debug/deps/process_ownership-b14f211a6e4179bb)
-#10 DONE 123.4s
+#10 0.332 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 2.906 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 2.913 info: downloading 3 components
+#10 81.67     Updating crates.io index
+#10 97.82  Downloading crates ...
+#10 98.72   Downloaded errno v0.3.14
+#10 98.78   Downloaded tokio-macros v2.7.1
+#10 98.90   Downloaded unicode-ident v1.0.26
+#10 98.91   Downloaded bitflags v2.13.2
+#10 98.93   Downloaded quote v1.0.47
+#10 99.01   Downloaded pin-project-lite v0.2.17
+#10 99.17   Downloaded signal-hook-registry v1.4.8
+#10 99.38   Downloaded proc-macro2 v1.0.107
+#10 99.73   Downloaded mio v1.2.3
+#10 100.7   Downloaded syn v2.0.119
+#10 101.1   Downloaded rustix v1.1.5
+#10 101.9   Downloaded libc v0.2.189
+#10 102.0   Downloaded tokio v1.53.1
+#10 103.2   Downloaded linux-raw-sys v0.12.1
+#10 103.3    Compiling proc-macro2 v1.0.107
+#10 103.3    Compiling libc v0.2.189
+#10 103.3    Compiling quote v1.0.47
+#10 103.3    Compiling unicode-ident v1.0.26
+#10 103.3    Compiling rustix v1.1.5
+#10 103.3    Compiling pin-project-lite v0.2.17
+#10 103.3    Compiling bitflags v2.13.2
+#10 103.3    Compiling linux-raw-sys v0.12.1
+#10 105.3    Compiling syn v2.0.119
+#10 105.3    Compiling errno v0.3.14
+#10 105.3    Compiling mio v1.2.3
+#10 105.4    Compiling signal-hook-registry v1.4.8
+#10 119.8    Compiling tokio-macros v2.7.1
+#10 125.3    Compiling tokio v1.53.1
+#10 129.9    Compiling rubix-supervisor v0.1.0 (/source/crates/rubix-supervisor)
+#10 135.3     Finished `test` profile [unoptimized + debuginfo] target(s) in 53.70s
+#10 135.5   Executable tests/process_ownership.rs (target/debug/deps/process_ownership-b14f211a6e4179bb)
+#10 DONE 135.7s
 
 #11 [stage-1 2/4] COPY --from=build /out/process-tests /process-tests
 #11 CACHED
@@ -81,18 +82,15 @@
 #13 CACHED
 
 #14 exporting to image
-#14 exporting layers
 #14 exporting layers done
 #14 exporting manifest sha256:b55c639e16d33aef9ab1cee6005b105dfd7d3e9e1a6f1c4403ce7cf6a917eeba 0.0s done
 #14 exporting config sha256:de1295d74bbd7f6c87e710a3e55ad927f3b3904aa97d117aa3c05cf88fe1a64c 0.1s done
-#14 exporting attestation manifest sha256:cc6854f778e15d92987b7057ca2b95497c36aa11c3ef30bf16db8c8b065f10f4
-#14 exporting attestation manifest sha256:cc6854f778e15d92987b7057ca2b95497c36aa11c3ef30bf16db8c8b065f10f4 0.1s done
-#14 exporting manifest list sha256:1f7b8d0a1c64ef61c449998670ecc65e61b677caec88e693f06f9402b620b43f
-#14 exporting manifest list sha256:1f7b8d0a1c64ef61c449998670ecc65e61b677caec88e693f06f9402b620b43f 0.1s done
-#14 naming to docker.io/library/rubix-process-d43be25b03224ee2a483a22a6364d0c5:latest
-#14 naming to docker.io/library/rubix-process-d43be25b03224ee2a483a22a6364d0c5:latest 0.2s done
-#14 unpacking to docker.io/library/rubix-process-d43be25b03224ee2a483a22a6364d0c5:latest
-#14 unpacking to docker.io/library/rubix-process-d43be25b03224ee2a483a22a6364d0c5:latest 0.0s done
-#14 DONE 1.5s
+#14 exporting attestation manifest sha256:6f34312ab6dd03b027e927cdaac1f98177019cf042edf4593ff5db189675a16e 0.1s done
+#14 exporting manifest list sha256:1ea926327de98a8df9011fd756b7ef55953d0f7fe72b5d9a326ee81408e8a32f
+#14 exporting manifest list sha256:1ea926327de98a8df9011fd756b7ef55953d0f7fe72b5d9a326ee81408e8a32f 0.0s done
+#14 naming to docker.io/library/rubix-process-1b1513c13ebc4b1aa6018b0904527ac6:latest 0.0s done
+#14 unpacking to docker.io/library/rubix-process-1b1513c13ebc4b1aa6018b0904527ac6:latest
+#14 unpacking to docker.io/library/rubix-process-1b1513c13ebc4b1aa6018b0904527ac6:latest 0.5s done
+#14 DONE 1.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/kpmnz4lidoaa8o52idv9eo36o
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/q7hknbiigrab7p4c5cbqu516e

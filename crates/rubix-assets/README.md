@@ -2,7 +2,7 @@
 
 This is the first bounded layer of E06.01/#48. It is a synchronous, read-only
 library shared by future runtime and release consumers. It does not open paths,
-fetch inputs, start commands, decode compression, parse ELF/OCI content, install
+fetch inputs, start commands, decode compression, parse OCI content, install
 files, import images or authorize any of those actions.
 
 `Manifest::decode(bytes, limits)` is the sole public construction route and parses
@@ -90,3 +90,7 @@ truncation/corruption/trailing bytes, and aggregate budget exhaustion.
 [CATALOG.md](CATALOG.md) records source authority, actual unresolved production pins,
 encodings, the full matrix and the remaining content-validation/asset-resolution
 gates. Ordinary builds perform no upstream refresh and embed no third-party assets.
+
+The additive [identity ELF inspection](ELF.md) now checks the exact identity bytes and
+reports bounded header/loader/dependency facts. Compression and runtime ABI closure
+remain separate; this addition does not close #48.
