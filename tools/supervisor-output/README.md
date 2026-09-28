@@ -15,8 +15,11 @@ finite descendants. Safe Rust re-exec replaces the old forked fixture; the escap
 writer creates its own session, exits after two seconds, and must disappear before
 namespace completion. No raw captured child bytes are published.
 
-Independent Rust expectations require exact output status and size, owner join and
-leader reaping facts, sub-five-second samples and namespace cleanup. Both test and
+Independent Rust expectations require exact output status and deterministic sizes,
+owner join and leader reaping facts, sub-five-second samples and namespace cleanup.
+Cancelled cases independently require at most 64 bytes; cancellation can stop
+retention at different prefixes. Repeat comparison omits their partial byte counts
+and elapsed measurements, while raw evidence retains every observed count. Both test and
 fixture binaries are bound to a fresh build nonce and both runtime hashes. Full
 historical copied inputs and exact current relevant input inventories remain
 verified; see the process fixture README for the source scopes and cleanup model.

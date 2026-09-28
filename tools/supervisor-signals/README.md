@@ -30,7 +30,9 @@ Cargo configuration, supervisor Rust inputs and Rust maintenance implementation.
 Default verification compares every copied input; `--relevant-current` permits
 unrelated historical source changes while preserving exact relevant inventories.
 Every raw log, command and command settlement record is hash-bound. The verifier
-requires the exact eight-file evidence set; old four-file provenance remains
+requires exactly 20 evidence files: the capture receipt, source inventory, and
+raw log plus settled receipt for each of nine commands (build, two runs, image
+inspection, and five cleanup commands). Old four-file provenance remains
 historical and must never be relabeled as new Rust execution.
 
 The pinned Rust container runs as UID 65532 with no network or host mounts,

@@ -112,6 +112,51 @@ fn process_fields_types_startup_and_deadlines_are_required() -> Result<()> {
     Ok(())
 }
 #[test]
+fn cancelled_prefix_counts_vary_but_each_raw_run_remains_strict() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let original = staged(directory.path(), "output")?;
+    let raw = raw("output")?;
+    let pattern = regex::Regex::new(r"(status=Cancelled bytes=)\d+")?;
+    for size in [0, 6, 64] {
+        let changed = pattern
+            .replace_all(&raw, format!("${{1}}{size}"))
+            .into_owned();
+        let (rows, _) = records("output", changed.as_bytes())?;
+        let mut receipt = original.clone();
+        receipt["runs"]["repeat"]["records"] = rows;
+        receipt["runs"]["repeat"]["raw_sha256"] = rubix_dev::sha256(changed.as_bytes()).into();
+        fs::write(directory.path().join("repeat.log"), changed)?;
+        bind_command(directory.path(), &mut receipt, "repeat")?;
+        save(&directory.path().join("receipt.json"), &receipt)?;
+        verify(&root()?, "output", directory.path(), true)?;
+        assert_eq!(
+            receipt["runs"]["repeat"]["records"]["probe-failure"]["bytes"],
+            size
+        );
+    }
+    for changed in [
+        pattern.replace_all(&raw, "${1}65").into_owned(),
+        raw.replace("status=Complete bytes=8", "status=Complete bytes=7"),
+        raw.replace("status=Cancelled", "status=Complete"),
+        raw.replace("joined=true", "joined=false"),
+        raw.replace("reaped=true", "reaped=false"),
+    ] {
+        assert_ne!(changed, raw);
+        assert!(records("output", changed.as_bytes()).is_err());
+    }
+    let rows = records("output", raw.as_bytes())?.0;
+    for (key, value) in [
+        ("bytes", json!(7)),
+        ("status", json!("Cancelled")),
+        ("joined", json!(false)),
+    ] {
+        let mut changed = rows.clone();
+        changed["merged"][key] = value;
+        assert_ne!(oracle::normalize(&rows), oracle::normalize(&changed));
+    }
+    Ok(())
+}
+#[test]
 fn output_and_signal_semantic_mutations_fail() -> Result<()> {
     for (family, pairs) in [
         (
