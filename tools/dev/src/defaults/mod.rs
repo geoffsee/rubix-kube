@@ -7,6 +7,7 @@ use std::{
 };
 pub mod archives;
 pub mod capture;
+pub(crate) mod evidence;
 #[cfg(test)]
 mod tests;
 pub fn directory() -> PathBuf {

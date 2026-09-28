@@ -384,6 +384,8 @@ pub fn source_inventory(fixture: &Path) -> Result<Value> {
     paths.extend([
         root.join("Cargo.toml"),
         root.join("Cargo.lock"),
+        root.join("rust-toolchain.toml"),
+        root.join(".cargo/config.toml"),
         root.join("tools/dev/Cargo.toml"),
         fixture.join("inputs.json"),
         fixture.join("Dockerfile"),
@@ -391,6 +393,18 @@ pub fn source_inventory(fixture: &Path) -> Result<Value> {
     ]);
     if fixture.join("apiserver.go").is_file() {
         paths.push(fixture.join("apiserver.go"));
+    }
+    for name in [
+        "expected.json",
+        "apiserver.expected.json",
+        "source-anchors.json",
+        "provenance.json",
+        "evidence/modules.sha256",
+        "evidence/receipt.json",
+    ] {
+        if fixture.join(name).exists() {
+            paths.push(fixture.join(name));
+        }
     }
     let mut result = serde_json::Map::new();
     for path in paths {
@@ -414,7 +428,10 @@ pub fn inspect_image(runner: &mut Runner, owned: &mut OwnedDocker) -> Result<Val
     let inspect = json::parse(&raw)?;
     let id = inspect[0]["Id"].as_str().ok_or("missing owned image ID")?;
     require(
-        id.starts_with("sha256:")
+        inspect.as_array().is_some_and(|items| items.len() == 1)
+            && inspect[0]["Os"] == "linux"
+            && inspect[0]["Architecture"] == "arm64"
+            && id.starts_with("sha256:")
             && id.len() == 71
             && id[7..].bytes().all(|b| b.is_ascii_hexdigit()),
         "invalid image ID",
@@ -560,8 +577,23 @@ pub fn cli(args: &[String]) -> Result<i32> {
         )?;
         let source = format!("{}:/out/modules.sha256", owned.containers[0]);
         let mut copy = arguments(&["docker", "cp", &source]);
-        copy.push(args.output.join("modules.sha256").into_os_string());
+        copy.push(
+            args.output
+                .canonicalize()?
+                .join("modules.sha256")
+                .into_os_string(),
+        );
         runner.bounded(&copy, "copy-modules", 30, 1024 * 1024)?;
+        report["modules_sha256"] = value!(digest(&args.output.join("modules.sha256"))?);
+        super::evidence::verify_modules(
+            &read_bounded(&args.output.join("modules.sha256"), 1024 * 1024)?,
+            &report,
+            false,
+        )?;
+        require(
+            report["source_sha256"] == source_inventory(&fixture)?,
+            "capture sources changed during execution",
+        )?;
         Ok(())
     })();
     if let Err(error) = result {
@@ -587,6 +619,7 @@ pub fn verify_evidence(fixture: &Path, output: &Path, resolved: bool) -> Result<
         "current Rust capture receipt required",
     )?;
     require(successful(&report), "capture or owned cleanup failed")?;
+    super::evidence::verify(output, &report, resolved)?;
     require(
         report["identical_repeats"] == true,
         "capture did not repeat identically",
