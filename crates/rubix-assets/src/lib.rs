@@ -21,3 +21,9 @@ pub use inventory::{
     DeclaredInventory, Delivery, InventoryError, InventoryRequest, Limits, Manifest, Scope, Variant,
 };
 pub use verify::{EncodedBlobMatch, VerificationError, VerificationSession};
+
+mod layer;
+pub use layer::{
+    LayerCodec, LayerDecodeLimits, LayerDigestArchiveObservation, LayerDigestObservation,
+    LayerPolicyError,
+};

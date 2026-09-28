@@ -73,6 +73,7 @@ pub enum ArchivePolicyError {
     References,
     ForeignLayers,
     PlatformMismatch,
+    Layer(crate::LayerPolicyError),
 }
 impl fmt::Display for ArchivePolicyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -213,6 +214,18 @@ impl DecodeSession<'_> {
             .map_err(ArchiveError::Policy)
     }
 }
+pub(crate) trait LayerObserver {
+    fn start(&mut self, _size: u64, _budget: &mut u64) -> Result<(), ArchivePolicyError> {
+        Ok(())
+    }
+    fn push(&mut self, _bytes: &[u8], _budget: &mut u64) -> Result<(), ArchivePolicyError> {
+        Ok(())
+    }
+    fn end(&mut self, _digest: [u8; 32]) -> Result<(), ArchivePolicyError> {
+        Ok(())
+    }
+}
+impl LayerObserver for () {}
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum MemberKind {
     Config,
@@ -234,7 +247,7 @@ struct Current {
     hash: Sha256,
     data: Vec<u8>,
 }
-struct ArchiveParser {
+pub(crate) struct ArchiveParser {
     limits: ArchiveLimits,
     header: [u8; 512],
     header_used: usize,
@@ -245,7 +258,7 @@ struct ArchiveParser {
     config_seen: bool,
 }
 impl ArchiveParser {
-    fn new(limits: ArchiveLimits) -> Self {
+    pub(crate) fn new(limits: ArchiveLimits) -> Self {
         Self {
             limits,
             header: [0; 512],
@@ -257,7 +270,15 @@ impl ArchiveParser {
             config_seen: false,
         }
     }
-    fn push(&mut self, mut bytes: &[u8]) -> Result<(), ArchivePolicyError> {
+    fn push(&mut self, bytes: &[u8]) -> Result<(), ArchivePolicyError> {
+        self.push_observing(bytes, &mut (), &mut 0)
+    }
+    pub(crate) fn push_observing(
+        &mut self,
+        mut bytes: &[u8],
+        layers: &mut impl LayerObserver,
+        budget: &mut u64,
+    ) -> Result<(), ArchivePolicyError> {
         while !bytes.is_empty() {
             if let Some(current) = self.current.as_mut() {
                 let take = usize::try_from(
@@ -268,7 +289,9 @@ impl ArchiveParser {
                 .map_err(|_| ArchivePolicyError::Limit)?;
                 let chunk = &bytes[..take];
                 current.hash.update(chunk);
-                if current.kind != MemberKind::Layer {
+                if current.kind == MemberKind::Layer {
+                    layers.push(chunk, budget)?;
+                } else {
                     current
                         .data
                         .try_reserve_exact(take)
@@ -278,7 +301,7 @@ impl ArchiveParser {
                 current.remaining -= u64::try_from(take).map_err(|_| ArchivePolicyError::Limit)?;
                 bytes = &bytes[take..];
                 if current.remaining == 0 {
-                    self.complete_member()?;
+                    self.complete_member(layers)?;
                 }
             } else if self.padding != 0 {
                 let take = self.padding.min(bytes.len());
@@ -297,13 +320,17 @@ impl ArchiveParser {
                 self.header_used += take;
                 bytes = &bytes[take..];
                 if self.header_used == 512 {
-                    self.complete_header()?;
+                    self.complete_header(layers, budget)?;
                 }
             }
         }
         Ok(())
     }
-    fn complete_header(&mut self) -> Result<(), ArchivePolicyError> {
+    fn complete_header(
+        &mut self,
+        layers: &mut impl LayerObserver,
+        budget: &mut u64,
+    ) -> Result<(), ArchivePolicyError> {
         self.header_used = 0;
         if self.header.iter().all(|byte| *byte == 0) {
             self.zeros += 1;
@@ -312,9 +339,13 @@ impl ArchiveParser {
         if self.zeros != 0 {
             return Err(ArchivePolicyError::Header);
         }
-        self.start_member()
+        self.start_member(layers, budget)
     }
-    fn start_member(&mut self) -> Result<(), ArchivePolicyError> {
+    fn start_member(
+        &mut self,
+        layers: &mut impl LayerObserver,
+        budget: &mut u64,
+    ) -> Result<(), ArchivePolicyError> {
         let header = &self.header;
         if &header[257..265] != b"ustar\x0000" {
             return Err(ArchivePolicyError::Header);
@@ -370,6 +401,9 @@ impl ArchiveParser {
         {
             return Err(ArchivePolicyError::Limit);
         }
+        if kind == MemberKind::Layer {
+            layers.start(size, budget)?;
+        }
         self.config_seen |= kind == MemberKind::Config;
         self.current = Some(Current {
             name,
@@ -381,15 +415,21 @@ impl ArchiveParser {
             data: Vec::new(),
         });
         if size == 0 {
-            self.complete_member()?;
+            self.complete_member(layers)?;
         }
         Ok(())
     }
-    fn complete_member(&mut self) -> Result<(), ArchivePolicyError> {
+    fn complete_member(
+        &mut self,
+        layers: &mut impl LayerObserver,
+    ) -> Result<(), ArchivePolicyError> {
         let current = self.current.take().ok_or(ArchivePolicyError::Header)?;
         let digest: [u8; 32] = current.hash.finalize().into();
         if current.expected.is_some_and(|expected| expected != digest) {
             return Err(ArchivePolicyError::MemberDigest);
+        }
+        if current.kind == MemberKind::Layer {
+            layers.end(digest)?;
         }
         self.padding = usize::try_from((512 - current.size % 512) % 512)
             .map_err(|_| ArchivePolicyError::Limit)?;
@@ -404,7 +444,7 @@ impl ArchiveParser {
         );
         Ok(())
     }
-    fn finish(
+    pub(crate) fn finish(
         self,
         decoded: DecodedObservation,
         architecture: Architecture,
@@ -722,7 +762,7 @@ fn strict_json(bytes: &[u8], depth: usize) -> Result<Value, ArchivePolicyError> 
 
 #[cfg(test)]
 #[path = "../tests/common/archive.rs"]
-mod vectors;
+pub(crate) mod vectors;
 #[cfg(test)]
 mod tests {
     use super::*;
