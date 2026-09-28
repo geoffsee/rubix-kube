@@ -71,3 +71,10 @@ that gate and dependent owner never start. Fatal cases preserve the exact primar
 adapter error; force cases require the explicit `Forced` cleanup record rather
 than claiming ordinary graceful cleanup. The slim runtime's source-bound `kill.sh`
 invokes the shell's kill builtin for the unchanged original signal fixture.
+
+The ordinary Python acceptance tests separately require every recorded elapsed
+sample to be at most 35,000 ms, and reject a 35,001 ms mutation. They first verify
+the frozen evidence and its current relevant inputs. The 37/38-second Rust
+watchdogs and the structural verifier's wider timing tolerance retain overdue
+results for diagnosis; they do not replace this stricter engineering gate.
+This qualifies the observed samples, not a universal kernel cleanup bound.
