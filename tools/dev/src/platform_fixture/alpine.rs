@@ -453,6 +453,14 @@ fn verify_guest_fields(
     Ok(report)
 }
 pub(super) fn verify(root: &Path, profile: &str, directory: &Path) -> Result<Value> {
+    verify_with_baseline(root, profile, directory, None)
+}
+pub(super) fn verify_with_baseline(
+    root: &Path,
+    profile: &str,
+    directory: &Path,
+    baseline_directory: Option<&Path>,
+) -> Result<Value> {
     let here = fixture(
         root,
         if profile == "alpine" {
@@ -490,21 +498,78 @@ pub(super) fn verify(root: &Path, profile: &str, directory: &Path) -> Result<Val
         baseline_semantic(&before, &reboot)
     } else {
         preparation::verify(root, &directory.join("artifact-build"))?;
-        let effects = rust_semantic(root, &before, &reboot)?;
-        let baseline = verify(
-            root,
-            "alpine",
-            &fixture(root, "alpine-preparation").join("evidence-rust/first"),
+        candidate_metadata(
+            &load(&directory.join("artifact-build/artifact.json"))?,
+            &inputs,
+            report["revision"].as_str().ok_or("guest revision")?,
         )?;
-        for key in ["initial", "installed", "controllers"] {
-            equal(
-                &effects[key],
-                &baseline[key],
-                "current baseline preparation parity",
-            )?;
-        }
+        let effects = rust_semantic(root, &before, &reboot)?;
+        let published = fixture(root, "alpine-preparation").join("evidence-rust/first");
+        let (baseline, _) = verified_baseline(
+            root,
+            baseline_directory.unwrap_or(&published),
+            Some(
+                report["baseline_result_sha256"]
+                    .as_str()
+                    .ok_or("baseline result digest")?,
+            ),
+        )?;
+        baseline_parity(&effects, &baseline)?;
         Ok(effects)
     }
+}
+pub(super) fn candidate_metadata(metadata: &Value, inputs: &Value, revision: &str) -> Result<()> {
+    for key in ["sha256", "size", "target"] {
+        equal(
+            &metadata[key],
+            &inputs["artifact"][key],
+            "candidate byte and target pin",
+        )?;
+    }
+    require(
+        revision.len() == 40
+            && revision
+                .bytes()
+                .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()),
+        "exact capture revision",
+    )?;
+    equal(
+        &metadata["revision"],
+        &json!(revision),
+        "current qualified artifact and guest source revision",
+    )
+}
+pub(super) fn verified_baseline(
+    root: &Path,
+    directory: &Path,
+    expected_digest: Option<&str>,
+) -> Result<(Value, String)> {
+    let path = directory.join("result.json");
+    let before = digest(&path)?;
+    if let Some(expected) = expected_digest {
+        equal(
+            &json!(before),
+            &json!(expected),
+            "bound external baseline result",
+        )?;
+    }
+    let observations = verify(root, "alpine", directory)?;
+    equal(
+        &json!(digest(&path)?),
+        &json!(before),
+        "baseline stable during verification",
+    )?;
+    Ok((observations, before))
+}
+pub(super) fn baseline_parity(effects: &Value, baseline: &Value) -> Result<()> {
+    for key in ["initial", "installed", "controllers"] {
+        equal(
+            &effects[key],
+            &baseline[key],
+            "current baseline preparation parity",
+        )?;
+    }
+    Ok(())
 }
 pub(super) fn qemu_argv(private: &str, port: &str) -> Vec<String> {
     [
@@ -702,6 +767,62 @@ mod tests {
                 &fixture(&root, name).join("evidence-rust/repeat"),
             )?;
             equal(&first, &repeat, "independent repeated guests")?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod dependency_tests {
+    use super::*;
+    #[test]
+    fn fresh_qualified_revision_retains_exact_artifact_byte_and_target_pins() -> Result<()> {
+        let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
+        let inputs = load(&fixture(&root, "alpine-rust-preparation").join("inputs.json"))?;
+        let revision = "a".repeat(40);
+        let mut metadata = inputs["artifact"].clone();
+        metadata["revision"] = json!(revision);
+        candidate_metadata(&metadata, &inputs, &revision)?;
+        for (key, value) in [
+            ("revision", json!("b".repeat(40))),
+            ("sha256", json!("c".repeat(64))),
+            ("size", json!(true)),
+            ("target", json!("aarch64-unknown-linux-gnu")),
+        ] {
+            let mut bad = metadata.clone();
+            bad[key] = value;
+            assert!(
+                candidate_metadata(&bad, &inputs, &revision).is_err(),
+                "{key}"
+            );
+        }
+        assert!(candidate_metadata(&metadata, &inputs, "moving-ref").is_err());
+        Ok(())
+    }
+    #[test]
+    fn external_baseline_requires_bound_digest_and_full_current_verification() -> Result<()> {
+        let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
+        let dir = tempfile::tempdir()?;
+        assert!(verified_baseline(&root, dir.path(), None).is_err());
+        std::fs::write(dir.path().join("result.json"), b"{}\n")?;
+        let actual = digest(&dir.path().join("result.json"))?;
+        assert!(
+            verified_baseline(&root, dir.path(), Some(&"0".repeat(64)))
+                .unwrap_err()
+                .to_string()
+                .contains("bound external baseline result")
+        );
+        assert!(
+            verified_baseline(&root, dir.path(), Some(&actual)).is_err(),
+            "matching a self-reported hash cannot bypass full baseline verification"
+        );
+        let effects =
+            json!({"initial":["base"],"installed":["base","added"],"controllers":["cpu"]});
+        baseline_parity(&effects, &effects)?;
+        for key in ["initial", "installed", "controllers"] {
+            let mut changed = effects.clone();
+            changed[key] = json!([]);
+            assert!(baseline_parity(&effects, &changed).is_err(), "{key}");
         }
         Ok(())
     }

@@ -132,6 +132,7 @@ impl Options {
                     "--image-cache",
                     "--input-cache",
                     "--artifact-directory",
+                    "--baseline-directory",
                     "--inject-failure",
                     "--cache",
                 ]
@@ -190,7 +191,15 @@ pub(crate) fn main(args: &[OsString]) -> Result<u8> {
             Ok(0)
         },
         ("alpine" | "alpine-rust", "verify") => {
-            alpine::verify(&root, profile, options.path("--directory")?)?;
+            alpine::verify_with_baseline(
+                &root,
+                profile,
+                options.path("--directory")?,
+                options
+                    .values
+                    .get("--baseline-directory")
+                    .map(PathBuf::as_path),
+            )?;
             Ok(0)
         },
         ("alpine" | "alpine-rust", "capture") => {
