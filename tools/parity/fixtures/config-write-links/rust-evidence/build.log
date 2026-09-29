@@ -22,45 +22,27 @@
 #6 [build 2/5] WORKDIR /src
 #6 CACHED
 
-#7 [build 3/5] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
+#7 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config
 #7 CACHED
 
 #8 [build 4/5] COPY file_capture_test.go /src/internal/config/rubix_capture_test.go
-#8 DONE 0.0s
+#8 CACHED
 
-#9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/config.test ./internal/config
-#9 0.147 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.150 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 0.151 go: downloading github.com/distribution/reference v0.6.0
-#9 0.151 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.151 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 0.152 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 1.399 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 1.399 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 1.400 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 1.400 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 1.404 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 1.596 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 1.596 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 1.596 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 1.644 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 1.949 go: downloading github.com/x448/float16 v0.8.4
-#9 1.967 go: downloading golang.org/x/sys v0.47.0
-#9 DONE 7.7s
+#9 [build 3/5] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
+#9 CACHED
 
 #10 [capture 1/1] WORKDIR /tmp
-#10 DONE 0.0s
+#10 CACHED
 
 #11 exporting to image
-#11 exporting layers
-#11 exporting layers 2.3s done
-#11 exporting manifest sha256:eaf3b51363f4baf754bd45a677c6f05b87df3226eaec130fbfa1ccacafc18d08 done
-#11 exporting config sha256:9b0bfcb066d0a37445ccacb476ba70993bfe31578f606ab74a951a9df30edcbd done
-#11 exporting attestation manifest sha256:1cb7c2c6de427b1f0af1e29e54fd96abe6f9525d0d30d184af1b4852aadd4605 done
-#11 exporting manifest list sha256:11845fd49d0082c3c8d4598305892d4779e1a1c5d1fdcce1cfb5aff6694409b3 done
-#11 naming to docker.io/library/rubix-config-write-links-5jl0fv:latest done
-#11 unpacking to docker.io/library/rubix-config-write-links-5jl0fv:latest
-#11 unpacking to docker.io/library/rubix-config-write-links-5jl0fv:latest 0.6s done
-#11 DONE 3.0s
+#11 exporting layers done
+#11 exporting manifest sha256:6442959606e7d1bd4236d098ed8e364f9de7ba5e40deaf7df830679b0fc78ca6 done
+#11 exporting config sha256:0cfd4849ff4222d6528d6a1a34d62ce3db73eeb2a078f06ac4204b0e8b076646 done
+#11 exporting attestation manifest sha256:5a2993aec158e9f17c6b9ac33aa4c4b459be58bb0bc58c9b455b0dd43bcc5800 done
+#11 exporting manifest list sha256:7b23a153f40b2cd95bbf4f970e73df9fcd77f23576db8f38349b5873f70b46de done
+#11 naming to docker.io/library/rubix-config-write-links-5ryxb4:latest done
+#11 unpacking to docker.io/library/rubix-config-write-links-5ryxb4:latest
+#11 unpacking to docker.io/library/rubix-config-write-links-5ryxb4:latest 0.7s done
+#11 DONE 0.7s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/q98udrsrp2wjk3rzz4ntuq5w6
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/v2czmp5oypjhj1kk9uf4pkc8l

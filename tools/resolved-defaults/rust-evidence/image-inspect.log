@@ -1,14 +1,14 @@
 [
     {
-        "Id": "sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b",
+        "Id": "sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee",
         "RepoTags": [
-            "rubix-resolved-xgjlyz:latest"
+            "rubix-resolved-f4dulm:latest"
         ],
         "RepoDigests": [
-            "rubix-resolved-xgjlyz@sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b"
+            "rubix-resolved-f4dulm@sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee"
         ],
         "Comment": "buildkit.dockerfile.v0",
-        "Created": "2026-09-28T17:08:40.922072958Z",
+        "Created": "2026-09-29T06:54:39.233172427Z",
         "Config": {
             "User": "65532:65532",
             "Env": [
@@ -21,26 +21,26 @@
         },
         "Architecture": "arm64",
         "Os": "linux",
-        "Size": 36451572,
+        "Size": 36451578,
         "RootFS": {
             "Type": "layers",
             "Layers": [
-                "sha256:d771e32cc6599d392049efbfd1be5e34737554bab8a6d86d74c5eae46137a948"
+                "sha256:9850cf748f94156bb52fa570aec3f21ec8d489ce9bfed268bb158c94716378aa"
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-28T17:08:42.470305626Z"
+            "LastTagTime": "2026-09-29T06:54:41.186191678Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b",
+            "digest": "sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee",
             "size": 855
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "yuqkmq30ffjqlac682xivwirs",
-                    "CreatedAt": "2026-09-28T17:08:42.692082751Z"
+                    "Ref": "07xiyzz2dkqw49nyc4zx9soxz",
+                    "CreatedAt": "2026-09-29T06:54:41.410559262Z"
                 }
             ]
         }
