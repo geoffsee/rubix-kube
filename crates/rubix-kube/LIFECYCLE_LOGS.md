@@ -105,7 +105,7 @@ not Kubernetes API availability qualification.
 Run `cargo test -p rubix-kube --locked --test lifecycle_logs` and the corresponding
 release-mode test, then strict package Clippy. No registry package is added: this
 uses existing serde_json and the already-locked supervisor/Tokio dependencies.
-This is partial issue #44 work. Production CLI runtime invocation, configured sink
-ownership/flush policy, real component readiness/ongoing health and actual API
-usability under optional failure remain integration gates. No issue closure or
-whole-node logging qualification is claimed.
+Caller-owned writer delivery and flush policy now live in `LIFECYCLE_SINK.md`.
+This is partial issue #44 work. Production CLI runtime invocation, real component
+readiness/ongoing health, and actual API usability under optional failure remain
+integration gates. No issue closure or whole-node logging qualification is claimed.

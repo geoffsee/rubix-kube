@@ -58,8 +58,10 @@ errors and continues for local-path, Portainer and D2k in `cmd/kubesolo/main.go`
 pretty/no-color/JSON output; main enables DEBUG from configuration. This observer
 makes retained optional failures available during operation without reproducing
 raw error logging. It is partial groundwork for issue #44, not its completion.
-Structured log formatting, debug filtering, the production CLI consumer, actual API
-usability under optional failure, process-adapter composition and ongoing component
+Structured JSONL formatting and debug filtering are covered by
+`crates/rubix-kube/LIFECYCLE_LOGS.md`. Caller-owned writer delivery is covered by
+`crates/rubix-kube/LIFECYCLE_SINK.md`. The production CLI consumer, actual API
+usability under optional failure, process-adapter composition, and ongoing component
 health remain integration work.
 
 `tests/diagnostics.rs` exercises a responding healthy worker during visible optional
