@@ -14,7 +14,7 @@ use crate::lifecycle_logs::{LogLevel, LogReceiver};
 pub enum FlushPolicy {
     /// Flush after every successful frame write.
     EachFrame,
-    /// Write every frame, then flush once when the sender closes.
+    /// Write every frame, then flush once when the sender closes, even if none arrived.
     OnClose,
 }
 
@@ -83,7 +83,7 @@ fn transfer<W: Write>(mut receiver: LogReceiver, mut writer: W, policy: FlushPol
                 return report(written, flushed_frames, outcome);
             }
         } else {
-            if pending > 0
+            if (policy == FlushPolicy::OnClose || pending > 0)
                 && let Err(outcome) = flush_pending(&mut writer, &mut flushed_frames, &mut pending)
             {
                 return report(written, flushed_frames, outcome);

@@ -6,8 +6,9 @@ change the startup command adapter. `configured_log_level` reads the resolved
 `logging.debug` value: false selects Info and true selects Debug. The caller
 constructs the renderer with that level and still owns `consume_lifecycle`.
 
-`FlushPolicy::EachFrame` flushes after every successful `write_all`.
-`FlushPolicy::OnClose` writes every frame and flushes once when the sender closes.
+`FlushPolicy::EachFrame` flushes after every successful `write_all` and does not
+flush an empty stream. `FlushPolicy::OnClose` writes every frame and flushes once
+when the sender closes, including when no frame arrived.
 A frame counts as flushed only after the flush that covers it succeeds. A flush
 failure leaves that frame in `written` and stops delivery, so later frames are not
 attempted and a failed frame is not retried. `SinkOutcome` stores `std::io::ErrorKind`
