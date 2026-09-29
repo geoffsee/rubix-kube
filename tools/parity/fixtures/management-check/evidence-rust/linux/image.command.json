@@ -5,7 +5,7 @@
     "inspect",
     "--format",
     "{{.Id}}",
-    "rubix-management-linux-p2dyes"
+    "rubix-management-linux-ll9mnz"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 32654,
+  "owned_pid": 10136,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-sJOQmU",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-2CJDks",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "de12b24b4c0551afd3971ea1af31544060b7dc0071a6a35072e7c52ee16e6bc5",
+  "stdout_sha256": "0250350b35f96986da61920f4a7e001aa1fb72a740e3862b5976856ceb331f69",
   "timeout": false
 }

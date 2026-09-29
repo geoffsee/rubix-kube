@@ -5,8 +5,8 @@
     "--platform",
     "linux/arm64",
     "-t",
-    "rubix-management-linux-p2dyes",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-platform-context-NaTGK8"
+    "rubix-management-linux-ll9mnz",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-platform-context-ebJBn3"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -15,11 +15,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 32245,
+  "owned_pid": 9649,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-DKLvmS",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-8qqr8K",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "da17f5c158c6e59aa823d32e267bd78c47c8b66e50c5599a579394f032b5802e",
+  "stdout_sha256": "54f719bd1ac7381f5b3d042401a748b709507787117eb0444ad1403876a4bce8",
   "timeout": false
 }
