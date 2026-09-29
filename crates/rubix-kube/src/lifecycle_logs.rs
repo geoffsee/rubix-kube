@@ -322,6 +322,12 @@ impl LogReceiver {
     pub async fn recv(&mut self) -> Option<LogFrame> {
         self.0.recv().await
     }
+
+    /// Blocks this thread until a frame arrives or the sender is dropped.
+    /// Call it from `deliver_logs`'s blocking worker, not from an async runtime worker.
+    pub fn blocking_recv(&mut self) -> Option<LogFrame> {
+        self.0.blocking_recv()
+    }
 }
 pub fn log_channel(capacity: usize) -> Result<(LogSender, LogReceiver), ChannelCapacityError> {
     if !(1..=MAX_QUEUE_CAPACITY).contains(&capacity) {
