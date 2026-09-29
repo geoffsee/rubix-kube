@@ -7,6 +7,9 @@ use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+pub mod leaf;
+pub mod kubeconfig;
+pub mod profile;
 
 #[derive(Debug)]
 pub enum PkiError {
