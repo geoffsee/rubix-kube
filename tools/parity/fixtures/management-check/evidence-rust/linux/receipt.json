@@ -160,7 +160,7 @@
     "crates/rubix-kube/tests/lifecycle_sink.rs": "ab5be7ee30fa6e43e1a4bb6032368ae0246ade7828f1adc380194a880127756c",
     "crates/rubix-kube/tests/startup.rs": "2238842d93e02e00878b418d712f4b4a4a383240901c3238387cfdaa7d6a8b35",
     "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
-    "crates/rubix-pki/src/lib.rs": "e8593dece414ff556f2a4bf03ee0c2a88212958fbd9edb7423d75ff19ead41bf",
+    "crates/rubix-pki/src/lib.rs": "dfbb26c30150059bec210dbd0f875e68e009ca2787ca2374b788ba8116ad3a9e",
     "crates/rubix-platform/CONSTRAINED.md": "72bcb70af4680f127a20defc12d146478c16a64fb7e0a0b5cb20b105427c8b93",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-platform/PREFLIGHT.md": "8e195cc5449a52372a7054fbb7e75b2db4d9f1a54c16d46840dfcf48978c6cd1",
@@ -404,5 +404,6 @@
     "tools/upstream/src/main.rs": "8c141ec322ab8a3786390877a9459c9599a570135d5e883f7d534cca178ba8d4",
     "tools/upstream/tests/api_json.rs": "cae7fe6c80e5dc3cc743c3789f4fdf6fe1304f3ea6ea034767daadb70710c1e3"
   },
-  "tag": "rubix-management-linux-hb1qvi"
+  "tag": "rubix-management-linux-hb1qvi",
+  "inventory_sha256": "bd8ec7cfef7531c4ba61f1f00398afcf2235744745a5469150504aecc1dfa357"
 }
