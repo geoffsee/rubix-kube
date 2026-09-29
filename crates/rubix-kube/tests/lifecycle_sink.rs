@@ -134,6 +134,37 @@ async fn deliver_empty(
     delivery.await.expect("sink worker")
 }
 
+#[tokio::test]
+async fn on_close_flushes_an_empty_stream_and_each_frame_does_not() {
+    let (sender, receiver) = log_channel(1).expect("channel");
+    drop(sender);
+    let probe = Probe::new(None, None);
+    let report = deliver_logs(receiver, probe.clone(), FlushPolicy::OnClose).await;
+    assert_eq!(report.written, 0);
+    assert_eq!(report.flushed_frames, 0);
+    assert_eq!(report.outcome, SinkOutcome::Closed);
+    assert_eq!(probe.counts(), (0, 1));
+
+    let (sender, receiver) = log_channel(1).expect("channel");
+    drop(sender);
+    let failed = Probe::new(None, Some(1));
+    let report = deliver_logs(receiver, failed.clone(), FlushPolicy::OnClose).await;
+    assert_eq!(report.written, 0);
+    assert_eq!(report.flushed_frames, 0);
+    assert_eq!(
+        report.outcome,
+        SinkOutcome::Flush(io::ErrorKind::Interrupted)
+    );
+    assert_eq!(failed.counts(), (0, 1));
+
+    let (sender, receiver) = log_channel(1).expect("channel");
+    drop(sender);
+    let each = Probe::new(None, None);
+    let report = deliver_logs(receiver, each.clone(), FlushPolicy::EachFrame).await;
+    assert_eq!(report.outcome, SinkOutcome::Closed);
+    assert_eq!(each.counts(), (0, 0));
+}
+
 #[test]
 fn resolved_debug_setting_selects_the_renderer_level() {
     assert_eq!(configured_log_level(&config(false)), LogLevel::Info);

@@ -65,7 +65,9 @@ Only a capped current record is serialized before testing the byte budget.
 
 `log_channel` accepts capacities 1 through 64; queued frame contents therefore use
 at most 256 KiB, plus bounded bookkeeping/container overhead. Its receiver exposes
-only async `recv`; callers decide whether and how to write frames elsewhere.
+async `recv` and `blocking_recv`. Call `blocking_recv` only from a blocking worker:
+Tokio panics if it runs inside an asynchronous execution context. Callers decide
+whether and how to write frames elsewhere. `deliver_logs` is the owned writer.
 The observer consumer calls `try_send`, never awaits a sink writer or channel space.
 An unread or slow queue cannot block the supervisor coordinator. `enqueued` counts
 accepted frames; `dropped_full` counts frames lost to capacity. Oversized/full frames
