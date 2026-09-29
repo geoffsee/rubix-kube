@@ -34,7 +34,7 @@
     "version": "unshare from util-linux 2.42.3"
   },
   "packages": {
-    "index_sha256": "c9bc75e1d555694bcbdd2bfe53d733661a06c806291f460cd59c3f9fe648616a",
+    "index_sha256": "27083f35a2f84e710ef0174aafc82894f56b95da0bb80d073f923ecbe2897164",
     "repository": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/",
     "resolution_image": "alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6",
     "selected": {
