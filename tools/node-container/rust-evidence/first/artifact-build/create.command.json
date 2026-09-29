@@ -3,8 +3,8 @@
     "docker",
     "create",
     "--name",
-    "rubix-node-container-1e289687eeaa4db59d618c6397f5e366-artifact",
-    "rubix-node-container-1e289687eeaa4db59d618c6397f5e366",
+    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d-artifact",
+    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d",
     "/bin/true"
   ],
   "cancelled": false,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 81384,
+  "owned_pid": 34861,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-zayZhS",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SOLdOg",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "73df022a14efb4932ca12e778fa07d1568ca25b50c5e71801d34c3c8b5d5aee2",
+  "stdout_sha256": "18a69e2b02ef941cd0a10ce6bc86681e3eda672ac35b8601c441c5c29a22b7f5",
   "timeout": false
 }

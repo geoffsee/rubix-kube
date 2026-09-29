@@ -1,0 +1,89 @@
+{
+  "artifact_sha256": "192cae0252102e1ff340ccd4a1b2b4ff15983ab5aa7f3bf3ebcf3d0d55fc63ae",
+  "build_command": [
+    "docker",
+    "build",
+    "--platform=linux/arm64",
+    "--progress=plain",
+    "--build-arg",
+    "QUALIFICATION_NONCE=bb8923a22974414754049664e5f19c94",
+    "-t",
+    "rubix-node-constrained-bb8923a22974414754049664e5f19c94",
+    "-f",
+    "/tmp/rubix-node-context-Dhjzud/tools/node-constrained/Build.Dockerfile",
+    "/tmp/rubix-node-context-Dhjzud"
+  ],
+  "build_sha256": "9c795c9780ed78f6754c8b98bf86ea55cb04b7275dfc2029132413ebca0ed75e",
+  "builder_sha256": {
+    "constrained-guest": "b97498d7f2ad82d9d96207af1583187441e56221734cd01b01179a0e811b9b6b",
+    "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+    "host_preparation": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
+    "prepare_node_host": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+    "rubix_kube": "06e8bc7b0a10267aa1e245c1bad8d6ed94cac9446eb83e56d2920c396e40c379"
+  },
+  "cancelled": false,
+  "cleanup_errors": [],
+  "commands": {
+    "build": "e9476c09f2c615eda79f9e47ced4f59f85ff74d55e517b5117c5cbcd251914a4",
+    "cleanup-1": "459933f670d8e401c49c85f3fe29165efbcab537f108a907c4e55b846399790d",
+    "cleanup-2": "4c5a4e0d52d028dcaee49a3aa9ec68a8cedfa32cf29336b91cdfbe4e962208d8",
+    "cleanup-3": "406594317d5e3f89edb224c276bed9eafe6f74c9e8e1db8c3ecce52c3faad38a",
+    "cleanup-4": "51b3da57db1e0abd0b61f26921006ba28cdd3693c7c09d348e7a5f1aca206e7d",
+    "cleanup-5": "db64b9df83110718a470940c348f4648d7317d5db512141b7952f6b570f7d630",
+    "copy-constrained-guest": "9ced3ad11f3099ed06874c0165834e5f6f993a149267aa43372e858645f5a104",
+    "copy-host_network": "5ebdfa564f9410b60fd85f3f3729c8e51ce0860c9de80509510c86c1f38b6b0b",
+    "copy-host_preparation": "59d61246de04028a0b13cb506b9048bbf17fc954a3158cce4af8c43794ee910d",
+    "copy-prepare_node_host": "c282655c8648d83af2daec37154df50553dd02c7d355fa2d118b27097c42a7b5",
+    "copy-rubix_kube": "2da77c11d78dd2067d4ac5efb823f3def3d325a280e036e46efaa022871e2ff2",
+    "create": "9d95744b6c746da3fc48f7a04b9c63225f6e53b16bb585a501d3f531d3713b4a",
+    "image-inspect": "57094abca7096fe5be4b30f28cdf80758582d9fc8e70fb1c634277eb09c869f0",
+    "test": "cd5dc274b87b4882f6a821065c5b996ade943e2aa5f72613791d9d8a1677bfa6"
+  },
+  "containers": [
+    "rubix-node-constrained-bb8923a22974414754049664e5f19c94-artifact",
+    "rubix-node-constrained-bb8923a22974414754049664e5f19c94-test"
+  ],
+  "dirty": false,
+  "errors": [],
+  "family": "constrained",
+  "image_id": "sha256:7bcdde054791e1c90e266fe11db73e7121ccfcf53199833118e2253c76fe8199",
+  "nonce": "bb8923a22974414754049664e5f19c94",
+  "remaining_containers": [],
+  "remaining_images": [],
+  "revision": "4b3bb45695b655c9f4b4020254c21c7f991908ab",
+  "runs": {
+    "test": {
+      "binary_sha256": {
+        "constrained-guest": "b97498d7f2ad82d9d96207af1583187441e56221734cd01b01179a0e811b9b6b",
+        "host_network": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+        "host_preparation": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
+        "prepare_node_host": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+        "rubix_kube": "06e8bc7b0a10267aa1e245c1bad8d6ed94cac9446eb83e56d2920c396e40c379"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-constrained-bb8923a22974414754049664e5f19c94-test",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=64",
+        "--memory=512m",
+        "--cpus=2",
+        "rubix-node-constrained-bb8923a22974414754049664e5f19c94",
+        "/bin/sh",
+        "-c",
+        "sha256sum /out/prepare_node_host /out/rubix_kube /out/host_preparation /out/host_network /out/constrained-guest && for binary in rubix_kube host_preparation host_network; do echo TEST_${binary}_BEGIN; /out/$binary || exit 1; echo TEST_${binary}_END; done && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_node_host --container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_node_host --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
+      ],
+      "raw_sha256": "376d6a04fa7ed4b6d3edd6f542a22e954ce1b2f79ac151ef0e90f93234ec648c",
+      "records": {
+        "safe_tests_and_cli": true
+      }
+    }
+  },
+  "schema": 3,
+  "source_sha256": "843494b6ee0ab740d500347dd1483db47bdaf9b29f96d9500388f9b966f8592f",
+  "tag": "rubix-node-constrained-bb8923a22974414754049664e5f19c94"
+}

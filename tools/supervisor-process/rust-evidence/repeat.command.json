@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-supervisor-process-28bf637e1199ea5f305545ac73b38fc8-repeat",
+    "rubix-supervisor-process-6901c21ee9d22adae1ab83f3491d21ec-repeat",
     "--init",
     "--network=none",
     "--read-only",
@@ -18,7 +18,7 @@
     "RUBIX_PROCESS_DISPOSABLE=1",
     "--ulimit",
     "fsize=1048576:1048576",
-    "rubix-supervisor-process-28bf637e1199ea5f305545ac73b38fc8",
+    "rubix-supervisor-process-6901c21ee9d22adae1ab83f3491d21ec",
     "/bin/sh",
     "-c",
     "sha256sum /process-tests /fixture; /process-tests --ignored --exact disposable_process_cases --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -30,11 +30,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78701,
+  "owned_pid": 33184,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-AUmiVm",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-y3ivPd",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "116fbad073f59c2a3678de102fb9378d506915b2fce8cca76d7d2b44a4b73939",
+  "stdout_sha256": "0d2ccdbe2e533e0acea41a42cf04707d9391142ef7e1966604c9383889ec389a",
   "timeout": false
 }

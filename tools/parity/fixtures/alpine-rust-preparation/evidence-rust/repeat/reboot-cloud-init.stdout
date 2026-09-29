@@ -6,28 +6,28 @@
   "extended_status": "done",
   "init": {
     "errors": [],
-    "finished": 9.32,
+    "finished": 8.02,
     "recoverable_errors": {},
-    "start": 9.27
+    "start": 7.96
   },
   "init-local": {
     "errors": [],
-    "finished": 1.87,
+    "finished": 2.25,
     "recoverable_errors": {},
-    "start": 1.81
+    "start": 2.18
   },
-  "last_update": "Thu, 01 Jan 1970 00:00:09 +0000",
+  "last_update": "Thu, 01 Jan 1970 00:00:08 +0000",
   "modules-config": {
     "errors": [],
-    "finished": 9.52,
+    "finished": 8.22,
     "recoverable_errors": {},
-    "start": 9.5
+    "start": 8.2
   },
   "modules-final": {
     "errors": [],
-    "finished": 9.73,
+    "finished": 8.42,
     "recoverable_errors": {},
-    "start": 9.7
+    "start": 8.39
   },
   "recoverable_errors": {},
   "stage": null,

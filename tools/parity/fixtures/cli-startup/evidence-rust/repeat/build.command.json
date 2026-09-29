@@ -3,8 +3,8 @@
     "docker",
     "build",
     "--tag",
-    "rubix-parity-5046330f00ffe40f4e464e68:test",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-parity-context-KPBXHu"
+    "rubix-parity-75e5239f2872600a6321d6bc:test",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-parity-context-MJPwog"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": false,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 79309,
+  "owned_pid": 32043,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-RQ604k",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-rF0Roo",
   "spawned": true,
-  "stderr_sha256": "e684a7dda638fe6dbbbe46c712d8ea8cfc4bb8d6d272b9fccb1178b3828a9b6c",
+  "stderr_sha256": "41c57262f33719a252cbfed5db31454cebabeb39bfc2da35e51f4535420e3f91",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "timeout": false
 }

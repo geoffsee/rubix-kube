@@ -3,7 +3,7 @@
     "docker",
     "image",
     "inspect",
-    "rubix-alpine-preparew1slot"
+    "rubix-alpine-prepare3mlg3h"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77584,
+  "owned_pid": 97841,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-cySZsx",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-3p4XcX",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "c7d10b60e07e42475c5466a6483b9b2b8825d1944d0197158b45dc421d4cdda1",
+  "stdout_sha256": "a2a2bf725599188e8a98d27434bc5b09fc38c703b5d62569fa42cd8e34a174b2",
   "timeout": false
 }

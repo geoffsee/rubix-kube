@@ -13,7 +13,7 @@ fn record(directory: &Path, label: &str, argv: &Value) -> Result<String> {
     save(&path, &value)?;
     digest(&path)
 }
-fn staged(directory: &Path, family: &str) -> Result<Value> {
+pub(super) fn staged(directory: &Path, family: &str) -> Result<Value> {
     let nonce = "a".repeat(32);
     let tag = format!("rubix-node-{family}-{nonce}");
     let source = inventory(&root()?, family)?;
@@ -27,6 +27,9 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
         }),
         32 * 1024 * 1024,
     )?)?;
+    if family == "constrained" {
+        writeln!(raw, "{}  /out/constrained-guest", sha256(b"invented guest"))?;
+    }
     let original = build::verify_run(&root()?, family, &raw)?;
     let mut hashes = serde_json::Map::new();
     let mut metadata =
@@ -40,7 +43,7 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
         hashes.insert(name.into(), hash.into());
     }
     let mut build_log = String::new();
-    if family == "container" {
+    if matches!(family, "container" | "constrained") {
         build_log.push_str("#1 0.1 POLICY_TESTS_BEGIN\n#1 0.1 test tests::cancelled_result_publishes_once_and_is_terminal ... ok\n#1 0.1 test tests::uncertain_cleanup_is_quiet_terminal_even_when_observer_is_settled ... ok\n#1 0.1 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n#1 0.1 POLICY_TESTS_END\n");
     }
     writeln!(build_log, "#1 0.1 RUBIX_BUILD_BIND_BEGIN {nonce}")?;
@@ -108,7 +111,7 @@ fn staged(directory: &Path, family: &str) -> Result<Value> {
 }
 #[test]
 fn artifact_creation_requires_explicit_inert_command_after_rehash() -> Result<()> {
-    for family in ["network", "container"] {
+    for family in ["network", "container", "constrained"] {
         let directory = tempfile::tempdir()?;
         let original = staged(directory.path(), family)?;
         let path = directory.path().join("create.command.json");
@@ -138,7 +141,7 @@ fn artifact_creation_requires_explicit_inert_command_after_rehash() -> Result<()
 }
 #[test]
 fn complete_build_receipts_bind_every_field_and_artifact() -> Result<()> {
-    for family in ["network", "container"] {
+    for family in ["network", "container", "constrained"] {
         let directory = tempfile::tempdir()?;
         let original = staged(directory.path(), family)?;
         for key in original.as_object().ok_or("receipt")?.keys() {
@@ -344,5 +347,74 @@ fn rehashed_daemon_inventory_image_and_cleanup_receipts_cannot_claim_success() -
             "{label}"
         );
     }
+    Ok(())
+}
+
+#[test]
+fn constrained_builder_hash_rejects_equal_runtime_and_metadata_substitution() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let mut receipt = staged(directory.path(), "constrained")?;
+    for name in build::binaries("constrained")? {
+        fs::remove_file(directory.path().join(name))?;
+    }
+    docker::verify(&root()?, "constrained", directory.path(), false)?;
+    let path = directory.path().join("artifact.json");
+    let mut metadata = load(&path)?;
+    let old = metadata["files"]["prepare_node_host"]["sha256"]
+        .as_str()
+        .ok_or("candidate hash")?
+        .to_owned();
+    let replacement = "0".repeat(64);
+    metadata["files"]["prepare_node_host"]["sha256"] = json!(replacement);
+    save(&path, &metadata)?;
+    receipt["artifact_sha256"] = digest(&path)?.into();
+    let log = directory.path().join("test.log");
+    let raw = String::from_utf8(read(&log, 32 * 1024 * 1024)?)?;
+    assert!(raw.contains(&old));
+    fs::write(&log, raw.replace(&old, &replacement))?;
+    receipt["runs"]["test"]["binary_sha256"]["prepare_node_host"] = json!(replacement);
+    receipt["runs"]["test"]["raw_sha256"] = digest(&log)?.into();
+    receipt["commands"]["test"] = record(
+        directory.path(),
+        "test",
+        &receipt["runs"]["test"]["command"],
+    )?
+    .into();
+    save(&directory.path().join("receipt.json"), &receipt)?;
+    // Binary-optional verification is the guest publication path; it must still bind the builder.
+    assert!(docker::verify(&root()?, "constrained", directory.path(), false).is_err());
+    Ok(())
+}
+#[test]
+fn constrained_current_compiled_inventory_and_build_failure_preserved() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let original = staged(directory.path(), "constrained")?;
+    for name in build::binaries("constrained")? {
+        fs::remove_file(directory.path().join(name))?;
+    }
+    docker::verify(&root()?, "constrained", directory.path(), false)?;
+    for (key, value) in [
+        ("dirty", json!(true)),
+        ("cleanup_errors", json!(["failed"])),
+        ("remaining_images", json!(["owned"])),
+        ("revision", json!("invalid")),
+        ("build_sha256", json!("0".repeat(64))),
+    ] {
+        let mut changed = original.clone();
+        changed[key] = value;
+        save(&directory.path().join("receipt.json"), &changed)?;
+        assert!(
+            docker::verify(&root()?, "constrained", directory.path(), false).is_err(),
+            "{key}"
+        );
+    }
+    let path = directory.path().join("source-hashes.json");
+    let mut sources = load(&path)?;
+    sources["Cargo.lock"] = json!("0".repeat(64));
+    save(&path, &sources)?;
+    let mut receipt = original;
+    receipt["source_sha256"] = digest(&path)?.into();
+    save(&directory.path().join("receipt.json"), &receipt)?;
+    assert!(docker::verify(&root()?, "constrained", directory.path(), false).is_err());
     Ok(())
 }

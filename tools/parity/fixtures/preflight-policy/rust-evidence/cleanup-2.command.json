@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-preflight-policy-bpwy5o-preflight-1"
+    "rubix-preflight-policy-te9tvx-preflight-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78123,
+  "owned_pid": 97959,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-6OFa7v",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-YFUQqN",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "ab9cd35fb007899927b1601772ba07b7a0045794065402273d41e62266a449ce",
+  "stdout_sha256": "d6242ebcb528a80de890bb1299620ee040d6ca96188405e062c633154d6ae0ad",
   "timeout": false
 }

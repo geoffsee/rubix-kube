@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-resources-pki-4gisqv-localpath-0"
+    "rubix-resources-pki-gnnue3-localpath-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78277,
+  "owned_pid": 98058,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-NLpJBe",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ZBn1VB",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "bed869d5014801692b8d50cb60cffd04b6ec5022bdd26c7a455053b5f92f4ccc",
+  "stdout_sha256": "a97d9353377be4372b450c8eb6db4a82d76ed02d8883b8b65167961ec65b08de",
   "timeout": false
 }

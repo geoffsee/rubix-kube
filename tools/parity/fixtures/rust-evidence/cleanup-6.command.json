@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-resources-pki-4gisqv-portainer-1"
+    "rubix-resources-pki-gnnue3-portainer-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78280,
+  "owned_pid": 98061,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-isfZQm",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-IWigm3",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "3bc7d6521e802bd9730260f8cef0b8a803b07a66f039b2982a40ab0e4cea9365",
+  "stdout_sha256": "39195dc28a727768bc818c3d55ff7db440fa8658c45e87deed7625dc8f7cbb17",
   "timeout": false
 }

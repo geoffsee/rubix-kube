@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-node-container-1e289687eeaa4db59d618c6397f5e366-artifact:/out/host_preparation",
-    "/private/tmp/rubix-manifest-qualification-d0f66fe/assets/node-container-build/host_preparation"
+    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d-artifact:/out/host_preparation",
+    "/private/tmp/rubix-constrained-qualification-4b3bb45/assets/node-container-build/host_preparation"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 81394,
+  "owned_pid": 34864,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-YLzTlB",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-cGPgnA",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

@@ -6,58 +6,58 @@
     "--platform=linux/arm64",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=1562a3e831e6af53a4d4929627869222",
+    "QUALIFICATION_NONCE=02b13cacca2d6a8cb6d3a8065147535f",
     "-t",
-    "rubix-node-assessment-1562a3e831e6af53a4d4929627869222",
+    "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f",
     "-f",
-    "/tmp/rubix-node-context-3iHJr4/tools/node-assessment/Capture.Dockerfile",
-    "/tmp/rubix-node-context-3iHJr4"
+    "/tmp/rubix-node-context-B4WEJk/tools/node-assessment/Capture.Dockerfile",
+    "/tmp/rubix-node-context-B4WEJk"
   ],
-  "build_sha256": "7cf8afd009ce40058563bdd7da517b3fb784f616c1f8a45549e0a71cd9399144",
+  "build_sha256": "58e8a6832888ff16be02a8074a8c845703d17d7ad12259f71cf353fe83f74435",
   "builder_sha256": {
     "assess_host": "9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581",
     "host_preflight": "096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76",
     "iptables_probe": "0b1060f7a341c8be50f79d72278f4c28f0770cacff7dd1e3b2aaac39168c8992",
-    "node-fixture": "400cf951cbc48bb69b7b02bcfc51e31077dc6acf676e940c167e4c36ed7ff018"
+    "node-fixture": "7dc91587ca0250ce8db939376dd3dd431ae98e5e9296f5076283305d13caa2c5"
   },
   "cancelled": false,
   "cleanup_errors": [],
   "commands": {
-    "build": "1b3d0846f911274cb3041866c7ff699694d40ca0e8937d4c700ca9fc2b3ce634",
-    "cleanup-1": "b170372256a5c7034d7799917900f6bcbbf7b80daab4499511517590bedd7a30",
-    "cleanup-2": "7a4d2e48a186e6a941d980395c627770d303a83926fcd114421c319ad88f0089",
-    "cleanup-3": "d6057c811fc157257398e7d7029bcd1804781db93e20b98e9af269476aa4e68f",
-    "cleanup-4": "cc04f193dd52c15f31306339108e3225a5b9066f6d28fedde0a76cc0cf63735e",
-    "cleanup-5": "5e851e39e84aca448404ea8d852ead73aa7487e31d4e85bb82d8a400756abe79",
-    "first": "5583ec60023ee3ebf500439611b48b869b7097ebfcb9d9e6cf2c12d8f24f5a65",
-    "image-inspect": "e1d221c62209f17098c55996190291879b326722e761604d25e531059b479783",
-    "repeat": "95bef8c708513f4a88f88a27db16c26f67b585f43ef1821a0b29e6bbaabb986d"
+    "build": "66f47bb39826752631fc32efccb028e1c63dffc93981516c7fd28fbb9aac3338",
+    "cleanup-1": "c0605e229ccb1faabdfca776f3811d5cccf0eed2fb16e3f8320e528ad7975651",
+    "cleanup-2": "19e202d270863e42696137de8523ee7e8e29ae26d04e4dc5c3b10a0ae96f925d",
+    "cleanup-3": "e91ce880a903b219c814639d1d17a3b7a963a2ad8814b24cf5808e7d8c5967d1",
+    "cleanup-4": "b77207f45176c1a235b2013cbd205aa0434f6acc5d08bece270e0949c42cc61c",
+    "cleanup-5": "fd9328fbd382617dbd198f6bc11b0a3166079e18fd974b277b9f13c76786f344",
+    "first": "286e16e5a695bb1a2e40cf62a8f4fdeb44a5bc9a568eb53dfa8e60c14c234797",
+    "image-inspect": "f70bfbf49f2a746ca83ed5a539c37402281aa03becf22485891a0b18d4cb6d74",
+    "repeat": "ef1ee750bc60dc3a58aa09973c8320d6b0c4c7738e91e8687850e8af540f3f3d"
   },
   "containers": [
-    "rubix-node-assessment-1562a3e831e6af53a4d4929627869222-first",
-    "rubix-node-assessment-1562a3e831e6af53a4d4929627869222-repeat"
+    "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f-first",
+    "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f-repeat"
   ],
   "dirty": false,
   "errors": [],
   "family": "assessment",
-  "image_id": "sha256:eb75f16f52f9a186a788217fbf8bc68bc66158ab77e5eeb5fa7711c51818f941",
-  "nonce": "1562a3e831e6af53a4d4929627869222",
+  "image_id": "sha256:2b6fba2655f810b173878a9adad1f075751d98ddc3fbfdd2d81bc67b0287002a",
+  "nonce": "02b13cacca2d6a8cb6d3a8065147535f",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "d0f66fede8ee8449e59c5e5553557b1d0fff5c0e",
+  "revision": "4b3bb45695b655c9f4b4020254c21c7f991908ab",
   "runs": {
     "first": {
       "binary_sha256": {
         "assess_host": "9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581",
         "host_preflight": "096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76",
         "iptables_probe": "0b1060f7a341c8be50f79d72278f4c28f0770cacff7dd1e3b2aaac39168c8992",
-        "node-fixture": "400cf951cbc48bb69b7b02bcfc51e31077dc6acf676e940c167e4c36ed7ff018"
+        "node-fixture": "7dc91587ca0250ce8db939376dd3dd431ae98e5e9296f5076283305d13caa2c5"
       },
       "command": [
         "docker",
         "run",
         "--name",
-        "rubix-node-assessment-1562a3e831e6af53a4d4929627869222-first",
+        "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -74,104 +74,12 @@
         "RUBIX_NODE_DISPOSABLE=1",
         "--env",
         "PRIVATE_SENTINEL=must-not-reach-probe",
-        "rubix-node-assessment-1562a3e831e6af53a4d4929627869222",
+        "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f",
         "/bin/sh",
         "-c",
         "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host /out/node-fixture; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /node-fixture consumer; status=$?; /node-fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "d85c8979837ff693b88ba2506d5f68491f2215c4e7e43c0a9a28b6c6215c561a",
-      "records": {
-        "cancel": {
-          "elapsed_ms": 17,
-          "reaped": true,
-          "status": "Some(Cancelled)"
-        },
-        "deadline": {
-          "elapsed_ms": 2023,
-          "reaped": true,
-          "status": "Some(Deadline)"
-        },
-        "denied": {
-          "elapsed_ms": 11,
-          "reaped": false,
-          "status": "Some(Command)"
-        },
-        "empty": {
-          "elapsed_ms": 11,
-          "reaped": true,
-          "status": "None"
-        },
-        "held": {
-          "elapsed_ms": 269,
-          "reaped": true,
-          "status": "Some(Capture)"
-        },
-        "invalid-utf8": {
-          "elapsed_ms": 11,
-          "reaped": true,
-          "status": "None"
-        },
-        "legacy": {
-          "elapsed_ms": 11,
-          "reaped": true,
-          "status": "None"
-        },
-        "missing": {
-          "elapsed_ms": 11,
-          "reaped": false,
-          "status": "Some(Command)"
-        },
-        "nft": {
-          "elapsed_ms": 11,
-          "reaped": true,
-          "status": "None"
-        },
-        "nonzero": {
-          "elapsed_ms": 11,
-          "reaped": true,
-          "status": "Some(Command)"
-        },
-        "overflow": {
-          "elapsed_ms": 11,
-          "reaped": true,
-          "status": "Some(Capture)"
-        }
-      }
-    },
-    "repeat": {
-      "binary_sha256": {
-        "assess_host": "9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581",
-        "host_preflight": "096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76",
-        "iptables_probe": "0b1060f7a341c8be50f79d72278f4c28f0770cacff7dd1e3b2aaac39168c8992",
-        "node-fixture": "400cf951cbc48bb69b7b02bcfc51e31077dc6acf676e940c167e4c36ed7ff018"
-      },
-      "command": [
-        "docker",
-        "run",
-        "--name",
-        "rubix-node-assessment-1562a3e831e6af53a4d4929627869222-repeat",
-        "--init",
-        "--network=none",
-        "--read-only",
-        "--cap-drop=ALL",
-        "--security-opt=no-new-privileges",
-        "--pids-limit=96",
-        "--memory=512m",
-        "--cpus=2",
-        "--tmpfs",
-        "/tmp:rw,nosuid,nodev,size=16m",
-        "--tmpfs",
-        "/usr/sbin:rw,exec,nosuid,nodev,size=1m,uid=65532,gid=65532,mode=0755",
-        "--env",
-        "RUBIX_NODE_DISPOSABLE=1",
-        "--env",
-        "PRIVATE_SENTINEL=must-not-reach-probe",
-        "rubix-node-assessment-1562a3e831e6af53a4d4929627869222",
-        "/bin/sh",
-        "-c",
-        "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host /out/node-fixture; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /node-fixture consumer; status=$?; /node-fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
-      ],
-      "raw_sha256": "bde485423b81e4a0366fb96c08b8b97ceb4655ce81ca2d102722f2e412fb444e",
+      "raw_sha256": "fc9e606dee2b259990e3e916a5e077adbfa6a2e4d75c69013eee87bf40549ef0",
       "records": {
         "cancel": {
           "elapsed_ms": 17,
@@ -194,17 +102,17 @@
           "status": "None"
         },
         "held": {
-          "elapsed_ms": 263,
+          "elapsed_ms": 274,
           "reaped": true,
           "status": "Some(Capture)"
         },
         "invalid-utf8": {
-          "elapsed_ms": 11,
+          "elapsed_ms": 22,
           "reaped": true,
           "status": "None"
         },
         "legacy": {
-          "elapsed_ms": 22,
+          "elapsed_ms": 11,
           "reaped": true,
           "status": "None"
         },
@@ -214,12 +122,104 @@
           "status": "Some(Command)"
         },
         "nft": {
-          "elapsed_ms": 11,
+          "elapsed_ms": 13,
           "reaped": true,
           "status": "None"
         },
         "nonzero": {
           "elapsed_ms": 11,
+          "reaped": true,
+          "status": "Some(Command)"
+        },
+        "overflow": {
+          "elapsed_ms": 22,
+          "reaped": true,
+          "status": "Some(Capture)"
+        }
+      }
+    },
+    "repeat": {
+      "binary_sha256": {
+        "assess_host": "9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581",
+        "host_preflight": "096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76",
+        "iptables_probe": "0b1060f7a341c8be50f79d72278f4c28f0770cacff7dd1e3b2aaac39168c8992",
+        "node-fixture": "7dc91587ca0250ce8db939376dd3dd431ae98e5e9296f5076283305d13caa2c5"
+      },
+      "command": [
+        "docker",
+        "run",
+        "--name",
+        "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f-repeat",
+        "--init",
+        "--network=none",
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges",
+        "--pids-limit=96",
+        "--memory=512m",
+        "--cpus=2",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=16m",
+        "--tmpfs",
+        "/usr/sbin:rw,exec,nosuid,nodev,size=1m,uid=65532,gid=65532,mode=0755",
+        "--env",
+        "RUBIX_NODE_DISPOSABLE=1",
+        "--env",
+        "PRIVATE_SENTINEL=must-not-reach-probe",
+        "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f",
+        "/bin/sh",
+        "-c",
+        "sha256sum /out/host_preflight /out/iptables_probe /out/assess_host /out/node-fixture; /out/host_preflight && /out/iptables_probe --ignored --exact disposable_fixed_probe --nocapture && /out/host_preflight --ignored --exact disposable_configured_assessment --nocapture && /node-fixture consumer; status=$?; /node-fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
+      ],
+      "raw_sha256": "8e58e3e3c018087c7aecdd67055b3479ac9b2cca5b7d86c11fd28d99b2cc5a31",
+      "records": {
+        "cancel": {
+          "elapsed_ms": 17,
+          "reaped": true,
+          "status": "Some(Cancelled)"
+        },
+        "deadline": {
+          "elapsed_ms": 2026,
+          "reaped": true,
+          "status": "Some(Deadline)"
+        },
+        "denied": {
+          "elapsed_ms": 11,
+          "reaped": false,
+          "status": "Some(Command)"
+        },
+        "empty": {
+          "elapsed_ms": 11,
+          "reaped": true,
+          "status": "None"
+        },
+        "held": {
+          "elapsed_ms": 275,
+          "reaped": true,
+          "status": "Some(Capture)"
+        },
+        "invalid-utf8": {
+          "elapsed_ms": 11,
+          "reaped": true,
+          "status": "None"
+        },
+        "legacy": {
+          "elapsed_ms": 23,
+          "reaped": true,
+          "status": "None"
+        },
+        "missing": {
+          "elapsed_ms": 13,
+          "reaped": false,
+          "status": "Some(Command)"
+        },
+        "nft": {
+          "elapsed_ms": 11,
+          "reaped": true,
+          "status": "None"
+        },
+        "nonzero": {
+          "elapsed_ms": 10,
           "reaped": true,
           "status": "Some(Command)"
         },
@@ -232,6 +232,6 @@
     }
   },
   "schema": 3,
-  "source_sha256": "f49a19e11fc0989a9b29d64df07a66568c871de9b44008a0c397a4d5e11429ed",
-  "tag": "rubix-node-assessment-1562a3e831e6af53a4d4929627869222"
+  "source_sha256": "aed86ad3b0306108a541705cd398f53dc2ee8d06717c8cfcf8653c1a752b3401",
+  "tag": "rubix-node-assessment-02b13cacca2d6a8cb6d3a8065147535f"
 }

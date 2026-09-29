@@ -9,39 +9,39 @@
     "build",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca",
+    "QUALIFICATION_NONCE=rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc",
     "--platform=linux/arm64",
     "-t",
-    "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca",
+    "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc",
     "-f",
-    "/tmp/rubix-supervisor-context-dr1F5z/tools/supervisor-signals/Capture.Dockerfile",
-    "/tmp/rubix-supervisor-context-dr1F5z"
+    "/tmp/rubix-supervisor-context-V0EXgX/tools/supervisor-signals/Capture.Dockerfile",
+    "/tmp/rubix-supervisor-context-V0EXgX"
   ],
-  "build_log_sha256": "bb4a9e1ce0182250f09cff323edf462ffe4997e5df0ab0f338eccc736c621cea",
+  "build_log_sha256": "786da5b973af39dc192ab1c0fc722da1acd39e60435fb99eac8c1acaa5772e9b",
   "cancelled": false,
   "cleanup_errors": [],
   "command_sha256": {
-    "build": "ffcac5c6c420904aa8d6ecff11d54f10eecacc1441e492b2c1248de3ba39b432",
-    "cleanup-1": "5097fe5d92ae1ce50b0afc1e30e52e0972a48545f215a2a678aa7e07e017e30d",
-    "cleanup-2": "5a6684f9b7e89f8d667df86ba0b5561f3ea954e6bdc328bda4f1763243ec34cf",
-    "cleanup-3": "20e1de5fd0cb7cddfb1fa952f927d1b4210550f2f66467ba2489831aa2eebaf0",
-    "cleanup-4": "8290f0a9f98cf3b3a0475396810cc5f52c432577d48d5d3ac4d53829408b8454",
-    "cleanup-5": "a6ea6568f01598c0bdb37bdaffe5eab1ba731180fc436c9d7ea3415c643482e5",
-    "first": "103a9ce838cc8e05073e147445ec13b984245725d113a8284b7036712818482e",
-    "image-inspect": "27686ea21e39042d643e172523a0a5d220efbf7c07d5c759bd280d3ddbe83452",
-    "repeat": "153d0a331b5387c6d41654975f629e6821bafe07a3b1038ad6cacdc56457b14a"
+    "build": "702bee798858f31bfcb7a7e452aa2d76cc71f0be36a813870acbad98cc1ec191",
+    "cleanup-1": "570f27eb3a025c783c40a164818c622da88c601fc2398207fe685a8017c2aad9",
+    "cleanup-2": "eb2388e4f579702648ee37b410b8e42013f267ba6364296fdebde991880b9677",
+    "cleanup-3": "d35ba587ff77236bf8f831704f633ca7db66f4308d49c4d01ec85dff38989097",
+    "cleanup-4": "322645f935ea3eb36732fed664ad22f2306d1d4f738085dca3aaf0a70265d49f",
+    "cleanup-5": "a34fdcb3b3a547d5a44f8239681f904b0370f1b10b2a21a697f15fb07345a114",
+    "first": "e737ff0e958f31affb9d5942c351cf738fc2b6725c6645bb3da7ce4d90250842",
+    "image-inspect": "c463d8bb102d2fc07f881c3fcb7c2c8f6da8cb25cc7208f26c9414fab8d7b06f",
+    "repeat": "5cae0d0180fc50a346d93416c639b548b70ab6c18469531d6d5c0f437cad5666"
   },
   "containers": [
-    "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca-first",
-    "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca-repeat"
+    "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc-first",
+    "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc-repeat"
   ],
   "dirty": false,
   "errors": [],
   "family": "signals",
-  "image_id": "sha256:5178b8ba34d3f6b1ccaefb02b06ae7a7fd96e7636dbcfa1f89e6704ded5eb557",
+  "image_id": "sha256:ea02d79a2cbae1a46f2bd2cb50ae75f653c0ba7430a5631f05ba628f00154f13",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "d0f66fede8ee8449e59c5e5553557b1d0fff5c0e",
+  "revision": "4b3bb45695b655c9f4b4020254c21c7f991908ab",
   "runs": {
     "first": {
       "binary_sha256": {
@@ -53,7 +53,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca-first",
+        "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -68,316 +68,316 @@
         "RUBIX_SIGNAL_DISPOSABLE=1",
         "--ulimit",
         "fsize=1048576:1048576",
-        "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca",
+        "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc",
         "/bin/sh",
         "-c",
         "sha256sum /signals.test /owned_signals.test /fixture; /signals.test --nocapture && /owned_signals.test --ignored --exact disposable_owned_signals --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "a9d9aed4f694c8bdaa78b979713e8e46a9a37daf03dce163364a1a4660bc60ed",
+      "raw_sha256": "5ad1e66ca998b532f10566522cf46ff7a7ee35bcd3f6d4e13de6254713bc3fa3",
       "records": [
         {
           "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 0
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 0
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 0
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 24,
-          "iteration": 1
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 1
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 1
-        },
-        {
-          "case": "full",
           "elapsed_ms": 34,
-          "iteration": 2
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 2
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 2
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 23,
-          "iteration": 3
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 3
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 3
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 32,
-          "iteration": 4
+          "iteration": 0
         },
         {
           "case": "partial",
           "elapsed_ms": 11,
-          "iteration": 4
+          "iteration": 0
         },
         {
           "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 4
+          "elapsed_ms": 14,
+          "iteration": 0
         },
         {
           "case": "full",
           "elapsed_ms": 22,
-          "iteration": 5
+          "iteration": 1
         },
         {
           "case": "partial",
           "elapsed_ms": 11,
-          "iteration": 5
+          "iteration": 1
         },
         {
           "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 5
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 21,
-          "iteration": 6
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 12,
-          "iteration": 6
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 6
+          "elapsed_ms": 13,
+          "iteration": 1
         },
         {
           "case": "full",
           "elapsed_ms": 22,
-          "iteration": 7
+          "iteration": 2
         },
         {
           "case": "partial",
           "elapsed_ms": 11,
-          "iteration": 7
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 7
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 23,
-          "iteration": 8
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 8
+          "iteration": 2
         },
         {
           "case": "fatal",
           "elapsed_ms": 17,
-          "iteration": 8
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 21,
-          "iteration": 9
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 9
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 9
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 10
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 10
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 10
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 11
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 11
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 18,
-          "iteration": 11
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 21,
-          "iteration": 12
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 12
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 15,
-          "iteration": 12
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 21,
-          "iteration": 13
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 13
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 27,
-          "iteration": 13
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 14
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 14
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 15,
-          "iteration": 14
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 15
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 15
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 15
+          "iteration": 2
         },
         {
           "case": "full",
           "elapsed_ms": 23,
-          "iteration": 16
+          "iteration": 3
         },
         {
           "case": "partial",
-          "elapsed_ms": 21,
-          "iteration": 16
+          "elapsed_ms": 23,
+          "iteration": 3
         },
         {
           "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 16
+          "elapsed_ms": 24,
+          "iteration": 3
         },
         {
           "case": "full",
-          "elapsed_ms": 21,
-          "iteration": 17
+          "elapsed_ms": 34,
+          "iteration": 4
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 17
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 17
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 18
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 21,
-          "iteration": 18
+          "elapsed_ms": 12,
+          "iteration": 4
         },
         {
           "case": "fatal",
           "elapsed_ms": 15,
-          "iteration": 18
+          "iteration": 4
         },
         {
           "case": "full",
-          "elapsed_ms": 32,
-          "iteration": 19
+          "elapsed_ms": 35,
+          "iteration": 5
         },
         {
           "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 19
+          "elapsed_ms": 11,
+          "iteration": 5
         },
         {
           "case": "fatal",
           "elapsed_ms": 16,
+          "iteration": 5
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 21,
+          "iteration": 6
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 22,
+          "iteration": 6
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 15,
+          "iteration": 6
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 22,
+          "iteration": 7
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 7
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 16,
+          "iteration": 7
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 35,
+          "iteration": 8
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 8
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 14,
+          "iteration": 8
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 23,
+          "iteration": 9
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 12,
+          "iteration": 9
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 16,
+          "iteration": 9
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 34,
+          "iteration": 10
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 12,
+          "iteration": 10
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 18,
+          "iteration": 10
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 23,
+          "iteration": 11
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 10,
+          "iteration": 11
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 17,
+          "iteration": 11
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 23,
+          "iteration": 12
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 12
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 17,
+          "iteration": 12
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 38,
+          "iteration": 13
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 13
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 15,
+          "iteration": 13
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 24,
+          "iteration": 14
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 24,
+          "iteration": 14
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 30,
+          "iteration": 14
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 24,
+          "iteration": 15
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 24,
+          "iteration": 15
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 29,
+          "iteration": 15
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 24,
+          "iteration": 16
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 16
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 16,
+          "iteration": 16
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 36,
+          "iteration": 17
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 10,
+          "iteration": 17
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 28,
+          "iteration": 17
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 34,
+          "iteration": 18
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 18
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 30,
+          "iteration": 18
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 23,
+          "iteration": 19
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 19
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 13,
           "iteration": 19
         },
         {
           "case": "force",
-          "elapsed_ms": 30013,
+          "elapsed_ms": 30012,
           "iteration": 20
         }
       ]
@@ -392,7 +392,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca-repeat",
+        "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -407,241 +407,241 @@
         "RUBIX_SIGNAL_DISPOSABLE=1",
         "--ulimit",
         "fsize=1048576:1048576",
-        "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca",
+        "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc",
         "/bin/sh",
         "-c",
         "sha256sum /signals.test /owned_signals.test /fixture; /signals.test --nocapture && /owned_signals.test --ignored --exact disposable_owned_signals --nocapture; status=$?; /fixture namespace; inventory=$?; test \"$status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "227b6f1e7f6e6402d7c07ffee05e8de726c334d076c36ca1dd304f830e04c46a",
+      "raw_sha256": "b982c89baaf0d493ad7f64ab86dc83f858b06c541cee95ec5ff311aff64d1cfc",
       "records": [
         {
           "case": "full",
-          "elapsed_ms": 48,
+          "elapsed_ms": 32,
           "iteration": 0
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
+          "elapsed_ms": 22,
           "iteration": 0
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 0
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 23,
-          "iteration": 1
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 1
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 1
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 2
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 2
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 2
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 3
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 22,
-          "iteration": 3
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 15,
-          "iteration": 3
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 4
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 4
         },
         {
           "case": "fatal",
           "elapsed_ms": 18,
-          "iteration": 4
+          "iteration": 0
         },
         {
           "case": "full",
           "elapsed_ms": 23,
-          "iteration": 5
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 5
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 5
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 34,
-          "iteration": 6
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 6
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 15,
-          "iteration": 6
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 7
+          "iteration": 1
         },
         {
           "case": "partial",
           "elapsed_ms": 12,
-          "iteration": 7
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 17,
-          "iteration": 7
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 8
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 10,
-          "iteration": 8
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 26,
-          "iteration": 8
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 9
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 9
+          "iteration": 1
         },
         {
           "case": "fatal",
           "elapsed_ms": 16,
-          "iteration": 9
+          "iteration": 1
         },
         {
           "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 10
+          "elapsed_ms": 23,
+          "iteration": 2
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 10
+          "elapsed_ms": 12,
+          "iteration": 2
         },
         {
           "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 10
+          "elapsed_ms": 28,
+          "iteration": 2
         },
         {
           "case": "full",
           "elapsed_ms": 34,
-          "iteration": 11
+          "iteration": 3
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 11
+          "elapsed_ms": 23,
+          "iteration": 3
         },
         {
           "case": "fatal",
-          "elapsed_ms": 17,
-          "iteration": 11
+          "elapsed_ms": 28,
+          "iteration": 3
         },
         {
           "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 12
+          "elapsed_ms": 28,
+          "iteration": 4
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 12
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 17,
-          "iteration": 12
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 13
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 13
-        },
-        {
-          "case": "fatal",
-          "elapsed_ms": 16,
-          "iteration": 13
-        },
-        {
-          "case": "full",
-          "elapsed_ms": 22,
-          "iteration": 14
-        },
-        {
-          "case": "partial",
-          "elapsed_ms": 11,
-          "iteration": 14
+          "elapsed_ms": 12,
+          "iteration": 4
         },
         {
           "case": "fatal",
           "elapsed_ms": 15,
-          "iteration": 14
+          "iteration": 4
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 21,
+          "iteration": 5
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 22,
+          "iteration": 5
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 28,
+          "iteration": 5
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 34,
+          "iteration": 6
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 6
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 28,
+          "iteration": 6
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 33,
+          "iteration": 7
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 22,
+          "iteration": 7
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 29,
+          "iteration": 7
         },
         {
           "case": "full",
           "elapsed_ms": 22,
+          "iteration": 8
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 22,
+          "iteration": 8
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 15,
+          "iteration": 8
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 32,
+          "iteration": 9
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 12,
+          "iteration": 9
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 14,
+          "iteration": 9
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 22,
+          "iteration": 10
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 11,
+          "iteration": 10
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 17,
+          "iteration": 10
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 33,
+          "iteration": 11
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 12,
+          "iteration": 11
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 17,
+          "iteration": 11
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 24,
+          "iteration": 12
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 22,
+          "iteration": 12
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 16,
+          "iteration": 12
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 32,
+          "iteration": 13
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 12,
+          "iteration": 13
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 16,
+          "iteration": 13
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 22,
+          "iteration": 14
+        },
+        {
+          "case": "partial",
+          "elapsed_ms": 12,
+          "iteration": 14
+        },
+        {
+          "case": "fatal",
+          "elapsed_ms": 19,
+          "iteration": 14
+        },
+        {
+          "case": "full",
+          "elapsed_ms": 21,
           "iteration": 15
         },
         {
@@ -651,12 +651,12 @@
         },
         {
           "case": "fatal",
-          "elapsed_ms": 16,
+          "elapsed_ms": 18,
           "iteration": 15
         },
         {
           "case": "full",
-          "elapsed_ms": 22,
+          "elapsed_ms": 33,
           "iteration": 16
         },
         {
@@ -676,22 +676,22 @@
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
+          "elapsed_ms": 25,
           "iteration": 17
         },
         {
           "case": "fatal",
-          "elapsed_ms": 15,
+          "elapsed_ms": 16,
           "iteration": 17
         },
         {
           "case": "full",
-          "elapsed_ms": 22,
+          "elapsed_ms": 23,
           "iteration": 18
         },
         {
           "case": "partial",
-          "elapsed_ms": 22,
+          "elapsed_ms": 12,
           "iteration": 18
         },
         {
@@ -701,17 +701,17 @@
         },
         {
           "case": "full",
-          "elapsed_ms": 23,
+          "elapsed_ms": 22,
           "iteration": 19
         },
         {
           "case": "partial",
-          "elapsed_ms": 11,
+          "elapsed_ms": 22,
           "iteration": 19
         },
         {
           "case": "fatal",
-          "elapsed_ms": 15,
+          "elapsed_ms": 17,
           "iteration": 19
         },
         {
@@ -723,7 +723,7 @@
     }
   },
   "schema": 3,
-  "source_inventory_sha256": "794377019d2e19e09e75469ff0b7b734613c378197f5290d6916ec223721ace1",
+  "source_inventory_sha256": "064c88ea0b91e74e57a3aa904f6a69ecf2eff9a1bca98e2336ba1b838640e258",
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
     "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
@@ -975,6 +975,7 @@
     "tools/dev/src/bin/rubix-api-json.rs": "c27628a35967e435ba937fc277788d6381e71bf8c0b474db100e2e5ff2dc9b98",
     "tools/dev/src/bin/rubix-asset-fixture.rs": "f37ccc205ab2c1245179e0c01e8e090ac2c04e3f3cea878d33350bafc9e970c9",
     "tools/dev/src/bin/rubix-component-boundary.rs": "16924b396b3363a7bec0f9d0146db24f10a9d28c056f0effafe63e07c331a2da",
+    "tools/dev/src/bin/rubix-constrained-guest.rs": "00dd909f7b61b01bb68ace51742af202c528b5bc3037a63f7d0bfcfb81df8630",
     "tools/dev/src/bin/rubix-defaults.rs": "c201e5eb62ca1f5ed2166254306e11bc5e582028f852906d26f762d687344991",
     "tools/dev/src/bin/rubix-drift.rs": "ed8b19087c8a5e7276bc5267106de93fa09b299c88fe02262d02e6ade532449c",
     "tools/dev/src/bin/rubix-fixture.rs": "9efe14ab34cae365d9683384d91b3f005067421365e7e3d78173d406435e0425",
@@ -1021,14 +1022,19 @@
     "tools/dev/src/language_policy.rs": "ac8249bce2561e23c6fa58bffe6eaf09a6e682653b56826efd47a8ecd5cf4815",
     "tools/dev/src/lib.rs": "8b7eb5afa8d952061a03f2ad09f6f4706d54eb2c042986440c08dffb8c36259b",
     "tools/dev/src/node_fixture/assessment.rs": "f8add93fce4b31be1ff1c178cda2ca4ec480ff851d016778821b45051006e28b",
-    "tools/dev/src/node_fixture/build.rs": "a558aa4aab704f601070e713a59ee522091a3c4664d0d5f4df6b6273f7f8a358",
+    "tools/dev/src/node_fixture/build.rs": "2f4d6431c2e807ff89b4e3bbdc301883ddd87ca4401843ae2ea72b32dab92868",
     "tools/dev/src/node_fixture/commands.rs": "a4c3cab7a9edb575a9c4f475e71daebbce32ee6620d7836e6d5447980652722d",
-    "tools/dev/src/node_fixture/common.rs": "5d50396ebfd70604f925e3404370384c77d8fae28277e15f0d53159606fe5b6b",
+    "tools/dev/src/node_fixture/common.rs": "28dd0e146705bdeabf6509bbac81d4ed0b6bbda37b7f4c38807a99ae9cbba694",
+    "tools/dev/src/node_fixture/constrained_diagnostics.rs": "01699b897e8b08adfda0e2c0ff4ccdce72be9d79cdec07d5ca0efded35c57169",
+    "tools/dev/src/node_fixture/constrained_envelope_tests.rs": "c0cc675aaa10b94a700d7b9f4f1be0b5b69fecc59186d37fe1e12a302756d30c",
+    "tools/dev/src/node_fixture/constrained_guest.rs": "c14caefb52d9b04bf102dba75634b2af9b19f65c0065ae95237f762a4e2e69c4",
+    "tools/dev/src/node_fixture/constrained_tests.rs": "c2e274ff0d9ff207c64f2b5f197a8aae359dece6edc5d49d33f3674c52eb71bb",
+    "tools/dev/src/node_fixture/constrained_verify.rs": "6befad8c41140dc9e6cabe043f9ae672ffb0849c4daa20f700c0219a43a1cc54",
     "tools/dev/src/node_fixture/container.rs": "13f0443067423b15c372c65769009970a02bba9300663e309571c7935a3f06d9",
     "tools/dev/src/node_fixture/docker.rs": "3f97c1e10f2d0b95f92bd2f8e46058d7ba9f70de4c2884460d8a3fea624fc705",
-    "tools/dev/src/node_fixture/docker_tests.rs": "6ff5fc9aca2c636546a54298c814e1acadaa47514671216902c0b1a8f27eed57",
-    "tools/dev/src/node_fixture/guest.rs": "c44cefdb2ee3eacf5a6d138350bb0bb83bdd1351f9e9d9fe091f190e8c41d7fd",
-    "tools/dev/src/node_fixture/mod.rs": "89a7d8d24ff362e3619c10c4ac83fec2cfb01bcdb92efc8c67d27feda6d67760",
+    "tools/dev/src/node_fixture/docker_tests.rs": "e2996495ac40db11f4db67ee5f9e43615b263d62507383743a53054d5e85ecb7",
+    "tools/dev/src/node_fixture/guest.rs": "76dcf6465916b0f85b849b5ec2d98ba07f2a30ea57fcdd8e61ab8df4a4bb5e9e",
+    "tools/dev/src/node_fixture/mod.rs": "437641676e58c44049f24c0de5bf01c723ccb65449df242f4ffb168c3fd01479",
     "tools/dev/src/node_fixture/network.rs": "e99af8fe1b0d5e59d2cd498bac99e72ca37b42bd39b9076d806d452eb4fc58bd",
     "tools/dev/src/node_fixture/runtime.rs": "5dd1ed4b0c8e962112544b433ee7b6b38527fbb0ef900d06b18232f86c15ff11",
     "tools/dev/src/node_fixture/tests.rs": "d0ee2e77c2a8e591df75755f5134dc72bfc2f2dd4232882adf39369285089891",
@@ -1044,8 +1050,8 @@
     "tools/dev/src/parity/vm.rs": "6077d574aba2b13791f8174dacc87ef50419f7e1372505e801058221ebdc7478",
     "tools/dev/src/platform_fixture/alpine.rs": "587d6a4ad86ff0e4a460b0f308b53b0ee09ce6dc6d03bdf0b89a26f8fa9547de",
     "tools/dev/src/platform_fixture/capture.rs": "33160726f437690a5285afe9cdd0d789aaee6d005935d273826865e2fb66f6d4",
-    "tools/dev/src/platform_fixture/command_evidence.rs": "1d2716692e91cc82535b080db1e64d7dc6701507d96ab3ecc1e3c68531b65b65",
-    "tools/dev/src/platform_fixture/guest.rs": "fcfc391e9c419af3aad8ee2b355eaf1b78dc328ef3713d953a36f7877fb5b34e",
+    "tools/dev/src/platform_fixture/command_evidence.rs": "4dd47e0b66ee4b101cc685b666b148d7c40ca1eb09405de81e4a8a0efd6af6eb",
+    "tools/dev/src/platform_fixture/guest.rs": "03635b2688448c2e996aa7b41702bac778473fe5c96c3116b6adcb3116fad15c",
     "tools/dev/src/platform_fixture/mod.rs": "04eeea9d6c96f3505cbd946be41c55b5a6ffff8fce50ee09a2f9c0a057a79cdf",
     "tools/dev/src/platform_fixture/preparation.rs": "d7a54d0462d56e3c1ef616ac610c991caac433a9f991264b67f2ab55e8c13e3d",
     "tools/dev/src/platform_fixture/prepare.rs": "5b78ed8f676d184935a13fa59dc4dc1ed13507bf51ea22c5cba3024d335e5bf8",
@@ -1073,6 +1079,7 @@
     "tools/dev/src/upstream/tests.rs": "b01992bd1d2ec3f502ca36c3307ff27ed6336100dfb4662e6c9e6d58a00ee7f2",
     "tools/dev/tests/api_json_cli.rs": "8ba67f8e871ab51a37cf2132dd9a580ea82fb1e937cae0e4428d456a8f120342",
     "tools/dev/tests/component_internals.rs": "1084aa22f80f07d4c85e6856a96669e0f33383b9b8a5d204f024b42db4dd67ba",
+    "tools/dev/tests/constrained_namespace.rs": "ac07c149827ab3e87cc8bf1d62af437ef0c97adab21d795860728762e5abfb8c",
     "tools/dev/tests/defaults_cli.rs": "69b71e859a852a6eed2b1dafee1cf4ca3bc656c32f2bceccf1c2df7761c414ef",
     "tools/dev/tests/fixture_cli.rs": "42954d98ea90aea3768f03a3c561f564c077cdacbf7a9476497e3fc2bc50dc3b",
     "tools/dev/tests/parity_process.rs": "68369166b36b8b34cba207406a902418b744dc85bdc37f696e5cfcf5e9435b81",
@@ -1097,5 +1104,5 @@
     "tools/upstream/src/main.rs": "8c141ec322ab8a3786390877a9459c9599a570135d5e883f7d534cca178ba8d4",
     "tools/upstream/tests/api_json.rs": "cae7fe6c80e5dc3cc743c3789f4fdf6fe1304f3ea6ea034767daadb70710c1e3"
   },
-  "tag": "rubix-supervisor-signals-34d42dce63787abfb7f844c72bf5ffca"
+  "tag": "rubix-supervisor-signals-3e8b779b21e3e2e60ff5886b32ed03dc"
 }

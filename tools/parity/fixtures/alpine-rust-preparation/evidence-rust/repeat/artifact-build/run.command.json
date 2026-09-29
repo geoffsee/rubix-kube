@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-preparation-linux-4fc761eac9ad54ab7acfb2114e3cbc84-test",
+    "rubix-preparation-linux-8eeba6df565a09f9dcde9155656c341d-test",
     "--hostname",
     "fixture",
     "--init",
@@ -26,7 +26,7 @@
     "64",
     "--tmpfs",
     "/tmp:rw,exec,nosuid,nodev,size=32m",
-    "rubix-preparation-linux-4fc761eac9ad54ab7acfb2114e3cbc84"
+    "rubix-preparation-linux-8eeba6df565a09f9dcde9155656c341d"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -35,11 +35,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78189,
+  "owned_pid": 32226,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-NllFqb",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-KfP2T0",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "967b0db5cb0a18f45e70503a9b87d264ed68946f0a3ac4cee4f0dc113a80d682",
+  "stdout_sha256": "4aa7124c1c61fb86a4d76885204a8cd5c67b543c4799dafdc4533492e91bbe03",
   "timeout": false
 }

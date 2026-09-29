@@ -10,7 +10,7 @@
     "--max-filesize",
     "16777216",
     "--output",
-    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-kXHNYF/libmnl-1.0.5-r2.apk",
+    "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-alpine-prepare-source-bdtwfg/libmnl-1.0.5-r2.apk",
     "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/libmnl-1.0.5-r2.apk"
   ],
   "cancelled": false,
@@ -20,11 +20,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 77686,
+  "owned_pid": 97862,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Tq7AN1",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-v0w72m",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "16cacf0a9aa11bb85fc35c8a6782e0dcb288496f5b0419602eb6366b1d77cc44",
+  "stdout_sha256": "cc8fd8316b270ab9cb18ed391a4feeba286149d20aec8381e881132a0324913a",
   "timeout": false
 }

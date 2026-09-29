@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-resources-pki-4gisqv-pki-0"
+    "rubix-resources-pki-gnnue3-pki-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 78284,
+  "owned_pid": 98064,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-PaDMAg",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-U7lxMH",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "2a2cd95d19ac7075905c0f3cdf5d4879050fc1cd90bd14611472f5b4d8c24814",
+  "stdout_sha256": "1be7492309f08879611fc76b3f2bcd926d9518195badf34299f094b09aed667c",
   "timeout": false
 }
