@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-management-go-dwk5wz"
+    "rubix-management-go-0bm5wl"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 9640,
+  "owned_pid": 41411,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-YXYjbd",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-1oxGIv",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "eb8bdd687996296d6cd0d6d76c544cc26ce013664eb69cc304ca5822def469ba",
+  "stdout_sha256": "80bdfce7db9d24bb446d80af80d51467404655be183216ae8d22a7af0b938221",
   "timeout": false
 }

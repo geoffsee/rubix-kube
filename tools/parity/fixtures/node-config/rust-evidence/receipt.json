@@ -15,16 +15,16 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-node-config-axiht8-kubelet-0",
-    "rubix-node-config-axiht8-kubelet-1",
-    "rubix-node-config-axiht8-containerd-0",
-    "rubix-node-config-axiht8-containerd-1"
+    "rubix-node-config-jpcshh-kubelet-0",
+    "rubix-node-config-jpcshh-kubelet-1",
+    "rubix-node-config-jpcshh-containerd-0",
+    "rubix-node-config-jpcshh-containerd-1"
   ],
   "errors": [],
   "family": "node-config",
   "identical_repeats": true,
-  "image": "rubix-node-config-axiht8",
-  "image_id": "sha256:755003eed7e663ad25808c2770e3df0de4078a068b2960576feb46c09a008857",
+  "image": "rubix-node-config-jpcshh",
+  "image_id": "sha256:445677e86600a25c54e1abd2a88575cc12b0ad16a2ca9012d033a88177eafea3",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -41,30 +41,30 @@
         "User": "65532:65532",
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T17:05:27.106317716Z",
+      "Created": "2026-09-29T06:42:30.065889256Z",
       "Descriptor": {
-        "digest": "sha256:755003eed7e663ad25808c2770e3df0de4078a068b2960576feb46c09a008857",
+        "digest": "sha256:445677e86600a25c54e1abd2a88575cc12b0ad16a2ca9012d033a88177eafea3",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:755003eed7e663ad25808c2770e3df0de4078a068b2960576feb46c09a008857",
+      "Id": "sha256:445677e86600a25c54e1abd2a88575cc12b0ad16a2ca9012d033a88177eafea3",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T17:06:30.858978259Z",
-            "Ref": "kpgn85liiu7lxc5at54tcx5nm"
+            "CreatedAt": "2026-09-29T06:45:24.866693837Z",
+            "Ref": "vvsi6asrt40zpovp65ifeikcy"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T17:06:19.493233962Z"
+        "LastTagTime": "2026-09-29T06:45:13.736328513Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-node-config-axiht8@sha256:755003eed7e663ad25808c2770e3df0de4078a068b2960576feb46c09a008857"
+        "rubix-node-config-jpcshh@sha256:445677e86600a25c54e1abd2a88575cc12b0ad16a2ca9012d033a88177eafea3"
       ],
       "RepoTags": [
-        "rubix-node-config-axiht8:latest"
+        "rubix-node-config-jpcshh:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -77,14 +77,14 @@
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
           "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
           "sha256:89e8c1a498d66a2155a581feb21a032650ac64b05d4c00fec6594ac27484aa0e",
-          "sha256:4344b540ca63f2aec0ac6c959d0c5c1cea71fba3ff1d724d63cf153fb4bbfb3d",
-          "sha256:6549778a22ddf94b4856bc4c50f9ed42be908f435a70798a33921b68ac01f9f2",
-          "sha256:2fcbee87a7ff0e2971284ca16fb3ae066c8c200b822dc449f1c51236fc5737ec",
+          "sha256:701bb9d78acc80491bb4d74589af9990b7f774123013272aa2d4c0ada9824f25",
+          "sha256:73b29c5572c006f26ae86f34de8672a791c008482e480572b59f1d651305dfcd",
+          "sha256:bae420e21e6b89aec5aaba1a85dd67c221b64a8d3989204f35c2243b39f67641",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 1175703999
+      "Size": 1175697023
     }
   ],
   "outputs": {
@@ -98,12 +98,12 @@
   "repeat_count": 2,
   "retained_build_contexts": [],
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
-  "runner_sha256": "6e1e36786196ab56d9ef63e3c48002654754893af34bdf88797b9ec50b22299f",
+  "runner_sha256": "ccd2baeaceaef06e6a0a138418b999bd468f25cd233304f6046ae760db206c6e",
   "schema_version": 2,
   "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
   "source_sha256": {
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "rust-toolchain.toml": "479123a7389d25b7b45d10fb78ebd35ce5b57aa1cc9132165ec43f3bb5f160fb",
     "tools/dev/Cargo.toml": "5de3a945bfad9644f9bff6151fac96f2696bcea37d6bd888e36a61468d2046ef",
     "tools/dev/src/api_json/mod.rs": "8bd6118d9541d04a30a36477dcbace51d2f49fdad17aa3d21a4e7a509b3e9512",

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-component-boundary-irtljv-capture"
+    "rubix-component-boundary-htz7ii-capture"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 33650,
+  "owned_pid": 40837,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-3QdOb2",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-w5Cl4e",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "fd0b23f22782bc6cb2013abb630ad0674c424c7784165c0ab9e04fec6e3d7d7d",
+  "stdout_sha256": "108f533bfedc79a1aefa679c26daa10d23be9802f4e12580fdbe52a7b6e30398",
   "timeout": false
 }

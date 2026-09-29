@@ -12,38 +12,38 @@
 #3 DONE 0.0s
 
 #4 [1/6] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #4 DONE 0.0s
 
-#5 [internal] load build context
-#5 transferring context: 2.99kB done
-#5 DONE 0.0s
+#5 [2/6] WORKDIR /src
+#5 CACHED
 
-#6 [2/6] WORKDIR /src
+#6 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/detect/detect.go
 #6 CACHED
 
-#7 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/detect/detect.go
-#7 CACHED
+#7 [internal] load build context
+#7 transferring context: 2.99kB done
+#7 DONE 0.0s
 
 #8 [4/6] COPY detect_capture_test.go .
-#8 CACHED
+#8 DONE 0.0s
 
 #9 [5/6] RUN sha256sum detect.go > /source.sha256 && go test -c -trimpath -o /detect.test .
-#9 CACHED
+#9 DONE 4.1s
 
 #10 [6/6] WORKDIR /tmp
-#10 CACHED
+#10 DONE 0.0s
 
 #11 exporting to image
-#11 exporting layers done
-#11 exporting manifest sha256:c0bb2e31b6174019371b1127c83638fbdd437df420082871f46e3cafd0f1eaa4 done
-#11 exporting config sha256:38838d9d39c84063571a82dd71d1b922895d7befcd8ed10bcbc041154fe7ec5a done
-#11 exporting attestation manifest sha256:75312dcb08d9c63ee0946f9e268bcd90412ab0aae8a6ebf9b6df524e18fe5b75 done
-#11 exporting manifest list sha256:e0c98c24e15b807378146101f695ece756ddc7e69cff558bba349a0ab107ddf5
-#11 exporting manifest list sha256:e0c98c24e15b807378146101f695ece756ddc7e69cff558bba349a0ab107ddf5 0.0s done
-#11 naming to docker.io/library/rubix-platform-go-jjy8ij:latest done
-#11 unpacking to docker.io/library/rubix-platform-go-jjy8ij:latest
-#11 unpacking to docker.io/library/rubix-platform-go-jjy8ij:latest 0.3s done
-#11 DONE 0.3s
+#11 exporting layers
+#11 exporting layers 1.2s done
+#11 exporting manifest sha256:0e2df1269fd15c64e671d01486fb2bff661be587f624f57c6e9814cd71930b31 done
+#11 exporting config sha256:b04a478321172ac1fdf926acab9f8b561689a5c4752118eda11f75936ce229fa done
+#11 exporting attestation manifest sha256:076f25ff61f4dc40f1454a6e2fe92c4d31eb4f6f490d96c7dd5a2070405cb6b9 done
+#11 exporting manifest list sha256:b2b3ccfdab6a2bcc7f0acd7adbdacd0197ab1b4b24bcf5c3fe47eef827a47268 done
+#11 naming to docker.io/library/rubix-platform-go-r2zqfi:latest done
+#11 unpacking to docker.io/library/rubix-platform-go-r2zqfi:latest
+#11 unpacking to docker.io/library/rubix-platform-go-r2zqfi:latest 0.2s done
+#11 DONE 1.4s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/3opfu7bvpvhafi3d5cxm2zpc8
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/nkqzwf410ug4j8f8n0dkzuwst

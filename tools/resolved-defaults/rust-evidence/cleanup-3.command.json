@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-resolved-xgjlyz"
+    "rubix-resolved-f4dulm"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 99073,
+  "owned_pid": 41321,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-uRDZRv",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-7wAzuV",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "50ea94890f445118312d2d3e8d50d6a23966c3276e353574e645268a755dcd5b",
+  "stdout_sha256": "ed7d3ae66e2e9d534fb90b1324e24d82ff65c16a192cb93878527c92ab33fd7a",
   "timeout": false
 }

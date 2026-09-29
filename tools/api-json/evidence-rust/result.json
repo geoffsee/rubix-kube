@@ -25,12 +25,12 @@
   ],
   "datastore_tls": [
     {
-      "diagnostic": "Can't use SSL_get_servername\n205079A3FFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../ssl/record/rec_layer_s3.c:1602:SSL alert number 40\n",
+      "diagnostic": "Can't use SSL_get_servername\n20407E8AFFFF0000:error:0A000410:SSL routines:ssl3_read_bytes:sslv3 alert handshake failure:../ssl/record/rec_layer_s3.c:1602:SSL alert number 40\n",
       "exit_code": 1,
       "identity": "absent"
     },
     {
-      "diagnostic": "Can't use SSL_get_servername\n201049BCFFFF0000:error:0A000418:SSL routines:ssl3_read_bytes:tlsv1 alert unknown ca:../ssl/record/rec_layer_s3.c:1602:SSL alert number 48\n",
+      "diagnostic": "Can't use SSL_get_servername\n20C0B081FFFF0000:error:0A000418:SSL routines:ssl3_read_bytes:tlsv1 alert unknown ca:../ssl/record/rec_layer_s3.c:1602:SSL alert number 48\n",
       "exit_code": 1,
       "identity": "admin"
     }
@@ -361,7 +361,7 @@
       "method": "GET",
       "name": "anonymous-denied",
       "path": "/api/v1/namespaces",
-      "raw_headers": "HTTP/2 401 \r\naudit-id: e1593587-fbb9-4a70-8632-b12f676120b2\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\ncontent-length: 157\r\ndate: Mon, 28 Sep 2026 20:54:52 GMT\r\n\r\n",
+      "raw_headers": "HTTP/2 401 \r\naudit-id: e62f534a-f0df-4ed3-abd9-3d64d99d14b5\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\ncontent-length: 157\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
       "raw_response": "{\n  \"kind\": \"Status\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {},\n  \"status\": \"Failure\",\n  \"message\": \"Unauthorized\",\n  \"reason\": \"Unauthorized\",\n  \"code\": 401\n}",
       "request": null,
       "response": {
@@ -379,7 +379,7 @@
       "method": "GET",
       "name": "rbac-denied",
       "path": "/api/v1/namespaces",
-      "raw_headers": "HTTP/2 403 \r\naudit-id: 98055e70-c14c-41c8-a354-fbbe85586db6\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-content-type-options: nosniff\r\nx-kubernetes-pf-flowschema-uid: b26de0a9-8b72-4a77-93d0-8e7edc710500\r\nx-kubernetes-pf-prioritylevel-uid: 6457eacf-9686-4eed-bee3-5848ddf6dec8\r\ncontent-length: 317\r\ndate: Mon, 28 Sep 2026 20:54:52 GMT\r\n\r\n",
+      "raw_headers": "HTTP/2 403 \r\naudit-id: d4fb39d4-5b52-4945-bb7e-8326db19c4fe\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-content-type-options: nosniff\r\nx-kubernetes-pf-flowschema-uid: 551211d3-3db6-4aa6-b735-5cc60fa18eed\r\nx-kubernetes-pf-prioritylevel-uid: e6a74435-4a96-42ff-b751-37dae550ed0c\r\ncontent-length: 317\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
       "raw_response": "{\n  \"kind\": \"Status\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {},\n  \"status\": \"Failure\",\n  \"message\": \"namespaces is forbidden: User \\\"boundary-unprivileged\\\" cannot list resource \\\"namespaces\\\" in API group \\\"\\\" at the cluster scope\",\n  \"reason\": \"Forbidden\",\n  \"details\": {\n    \"kind\": \"namespaces\"\n  },\n  \"code\": 403\n}",
       "request": null,
       "response": {
@@ -400,8 +400,8 @@
       "method": "POST",
       "name": "namespace",
       "path": "/api/v1/namespaces",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: 2e04d7ff-3dfa-4997-b2f8-1b72ba3352e3\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 810\r\ndate: Mon, 28 Sep 2026 20:54:52 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"Namespace\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"serialization-fixture\",\n    \"uid\": \"5cfc8403-eb3e-4f14-a3e6-e5fb3c44bc1e\",\n    \"resourceVersion\": \"203\",\n    \"creationTimestamp\": \"2026-09-28T20:54:52Z\",\n    \"labels\": {\n      \"kubernetes.io/metadata.name\": \"serialization-fixture\"\n    },\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:52Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:metadata\": {\n            \"f:labels\": {\n              \".\": {},\n              \"f:kubernetes.io/metadata.name\": {}\n            }\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"finalizers\": [\n      \"kubernetes\"\n    ]\n  },\n  \"status\": {\n    \"phase\": \"Active\"\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: 1dfa69b1-fe81-42d8-b681-f78286df8553\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 810\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"Namespace\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"serialization-fixture\",\n    \"uid\": \"53d4c8e2-f040-4867-98fb-babd8d383f75\",\n    \"resourceVersion\": \"203\",\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"labels\": {\n      \"kubernetes.io/metadata.name\": \"serialization-fixture\"\n    },\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:metadata\": {\n            \"f:labels\": {\n              \".\": {},\n              \"f:kubernetes.io/metadata.name\": {}\n            }\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"finalizers\": [\n      \"kubernetes\"\n    ]\n  },\n  \"status\": {\n    \"phase\": \"Active\"\n  }\n}",
       "request": {
         "apiVersion": "v1",
         "kind": "Namespace",
@@ -413,7 +413,7 @@
         "apiVersion": "v1",
         "kind": "Namespace",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:52Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "labels": {
             "kubernetes.io/metadata.name": "serialization-fixture"
           },
@@ -431,12 +431,12 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:52Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "serialization-fixture",
           "resourceVersion": "203",
-          "uid": "5cfc8403-eb3e-4f14-a3e6-e5fb3c44bc1e"
+          "uid": "53d4c8e2-f040-4867-98fb-babd8d383f75"
         },
         "spec": {
           "finalizers": [
@@ -453,8 +453,8 @@
       "method": "POST",
       "name": "service-account",
       "path": "/api/v1/namespaces/serialization-fixture/serviceaccounts",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: 4d4bf08d-d9fc-4f5e-a525-5a2beda99ba4\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 267\r\ndate: Mon, 28 Sep 2026 20:54:52 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"ServiceAccount\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"default\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"8b0d6e13-ab38-4735-bab9-4a43b858624f\",\n    \"resourceVersion\": \"204\",\n    \"creationTimestamp\": \"2026-09-28T20:54:52Z\"\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: 7ab40e55-920d-4216-98ef-21036ffca6c5\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 267\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"ServiceAccount\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"default\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"9e6bfd13-c701-4ea5-803c-c8bf1d131907\",\n    \"resourceVersion\": \"204\",\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\"\n  }\n}",
       "request": {
         "apiVersion": "v1",
         "kind": "ServiceAccount",
@@ -466,11 +466,11 @@
         "apiVersion": "v1",
         "kind": "ServiceAccount",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:52Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "name": "default",
           "namespace": "serialization-fixture",
           "resourceVersion": "204",
-          "uid": "8b0d6e13-ab38-4735-bab9-4a43b858624f"
+          "uid": "9e6bfd13-c701-4ea5-803c-c8bf1d131907"
         }
       },
       "status": 201
@@ -479,8 +479,8 @@
       "method": "POST",
       "name": "pod-create",
       "path": "/api/v1/namespaces/serialization-fixture/pods",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: eab8bd68-b728-450a-b26f-b664cf70c4fa\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 3273\r\ndate: Mon, 28 Sep 2026 20:54:53 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"Pod\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"quantities\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"fb7c2fe5-dbf7-4aa9-a3f8-f64eff36b929\",\n    \"resourceVersion\": \"205\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-28T20:54:53Z\",\n    \"labels\": {\n      \"fixture\": \"json\"\n    },\n    \"annotations\": {\n      \"example.test/text\": \"literal: null\"\n    },\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:52Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:metadata\": {\n            \"f:annotations\": {\n              \".\": {},\n              \"f:example.test/text\": {}\n            },\n            \"f:labels\": {\n              \".\": {},\n              \"f:fixture\": {}\n            }\n          },\n          \"f:spec\": {\n            \"f:automountServiceAccountToken\": {},\n            \"f:containers\": {\n              \"k:{\\\"name\\\":\\\"main\\\"}\": {\n                \".\": {},\n                \"f:image\": {},\n                \"f:imagePullPolicy\": {},\n                \"f:name\": {},\n                \"f:resources\": {\n                  \".\": {},\n                  \"f:limits\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:memory\": {}\n                  },\n                  \"f:requests\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:ephemeral-storage\": {},\n                    \"f:memory\": {}\n                  }\n                },\n                \"f:terminationMessagePath\": {},\n                \"f:terminationMessagePolicy\": {}\n              }\n            },\n            \"f:dnsPolicy\": {},\n            \"f:enableServiceLinks\": {},\n            \"f:restartPolicy\": {},\n            \"f:schedulerName\": {},\n            \"f:securityContext\": {},\n            \"f:terminationGracePeriodSeconds\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"containers\": [\n      {\n        \"name\": \"main\",\n        \"image\": \"example.invalid/fixture:v1\",\n        \"resources\": {\n          \"limits\": {\n            \"cpu\": \"1\",\n            \"memory\": \"2Gi\"\n          },\n          \"requests\": {\n            \"cpu\": \"500m\",\n            \"ephemeral-storage\": \"1e3\",\n            \"memory\": \"1536Mi\"\n          }\n        },\n        \"terminationMessagePath\": \"/dev/termination-log\",\n        \"terminationMessagePolicy\": \"File\",\n        \"imagePullPolicy\": \"IfNotPresent\"\n      }\n    ],\n    \"restartPolicy\": \"Always\",\n    \"terminationGracePeriodSeconds\": 30,\n    \"dnsPolicy\": \"ClusterFirst\",\n    \"serviceAccountName\": \"default\",\n    \"serviceAccount\": \"default\",\n    \"automountServiceAccountToken\": false,\n    \"securityContext\": {},\n    \"schedulerName\": \"default-scheduler\",\n    \"tolerations\": [\n      {\n        \"key\": \"node.kubernetes.io/not-ready\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      },\n      {\n        \"key\": \"node.kubernetes.io/unreachable\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      }\n    ],\n    \"priority\": 0,\n    \"enableServiceLinks\": true,\n    \"preemptionPolicy\": \"PreemptLowerPriority\"\n  },\n  \"status\": {\n    \"phase\": \"Pending\",\n    \"qosClass\": \"Burstable\"\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: 4e8cbd2d-fa15-4684-86bc-9d22599d772f\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 3273\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"Pod\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"quantities\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"a8f43258-9e5f-48c9-937d-0d1c4428b7c0\",\n    \"resourceVersion\": \"205\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"labels\": {\n      \"fixture\": \"json\"\n    },\n    \"annotations\": {\n      \"example.test/text\": \"literal: null\"\n    },\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:metadata\": {\n            \"f:annotations\": {\n              \".\": {},\n              \"f:example.test/text\": {}\n            },\n            \"f:labels\": {\n              \".\": {},\n              \"f:fixture\": {}\n            }\n          },\n          \"f:spec\": {\n            \"f:automountServiceAccountToken\": {},\n            \"f:containers\": {\n              \"k:{\\\"name\\\":\\\"main\\\"}\": {\n                \".\": {},\n                \"f:image\": {},\n                \"f:imagePullPolicy\": {},\n                \"f:name\": {},\n                \"f:resources\": {\n                  \".\": {},\n                  \"f:limits\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:memory\": {}\n                  },\n                  \"f:requests\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:ephemeral-storage\": {},\n                    \"f:memory\": {}\n                  }\n                },\n                \"f:terminationMessagePath\": {},\n                \"f:terminationMessagePolicy\": {}\n              }\n            },\n            \"f:dnsPolicy\": {},\n            \"f:enableServiceLinks\": {},\n            \"f:restartPolicy\": {},\n            \"f:schedulerName\": {},\n            \"f:securityContext\": {},\n            \"f:terminationGracePeriodSeconds\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"containers\": [\n      {\n        \"name\": \"main\",\n        \"image\": \"example.invalid/fixture:v1\",\n        \"resources\": {\n          \"limits\": {\n            \"cpu\": \"1\",\n            \"memory\": \"2Gi\"\n          },\n          \"requests\": {\n            \"cpu\": \"500m\",\n            \"ephemeral-storage\": \"1e3\",\n            \"memory\": \"1536Mi\"\n          }\n        },\n        \"terminationMessagePath\": \"/dev/termination-log\",\n        \"terminationMessagePolicy\": \"File\",\n        \"imagePullPolicy\": \"IfNotPresent\"\n      }\n    ],\n    \"restartPolicy\": \"Always\",\n    \"terminationGracePeriodSeconds\": 30,\n    \"dnsPolicy\": \"ClusterFirst\",\n    \"serviceAccountName\": \"default\",\n    \"serviceAccount\": \"default\",\n    \"automountServiceAccountToken\": false,\n    \"securityContext\": {},\n    \"schedulerName\": \"default-scheduler\",\n    \"tolerations\": [\n      {\n        \"key\": \"node.kubernetes.io/not-ready\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      },\n      {\n        \"key\": \"node.kubernetes.io/unreachable\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      }\n    ],\n    \"priority\": 0,\n    \"enableServiceLinks\": true,\n    \"preemptionPolicy\": \"PreemptLowerPriority\"\n  },\n  \"status\": {\n    \"phase\": \"Pending\",\n    \"qosClass\": \"Burstable\"\n  }\n}",
       "request": {
         "apiVersion": "v1",
         "kind": "Pod",
@@ -523,7 +523,7 @@
           "annotations": {
             "example.test/text": "literal: null"
           },
-          "creationTimestamp": "2026-09-28T20:54:53Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "generation": 1,
           "labels": {
             "fixture": "json"
@@ -579,13 +579,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:52Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "quantities",
           "namespace": "serialization-fixture",
           "resourceVersion": "205",
-          "uid": "fb7c2fe5-dbf7-4aa9-a3f8-f64eff36b929"
+          "uid": "a8f43258-9e5f-48c9-937d-0d1c4428b7c0"
         },
         "spec": {
           "automountServiceAccountToken": false,
@@ -645,8 +645,8 @@
       "method": "GET",
       "name": "pod-read",
       "path": "/api/v1/namespaces/serialization-fixture/pods/quantities",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: 532af19a-1aee-49b8-befa-69e23cb47380\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 3273\r\ndate: Mon, 28 Sep 2026 20:54:53 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"Pod\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"quantities\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"fb7c2fe5-dbf7-4aa9-a3f8-f64eff36b929\",\n    \"resourceVersion\": \"205\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-28T20:54:53Z\",\n    \"labels\": {\n      \"fixture\": \"json\"\n    },\n    \"annotations\": {\n      \"example.test/text\": \"literal: null\"\n    },\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:52Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:metadata\": {\n            \"f:annotations\": {\n              \".\": {},\n              \"f:example.test/text\": {}\n            },\n            \"f:labels\": {\n              \".\": {},\n              \"f:fixture\": {}\n            }\n          },\n          \"f:spec\": {\n            \"f:automountServiceAccountToken\": {},\n            \"f:containers\": {\n              \"k:{\\\"name\\\":\\\"main\\\"}\": {\n                \".\": {},\n                \"f:image\": {},\n                \"f:imagePullPolicy\": {},\n                \"f:name\": {},\n                \"f:resources\": {\n                  \".\": {},\n                  \"f:limits\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:memory\": {}\n                  },\n                  \"f:requests\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:ephemeral-storage\": {},\n                    \"f:memory\": {}\n                  }\n                },\n                \"f:terminationMessagePath\": {},\n                \"f:terminationMessagePolicy\": {}\n              }\n            },\n            \"f:dnsPolicy\": {},\n            \"f:enableServiceLinks\": {},\n            \"f:restartPolicy\": {},\n            \"f:schedulerName\": {},\n            \"f:securityContext\": {},\n            \"f:terminationGracePeriodSeconds\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"containers\": [\n      {\n        \"name\": \"main\",\n        \"image\": \"example.invalid/fixture:v1\",\n        \"resources\": {\n          \"limits\": {\n            \"cpu\": \"1\",\n            \"memory\": \"2Gi\"\n          },\n          \"requests\": {\n            \"cpu\": \"500m\",\n            \"ephemeral-storage\": \"1e3\",\n            \"memory\": \"1536Mi\"\n          }\n        },\n        \"terminationMessagePath\": \"/dev/termination-log\",\n        \"terminationMessagePolicy\": \"File\",\n        \"imagePullPolicy\": \"IfNotPresent\"\n      }\n    ],\n    \"restartPolicy\": \"Always\",\n    \"terminationGracePeriodSeconds\": 30,\n    \"dnsPolicy\": \"ClusterFirst\",\n    \"serviceAccountName\": \"default\",\n    \"serviceAccount\": \"default\",\n    \"automountServiceAccountToken\": false,\n    \"securityContext\": {},\n    \"schedulerName\": \"default-scheduler\",\n    \"tolerations\": [\n      {\n        \"key\": \"node.kubernetes.io/not-ready\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      },\n      {\n        \"key\": \"node.kubernetes.io/unreachable\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      }\n    ],\n    \"priority\": 0,\n    \"enableServiceLinks\": true,\n    \"preemptionPolicy\": \"PreemptLowerPriority\"\n  },\n  \"status\": {\n    \"phase\": \"Pending\",\n    \"qosClass\": \"Burstable\"\n  }\n}",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: cb852e2e-0a77-4579-aba3-76d6a45172ae\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 3273\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"Pod\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"quantities\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"a8f43258-9e5f-48c9-937d-0d1c4428b7c0\",\n    \"resourceVersion\": \"205\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"labels\": {\n      \"fixture\": \"json\"\n    },\n    \"annotations\": {\n      \"example.test/text\": \"literal: null\"\n    },\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:metadata\": {\n            \"f:annotations\": {\n              \".\": {},\n              \"f:example.test/text\": {}\n            },\n            \"f:labels\": {\n              \".\": {},\n              \"f:fixture\": {}\n            }\n          },\n          \"f:spec\": {\n            \"f:automountServiceAccountToken\": {},\n            \"f:containers\": {\n              \"k:{\\\"name\\\":\\\"main\\\"}\": {\n                \".\": {},\n                \"f:image\": {},\n                \"f:imagePullPolicy\": {},\n                \"f:name\": {},\n                \"f:resources\": {\n                  \".\": {},\n                  \"f:limits\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:memory\": {}\n                  },\n                  \"f:requests\": {\n                    \".\": {},\n                    \"f:cpu\": {},\n                    \"f:ephemeral-storage\": {},\n                    \"f:memory\": {}\n                  }\n                },\n                \"f:terminationMessagePath\": {},\n                \"f:terminationMessagePolicy\": {}\n              }\n            },\n            \"f:dnsPolicy\": {},\n            \"f:enableServiceLinks\": {},\n            \"f:restartPolicy\": {},\n            \"f:schedulerName\": {},\n            \"f:securityContext\": {},\n            \"f:terminationGracePeriodSeconds\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"containers\": [\n      {\n        \"name\": \"main\",\n        \"image\": \"example.invalid/fixture:v1\",\n        \"resources\": {\n          \"limits\": {\n            \"cpu\": \"1\",\n            \"memory\": \"2Gi\"\n          },\n          \"requests\": {\n            \"cpu\": \"500m\",\n            \"ephemeral-storage\": \"1e3\",\n            \"memory\": \"1536Mi\"\n          }\n        },\n        \"terminationMessagePath\": \"/dev/termination-log\",\n        \"terminationMessagePolicy\": \"File\",\n        \"imagePullPolicy\": \"IfNotPresent\"\n      }\n    ],\n    \"restartPolicy\": \"Always\",\n    \"terminationGracePeriodSeconds\": 30,\n    \"dnsPolicy\": \"ClusterFirst\",\n    \"serviceAccountName\": \"default\",\n    \"serviceAccount\": \"default\",\n    \"automountServiceAccountToken\": false,\n    \"securityContext\": {},\n    \"schedulerName\": \"default-scheduler\",\n    \"tolerations\": [\n      {\n        \"key\": \"node.kubernetes.io/not-ready\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      },\n      {\n        \"key\": \"node.kubernetes.io/unreachable\",\n        \"operator\": \"Exists\",\n        \"effect\": \"NoExecute\",\n        \"tolerationSeconds\": 300\n      }\n    ],\n    \"priority\": 0,\n    \"enableServiceLinks\": true,\n    \"preemptionPolicy\": \"PreemptLowerPriority\"\n  },\n  \"status\": {\n    \"phase\": \"Pending\",\n    \"qosClass\": \"Burstable\"\n  }\n}",
       "request": null,
       "response": {
         "apiVersion": "v1",
@@ -655,7 +655,7 @@
           "annotations": {
             "example.test/text": "literal: null"
           },
-          "creationTimestamp": "2026-09-28T20:54:53Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "generation": 1,
           "labels": {
             "fixture": "json"
@@ -711,13 +711,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:52Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "quantities",
           "namespace": "serialization-fixture",
           "resourceVersion": "205",
-          "uid": "fb7c2fe5-dbf7-4aa9-a3f8-f64eff36b929"
+          "uid": "a8f43258-9e5f-48c9-937d-0d1c4428b7c0"
         },
         "spec": {
           "automountServiceAccountToken": false,
@@ -777,8 +777,8 @@
       "method": "POST",
       "name": "service-create",
       "path": "/api/v1/namespaces/serialization-fixture/services",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: c8ec2e50-7768-4e5f-920b-798678af0fe8\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 1814\r\ndate: Mon, 28 Sep 2026 20:54:53 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"Service\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"ports\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"d8adc0a9-2c6e-4f62-ab25-b17c2fac4c97\",\n    \"resourceVersion\": \"206\",\n    \"creationTimestamp\": \"2026-09-28T20:54:53Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:clusterIP\": {},\n            \"f:internalTrafficPolicy\": {},\n            \"f:ports\": {\n              \".\": {},\n              \"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              },\n              \"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              }\n            },\n            \"f:selector\": {},\n            \"f:sessionAffinity\": {},\n            \"f:type\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"ports\": [\n      {\n        \"name\": \"named\",\n        \"protocol\": \"TCP\",\n        \"port\": 80,\n        \"targetPort\": \"http\"\n      },\n      {\n        \"name\": \"numeric\",\n        \"protocol\": \"TCP\",\n        \"port\": 81,\n        \"targetPort\": 8080\n      }\n    ],\n    \"selector\": {\n      \"fixture\": \"json\"\n    },\n    \"clusterIP\": \"None\",\n    \"clusterIPs\": [\n      \"None\"\n    ],\n    \"type\": \"ClusterIP\",\n    \"sessionAffinity\": \"None\",\n    \"ipFamilies\": [\n      \"IPv4\"\n    ],\n    \"ipFamilyPolicy\": \"SingleStack\",\n    \"internalTrafficPolicy\": \"Cluster\"\n  },\n  \"status\": {\n    \"loadBalancer\": {}\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: 0365047a-65d1-4d24-a5f1-ce6465ecbd6a\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 1814\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"Service\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"ports\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"dd29d40b-0cdc-4531-896a-67775878bdc3\",\n    \"resourceVersion\": \"206\",\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:clusterIP\": {},\n            \"f:internalTrafficPolicy\": {},\n            \"f:ports\": {\n              \".\": {},\n              \"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              },\n              \"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              }\n            },\n            \"f:selector\": {},\n            \"f:sessionAffinity\": {},\n            \"f:type\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"ports\": [\n      {\n        \"name\": \"named\",\n        \"protocol\": \"TCP\",\n        \"port\": 80,\n        \"targetPort\": \"http\"\n      },\n      {\n        \"name\": \"numeric\",\n        \"protocol\": \"TCP\",\n        \"port\": 81,\n        \"targetPort\": 8080\n      }\n    ],\n    \"selector\": {\n      \"fixture\": \"json\"\n    },\n    \"clusterIP\": \"None\",\n    \"clusterIPs\": [\n      \"None\"\n    ],\n    \"type\": \"ClusterIP\",\n    \"sessionAffinity\": \"None\",\n    \"ipFamilies\": [\n      \"IPv4\"\n    ],\n    \"ipFamilyPolicy\": \"SingleStack\",\n    \"internalTrafficPolicy\": \"Cluster\"\n  },\n  \"status\": {\n    \"loadBalancer\": {}\n  }\n}",
       "request": {
         "apiVersion": "v1",
         "kind": "Service",
@@ -809,7 +809,7 @@
         "apiVersion": "v1",
         "kind": "Service",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:53Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "managedFields": [
             {
               "apiVersion": "v1",
@@ -842,13 +842,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:53Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "ports",
           "namespace": "serialization-fixture",
           "resourceVersion": "206",
-          "uid": "d8adc0a9-2c6e-4f62-ab25-b17c2fac4c97"
+          "uid": "dd29d40b-0cdc-4531-896a-67775878bdc3"
         },
         "spec": {
           "clusterIP": "None",
@@ -890,14 +890,14 @@
       "method": "GET",
       "name": "service-read",
       "path": "/api/v1/namespaces/serialization-fixture/services/ports",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: 66827f38-9e6f-49fb-b9a1-ef1ef8da1d16\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 1814\r\ndate: Mon, 28 Sep 2026 20:54:53 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"Service\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"ports\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"d8adc0a9-2c6e-4f62-ab25-b17c2fac4c97\",\n    \"resourceVersion\": \"206\",\n    \"creationTimestamp\": \"2026-09-28T20:54:53Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:clusterIP\": {},\n            \"f:internalTrafficPolicy\": {},\n            \"f:ports\": {\n              \".\": {},\n              \"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              },\n              \"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              }\n            },\n            \"f:selector\": {},\n            \"f:sessionAffinity\": {},\n            \"f:type\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"ports\": [\n      {\n        \"name\": \"named\",\n        \"protocol\": \"TCP\",\n        \"port\": 80,\n        \"targetPort\": \"http\"\n      },\n      {\n        \"name\": \"numeric\",\n        \"protocol\": \"TCP\",\n        \"port\": 81,\n        \"targetPort\": 8080\n      }\n    ],\n    \"selector\": {\n      \"fixture\": \"json\"\n    },\n    \"clusterIP\": \"None\",\n    \"clusterIPs\": [\n      \"None\"\n    ],\n    \"type\": \"ClusterIP\",\n    \"sessionAffinity\": \"None\",\n    \"ipFamilies\": [\n      \"IPv4\"\n    ],\n    \"ipFamilyPolicy\": \"SingleStack\",\n    \"internalTrafficPolicy\": \"Cluster\"\n  },\n  \"status\": {\n    \"loadBalancer\": {}\n  }\n}",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: ac08ad70-e269-430d-934b-ee97ab2ebec4\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 1814\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"Service\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"ports\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"dd29d40b-0cdc-4531-896a-67775878bdc3\",\n    \"resourceVersion\": \"206\",\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:clusterIP\": {},\n            \"f:internalTrafficPolicy\": {},\n            \"f:ports\": {\n              \".\": {},\n              \"k:{\\\"port\\\":80,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              },\n              \"k:{\\\"port\\\":81,\\\"protocol\\\":\\\"TCP\\\"}\": {\n                \".\": {},\n                \"f:name\": {},\n                \"f:port\": {},\n                \"f:protocol\": {},\n                \"f:targetPort\": {}\n              }\n            },\n            \"f:selector\": {},\n            \"f:sessionAffinity\": {},\n            \"f:type\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"ports\": [\n      {\n        \"name\": \"named\",\n        \"protocol\": \"TCP\",\n        \"port\": 80,\n        \"targetPort\": \"http\"\n      },\n      {\n        \"name\": \"numeric\",\n        \"protocol\": \"TCP\",\n        \"port\": 81,\n        \"targetPort\": 8080\n      }\n    ],\n    \"selector\": {\n      \"fixture\": \"json\"\n    },\n    \"clusterIP\": \"None\",\n    \"clusterIPs\": [\n      \"None\"\n    ],\n    \"type\": \"ClusterIP\",\n    \"sessionAffinity\": \"None\",\n    \"ipFamilies\": [\n      \"IPv4\"\n    ],\n    \"ipFamilyPolicy\": \"SingleStack\",\n    \"internalTrafficPolicy\": \"Cluster\"\n  },\n  \"status\": {\n    \"loadBalancer\": {}\n  }\n}",
       "request": null,
       "response": {
         "apiVersion": "v1",
         "kind": "Service",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:53Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "managedFields": [
             {
               "apiVersion": "v1",
@@ -930,13 +930,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:53Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "ports",
           "namespace": "serialization-fixture",
           "resourceVersion": "206",
-          "uid": "d8adc0a9-2c6e-4f62-ab25-b17c2fac4c97"
+          "uid": "dd29d40b-0cdc-4531-896a-67775878bdc3"
         },
         "spec": {
           "clusterIP": "None",
@@ -978,8 +978,8 @@
       "method": "POST",
       "name": "crd-create",
       "path": "/apis/apiextensions.k8s.io/v1/customresourcedefinitions",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: 0992a96e-3fe3-4a00-84f2-73060dd47374\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 1737\r\ndate: Mon, 28 Sep 2026 20:54:53 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"CustomResourceDefinition\",\n  \"apiVersion\": \"apiextensions.k8s.io/v1\",\n  \"metadata\": {\n    \"name\": \"samples.fixture.rubix.test\",\n    \"uid\": \"ec228e94-fb4a-441d-9f91-c08d4030ae8d\",\n    \"resourceVersion\": \"207\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-28T20:54:53Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"apiextensions.k8s.io/v1\",\n        \"time\": \"2026-09-28T20:54:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:conversion\": {\n              \".\": {},\n              \"f:strategy\": {}\n            },\n            \"f:group\": {},\n            \"f:names\": {\n              \"f:kind\": {},\n              \"f:listKind\": {},\n              \"f:plural\": {},\n              \"f:singular\": {}\n            },\n            \"f:scope\": {},\n            \"f:versions\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"group\": \"fixture.rubix.test\",\n    \"names\": {\n      \"plural\": \"samples\",\n      \"singular\": \"sample\",\n      \"kind\": \"Sample\",\n      \"listKind\": \"SampleList\"\n    },\n    \"scope\": \"Namespaced\",\n    \"versions\": [\n      {\n        \"name\": \"v1\",\n        \"served\": true,\n        \"storage\": true,\n        \"schema\": {\n          \"openAPIV3Schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"spec\": {\n                \"type\": \"object\",\n                \"x-kubernetes-preserve-unknown-fields\": true\n              }\n            }\n          }\n        }\n      }\n    ],\n    \"conversion\": {\n      \"strategy\": \"None\"\n    }\n  },\n  \"status\": {\n    \"conditions\": null,\n    \"acceptedNames\": {\n      \"plural\": \"\",\n      \"kind\": \"\"\n    },\n    \"storedVersions\": [\n      \"v1\"\n    ]\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: e2332c3e-a10f-48d1-bad0-2742a426a942\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 1737\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"CustomResourceDefinition\",\n  \"apiVersion\": \"apiextensions.k8s.io/v1\",\n  \"metadata\": {\n    \"name\": \"samples.fixture.rubix.test\",\n    \"uid\": \"a226baab-e306-483c-87fd-dab25741e551\",\n    \"resourceVersion\": \"207\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"apiextensions.k8s.io/v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:conversion\": {\n              \".\": {},\n              \"f:strategy\": {}\n            },\n            \"f:group\": {},\n            \"f:names\": {\n              \"f:kind\": {},\n              \"f:listKind\": {},\n              \"f:plural\": {},\n              \"f:singular\": {}\n            },\n            \"f:scope\": {},\n            \"f:versions\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"spec\": {\n    \"group\": \"fixture.rubix.test\",\n    \"names\": {\n      \"plural\": \"samples\",\n      \"singular\": \"sample\",\n      \"kind\": \"Sample\",\n      \"listKind\": \"SampleList\"\n    },\n    \"scope\": \"Namespaced\",\n    \"versions\": [\n      {\n        \"name\": \"v1\",\n        \"served\": true,\n        \"storage\": true,\n        \"schema\": {\n          \"openAPIV3Schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"spec\": {\n                \"type\": \"object\",\n                \"x-kubernetes-preserve-unknown-fields\": true\n              }\n            }\n          }\n        }\n      }\n    ],\n    \"conversion\": {\n      \"strategy\": \"None\"\n    }\n  },\n  \"status\": {\n    \"conditions\": null,\n    \"acceptedNames\": {\n      \"plural\": \"\",\n      \"kind\": \"\"\n    },\n    \"storedVersions\": [\n      \"v1\"\n    ]\n  }\n}",
       "request": {
         "apiVersion": "apiextensions.k8s.io/v1",
         "kind": "CustomResourceDefinition",
@@ -1018,7 +1018,7 @@
         "apiVersion": "apiextensions.k8s.io/v1",
         "kind": "CustomResourceDefinition",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:53Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "generation": 1,
           "managedFields": [
             {
@@ -1043,12 +1043,12 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:53Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "samples.fixture.rubix.test",
           "resourceVersion": "207",
-          "uid": "ec228e94-fb4a-441d-9f91-c08d4030ae8d"
+          "uid": "a226baab-e306-483c-87fd-dab25741e551"
         },
         "spec": {
           "conversion": {
@@ -1098,14 +1098,14 @@
       "method": "GET",
       "name": "crd-ready",
       "path": "/apis/apiextensions.k8s.io/v1/customresourcedefinitions/samples.fixture.rubix.test",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: 64a4e037-1952-40eb-a66d-70e9b1d62b55\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 3286\r\ndate: Mon, 28 Sep 2026 20:54:53 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"CustomResourceDefinition\",\n  \"apiVersion\": \"apiextensions.k8s.io/v1\",\n  \"metadata\": {\n    \"name\": \"samples.fixture.rubix.test\",\n    \"uid\": \"ec228e94-fb4a-441d-9f91-c08d4030ae8d\",\n    \"resourceVersion\": \"210\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-28T20:54:53Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"apiextensions.k8s.io/v1\",\n        \"time\": \"2026-09-28T20:54:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:conversion\": {\n              \".\": {},\n              \"f:strategy\": {}\n            },\n            \"f:group\": {},\n            \"f:names\": {\n              \"f:kind\": {},\n              \"f:listKind\": {},\n              \"f:plural\": {},\n              \"f:singular\": {}\n            },\n            \"f:scope\": {},\n            \"f:versions\": {}\n          }\n        }\n      },\n      {\n        \"manager\": \"kube-apiserver\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"apiextensions.k8s.io/v1\",\n        \"time\": \"2026-09-28T20:54:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:status\": {\n            \"f:acceptedNames\": {\n              \"f:kind\": {},\n              \"f:listKind\": {},\n              \"f:plural\": {},\n              \"f:singular\": {}\n            },\n            \"f:conditions\": {\n              \"k:{\\\"type\\\":\\\"Established\\\"}\": {\n                \".\": {},\n                \"f:lastTransitionTime\": {},\n                \"f:message\": {},\n                \"f:reason\": {},\n                \"f:status\": {},\n                \"f:type\": {}\n              },\n              \"k:{\\\"type\\\":\\\"NamesAccepted\\\"}\": {\n                \".\": {},\n                \"f:lastTransitionTime\": {},\n                \"f:message\": {},\n                \"f:reason\": {},\n                \"f:status\": {},\n                \"f:type\": {}\n              }\n            }\n          }\n        },\n        \"subresource\": \"status\"\n      }\n    ]\n  },\n  \"spec\": {\n    \"group\": \"fixture.rubix.test\",\n    \"names\": {\n      \"plural\": \"samples\",\n      \"singular\": \"sample\",\n      \"kind\": \"Sample\",\n      \"listKind\": \"SampleList\"\n    },\n    \"scope\": \"Namespaced\",\n    \"versions\": [\n      {\n        \"name\": \"v1\",\n        \"served\": true,\n        \"storage\": true,\n        \"schema\": {\n          \"openAPIV3Schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"spec\": {\n                \"type\": \"object\",\n                \"x-kubernetes-preserve-unknown-fields\": true\n              }\n            }\n          }\n        }\n      }\n    ],\n    \"conversion\": {\n      \"strategy\": \"None\"\n    }\n  },\n  \"status\": {\n    \"conditions\": [\n      {\n        \"type\": \"NamesAccepted\",\n        \"status\": \"True\",\n        \"lastTransitionTime\": \"2026-09-28T20:54:53Z\",\n        \"reason\": \"NoConflicts\",\n        \"message\": \"no conflicts found\"\n      },\n      {\n        \"type\": \"Established\",\n        \"status\": \"True\",\n        \"lastTransitionTime\": \"2026-09-28T20:54:53Z\",\n        \"reason\": \"InitialNamesAccepted\",\n        \"message\": \"the initial names have been accepted\"\n      }\n    ],\n    \"acceptedNames\": {\n      \"plural\": \"samples\",\n      \"singular\": \"sample\",\n      \"kind\": \"Sample\",\n      \"listKind\": \"SampleList\"\n    },\n    \"storedVersions\": [\n      \"v1\"\n    ]\n  }\n}",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: 7729fb16-0771-4197-89d9-e1b94dd6b5ed\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 3286\r\ndate: Tue, 29 Sep 2026 06:48:50 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"CustomResourceDefinition\",\n  \"apiVersion\": \"apiextensions.k8s.io/v1\",\n  \"metadata\": {\n    \"name\": \"samples.fixture.rubix.test\",\n    \"uid\": \"a226baab-e306-483c-87fd-dab25741e551\",\n    \"resourceVersion\": \"210\",\n    \"generation\": 1,\n    \"creationTimestamp\": \"2026-09-29T06:48:50Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"apiextensions.k8s.io/v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \"f:conversion\": {\n              \".\": {},\n              \"f:strategy\": {}\n            },\n            \"f:group\": {},\n            \"f:names\": {\n              \"f:kind\": {},\n              \"f:listKind\": {},\n              \"f:plural\": {},\n              \"f:singular\": {}\n            },\n            \"f:scope\": {},\n            \"f:versions\": {}\n          }\n        }\n      },\n      {\n        \"manager\": \"kube-apiserver\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"apiextensions.k8s.io/v1\",\n        \"time\": \"2026-09-29T06:48:50Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:status\": {\n            \"f:acceptedNames\": {\n              \"f:kind\": {},\n              \"f:listKind\": {},\n              \"f:plural\": {},\n              \"f:singular\": {}\n            },\n            \"f:conditions\": {\n              \"k:{\\\"type\\\":\\\"Established\\\"}\": {\n                \".\": {},\n                \"f:lastTransitionTime\": {},\n                \"f:message\": {},\n                \"f:reason\": {},\n                \"f:status\": {},\n                \"f:type\": {}\n              },\n              \"k:{\\\"type\\\":\\\"NamesAccepted\\\"}\": {\n                \".\": {},\n                \"f:lastTransitionTime\": {},\n                \"f:message\": {},\n                \"f:reason\": {},\n                \"f:status\": {},\n                \"f:type\": {}\n              }\n            }\n          }\n        },\n        \"subresource\": \"status\"\n      }\n    ]\n  },\n  \"spec\": {\n    \"group\": \"fixture.rubix.test\",\n    \"names\": {\n      \"plural\": \"samples\",\n      \"singular\": \"sample\",\n      \"kind\": \"Sample\",\n      \"listKind\": \"SampleList\"\n    },\n    \"scope\": \"Namespaced\",\n    \"versions\": [\n      {\n        \"name\": \"v1\",\n        \"served\": true,\n        \"storage\": true,\n        \"schema\": {\n          \"openAPIV3Schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"spec\": {\n                \"type\": \"object\",\n                \"x-kubernetes-preserve-unknown-fields\": true\n              }\n            }\n          }\n        }\n      }\n    ],\n    \"conversion\": {\n      \"strategy\": \"None\"\n    }\n  },\n  \"status\": {\n    \"conditions\": [\n      {\n        \"type\": \"NamesAccepted\",\n        \"status\": \"True\",\n        \"lastTransitionTime\": \"2026-09-29T06:48:50Z\",\n        \"reason\": \"NoConflicts\",\n        \"message\": \"no conflicts found\"\n      },\n      {\n        \"type\": \"Established\",\n        \"status\": \"True\",\n        \"lastTransitionTime\": \"2026-09-29T06:48:50Z\",\n        \"reason\": \"InitialNamesAccepted\",\n        \"message\": \"the initial names have been accepted\"\n      }\n    ],\n    \"acceptedNames\": {\n      \"plural\": \"samples\",\n      \"singular\": \"sample\",\n      \"kind\": \"Sample\",\n      \"listKind\": \"SampleList\"\n    },\n    \"storedVersions\": [\n      \"v1\"\n    ]\n  }\n}",
       "request": null,
       "response": {
         "apiVersion": "apiextensions.k8s.io/v1",
         "kind": "CustomResourceDefinition",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:53Z",
+          "creationTimestamp": "2026-09-29T06:48:50Z",
           "generation": 1,
           "managedFields": [
             {
@@ -1130,7 +1130,7 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:53Z"
+              "time": "2026-09-29T06:48:50Z"
             },
             {
               "apiVersion": "apiextensions.k8s.io/v1",
@@ -1166,12 +1166,12 @@
               "manager": "kube-apiserver",
               "operation": "Update",
               "subresource": "status",
-              "time": "2026-09-28T20:54:53Z"
+              "time": "2026-09-29T06:48:50Z"
             }
           ],
           "name": "samples.fixture.rubix.test",
           "resourceVersion": "210",
-          "uid": "ec228e94-fb4a-441d-9f91-c08d4030ae8d"
+          "uid": "a226baab-e306-483c-87fd-dab25741e551"
         },
         "spec": {
           "conversion": {
@@ -1213,14 +1213,14 @@
           },
           "conditions": [
             {
-              "lastTransitionTime": "2026-09-28T20:54:53Z",
+              "lastTransitionTime": "2026-09-29T06:48:50Z",
               "message": "no conflicts found",
               "reason": "NoConflicts",
               "status": "True",
               "type": "NamesAccepted"
             },
             {
-              "lastTransitionTime": "2026-09-28T20:54:53Z",
+              "lastTransitionTime": "2026-09-29T06:48:50Z",
               "message": "the initial names have been accepted",
               "reason": "InitialNamesAccepted",
               "status": "True",
@@ -1238,8 +1238,8 @@
       "method": "POST",
       "name": "custom-create",
       "path": "/apis/fixture.rubix.test/v1/namespaces/serialization-fixture/samples",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: 135f1e62-d9a7-4713-bc96-2dd150c9e484\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 1228\r\ndate: Mon, 28 Sep 2026 20:54:55 GMT\r\n\r\n",
-      "raw_response": "{\n  \"apiVersion\": \"fixture.rubix.test/v1\",\n  \"kind\": \"Sample\",\n  \"metadata\": {\n    \"creationTimestamp\": \"2026-09-28T20:54:55Z\",\n    \"generation\": 1,\n    \"managedFields\": [\n      {\n        \"apiVersion\": \"fixture.rubix.test/v1\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \".\": {},\n            \"f:unknown\": {\n              \".\": {},\n              \"f:bool\": {},\n              \"f:decimal\": {},\n              \"f:integer\": {},\n              \"f:list\": {},\n              \"f:metadata\": {\n                \".\": {},\n                \"f:uid\": {}\n              },\n              \"f:null\": {}\n            }\n          }\n        },\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"time\": \"2026-09-28T20:54:55Z\"\n      }\n    ],\n    \"name\": \"arbitrary\",\n    \"namespace\": \"serialization-fixture\",\n    \"resourceVersion\": \"211\",\n    \"uid\": \"b24f725f-a8e5-48b0-8593-0e09a8eb4e6d\"\n  },\n  \"spec\": {\n    \"unknown\": {\n      \"bool\": false,\n      \"decimal\": 1.25,\n      \"integer\": 17,\n      \"list\": [\n        null,\n        true,\n        \"7\",\n        7,\n        {\n          \"nested\": \"value\"\n        }\n      ],\n      \"metadata\": {\n        \"uid\": \"user-value\"\n      },\n      \"null\": null\n    }\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: f7f5f6fd-23fc-41dc-a0b0-1c945a749ce4\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 1228\r\ndate: Tue, 29 Sep 2026 06:48:52 GMT\r\n\r\n",
+      "raw_response": "{\n  \"apiVersion\": \"fixture.rubix.test/v1\",\n  \"kind\": \"Sample\",\n  \"metadata\": {\n    \"creationTimestamp\": \"2026-09-29T06:48:52Z\",\n    \"generation\": 1,\n    \"managedFields\": [\n      {\n        \"apiVersion\": \"fixture.rubix.test/v1\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \".\": {},\n            \"f:unknown\": {\n              \".\": {},\n              \"f:bool\": {},\n              \"f:decimal\": {},\n              \"f:integer\": {},\n              \"f:list\": {},\n              \"f:metadata\": {\n                \".\": {},\n                \"f:uid\": {}\n              },\n              \"f:null\": {}\n            }\n          }\n        },\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"time\": \"2026-09-29T06:48:52Z\"\n      }\n    ],\n    \"name\": \"arbitrary\",\n    \"namespace\": \"serialization-fixture\",\n    \"resourceVersion\": \"211\",\n    \"uid\": \"1fc40734-5a6c-48ed-afca-11764e21d2db\"\n  },\n  \"spec\": {\n    \"unknown\": {\n      \"bool\": false,\n      \"decimal\": 1.25,\n      \"integer\": 17,\n      \"list\": [\n        null,\n        true,\n        \"7\",\n        7,\n        {\n          \"nested\": \"value\"\n        }\n      ],\n      \"metadata\": {\n        \"uid\": \"user-value\"\n      },\n      \"null\": null\n    }\n  }\n}",
       "request": {
         "apiVersion": "fixture.rubix.test/v1",
         "kind": "Sample",
@@ -1271,7 +1271,7 @@
         "apiVersion": "fixture.rubix.test/v1",
         "kind": "Sample",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:55Z",
+          "creationTimestamp": "2026-09-29T06:48:52Z",
           "generation": 1,
           "managedFields": [
             {
@@ -1296,13 +1296,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:55Z"
+              "time": "2026-09-29T06:48:52Z"
             }
           ],
           "name": "arbitrary",
           "namespace": "serialization-fixture",
           "resourceVersion": "211",
-          "uid": "b24f725f-a8e5-48b0-8593-0e09a8eb4e6d"
+          "uid": "1fc40734-5a6c-48ed-afca-11764e21d2db"
         },
         "spec": {
           "unknown": {
@@ -1331,14 +1331,14 @@
       "method": "GET",
       "name": "custom-read",
       "path": "/apis/fixture.rubix.test/v1/namespaces/serialization-fixture/samples/arbitrary",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: c727e391-2be1-4a5d-93d3-245dcd7e68ca\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 1228\r\ndate: Mon, 28 Sep 2026 20:54:55 GMT\r\n\r\n",
-      "raw_response": "{\n  \"apiVersion\": \"fixture.rubix.test/v1\",\n  \"kind\": \"Sample\",\n  \"metadata\": {\n    \"creationTimestamp\": \"2026-09-28T20:54:55Z\",\n    \"generation\": 1,\n    \"managedFields\": [\n      {\n        \"apiVersion\": \"fixture.rubix.test/v1\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \".\": {},\n            \"f:unknown\": {\n              \".\": {},\n              \"f:bool\": {},\n              \"f:decimal\": {},\n              \"f:integer\": {},\n              \"f:list\": {},\n              \"f:metadata\": {\n                \".\": {},\n                \"f:uid\": {}\n              },\n              \"f:null\": {}\n            }\n          }\n        },\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"time\": \"2026-09-28T20:54:55Z\"\n      }\n    ],\n    \"name\": \"arbitrary\",\n    \"namespace\": \"serialization-fixture\",\n    \"resourceVersion\": \"211\",\n    \"uid\": \"b24f725f-a8e5-48b0-8593-0e09a8eb4e6d\"\n  },\n  \"spec\": {\n    \"unknown\": {\n      \"bool\": false,\n      \"decimal\": 1.25,\n      \"integer\": 17,\n      \"list\": [\n        null,\n        true,\n        \"7\",\n        7,\n        {\n          \"nested\": \"value\"\n        }\n      ],\n      \"metadata\": {\n        \"uid\": \"user-value\"\n      },\n      \"null\": null\n    }\n  }\n}",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: 6fe6ec14-e11a-4074-9bf3-1619338396f9\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 1228\r\ndate: Tue, 29 Sep 2026 06:48:52 GMT\r\n\r\n",
+      "raw_response": "{\n  \"apiVersion\": \"fixture.rubix.test/v1\",\n  \"kind\": \"Sample\",\n  \"metadata\": {\n    \"creationTimestamp\": \"2026-09-29T06:48:52Z\",\n    \"generation\": 1,\n    \"managedFields\": [\n      {\n        \"apiVersion\": \"fixture.rubix.test/v1\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:spec\": {\n            \".\": {},\n            \"f:unknown\": {\n              \".\": {},\n              \"f:bool\": {},\n              \"f:decimal\": {},\n              \"f:integer\": {},\n              \"f:list\": {},\n              \"f:metadata\": {\n                \".\": {},\n                \"f:uid\": {}\n              },\n              \"f:null\": {}\n            }\n          }\n        },\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"time\": \"2026-09-29T06:48:52Z\"\n      }\n    ],\n    \"name\": \"arbitrary\",\n    \"namespace\": \"serialization-fixture\",\n    \"resourceVersion\": \"211\",\n    \"uid\": \"1fc40734-5a6c-48ed-afca-11764e21d2db\"\n  },\n  \"spec\": {\n    \"unknown\": {\n      \"bool\": false,\n      \"decimal\": 1.25,\n      \"integer\": 17,\n      \"list\": [\n        null,\n        true,\n        \"7\",\n        7,\n        {\n          \"nested\": \"value\"\n        }\n      ],\n      \"metadata\": {\n        \"uid\": \"user-value\"\n      },\n      \"null\": null\n    }\n  }\n}",
       "request": null,
       "response": {
         "apiVersion": "fixture.rubix.test/v1",
         "kind": "Sample",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:55Z",
+          "creationTimestamp": "2026-09-29T06:48:52Z",
           "generation": 1,
           "managedFields": [
             {
@@ -1363,13 +1363,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:55Z"
+              "time": "2026-09-29T06:48:52Z"
             }
           ],
           "name": "arbitrary",
           "namespace": "serialization-fixture",
           "resourceVersion": "211",
-          "uid": "b24f725f-a8e5-48b0-8593-0e09a8eb4e6d"
+          "uid": "1fc40734-5a6c-48ed-afca-11764e21d2db"
         },
         "spec": {
           "unknown": {
@@ -1398,7 +1398,7 @@
       "method": "GET",
       "name": "watch-before",
       "path": "/api/v1/namespaces/serialization-fixture/configmaps",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: 39c4cd39-0438-4a27-af14-6d0ec96e05a7\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 116\r\ndate: Mon, 28 Sep 2026 20:54:56 GMT\r\n\r\n",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: 6a8e280f-b569-4640-bf3e-f5c09a25530c\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 116\r\ndate: Tue, 29 Sep 2026 06:48:53 GMT\r\n\r\n",
       "raw_response": "{\n  \"kind\": \"ConfigMapList\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"resourceVersion\": \"211\"\n  },\n  \"items\": []\n}",
       "request": null,
       "response": {
@@ -1415,8 +1415,8 @@
       "method": "POST",
       "name": "watch-create",
       "path": "/api/v1/namespaces/serialization-fixture/configmaps",
-      "raw_headers": "HTTP/2 201 \r\naudit-id: 91a40f88-7da4-4121-a32d-f3227032d295\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 619\r\ndate: Mon, 28 Sep 2026 20:54:56 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"ConfigMap\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"watched\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"f8a32c1c-50f6-499f-b4cc-ec82d496095b\",\n    \"resourceVersion\": \"212\",\n    \"creationTimestamp\": \"2026-09-28T20:54:56Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:56Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:data\": {\n            \".\": {},\n            \"f:value\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"data\": {\n    \"value\": \"first\"\n  }\n}",
+      "raw_headers": "HTTP/2 201 \r\naudit-id: 7869d8e2-493e-43c4-89c2-716d5336a8ae\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 619\r\ndate: Tue, 29 Sep 2026 06:48:53 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"ConfigMap\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"watched\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"ce9a3df0-272d-44c7-95f6-61bda23f89a4\",\n    \"resourceVersion\": \"212\",\n    \"creationTimestamp\": \"2026-09-29T06:48:53Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:data\": {\n            \".\": {},\n            \"f:value\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"data\": {\n    \"value\": \"first\"\n  }\n}",
       "request": {
         "apiVersion": "v1",
         "data": {
@@ -1434,7 +1434,7 @@
         },
         "kind": "ConfigMap",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:56Z",
+          "creationTimestamp": "2026-09-29T06:48:53Z",
           "managedFields": [
             {
               "apiVersion": "v1",
@@ -1447,13 +1447,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:56Z"
+              "time": "2026-09-29T06:48:53Z"
             }
           ],
           "name": "watched",
           "namespace": "serialization-fixture",
           "resourceVersion": "212",
-          "uid": "f8a32c1c-50f6-499f-b4cc-ec82d496095b"
+          "uid": "ce9a3df0-272d-44c7-95f6-61bda23f89a4"
         }
       },
       "status": 201
@@ -1462,8 +1462,8 @@
       "method": "PUT",
       "name": "watch-update",
       "path": "/api/v1/namespaces/serialization-fixture/configmaps/watched",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: ded3430c-df9a-43b2-b918-1d752a6b5085\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 620\r\ndate: Mon, 28 Sep 2026 20:54:56 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"ConfigMap\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"watched\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"f8a32c1c-50f6-499f-b4cc-ec82d496095b\",\n    \"resourceVersion\": \"213\",\n    \"creationTimestamp\": \"2026-09-28T20:54:56Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-28T20:54:56Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:data\": {\n            \".\": {},\n            \"f:value\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"data\": {\n    \"value\": \"second\"\n  }\n}",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: fc519e0a-9793-4641-a6f6-d9d93b512af1\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 620\r\ndate: Tue, 29 Sep 2026 06:48:53 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"ConfigMap\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {\n    \"name\": \"watched\",\n    \"namespace\": \"serialization-fixture\",\n    \"uid\": \"ce9a3df0-272d-44c7-95f6-61bda23f89a4\",\n    \"resourceVersion\": \"213\",\n    \"creationTimestamp\": \"2026-09-29T06:48:53Z\",\n    \"managedFields\": [\n      {\n        \"manager\": \"curl\",\n        \"operation\": \"Update\",\n        \"apiVersion\": \"v1\",\n        \"time\": \"2026-09-29T06:48:53Z\",\n        \"fieldsType\": \"FieldsV1\",\n        \"fieldsV1\": {\n          \"f:data\": {\n            \".\": {},\n            \"f:value\": {}\n          }\n        }\n      }\n    ]\n  },\n  \"data\": {\n    \"value\": \"second\"\n  }\n}",
       "request": {
         "apiVersion": "v1",
         "data": {
@@ -1471,7 +1471,7 @@
         },
         "kind": "ConfigMap",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:56Z",
+          "creationTimestamp": "2026-09-29T06:48:53Z",
           "managedFields": [
             {
               "apiVersion": "v1",
@@ -1484,13 +1484,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:56Z"
+              "time": "2026-09-29T06:48:53Z"
             }
           ],
           "name": "watched",
           "namespace": "serialization-fixture",
           "resourceVersion": "212",
-          "uid": "f8a32c1c-50f6-499f-b4cc-ec82d496095b"
+          "uid": "ce9a3df0-272d-44c7-95f6-61bda23f89a4"
         }
       },
       "response": {
@@ -1500,7 +1500,7 @@
         },
         "kind": "ConfigMap",
         "metadata": {
-          "creationTimestamp": "2026-09-28T20:54:56Z",
+          "creationTimestamp": "2026-09-29T06:48:53Z",
           "managedFields": [
             {
               "apiVersion": "v1",
@@ -1513,13 +1513,13 @@
               },
               "manager": "curl",
               "operation": "Update",
-              "time": "2026-09-28T20:54:56Z"
+              "time": "2026-09-29T06:48:53Z"
             }
           ],
           "name": "watched",
           "namespace": "serialization-fixture",
           "resourceVersion": "213",
-          "uid": "f8a32c1c-50f6-499f-b4cc-ec82d496095b"
+          "uid": "ce9a3df0-272d-44c7-95f6-61bda23f89a4"
         }
       },
       "status": 200
@@ -1528,15 +1528,15 @@
       "method": "DELETE",
       "name": "watch-delete",
       "path": "/api/v1/namespaces/serialization-fixture/configmaps/watched",
-      "raw_headers": "HTTP/2 200 \r\naudit-id: 323f7af6-9343-4a5e-b6d1-20459892e974\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ncontent-length: 204\r\ndate: Mon, 28 Sep 2026 20:54:56 GMT\r\n\r\n",
-      "raw_response": "{\n  \"kind\": \"Status\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {},\n  \"status\": \"Success\",\n  \"details\": {\n    \"name\": \"watched\",\n    \"kind\": \"configmaps\",\n    \"uid\": \"f8a32c1c-50f6-499f-b4cc-ec82d496095b\"\n  }\n}",
+      "raw_headers": "HTTP/2 200 \r\naudit-id: e3fdf67a-e8ae-4649-92a5-be8e749eb493\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ncontent-length: 204\r\ndate: Tue, 29 Sep 2026 06:48:53 GMT\r\n\r\n",
+      "raw_response": "{\n  \"kind\": \"Status\",\n  \"apiVersion\": \"v1\",\n  \"metadata\": {},\n  \"status\": \"Success\",\n  \"details\": {\n    \"name\": \"watched\",\n    \"kind\": \"configmaps\",\n    \"uid\": \"ce9a3df0-272d-44c7-95f6-61bda23f89a4\"\n  }\n}",
       "request": null,
       "response": {
         "apiVersion": "v1",
         "details": {
           "kind": "configmaps",
           "name": "watched",
-          "uid": "f8a32c1c-50f6-499f-b4cc-ec82d496095b"
+          "uid": "ce9a3df0-272d-44c7-95f6-61bda23f89a4"
         },
         "kind": "Status",
         "metadata": {},
@@ -1581,29 +1581,29 @@
   "measurements": [
     {
       "component_process_count": 2,
-      "component_rss_sum_kib": 310188,
+      "component_rss_sum_kib": 319008,
       "components": [
         {
-          "VmHWM_kib": 54116,
-          "VmRSS_kib": 54116,
+          "VmHWM_kib": 52656,
+          "VmRSS_kib": 52416,
           "name": "kine",
           "pid": 21
         },
         {
-          "VmHWM_kib": 256072,
-          "VmRSS_kib": 256072,
+          "VmHWM_kib": 266592,
+          "VmRSS_kib": 266592,
           "name": "kube-apiserver",
           "pid": 28
         }
       ],
       "cycle": "1",
-      "readiness_seconds": 2.287657709
+      "readiness_seconds": 2.269768834
     }
   ],
   "raw_watch_lines": [
-    "{\"type\":\"ADDED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"f8a32c1c-50f6-499f-b4cc-ec82d496095b\",\"resourceVersion\":\"212\",\"creationTimestamp\":\"2026-09-28T20:54:56Z\",\"managedFields\":[{\"manager\":\"curl\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-28T20:54:56Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"first\"}}}\n",
-    "{\"type\":\"MODIFIED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"f8a32c1c-50f6-499f-b4cc-ec82d496095b\",\"resourceVersion\":\"213\",\"creationTimestamp\":\"2026-09-28T20:54:56Z\",\"managedFields\":[{\"manager\":\"curl\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-28T20:54:56Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n",
-    "{\"type\":\"DELETED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"f8a32c1c-50f6-499f-b4cc-ec82d496095b\",\"resourceVersion\":\"214\",\"creationTimestamp\":\"2026-09-28T20:54:56Z\",\"managedFields\":[{\"manager\":\"curl\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-28T20:54:56Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n"
+    "{\"type\":\"ADDED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"ce9a3df0-272d-44c7-95f6-61bda23f89a4\",\"resourceVersion\":\"212\",\"creationTimestamp\":\"2026-09-29T06:48:53Z\",\"managedFields\":[{\"manager\":\"curl\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-29T06:48:53Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"first\"}}}\n",
+    "{\"type\":\"MODIFIED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"ce9a3df0-272d-44c7-95f6-61bda23f89a4\",\"resourceVersion\":\"213\",\"creationTimestamp\":\"2026-09-29T06:48:53Z\",\"managedFields\":[{\"manager\":\"curl\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-29T06:48:53Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n",
+    "{\"type\":\"DELETED\",\"object\":{\"kind\":\"ConfigMap\",\"apiVersion\":\"v1\",\"metadata\":{\"name\":\"watched\",\"namespace\":\"serialization-fixture\",\"uid\":\"ce9a3df0-272d-44c7-95f6-61bda23f89a4\",\"resourceVersion\":\"214\",\"creationTimestamp\":\"2026-09-29T06:48:53Z\",\"managedFields\":[{\"manager\":\"curl\",\"operation\":\"Update\",\"apiVersion\":\"v1\",\"time\":\"2026-09-29T06:48:53Z\",\"fieldsType\":\"FieldsV1\",\"fieldsV1\":{\"f:data\":{\".\":{},\"f:value\":{}}}}]},\"data\":{\"value\":\"second\"}}}\n"
   ],
   "schema_version": 2,
   "shutdowns": [
@@ -1626,13 +1626,14 @@
   ],
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-assets/Cargo.toml": "fa6e114813b77bd1cabd0cd5649beb3f5e4596523ded506d2559643a7a845837",
     "crates/rubix-config/Cargo.toml": "1006c70dd15cdc9989a5fa5bd3afd31aff521bd4bf8544604abfdf59cfa7b5e3",
     "crates/rubix-containerd-api/Cargo.toml": "fabe2671f66933b38f470738230e6da84c9ac7e011ba6260efad2058a258cb48",
     "crates/rubix-cri/Cargo.toml": "0e2325f0054e50a30895d4ec08796e73a93818822f9b123aafc83680526d443c",
     "crates/rubix-kube/Cargo.toml": "d18ec49bde2cf845b913f4b6328054d119ca9dd8cdf2efe8012d263ea220dee5",
+    "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-supervisor/Cargo.toml": "562290095bcdcd4a5c7dac0154a5abc33fa41d05722673d1e2ce6cbc96389106",
     "crates/rubixctl/Cargo.toml": "24315c5d21030efaaa8e4e091ea0a1fd9fe178eebc7c61d3839eca26e4eb7439",
@@ -1780,5 +1781,5 @@
     "tools/upstream/Cargo.toml": "c8fa703091d7be15ac6882a0f27846d0e3f0b516c812e34950aac4275291ee33"
   },
   "status": "passed",
-  "watch_headers": "HTTP/2 200 \r\naudit-id: 8047e3c7-e8cf-4076-8449-6eea6149f83e\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: 6a36622e-1b7f-4cad-a149-79c606ff1ed7\r\nx-kubernetes-pf-prioritylevel-uid: 1afe5a22-815c-4bac-a07d-69f6476e238a\r\ndate: Mon, 28 Sep 2026 20:54:56 GMT\r\n\r\n"
+  "watch_headers": "HTTP/2 200 \r\naudit-id: 37bb2f63-e9d5-4b82-bf06-6ea093f39847\r\ncache-control: no-cache, private\r\ncontent-type: application/json\r\nx-kubernetes-pf-flowschema-uid: aee7c85d-bf57-46f6-9adc-1476a7330b5d\r\nx-kubernetes-pf-prioritylevel-uid: ece6f510-9edf-446f-abcb-d9983ff9b1cb\r\ndate: Tue, 29 Sep 2026 06:48:53 GMT\r\n\r\n"
 }

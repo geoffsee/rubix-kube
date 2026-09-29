@@ -19,56 +19,52 @@
 #5 transferring context: 8.14kB done
 #5 DONE 0.0s
 
-#6 [ 4/13] COPY extract.go /extract.go
+#6 [ 9/13] COPY system_test.go system/capture_test.go
 #6 CACHED
 
-#7 [ 2/13] WORKDIR /source
+#7 [ 7/13] COPY go.mod ./
 #7 CACHED
 
-#8 [ 6/13] WORKDIR /oracle
+#8 [ 5/13] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/network /oracle/system  && cp internal/runtime/network/ipv6.go /oracle/network/source.go  && cp internal/system/modules.go /oracle/system/source.go  && cp go.sum /oracle/go.sum  && sha256sum internal/runtime/network/ipv6.go internal/system/modules.go pkg/kubernetes/kubeproxy/flags.go internal/core/embedded/host.go types/const.go > /source.sha256
 #8 CACHED
 
-#9 [ 7/13] COPY go.mod ./
+#9 [ 2/13] WORKDIR /source
 #9 CACHED
 
-#10 [ 5/13] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/network /oracle/system  && cp internal/runtime/network/ipv6.go /oracle/network/source.go  && cp internal/system/modules.go /oracle/system/source.go  && cp go.sum /oracle/go.sum  && sha256sum internal/runtime/network/ipv6.go internal/system/modules.go pkg/kubernetes/kubeproxy/flags.go internal/core/embedded/host.go types/const.go > /source.sha256
+#10 [ 6/13] WORKDIR /oracle
 #10 CACHED
 
 #11 [ 3/13] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=1
 #11 CACHED
 
-#12 [ 8/13] COPY network_test.go network/capture_test.go
+#12 [10/13] COPY proxy_test.go proxy/capture_test.go
 #12 CACHED
 
-#13 [ 9/13] COPY system_test.go system/capture_test.go
+#13 [12/13] RUN for pkg in network system proxy embedded; do go test -mod=readonly -c -trimpath -o /$pkg.test ./$pkg || exit; sha256sum /$pkg.test >> /source.sha256; done
 #13 CACHED
 
-#14 [10/13] COPY proxy_test.go proxy/capture_test.go
-#14 DONE 0.0s
+#14 [ 8/13] COPY network_test.go network/capture_test.go
+#14 CACHED
 
-#15 [11/13] COPY embedded_test.go embedded/capture_test.go
-#15 DONE 0.0s
+#15 [ 4/13] COPY extract.go /extract.go
+#15 CACHED
 
-#16 [12/13] RUN for pkg in network system proxy embedded; do go test -mod=readonly -c -trimpath -o /$pkg.test ./$pkg || exit; sha256sum /$pkg.test >> /source.sha256; done
-#16 0.094 go: downloading github.com/rs/zerolog v1.33.0
-#16 0.997 go: downloading github.com/mattn/go-colorable v0.1.13
-#16 1.217 go: downloading github.com/mattn/go-isatty v0.0.20
-#16 1.449 go: downloading golang.org/x/sys v0.47.0
-#16 DONE 7.5s
+#16 [11/13] COPY embedded_test.go embedded/capture_test.go
+#16 CACHED
 
 #17 [13/13] WORKDIR /tmp
-#17 DONE 0.0s
+#17 CACHED
 
 #18 exporting to image
-#18 exporting layers
-#18 exporting layers 1.9s done
-#18 exporting manifest sha256:1255c9380e4a40cfa1b49d01548e736c9bf7dbdf94ab14544d4bc1c97a20a91c done
-#18 exporting config sha256:959d53608c5cf0438dcf93d264797196cd201dc738c9be7d3fe8df0f8da954e0 done
-#18 exporting attestation manifest sha256:46adc6926df9745e07ccf7904e5ff0cfd414532cc153717b601f01524ffb4d80 done
-#18 exporting manifest list sha256:69cc05c1d8d7fb7d856b6907e2b936be874fa6ec4d6c9ebbaf5b5c7ef9d5bdc8 done
-#18 naming to docker.io/library/rubix-constrained-policy-ybicam:latest done
-#18 unpacking to docker.io/library/rubix-constrained-policy-ybicam:latest
-#18 unpacking to docker.io/library/rubix-constrained-policy-ybicam:latest 0.7s done
-#18 DONE 2.6s
+#18 exporting layers done
+#18 exporting manifest sha256:be6801d0caa8b99550ee2f03849284f94bb0080d1fdaa7d6f8942486b38fd16c done
+#18 exporting config sha256:0d4cc51061531bda3f1cef3f4f37db62808f1415c4eb938922fafc2e11fb6c1b done
+#18 exporting attestation manifest sha256:3b80365b71b1527a299387e672262cde1ad2483e77c5d06eed93b3145e625545 done
+#18 exporting manifest list sha256:768aa4c1ad218921a0d1a157e91b7e4cf79ba08b7b1a489a0a00839b2dccf7f5 done
+#18 naming to docker.io/library/rubix-constrained-policy-vtt5fr:latest
+#18 naming to docker.io/library/rubix-constrained-policy-vtt5fr:latest done
+#18 unpacking to docker.io/library/rubix-constrained-policy-vtt5fr:latest
+#18 unpacking to docker.io/library/rubix-constrained-policy-vtt5fr:latest 0.6s done
+#18 DONE 0.7s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/v4csitgcelsb5nxtkrifxoscl
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/pelzdglhmno62p0dwy6lcua42

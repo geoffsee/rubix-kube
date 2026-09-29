@@ -4,10 +4,10 @@
     "build",
     "--progress=plain",
     "--tag",
-    "rubix-component-boundary-irtljv",
+    "rubix-component-boundary-htz7ii",
     "-f",
-    "/tmp/rubix-component-context-8VpRIf/experiments/component-boundary/Dockerfile",
-    "/tmp/rubix-component-context-8VpRIf"
+    "/tmp/rubix-component-context-1wFNWi/experiments/component-boundary/Dockerfile",
+    "/tmp/rubix-component-context-1wFNWi"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -16,11 +16,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 33205,
+  "owned_pid": 40805,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-F9hBpn",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-MSTf0e",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "eefa450af987ef633a92b3ea01f9c4308773502fd48802cf51b7428bb86c867d",
+  "stdout_sha256": "1d99b0d773600ff292cc1a9aa024a7ecb1b0410fb4a72c1a22c4ea2b758f29e2",
   "timeout": false
 }

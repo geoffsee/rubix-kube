@@ -3,10 +3,10 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-official-defaults-niwkzb-run-0",
-    "rubix-official-defaults-niwkzb-run-1",
-    "rubix-official-defaults-niwkzb-apiserver-0",
-    "rubix-official-defaults-niwkzb-apiserver-1"
+    "rubix-official-defaults-aepjrs-run-0",
+    "rubix-official-defaults-aepjrs-run-1",
+    "rubix-official-defaults-aepjrs-apiserver-0",
+    "rubix-official-defaults-aepjrs-apiserver-1"
   ],
   "errors": [],
   "hostnames": [
@@ -14,8 +14,8 @@
     "fixture-1"
   ],
   "identical_repeats": true,
-  "image": "rubix-official-defaults-niwkzb",
-  "image_id": "sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a",
+  "image": "rubix-official-defaults-aepjrs",
+  "image_id": "sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -30,38 +30,38 @@
         "User": "65532:65532",
         "WorkingDir": "/"
       },
-      "Created": "2026-09-28T17:07:37.633728638Z",
+      "Created": "2026-09-29T06:53:09.901617886Z",
       "Descriptor": {
-        "digest": "sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a",
+        "digest": "sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 855
       },
-      "Id": "sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a",
+      "Id": "sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T17:07:40.755167333Z",
-            "Ref": "u0ytqyjgrv3bgskqgm2sjl4xr"
+            "CreatedAt": "2026-09-29T06:53:14.661022638Z",
+            "Ref": "la03pgnlxrva9fqhjamz8k06h"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T17:07:40.374025208Z"
+        "LastTagTime": "2026-09-29T06:53:14.277769763Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-official-defaults-niwkzb@sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a"
+        "rubix-official-defaults-aepjrs@sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd"
       ],
       "RepoTags": [
-        "rubix-official-defaults-niwkzb:latest"
+        "rubix-official-defaults-aepjrs:latest"
       ],
       "RootFS": {
         "Layers": [
-          "sha256:f0d4a1a604345fc083ba9367cc9f7314e5765e3e7891bb53a65ebbe53f4175f5"
+          "sha256:846013a5c22c1a6eacf1c3ec5383065d37e311dc2cad1c48526b9b1df76f5345"
         ],
         "Type": "layers"
       },
-      "Size": 66059606
+      "Size": 66059592
     }
   ],
   "inputs": {
@@ -95,8 +95,8 @@
   "schema_version": 2,
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "rust-toolchain.toml": "479123a7389d25b7b45d10fb78ebd35ce5b57aa1cc9132165ec43f3bb5f160fb",
     "tools/defaults/Dockerfile": "f8cecc17d5e513fabcde160840a10d5c0fb5e7545c8f4b5329fedd5aa076e822",
     "tools/defaults/apiserver.expected.json": "a7538b7fc55682c4ad920085a12cb53451ad371786b79e957d8c79f29e1ee539",
