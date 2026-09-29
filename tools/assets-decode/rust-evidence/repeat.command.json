@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-decode-2d40f7aebb962c0ce755c02160b4061a-repeat",
+    "rubix-decode-5bb3ca7da148329846edf3dfbac0ca1d-repeat",
     "--init",
     "--network=none",
     "--read-only",
@@ -14,7 +14,7 @@
     "--cpus=2",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=16m",
-    "rubix-decode-2d40f7aebb962c0ce755c02160b4061a",
+    "rubix-decode-5bb3ca7da148329846edf3dfbac0ca1d",
     "/bin/sh",
     "-c",
     "sha256sum /decode-tests /decoded_elf-tests /fixture; printf 'RUBIX_SUITE decode\\n'; /decode-tests --nocapture --test-threads=1; decode_status=$?; printf 'RUBIX_SUITE decoded_elf\\n'; /decoded_elf-tests --nocapture --test-threads=1; elf_status=$?; /fixture namespace; inventory=$?; test \"$decode_status\" -eq 0 && test \"$elf_status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -26,11 +26,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 31947,
+  "owned_pid": 46308,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-0lszdf",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gbojVL",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "623eb6c258a434de86926076033c9bd0ed70f0de06e0ff67d583b691a573b667",
+  "stdout_sha256": "ed0cc71a0999f42c2569947dbd94674d4f38d21e3a41f213d68414c131b23f10",
   "timeout": false
 }

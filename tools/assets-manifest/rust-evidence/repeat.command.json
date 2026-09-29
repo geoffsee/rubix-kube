@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab-repeat",
+    "rubix-manifest-f164391d2bf57d3914af5f96f48df1d0-repeat",
     "--init",
     "--network=none",
     "--read-only",
@@ -14,7 +14,7 @@
     "--cpus=2",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=96m",
-    "rubix-manifest-ccce16b3479f2f2c39b6cf6e5c4478ab",
+    "rubix-manifest-f164391d2bf57d3914af5f96f48df1d0",
     "/bin/sh",
     "-c",
     "sha256sum /producer /manifest-tests /fixture && /fixture manifest-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -26,11 +26,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 32985,
+  "owned_pid": 46771,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-twOvsM",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-BKM007",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "7e8fca62f1c87bdde43951c973b1151c327c5ca56f4479fcbfdc2c9dce7d6ee2",
+  "stdout_sha256": "42669b5b25fba689d550461003571a9918410ea54d3d0824a1fdb55b33ee8afb",
   "timeout": false
 }

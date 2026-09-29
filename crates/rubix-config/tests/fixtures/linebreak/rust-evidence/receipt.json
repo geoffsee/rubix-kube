@@ -4,13 +4,13 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-config-linebreak-utbkpb-config-0"
+    "rubix-config-linebreak-8gghtb-config-0"
   ],
   "errors": [],
   "family": "config-linebreak",
   "identical_repeats": false,
-  "image": "rubix-config-linebreak-utbkpb",
-  "image_id": "sha256:f66f918f63a0b47a5ed6fdf18bfbdfd2f6592bb333ca29bef15ee58a7c97630b",
+  "image": "rubix-config-linebreak-8gghtb",
+  "image_id": "sha256:9fb3d433cd6c6a4a90af6a514bf1b4237278252d1c1cf62819598cfdc30f9a13",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -27,30 +27,30 @@
         "User": "65532:65532",
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T16:57:40.180215875Z",
+      "Created": "2026-09-29T07:30:41.103529511Z",
       "Descriptor": {
-        "digest": "sha256:f66f918f63a0b47a5ed6fdf18bfbdfd2f6592bb333ca29bef15ee58a7c97630b",
+        "digest": "sha256:9fb3d433cd6c6a4a90af6a514bf1b4237278252d1c1cf62819598cfdc30f9a13",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:f66f918f63a0b47a5ed6fdf18bfbdfd2f6592bb333ca29bef15ee58a7c97630b",
+      "Id": "sha256:9fb3d433cd6c6a4a90af6a514bf1b4237278252d1c1cf62819598cfdc30f9a13",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T16:57:43.053682459Z",
-            "Ref": "jsd4gps1vsc6p7kj2zwcxda55"
+            "CreatedAt": "2026-09-29T07:30:43.792315388Z",
+            "Ref": "sqnzbxt96abl0ur1337b6b9jy"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T16:57:42.427910542Z"
+        "LastTagTime": "2026-09-29T07:30:43.315020429Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-config-linebreak-utbkpb@sha256:f66f918f63a0b47a5ed6fdf18bfbdfd2f6592bb333ca29bef15ee58a7c97630b"
+        "rubix-config-linebreak-8gghtb@sha256:9fb3d433cd6c6a4a90af6a514bf1b4237278252d1c1cf62819598cfdc30f9a13"
       ],
       "RepoTags": [
-        "rubix-config-linebreak-utbkpb:latest"
+        "rubix-config-linebreak-8gghtb:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -63,14 +63,14 @@
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
           "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
           "sha256:89e8c1a498d66a2155a581feb21a032650ac64b05d4c00fec6594ac27484aa0e",
-          "sha256:75e6cf64606b18d90a56da3447f0ac378d504345baea501026e3fe2422238a07",
-          "sha256:6d46d82496cb6568795221c34c08bca75e24d7ddbbc5f6ba64ecd460f781f758",
-          "sha256:0fe983bec8d974d61e4359b42b79bcac50d521139db4ce6182103530e41231eb",
+          "sha256:f1e99a94e23e295174983d491fb8de3546d3918e3a44595fc8bbb3ccdb84b1c7",
+          "sha256:eb92c897f58cab0503833c1768b5151dc2e3067fd19ea3a4a79a51a66bbf27cf",
+          "sha256:b58c4ec225a6d657955898e3ceb970e7baf6765f2aca2eb75754cda1f590022c",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 324065079
+      "Size": 324065062
     }
   ],
   "outputs": {
@@ -83,12 +83,12 @@
   "repeat_count": 1,
   "retained_build_contexts": [],
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
-  "runner_sha256": "6e1e36786196ab56d9ef63e3c48002654754893af34bdf88797b9ec50b22299f",
+  "runner_sha256": "e8a87c8935f17b97062e613dc800c6809771f7617c3d0855d3e6f3dd76cb0ac1",
   "schema_version": 2,
   "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
   "source_sha256": {
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-config/tests/fixtures/linebreak/Capture.Dockerfile": "a7e7ce58fe73e1bb2bc6cb05e18024d519739104f77aace0b0ed4ac7226ecd98",
     "crates/rubix-config/tests/fixtures/linebreak/api_capture_test.go": "f25a6ab06c25c1ffad3608e05cf1a0d531ba50b70e010d8fbc48d05096891377",
     "crates/rubix-config/tests/fixtures/linebreak/file_capture_test.go": "2fefc13357b340f5bb3f58b227bca514e5836f45ae99e1462a7cf6d656bb1c03",
