@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-node-constrained-bb8923a22974414754049664e5f19c94-artifact:/out/host_network",
-    "/private/tmp/rubix-constrained-qualification-4b3bb45/assets/node-constrained-build/host_network"
+    "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7-artifact:/out/host_network",
+    "/private/tmp/rubix-node-83a2ccf/constrained-build/host_network"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 32304,
+  "owned_pid": 12447,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-BtalXr",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SPrrSp",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

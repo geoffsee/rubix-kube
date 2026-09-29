@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "curl",
+    "--fail",
+    "--location",
+    "--proto",
+    "=https",
+    "--max-time",
+    "600",
+    "--max-filesize",
+    "1073741824",
+    "--output",
+    "/tmp/rubix-vm-image-cache/.tmpyG1ZCv",
+    "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/alpine-3.24.2-aarch64-cloudinit-r0.qcow2"
+  ],
+  "cancelled": false,
+  "cleanup_complete": true,
+  "cleanup_errors": [],
+  "exit_code": 0,
+  "merged_output": false,
+  "output_eof": true,
+  "output_limit": false,
+  "owned_pid": 12466,
+  "owned_process_group_absent": true,
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-nmb4i4",
+  "spawned": true,
+  "stderr_sha256": "11eb045f25bfe9f7f931664d6844100e987ad4b7b067fe847971afb3e99c4947",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "timeout": false
+}

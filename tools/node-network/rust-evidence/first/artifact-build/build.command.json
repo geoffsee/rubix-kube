@@ -5,12 +5,12 @@
     "--platform=linux/arm64",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=a539444a09e838115d75a873c5475441",
+    "QUALIFICATION_NONCE=9612363503ffaa91a1f60994b62fbe82",
     "-t",
-    "rubix-node-network-a539444a09e838115d75a873c5475441",
+    "rubix-node-network-9612363503ffaa91a1f60994b62fbe82",
     "-f",
-    "/tmp/rubix-node-context-Knycjq/tools/node-network/Build.Dockerfile",
-    "/tmp/rubix-node-context-Knycjq"
+    "/tmp/rubix-node-context-43ZWUY/tools/node-network/Build.Dockerfile",
+    "/tmp/rubix-node-context-43ZWUY"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -19,11 +19,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 34228,
+  "owned_pid": 12050,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-qA9s6e",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-sPmZY3",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "9aba260b5a9c6e0155e767e4e36c90d8da3823792cc27b21f1c880993be26a81",
+  "stdout_sha256": "a376d2fc56d05fcd4f183708846e3729e17cefbc9bb08ee0936092340ddc6f47",
   "timeout": false
 }

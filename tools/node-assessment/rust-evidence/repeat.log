@@ -1,6 +1,6 @@
-096f1b9a3c1cd329577105f479ffbe6949772182da016cd6b1ba7699e4365f76  /out/host_preflight
-0b1060f7a341c8be50f79d72278f4c28f0770cacff7dd1e3b2aaac39168c8992  /out/iptables_probe
-9a858958d5719635e9d1560b4d4da4dfe21aed52632016ae38c915b0fa7f3581  /out/assess_host
+3126b5631594e6a6ece343e89f32a7fdb2b0d0118fc91c13f8df42581cbbb80e  /out/host_preflight
+ec72ce7b7dbcb77986e4a922ce6cd7316d3a633e0b63601b59bfd433ec5a0341  /out/iptables_probe
+ca781638e89cf9125d8e9795561f3cb60bc9f5d09f9d34af9aa498a6458c8c41  /out/assess_host
 7dc91587ca0250ce8db939376dd3dd431ae98e5e9296f5076283305d13caa2c5  /out/node-fixture
 
 running 10 tests
@@ -20,14 +20,14 @@ test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; fini
 
 running 1 test
 RUBIX_NODE_PROBE case=nft result=None joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=23
+RUBIX_NODE_PROBE case=legacy result=None joined=true reaped=true elapsed_ms=12
 RUBIX_NODE_PROBE case=empty result=None joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=10
-RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=13
+RUBIX_NODE_PROBE case=invalid-utf8 result=None joined=true reaped=true elapsed_ms=22
+RUBIX_NODE_PROBE case=nonzero result=Some(Command) joined=true reaped=true elapsed_ms=11
+RUBIX_NODE_PROBE case=missing result=Some(Command) joined=true reaped=false elapsed_ms=12
 RUBIX_NODE_PROBE case=denied result=Some(Command) joined=true reaped=false elapsed_ms=11
 RUBIX_NODE_PROBE case=overflow result=Some(Capture) joined=true reaped=true elapsed_ms=11
-RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2026
+RUBIX_NODE_PROBE case=deadline result=Some(Deadline) joined=true reaped=true elapsed_ms=2023
 RUBIX_NODE_PROBE case=cancel result=Some(Cancelled) joined=true reaped=true elapsed_ms=17
 RUBIX_NODE_PROBE case=held result=Some(Capture) joined=true reaped=true elapsed_ms=275
 RUBIX_NODE_PROBE_COMPLETE cases=11 external_sentinel_preserved=true

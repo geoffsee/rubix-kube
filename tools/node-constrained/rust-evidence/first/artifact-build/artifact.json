@@ -5,15 +5,15 @@
       "size": 5712504
     },
     "host_network": {
-      "sha256": "65e299036fd6820d62ec651078c1703fd978d44a8db60f8f1a8233f2ea269a03",
+      "sha256": "51fc2c19559ef4458001905ee490fd032e1ce582f6df77e03f84f88e341482fe",
       "size": 13749896
     },
     "host_preparation": {
-      "sha256": "98bebb17eb7ee6bb111003e8aecab5891b8e08b8fa392ded3fe96f820e190e6e",
+      "sha256": "a8f6ece4b66d2e1456885e9bcaac9243de15cbcd65dab948e705957b30ddcd35",
       "size": 13540288
     },
     "prepare_node_host": {
-      "sha256": "9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c",
+      "sha256": "924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a",
       "size": 13156744
     },
     "rubix_kube": {
@@ -21,6 +21,6 @@
       "size": 7169624
     }
   },
-  "revision": "4b3bb45695b655c9f4b4020254c21c7f991908ab",
+  "revision": "1ec26f681ae2bfd2c0366aef2981eed70d5125b5",
   "target": "aarch64-unknown-linux-musl"
 }
