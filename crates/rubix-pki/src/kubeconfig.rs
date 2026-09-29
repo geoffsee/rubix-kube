@@ -1,5 +1,5 @@
-use std::path::Path;
 use crate::{PkiError, atomic_write};
+use std::path::Path;
 
 pub fn ensure_kubeconfig(
     path: &Path,
