@@ -1,11 +1,12 @@
 use rcgen::{
-    BasicConstraints, CertificateParams, IsCa, KeyPair, KeyUsagePurpose, RsaKeySize, PKCS_RSA_SHA256,
+    BasicConstraints, CertificateParams, IsCa, KeyPair, KeyUsagePurpose, PKCS_RSA_SHA256,
+    RsaKeySize,
 };
 use std::fs;
 use std::io::Write;
-use std::path::Path;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 
 #[derive(Debug)]
 pub enum PkiError {
@@ -44,7 +45,8 @@ pub fn ensure_ca(cert_path: &Path, key_path: &Path, common_name: &str) -> Result
         fs::create_dir_all(parent)?;
     }
 
-    let mut params = CertificateParams::new(vec![common_name.to_string()]).map_err(PkiError::Rcgen)?;
+    let mut params =
+        CertificateParams::new(vec![common_name.to_string()]).map_err(PkiError::Rcgen)?;
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     params.key_usages = vec![
         KeyUsagePurpose::KeyCertSign,
@@ -52,9 +54,9 @@ pub fn ensure_ca(cert_path: &Path, key_path: &Path, common_name: &str) -> Result
         KeyUsagePurpose::DigitalSignature,
     ];
     let key_pair = KeyPair::generate_rsa_for(&PKCS_RSA_SHA256, RsaKeySize::_2048)?;
-    
+
     let cert = params.self_signed(&key_pair)?;
-    
+
     let pkcs8_pem = key_pair.serialize_pem();
     let key_pem = to_pkcs1_pem(&pkcs8_pem)?;
 
@@ -84,10 +86,11 @@ pub fn ensure_service_account_key(key_path: &Path) -> Result<(), PkiError> {
 
 fn to_pkcs1_pem(pkcs8_pem: &str) -> Result<String, PkiError> {
     use pkcs8::der::Decode;
-    
+
     let parsed_pem = pem::parse(pkcs8_pem).map_err(|_| PkiError::InvalidKey)?;
-    let pkcs8_doc = pkcs8::PrivateKeyInfo::from_der(parsed_pem.contents()).map_err(|_| PkiError::InvalidKey)?;
-    
+    let pkcs8_doc =
+        pkcs8::PrivateKeyInfo::from_der(parsed_pem.contents()).map_err(|_| PkiError::InvalidKey)?;
+
     let pkcs1_pem = pem::encode(&pem::Pem::new("RSA PRIVATE KEY", pkcs8_doc.private_key));
     Ok(pkcs1_pem)
 }
