@@ -31,7 +31,6 @@ contexts:
   name: {user_name}@{cluster_name}
 current-context: {user_name}@{cluster_name}
 kind: Config
-preferences: {{}}
 users:
 - name: {user_name}
   user:
@@ -74,7 +73,6 @@ contexts:
   name: {user_name}@{cluster_name}
 current-context: {user_name}@{cluster_name}
 kind: Config
-preferences: {{}}
 users:
 - name: {user_name}
   user:
