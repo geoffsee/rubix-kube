@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7-artifact:/out/constrained-guest",
-    "/private/tmp/rubix-node-83a2ccf/constrained-build/constrained-guest"
+    "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196-artifact:/out/constrained-guest",
+    "/private/tmp/constrained-build/constrained-guest"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 12448,
+  "owned_pid": 43139,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-PysKLk",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-gtiqm6",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

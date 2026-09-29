@@ -1,19 +1,19 @@
 {
-  "artifact_sha256": "623027dd4f85526713bb63e9db1624d5fc645dde0bbf9fc94b83a91ac946a329",
+  "artifact_sha256": "d97340d6261dbe636a7cf153036826ad93ce313ab0af40c140c971f71a21403b",
   "build_command": [
     "docker",
     "build",
     "--platform=linux/arm64",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=c768f5b5f5dd93b03bbbd780421132a7",
+    "QUALIFICATION_NONCE=15da1c842120f1c113d20e3aa9410196",
     "-t",
-    "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7",
+    "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196",
     "-f",
-    "/tmp/rubix-node-context-BpIHSo/tools/node-constrained/Build.Dockerfile",
-    "/tmp/rubix-node-context-BpIHSo"
+    "/tmp/rubix-node-context-HHqCMP/tools/node-constrained/Build.Dockerfile",
+    "/tmp/rubix-node-context-HHqCMP"
   ],
-  "build_sha256": "df7fcff781508ae685e9e54d61bc015a553d0e8057d10c0693ed3b237ed9e3cc",
+  "build_sha256": "49d9b19b4d9be49efdcb684d96b16a7dffa2354be18ae0c73f9a88095700fb38",
   "builder_sha256": {
     "constrained-guest": "b97498d7f2ad82d9d96207af1583187441e56221734cd01b01179a0e811b9b6b",
     "host_network": "51fc2c19559ef4458001905ee490fd032e1ce582f6df77e03f84f88e341482fe",
@@ -24,33 +24,33 @@
   "cancelled": false,
   "cleanup_errors": [],
   "commands": {
-    "build": "896f6e6990af0557a12e72c293634e664c28e4fd5aab06f0f5892fc13e81741a",
-    "cleanup-1": "6c7517608aee859da7153e749093b5ef03f6df90b96d2d2027d5f537647f7262",
-    "cleanup-2": "6f2b8d5f9ac65542531ca86f3ef700fad81a1f1345f39b7b197f3a3e85d7ca3d",
-    "cleanup-3": "81340d1d7bd67fe9e2ab77c8f176c502c9bffa2fe9c4e005e688570c18200232",
-    "cleanup-4": "bd8e3f2d5d23d9836b93f51bc21964a1d8cc0e1a46317d168eec4652c2400e07",
-    "cleanup-5": "55d32f9ab14723e2731f9119e87429e3e154a2568659d5d1875115e280f3a61b",
-    "copy-constrained-guest": "f68c1618cc637611d342b1a51b657cbd2e17cc4292b97e962982c2219d78d60a",
-    "copy-host_network": "b83479a292fe03ee9610fa032e64541d0044b596fb3052f7b63d48126b3a0772",
-    "copy-host_preparation": "4d25095ebf4fa05ba5d3c58caf8270094ff3366458755337be38169fbe4dc314",
-    "copy-prepare_node_host": "d14a446148d1b3bdbfb44ecbb141fc47831b65dbdc8a723890950e27a0b05c2e",
-    "copy-rubix_kube": "b4a8208a6ec0066d3fb291b6e36fea11cc08f6a3e742661c6c3f9f7de0887613",
-    "create": "fc086c04c36ffd8fc93aa39cb1680eb3234468a0d4671298d82be5270634619c",
-    "image-inspect": "533d84b2b08c99b04b9af5318d81ef2ad1516133c5a21616f1cf1a07e9212fce",
-    "test": "5479682465e245c13ea9ba05ef0cfd55d855f5983c990da41806a55dfe3b3223"
+    "build": "dc948010d95f74ce9e11a60b422ae048cc1a93da0f150581fcd682080a7be3e0",
+    "cleanup-1": "99245a144d71801556bf4058357b89f13debdb5148830d49ef22deeaabc7ce6e",
+    "cleanup-2": "97bab14a3e8421e2c175764235b4778960b589573bfbd694281c28426200c77c",
+    "cleanup-3": "01f46319963d9cb501d112b63f224f32577300daec76e08d9398ac9dfbb5aac2",
+    "cleanup-4": "72256e5184163365a3bf4964b25c98a8d15c4a410aef0eac05388c5fdc79c646",
+    "cleanup-5": "b2c3ac74e5eaa166d6d3ba0193da1b77f62bdf0a77b324076f517bad728bc2ca",
+    "copy-constrained-guest": "e70555642451cfc56a1c7914cdaf73b184eb22103eb9e3f6acfa8ca18174a3cb",
+    "copy-host_network": "75725a2d7260e1bb511a66df43276071634d65ffdd924fd87038f5d115c87c91",
+    "copy-host_preparation": "3eb191a97eafaeeeec820e1c46aecf5e8e1ee06b207e8cd8dc6e59d03784cc37",
+    "copy-prepare_node_host": "021a056e538a7480e784f19e0d848414f373b7ac173ee6d7ff2125453f334adc",
+    "copy-rubix_kube": "22e5f6be1a4e797114c887bf2bab34760f2f45513c1ad92ad112cafbda2b67ed",
+    "create": "5cb214554b5f77cd3dccfd1822b4a8cd701d8f5cac55c0bd2cb3b83fb4d31ef3",
+    "image-inspect": "60b6281335605cecf8b909ca3ee2a0a42b58972f533ec0376e760402c7f0b3cd",
+    "test": "e605cab45b258e938f65052b0635a669cc686c9a4523fcdb7579cf554dde8071"
   },
   "containers": [
-    "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7-artifact",
-    "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7-test"
+    "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196-artifact",
+    "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196-test"
   ],
   "dirty": false,
   "errors": [],
   "family": "constrained",
-  "image_id": "sha256:3b065ae50bf9e06a2b000ce0c377f08ad82083d1c077973eec01218420b5c800",
-  "nonce": "c768f5b5f5dd93b03bbbd780421132a7",
+  "image_id": "sha256:43977c5cbdb25547bb01337c81659b3c696e7d70b73ee91e1d9e6612297e1075",
+  "nonce": "15da1c842120f1c113d20e3aa9410196",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "1ec26f681ae2bfd2c0366aef2981eed70d5125b5",
+  "revision": "3acfb17f71f8396c6c816581e2330670e061de58",
   "runs": {
     "test": {
       "binary_sha256": {
@@ -64,7 +64,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7-test",
+        "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196-test",
         "--network=none",
         "--read-only",
         "--cap-drop=ALL",
@@ -72,18 +72,18 @@
         "--pids-limit=64",
         "--memory=512m",
         "--cpus=2",
-        "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7",
+        "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196",
         "/bin/sh",
         "-c",
         "sha256sum /out/prepare_node_host /out/rubix_kube /out/host_preparation /out/host_network /out/constrained-guest && for binary in rubix_kube host_preparation host_network; do echo TEST_${binary}_BEGIN; /out/$binary || exit 1; echo TEST_${binary}_END; done && for case in version help print-config; do echo CLI_${case}_BEGIN; if [ \"$case\" = print-config ]; then /out/prepare_node_host --container-mode --container-runtime-endpoint=unix:///tmp/external-runtime/containerd.sock --print-config 2>&1 || exit 1; else /out/prepare_node_host --$case 2>&1 || exit 1; fi; echo CLI_${case}_END; done"
       ],
-      "raw_sha256": "89cbee49f8bb95eb0366b2625b6e641f5da9291927392f49d760e3b263409d32",
+      "raw_sha256": "965ae4eb645dc820273ec80af3a94b50c3d75bf036e1e12c91bf701328c4c264",
       "records": {
         "safe_tests_and_cli": true
       }
     }
   },
   "schema": 3,
-  "source_sha256": "2624c25ccdf9f391ad2b4bdc74cfa1e0b14849f5aaa67420f7a3ce4eac83fa0c",
-  "tag": "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7"
+  "source_sha256": "8d4613290c4424e230225f16120ce265435f6ac3e6726a8a3710d6402ba8c3f5",
+  "tag": "rubix-node-constrained-15da1c842120f1c113d20e3aa9410196"
 }

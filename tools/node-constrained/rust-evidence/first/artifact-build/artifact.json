@@ -21,6 +21,6 @@
       "size": 7169624
     }
   },
-  "revision": "1ec26f681ae2bfd2c0366aef2981eed70d5125b5",
+  "revision": "3acfb17f71f8396c6c816581e2330670e061de58",
   "target": "aarch64-unknown-linux-musl"
 }
