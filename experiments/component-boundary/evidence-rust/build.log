@@ -5,7 +5,7 @@
 #1 DONE 0.0s
 
 #2 [internal] load metadata for docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
-#2 DONE 1.6s
+#2 DONE 0.0s
 
 #3 [internal] load .dockerignore
 #3 transferring context: 2B done
@@ -22,7 +22,7 @@
 #6 CACHED
 
 #7 [internal] load build context
-#7 transferring context: 3.72MB 0.1s done
+#7 transferring context: 3.81MB 0.1s done
 #7 DONE 0.1s
 
 #8 [build 1/3] WORKDIR /source
@@ -32,162 +32,168 @@
 #9 CACHED
 
 #10 [build 3/3] RUN cargo build --locked --release -p rubix-dev --bin rubix-component-boundary && target/release/rubix-component-boundary stage-sources
-#10 0.117 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
-#10 1.294 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
-#10 1.302 info: downloading 3 components
-#10 4.261     Updating crates.io index
-#10 6.406  Downloading crates ...
-#10 6.851   Downloaded adler2 v2.0.1
-#10 6.978   Downloaded errno v0.3.14
-#10 7.034   Downloaded crypto-common v0.2.2
-#10 7.055   Downloaded block-buffer v0.12.1
-#10 7.127   Downloaded equivalent v1.0.2
-#10 7.148   Downloaded cpufeatures v0.3.1
-#10 7.163   Downloaded cfg-if v1.0.5
-#10 7.165   Downloaded serde_spanned v1.1.1
-#10 7.176   Downloaded itoa v1.0.18
-#10 7.344   Downloaded pin-project-lite v0.2.17
-#10 7.350   Downloaded pkg-config v0.3.34
-#10 7.353   Downloaded quote v1.0.47
-#10 7.355   Downloaded signal-hook-registry v1.4.8
-#10 7.356   Downloaded zmij v1.0.23
-#10 7.358   Downloaded zstd v0.13.3
-#10 7.362   Downloaded digest v0.11.3
-#10 7.367   Downloaded filetime v0.2.29
-#10 7.368   Downloaded fastrand v2.5.0
-#10 7.368   Downloaded toml_datetime v0.7.5+spec-1.1.0
-#10 7.369   Downloaded toml_writer v1.1.2+spec-1.1.0
-#10 7.392   Downloaded simd-adler32 v0.3.10
-#10 7.453   Downloaded sha2 v0.11.0
-#10 7.458   Downloaded once_cell v1.21.4
-#10 7.466   Downloaded zstd-safe v7.3.0
-#10 7.480   Downloaded unicode-ident v1.0.26
-#10 7.491   Downloaded toml_parser v1.0.5+spec-1.0.0
-#10 7.496   Downloaded crc32fast v1.5.2
-#10 7.499   Downloaded find-msvc-tools v0.1.14
-#10 7.500   Downloaded jobserver v0.1.35
-#10 7.511   Downloaded tempfile v3.27.0
-#10 7.528   Downloaded shlex v2.0.1
-#10 7.569   Downloaded bitflags v2.13.2
-#10 7.573   Downloaded serde_derive v1.0.228
-#10 7.600   Downloaded toml v0.9.6
-#10 7.606   Downloaded hybrid-array v0.4.15
-#10 7.609   Downloaded proc-macro2 v1.0.107
-#10 7.651   Downloaded serde_core v1.0.228
-#10 7.687   Downloaded flate2 v1.1.10
-#10 7.691   Downloaded base64 v0.22.1
-#10 7.731   Downloaded miniz_oxide v0.9.1
-#10 7.749   Downloaded serde v1.0.228
-#10 7.753   Downloaded tar v0.4.46
-#10 7.756   Downloaded getrandom v0.4.3
-#10 7.805   Downloaded mio v1.2.3
-#10 7.811   Downloaded typenum v1.20.1
-#10 7.820   Downloaded typed-path v0.12.3
-#10 7.828   Downloaded memchr v2.8.3
-#10 7.835   Downloaded indexmap v2.11.3
-#10 7.862   Downloaded cc v1.5.1
-#10 7.964   Downloaded zip v8.6.0
-#10 7.991   Downloaded hashbrown v0.15.5
-#10 8.023   Downloaded regex v1.13.1
-#10 8.028   Downloaded serde_json v1.0.151
-#10 8.123   Downloaded winnow v0.7.15
-#10 8.133   Downloaded aho-corasick v1.1.5
-#10 8.407   Downloaded syn v2.0.119
-#10 8.478   Downloaded regex-syntax v0.8.11
-#10 8.595   Downloaded rustix v1.1.5
-#10 9.129   Downloaded regex-automata v0.4.18
-#10 9.346   Downloaded zstd-sys v2.1.0+zstd.1.5.7
-#10 9.435   Downloaded libc v0.2.189
-#10 9.499   Downloaded tokio v1.53.1
-#10 10.67   Downloaded linux-raw-sys v0.12.1
-#10 10.77    Compiling libc v0.2.189
-#10 10.77    Compiling proc-macro2 v1.0.107
-#10 10.77    Compiling quote v1.0.47
-#10 10.77    Compiling cfg-if v1.0.5
-#10 10.77    Compiling shlex v2.0.1
-#10 10.77    Compiling serde_core v1.0.228
-#10 10.77    Compiling find-msvc-tools v0.1.14
-#10 10.77    Compiling pkg-config v0.3.34
-#10 10.77    Compiling unicode-ident v1.0.26
-#10 10.77    Compiling memchr v2.8.3
-#10 10.77    Compiling typenum v1.20.1
-#10 10.77    Compiling crc32fast v1.5.2
-#10 10.78    Compiling getrandom v0.4.3
-#10 10.78    Compiling adler2 v2.0.1
-#10 10.78    Compiling simd-adler32 v0.3.10
-#10 10.79    Compiling rustix v1.1.5
-#10 10.84    Compiling zmij v1.0.23
-#10 10.84    Compiling zstd-safe v7.3.0
-#10 10.85    Compiling linux-raw-sys v0.12.1
-#10 10.86    Compiling hashbrown v0.15.5
-#10 10.90    Compiling miniz_oxide v0.9.1
-#10 10.98    Compiling serde_json v1.0.151
-#10 11.03    Compiling aho-corasick v1.1.5
-#10 11.04    Compiling regex-syntax v0.8.11
-#10 11.07    Compiling bitflags v2.13.2
-#10 11.10    Compiling equivalent v1.0.2
-#10 11.12    Compiling serde v1.0.228
-#10 11.13    Compiling winnow v0.7.15
-#10 11.15    Compiling fastrand v2.5.0
-#10 11.16    Compiling flate2 v1.1.10
-#10 11.25    Compiling hybrid-array v0.4.15
-#10 11.25    Compiling indexmap v2.11.3
-#10 11.30    Compiling typed-path v0.12.3
-#10 11.37    Compiling itoa v1.0.18
-#10 11.55    Compiling jobserver v0.1.35
-#10 11.60    Compiling once_cell v1.21.4
-#10 11.64    Compiling crypto-common v0.2.2
-#10 11.66    Compiling syn v2.0.119
-#10 11.67    Compiling block-buffer v0.12.1
-#10 11.72    Compiling cc v1.5.1
-#10 11.73    Compiling pin-project-lite v0.2.17
-#10 11.78    Compiling errno v0.3.14
-#10 11.79    Compiling cpufeatures v0.3.1
-#10 11.80    Compiling mio v1.2.3
-#10 11.80    Compiling filetime v0.2.29
-#10 11.82    Compiling base64 v0.22.1
-#10 11.87    Compiling signal-hook-registry v1.4.8
-#10 11.93    Compiling tar v0.4.46
-#10 11.98    Compiling tokio v1.53.1
-#10 12.03    Compiling digest v0.11.3
-#10 12.10    Compiling sha2 v0.11.0
-#10 12.11    Compiling zip v8.6.0
-#10 12.14    Compiling toml_parser v1.0.5+spec-1.0.0
-#10 12.17    Compiling regex-automata v0.4.18
-#10 12.22    Compiling serde_spanned v1.1.1
-#10 12.24    Compiling toml_datetime v0.7.5+spec-1.1.0
-#10 12.59    Compiling toml v0.9.6
-#10 12.74    Compiling zstd-sys v2.1.0+zstd.1.5.7
-#10 12.96    Compiling serde_derive v1.0.228
-#10 13.00    Compiling tempfile v3.27.0
-#10 13.69    Compiling regex v1.13.1
-#10 20.27    Compiling zstd v0.13.3
-#10 20.33    Compiling rubix-dev v0.1.0 (/source/tools/dev)
-#10 31.94     Finished `release` profile [optimized + debuginfo] target(s) in 27.70s
-#10 DONE 32.5s
+#10 0.122 info: syncing channel updates for 1.97.1-aarch64-unknown-linux-gnu
+#10 1.325 info: latest update on 2026-07-16 for version 1.97.1 (8bab26f4f 2026-07-14)
+#10 1.332 info: downloading 3 components
+#10 10.59     Updating crates.io index
+#10 12.80  Downloading crates ...
+#10 13.11   Downloaded adler2 v2.0.1
+#10 13.31   Downloaded itoa v1.0.18
+#10 13.34   Downloaded zmij v1.0.23
+#10 13.36   Downloaded cpufeatures v0.3.1
+#10 13.50   Downloaded block-buffer v0.12.1
+#10 13.50   Downloaded cfg-if v1.0.5
+#10 13.51   Downloaded serde_spanned v1.1.1
+#10 13.53   Downloaded errno v0.3.14
+#10 13.54   Downloaded equivalent v1.0.2
+#10 13.56   Downloaded pin-project-lite v0.2.17
+#10 13.57   Downloaded zstd-safe v7.3.0
+#10 13.57   Downloaded shlex v2.0.1
+#10 13.57   Downloaded signal-hook-registry v1.4.8
+#10 13.60   Downloaded toml_datetime v0.7.5+spec-1.1.0
+#10 13.60   Downloaded jobserver v0.1.35
+#10 13.61   Downloaded pkg-config v0.3.34
+#10 13.62   Downloaded fastrand v2.5.0
+#10 13.62   Downloaded filetime v0.2.29
+#10 13.62   Downloaded crypto-common v0.2.2
+#10 13.63   Downloaded toml_writer v1.1.2+spec-1.1.0
+#10 13.64   Downloaded proc-macro2 v1.0.107
+#10 13.66   Downloaded find-msvc-tools v0.1.14
+#10 13.66   Downloaded zstd v0.13.3
+#10 13.66   Downloaded quote v1.0.47
+#10 13.68   Downloaded simd-adler32 v0.3.10
+#10 13.70   Downloaded toml_parser v1.0.5+spec-1.0.0
+#10 13.71   Downloaded hybrid-array v0.4.15
+#10 13.71   Downloaded digest v0.11.3
+#10 13.71   Downloaded unicode-ident v1.0.26
+#10 13.72   Downloaded once_cell v1.21.4
+#10 13.72   Downloaded tempfile v3.27.0
+#10 13.72   Downloaded sha2 v0.11.0
+#10 13.73   Downloaded serde_derive v1.0.228
+#10 13.76   Downloaded crc32fast v1.5.2
+#10 13.76   Downloaded toml v0.9.6
+#10 13.77   Downloaded getrandom v0.4.3
+#10 13.77   Downloaded bitflags v2.13.2
+#10 13.78   Downloaded miniz_oxide v0.9.1
+#10 13.80   Downloaded serde_core v1.0.228
+#10 13.81   Downloaded flate2 v1.1.10
+#10 13.81   Downloaded serde v1.0.228
+#10 13.83   Downloaded tar v0.4.46
+#10 13.84   Downloaded base64 v0.22.1
+#10 13.85   Downloaded cc v1.5.1
+#10 13.86   Downloaded memchr v2.8.3
+#10 13.87   Downloaded typenum v1.20.1
+#10 13.87   Downloaded mio v1.2.3
+#10 13.89   Downloaded typed-path v0.12.3
+#10 13.90   Downloaded indexmap v2.11.3
+#10 13.93   Downloaded aho-corasick v1.1.5
+#10 13.93   Downloaded zip v8.6.0
+#10 13.95   Downloaded regex v1.13.1
+#10 13.95   Downloaded hashbrown v0.15.5
+#10 13.98   Downloaded serde_json v1.0.151
+#10 13.99   Downloaded winnow v0.7.15
+#10 14.08   Downloaded syn v2.0.119
+#10 14.16   Downloaded regex-syntax v0.8.11
+#10 14.18   Downloaded rustix v1.1.5
+#10 14.24   Downloaded regex-automata v0.4.18
+#10 14.33   Downloaded zstd-sys v2.1.0+zstd.1.5.7
+#10 14.37   Downloaded libc v0.2.189
+#10 14.43   Downloaded tokio v1.53.1
+#10 14.58   Downloaded linux-raw-sys v0.12.1
+#10 14.66    Compiling libc v0.2.189
+#10 14.66    Compiling proc-macro2 v1.0.107
+#10 14.66    Compiling cfg-if v1.0.5
+#10 14.66    Compiling quote v1.0.47
+#10 14.66    Compiling find-msvc-tools v0.1.14
+#10 14.67    Compiling shlex v2.0.1
+#10 14.67    Compiling serde_core v1.0.228
+#10 14.67    Compiling pkg-config v0.3.34
+#10 14.67    Compiling unicode-ident v1.0.26
+#10 14.67    Compiling typenum v1.20.1
+#10 14.67    Compiling memchr v2.8.3
+#10 14.67    Compiling crc32fast v1.5.2
+#10 14.67    Compiling adler2 v2.0.1
+#10 14.67    Compiling getrandom v0.4.3
+#10 14.68    Compiling zmij v1.0.23
+#10 14.68    Compiling rustix v1.1.5
+#10 14.69    Compiling simd-adler32 v0.3.10
+#10 14.74    Compiling zstd-safe v7.3.0
+#10 14.75    Compiling serde v1.0.228
+#10 14.79    Compiling miniz_oxide v0.9.1
+#10 14.80    Compiling regex-syntax v0.8.11
+#10 14.85    Compiling serde_json v1.0.151
+#10 14.86    Compiling winnow v0.7.15
+#10 14.87    Compiling equivalent v1.0.2
+#10 14.94    Compiling aho-corasick v1.1.5
+#10 14.96    Compiling hashbrown v0.15.5
+#10 14.97    Compiling bitflags v2.13.2
+#10 14.99    Compiling linux-raw-sys v0.12.1
+#10 15.02    Compiling typed-path v0.12.3
+#10 15.03    Compiling flate2 v1.1.10
+#10 15.13    Compiling hybrid-array v0.4.15
+#10 15.15    Compiling itoa v1.0.18
+#10 15.26    Compiling once_cell v1.21.4
+#10 15.32    Compiling jobserver v0.1.35
+#10 15.32    Compiling syn v2.0.119
+#10 15.34    Compiling pin-project-lite v0.2.17
+#10 15.35    Compiling fastrand v2.5.0
+#10 15.40    Compiling errno v0.3.14
+#10 15.41    Compiling cc v1.5.1
+#10 15.42    Compiling block-buffer v0.12.1
+#10 15.43    Compiling crypto-common v0.2.2
+#10 15.45    Compiling signal-hook-registry v1.4.8
+#10 15.46    Compiling indexmap v2.11.3
+#10 15.49    Compiling filetime v0.2.29
+#10 15.50    Compiling cpufeatures v0.3.1
+#10 15.51    Compiling mio v1.2.3
+#10 15.58    Compiling tar v0.4.46
+#10 15.60    Compiling base64 v0.22.1
+#10 15.68    Compiling tokio v1.53.1
+#10 15.75    Compiling toml_parser v1.0.5+spec-1.0.0
+#10 15.78    Compiling digest v0.11.3
+#10 15.83    Compiling regex-automata v0.4.18
+#10 15.84    Compiling serde_spanned v1.1.1
+#10 15.85    Compiling toml_datetime v0.7.5+spec-1.1.0
+#10 15.86    Compiling zip v8.6.0
+#10 15.89    Compiling sha2 v0.11.0
+#10 16.03    Compiling toml v0.9.6
+#10 16.20    Compiling zstd-sys v2.1.0+zstd.1.5.7
+#10 16.37    Compiling serde_derive v1.0.228
+#10 16.55    Compiling tempfile v3.27.0
+#10 17.14    Compiling regex v1.13.1
+#10 23.57    Compiling zstd v0.13.3
+#10 23.64    Compiling rubix-dev v0.1.0 (/source/tools/dev)
+#10 34.58     Finished `release` profile [optimized + debuginfo] target(s) in 24.01s
+#10 DONE 34.7s
 
 #11 [stage-2 2/5] COPY --from=build /source/target/release/rubix-component-boundary /fixture
 #11 DONE 0.0s
 
 #12 [stage-2 3/5] COPY --from=build /experiment/sources /experiment/sources
-#12 DONE 0.1s
+#12 DONE 0.0s
 
 #13 [stage-2 4/5] COPY experiments/component-boundary/inputs.json /experiment/inputs.json
-#13 DONE 0.1s
+#13 DONE 0.0s
 
 #14 [stage-2 5/5] RUN /fixture fetch && mkdir /evidence /state && chown -R 65532:65532 /evidence /state && chmod 0700 /evidence /state
-#14 DONE 16.1s
+#14 ...
+
+#4 [base 1/2] FROM docker.io/library/rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97
+#4 CACHED
+
+#14 [stage-2 5/5] RUN /fixture fetch && mkdir /evidence /state && chown -R 65532:65532 /evidence /state && chmod 0700 /evidence /state
+#14 DONE 207.5s
 
 #15 exporting to image
 #15 exporting layers
-#15 exporting layers 2.7s done
-#15 exporting manifest sha256:c7eefc3c055014699afe2a5a6e567e3c2fb7cc151c0cfe7a1eb39dde2dbdbb0e done
-#15 exporting config sha256:f8856a00ca918d97ed919919fa69853986b591c5997eb48adb8aedeb32b47f49 done
-#15 exporting attestation manifest sha256:bc56af50d7340b6142f97c404e4f2396feab9a038de08734769ab79807e48095 done
-#15 exporting manifest list sha256:d539df0a035cee73a5ae0dc7c8d11393318f1eecd1a297e87b26f7195b8751a7 done
-#15 naming to docker.io/library/rubix-component-boundary-wl54i1:latest done
-#15 unpacking to docker.io/library/rubix-component-boundary-wl54i1:latest
-#15 unpacking to docker.io/library/rubix-component-boundary-wl54i1:latest 0.6s done
-#15 DONE 3.3s
+#15 exporting layers 2.4s done
+#15 exporting manifest sha256:deb7433fea95607072c128ccc7ed131463c288a82f49005cd89bd9e54bbe6203 done
+#15 exporting config sha256:fb04bdd7053f65d803145aafb6c0da2b58c6ebaabb89728e7295e0fb0fcd4d95 done
+#15 exporting attestation manifest sha256:549ecd879bae3e5a2c84c32919a38e73634e408496c8c0b88267de6a4db3cc86 done
+#15 exporting manifest list sha256:793e395f5737254864e6bb5685d4475b5c8dbf4795a60e4b81665b472a3c9293 done
+#15 naming to docker.io/library/rubix-component-boundary-irtljv:latest done
+#15 unpacking to docker.io/library/rubix-component-boundary-irtljv:latest
+#15 unpacking to docker.io/library/rubix-component-boundary-irtljv:latest 0.5s done
+#15 DONE 2.9s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/j1hvz0jvtjb8d9jagc16ztxo6
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/o0cbwahkvnpecc0hmhqdgkava

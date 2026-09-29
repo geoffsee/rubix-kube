@@ -2,7 +2,7 @@
 use super::{
     build, commands,
     common::{Result, Value, digest, inventory, json, load, read, require, text},
-    container, docker, network,
+    constrained_verify, container, docker, network,
 };
 use crate::platform_fixture::{
     alpine, command_evidence,
@@ -14,10 +14,11 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-fn helpers(family: &str) -> Result<[&'static str; 2]> {
+fn helpers(family: &str) -> Result<Vec<&'static str>> {
     match family {
-        "network" => Ok(["modprobe-double.sh", "iptables-double.sh"]),
-        "container" => Ok(["launch.sh", "namespace.sh"]),
+        "network" => Ok(vec!["modprobe-double.sh", "iptables-double.sh"]),
+        "container" => Ok(vec!["launch.sh", "namespace.sh"]),
+        "constrained" => Ok(vec!["namespace.sh", "guard-failure.sh", "module-wait.sh"]),
         _ => Err("node guest family".into()),
     }
 }
@@ -70,10 +71,11 @@ fn check_command(family: &str) -> Result<String> {
     ))
 }
 fn semantic(root: &Path, family: &str, raw: &str, metadata: &Value) -> Result<Value> {
-    if family == "network" {
-        network::semantic(root, raw)
-    } else {
-        container::semantic(root, raw, metadata)
+    match family {
+        "network" => network::semantic(root, raw),
+        "container" => container::semantic(root, raw, metadata),
+        "constrained" => constrained_verify::semantic(root, raw, metadata),
+        _ => Err("node guest family".into()),
     }
 }
 fn pins(cache: &Path, inputs: &Value) -> Result<()> {
@@ -143,13 +145,17 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path) -> Result<Valu
         "exact guest input hashes",
     )?;
     let label = format!("{family}-cases");
-    let (raw, _) = command_evidence::remote(
-        directory,
-        &report,
-        &label,
-        "RUBIX_RUN_PREPARATION=1 sh -s",
-        &[0],
-    )?;
+    let (raw, _) = if family == "constrained" {
+        command_evidence::remote_constrained(directory, &report)?
+    } else {
+        command_evidence::remote(
+            directory,
+            &report,
+            &label,
+            "RUBIX_RUN_PREPARATION=1 sh -s",
+            &[0],
+        )?
+    };
     require(
         read(&directory.join(format!("{label}.stdin")), 256 * 1024)?
             == read(&here(root, family).join("guest.sh"), 256 * 1024)?,
@@ -276,13 +282,18 @@ pub(super) fn capture(
             checks(&wanted)?.as_bytes(),
             true,
         )?;
-        let result = guest.remote(
-            &format!("{family}-cases"),
-            "RUBIX_RUN_PREPARATION=1 sh -s",
-            if family == "network" { 420 } else { 480 },
-            &read(&here(root, family).join("guest.sh"), 256 * 1024)?,
-            true,
-        )?;
+        let script = read(&here(root, family).join("guest.sh"), 256 * 1024)?;
+        let result = if family == "constrained" {
+            guest.remote_constrained(&script)?
+        } else {
+            guest.remote(
+                &format!("{family}-cases"),
+                "RUBIX_RUN_PREPARATION=1 sh -s",
+                if family == "network" { 420 } else { 480 },
+                &script,
+                true,
+            )?
+        };
         let raw = String::from_utf8(result.stdout_bytes)?;
         semantic(root, family, &raw, &metadata)?;
         guest.report["observation"] = raw.into();
@@ -472,3 +483,6 @@ mod cancellation_tests {
         Ok(())
     }
 }
+#[cfg(test)]
+#[path = "constrained_envelope_tests.rs"]
+mod constrained_envelope_tests;
