@@ -49,10 +49,6 @@ debug = "line-tables-only"
 opt-level = 3
 debug = false
 
-[profile.dev.package."rubix-kube"]
-opt-level = 0
-debug = "line-tables-only"
-
 [profile.release]
 lto = "thin"
 codegen-units = 1
