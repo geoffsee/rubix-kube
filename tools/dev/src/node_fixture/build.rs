@@ -22,12 +22,18 @@ pub(super) const NETWORK_TESTS: [&str; 14] = [
 pub(super) fn binaries(family: &str) -> Result<Vec<&'static str>> {
     match family {
         "network" => Ok(vec!["prepare_host_network", "host_network"]),
-        "container" => Ok(vec![
-            "prepare_node_host",
-            "rubix_kube",
-            "host_preparation",
-            "host_network",
-        ]),
+        "container" | "constrained" => {
+            let mut names = vec![
+                "prepare_node_host",
+                "rubix_kube",
+                "host_preparation",
+                "host_network",
+            ];
+            if family == "constrained" {
+                names.push("constrained-guest");
+            }
+            Ok(names)
+        },
         _ => Err("node build family".into()),
     }
 }
@@ -68,7 +74,7 @@ pub(super) fn builder_hashes(raw: &str, family: &str, nonce: &str) -> Result<Val
         .collect::<Vec<_>>()
         .join("\n")
         + "\n";
-    if family == "container" {
+    if matches!(family, "container" | "constrained") {
         let (policy, _) = block(&normalized, "POLICY_TESTS")?;
         tests(
             policy,
@@ -160,7 +166,7 @@ pub(super) fn verify_run(root: &Path, family: &str, raw: &str) -> Result<Value> 
                 body.as_bytes() == read(&root.join("crates/rubix-kube/src/help.txt"), 65536)?,
                 "complete help",
             )?,
-            _ => network::config(body, family == "container")?,
+            _ => network::config(body, matches!(family, "container" | "constrained"))?,
         }
     }
     let mut hashes = serde_json::Map::new();

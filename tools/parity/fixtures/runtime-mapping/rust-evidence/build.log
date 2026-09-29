@@ -29,38 +29,38 @@
 #8 DONE 0.1s
 
 #9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/mapping.test ./internal/config
-#9 0.165 go: downloading github.com/distribution/reference v0.6.0
-#9 0.167 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.175 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.180 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 0.180 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 0.182 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 1.893 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 1.893 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 1.894 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 1.895 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 2.027 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 2.120 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 2.121 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 2.121 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 2.262 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 2.377 go: downloading github.com/x448/float16 v0.8.4
-#9 2.490 go: downloading golang.org/x/sys v0.47.0
-#9 DONE 9.8s
+#9 0.151 go: downloading github.com/distribution/reference v0.6.0
+#9 0.151 go: downloading sigs.k8s.io/yaml v1.6.0
+#9 0.158 go: downloading github.com/rs/zerolog v1.33.0
+#9 0.158 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#9 0.159 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#9 0.160 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#9 1.324 go: downloading github.com/opencontainers/go-digest v1.0.0
+#9 1.324 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#9 1.324 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 1.324 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#9 1.324 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#9 1.530 go: downloading gopkg.in/inf.v0 v0.9.1
+#9 1.530 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#9 1.530 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#9 1.534 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 1.775 go: downloading github.com/x448/float16 v0.8.4
+#9 1.775 go: downloading golang.org/x/sys v0.47.0
+#9 DONE 7.4s
 
 #10 [capture 1/1] WORKDIR /tmp
-#10 DONE 0.1s
+#10 DONE 0.0s
 
 #11 exporting to image
 #11 exporting layers
-#11 exporting layers 3.7s done
-#11 exporting manifest sha256:3bf64f7cfbb597f975d9f559a9201d93c530a6034fee23bded6e65f25039ac8e done
-#11 exporting config sha256:e90d93c907d96d9fe41f74083179add131369f7ade7fbd8f241df67de2de2e24 done
-#11 exporting attestation manifest sha256:f43e85bd5a9331e4186ce8bff2dfe9083ac711a3425b0e5a3ef4a8017f15febc done
-#11 exporting manifest list sha256:9a4d591beb9f14b3100c8527ef16a43496d9ad7fe3543c77a290e37b29202ad5 done
-#11 naming to docker.io/library/rubix-runtime-mapping-dpkjeg:latest done
-#11 unpacking to docker.io/library/rubix-runtime-mapping-dpkjeg:latest
-#11 unpacking to docker.io/library/rubix-runtime-mapping-dpkjeg:latest 0.9s done
-#11 DONE 4.6s
+#11 exporting layers 2.3s done
+#11 exporting manifest sha256:5a3257dc7b7f7a0eb6b2f256ec5397a0d19b98949e5f91638403d8f1f490b968 done
+#11 exporting config sha256:2ae06e31c4df3b5279fa56defcb6f8ff0fd91b40e975880ceb7da909dd79dfb2 done
+#11 exporting attestation manifest sha256:d0d0adf018ec094edd67c1b532e0e68254ac0021eb7b1e1fa0c311dabb7bd5a2 done
+#11 exporting manifest list sha256:d770a861f961874b70382ced98aca06a58ab102d31e7f93a9ac4a9559ed5a091 done
+#11 naming to docker.io/library/rubix-runtime-mapping-4jiwm0:latest done
+#11 unpacking to docker.io/library/rubix-runtime-mapping-4jiwm0:latest
+#11 unpacking to docker.io/library/rubix-runtime-mapping-4jiwm0:latest 0.6s done
+#11 DONE 2.9s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ziqio6ocnsfm37qxfyntpp16v
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/znv776dv5krqkmebprhaimii8

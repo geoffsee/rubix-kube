@@ -19,28 +19,28 @@
 #5 transferring context: 20.08kB done
 #5 DONE 0.0s
 
-#6 [build 3/9] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
+#6 [build 7/9] COPY resources/d2k_capture_test.go /src/pkg/components/d2k/rubix_capture_test.go
 #6 CACHED
 
-#7 [build 7/9] COPY resources/d2k_capture_test.go /src/pkg/components/d2k/rubix_capture_test.go
+#7 [build 9/9] RUN mkdir /out && for component in coredns localpath portainer d2k; do go test -c -p 2 -tags external_deps -trimpath -o /out/$component.test ./pkg/components/$component || exit 1; done     && go test -c -p 2 -tags external_deps -trimpath -o /out/pki.test ./internal/core/pki     && go version > /out/go-version.txt
 #7 CACHED
 
-#8 [build 5/9] COPY resources/localpath_capture_test.go /src/pkg/components/localpath/rubix_capture_test.go
+#8 [build 3/9] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d     && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check     && tar --extract --gzip --file /tmp/source.tar.gz --strip-components=1
 #8 CACHED
 
 #9 [build 4/9] COPY resources/coredns_capture_test.go /src/pkg/components/coredns/rubix_capture_test.go
 #9 CACHED
 
-#10 [build 8/9] COPY pki/pki_capture_test.go /src/internal/core/pki/rubix_capture_test.go
+#10 [build 2/9] WORKDIR /src
 #10 CACHED
 
-#11 [build 9/9] RUN mkdir /out && for component in coredns localpath portainer d2k; do go test -c -p 2 -tags external_deps -trimpath -o /out/$component.test ./pkg/components/$component || exit 1; done     && go test -c -p 2 -tags external_deps -trimpath -o /out/pki.test ./internal/core/pki     && go version > /out/go-version.txt
+#11 [build 6/9] COPY resources/portainer_capture_test.go /src/pkg/components/portainer/rubix_capture_test.go
 #11 CACHED
 
-#12 [build 6/9] COPY resources/portainer_capture_test.go /src/pkg/components/portainer/rubix_capture_test.go
+#12 [build 8/9] COPY pki/pki_capture_test.go /src/internal/core/pki/rubix_capture_test.go
 #12 CACHED
 
-#13 [build 2/9] WORKDIR /src
+#13 [build 5/9] COPY resources/localpath_capture_test.go /src/pkg/components/localpath/rubix_capture_test.go
 #13 CACHED
 
 #14 [capture 1/1] WORKDIR /tmp
@@ -50,12 +50,11 @@
 #15 exporting layers done
 #15 exporting manifest sha256:d69b4640b83289103d1f46d686c714ea49a6bbe3f4cc369777fe1b05b3408685 done
 #15 exporting config sha256:f1733f1b6be119a8bc445cee8e2c0af19b21a245dabf7a7b4f6e85aa18d03698 done
-#15 exporting attestation manifest sha256:7c30832b7610f874e52df5b742feb48ff41aced66f0283a0e6cdaf29ce7c171f
-#15 exporting attestation manifest sha256:7c30832b7610f874e52df5b742feb48ff41aced66f0283a0e6cdaf29ce7c171f done
-#15 exporting manifest list sha256:51ca43c2199564670739ebabe2494bd1568144588bdd9eb72ae61801d8455c1c done
-#15 naming to docker.io/library/rubix-resources-pki-4gisqv:latest done
-#15 unpacking to docker.io/library/rubix-resources-pki-4gisqv:latest
-#15 unpacking to docker.io/library/rubix-resources-pki-4gisqv:latest 3.8s done
-#15 DONE 3.9s
+#15 exporting attestation manifest sha256:4c0d73679117ccf8e71befa4293e5dc66097b5140bd7fb78a92256603f2a6a05 done
+#15 exporting manifest list sha256:8f79a3f4126a3fbafdeb84b7c3a739cd96a68d284c9cde71ea3fd27487131b4e done
+#15 naming to docker.io/library/rubix-resources-pki-gnnue3:latest done
+#15 unpacking to docker.io/library/rubix-resources-pki-gnnue3:latest
+#15 unpacking to docker.io/library/rubix-resources-pki-gnnue3:latest 3.6s done
+#15 DONE 3.7s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/g4uepgsmwm0y3ugpahv1o6fkl
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/i4sa9v1wd1cmu49hj19uail2y

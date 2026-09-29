@@ -29,10 +29,10 @@ test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 7 tests
 test earlier_nonroot_or_unknown_blocks_all_preparation ... ok
+test failure_or_gap_cancellation_prevents_next_action_and_ports ... ok
 test pre_cancelled_invocation_has_no_host_effects ... ok
 test repairs_in_order_and_requires_fresh_observation_before_ports ... ok
 test shared_effects_warning_survives_successful_action_and_failed_recheck ... ok
-test failure_or_gap_cancellation_prevents_next_action_and_ports ... ok
 test success_without_repair_never_passes_or_repeats_action ... ok
 test uncertain_cleanup_returns_two_without_further_output_or_effects ... ok
 

@@ -12,49 +12,49 @@
 #3 DONE 0.0s
 
 #4 [ 1/13] FROM docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
-#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
+#4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd 0.0s done
 #4 DONE 0.0s
 
 #5 [internal] load build context
 #5 transferring context: 8.14kB done
 #5 DONE 0.0s
 
-#6 [ 7/13] COPY go.mod ./
+#6 [ 4/13] COPY extract.go /extract.go
 #6 CACHED
 
-#7 [ 9/13] COPY system_test.go system/capture_test.go
+#7 [ 2/13] WORKDIR /source
 #7 CACHED
 
-#8 [ 5/13] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/network /oracle/system  && cp internal/runtime/network/ipv6.go /oracle/network/source.go  && cp internal/system/modules.go /oracle/system/source.go  && cp go.sum /oracle/go.sum  && sha256sum internal/runtime/network/ipv6.go internal/system/modules.go pkg/kubernetes/kubeproxy/flags.go internal/core/embedded/host.go types/const.go > /source.sha256
+#8 [ 6/13] WORKDIR /oracle
 #8 CACHED
 
-#9 [ 3/13] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=1
+#9 [ 7/13] COPY go.mod ./
 #9 CACHED
 
-#10 [ 2/13] WORKDIR /source
+#10 [ 5/13] RUN go run /extract.go /source /oracle  && mkdir -p /oracle/network /oracle/system  && cp internal/runtime/network/ipv6.go /oracle/network/source.go  && cp internal/system/modules.go /oracle/system/source.go  && cp go.sum /oracle/go.sum  && sha256sum internal/runtime/network/ipv6.go internal/system/modules.go pkg/kubernetes/kubeproxy/flags.go internal/core/embedded/host.go types/const.go > /source.sha256
 #10 CACHED
 
-#11 [ 4/13] COPY extract.go /extract.go
+#11 [ 3/13] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=1
 #11 CACHED
 
-#12 [ 6/13] WORKDIR /oracle
+#12 [ 8/13] COPY network_test.go network/capture_test.go
 #12 CACHED
 
-#13 [ 8/13] COPY network_test.go network/capture_test.go
+#13 [ 9/13] COPY system_test.go system/capture_test.go
 #13 CACHED
 
 #14 [10/13] COPY proxy_test.go proxy/capture_test.go
-#14 CACHED
+#14 DONE 0.0s
 
 #15 [11/13] COPY embedded_test.go embedded/capture_test.go
-#15 DONE 0.1s
+#15 DONE 0.0s
 
 #16 [12/13] RUN for pkg in network system proxy embedded; do go test -mod=readonly -c -trimpath -o /$pkg.test ./$pkg || exit; sha256sum /$pkg.test >> /source.sha256; done
-#16 0.113 go: downloading github.com/rs/zerolog v1.33.0
-#16 1.187 go: downloading github.com/mattn/go-colorable v0.1.13
-#16 1.402 go: downloading github.com/mattn/go-isatty v0.0.20
-#16 1.625 go: downloading golang.org/x/sys v0.47.0
-#16 DONE 12.2s
+#16 0.094 go: downloading github.com/rs/zerolog v1.33.0
+#16 0.997 go: downloading github.com/mattn/go-colorable v0.1.13
+#16 1.217 go: downloading github.com/mattn/go-isatty v0.0.20
+#16 1.449 go: downloading golang.org/x/sys v0.47.0
+#16 DONE 7.5s
 
 #17 [13/13] WORKDIR /tmp
 #17 DONE 0.0s
@@ -62,13 +62,13 @@
 #18 exporting to image
 #18 exporting layers
 #18 exporting layers 1.9s done
-#18 exporting manifest sha256:1a9ef2b2928a2583c33e1990cea39d036a69d7e2ea6a184a14adbafc05abef16 done
-#18 exporting config sha256:b42aa237b5c81ff5fbe7daa371c9e04fc18edeaa69bba2900bf5c7135f54b102 done
-#18 exporting attestation manifest sha256:f34674cbcfcde13b10fca27f0b10ca4868171d579542d28b1a06b16d873810a0 done
-#18 exporting manifest list sha256:d7bc26363b8872c5eaa3d21269f831158b3a8167a69f25d1eb56f817379fdf05 done
-#18 naming to docker.io/library/rubix-constrained-policy-i7wypt:latest done
-#18 unpacking to docker.io/library/rubix-constrained-policy-i7wypt:latest
-#18 unpacking to docker.io/library/rubix-constrained-policy-i7wypt:latest 0.7s done
+#18 exporting manifest sha256:1255c9380e4a40cfa1b49d01548e736c9bf7dbdf94ab14544d4bc1c97a20a91c done
+#18 exporting config sha256:959d53608c5cf0438dcf93d264797196cd201dc738c9be7d3fe8df0f8da954e0 done
+#18 exporting attestation manifest sha256:46adc6926df9745e07ccf7904e5ff0cfd414532cc153717b601f01524ffb4d80 done
+#18 exporting manifest list sha256:69cc05c1d8d7fb7d856b6907e2b936be874fa6ec4d6c9ebbaf5b5c7ef9d5bdc8 done
+#18 naming to docker.io/library/rubix-constrained-policy-ybicam:latest done
+#18 unpacking to docker.io/library/rubix-constrained-policy-ybicam:latest
+#18 unpacking to docker.io/library/rubix-constrained-policy-ybicam:latest 0.7s done
 #18 DONE 2.6s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/r8fh4u5ht5yotlkqesix4a7gv
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/v4csitgcelsb5nxtkrifxoscl

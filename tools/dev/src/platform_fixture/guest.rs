@@ -49,6 +49,49 @@ pub(crate) struct Guest {
     secrets: Vec<Vec<u8>>,
 }
 impl Guest {
+    /// The constrained observer includes bounded failure diagnostics after snapshots.
+    /// Keep this larger budget exclusive to that exact command and adapter.
+    pub(crate) fn remote_constrained(&self, input: &[u8]) -> Result<CommandResult> {
+        super::command_evidence::constrained_policy(
+            &self.report,
+            "constrained-cases",
+            "RUBIX_RUN_PREPARATION=1 sh -s",
+        )?;
+        let label = "constrained-cases";
+        write_new(&self.commands.output.join(format!("{label}.stdin")), input)?;
+        let mut argv = self.ssh.clone();
+        argv.push("RUBIX_RUN_PREPARATION=1 sh -s".into());
+        let result = self.commands.run(
+            label,
+            &argv,
+            Duration::from_mins(10),
+            input,
+            true,
+            super::command_evidence::CONSTRAINED_LIMIT,
+        );
+        let path = self.commands.output.join(format!("{label}.command.json"));
+        match result {
+            Ok(mut result) => {
+                result.receipt["byte_limit"] = json!(super::command_evidence::CONSTRAINED_LIMIT);
+                crate::parity::write_json(&path, &result.receipt, false)?;
+                Ok(result)
+            },
+            Err(mut error) => {
+                if let Some(failure) =
+                    error.downcast_mut::<crate::parity::process::CommandFailure>()
+                {
+                    failure.receipt["byte_limit"] =
+                        json!(super::command_evidence::CONSTRAINED_LIMIT);
+                    if let Err(publication) =
+                        crate::parity::write_json(&path, &failure.receipt, false)
+                    {
+                        eprintln!("constrained bound receipt publication: {publication}");
+                    }
+                }
+                Err(error)
+            },
+        }
+    }
     pub(crate) fn private(&self) -> Result<&Path> {
         self.private
             .as_deref()
@@ -62,6 +105,14 @@ impl Guest {
         input: &[u8],
         required: bool,
     ) -> Result<CommandResult> {
+        if label == "constrained-cases" {
+            super::command_evidence::constrained_policy(&self.report, label, command)?;
+            require(
+                seconds == 600 && required,
+                "fixed constrained command policy",
+            )?;
+            return self.remote_constrained(input);
+        }
         write_new(&self.commands.output.join(format!("{label}.stdin")), input)?;
         let mut argv = self.ssh.clone();
         argv.push(command.into());
