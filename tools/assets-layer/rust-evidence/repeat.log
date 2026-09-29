@@ -39,7 +39,7 @@ RUBIX_LAYER {"archive_sha256":"8a3edd04fb0a8732eedee59f314006ff41261028727e3baee
 successes:
     verify_pinned_crane_layers
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 RUBIX_COMPLETE {"cases":["gzip","gzip-concat","zstd","zstd-concat","gzip-crc","zstd-checksum","gzip-truncated","zstd-truncated","wrong-diffid","outer-crc","decoded-limit","ordered-limit"],"consumer_command":["/layer-tests","--ignored","--exact","verify_pinned_crane_layers","--show-output","--test-threads=1"]}
-RUBIX_NAMESPACE {"helper":17,"init":1,"processes":[1,7,17],"shell":7}
+RUBIX_NAMESPACE {"helper":18,"init":1,"processes":[1,7,18],"shell":7}
