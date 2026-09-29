@@ -24,17 +24,17 @@ test cgroup_generations_and_loaded_modules_are_observations_not_policy_success .
 test missing_or_unreadable_evidence_never_becomes_a_positive_default ... ok
 test mountinfo_decodes_paths_and_keeps_mount_and_superblock_readonly_separate ... ok
 test observed_go_classifier_cases_match_independent_expectations ... ok
-test runtime_container_and_installer_environment_keep_distinct_indicators ... ok
 test real_discovery_preserves_custom_paths_and_does_not_create_or_rewrite_them ... ok
+test runtime_container_and_installer_environment_keep_distinct_indicators ... ok
 
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 6 tests
-test baseline_order_and_real_uid_are_distinct_from_effective_uid ... ok
 test agrees_with_actual_pinned_go_reference_observations ... ok
-test module_indexes_are_not_proof_of_comment_capability ... ok
+test baseline_order_and_real_uid_are_distinct_from_effective_uid ... ok
 test every_required_controller_and_optional_port_has_distinct_evidence ... ok
+test module_indexes_are_not_proof_of_comment_capability ... ok
 test prerequisite_opt_in_plans_require_recheck_and_never_grant_runtime_ownership ... ok
 test unknown_read_errors_and_unprobed_ports_never_claim_success ... ok
 
@@ -43,8 +43,8 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 4 tests
 test backend_hints_remain_independent_and_never_waive_xtables ... ok
-test correct_values_require_no_writes_and_missing_ipv4_is_not_optional ... ok
 test collector_never_claims_unsupported_platform_or_invalid_limits ... ok
+test correct_values_require_no_writes_and_missing_ipv4_is_not_optional ... ok
 test external_responsibility_does_not_adopt_host_resources ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
