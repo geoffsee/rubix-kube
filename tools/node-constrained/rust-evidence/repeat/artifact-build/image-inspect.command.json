@@ -5,7 +5,7 @@
     "inspect",
     "--format",
     "{{.Id}}",
-    "rubix-node-constrained-bb8923a22974414754049664e5f19c94"
+    "rubix-node-constrained-c768f5b5f5dd93b03bbbd780421132a7"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 32299,
+  "owned_pid": 12442,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-tQLDyd",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-n5zHSz",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "e7d0094ebba4eeacebe08d9f6bc012e852b5935fcd35b7c2f05930ab0bc34560",
+  "stdout_sha256": "c78864d9fde9ce2b456682ba78a74d6d7971c8bef3b3d587e5785a8ede9d2289",
   "timeout": false
 }

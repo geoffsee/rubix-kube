@@ -278,7 +278,6 @@ TEST_rubix_kube_BEGIN
 
 running 18 tests
 test host_container::platform::tests::mount_paths_decode_only_kernel_escapes_and_keep_bytes ... ok
-test host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow ... ok
 test host_container::platform::tests::mount_tree_requires_complete_bounded_unique_records ... ok
 test host_container::platform::tests::process_membership_accepts_unordered_duplicates_but_not_truncation_or_bad_tokens ... ok
 test host_container::tests::bulk_and_individual_failures_continue_with_truthful_partial_readback ... ok
@@ -289,12 +288,13 @@ test host_container::tests::changed_context_stops_controller_fallback_and_readba
 test host_container::tests::controller_tokens_reject_operations_duplicates_and_bounds ... ok
 test host_container::tests::initially_ready_cancellation_never_acquires_a_session ... ok
 test host_container::tests::lost_admission_on_final_observation_is_fatal ... ok
+test host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow ... ok
 test host_container::tests::migration_requires_observed_membership_before_delegation ... ok
 test host_container::tests::mount_failure_and_uncertain_readback_suppress_all_cgroups ... ok
 test host_container::tests::only_positive_v1_skips_cgroup_operations ... ok
 test host_container::tests::ordered_effects_use_independent_controller_readback ... ok
-test host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain ... ok
 test host_container::tests::successful_write_never_substitutes_for_failed_or_missing_readback ... ok
+test host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain ... ok
 
 test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -302,12 +302,12 @@ TEST_rubix_kube_END
 TEST_host_preparation_BEGIN
 
 running 6 tests
-test external_runtime_still_prepares_container_after_network_warnings ... ok
 test fresh_backend_guard_failure_prevents_all_effects ... ok
+test external_runtime_still_prepares_container_after_network_warnings ... ok
 test initially_cancelled_combined_operation_never_performs_effects ... ok
 test network_cancellation_stops_before_container_and_retains_effects ... ok
-test resolved_noncontainer_mode_never_acquires_container_session ... ok
 test uncertain_network_owner_stops_before_container_and_retains_effects ... ok
+test resolved_noncontainer_mode_never_acquires_container_session ... ok
 
 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -315,8 +315,8 @@ TEST_host_preparation_END
 TEST_host_network_BEGIN
 
 running 14 tests
-test cancellation_after_failed_write_retains_possible_effects ... ok
 test cancellation_after_ipv6_write_preserves_possible_effects_without_readback ... ok
+test cancellation_after_failed_write_retains_possible_effects ... ok
 test cancellation_before_start_never_observes_or_mutates_network ... ok
 test cancellation_between_ipv6_read_and_write_prevents_write ... ok
 test complete_bounded_scalars_reject_prefixes_and_binary_data ... ok
@@ -336,24 +336,24 @@ TEST_host_network_END
 INJECTED_TESTS_END
 PROTOCOL_eof_BEGIN
 EXIT 1
-{"event":"READY","pid":2571,"schema":1}
+{"event":"READY","pid":2572,"schema":1}
 {"event":"protocol_failure","phase":"READY","preparation_started":false,"reason":"eof","schema":1,"shared_effects_possible":false}
 STDERR_BEGIN
 STDERR_END
 PROTOCOL_eof_END
 PROTOCOL_wrong_BEGIN
 EXIT 1
-{"event":"READY","pid":2575,"schema":1}
+{"event":"READY","pid":2576,"schema":1}
 {"event":"protocol_failure","phase":"READY","preparation_started":false,"reason":"wrong_byte","schema":1,"shared_effects_possible":false}
 STDERR_BEGIN
 STDERR_END
 PROTOCOL_wrong_END
 OBS_signal_READY_BEGIN
-PID 2579
+PID 2580
 STAT_BEGIN
-2579 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 281 196 0 0 0 0 0 0 20 0 1 0 1138 2666496 539 18446744073709551615 4194304 6372816 281474480222032 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 452530176 281474480225850 281474480225977 281474480225977 281474480226260 0
+2580 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 278 193 0 0 0 0 0 0 20 0 1 0 1073 2666496 539 18446744073709551615 4194304 6372816 281474966129424 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 666103808 281474966130234 281474966130361 281474966130361 281474966130644 0
 STAT_END
-EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2579/exe
+EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2580/exe
 MNT_NS mnt:[4026532175]
 CGROUP_NS cgroup:[4026532176]
 OBSERVER_MNT_NS mnt:[4026531832]
@@ -405,7 +405,7 @@ ROOT_TYPE_BEGIN
 domain
 ROOT_TYPE_END
 ROOT_MEMBERS_BEGIN
-2579
+2580
 ROOT_MEMBERS_END
 AVAILABLE_BEGIN
 cpuset cpu io memory hugetlb pids dmem
@@ -430,7 +430,7 @@ OBS_signal_READY_END
 CONSUMER_signal_BEGIN
 EXIT 1
 STDOUT_BEGIN
-LAUNCH_PID 2579
+LAUNCH_PID 2580
 PRIVATE_BEFORE_BIND_BEGIN
 41 40 253:2 / / rw,noatime - ext4 /dev/vda2 rw
 42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw
@@ -449,20 +449,20 @@ PRIVATE_BEFORE_BIND_BEGIN
 55 41 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64
 56 41 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro
 PRIVATE_BEFORE_BIND_END
-{"event":"READY","pid":2579,"schema":1}
+{"event":"READY","pid":2580,"schema":1}
 {"event":"protocol_failure","phase":"READY","preparation_started":false,"reason":"cancelled","schema":1,"shared_effects_possible":false}
 STDOUT_END
 STDERR_BEGIN
 STDERR_END
 CONSUMER_signal_END
 SIGNAL_NO_PREPARATION
-PID_ABSENT 2579
+PID_ABSENT 2580
 OBS_real_READY_BEGIN
-PID 2616
+PID 2617
 STAT_BEGIN
-2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 283 193 0 0 0 0 0 0 20 0 1 0 1145 2666496 539 18446744073709551615 4194304 6372816 281474636952096 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 1067126784 281474636955194 281474636955321 281474636955321 281474636955604 0
+2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 280 194 0 0 0 0 0 0 20 0 1 0 1081 2666496 539 18446744073709551615 4194304 6372816 281473967823776 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 202801152 281473967824442 281473967824569 281473967824569 281473967824852 0
 STAT_END
-EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2616/exe
+EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2617/exe
 MNT_NS mnt:[4026532175]
 CGROUP_NS cgroup:[4026532176]
 OBSERVER_MNT_NS mnt:[4026531832]
@@ -514,7 +514,7 @@ ROOT_TYPE_BEGIN
 domain
 ROOT_TYPE_END
 ROOT_MEMBERS_BEGIN
-2616
+2617
 ROOT_MEMBERS_END
 AVAILABLE_BEGIN
 cpuset cpu io memory hugetlb pids dmem
@@ -537,11 +537,11 @@ d10ba16de515c491d70913dd434515c1aa4cebc289360581b3b7706f1ae910fd  /tmp/external-
 EXTERNAL_END
 OBS_real_READY_END
 OBS_real_FIRST_BEGIN
-PID 2616
+PID 2617
 STAT_BEGIN
-2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 3145 3376 0 1 1 0 1 1 20 0 1 0 1145 2777088 592 18446744073709551615 4194304 6372816 281474636952096 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 1067126784 281474636955194 281474636955321 281474636955321 281474636955604 0
+2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 3142 3515 0 1 1 0 1 1 20 0 1 0 1081 2777088 554 18446744073709551615 4194304 6372816 281473967823776 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 202801152 281473967824442 281473967824569 281473967824569 281473967824852 0
 STAT_END
-EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2616/exe
+EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2617/exe
 MNT_NS mnt:[4026532175]
 CGROUP_NS cgroup:[4026532176]
 OBSERVER_MNT_NS mnt:[4026531832]
@@ -601,7 +601,7 @@ ROOT_ENABLED_BEGIN
 cpuset cpu io memory hugetlb pids dmem
 ROOT_ENABLED_END
 INIT_MEMBERS_BEGIN
-2616
+2617
 INIT_MEMBERS_END
 INIT_TYPE_BEGIN
 domain
@@ -623,11 +623,11 @@ d10ba16de515c491d70913dd434515c1aa4cebc289360581b3b7706f1ae910fd  /tmp/external-
 EXTERNAL_END
 OBS_real_FIRST_END
 OBS_real_SECOND_BEGIN
-PID 2616
+PID 2617
 STAT_BEGIN
-2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 6030 6094 0 1 2 1 1 1 20 0 1 0 1145 2777088 615 18446744073709551615 4194304 6372816 281474636952096 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 1067126784 281474636955194 281474636955321 281474636955321 281474636955604 0
+2617 (prepare_node_ho) S 2334 2334 2334 0 -1 4194560 6027 6239 0 1 2 1 1 1 20 0 1 0 1081 2777088 614 18446744073709551615 4194304 6372816 281473967823776 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 202801152 281473967824442 281473967824569 281473967824569 281473967824852 0
 STAT_END
-EXE 9f23c47bb4a87b12380c1886c55142efef641fe7debb7a2b7a5f134c9d09459c  /proc/2616/exe
+EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2617/exe
 MNT_NS mnt:[4026532175]
 CGROUP_NS cgroup:[4026532176]
 OBSERVER_MNT_NS mnt:[4026531832]
@@ -687,7 +687,7 @@ ROOT_ENABLED_BEGIN
 cpuset cpu io memory hugetlb pids dmem
 ROOT_ENABLED_END
 INIT_MEMBERS_BEGIN
-2616
+2617
 INIT_MEMBERS_END
 INIT_TYPE_BEGIN
 domain
@@ -711,7 +711,7 @@ OBS_real_SECOND_END
 CONSUMER_real_BEGIN
 EXIT 0
 STDOUT_BEGIN
-LAUNCH_PID 2616
+LAUNCH_PID 2617
 PRIVATE_BEFORE_BIND_BEGIN
 41 40 253:2 / / rw,noatime - ext4 /dev/vda2 rw
 42 41 0:23 / /sys rw,nosuid,nodev,noexec,relatime - sysfs sysfs rw
@@ -730,16 +730,16 @@ PRIVATE_BEFORE_BIND_BEGIN
 55 41 0:27 / /run rw,nosuid,nodev - tmpfs tmpfs rw,size=402692k,nr_inodes=819200,mode=755,inode64
 56 41 253:1 / /boot rw,noatime - vfat /dev/vda1 rw,fmask=0077,dmask=0077,codepage=437,iocharset=utf8,shortname=mixed,errors=remount-ro
 PRIVATE_BEFORE_BIND_END
-{"event":"READY","pid":2616,"schema":1}
-{"container":{"attempts":[{"controllers":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"mutation":{"attempted":true,"result":"Ok(())"}}],"available":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"enabled_after":{"names":["cpuset","cpu","io","memory","hugetlb","pids","dmem"]},"enabled_before":[],"init":{"attempted":true,"result":"Ok(())"},"layout":"V2","migration":{"attempted":true,"result":"Ok(())"},"missing_after":[],"mount":{"attempted":true,"result":"Ok(())"},"shared_effects_possible":true,"status":"Completed"},"event":"result","network":{"assessment":"Observed","family":"Present(NfTables)","ipv6":[],"modules":[{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"br_netfilter","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"overlay","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_comment","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_conntrack","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_MASQUERADE","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_addrtype","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_multiport","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_nat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_compat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_numgen","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_redir","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_limit","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_tproxy","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true}],"runtime":"External","status":"Completed"},"pass":1,"pid":2616,"schema":1,"shared_effects_possible":true,"status":"Completed"}
-{"event":"FIRST","pid":2616,"schema":1}
-{"container":{"attempts":[{"controllers":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"mutation":{"attempted":true,"result":"Ok(())"}}],"available":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"enabled_after":{"names":["cpuset","cpu","io","memory","hugetlb","pids","dmem"]},"enabled_before":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"init":{"attempted":false,"result":"Ok(())"},"layout":"V2","migration":{"attempted":true,"result":"Ok(())"},"missing_after":[],"mount":{"attempted":true,"result":"Ok(())"},"shared_effects_possible":true,"status":"Completed"},"event":"result","network":{"assessment":"Observed","family":"Present(NfTables)","ipv6":[],"modules":[{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"br_netfilter","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"overlay","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_comment","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_conntrack","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_MASQUERADE","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_addrtype","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_multiport","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_nat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_compat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_numgen","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_redir","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_limit","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_tproxy","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true}],"runtime":"External","status":"Completed"},"pass":2,"pid":2616,"schema":1,"shared_effects_possible":true,"status":"Completed"}
-{"event":"SECOND","pid":2616,"schema":1}
-{"event":"DONE","pid":2616,"schema":1}
+{"event":"READY","pid":2617,"schema":1}
+{"container":{"attempts":[{"controllers":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"mutation":{"attempted":true,"result":"Ok(())"}}],"available":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"enabled_after":{"names":["cpuset","cpu","io","memory","hugetlb","pids","dmem"]},"enabled_before":[],"init":{"attempted":true,"result":"Ok(())"},"layout":"V2","migration":{"attempted":true,"result":"Ok(())"},"missing_after":[],"mount":{"attempted":true,"result":"Ok(())"},"shared_effects_possible":true,"status":"Completed"},"event":"result","network":{"assessment":"Observed","family":"Present(NfTables)","ipv6":[],"modules":[{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"br_netfilter","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"overlay","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_comment","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_conntrack","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_MASQUERADE","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_addrtype","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_multiport","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_nat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_compat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_numgen","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_redir","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_limit","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_tproxy","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true}],"runtime":"External","status":"Completed"},"pass":1,"pid":2617,"schema":1,"shared_effects_possible":true,"status":"Completed"}
+{"event":"FIRST","pid":2617,"schema":1}
+{"container":{"attempts":[{"controllers":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"mutation":{"attempted":true,"result":"Ok(())"}}],"available":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"enabled_after":{"names":["cpuset","cpu","io","memory","hugetlb","pids","dmem"]},"enabled_before":["cpuset","cpu","io","memory","hugetlb","pids","dmem"],"init":{"attempted":false,"result":"Ok(())"},"layout":"V2","migration":{"attempted":true,"result":"Ok(())"},"missing_after":[],"mount":{"attempted":true,"result":"Ok(())"},"shared_effects_possible":true,"status":"Completed"},"event":"result","network":{"assessment":"Observed","family":"Present(NfTables)","ipv6":[],"modules":[{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"br_netfilter","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"overlay","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_comment","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_conntrack","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_MASQUERADE","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_addrtype","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_multiport","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"xt_nat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_compat","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_numgen","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_redir","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_limit","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true},{"after":{"available_index":"Present(true)","builtin_index":"Present(false)","loaded":"Present(true)"},"exit":0,"joined":true,"name":"nft_tproxy","outcome":"Success","ownership_lost":false,"reaped":true,"spawned":true}],"runtime":"External","status":"Completed"},"pass":2,"pid":2617,"schema":1,"shared_effects_possible":true,"status":"Completed"}
+{"event":"SECOND","pid":2617,"schema":1}
+{"event":"DONE","pid":2617,"schema":1}
 STDOUT_END
 STDERR_BEGIN
 STDERR_END
 CONSUMER_real_END
 REAL_PROCESS_EXITED
-PID_ABSENT 2616
+PID_ABSENT 2617
 CONTAINER_GUEST_COMPLETE

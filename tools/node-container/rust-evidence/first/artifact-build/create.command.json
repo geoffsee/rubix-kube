@@ -3,8 +3,8 @@
     "docker",
     "create",
     "--name",
-    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d-artifact",
-    "rubix-node-container-4b604a797ba1a3a7a97aca847d69da2d",
+    "rubix-node-container-b74b13ebc2721c198835e0482e459cb9-artifact",
+    "rubix-node-container-b74b13ebc2721c198835e0482e459cb9",
     "/bin/true"
   ],
   "cancelled": false,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 34861,
+  "owned_pid": 12201,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SOLdOg",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-C4B0UT",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "18a69e2b02ef941cd0a10ce6bc86681e3eda672ac35b8601c441c5c29a22b7f5",
+  "stdout_sha256": "8155e2ba93631b674398b6a9e7c056b592a3ba20837a3862de35777604094d7d",
   "timeout": false
 }
