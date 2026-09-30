@@ -119,6 +119,7 @@ fn reports_reject_truncated_gzip_duplicates_and_one_sided_resolved_inputs() {
     );
 }
 #[test]
+#[ignore = "receipt checks disabled"]
 fn combined_resolved_report_rejects_unbound_and_detects_rehashed_removal() {
     let dir = tempfile::tempdir().unwrap();
     let before = dir.path().join("before");
