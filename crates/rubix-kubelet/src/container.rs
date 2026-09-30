@@ -149,8 +149,7 @@ impl ContainerEnvironment {
 
             match status {
                 Ok(exit) if exit.success() => Ok(MountPropagationStatus::Shared),
-                Ok(_) => Ok(MountPropagationStatus::SkippedPermissionDenied),
-                Err(_) => Ok(MountPropagationStatus::SkippedPermissionDenied),
+                Ok(_) | Err(_) => Ok(MountPropagationStatus::SkippedPermissionDenied),
             }
         }
 
