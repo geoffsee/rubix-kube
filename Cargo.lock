@@ -1117,9 +1117,15 @@ dependencies = [
 name = "rubix-cri"
 version = "0.1.0"
 dependencies = [
+ "h2",
+ "hyper-util",
  "prost",
+ "rubix-supervisor",
+ "tempfile",
+ "tokio",
  "tonic",
  "tonic-prost",
+ "tower",
 ]
 
 [[package]]
