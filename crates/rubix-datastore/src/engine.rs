@@ -47,6 +47,11 @@ impl std::fmt::Debug for DatastoreEngine {
 }
 
 impl DatastoreEngine {
+    #[must_use]
+    pub fn client(&self) -> crate::client::DatastoreClient {
+        crate::client::DatastoreClient::new(self.clone())
+    }
+
     pub fn open(config: DatastoreConfig) -> Result<(Self, WalSummary), DatastoreError> {
         config.validate()?;
 

@@ -101,6 +101,80 @@ fn to_pkcs1_pem(pkcs8_pem: &str) -> Result<String, PkiError> {
     Ok(pkcs1_pem)
 }
 
+pub fn validate_certificate_pem(bytes: &[u8]) -> Result<(), PkiError> {
+    let text = std::str::from_utf8(bytes).map_err(|_| PkiError::InvalidCert)?;
+    let begin_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----BEGIN "))
+        .count();
+    let end_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----END "))
+        .count();
+    if begin_count == 0 || begin_count != end_count {
+        return Err(PkiError::InvalidCert);
+    }
+
+    let pem_entries = pem::parse_many(bytes).map_err(|_| PkiError::InvalidCert)?;
+    if pem_entries.len() != begin_count {
+        return Err(PkiError::InvalidCert);
+    }
+
+    let mut found = false;
+    for entry in pem_entries {
+        if entry.tag() == "CERTIFICATE" {
+            found = true;
+            let (_, _cert) = x509_parser::parse_x509_certificate(entry.contents())
+                .map_err(|_| PkiError::InvalidCert)?;
+        }
+    }
+    if !found {
+        return Err(PkiError::InvalidCert);
+    }
+    Ok(())
+}
+
+pub fn validate_private_key_pem(bytes: &[u8]) -> Result<(), PkiError> {
+    let text = std::str::from_utf8(bytes).map_err(|_| PkiError::InvalidKey)?;
+    let begin_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----BEGIN "))
+        .count();
+    let end_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----END "))
+        .count();
+    if begin_count == 0 || begin_count != end_count {
+        return Err(PkiError::InvalidKey);
+    }
+
+    let pem_entries = pem::parse_many(bytes).map_err(|_| PkiError::InvalidKey)?;
+    if pem_entries.len() != begin_count {
+        return Err(PkiError::InvalidKey);
+    }
+
+    let mut found = false;
+    for entry in pem_entries {
+        let tag = entry.tag();
+        if tag == "RSA PRIVATE KEY" || tag == "PRIVATE KEY" || tag == "EC PRIVATE KEY" {
+            found = true;
+            if entry.contents().is_empty() {
+                return Err(PkiError::InvalidKey);
+            }
+            let entry_pem = pem::encode(&entry);
+            if KeyPair::from_pem(&entry_pem).is_err()
+                && pkcs8::PrivateKeyInfo::try_from(entry.contents()).is_err()
+            {
+                return Err(PkiError::InvalidKey);
+            }
+        }
+    }
+    if !found {
+        return Err(PkiError::InvalidKey);
+    }
+    Ok(())
+}
+
 fn atomic_write(path: &Path, data: &[u8], mode: u32) -> Result<(), std::io::Error> {
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let mut temp = tempfile::Builder::new().tempfile_in(dir)?;
@@ -179,5 +253,28 @@ mod tests {
         ensure_service_account_key(&key_path).unwrap();
         let reused_key = fs::read(&key_path).unwrap();
         assert_eq!(initial_key, reused_key);
+    }
+
+    #[test]
+    fn test_validate_keys_multi_block_and_truncated() {
+        let rsa_pair = KeyPair::generate_rsa_for(&PKCS_RSA_SHA256, RsaKeySize::_2048).unwrap();
+        let pkcs8_pem = rsa_pair.serialize_pem();
+        let pkcs1_pem = to_pkcs1_pem(&pkcs8_pem).unwrap();
+
+        // Multi-block: RSA PKCS#1 followed by a certificate block
+        let params = CertificateParams::new(vec!["test.example.com".to_string()]).unwrap();
+        let cert = params.self_signed(&rsa_pair).unwrap();
+        let bundle = format!("{pkcs1_pem}\n{}", cert.pem());
+
+        assert!(validate_private_key_pem(bundle.as_bytes()).is_ok());
+
+        // EC key multi-block
+        let ec_pair = KeyPair::generate_for(&rcgen::PKCS_ECDSA_P256_SHA256).unwrap();
+        let ec_bundle = format!("{}\n{}", ec_pair.serialize_pem(), cert.pem());
+        assert!(validate_private_key_pem(ec_bundle.as_bytes()).is_ok());
+
+        // Valid key followed by truncated PEM block
+        let corrupt_bundle = format!("{pkcs1_pem}\n-----BEGIN RSA PRIVATE KEY-----\nMIIE\n");
+        assert!(validate_private_key_pem(corrupt_bundle.as_bytes()).is_err());
     }
 }
