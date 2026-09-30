@@ -54,6 +54,16 @@ impl DatastoreConfig {
         self
     }
 
+    #[must_use]
+    pub fn wal_path(&self) -> PathBuf {
+        self.data_dir.join("member/wal/00000001.wal")
+    }
+
+    #[must_use]
+    pub fn snapshot_path(&self) -> PathBuf {
+        self.data_dir.join("snapshot.db")
+    }
+
     pub fn validate(&self) -> Result<(), DatastoreError> {
         let s = self.data_dir.to_string_lossy();
         if s.is_empty() || s == "." || s == "/" {

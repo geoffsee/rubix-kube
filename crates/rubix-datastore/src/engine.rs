@@ -56,7 +56,7 @@ impl DatastoreEngine {
         let lock = DatastoreLock::acquire(&config.data_dir)?;
 
         // Load snapshot if present
-        let snapshot_path = config.data_dir.join("snapshot.db");
+        let snapshot_path = config.snapshot_path();
         let (mut kv, mut revision) = if snapshot_path.exists() {
             Self::read_snapshot(&snapshot_path)?
         } else {
@@ -64,7 +64,7 @@ impl DatastoreEngine {
         };
 
         // Open WAL and replay
-        let wal_path = config.data_dir.join("member/wal/00000001.wal");
+        let wal_path = config.wal_path();
         let (wal, records, summary) = Wal::open(&wal_path, config.auto_repair_wal)?;
 
         let snapshot_revision = revision;
@@ -280,7 +280,7 @@ impl DatastoreEngine {
 
     pub async fn checkpoint_snapshot(&self) -> Result<(), DatastoreError> {
         let state = self.state.read().await;
-        let snapshot_path = self.config.data_dir.join("snapshot.db");
+        let snapshot_path = self.config.snapshot_path();
         let temp_path = self.config.data_dir.join("snapshot.db.tmp");
 
         let mut file = OpenOptions::new()
@@ -303,20 +303,22 @@ impl DatastoreEngine {
     fn read_snapshot(path: &Path) -> Result<(BTreeMap<String, KeyValue>, u64), DatastoreError> {
         let mut file = File::open(path)?;
         let mut magic = [0u8; 8];
-        file.read_exact(&mut magic)?;
-        if &magic != SNAPSHOT_MAGIC {
+        if file.read_exact(&mut magic).is_err() || &magic != SNAPSHOT_MAGIC {
             return Err(DatastoreError::Fatal(
                 "invalid snapshot magic header".into(),
             ));
         }
 
         let mut rev_bytes = [0u8; 8];
-        file.read_exact(&mut rev_bytes)?;
+        if file.read_exact(&mut rev_bytes).is_err() {
+            return Err(DatastoreError::Fatal("truncated snapshot header".into()));
+        }
         let revision = u64::from_be_bytes(rev_bytes);
 
         let mut rest = Vec::new();
         file.read_to_end(&mut rest)?;
-        let kv: BTreeMap<String, KeyValue> = serde_json::from_slice(&rest)?;
+        let kv: BTreeMap<String, KeyValue> = serde_json::from_slice(&rest)
+            .map_err(|e| DatastoreError::Fatal(format!("corrupt snapshot payload: {e}")))?;
 
         Ok((kv, revision))
     }
