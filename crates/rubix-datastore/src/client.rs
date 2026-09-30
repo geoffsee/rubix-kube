@@ -48,4 +48,11 @@ impl DatastoreClient {
     pub async fn watch(&self, prefix: &str) -> WatchReceiver {
         self.engine.watch(prefix).await
     }
+
+    pub async fn create_backup(
+        &self,
+        backup_dir: &std::path::Path,
+    ) -> Result<crate::backup::BackupMetadata, DatastoreError> {
+        self.engine.create_backup(backup_dir).await
+    }
 }
