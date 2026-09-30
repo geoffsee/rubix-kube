@@ -1,0 +1,285 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Serialize};
+
+use crate::error::KubeletError;
+
+/// Supported Cgroup versions.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum KubeletCgroupVersion {
+    V1,
+    V2,
+}
+
+impl KubeletCgroupVersion {
+    /// Detects cgroup version from the given cgroup root mount path.
+    #[must_use]
+    pub fn detect(cgroup_root: &Path) -> Self {
+        if cgroup_root.join("cgroup.controllers").exists() {
+            Self::V2
+        } else {
+            Self::V1
+        }
+    }
+}
+
+/// Status of mount propagation preparation for container mode.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MountPropagationStatus {
+    Shared,
+    SkippedPermissionDenied,
+    SkippedNonLinux,
+    SimulatedRshared,
+}
+
+/// Status of cgroup preparation for container mode.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CgroupSetupStatus {
+    Configured { controllers: Vec<String>, pid: u32 },
+    SkippedNotV2,
+    SkippedPermissionDenied,
+    Simulated { controllers: Vec<String>, pid: u32 },
+}
+
+/// Status of IPv6 sysctl disablement.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Ipv6DisableStatus {
+    Disabled { modified_paths: Vec<PathBuf> },
+    AlreadyDisabled,
+    SkippedPermissionDenied,
+    SkippedNotFound,
+}
+
+/// Manages host environment checks, mounts, cgroups, and network adjustments for container mode.
+#[derive(Clone, Debug)]
+pub struct ContainerEnvironment {
+    root_path: PathBuf,
+    cgroup_root: PathBuf,
+    proc_sys_net_ipv6: PathBuf,
+    allow_host_mutations: bool,
+    simulated: bool,
+}
+
+impl Default for ContainerEnvironment {
+    fn default() -> Self {
+        Self {
+            root_path: PathBuf::from("/"),
+            cgroup_root: PathBuf::from("/sys/fs/cgroup"),
+            proc_sys_net_ipv6: PathBuf::from("/proc/sys/net/ipv6/conf"),
+            allow_host_mutations: true,
+            simulated: false,
+        }
+    }
+}
+
+impl ContainerEnvironment {
+    /// Creates a simulated container environment bounded to custom directories for disposable test fixtures.
+    #[must_use]
+    pub fn new_simulated(
+        root_path: PathBuf,
+        cgroup_root: PathBuf,
+        proc_sys_net_ipv6: PathBuf,
+    ) -> Self {
+        Self {
+            root_path,
+            cgroup_root,
+            proc_sys_net_ipv6,
+            allow_host_mutations: false,
+            simulated: true,
+        }
+    }
+
+    #[must_use]
+    pub fn cgroup_root(&self) -> &Path {
+        &self.cgroup_root
+    }
+
+    #[must_use]
+    pub fn root_path(&self) -> &Path {
+        &self.root_path
+    }
+
+    #[must_use]
+    pub fn proc_sys_net_ipv6(&self) -> &Path {
+        &self.proc_sys_net_ipv6
+    }
+
+    #[must_use]
+    pub fn is_simulated(&self) -> bool {
+        self.simulated
+    }
+
+    #[must_use]
+    pub fn allow_host_mutations(&self) -> bool {
+        self.allow_host_mutations
+    }
+
+    /// Detects if the current process is running inside a container.
+    #[must_use]
+    pub fn is_container_detected() -> bool {
+        Path::new("/.dockerenv").exists()
+            || Path::new("/run/.containerenv").exists()
+            || std::env::var_os("container").is_some_and(|val| !val.is_empty())
+    }
+
+    /// Prepares mount propagation on the root filesystem for container mode (`rshared`).
+    ///
+    /// In container mode, Kubernetes requires `/` to have `rshared` propagation so that volume
+    /// mounts (projected service-account tokens, configmaps, secrets) can propagate into pods.
+    /// In an unprivileged or nested-runtime fixture where mount operations are not permitted,
+    /// this gracefully detects and logs the restriction without halting the node.
+    pub fn prepare_mounts(&self) -> Result<MountPropagationStatus, KubeletError> {
+        if self.simulated {
+            return Ok(MountPropagationStatus::SimulatedRshared);
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            if !self.allow_host_mutations {
+                return Ok(MountPropagationStatus::SimulatedRshared);
+            }
+
+            // On Linux, invoke remount with MS_REC | MS_SHARED
+            // If running unprivileged or permission denied, handle gracefully
+            let status = std::process::Command::new("mount")
+                .arg("--make-rshared")
+                .arg(&self.root_path)
+                .status();
+
+            match status {
+                Ok(exit) if exit.success() => Ok(MountPropagationStatus::Shared),
+                Ok(_) => Ok(MountPropagationStatus::SkippedPermissionDenied),
+                Err(_) => Ok(MountPropagationStatus::SkippedPermissionDenied),
+            }
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            Ok(MountPropagationStatus::SkippedNonLinux)
+        }
+    }
+
+    /// Prepares cgroup v2 hierarchy for nested container workloads.
+    ///
+    /// In cgroup v2, a cgroup cannot simultaneously host processes and delegate controllers
+    /// to child cgroups (the "no internal processes" constraint). To avoid this conflict:
+    /// - If not cgroup v2 (e.g. cgroup v1), skips setup cleanly.
+    /// - If cgroup v2, creates `<cgroup_root>/init`, moves `pid` into it via `cgroup.procs`,
+    ///   and enables available controllers on `<cgroup_root>/cgroup.subtree_control`.
+    pub fn prepare_cgroups(&self, pid: u32) -> Result<CgroupSetupStatus, KubeletError> {
+        let controllers_file = self.cgroup_root.join("cgroup.controllers");
+        if !controllers_file.exists() {
+            return Ok(CgroupSetupStatus::SkippedNotV2);
+        }
+
+        let raw_controllers = match fs::read_to_string(&controllers_file) {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                return Ok(CgroupSetupStatus::SkippedPermissionDenied);
+            },
+            Err(e) => return Err(KubeletError::Io(e)),
+        };
+
+        let controllers: Vec<String> = raw_controllers
+            .split_whitespace()
+            .map(str::to_string)
+            .collect();
+
+        let init_cgroup = self.cgroup_root.join("init");
+        if let Err(e) = fs::create_dir_all(&init_cgroup) {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                return Ok(CgroupSetupStatus::SkippedPermissionDenied);
+            }
+            return Err(KubeletError::Io(e));
+        }
+
+        let procs_file = init_cgroup.join("cgroup.procs");
+        if let Err(e) = fs::write(&procs_file, format!("{pid}\n")) {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                return Ok(CgroupSetupStatus::SkippedPermissionDenied);
+            }
+            return Err(KubeletError::Io(e));
+        }
+
+        if !controllers.is_empty() {
+            let subtree_control = self.cgroup_root.join("cgroup.subtree_control");
+            let enable_str = controllers
+                .iter()
+                .map(|c| format!("+{c}"))
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            if let Err(e) = fs::write(&subtree_control, &enable_str) {
+                // If bulk write fails, attempt one by one
+                if e.kind() == std::io::ErrorKind::PermissionDenied {
+                    return Ok(CgroupSetupStatus::SkippedPermissionDenied);
+                }
+                for c in &controllers {
+                    let single = format!("+{c}\n");
+                    let _ = fs::write(&subtree_control, single);
+                }
+            }
+        }
+
+        if self.simulated {
+            Ok(CgroupSetupStatus::Simulated { controllers, pid })
+        } else {
+            Ok(CgroupSetupStatus::Configured { controllers, pid })
+        }
+    }
+
+    /// Disables IPv6 via kernel sysctls for IPv4-only cluster operation.
+    ///
+    /// Applies to `all`, `default`, and `lo` sub-interfaces under `/proc/sys/net/ipv6/conf`.
+    /// Missing paths or permission errors in constrained/unprivileged containers are ignored gracefully.
+    pub fn disable_ipv6(&self) -> Result<Ipv6DisableStatus, KubeletError> {
+        let targets = ["all", "default", "lo"];
+        let mut modified = Vec::new();
+        let mut all_already_disabled = true;
+        let mut permission_denied = false;
+        let mut found_any = false;
+
+        for target in targets {
+            let path = self.proc_sys_net_ipv6.join(target).join("disable_ipv6");
+            if !path.exists() {
+                continue;
+            }
+            found_any = true;
+
+            match fs::read_to_string(&path) {
+                Ok(content) => {
+                    if content.trim() == "1" {
+                        continue;
+                    }
+                    all_already_disabled = false;
+                    match fs::write(&path, "1\n") {
+                        Ok(()) => modified.push(path),
+                        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                            permission_denied = true;
+                        },
+                        Err(e) => return Err(KubeletError::Io(e)),
+                    }
+                },
+                Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                    permission_denied = true;
+                },
+                Err(e) => return Err(KubeletError::Io(e)),
+            }
+        }
+
+        if !found_any {
+            Ok(Ipv6DisableStatus::SkippedNotFound)
+        } else if !modified.is_empty() {
+            Ok(Ipv6DisableStatus::Disabled {
+                modified_paths: modified,
+            })
+        } else if permission_denied {
+            Ok(Ipv6DisableStatus::SkippedPermissionDenied)
+        } else if all_already_disabled {
+            Ok(Ipv6DisableStatus::AlreadyDisabled)
+        } else {
+            Ok(Ipv6DisableStatus::SkippedNotFound)
+        }
+    }
+}
