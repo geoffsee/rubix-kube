@@ -19,12 +19,62 @@ pub fn validate_pki_dir(dir: &Path) -> Result<(), PkiError> {
             "symlink pki directory is rejected".into(),
         ));
     }
-    if let Ok(canonical) = dir.canonicalize() {
-        if canonical == Path::new("/") {
-            return Err(PkiError::UnsafePath("canonical root / is rejected".into()));
-        }
+    if let Ok(canonical) = dir.canonicalize()
+        && canonical == Path::new("/")
+    {
+        return Err(PkiError::UnsafePath("canonical root / is rejected".into()));
     }
     Ok(())
+}
+
+fn parse_ip_address(ip_bytes: &[u8]) -> Option<IpAddr> {
+    if ip_bytes.len() == 4 {
+        Some(IpAddr::V4(std::net::Ipv4Addr::new(
+            ip_bytes[0],
+            ip_bytes[1],
+            ip_bytes[2],
+            ip_bytes[3],
+        )))
+    } else if ip_bytes.len() == 16 {
+        let mut octets = [0u8; 16];
+        octets.copy_from_slice(ip_bytes);
+        Some(IpAddr::V6(std::net::Ipv6Addr::from(octets)))
+    } else {
+        None
+    }
+}
+
+fn process_general_name(
+    gn: &GeneralName<'_>,
+    dns: &mut HashSet<String>,
+    ips: &mut HashSet<IpAddr>,
+) {
+    match gn {
+        GeneralName::DNSName(name) => {
+            dns.insert((*name).to_string());
+        },
+        GeneralName::IPAddress(ip_bytes) => {
+            if let Some(ip) = parse_ip_address(ip_bytes) {
+                ips.insert(ip);
+            }
+        },
+        _ => {},
+    }
+}
+
+fn extract_sans(cert: &X509Certificate<'_>) -> (HashSet<String>, HashSet<IpAddr>) {
+    let mut found_dns: HashSet<String> = HashSet::new();
+    let mut found_ips: HashSet<IpAddr> = HashSet::new();
+
+    for ext in cert.iter_extensions() {
+        let ParsedExtension::SubjectAlternativeName(san) = ext.parsed_extension() else {
+            continue;
+        };
+        for gn in &san.general_names {
+            process_general_name(gn, &mut found_dns, &mut found_ips);
+        }
+    }
+    (found_dns, found_ips)
 }
 
 pub fn inspect_leaf(
@@ -39,34 +89,28 @@ pub fn inspect_leaf(
     }
 
     // Check key validity
-    let key_bytes = match std::fs::read(key_path) {
-        Ok(b) => b,
-        Err(_) => return Ok(false),
+    let Ok(key_bytes) = std::fs::read(key_path) else {
+        return Ok(false);
     };
-    let key_str = match std::str::from_utf8(&key_bytes) {
-        Ok(s) => s,
-        Err(_) => return Ok(false),
+    let Ok(key_str) = std::str::from_utf8(&key_bytes) else {
+        return Ok(false);
     };
     if ::pem::parse(key_str).is_err() {
         return Ok(false);
     }
 
     // Check cert validity
-    let cert_bytes = match std::fs::read(cert_path) {
-        Ok(b) => b,
-        Err(_) => return Ok(false),
+    let Ok(cert_bytes) = std::fs::read(cert_path) else {
+        return Ok(false);
     };
-    let cert_str = match std::str::from_utf8(&cert_bytes) {
-        Ok(s) => s,
-        Err(_) => return Ok(false),
+    let Ok(cert_str) = std::str::from_utf8(&cert_bytes) else {
+        return Ok(false);
     };
-    let parsed_pem = match ::pem::parse(cert_str) {
-        Ok(p) => p,
-        Err(_) => return Ok(false),
+    let Ok(parsed_pem) = ::pem::parse(cert_str) else {
+        return Ok(false);
     };
-    let (_, cert) = match X509Certificate::from_der(parsed_pem.contents()) {
-        Ok(c) => c,
-        Err(_) => return Ok(false),
+    let Ok((_, cert)) = X509Certificate::from_der(parsed_pem.contents()) else {
+        return Ok(false);
     };
 
     // Check expiration: not_before <= now <= not_after
@@ -87,12 +131,10 @@ pub fn inspect_leaf(
         let mut cn_matched = false;
         for rdn in cert.subject().iter_rdn() {
             for attr in rdn.iter() {
-                if attr.attr_type() == &x509_parser::oid_registry::OID_X509_COMMON_NAME {
-                    if let Ok(cn) = attr.as_str() {
-                        if cn == expected_cn {
-                            cn_matched = true;
-                        }
-                    }
+                if attr.attr_type() == &x509_parser::oid_registry::OID_X509_COMMON_NAME
+                    && attr.as_str().is_ok_and(|cn| cn == expected_cn)
+                {
+                    cn_matched = true;
                 }
             }
         }
@@ -102,35 +144,7 @@ pub fn inspect_leaf(
     }
 
     // Check SANs
-    let mut found_dns: HashSet<String> = HashSet::new();
-    let mut found_ips: HashSet<IpAddr> = HashSet::new();
-
-    for ext in cert.iter_extensions() {
-        if let ParsedExtension::SubjectAlternativeName(san) = ext.parsed_extension() {
-            for gn in &san.general_names {
-                match gn {
-                    GeneralName::DNSName(name) => {
-                        found_dns.insert((*name).to_string());
-                    },
-                    GeneralName::IPAddress(ip_bytes) => {
-                        if ip_bytes.len() == 4 {
-                            found_ips.insert(IpAddr::V4(std::net::Ipv4Addr::new(
-                                ip_bytes[0],
-                                ip_bytes[1],
-                                ip_bytes[2],
-                                ip_bytes[3],
-                            )));
-                        } else if ip_bytes.len() == 16 {
-                            let mut octets = [0u8; 16];
-                            octets.copy_from_slice(ip_bytes);
-                            found_ips.insert(IpAddr::V6(std::net::Ipv6Addr::from(octets)));
-                        }
-                    },
-                    _ => {},
-                }
-            }
-        }
-    }
+    let (found_dns, found_ips) = extract_sans(&cert);
 
     for dns in expected_dns {
         if !found_dns.contains(dns) {
@@ -147,6 +161,7 @@ pub fn inspect_leaf(
     Ok(true)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn rotate_leaf_if_needed(
     cert_path: &Path,
     key_path: &Path,

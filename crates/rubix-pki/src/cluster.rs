@@ -1,6 +1,7 @@
 use base64::prelude::*;
 use rcgen::SanType;
 use sha2::{Digest, Sha256};
+use std::fmt::Write;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 
@@ -91,14 +92,7 @@ impl ClusterPki {
             params.subject_alt_names = san_types;
 
             let rotated = rotate_leaf_if_needed(
-                &cert_path,
-                &key_path,
-                signer_crt,
-                signer_key,
-                &params,
-                &params.subject_alt_names.first().map_or("", |_| ""),
-                dns,
-                ips,
+                &cert_path, &key_path, signer_crt, signer_key, &params, "", dns, ips,
             )?;
 
             if rotated {
@@ -268,6 +262,10 @@ impl ClusterPki {
         let mut hasher = Sha256::new();
         hasher.update(&bytes);
         let res = hasher.finalize();
-        Ok(res.iter().map(|b| format!("{b:02x}")).collect())
+        let mut hex = String::with_capacity(res.len() * 2);
+        for b in res {
+            let _ = write!(hex, "{b:02x}");
+        }
+        Ok(hex)
     }
 }
