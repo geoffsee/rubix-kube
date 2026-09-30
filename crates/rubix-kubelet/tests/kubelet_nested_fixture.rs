@@ -327,7 +327,10 @@ async fn test_disposable_nested_runtime_fixture_disallowed_host_mutations() {
     assert!(!fixture.cgroup_dir.join("init").exists());
 
     let ipv6_status = env.disable_ipv6().unwrap();
-    assert_eq!(ipv6_status, Ipv6DisableStatus::AlreadyDisabled);
+    assert_eq!(
+        ipv6_status,
+        Ipv6DisableStatus::SkippedHostMutationsDisallowed
+    );
     let sysctl_val =
         fs::read_to_string(fixture.proc_ipv6_dir.join("all").join("disable_ipv6")).unwrap();
     assert_eq!(sysctl_val.trim(), "0");

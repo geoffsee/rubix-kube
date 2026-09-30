@@ -49,6 +49,7 @@ pub enum Ipv6DisableStatus {
     AlreadyDisabled,
     SkippedPermissionDenied,
     SkippedNotFound,
+    SkippedHostMutationsDisallowed,
 }
 
 /// Manages host environment checks, mounts, cgroups, and network adjustments for container mode.
@@ -239,7 +240,7 @@ impl ContainerEnvironment {
     /// Missing paths or permission errors in constrained/unprivileged containers are ignored gracefully.
     pub fn disable_ipv6(&self) -> Result<Ipv6DisableStatus, KubeletError> {
         if !self.allow_host_mutations {
-            return Ok(Ipv6DisableStatus::AlreadyDisabled);
+            return Ok(Ipv6DisableStatus::SkippedHostMutationsDisallowed);
         }
 
         let targets = ["all", "default", "lo"];
