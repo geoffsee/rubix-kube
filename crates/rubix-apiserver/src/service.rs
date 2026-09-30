@@ -112,42 +112,53 @@ impl ApiserverService {
     pub async fn restore_rbac_from_storage(&self) -> Result<(), ApiserverError> {
         // 1. ClusterRoles
         let cluster_roles_prefix = format!("{}/clusterroles", self.storage.prefix());
-        if let Ok(entries) = self.storage.list(&cluster_roles_prefix).await {
-            for kv in entries {
-                if let Ok(cr) = serde_json::from_slice::<ClusterRole>(&kv.value) {
-                    self.rbac.add_cluster_role(cr);
+        let cluster_roles_list = self.storage.list(&cluster_roles_prefix).await?;
+        for kv in cluster_roles_list {
+            let cr = serde_json::from_slice::<ClusterRole>(&kv.value).map_err(|e| {
+                ApiserverError::StorageUnusable {
+                    reason: format!("failed to deserialize ClusterRole at {}: {e}", kv.key),
                 }
-            }
+            })?;
+            self.rbac.add_cluster_role(cr);
         }
 
         // 2. ClusterRoleBindings
         let cluster_bindings_prefix = format!("{}/clusterrolebindings", self.storage.prefix());
-        if let Ok(entries) = self.storage.list(&cluster_bindings_prefix).await {
-            for kv in entries {
-                if let Ok(crb) = serde_json::from_slice::<ClusterRoleBinding>(&kv.value) {
-                    self.rbac.add_cluster_role_binding(crb);
+        let cluster_bindings_list = self.storage.list(&cluster_bindings_prefix).await?;
+        for kv in cluster_bindings_list {
+            let crb = serde_json::from_slice::<ClusterRoleBinding>(&kv.value).map_err(|e| {
+                ApiserverError::StorageUnusable {
+                    reason: format!(
+                        "failed to deserialize ClusterRoleBinding at {}: {e}",
+                        kv.key
+                    ),
                 }
-            }
+            })?;
+            self.rbac.add_cluster_role_binding(crb);
         }
 
         // 3. Roles
         let namespaced_roles_prefix = format!("{}/roles", self.storage.prefix());
-        if let Ok(entries) = self.storage.list(&namespaced_roles_prefix).await {
-            for kv in entries {
-                if let Ok(r) = serde_json::from_slice::<Role>(&kv.value) {
-                    self.rbac.add_role(r);
+        let namespaced_roles_list = self.storage.list(&namespaced_roles_prefix).await?;
+        for kv in namespaced_roles_list {
+            let r = serde_json::from_slice::<Role>(&kv.value).map_err(|e| {
+                ApiserverError::StorageUnusable {
+                    reason: format!("failed to deserialize Role at {}: {e}", kv.key),
                 }
-            }
+            })?;
+            self.rbac.add_role(r);
         }
 
         // 4. RoleBindings
         let namespaced_bindings_prefix = format!("{}/rolebindings", self.storage.prefix());
-        if let Ok(entries) = self.storage.list(&namespaced_bindings_prefix).await {
-            for kv in entries {
-                if let Ok(rb) = serde_json::from_slice::<RoleBinding>(&kv.value) {
-                    self.rbac.add_role_binding(rb);
+        let namespaced_bindings_list = self.storage.list(&namespaced_bindings_prefix).await?;
+        for kv in namespaced_bindings_list {
+            let rb = serde_json::from_slice::<RoleBinding>(&kv.value).map_err(|e| {
+                ApiserverError::StorageUnusable {
+                    reason: format!("failed to deserialize RoleBinding at {}: {e}", kv.key),
                 }
-            }
+            })?;
+            self.rbac.add_role_binding(rb);
         }
 
         Ok(())

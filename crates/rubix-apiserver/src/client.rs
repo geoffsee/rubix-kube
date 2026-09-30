@@ -8,7 +8,7 @@ use rubix_datastore::WatchReceiver;
 use crate::config::ApiserverConfig;
 use crate::error::ApiserverError;
 use crate::rbac::{
-    AuthzRequest, ClusterRole, ClusterRoleBinding, RbacAuthorizer, Role, RoleBinding,
+    AuthzRequest, ClusterRole, ClusterRoleBinding, PolicyRule, RbacAuthorizer, Role, RoleBinding,
 };
 use crate::storage::KubernetesStorage;
 use crate::token::TokenService;
@@ -77,10 +77,6 @@ impl KubernetesApiClient {
     }
 
     fn check_token_auth(&self, token: &str, req: &AuthzRequest<'_>) -> Result<(), ApiserverError> {
-        if token == "admin-token" {
-            return Ok(());
-        }
-
         if let Some(ts) = &self.token_service {
             let claims = ts.verify_token(token, Some("https://kubernetes.default.svc"))?;
             let groups = vec![
@@ -96,7 +92,7 @@ impl KubernetesApiClient {
         } else {
             Err(ApiserverError::Unauthorized {
                 reason: format!(
-                    "token '{token}' is unauthorized for {} on {}",
+                    "bearer token cannot be verified (token service unavailable) for {} on {}",
                     req.verb, req.resource
                 ),
             })
@@ -669,6 +665,160 @@ impl KubernetesApiClient {
 
     // --- RBAC API Management ---
 
+    fn verify_caller_holds_rule(
+        &self,
+        rule: &PolicyRule,
+        namespace: Option<&str>,
+    ) -> Result<(), ApiserverError> {
+        for verb in &rule.verbs {
+            for group in &rule.api_groups {
+                for res in &rule.resources {
+                    self.check_auth_detailed(verb, group, res, namespace, None)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn verify_caller_holds_rules(
+        &self,
+        rules: &[PolicyRule],
+        namespace: Option<&str>,
+    ) -> Result<(), ApiserverError> {
+        for rule in rules {
+            self.verify_caller_holds_rule(rule, namespace)?;
+        }
+        Ok(())
+    }
+
+    fn verify_cluster_role_creation_privileges(
+        &self,
+        cr: &ClusterRole,
+    ) -> Result<(), ApiserverError> {
+        if self.identity == ClientIdentity::AdminCertificate {
+            return Ok(());
+        }
+
+        let has_escalate = self
+            .check_auth_detailed(
+                "escalate",
+                "rbac.authorization.k8s.io",
+                "clusterroles",
+                None,
+                Some(&cr.name),
+            )
+            .is_ok();
+
+        if has_escalate {
+            return Ok(());
+        }
+
+        self.verify_caller_holds_rules(&cr.rules, None)
+    }
+
+    fn verify_cluster_role_binding_privileges(&self, role_ref: &str) -> Result<(), ApiserverError> {
+        if self.identity == ClientIdentity::AdminCertificate {
+            return Ok(());
+        }
+
+        let has_bind = self
+            .check_auth_detailed(
+                "bind",
+                "rbac.authorization.k8s.io",
+                "clusterroles",
+                None,
+                Some(role_ref),
+            )
+            .is_ok();
+
+        if has_bind {
+            return Ok(());
+        }
+
+        let rules = if let Some(cr) = self.rbac.get_cluster_role(role_ref) {
+            cr.rules
+        } else {
+            return Err(ApiserverError::InvalidInput {
+                field: "role_ref".to_string(),
+                reason: format!("referenced ClusterRole '{role_ref}' does not exist"),
+            });
+        };
+
+        self.verify_caller_holds_rules(&rules, None)
+    }
+
+    fn verify_role_creation_privileges(
+        &self,
+        namespace: &str,
+        role: &Role,
+    ) -> Result<(), ApiserverError> {
+        if self.identity == ClientIdentity::AdminCertificate {
+            return Ok(());
+        }
+
+        let has_escalate = self
+            .check_auth_detailed(
+                "escalate",
+                "rbac.authorization.k8s.io",
+                "roles",
+                Some(namespace),
+                Some(&role.name),
+            )
+            .is_ok();
+
+        if has_escalate {
+            return Ok(());
+        }
+
+        self.verify_caller_holds_rules(&role.rules, Some(namespace))
+    }
+
+    fn verify_role_binding_privileges(
+        &self,
+        namespace: &str,
+        role_ref: &str,
+    ) -> Result<(), ApiserverError> {
+        if self.identity == ClientIdentity::AdminCertificate {
+            return Ok(());
+        }
+
+        let has_bind = self
+            .check_auth_detailed(
+                "bind",
+                "rbac.authorization.k8s.io",
+                "roles",
+                Some(namespace),
+                Some(role_ref),
+            )
+            .is_ok()
+            || self
+                .check_auth_detailed(
+                    "bind",
+                    "rbac.authorization.k8s.io",
+                    "clusterroles",
+                    None,
+                    Some(role_ref),
+                )
+                .is_ok();
+
+        if has_bind {
+            return Ok(());
+        }
+
+        let rules = if let Some(r) = self.rbac.get_role(namespace, role_ref) {
+            r.rules
+        } else if let Some(cr) = self.rbac.get_cluster_role(role_ref) {
+            cr.rules
+        } else {
+            return Err(ApiserverError::InvalidInput {
+                field: "role_ref".to_string(),
+                reason: format!("referenced role '{role_ref}' does not exist"),
+            });
+        };
+
+        self.verify_caller_holds_rules(&rules, Some(namespace))
+    }
+
     pub async fn create_cluster_role(
         &self,
         role: ClusterRole,
@@ -680,6 +830,7 @@ impl KubernetesApiClient {
             None,
             Some(&role.name),
         )?;
+        self.verify_cluster_role_creation_privileges(&role)?;
         let key = format!("{}/clusterroles/{}", self.storage.prefix(), role.name);
         let bytes = serde_json::to_vec(&role)?;
         self.storage.create(&key, bytes).await?;
@@ -723,6 +874,7 @@ impl KubernetesApiClient {
             None,
             Some(&binding.name),
         )?;
+        self.verify_cluster_role_binding_privileges(&binding.role_ref)?;
         let key = format!(
             "{}/clusterrolebindings/{}",
             self.storage.prefix(),
@@ -770,6 +922,7 @@ impl KubernetesApiClient {
             Some(&role.namespace),
             Some(&role.name),
         )?;
+        self.verify_role_creation_privileges(&role.namespace, &role)?;
         let key = format!(
             "{}/roles/{}/{}",
             self.storage.prefix(),
@@ -818,6 +971,7 @@ impl KubernetesApiClient {
             Some(&binding.namespace),
             Some(&binding.name),
         )?;
+        self.verify_role_binding_privileges(&binding.namespace, &binding.role_ref)?;
         let key = format!(
             "{}/rolebindings/{}/{}",
             self.storage.prefix(),

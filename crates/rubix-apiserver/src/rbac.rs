@@ -59,14 +59,15 @@ impl PolicyRule {
             return false;
         }
 
-        if let Some(r_name) = resource_name
-            && !self.resource_names.is_empty()
-            && !self
-                .resource_names
-                .iter()
-                .any(|rn| rn == "*" || rn == r_name)
-        {
-            return false;
+        if !self.resource_names.is_empty() {
+            match resource_name {
+                Some(r_name)
+                    if self
+                        .resource_names
+                        .iter()
+                        .any(|rn| rn == "*" || rn == r_name) => {},
+                _ => return false,
+            }
         }
 
         true

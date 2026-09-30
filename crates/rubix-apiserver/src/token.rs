@@ -111,6 +111,13 @@ impl TokenService {
             })?
             .as_secs();
 
+        if audiences.iter().any(|a| a == "*") {
+            return Err(ApiserverError::InvalidInput {
+                field: "audiences".to_string(),
+                reason: "wildcard audience '*' is not permitted".to_string(),
+            });
+        }
+
         let exp = now.saturating_add(lifetime.as_secs());
         let aud = if audiences.is_empty() {
             self.api_audiences.clone()
@@ -223,7 +230,7 @@ impl TokenService {
 
         // 4. Verify audience
         if let Some(expected_aud) = expected_audience {
-            let matched = claims.aud.iter().any(|a| a == expected_aud || a == "*");
+            let matched = claims.aud.iter().any(|a| a == expected_aud);
             if !matched {
                 return Err(ApiserverError::Unauthorized {
                     reason: format!(
