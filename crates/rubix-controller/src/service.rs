@@ -134,11 +134,13 @@ impl ControllerManagerService {
             self.config.controllers.clone()
         };
 
-        // Populated with active workload and garbage-collection reconciliation loops (E12.02)
+        // Populated with active workload and garbage-collection reconciliation loops (E12.02, E12.03)
         let workload_controllers = [
             "cronjob",
             "daemonset",
             "deployment",
+            "endpoints",
+            "endpointslice",
             "garbagecollector",
             "job",
             "replicaset",
