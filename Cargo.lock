@@ -1102,6 +1102,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "rubix-datastore"
+version = "0.1.0"
+dependencies = [
+ "rubix-supervisor",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "rubix-dev"
 version = "0.1.0"
 dependencies = [
