@@ -91,10 +91,7 @@ pub fn select_snapshotter(is_overlay_fs: bool, has_fuse_overlayfs: bool) -> Snap
 pub fn is_overlayfs(path: &Path) -> bool {
     #[cfg(target_os = "linux")]
     {
-        let target = path
-            .ancestors()
-            .find(|p| p.exists())
-            .unwrap_or(path);
+        let target = path.ancestors().find(|p| p.exists()).unwrap_or(path);
 
         if let Ok(stat) = rustix::fs::statfs(target) {
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]

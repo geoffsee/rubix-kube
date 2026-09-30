@@ -92,8 +92,7 @@ pub fn ensure_symbolic_link(source: &Path, target: &Path) -> Result<(), SymlinkE
     let source_abs = if source.is_absolute() {
         source.to_path_buf()
     } else {
-        std::env::current_dir()
-            .map_or_else(|_| source.to_path_buf(), |cwd| cwd.join(source))
+        std::env::current_dir().map_or_else(|_| source.to_path_buf(), |cwd| cwd.join(source))
     };
 
     if let Ok(existing_dest) = fs::read_link(target)
