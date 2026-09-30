@@ -201,3 +201,38 @@ fn test_unsafe_roots_rejected() {
         Err(PkiError::UnsafePath(_))
     ));
 }
+
+#[test]
+fn test_leaf_key_mismatch_rotates() {
+    let dir = tempdir().unwrap();
+    let config = ClusterPkiConfig::new(
+        dir.path().to_path_buf(),
+        "fixture-node".to_string(),
+        "192.0.2.10".parse().unwrap(),
+    );
+    let pki = ClusterPki::new(config);
+    pki.reconcile().unwrap();
+
+    // Replace admin.key with a freshly generated different key (causing cert/key mismatch)
+    let alt_key = rcgen::KeyPair::generate_for(&rcgen::PKCS_RSA_SHA256).unwrap();
+    fs::write(dir.path().join("admin.key"), alt_key.serialize_pem()).unwrap();
+
+    let report = pki.reconcile().unwrap();
+    assert!(report.rotated.contains(&"admin".to_string()));
+    assert!(report.preserved.contains(&"kubelet".to_string()));
+}
+
+#[test]
+fn test_ipv6_kubeconfig_server_url_is_bracketed() {
+    let dir = tempdir().unwrap();
+    let config = ClusterPkiConfig::new(
+        dir.path().to_path_buf(),
+        "fixture-node".to_string(),
+        "2001:db8::1".parse().unwrap(),
+    );
+    let pki = ClusterPki::new(config);
+    pki.reconcile().unwrap();
+
+    let admin_cfg = fs::read_to_string(dir.path().join("admin.kubeconfig")).unwrap();
+    assert!(admin_cfg.contains("server: https://[2001:db8::1]:6443"));
+}

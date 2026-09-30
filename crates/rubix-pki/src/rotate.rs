@@ -77,9 +77,11 @@ fn extract_sans(cert: &X509Certificate<'_>) -> (HashSet<String>, HashSet<IpAddr>
     (found_dns, found_ips)
 }
 
-pub fn inspect_leaf(
+#[allow(clippy::too_many_arguments)]
+pub fn inspect_leaf_with_signer(
     cert_path: &Path,
     key_path: &Path,
+    signer_cert_path: Option<&Path>,
     expected_cn: &str,
     expected_dns: &[String],
     expected_ips: &[IpAddr],
@@ -95,9 +97,9 @@ pub fn inspect_leaf(
     let Ok(key_str) = std::str::from_utf8(&key_bytes) else {
         return Ok(false);
     };
-    if ::pem::parse(key_str).is_err() {
+    let Ok(key_pair) = rcgen::KeyPair::from_pem(key_str) else {
         return Ok(false);
-    }
+    };
 
     // Check cert validity
     let Ok(cert_bytes) = std::fs::read(cert_path) else {
@@ -112,6 +114,33 @@ pub fn inspect_leaf(
     let Ok((_, cert)) = X509Certificate::from_der(parsed_pem.contents()) else {
         return Ok(false);
     };
+
+    // Verify key pair matches cert public key
+    if cert.public_key().subject_public_key.data.as_ref() != key_pair.public_key_raw() {
+        return Ok(false);
+    }
+
+    // Check signature if signer cert provided
+    if let Some(signer_path) = signer_cert_path {
+        let Ok(signer_bytes) = std::fs::read(signer_path) else {
+            return Ok(false);
+        };
+        let Ok(signer_str) = std::str::from_utf8(&signer_bytes) else {
+            return Ok(false);
+        };
+        let Ok(signer_pem) = ::pem::parse(signer_str) else {
+            return Ok(false);
+        };
+        let Ok((_, signer_cert)) = X509Certificate::from_der(signer_pem.contents()) else {
+            return Ok(false);
+        };
+        if cert
+            .verify_signature(Some(signer_cert.public_key()))
+            .is_err()
+        {
+            return Ok(false);
+        }
+    }
 
     // Check expiration: not_before <= now <= not_after
     let now = SystemTime::now()
@@ -161,6 +190,23 @@ pub fn inspect_leaf(
     Ok(true)
 }
 
+pub fn inspect_leaf(
+    cert_path: &Path,
+    key_path: &Path,
+    expected_cn: &str,
+    expected_dns: &[String],
+    expected_ips: &[IpAddr],
+) -> Result<bool, PkiError> {
+    inspect_leaf_with_signer(
+        cert_path,
+        key_path,
+        None,
+        expected_cn,
+        expected_dns,
+        expected_ips,
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn rotate_leaf_if_needed(
     cert_path: &Path,
@@ -172,7 +218,14 @@ pub fn rotate_leaf_if_needed(
     expected_dns: &[String],
     expected_ips: &[IpAddr],
 ) -> Result<bool, PkiError> {
-    if inspect_leaf(cert_path, key_path, expected_cn, expected_dns, expected_ips)? {
+    if inspect_leaf_with_signer(
+        cert_path,
+        key_path,
+        Some(signer_cert_path),
+        expected_cn,
+        expected_dns,
+        expected_ips,
+    )? {
         return Ok(false);
     }
 

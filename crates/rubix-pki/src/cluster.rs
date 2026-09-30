@@ -229,7 +229,10 @@ impl ClusterPki {
         )?;
 
         // 4. Kubeconfigs
-        let server_url = format!("https://{}:6443", self.config.node_ip);
+        let server_url = format!(
+            "https://{}",
+            std::net::SocketAddr::new(self.config.node_ip, 6443)
+        );
         let ca_data = std::fs::read(&ca_crt)?;
         let ca_b64 = BASE64_STANDARD.encode(&ca_data);
 
