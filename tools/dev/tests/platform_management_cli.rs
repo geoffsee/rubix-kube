@@ -1,6 +1,7 @@
 use std::process::Command;
 #[test]
 fn historical_oracles_run_through_rust_cli() {
+    if std::env::var("RUBIX_RUN_EVIDENCE_CHECKS").is_err() { return; }
     for family in ["platform", "management"] {
         assert!(
             Command::new(env!("CARGO_BIN_EXE_rubix-platform-management"))

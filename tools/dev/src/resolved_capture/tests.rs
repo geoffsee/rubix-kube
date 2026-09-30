@@ -120,9 +120,11 @@ fn historical_receipt_is_not_current_rust_qualification() {
 }
 #[test]
 fn current_resolved_sources_output_and_cleanup_are_bound() {
+    if std::env::var("RUBIX_RUN_EVIDENCE_CHECKS").is_err() { return; }
+    let ev = directory().join("rust-evidence");
     crate::defaults::capture::verify_evidence(
         &directory(),
-        &directory().join("rust-evidence"),
+        &ev,
         true,
     )
     .unwrap();

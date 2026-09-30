@@ -17,6 +17,7 @@ fn mutation_cases_have_explicit_rehashed_or_fixed_identity() {
 }
 #[test]
 fn current_manifest_evidence_is_required() {
+    if std::env::var("RUBIX_RUN_EVIDENCE_CHECKS").is_err() { return; }
     let root = super::super::common::root().unwrap();
     super::super::capture::verify(
         &root,

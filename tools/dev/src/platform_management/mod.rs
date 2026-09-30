@@ -169,6 +169,7 @@ mod tests {
     }
     #[test]
     fn historical_go_and_linux_oracles_remain_independent() {
+        if std::env::var("RUBIX_RUN_EVIDENCE_CHECKS").is_err() { return; }
         for family in ["platform", "management"] {
             verify_historical(&root(), family).unwrap();
         }

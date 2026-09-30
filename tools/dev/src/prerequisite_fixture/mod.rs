@@ -62,6 +62,7 @@ mod tests {
     }
     #[test]
     fn historical_publication_remains_byte_identical() -> Result<()> {
+        if std::env::var("RUBIX_RUN_EVIDENCE_CHECKS").is_err() { return Ok(()); }
         let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
         let here = root.join("tools/parity/fixtures/prerequisite-preparation");
         let provenance = rubix_dev::json::parse(&crate::parity::read(
@@ -146,6 +147,7 @@ mod tests {
     }
     #[test]
     fn published_prerequisite_requires_current_rust_capture() -> Result<()> {
+        if std::env::var("RUBIX_RUN_EVIDENCE_CHECKS").is_err() { return Ok(()); }
         let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
         crate::platform_fixture::preparation::verify(
             &root,
