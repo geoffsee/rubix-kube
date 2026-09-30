@@ -8,7 +8,7 @@ use tokio::sync::{RwLock, broadcast};
 use crate::config::DatastoreConfig;
 use crate::error::DatastoreError;
 use crate::lock::DatastoreLock;
-use crate::model::{DatastoreOp, KeyValue, WatchEvent, WatchEventType};
+use crate::model::{DatastoreOp, KeyValue, WatchEvent, WatchEventType, WatchReceiver};
 use crate::wal::{Wal, WalSummary};
 
 const SNAPSHOT_MAGIC: &[u8; 8] = b"RUBXSNP1";
@@ -270,9 +270,12 @@ impl DatastoreEngine {
         Ok(Some(existing))
     }
 
-    pub async fn watch(&self, _prefix: &str) -> broadcast::Receiver<WatchEvent> {
+    pub async fn watch(&self, prefix: &str) -> WatchReceiver {
         let state = self.state.read().await;
-        state.notifier.subscribe()
+        let raw_rx = state.notifier.subscribe();
+        let (tx, rx) = tokio::sync::mpsc::channel(BROADCAST_CAPACITY);
+        tokio::spawn(forward_watch_events(raw_rx, tx, prefix.to_string()));
+        WatchReceiver::new(rx)
     }
 
     pub async fn checkpoint_snapshot(&self) -> Result<(), DatastoreError> {
@@ -316,5 +319,24 @@ impl DatastoreEngine {
         let kv: BTreeMap<String, KeyValue> = serde_json::from_slice(&rest)?;
 
         Ok((kv, revision))
+    }
+}
+
+async fn forward_watch_events(
+    mut raw_rx: broadcast::Receiver<WatchEvent>,
+    tx: tokio::sync::mpsc::Sender<WatchEvent>,
+    prefix: String,
+) {
+    loop {
+        match raw_rx.recv().await {
+            Ok(event) => {
+                let matches = event.kv.key.starts_with(&prefix);
+                if matches && tx.send(event).await.is_err() {
+                    break;
+                }
+            },
+            Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
+            Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+        }
     }
 }

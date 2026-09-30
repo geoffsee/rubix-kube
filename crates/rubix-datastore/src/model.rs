@@ -27,3 +27,21 @@ pub struct WatchEvent {
     pub kv: KeyValue,
     pub prev_kv: Option<KeyValue>,
 }
+
+#[derive(Debug)]
+pub struct WatchReceiver {
+    rx: tokio::sync::mpsc::Receiver<WatchEvent>,
+}
+
+impl WatchReceiver {
+    pub fn new(rx: tokio::sync::mpsc::Receiver<WatchEvent>) -> Self {
+        Self { rx }
+    }
+
+    pub async fn recv(&mut self) -> Result<WatchEvent, tokio::sync::broadcast::error::RecvError> {
+        self.rx
+            .recv()
+            .await
+            .ok_or(tokio::sync::broadcast::error::RecvError::Closed)
+    }
+}

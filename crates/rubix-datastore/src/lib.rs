@@ -12,6 +12,6 @@ pub use config::DatastoreConfig;
 pub use engine::DatastoreEngine;
 pub use error::DatastoreError;
 pub use lock::DatastoreLock;
-pub use model::{DatastoreOp, KeyValue, WatchEvent, WatchEventType};
+pub use model::{DatastoreOp, KeyValue, WatchEvent, WatchEventType, WatchReceiver};
 pub use supervisor::DatastoreAdapter;
 pub use wal::{Wal, WalRecord, WalSummary};

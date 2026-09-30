@@ -80,6 +80,13 @@ fn read_single_record(
     }
 
     let record_len = u32::from_be_bytes(len_buf) as usize;
+    let pos = file.stream_position()?;
+    let remaining = file.metadata()?.len().saturating_sub(pos);
+    if record_len as u64 > remaining {
+        return Ok(ReadRecordOutcome::Corrupted(format!(
+            "WAL record length {record_len} exceeds remaining {remaining} bytes at index {next_index}"
+        )));
+    }
     let mut record_bytes = vec![0u8; record_len];
     if let Err(e) = file.read_exact(&mut record_bytes) {
         return Ok(ReadRecordOutcome::Corrupted(format!(

@@ -135,19 +135,25 @@ async fn test_watch_receives_live_events() {
 
     let mut watcher = client.watch("/registry/pods/").await;
 
+    // Mutation with non-matching prefix must NOT be received by watcher
+    client
+        .create("/registry/services/default/web", b"web-svc".to_vec())
+        .await
+        .unwrap();
+
     let key = "/registry/pods/default/redis";
     client.create(key, b"redis-1".to_vec()).await.unwrap();
 
     let event1 = watcher.recv().await.unwrap();
     assert_eq!(event1.event_type, WatchEventType::Put);
     assert_eq!(event1.kv.key, key);
-    assert_eq!(event1.kv.mod_revision, 1);
+    assert_eq!(event1.kv.mod_revision, 2);
 
     client.update(key, b"redis-2".to_vec(), None).await.unwrap();
     let event2 = watcher.recv().await.unwrap();
     assert_eq!(event2.event_type, WatchEventType::Put);
-    assert_eq!(event2.kv.mod_revision, 2);
-    assert_eq!(event2.prev_kv.unwrap().mod_revision, 1);
+    assert_eq!(event2.kv.mod_revision, 3);
+    assert_eq!(event2.prev_kv.unwrap().mod_revision, 2);
 
     client.delete(key, None).await.unwrap();
     let event3 = watcher.recv().await.unwrap();

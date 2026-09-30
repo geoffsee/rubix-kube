@@ -1,8 +1,6 @@
-use tokio::sync::broadcast;
-
 use crate::engine::DatastoreEngine;
 use crate::error::DatastoreError;
-use crate::model::{KeyValue, WatchEvent};
+use crate::model::{KeyValue, WatchReceiver};
 
 #[derive(Clone, Debug)]
 pub struct DatastoreClient {
@@ -47,7 +45,7 @@ impl DatastoreClient {
         self.engine.delete(key, expected_mod_revision).await
     }
 
-    pub async fn watch(&self, prefix: &str) -> broadcast::Receiver<WatchEvent> {
+    pub async fn watch(&self, prefix: &str) -> WatchReceiver {
         self.engine.watch(prefix).await
     }
 }
