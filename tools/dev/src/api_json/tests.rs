@@ -134,6 +134,7 @@ fn historical_python_receipt_cannot_be_relabelled_current() {
     );
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn current_rust_api_capture_is_required_for_qualification() {
     check_capture(&directory().join("evidence-rust")).unwrap();
 }

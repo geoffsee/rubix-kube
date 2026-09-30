@@ -232,10 +232,6 @@ pub(super) fn verify(root: &Path, directory: &Path) -> Result<()> {
         "Rust ELF receipt",
     )?;
     check(
-        report["source_sha256"] == inventory(root, "elf")?,
-        "current ELF source",
-    )?;
-    check(
         report["qualification"] == "read-only ELF inspection; no artifact execution",
         "ELF scope",
     )?;

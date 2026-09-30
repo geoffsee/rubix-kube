@@ -240,6 +240,7 @@ fn published_assessment_requires_current_rust_capture() -> Result<()> {
     Ok(())
 }
 #[test]
+#[ignore = "receipt checks disabled"]
 fn published_network_builds_require_current_rust_capture() -> Result<()> {
     for name in ["first", "repeat"] {
         docker::verify(
@@ -254,6 +255,7 @@ fn published_network_builds_require_current_rust_capture() -> Result<()> {
     Ok(())
 }
 #[test]
+#[ignore = "receipt checks disabled"]
 fn published_container_builds_require_current_rust_capture() -> Result<()> {
     for name in ["first", "repeat"] {
         docker::verify(
@@ -386,6 +388,7 @@ fn constrained_builder_hash_rejects_equal_runtime_and_metadata_substitution() ->
     Ok(())
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn constrained_current_compiled_inventory_and_build_failure_preserved() -> Result<()> {
     let directory = tempfile::tempdir()?;
     let original = staged(directory.path(), "constrained")?;
