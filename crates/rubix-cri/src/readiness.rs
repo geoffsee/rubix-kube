@@ -33,6 +33,10 @@ pub enum ReadinessError {
         service: &'static str,
         status: tonic::Status,
     },
+    ConnectFailed {
+        endpoint: PathBuf,
+        source: tonic::transport::Error,
+    },
 }
 
 impl fmt::Display for ReadinessError {
@@ -63,6 +67,13 @@ impl fmt::Display for ReadinessError {
                     status.code()
                 )
             },
+            Self::ConnectFailed { endpoint, source } => {
+                write!(
+                    f,
+                    "failed to connect to CRI endpoint '{}': {source}",
+                    endpoint.display()
+                )
+            },
         }
     }
 }
@@ -71,6 +82,7 @@ impl std::error::Error for ReadinessError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::RpcFailed { status, .. } => Some(status),
+            Self::ConnectFailed { source, .. } => Some(source),
             _ => None,
         }
     }

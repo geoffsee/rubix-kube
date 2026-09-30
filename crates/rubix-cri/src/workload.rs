@@ -18,7 +18,6 @@ use crate::runtime::v1::{
     StartContainerRequest, StopContainerRequest, StopPodSandboxRequest,
 };
 use std::collections::BTreeMap;
-use std::time::Duration;
 use tonic::transport::Channel;
 
 /// CRI client connecting to runtime and image service endpoints.
@@ -48,9 +47,9 @@ impl CriClient {
         let runtime_channel =
             connect_unix(runtime_path)
                 .await
-                .map_err(|_| ReadinessError::TimedOut {
+                .map_err(|source| ReadinessError::ConnectFailed {
                     endpoint: runtime_path.to_path_buf(),
-                    elapsed: Duration::ZERO,
+                    source,
                 })?;
 
         let image_channel = if runtime_path == image_path {
@@ -58,9 +57,9 @@ impl CriClient {
         } else {
             connect_unix(image_path)
                 .await
-                .map_err(|_| ReadinessError::TimedOut {
+                .map_err(|source| ReadinessError::ConnectFailed {
                     endpoint: image_path.to_path_buf(),
-                    elapsed: Duration::ZERO,
+                    source,
                 })?
         };
 
