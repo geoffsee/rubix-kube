@@ -4,13 +4,13 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-config-scalar-base-xwbkhi-scalar-0"
+    "rubix-config-scalar-base-txy96g-scalar-0"
   ],
   "errors": [],
   "family": "config-scalar-base",
   "identical_repeats": false,
-  "image": "rubix-config-scalar-base-xwbkhi",
-  "image_id": "sha256:81f81979f2c154de0c87ea0544d9e99ac663ea8a6c5607e3ebb9d403ce5c56d9",
+  "image": "rubix-config-scalar-base-txy96g",
+  "image_id": "sha256:e350343548fbca39956dbab289560669c980a9cd1b0a0ce1870ead1089623fb4",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -27,30 +27,30 @@
         "User": "65532:65532",
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T16:58:02.302477343Z",
+      "Created": "2026-09-29T07:31:03.599890591Z",
       "Descriptor": {
-        "digest": "sha256:81f81979f2c154de0c87ea0544d9e99ac663ea8a6c5607e3ebb9d403ce5c56d9",
+        "digest": "sha256:e350343548fbca39956dbab289560669c980a9cd1b0a0ce1870ead1089623fb4",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:81f81979f2c154de0c87ea0544d9e99ac663ea8a6c5607e3ebb9d403ce5c56d9",
+      "Id": "sha256:e350343548fbca39956dbab289560669c980a9cd1b0a0ce1870ead1089623fb4",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T16:58:05.186705762Z",
-            "Ref": "9j1zhlwybtziy863f313xe3qw"
+            "CreatedAt": "2026-09-29T07:31:06.291365301Z",
+            "Ref": "oatyxl33tn2cvfsc9bxzmyyuw"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T16:58:04.577178553Z"
+        "LastTagTime": "2026-09-29T07:31:05.824728134Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-config-scalar-base-xwbkhi@sha256:81f81979f2c154de0c87ea0544d9e99ac663ea8a6c5607e3ebb9d403ce5c56d9"
+        "rubix-config-scalar-base-txy96g@sha256:e350343548fbca39956dbab289560669c980a9cd1b0a0ce1870ead1089623fb4"
       ],
       "RepoTags": [
-        "rubix-config-scalar-base-xwbkhi:latest"
+        "rubix-config-scalar-base-txy96g:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -63,17 +63,17 @@
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
           "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
           "sha256:89e8c1a498d66a2155a581feb21a032650ac64b05d4c00fec6594ac27484aa0e",
-          "sha256:478c93f4fa53c3b9a54497e5d101d1daac5e8991ebd3165468f71eab7cda5c19",
-          "sha256:2ccde77ab9587ffc229e506e9a9b645fa0b449d0fbb31e40e47bab87da3bd1ed",
+          "sha256:96db2378027402ae5c19131fa609f008e02296d5dae33ddd3b926a4930cde484",
+          "sha256:c4517c69828f37c88b1fb59a1ab238ab4bf3cf62f7754b43e727de9f0f85b360",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 324056868
+      "Size": 324057003
     }
   ],
   "outputs": {
-    "scalar.json": "cfcc4c7f0530143dc43ba728debdb9e0ca9d25d7c097076684318ea7e183d288"
+    "scalar.json": "f2007a9e9ba2c9915e5d291370fda7577f676751ca7222a4f0dda55c414fde78"
   },
   "process_cleanup_complete": true,
   "process_failures": [],
@@ -82,12 +82,12 @@
   "repeat_count": 1,
   "retained_build_contexts": [],
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
-  "runner_sha256": "6e1e36786196ab56d9ef63e3c48002654754893af34bdf88797b9ec50b22299f",
+  "runner_sha256": "e8a87c8935f17b97062e613dc800c6809771f7617c3d0855d3e6f3dd76cb0ac1",
   "schema_version": 2,
   "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
   "source_sha256": {
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-config/tests/fixtures/scalar-signs/base/Dockerfile": "98ff4fda89eb2f1becb03d53ff31af17e4bd4d21063031b02e3dd2199c8aa5d3",
     "crates/rubix-config/tests/fixtures/scalar-signs/base/scalar_capture_test.go": "cc5f8606acde80841c5f6d94e5f421358321668cb6e44cf8f77fa1436c7fce83",
     "rust-toolchain.toml": "479123a7389d25b7b45d10fb78ebd35ce5b57aa1cc9132165ec43f3bb5f160fb",

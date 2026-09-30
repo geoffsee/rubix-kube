@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-preflight-policy-te9tvx"
+    "rubix-preflight-policy-lsc5mu"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 97960,
+  "owned_pid": 40414,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-OwXjo7",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Zt8PjR",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "3ea836126e7aa558d27b00b6ae4efa57fd7e9d9fc123c460cc363e8d90fb2fbf",
+  "stdout_sha256": "4541a5e991e413d10b19ccee9d5e2d09981e21454837d97a509e5e2118518d25",
   "timeout": false
 }

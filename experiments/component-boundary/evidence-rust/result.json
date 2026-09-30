@@ -61,83 +61,83 @@
   "measurements": [
     {
       "component_process_count": 2,
-      "component_rss_sum_kib": 303296,
+      "component_rss_sum_kib": 310236,
       "components": [
         {
-          "VmHWM_kib": 47168,
-          "VmRSS_kib": 47168,
+          "VmHWM_kib": 50044,
+          "VmRSS_kib": 49812,
           "name": "kine",
           "pid": 16
         },
         {
-          "VmHWM_kib": 256128,
-          "VmRSS_kib": 256128,
+          "VmHWM_kib": 260424,
+          "VmRSS_kib": 260424,
           "name": "kube-apiserver",
-          "pid": 23
+          "pid": 24
         }
       ],
       "cycle": "1",
-      "readiness_seconds": 2.280107084
+      "readiness_seconds": 2.774036335
     },
     {
       "component_process_count": 2,
-      "component_rss_sum_kib": 293012,
+      "component_rss_sum_kib": 294920,
       "components": [
         {
-          "VmHWM_kib": 49552,
-          "VmRSS_kib": 49552,
+          "VmHWM_kib": 47468,
+          "VmRSS_kib": 47100,
           "name": "kine",
           "pid": 45
         },
         {
-          "VmHWM_kib": 243460,
-          "VmRSS_kib": 243460,
+          "VmHWM_kib": 247820,
+          "VmRSS_kib": 247820,
           "name": "kube-apiserver",
           "pid": 52
         }
       ],
       "cycle": "2",
-      "readiness_seconds": 2.268832793
-    },
-    {
-      "component_process_count": 2,
-      "component_rss_sum_kib": 281748,
-      "components": [
-        {
-          "VmHWM_kib": 243544,
-          "VmRSS_kib": 243544,
-          "name": "kube-apiserver",
-          "pid": 52
-        },
-        {
-          "VmHWM_kib": 38292,
-          "VmRSS_kib": 38204,
-          "name": "kine",
-          "pid": 70
-        }
-      ],
-      "cycle": "datastore-recovery",
-      "readiness_seconds": 5.026807253
+      "readiness_seconds": 1.752021126
     },
     {
       "component_process_count": 2,
       "component_rss_sum_kib": 290396,
       "components": [
         {
-          "VmHWM_kib": 47232,
-          "VmRSS_kib": 47232,
+          "VmHWM_kib": 247920,
+          "VmRSS_kib": 247920,
+          "name": "kube-apiserver",
+          "pid": 52
+        },
+        {
+          "VmHWM_kib": 42528,
+          "VmRSS_kib": 42476,
+          "name": "kine",
+          "pid": 70
+        }
+      ],
+      "cycle": "datastore-recovery",
+      "readiness_seconds": 8.565069587
+    },
+    {
+      "component_process_count": 2,
+      "component_rss_sum_kib": 301580,
+      "components": [
+        {
+          "VmHWM_kib": 49852,
+          "VmRSS_kib": 49852,
           "name": "kine",
           "pid": 82
         },
         {
-          "VmHWM_kib": 243164,
-          "VmRSS_kib": 243164,
+          "VmHWM_kib": 251728,
+          "VmRSS_kib": 251728,
           "name": "kube-apiserver",
-          "pid": 89
+          "pid": 90
         }
       ],
       "cycle": "4",
-      "readiness_seconds": 2.262723334
+      "readiness_seconds": 1.755509917
     }
   ],
   "schema_version": 2,
@@ -148,7 +148,7 @@
       "exit_code": 0,
       "forced": false,
       "owned_group_remained": false,
-      "pid": 23
+      "pid": 24
     },
     {
       "component": "kine",
@@ -187,7 +187,7 @@
       "exit_code": 0,
       "forced": false,
       "owned_group_remained": false,
-      "pid": 89
+      "pid": 90
     },
     {
       "component": "kine",
@@ -200,13 +200,14 @@
   ],
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-assets/Cargo.toml": "fa6e114813b77bd1cabd0cd5649beb3f5e4596523ded506d2559643a7a845837",
     "crates/rubix-config/Cargo.toml": "1006c70dd15cdc9989a5fa5bd3afd31aff521bd4bf8544604abfdf59cfa7b5e3",
     "crates/rubix-containerd-api/Cargo.toml": "fabe2671f66933b38f470738230e6da84c9ac7e011ba6260efad2058a258cb48",
     "crates/rubix-cri/Cargo.toml": "0e2325f0054e50a30895d4ec08796e73a93818822f9b123aafc83680526d443c",
     "crates/rubix-kube/Cargo.toml": "d18ec49bde2cf845b913f4b6328054d119ca9dd8cdf2efe8012d263ea220dee5",
+    "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-supervisor/Cargo.toml": "562290095bcdcd4a5c7dac0154a5abc33fa41d05722673d1e2ce6cbc96389106",
     "crates/rubixctl/Cargo.toml": "24315c5d21030efaaa8e4e091ea0a1fd9fe178eebc7c61d3839eca26e4eb7439",

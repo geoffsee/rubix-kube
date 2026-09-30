@@ -3,50 +3,50 @@
   "cleanup_errors": [],
   "commands": {
     "build": {
-      "log_sha256": "eefa450af987ef633a92b3ea01f9c4308773502fd48802cf51b7428bb86c867d",
-      "receipt_sha256": "8d99eba8e367726f51b2487e19e67904695a8905638b26c382e5848678d253f2"
+      "log_sha256": "1d99b0d773600ff292cc1a9aa024a7ecb1b0410fb4a72c1a22c4ea2b758f29e2",
+      "receipt_sha256": "bedc2038a23b226046cda3c85da93e4e2986c33a36ad6e477e6e241274aa6a89"
     },
     "cleanup-1": {
-      "log_sha256": "fd0b23f22782bc6cb2013abb630ad0674c424c7784165c0ab9e04fec6e3d7d7d",
-      "receipt_sha256": "861cd8a623637f069a85e35cc529516639cf31e186c348b06388acb46edcd51d"
+      "log_sha256": "108f533bfedc79a1aefa679c26daa10d23be9802f4e12580fdbe52a7b6e30398",
+      "receipt_sha256": "08cd2f197b3c74621cd31441f1fe82ef6d34b8b460dc55e262c8e031e19148b3"
     },
     "cleanup-2": {
-      "log_sha256": "5935bf1b097d1094040c91fd2346ea28c9f9f41310ab0e2a73541efcebec6259",
-      "receipt_sha256": "cc682a74b2adaa85986ed022d7e237237f7e131e9bc4050b7f3e8a6d21256489"
+      "log_sha256": "f4c215cb8f7d863dc7e1f016062135e57903985f7067822350dac10c8a933be0",
+      "receipt_sha256": "d810d48ccdec1d2a03524fd99c543d5c6d2b3099673afe3b123824639ae17f91"
     },
     "cleanup-3": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "21d4a05362fb32b6dcc9aeea64c5bf55c44d2ea9fb10ed5aed46862ccdf00f37"
+      "receipt_sha256": "cbb37497ed1f57b98bb58403044473121f6927ca2f834cbe1dcc81fe5097ea09"
     },
     "cleanup-4": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "bedd840c377e8442cdd693c49a0a4113b67bf4024a3b0fa0b3f2781f73702595"
+      "receipt_sha256": "0bb76ead9bca7e5cdbeb4d508d4925aa2c6629ac07ac41e15a0954049096325f"
     },
     "container-inspect": {
-      "log_sha256": "7fd53bee425376d47d67625fd8c972c43c033598027a9236594e1e42cca8a077",
-      "receipt_sha256": "a3956a40b9357719eb03f94450bc059bdd1ae65a70a733db201982d2c82e66cc"
+      "log_sha256": "4def7ad54f41c3b1c36537d3925ec00b9c64a88b542857b0c96c3dc8f5223e75",
+      "receipt_sha256": "73cb2c185706153ebce01f90efe4d4214f78cc667e5a1b16e87a0c3f5f65e95c"
     },
     "copy-evidence": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "3f3cdb2f8406fb0c385e5e9c98844df7fe622c7832e91924b9652fc319d31547"
+      "receipt_sha256": "15876e91bc8377dca6d0779e2f89be7d220218e20522fb6f8a9332d6454df92d"
     },
     "create": {
-      "log_sha256": "14ceccb542476607b486edfa47777ebf8fea2eecb7fc4a7a1add32e0fbf352f8",
-      "receipt_sha256": "fff9079c5cd49853ad65265e2219b5ffcd628ad5945510d34ea78c03c0dff6af"
+      "log_sha256": "0150256a2e98077fdee85ec8a06326a881c7892b2c3636cb5d7bbc8243c52161",
+      "receipt_sha256": "5d3e4bf829924d5aeb711acd70d7e4895f15a9474d904770bd7e9b54cee5f2cc"
     },
     "execute": {
       "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "receipt_sha256": "770166ababa65d5795e17a8e6bcbd9d8fd87e9757474d01e9140528e1f0171c0"
+      "receipt_sha256": "4f7c379d50d1c4c8e44fa0c427e8eb8ea14badcf03258bb5397ba4358f4d8918"
     },
     "image-inspect": {
-      "log_sha256": "0ff236c7b032db2e17fa4cbcabd1680ac8b924966a1d20a9384b856b03185c73",
-      "receipt_sha256": "1e82c0f3678c39da5fc00c9e52a0de5b137857f2ce3f9154ce6ee2b56a676b17"
+      "log_sha256": "6cbb8157181bafc90bdca1bd1abcd176c6af8d718371712ad9d0c53a89a95789",
+      "receipt_sha256": "0e4ee843537e71ad07837a3149cbae18817fc5a56e9fc6b53e00a99a2436b05b"
     }
   },
   "errors": [],
   "exit_code": 0,
-  "owned_container": "rubix-component-boundary-irtljv-capture",
-  "owned_image": "rubix-component-boundary-irtljv",
+  "owned_container": "rubix-component-boundary-htz7ii-capture",
+  "owned_image": "rubix-component-boundary-htz7ii",
   "process_cleanup_complete": true,
   "process_failures": [],
   "remaining_containers": [],
@@ -55,13 +55,14 @@
   "schema_version": 2,
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-assets/Cargo.toml": "fa6e114813b77bd1cabd0cd5649beb3f5e4596523ded506d2559643a7a845837",
     "crates/rubix-config/Cargo.toml": "1006c70dd15cdc9989a5fa5bd3afd31aff521bd4bf8544604abfdf59cfa7b5e3",
     "crates/rubix-containerd-api/Cargo.toml": "fabe2671f66933b38f470738230e6da84c9ac7e011ba6260efad2058a258cb48",
     "crates/rubix-cri/Cargo.toml": "0e2325f0054e50a30895d4ec08796e73a93818822f9b123aafc83680526d443c",
     "crates/rubix-kube/Cargo.toml": "d18ec49bde2cf845b913f4b6328054d119ca9dd8cdf2efe8012d263ea220dee5",
+    "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-supervisor/Cargo.toml": "562290095bcdcd4a5c7dac0154a5abc33fa41d05722673d1e2ce6cbc96389106",
     "crates/rubixctl/Cargo.toml": "24315c5d21030efaaa8e4e091ea0a1fd9fe178eebc7c61d3839eca26e4eb7439",

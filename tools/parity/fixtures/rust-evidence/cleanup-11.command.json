@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-resources-pki-gnnue3"
+    "rubix-resources-pki-ajrmat"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 98066,
+  "owned_pid": 40575,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-AqiZtj",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-6AceF7",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "b7969fdbf929c35301b386b15e8dacf4692b344b2e5bd723aa1fcb6d1126e29c",
+  "stdout_sha256": "77ab037556486430874cac147122a1358125a30b08fed836ae398ab4d6145a56",
   "timeout": false
 }

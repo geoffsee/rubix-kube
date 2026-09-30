@@ -1,7 +1,7 @@
 {
   ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-  "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-  "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+  "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+  "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
   "Dockerfile": "b5e03c181357e60629f59ade9fefd3893acf5a9f1d006564172b15347df68400",
   "crates/rubix-assets/ARCHIVE.md": "ea7226a5982289801f5657ad555389efde8fb0f136e7ce96ad1bdebba8f121b2",
   "crates/rubix-assets/CATALOG.md": "fcdb12c229ce99994ce7c7567c0e25a7e685bfc3fe19bf968b86ee1658073e50",
@@ -220,6 +220,7 @@
   "crates/rubix-kube/tests/lifecycle_logs.rs": "3199939693847dc55608d3441c99baccf293225d3aacf81e315089a6b34c34b0",
   "crates/rubix-kube/tests/lifecycle_policy.rs": "ce71aac77014c1d303f44a6a1db3025dad74661544fb63b82c4a6b8cc18bedb5",
   "crates/rubix-kube/tests/startup.rs": "2238842d93e02e00878b418d712f4b4a4a383240901c3238387cfdaa7d6a8b35",
+  "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
   "crates/rubix-platform/CONSTRAINED.md": "72bcb70af4680f127a20defc12d146478c16a64fb7e0a0b5cb20b105427c8b93",
   "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
   "crates/rubix-platform/PREFLIGHT.md": "8e195cc5449a52372a7054fbb7e75b2db4d9f1a54c16d46840dfcf48978c6cd1",

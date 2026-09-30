@@ -3,7 +3,7 @@
     "docker",
     "run",
     "--name",
-    "rubix-platform-linux-empugu-0",
+    "rubix-platform-linux-1phky7-0",
     "--read-only",
     "--network",
     "none",
@@ -19,7 +19,7 @@
     "64",
     "--tmpfs",
     "/tmp:rw,nosuid,nodev,size=16m",
-    "rubix-platform-linux-empugu"
+    "rubix-platform-linux-1phky7"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -28,11 +28,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 10357,
+  "owned_pid": 41614,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-an000j",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-NwVZqv",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "d3eabdbd79240495f073aec9f5c9f446c5066a5f8991643c77ae973851fdc58c",
+  "stdout_sha256": "31d3c5bd2da51bfa1f9b2208aa80f584edef3bd486c734d9f0d0f8a6d58feb72",
   "timeout": false
 }

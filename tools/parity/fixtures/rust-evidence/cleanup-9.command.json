@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-resources-pki-gnnue3-pki-0"
+    "rubix-resources-pki-ajrmat-pki-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 98064,
+  "owned_pid": 40573,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-U7lxMH",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Ix4Ax1",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "1be7492309f08879611fc76b3f2bcd926d9518195badf34299f094b09aed667c",
+  "stdout_sha256": "f9437091ab7693c77214ca218e346f24fcefa4d648a4b71aec5dd6210c11264b",
   "timeout": false
 }

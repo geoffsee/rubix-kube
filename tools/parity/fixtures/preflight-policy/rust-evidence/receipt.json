@@ -6,14 +6,14 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-preflight-policy-te9tvx-preflight-0",
-    "rubix-preflight-policy-te9tvx-preflight-1"
+    "rubix-preflight-policy-lsc5mu-preflight-0",
+    "rubix-preflight-policy-lsc5mu-preflight-1"
   ],
   "errors": [],
   "family": "preflight-policy",
   "identical_repeats": true,
-  "image": "rubix-preflight-policy-te9tvx",
-  "image_id": "sha256:286564f7cf34a3012201c2196ae458b2805f9f71931685b7a09d3a70cfa98c79",
+  "image": "rubix-preflight-policy-lsc5mu",
+  "image_id": "sha256:a2966f8b7134391db98c3414938acd96bc773b1c27c5cff16b2086b47197467b",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -29,30 +29,30 @@
         ],
         "WorkingDir": "/tmp"
       },
-      "Created": "2026-09-28T16:58:32.963393469Z",
+      "Created": "2026-09-29T06:40:03.695336425Z",
       "Descriptor": {
-        "digest": "sha256:286564f7cf34a3012201c2196ae458b2805f9f71931685b7a09d3a70cfa98c79",
+        "digest": "sha256:a2966f8b7134391db98c3414938acd96bc773b1c27c5cff16b2086b47197467b",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 856
       },
-      "Id": "sha256:286564f7cf34a3012201c2196ae458b2805f9f71931685b7a09d3a70cfa98c79",
+      "Id": "sha256:a2966f8b7134391db98c3414938acd96bc773b1c27c5cff16b2086b47197467b",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T16:58:34.962590428Z",
-            "Ref": "2oi7mawzunbht25xbuw7yt3po"
+            "CreatedAt": "2026-09-29T06:44:59.953889381Z",
+            "Ref": "zkkopkiv05scfn977bzsqbwuq"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T16:58:34.610778053Z"
+        "LastTagTime": "2026-09-29T06:44:59.546365256Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-preflight-policy-te9tvx@sha256:286564f7cf34a3012201c2196ae458b2805f9f71931685b7a09d3a70cfa98c79"
+        "rubix-preflight-policy-lsc5mu@sha256:a2966f8b7134391db98c3414938acd96bc773b1c27c5cff16b2086b47197467b"
       ],
       "RepoTags": [
-        "rubix-preflight-policy-te9tvx:latest"
+        "rubix-preflight-policy-lsc5mu:latest"
       ],
       "RootFS": {
         "Layers": [
@@ -64,14 +64,14 @@
           "sha256:97c6c689c0d641d335745f59cb47ed87a6dffe8e8cae1de54715db524a6aef7f",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
           "sha256:cefc91f6ee36a5dd7fe051d1e4d49121f94b5bdf98c29e88c60882d7c863acfc",
-          "sha256:95dbec53556d1ca60c1af8f7ecbff33ce49a1312abf7d929012762b9cecef1f8",
-          "sha256:5d1110f95fcaa63366b7af40127946b97dccd742557e6c676caab15efb5d13f1",
-          "sha256:27b6cceb861e550a055605aba8e69d5b9e8c6d175e4849285f4231b3cffad633",
+          "sha256:264f1632edadd9356b324151221acb6bacfd0b3c295c3c03872bde74b8b40239",
+          "sha256:13df4e8561548cd34591cbb58e14de1952bdfd0d01954f815aa6004569f71ce4",
+          "sha256:0de1cb93bbe5be5abb78c03fa78bf4c98d6920c23d7d232a7c56c296c4656d5d",
           "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
         ],
         "Type": "layers"
       },
-      "Size": 311874896
+      "Size": 311874609
     }
   ],
   "outputs": {
@@ -85,12 +85,12 @@
   "repeat_count": 2,
   "retained_build_contexts": [],
   "revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
-  "runner_sha256": "6e1e36786196ab56d9ef63e3c48002654754893af34bdf88797b9ec50b22299f",
+  "runner_sha256": "ccd2baeaceaef06e6a0a138418b999bd468f25cd233304f6046ae760db206c6e",
   "schema_version": 2,
   "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec",
   "source_sha256": {
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "rust-toolchain.toml": "479123a7389d25b7b45d10fb78ebd35ce5b57aa1cc9132165ec43f3bb5f160fb",
     "tools/dev/Cargo.toml": "5de3a945bfad9644f9bff6151fac96f2696bcea37d6bd888e36a61468d2046ef",
     "tools/dev/src/api_json/mod.rs": "8bd6118d9541d04a30a36477dcbace51d2f49fdad17aa3d21a4e7a509b3e9512",

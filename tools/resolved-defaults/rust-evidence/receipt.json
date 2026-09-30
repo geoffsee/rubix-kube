@@ -2,13 +2,13 @@
   "cancelled": false,
   "cleanup_errors": [],
   "containers": [
-    "rubix-resolved-xgjlyz-0",
-    "rubix-resolved-xgjlyz-1"
+    "rubix-resolved-f4dulm-0",
+    "rubix-resolved-f4dulm-1"
   ],
   "errors": [],
   "identical_repeats": true,
-  "image": "rubix-resolved-xgjlyz",
-  "image_id": "sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b",
+  "image": "rubix-resolved-f4dulm",
+  "image_id": "sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee",
   "image_inspect": [
     {
       "Architecture": "arm64",
@@ -23,38 +23,38 @@
         "User": "65532:65532",
         "WorkingDir": "/"
       },
-      "Created": "2026-09-28T17:08:40.922072958Z",
+      "Created": "2026-09-29T06:54:39.233172427Z",
       "Descriptor": {
-        "digest": "sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b",
+        "digest": "sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee",
         "mediaType": "application/vnd.oci.image.index.v1+json",
         "size": 855
       },
-      "Id": "sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b",
+      "Id": "sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee",
       "Identity": {
         "Build": [
           {
-            "CreatedAt": "2026-09-28T17:08:42.692082751Z",
-            "Ref": "yuqkmq30ffjqlac682xivwirs"
+            "CreatedAt": "2026-09-29T06:54:41.410559262Z",
+            "Ref": "07xiyzz2dkqw49nyc4zx9soxz"
           }
         ]
       },
       "Metadata": {
-        "LastTagTime": "2026-09-28T17:08:42.470305626Z"
+        "LastTagTime": "2026-09-29T06:54:41.186191678Z"
       },
       "Os": "linux",
       "RepoDigests": [
-        "rubix-resolved-xgjlyz@sha256:de7c29f29081667696c2cfdb0ec1a0ea0291166aedc5aeb4937fb7419361233b"
+        "rubix-resolved-f4dulm@sha256:eca42b52a6b8bc53f6a672437f164120df24310fe2b12ff7b009f24530b2aaee"
       ],
       "RepoTags": [
-        "rubix-resolved-xgjlyz:latest"
+        "rubix-resolved-f4dulm:latest"
       ],
       "RootFS": {
         "Layers": [
-          "sha256:d771e32cc6599d392049efbfd1be5e34737554bab8a6d86d74c5eae46137a948"
+          "sha256:9850cf748f94156bb52fa570aec3f21ec8d489ce9bfed268bb158c94716378aa"
         ],
         "Type": "layers"
       },
-      "Size": 36451572
+      "Size": 36451578
     }
   ],
   "inputs": {
@@ -86,8 +86,8 @@
   "schema_version": 2,
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "rust-toolchain.toml": "479123a7389d25b7b45d10fb78ebd35ce5b57aa1cc9132165ec43f3bb5f160fb",
     "tools/dev/Cargo.toml": "5de3a945bfad9644f9bff6151fac96f2696bcea37d6bd888e36a61468d2046ef",
     "tools/dev/src/api_json/mod.rs": "8bd6118d9541d04a30a36477dcbace51d2f49fdad17aa3d21a4e7a509b3e9512",

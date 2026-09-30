@@ -9,39 +9,39 @@
     "build",
     "--progress=plain",
     "--build-arg",
-    "QUALIFICATION_NONCE=rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b",
+    "QUALIFICATION_NONCE=rubix-archive-c0127b898dc2bb20e7e78c504dd39858",
     "--platform=linux/arm64",
     "-t",
-    "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b",
+    "rubix-archive-c0127b898dc2bb20e7e78c504dd39858",
     "-f",
-    "/tmp/rubix-asset-context-LZL5ZG/tools/assets-archive/Capture.Dockerfile",
-    "/tmp/rubix-asset-context-LZL5ZG"
+    "/tmp/rubix-asset-context-2mRxad/tools/assets-archive/Capture.Dockerfile",
+    "/tmp/rubix-asset-context-2mRxad"
   ],
-  "build_log_sha256": "8c067a48e610660fdc506d52d13fa2ea18384333f0b7f61011287bd666e47d7e",
+  "build_log_sha256": "d8a9e0b7aeac37b4f12ed9c07bb7701ffa30c725d58c07c125a55140ab6c8436",
   "cancelled": false,
   "cleanup_errors": [],
   "command_sha256": {
-    "build": "d90ad68b247b8fa4981fe254b7f57d87c6b69bad78d445c841ef65016bef7af1",
-    "cleanup-1": "75f2d4266b58a26e26c9b84758e7897e92b40f40958a1000e3429ba89c4549bc",
-    "cleanup-2": "345dc5bfc0001ed855a261c5e567d132526100b898d8b3c88d740b6a9b8e432b",
-    "cleanup-3": "e6b0b7a89da308feedaa6289776a35f1dcb6d999d7a81c7d6188322ddc422c71",
-    "cleanup-4": "7e2b83b7dc766b64e47ccdb9752f32e5658f75a5d33bffa1f3c3cb9f9cc1f07b",
-    "cleanup-5": "953aaa661eaa4b638539c241654b8115cdc00b797cb450d5a4cc5404a12d4676",
-    "first": "7671a5d5dd9628eb2f48d47c2a1cfa110be50d295f0311879575f91ec4305198",
-    "image-inspect": "94c95ed947bbeca9c1072df7b4c36d554ecf07b3c956f24e40c1d2140e8a1474",
-    "repeat": "0dabdd54e4454e0665a9bce2b712d59d8341f7f1e85190ca355c2d153c66a7c2"
+    "build": "69571d73ab8267026b0c409669cb4da5f2579c73006de81942d0898debf8cd70",
+    "cleanup-1": "13d87283bcaf9d921f85b8703f6fffe30aa0dfe423e8a0696298e668543aa909",
+    "cleanup-2": "03b2a4b8391eb7998636706d93b2b7f0a0464b112ed3d916c4060e40d5535126",
+    "cleanup-3": "f9b680f47504821613dac5de6ea504ca423c204f1d5ed0c38b72a90f5825a7c5",
+    "cleanup-4": "46e5f313694b8ddd198529a0e960135516f2fd9f17090bcdbbf8ec57a34da9a2",
+    "cleanup-5": "171f58492e233c95eb106d72a4b66704f9386605839239efa658c995cede6ea6",
+    "first": "fc821ff5896f18f859d2e2dc63608f94802f79e604faa2b6d3142f1948c150f9",
+    "image-inspect": "236858a488d175c81552beab07e460a495baec05c76d0121d8b2edb3d3944df2",
+    "repeat": "5ba3de6b6567ca3740f48a03b252f9179af2e413c02642fbb4a0ca4d377f8e12"
   },
   "containers": [
-    "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b-first",
-    "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b-repeat"
+    "rubix-archive-c0127b898dc2bb20e7e78c504dd39858-first",
+    "rubix-archive-c0127b898dc2bb20e7e78c504dd39858-repeat"
   ],
   "dirty": false,
   "errors": [],
   "family": "archive",
-  "image_id": "sha256:4abd2e9817e50988790f61df06964668ddc9c6ed17d8b64734f49abbd7bf34c2",
+  "image_id": "sha256:424fdbe5b915b0c1d576a9ab57915daba7b7c62fa3554489fa6d7b026fa5ddbd",
   "remaining_containers": [],
   "remaining_images": [],
-  "revision": "4b3bb45695b655c9f4b4020254c21c7f991908ab",
+  "revision": "01c45441290453256949020e80ecc6b9c4f5ed3a",
   "runs": {
     "first": {
       "binary_sha256": {
@@ -53,7 +53,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b-first",
+        "rubix-archive-c0127b898dc2bb20e7e78c504dd39858-first",
         "--init",
         "--network=none",
         "--read-only",
@@ -64,12 +64,12 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b",
+        "rubix-archive-c0127b898dc2bb20e7e78c504dd39858",
         "/bin/sh",
         "-c",
         "sha256sum /producer /archive-tests /fixture && /fixture archive-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
       ],
-      "raw_sha256": "6ce8b7a66b1048b2c9f1a08fcfe9ab72ad6b09e5213ef4ad2a221cc02914adf1",
+      "raw_sha256": "c22c89d7367c07dde08b7f3df514ecaecc7ed1fb04e2d4d30722479b3858e96c",
       "records": {
         "amd64-repeated": {
           "archive_sha256": "ac1778143c34c5e42427701d547ad812f40068849940858b1ad013e8be65a4ab",
@@ -197,7 +197,7 @@
         "docker",
         "run",
         "--name",
-        "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b-repeat",
+        "rubix-archive-c0127b898dc2bb20e7e78c504dd39858-repeat",
         "--init",
         "--network=none",
         "--read-only",
@@ -208,7 +208,7 @@
         "--cpus=2",
         "--tmpfs",
         "/tmp:rw,nosuid,nodev,size=16m",
-        "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b",
+        "rubix-archive-c0127b898dc2bb20e7e78c504dd39858",
         "/bin/sh",
         "-c",
         "sha256sum /producer /archive-tests /fixture && /fixture archive-runtime; runtime_status=$?; /fixture namespace; inventory=$?; test \"$runtime_status\" -eq 0 && test \"$inventory\" -eq 0"
@@ -333,11 +333,11 @@
     }
   },
   "schema": 3,
-  "source_inventory_sha256": "1583e10b6f5e10d74f036169652fa18ca20457a90cc4e267cdd251b2ef226012",
+  "source_inventory_sha256": "d218f47c4dced15fe8a875c9c75fe34baff8e2533cdbf8de7b325f7d5beeebf9",
   "source_sha256": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-assets/Cargo.toml": "fa6e114813b77bd1cabd0cd5649beb3f5e4596523ded506d2559643a7a845837",
     "crates/rubix-assets/src/archive.rs": "98097fd442e6d6110f5fe675fde07a808d879e231048fae65c46eb2e1d66016c",
     "crates/rubix-assets/src/catalog.rs": "7154b10c0af78735fbae4b55e1f4e19370b6898819b9a4db7d524ffc77ffdc43",
@@ -368,6 +368,7 @@
     "crates/rubix-containerd-api/Cargo.toml": "fabe2671f66933b38f470738230e6da84c9ac7e011ba6260efad2058a258cb48",
     "crates/rubix-cri/Cargo.toml": "0e2325f0054e50a30895d4ec08796e73a93818822f9b123aafc83680526d443c",
     "crates/rubix-kube/Cargo.toml": "d18ec49bde2cf845b913f4b6328054d119ca9dd8cdf2efe8012d263ea220dee5",
+    "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-platform/src/classify.rs": "e3e62d4aad48ee8087ad94fac258305814ecbf93a428af10a5437d0f1788da01",
     "crates/rubix-platform/src/constrained.rs": "6953a432c5f2ec734c73df23d5aaa757e88944aa4c842b2d8f222ad14568e6b3",
@@ -523,5 +524,5 @@
     "tools/dev/src/upstream/mod.rs": "44a8e48bd96f6e1be73010802f5472ae0a79956414ab072a6850cf5dea996193",
     "tools/dev/src/upstream/tests.rs": "b01992bd1d2ec3f502ca36c3307ff27ed6336100dfb4662e6c9e6d58a00ee7f2"
   },
-  "tag": "rubix-archive-de222cc6cd9a9e8a82a27bed07446c6b"
+  "tag": "rubix-archive-c0127b898dc2bb20e7e78c504dd39858"
 }

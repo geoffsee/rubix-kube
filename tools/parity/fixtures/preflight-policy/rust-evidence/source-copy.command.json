@@ -2,8 +2,8 @@
   "argv": [
     "docker",
     "cp",
-    "rubix-preflight-policy-te9tvx-preflight-0:/source.sha256",
-    "/tmp/rubix-constrained-qualification-4b3bb45/generic/preflight-policy/source.sha256"
+    "rubix-preflight-policy-lsc5mu-preflight-0:/source.sha256",
+    "/tmp/preflight-policy/source.sha256"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,9 +12,9 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 97957,
+  "owned_pid": 40411,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-Fra8YK",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-jgedBR",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-constrained-policy-ybicam-network-1"
+    "rubix-constrained-policy-vtt5fr-network-1"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 98005,
+  "owned_pid": 40441,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-17A1HW",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-MirQ5W",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "fba79a769527b8755a143f9870a076c50f0213c0b7451fdfe05fc8f3b7ed0fe4",
+  "stdout_sha256": "0f7c2e5d1157173b119494af8039d8b4a3b06195779f8609017d6ac3269d7656",
   "timeout": false
 }

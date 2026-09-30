@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-config-linebreak-utbkpb"
+    "rubix-config-linebreak-8gghtb"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 97775,
+  "owned_pid": 43647,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-ZHVmJQ",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-UufrZb",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "a7d35031407412a61bc46f8b73b9073ceda14eeb22c94db71bc3f21774f0cec9",
+  "stdout_sha256": "cb75ec217c7d5c134245d0d8a9b2792cfc2b5898558d637be91a00fa80ebb133",
   "timeout": false
 }

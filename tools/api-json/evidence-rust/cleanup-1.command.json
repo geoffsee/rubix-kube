@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-api-json-ktvlle-capture"
+    "rubix-api-json-hghryc-capture"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 33192,
+  "owned_pid": 40778,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-iQQVQe",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-h17hy1",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "43a63539d9124d31f69df26c815e707f3c6c77c9c1ebb66f0b96eedd36083f13",
+  "stdout_sha256": "345e0bdb826e5a4b3dfffcfc35bca8beb0536f2604d8c3b16da0e20e7cd2cb09",
   "timeout": false
 }

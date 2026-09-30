@@ -4,7 +4,7 @@
     "image",
     "rm",
     "--force",
-    "rubix-component-boundary-irtljv"
+    "rubix-component-boundary-htz7ii"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -13,11 +13,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 33651,
+  "owned_pid": 40838,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-LHc9db",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-77sxPY",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "5935bf1b097d1094040c91fd2346ea28c9f9f41310ab0e2a73541efcebec6259",
+  "stdout_sha256": "f4c215cb8f7d863dc7e1f016062135e57903985f7067822350dac10c8a933be0",
   "timeout": false
 }

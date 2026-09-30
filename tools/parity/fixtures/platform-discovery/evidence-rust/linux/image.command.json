@@ -5,7 +5,7 @@
     "inspect",
     "--format",
     "{{.Id}}",
-    "rubix-platform-linux-empugu"
+    "rubix-platform-linux-1phky7"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -14,11 +14,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 10356,
+  "owned_pid": 41613,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-tJpg7y",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-R9GRiI",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "50b08985ef9261faf31eeeee2674199b46ef09a868aa63f011b86b3ac60686a4",
+  "stdout_sha256": "d9b782429db7fbdbf7fc6395cdf0e7f2dc9d78dadc6f879ca094aa4bc77cc6f9",
   "timeout": false
 }

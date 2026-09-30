@@ -3,12 +3,12 @@
   "cleanup_errors": [],
   "commands": {},
   "containers": [
-    "rubix-management-go-dwk5wz-0",
-    "rubix-management-go-dwk5wz-1"
+    "rubix-management-go-0bm5wl-0",
+    "rubix-management-go-0bm5wl-1"
   ],
   "errors": [],
   "family": "management",
-  "image_id": "sha256:a5c6f35621ce9b1c134338ba4ab1605294913af2dbe40d0b962342f78aa8d6ce",
+  "image_id": "sha256:d4b5a706158ea7acaa8f59faec6beb022c349c51c50fcbc03b366741c739bfd6",
   "mode": "go",
   "process_cleanup_complete": true,
   "process_failures": [],
@@ -18,8 +18,8 @@
   "schema_version": 2,
   "sources": {
     ".cargo/config.toml": "c51c374767c0698693be49913df37ddee192931d3559433c97692826ab104a7a",
-    "Cargo.lock": "8e8c59b2d8648c3b8dbc99af91c62aff39d8bad33aef336cad4a0e2288904dc8",
-    "Cargo.toml": "8595107311941ac2afa666621548413c9435d01529ec103503a02c03f2013ac4",
+    "Cargo.lock": "b3ef7f857c70be05a9c65c609629b432767d9fabe3de2f2060ccd4abeca0a0e6",
+    "Cargo.toml": "f59a91b3ac9f2b7f6dc6290f6cb17b6950c41cd5f0f053beec79b77ec1df562f",
     "crates/rubix-assets/ARCHIVE.md": "ea7226a5982289801f5657ad555389efde8fb0f136e7ce96ad1bdebba8f121b2",
     "crates/rubix-assets/CATALOG.md": "fcdb12c229ce99994ce7c7567c0e25a7e685bfc3fe19bf968b86ee1658073e50",
     "crates/rubix-assets/Cargo.toml": "fa6e114813b77bd1cabd0cd5649beb3f5e4596523ded506d2559643a7a845837",
@@ -160,6 +160,8 @@
     "crates/rubix-kube/tests/lifecycle_policy.rs": "ce71aac77014c1d303f44a6a1db3025dad74661544fb63b82c4a6b8cc18bedb5",
     "crates/rubix-kube/tests/lifecycle_sink.rs": "ab5be7ee30fa6e43e1a4bb6032368ae0246ade7828f1adc380194a880127756c",
     "crates/rubix-kube/tests/startup.rs": "2238842d93e02e00878b418d712f4b4a4a383240901c3238387cfdaa7d6a8b35",
+    "crates/rubix-pki/Cargo.toml": "d1a8e7b4f23de2947a2cd4a20d4a0a9a8f4cd54077bebad3dc6071be075be3d5",
+    "crates/rubix-pki/src/lib.rs": "dfbb26c30150059bec210dbd0f875e68e009ca2787ca2374b788ba8116ad3a9e",
     "crates/rubix-platform/CONSTRAINED.md": "72bcb70af4680f127a20defc12d146478c16a64fb7e0a0b5cb20b105427c8b93",
     "crates/rubix-platform/Cargo.toml": "956b1b2335ef78a01d1eb0c589776fcc3a2f54014ec2934f4aeddb6e9bd913ec",
     "crates/rubix-platform/PREFLIGHT.md": "8e195cc5449a52372a7054fbb7e75b2db4d9f1a54c16d46840dfcf48978c6cd1",
@@ -403,5 +405,6 @@
     "tools/upstream/src/main.rs": "8c141ec322ab8a3786390877a9459c9599a570135d5e883f7d534cca178ba8d4",
     "tools/upstream/tests/api_json.rs": "cae7fe6c80e5dc3cc743c3789f4fdf6fe1304f3ea6ea034767daadb70710c1e3"
   },
-  "tag": "rubix-management-go-dwk5wz"
+  "tag": "rubix-management-go-0bm5wl",
+  "inventory_sha256": "bd8ec7cfef7531c4ba61f1f00398afcf2235744745a5469150504aecc1dfa357"
 }

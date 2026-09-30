@@ -3,7 +3,7 @@
     "docker",
     "rm",
     "--force",
-    "rubix-config-print-preservation-c7auie-config-0"
+    "rubix-config-print-preservation-y3zkld-config-0"
   ],
   "cancelled": false,
   "cleanup_complete": true,
@@ -12,11 +12,11 @@
   "merged_output": true,
   "output_eof": true,
   "output_limit": false,
-  "owned_pid": 97817,
+  "owned_pid": 43670,
   "owned_process_group_absent": true,
-  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-SVOlkz",
+  "owner_directory": "/var/folders/q0/gnw0mqjs7nn6f8_2clg1zn0w0000gn/T/rubix-process-UNvHU6",
   "spawned": true,
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "stdout_sha256": "71d107f9992a6c6864d1e6c72f57024eb31657558085e5038233b5e822d225d2",
+  "stdout_sha256": "348f8c8c1817900b229c534d8b9b30df04d0a847de0a4791fd7d0fd2d5b5cc1b",
   "timeout": false
 }

@@ -1,14 +1,14 @@
 [
     {
-        "Id": "sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a",
+        "Id": "sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd",
         "RepoTags": [
-            "rubix-official-defaults-niwkzb:latest"
+            "rubix-official-defaults-aepjrs:latest"
         ],
         "RepoDigests": [
-            "rubix-official-defaults-niwkzb@sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a"
+            "rubix-official-defaults-aepjrs@sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd"
         ],
         "Comment": "buildkit.dockerfile.v0",
-        "Created": "2026-09-28T17:07:37.633728638Z",
+        "Created": "2026-09-29T06:53:09.901617886Z",
         "Config": {
             "User": "65532:65532",
             "Env": [
@@ -21,26 +21,26 @@
         },
         "Architecture": "arm64",
         "Os": "linux",
-        "Size": 66059606,
+        "Size": 66059592,
         "RootFS": {
             "Type": "layers",
             "Layers": [
-                "sha256:f0d4a1a604345fc083ba9367cc9f7314e5765e3e7891bb53a65ebbe53f4175f5"
+                "sha256:846013a5c22c1a6eacf1c3ec5383065d37e311dc2cad1c48526b9b1df76f5345"
             ]
         },
         "Metadata": {
-            "LastTagTime": "2026-09-28T17:07:40.374025208Z"
+            "LastTagTime": "2026-09-29T06:53:14.277769763Z"
         },
         "Descriptor": {
             "mediaType": "application/vnd.oci.image.index.v1+json",
-            "digest": "sha256:efe98d349db40cc2ca387d5eff0cee5bdf5fd230926ce476f7ce1d5917972d3a",
+            "digest": "sha256:cdc3e48038465b95251c73c28b15f3cb4d8ba0a1b6b9e6b0a3ed7304778ddbfd",
             "size": 855
         },
         "Identity": {
             "Build": [
                 {
-                    "Ref": "u0ytqyjgrv3bgskqgm2sjl4xr",
-                    "CreatedAt": "2026-09-28T17:07:40.755167333Z"
+                    "Ref": "la03pgnlxrva9fqhjamz8k06h",
+                    "CreatedAt": "2026-09-29T06:53:14.661022638Z"
                 }
             ]
         }
