@@ -276,9 +276,18 @@ pub(crate) fn verify_modules(raw: &[u8], report: &Value, resolved: bool) -> Resu
     } else {
         super::directory()
     };
-    let historical = load(&fixture.join("evidence/receipt.json"))?;
+    let historical = if fixture.join("evidence/receipt.json").exists() {
+        load(&fixture.join("evidence/receipt.json"))?
+    } else {
+        load(&fixture.join("inputs.json"))?
+    };
+    let source_pin = if historical.get("inputs").is_some() {
+        &historical["inputs"]["source"]
+    } else {
+        &historical["source"]
+    };
     require(
-        historical["inputs"]["source"] == report["inputs"]["source"],
+        source_pin == &report["inputs"]["source"],
         "module inventory source pin mismatch",
     )?;
     let expected = read_bounded(&fixture.join("evidence/modules.sha256"), 1024 * 1024)?;
