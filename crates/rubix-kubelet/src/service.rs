@@ -120,51 +120,7 @@ impl KubeletService {
                 }
             })?;
 
-        let expected_node_user = format!("system:node:{}", self.options.node_name);
-        let cert_pem = if let Some(idx) = kubeconfig_content.find("client-certificate-data:") {
-            let after = &kubeconfig_content[idx + "client-certificate-data:".len()..];
-            let b64_token = after.split_whitespace().next().unwrap_or("");
-            let decoded = rubix_pki::base64_decode(b64_token).map_err(|_| {
-                KubeletError::AuthenticationFailed {
-                    reason: "failed to decode client-certificate-data in kubeconfig".to_string(),
-                }
-            })?;
-            String::from_utf8(decoded).map_err(|_| KubeletError::AuthenticationFailed {
-                reason: "client-certificate-data is not valid UTF-8 PEM".to_string(),
-            })?
-        } else if let Some(idx) = kubeconfig_content.find("client-certificate:") {
-            let after = &kubeconfig_content[idx + "client-certificate:".len()..];
-            let path_str = after.lines().next().unwrap_or("").trim();
-            std::fs::read_to_string(path_str).map_err(|e| KubeletError::AuthenticationFailed {
-                reason: format!("failed to read client-certificate file {path_str}: {e}"),
-            })?
-        } else {
-            return Err(KubeletError::AuthenticationFailed {
-                reason: "kubeconfig missing client certificate credentials".to_string(),
-            });
-        };
-
-        let ca_pem = std::fs::read_to_string(&self.options.ca_file).map_err(|e| {
-            KubeletError::InvalidConfiguration {
-                field: "ca_file".to_string(),
-                reason: format!("failed to read ca_file: {e}"),
-            }
-        })?;
-
-        let identity = rubix_pki::verify_certificate_chain(&cert_pem, &ca_pem).map_err(|e| {
-            KubeletError::AuthenticationFailed {
-                reason: format!("kubeconfig client certificate verification failed: {e}"),
-            }
-        })?;
-
-        if identity.common_name != expected_node_user {
-            return Err(KubeletError::AuthenticationFailed {
-                reason: format!(
-                    "kubeconfig client certificate CN '{}' does not match expected '{}'",
-                    identity.common_name, expected_node_user
-                ),
-            });
-        }
+        self.validate_kubeconfig_client_cert(&kubeconfig_content)?;
 
         // 2. Validate CRI runtime endpoint
         let endpoint_str = &self.options.runtime_endpoint;
@@ -248,6 +204,74 @@ impl KubeletService {
             &self.options.cgroup_driver,
             0,
         ))
+    }
+
+    fn validate_kubeconfig_client_cert(
+        &self,
+        kubeconfig_content: &str,
+    ) -> Result<(), KubeletError> {
+        let expected_node_user = format!("system:node:{}", self.options.node_name);
+        let cert_pem = if let Some(idx) = kubeconfig_content.find("client-certificate-data:") {
+            let after = &kubeconfig_content[idx + "client-certificate-data:".len()..];
+            let b64_token = after.split_whitespace().next().unwrap_or("");
+            let decoded = rubix_pki::base64_decode(b64_token).map_err(|_| {
+                KubeletError::AuthenticationFailed {
+                    reason: "failed to decode client-certificate-data in kubeconfig".to_string(),
+                }
+            })?;
+            String::from_utf8(decoded).map_err(|_| KubeletError::AuthenticationFailed {
+                reason: "client-certificate-data is not valid UTF-8 PEM".to_string(),
+            })?
+        } else if let Some(idx) = kubeconfig_content.find("client-certificate:") {
+            let after = &kubeconfig_content[idx + "client-certificate:".len()..];
+            let path_str = after.lines().next().unwrap_or("").trim();
+            let cert_path = Path::new(path_str);
+            let resolved_path = if cert_path.is_absolute() {
+                cert_path.to_path_buf()
+            } else {
+                self.options
+                    .kubeconfig
+                    .parent()
+                    .unwrap_or_else(|| Path::new("."))
+                    .join(cert_path)
+            };
+            std::fs::read_to_string(&resolved_path).map_err(|e| {
+                KubeletError::AuthenticationFailed {
+                    reason: format!(
+                        "failed to read client-certificate file {}: {e}",
+                        resolved_path.display()
+                    ),
+                }
+            })?
+        } else {
+            return Err(KubeletError::AuthenticationFailed {
+                reason: "kubeconfig missing client certificate credentials".to_string(),
+            });
+        };
+
+        let ca_pem = std::fs::read_to_string(&self.options.ca_file).map_err(|e| {
+            KubeletError::InvalidConfiguration {
+                field: "ca_file".to_string(),
+                reason: format!("failed to read ca_file: {e}"),
+            }
+        })?;
+
+        let identity = rubix_pki::verify_certificate_chain(&cert_pem, &ca_pem).map_err(|e| {
+            KubeletError::AuthenticationFailed {
+                reason: format!("kubeconfig client certificate verification failed: {e}"),
+            }
+        })?;
+
+        if identity.common_name != expected_node_user {
+            return Err(KubeletError::AuthenticationFailed {
+                reason: format!(
+                    "kubeconfig client certificate CN '{}' does not match expected '{}'",
+                    identity.common_name, expected_node_user
+                ),
+            });
+        }
+
+        Ok(())
     }
 
     /// Stops the Kubelet service.
