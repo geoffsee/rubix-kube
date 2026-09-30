@@ -115,6 +115,35 @@ fn test_excessive_endpointslice_batch_period_is_rejected() {
 }
 
 #[test]
+fn test_excessive_endpoints_batch_period_is_rejected() {
+    let config = ControllerManagerConfig {
+        endpoint_updates_batch_period: Duration::from_millis(500),
+        ..Default::default()
+    };
+
+    let res = config.validate_batch_periods();
+    assert!(matches!(
+        res,
+        Err(ControllerError::InvalidConfiguration { field, .. }) if field == "endpoint_updates_batch_period"
+    ));
+}
+
+#[test]
+fn test_disabled_required_controller_is_rejected() {
+    // Upstream allowlist with explicit negation
+    let config = ControllerManagerConfig {
+        controllers: vec!["*".to_string(), "-job".to_string()],
+        ..Default::default()
+    };
+
+    let res = config.validate_controllers();
+    assert!(matches!(
+        res,
+        Err(ControllerError::OmittedRequiredController { controller, .. }) if controller == "job"
+    ));
+}
+
+#[test]
 fn test_empty_controller_list_is_rejected() {
     let config = ControllerManagerConfig {
         controllers: Vec::new(),

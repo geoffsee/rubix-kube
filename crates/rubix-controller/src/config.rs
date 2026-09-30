@@ -93,7 +93,7 @@ impl ControllerManagerConfig {
         }
     }
 
-    /// Validates that no required single-node controllers are omitted.
+    /// Validates that no required single-node controllers are omitted or explicitly disabled.
     /// Returns `Ok(())` if controllers is `["*"]` or contains all required controllers.
     pub fn validate_controllers(&self) -> Result<(), ControllerError> {
         if self.controllers.is_empty() {
@@ -103,6 +103,20 @@ impl ControllerManagerConfig {
             });
         }
 
+        // Reject any required controller explicitly disabled with '-' prefix
+        for &req in REQUIRED_CONTROLLERS {
+            if self
+                .controllers
+                .iter()
+                .any(|c| c.strip_prefix('-') == Some(req))
+            {
+                return Err(ControllerError::OmittedRequiredController {
+                    controller: req.to_string(),
+                    reason: format!("required controller '{req}' is explicitly disabled"),
+                });
+            }
+        }
+
         // "*" enables all upstream controllers
         if self.controllers.iter().any(|c| c == "*") {
             return Ok(());
@@ -110,10 +124,10 @@ impl ControllerManagerConfig {
 
         // Check if any required controller is missing from an explicit allowlist
         for &req in REQUIRED_CONTROLLERS {
-            let present = self.controllers.iter().any(|c| {
-                let norm = c.trim_start_matches('+').trim_start_matches('-');
-                norm == req
-            });
+            let present = self
+                .controllers
+                .iter()
+                .any(|c| c.trim_start_matches('+') == req);
             if !present {
                 return Err(ControllerError::OmittedRequiredController {
                     controller: req.to_string(),
@@ -127,16 +141,24 @@ impl ControllerManagerConfig {
         Ok(())
     }
 
-    /// Validates `EndpointSlice` update batch period matches upstream standard defaults.
+    /// Validates `EndpointSlice` and `Endpoints` update batch periods match upstream standard defaults (0s).
     pub fn validate_batch_periods(&self) -> Result<(), ControllerError> {
-        if self.endpointslice_updates_batch_period > Duration::from_secs(1) {
-            return Err(ControllerError::InvalidConfiguration {
-                field: "endpointslice_updates_batch_period".to_string(),
-                reason: format!(
-                    "batch period {:?} exceeds acceptable latency (must be 0s per KS-29 / PR #111)",
-                    self.endpointslice_updates_batch_period
-                ),
-            });
+        for (field, value) in [
+            (
+                "endpointslice_updates_batch_period",
+                self.endpointslice_updates_batch_period,
+            ),
+            (
+                "endpoint_updates_batch_period",
+                self.endpoint_updates_batch_period,
+            ),
+        ] {
+            if !value.is_zero() {
+                return Err(ControllerError::InvalidConfiguration {
+                    field: field.to_string(),
+                    reason: format!("batch period {value:?} must be 0s per KS-29 / PR #111"),
+                });
+            }
         }
         Ok(())
     }

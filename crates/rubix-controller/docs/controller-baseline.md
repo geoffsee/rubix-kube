@@ -13,7 +13,7 @@ Rubix integrates the **Kubernetes v1.35.7** controller manager component (`kube-
   - Authenticated RBAC authorization: Bound to bootstrap `system:kube-controller-manager` ClusterRole and ClusterRoleBinding with full cluster reconciliation authority
   - `--authentication-kubeconfig` and `--authorization-kubeconfig`
 - **Service Account Credentials**:
-  - `--service-account-private-key-file`: RSA private key (`sa.key`) used by token-controller to sign service account tokens
+  - `--service-account-private-key-file`: RSA private key (`service-account.key`) used by token-controller to sign service account tokens
   - `--root-ca-file`: Cluster CA certificate (`ca.crt`) injected into service account secrets
   - `--use-service-account-credentials=true`: Individual controllers authenticate using dedicated per-controller service account tokens
 - **EndpointSlice Latency & Upstream Defaults (PR #111 / KS-29)**:
@@ -35,7 +35,7 @@ Historical KubeSolo and edge forks introduced brittle controller allowlists that
 ### Controller Enforcement in Rubix
 In Rubix:
 1. **Default Controller Set**: Defaults to `["*"]`, enabling all official upstream Kubernetes v1.35.7 controllers.
-2. **Anti-Omission Validation**: If an explicit controller list is specified, `ControllerManagerConfig::validate_controllers()` enforces that no critical single-node controller is omitted. The required set includes:
+2. **Anti-Omission Validation**: If an explicit controller list is specified, `ControllerManagerConfig::validate_controllers()` enforces that no critical single-node controller is omitted or explicitly disabled with `-`. The required set includes:
    - `job`
    - `cronjob`
    - `garbagecollector`
@@ -51,7 +51,7 @@ In Rubix:
    - `serviceaccount-token`
    - `resourcequota`
    - `ttl-after-finished`
-   Attempting to configure an allowlist that omits any of these returns `ControllerError::OmittedRequiredController`.
+   Attempting to configure an allowlist that omits or disables any of these returns `ControllerError::OmittedRequiredController`.
 
 ---
 
@@ -66,7 +66,7 @@ The controller manager component is managed by `rubix-supervisor` through `Contr
   - `failure_policy`: `FailurePolicy::Fatal`
   - `startup_timeout`: 1 minute
 - **Lifecycle Phases**:
-  1. **Prerequisite Check**: Validates file existence of `kube-controller-manager.kubeconfig`, `ca.crt`, and `sa.key`. Validates controller list and batch periods. Verifies authenticated API server communication.
-  2. **Start**: Launches controller reconciliation loops.
-  3. **Readiness Check**: Confirms active controller workers and ongoing API connectivity. Signals readiness via `context.ready()`.
-  4. **Supervised Shutdown**: Listens on `context.changed()` for `StopPhase::Graceful` or `StopPhase::Force`, shutting down controller loops cleanly.
+  1. **Prerequisite Check**: Validates file existence and user identity in `kube-controller-manager.kubeconfig`, cluster trust in `ca.crt`, and signing key in `service-account.key`. Validates controller list and batch periods. Verifies authenticated API server communication.
+  2. **Start**: Initializes the service lifecycle state and verifies supervised readiness.
+  3. **Readiness Check**: Confirms ongoing authenticated API connectivity and reports configured controller status. Signals readiness via `context.ready()`.
+  4. **Supervised Shutdown**: Listens on `context.changed()` for `StopPhase::Graceful` or `StopPhase::Force`, shutting down the service cleanly.
