@@ -34,6 +34,8 @@ pub struct KubeletConfigOptions {
     pub runtime_endpoint: String,
     pub image_endpoint: Option<String>,
     pub cgroup_driver: String,
+    pub runtime_cgroup_driver: Option<String>,
+    pub resolv_conf: Option<PathBuf>,
     pub cluster_domain: String,
     pub cluster_dns: Vec<String>,
     pub container_mode: bool,
@@ -65,6 +67,8 @@ impl Default for KubeletConfigOptions {
             runtime_endpoint: DEFAULT_CONTAINERD_RUNTIME_ENDPOINT.to_string(),
             image_endpoint: None,
             cgroup_driver: "cgroupfs".to_string(),
+            runtime_cgroup_driver: None,
+            resolv_conf: None,
             cluster_domain: DEFAULT_CLUSTER_DOMAIN.to_string(),
             cluster_dns: vec![DEFAULT_CLUSTER_DNS.to_string()],
             container_mode: false,
@@ -104,6 +108,8 @@ impl KubeletConfigOptions {
             runtime_endpoint: DEFAULT_CONTAINERD_RUNTIME_ENDPOINT.to_string(),
             image_endpoint: None,
             cgroup_driver: "cgroupfs".to_string(),
+            runtime_cgroup_driver: None,
+            resolv_conf: None,
             cluster_domain: DEFAULT_CLUSTER_DOMAIN.to_string(),
             cluster_dns: vec![DEFAULT_CLUSTER_DNS.to_string()],
             container_mode: false,
@@ -116,6 +122,33 @@ impl KubeletConfigOptions {
             healthz_bind_address: DEFAULT_HEALTHZ_BIND_ADDRESS.to_string(),
             port: DEFAULT_KUBELET_PORT,
             read_only_port: DEFAULT_KUBELET_READ_ONLY_PORT,
+        }
+    }
+
+    /// Resolves the cgroup driver to use.
+    ///
+    /// Precedence matches upstream `KubeSolo`:
+    /// 1. Runtime-reported cgroup driver (from CRI runtime), if present.
+    /// 2. If in container mode, defaults to "cgroupfs".
+    /// 3. Explicit cgroup driver if configured (and not "auto").
+    /// 4. Detected from host init system: "systemd" if `/run/systemd/private` exists, else "cgroupfs".
+    #[must_use]
+    pub fn resolve_cgroup_driver(&self) -> String {
+        if let Some(ref driver) = self.runtime_cgroup_driver
+            && !driver.is_empty()
+        {
+            return driver.clone();
+        }
+        if self.container_mode {
+            return "cgroupfs".to_string();
+        }
+        if !self.cgroup_driver.is_empty() && self.cgroup_driver != "auto" {
+            return self.cgroup_driver.clone();
+        }
+        if Path::new("/run/systemd/private").exists() {
+            "systemd".to_string()
+        } else {
+            "cgroupfs".to_string()
         }
     }
 
@@ -153,7 +186,10 @@ impl KubeletConfigOptions {
                 }
             }),
         );
-        map.insert("cgroupDriver".to_string(), json!(self.cgroup_driver));
+        map.insert(
+            "cgroupDriver".to_string(),
+            json!(self.resolve_cgroup_driver()),
+        );
         map.insert("clusterDNS".to_string(), json!(self.cluster_dns));
         map.insert("clusterDomain".to_string(), json!(self.cluster_domain));
         map.insert(
@@ -164,17 +200,25 @@ impl KubeletConfigOptions {
         map.insert("kind".to_string(), json!("KubeletConfiguration"));
         map.insert("readOnlyPort".to_string(), json!(self.read_only_port));
 
+        if self.cpu_manager_policy == "static" {
+            map.insert("cpuManagerPolicy".to_string(), json!("static"));
+            if !self.reserved_cpus.is_empty() {
+                map.insert("reservedSystemCPUs".to_string(), json!(self.reserved_cpus));
+            }
+            if !self.cpu_manager_policy_options.is_empty() {
+                map.insert(
+                    "cpuManagerPolicyOptions".to_string(),
+                    json!(self.cpu_manager_policy_options),
+                );
+            }
+        }
+
+        if !self.system_reserved.is_empty() {
+            map.insert("systemReserved".to_string(), json!(self.system_reserved));
+        }
+
         if self.container_mode {
             map.insert("cgroupsPerQOS".to_string(), json!(false));
-            if self.cpu_manager_policy == "static" {
-                map.insert("cpuManagerPolicy".to_string(), json!("static"));
-                if !self.cpu_manager_policy_options.is_empty() {
-                    map.insert(
-                        "cpuManagerPolicyOptions".to_string(),
-                        json!(self.cpu_manager_policy_options),
-                    );
-                }
-            }
             map.insert("enforceNodeAllocatable".to_string(), json!([]));
             map.insert(
                 "evictionHard".to_string(),
@@ -186,16 +230,22 @@ impl KubeletConfigOptions {
                 }),
             );
             map.insert("imageGCHighThresholdPercent".to_string(), json!(100));
-            map.insert("kubeReserved".to_string(), json!(self.kube_reserved));
-            if self.cpu_manager_policy == "static" && !self.reserved_cpus.is_empty() {
-                map.insert("reservedSystemCPUs".to_string(), json!(self.reserved_cpus));
+            if !map.contains_key("systemReserved") {
+                map.insert("systemReserved".to_string(), json!({}));
             }
+            map.insert("kubeReserved".to_string(), json!(self.kube_reserved));
             map.insert("resolvConf".to_string(), json!("/dev/null"));
             map.insert("rotateCertificates".to_string(), json!(true));
-            map.insert("systemReserved".to_string(), json!(self.system_reserved));
         } else {
-            map.insert("resolvConf".to_string(), json!("/etc/resolv.conf"));
+            let resolv = self.resolv_conf.as_ref().map_or_else(
+                || "/etc/resolv.conf".to_string(),
+                |p| p.to_string_lossy().to_string(),
+            );
+            map.insert("resolvConf".to_string(), json!(resolv));
             map.insert("rotateCertificates".to_string(), json!(true));
+            if !self.kube_reserved.is_empty() {
+                map.insert("kubeReserved".to_string(), json!(self.kube_reserved));
+            }
         }
 
         map.insert(
@@ -276,7 +326,15 @@ impl KubeletConfigOptions {
 
     /// Validates that upstream resource defaults are preserved without reviving removed KS-68 edge overrides.
     pub fn validate_upstream_resource_defaults(&self) -> Result<(), KubeletError> {
-        if !self.container_mode {
+        if self.container_mode {
+            if self.cpu_manager_policy == "static" {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "cpu_manager_policy".to_string(),
+                    reason: "static CPU manager policy is unsupported in container mode"
+                        .to_string(),
+                });
+            }
+        } else {
             // In host mode, edge memory overrides must not be revived
             if self.read_only_port != 0 {
                 return Err(KubeletError::InvalidConfiguration {

@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use rubix_apiserver::{ApiserverService, KubernetesApiClient};
 
 use crate::config::KubeletConfigOptions;
+use crate::container::ContainerEnvironment;
 use crate::error::KubeletError;
 use crate::health::KubeletHealthReport;
 use crate::registration::NodeRegistration;
@@ -19,6 +20,7 @@ pub struct KubeletService {
     running: Arc<AtomicBool>,
     registration: NodeRegistration,
     reconciler: PodReconciler,
+    container_env: ContainerEnvironment,
 }
 
 impl KubeletService {
@@ -47,7 +49,19 @@ impl KubeletService {
             running: Arc::new(AtomicBool::new(false)),
             registration,
             reconciler,
+            container_env: ContainerEnvironment::default(),
         }
+    }
+
+    #[must_use]
+    pub fn with_container_environment(mut self, env: ContainerEnvironment) -> Self {
+        self.container_env = env;
+        self
+    }
+
+    #[must_use]
+    pub fn container_environment(&self) -> &ContainerEnvironment {
+        &self.container_env
     }
 
     #[must_use]
@@ -151,6 +165,13 @@ impl KubeletService {
     /// Starts the Kubelet service, writes its config, and registers the node.
     pub async fn start(&self) -> Result<(), KubeletError> {
         self.check_prerequisites().await?;
+        if self.options.container_mode {
+            let _ = self.container_env.prepare_mounts()?;
+            let _ = self.container_env.prepare_cgroups(std::process::id())?;
+        }
+        if self.options.disable_ipv6 {
+            let _ = self.container_env.disable_ipv6()?;
+        }
         self.options.write_kubelet_config_file()?;
         self.registration.register_or_update().await?;
         self.registration.update_lease().await?;
