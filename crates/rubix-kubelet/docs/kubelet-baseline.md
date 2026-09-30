@@ -24,7 +24,7 @@ Kubelet configuration adheres to the upstream Kubernetes v1.35.7 defaults contra
 | `apiVersion` | `kubelet.config.k8s.io/v1beta1` | Official v1beta1 configuration API |
 | `authentication.anonymous.enabled` | `false` | Disables unauthenticated access |
 | `authentication.webhook.enabled` | `true` | Validates client bearer tokens against apiserver |
-| `authentication.x509.clientCAFile` | `/path/to/ca.crt` | Verifies client certificates against cluster CA |
+| `authentication.x509.clientCAFile` | `/etc/kubernetes/pki/ca.crt` (or `<pki_dir>/ca.crt`) | Verifies client certificates against cluster CA |
 | `authorization.mode` | `Webhook` | Delegated authorization against API server |
 | `readOnlyPort` | `0` | Eliminates unauthenticated read-only probe surface (port 10255) |
 | `cgroupDriver` | `cgroupfs` or `systemd` | Negotiated with CRI runtime or detected from host |

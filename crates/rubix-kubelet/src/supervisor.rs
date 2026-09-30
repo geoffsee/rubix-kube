@@ -41,14 +41,7 @@ impl KubeletAdapter {
 impl Adapter for KubeletAdapter {
     fn run(self: Box<Self>, mut context: AdapterContext) -> AdapterFuture {
         Box::pin(async move {
-            // 1. Check prerequisites (PKI, CRI endpoints, API server reachability)
-            if let Err(err) = self.service.check_prerequisites().await {
-                return Err(AdapterError {
-                    code: err.diagnostic_code(),
-                });
-            }
-
-            // 2. Start service
+            // 1. Start service (runs prerequisites check and performs registration)
             if let Err(err) = self.service.start().await {
                 return Err(AdapterError {
                     code: err.diagnostic_code(),

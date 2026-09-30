@@ -117,18 +117,33 @@ impl PodReconciler {
             .await
             .map_err(KubeletError::from)?;
 
+        let Some(items) = pod_list.get("items").and_then(Value::as_array) else {
+            return Ok(0);
+        };
+
         let mut reconciled_count = 0;
-        if let Some(items) = pod_list.get("items").and_then(Value::as_array) {
-            for pod in items {
-                if let Some(assigned_node) = pod
-                    .get("spec")
-                    .and_then(|s| s.get("nodeName"))
+        for pod in items {
+            let Some(assigned_node) = pod
+                .get("spec")
+                .and_then(|s| s.get("nodeName"))
+                .and_then(Value::as_str)
+            else {
+                continue;
+            };
+
+            if assigned_node != self.node_name {
+                continue;
+            }
+
+            if let Err(e) = self.sync_pod(namespace, pod).await {
+                let pod_name = pod
+                    .get("metadata")
+                    .and_then(|m| m.get("name"))
                     .and_then(Value::as_str)
-                    && assigned_node == self.node_name
-                {
-                    self.sync_pod(namespace, pod).await?;
-                    reconciled_count += 1;
-                }
+                    .unwrap_or("unknown");
+                eprintln!("Failed to sync pod {namespace}/{pod_name}: {e}");
+            } else {
+                reconciled_count += 1;
             }
         }
 
@@ -186,7 +201,6 @@ impl PodReconciler {
             }
         }
 
-        let mut updated = pod.clone();
         let status = json!({
             "phase": "Running",
             "hostIP": self.node_ip,
@@ -221,14 +235,12 @@ impl PodReconciler {
             "containerStatuses": container_statuses
         });
 
-        updated["status"] = status;
-
         self.client
-            .update_pod(namespace, name, updated)
+            .patch_pod_status(namespace, name, status)
             .await
             .map_err(|e| KubeletError::PodReconciliationFailed {
                 pod: format!("{namespace}/{name}"),
-                reason: format!("failed to update pod status: {e}"),
+                reason: format!("failed to patch pod status: {e}"),
             })?;
 
         Ok(())

@@ -296,18 +296,45 @@ pub fn render_canonical_yaml(value: &Value) -> String {
     out
 }
 
+fn render_scalar(val: &Value, out: &mut String) {
+    match val {
+        Value::String(s) => {
+            if s.is_empty()
+                || s == "true"
+                || s == "false"
+                || s == "null"
+                || s == "yes"
+                || s == "no"
+                || s.starts_with('*')
+                || s.starts_with('&')
+                || s.starts_with('!')
+                || s.starts_with('@')
+                || s.starts_with('`')
+                || s.starts_with('-')
+                || s.starts_with('?')
+                || s.starts_with('{')
+                || s.starts_with('[')
+                || s.contains(": ")
+                || s.contains('#')
+            {
+                out.push_str(&serde_json::to_string(s).unwrap_or_else(|_| format!("\"{s}\"")));
+            } else {
+                out.push_str(s);
+            }
+        },
+        _ => {
+            out.push_str(&val.to_string());
+        },
+    }
+}
+
 fn render_array_elements(arr: &[Value], indent: usize, out: &mut String) {
     out.push('\n');
     for elem in arr {
         out.push_str(&" ".repeat(indent));
         out.push_str("- ");
-        if let Value::String(s) = elem {
-            out.push_str(s);
-            out.push('\n');
-        } else {
-            out.push_str(&elem.to_string());
-            out.push('\n');
-        }
+        render_scalar(elem, out);
+        out.push('\n');
     }
 }
 
@@ -335,28 +362,11 @@ fn render_value(value: &Value, indent: usize, out: &mut String) {
                     out.push_str(" []\n");
                 },
                 Value::Array(arr) => {
-                    render_array_elements(arr, indent, out);
+                    render_array_elements(arr, indent + 2, out);
                 },
-                Value::String(s) => {
+                Value::String(_) | Value::Bool(_) | Value::Number(_) => {
                     out.push(' ');
-                    // Quote boolean strings like "true"
-                    if s == "true" || s == "false" {
-                        out.push('"');
-                        out.push_str(s);
-                        out.push('"');
-                    } else {
-                        out.push_str(s);
-                    }
-                    out.push('\n');
-                },
-                Value::Bool(b) => {
-                    out.push(' ');
-                    out.push_str(&b.to_string());
-                    out.push('\n');
-                },
-                Value::Number(n) => {
-                    out.push(' ');
-                    out.push_str(&n.to_string());
+                    render_scalar(v, out);
                     out.push('\n');
                 },
                 Value::Null => {

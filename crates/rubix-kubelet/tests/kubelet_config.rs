@@ -185,6 +185,6 @@ fn test_render_canonical_yaml_deterministic() {
     let yaml = render_canonical_yaml(&val);
     assert_eq!(
         yaml,
-        "a: hello\nlist:\n- item1\n- item2\nnested:\n  a: true\n  b: false\nz: 1\n"
+        "a: hello\nlist:\n  - item1\n  - item2\nnested:\n  a: true\n  b: false\nz: 1\n"
     );
 }

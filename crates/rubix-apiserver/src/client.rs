@@ -1012,6 +1012,40 @@ impl KubernetesApiClient {
         Ok(result)
     }
 
+    pub async fn patch_pod_status(
+        &self,
+        namespace: &str,
+        name: &str,
+        status: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("patch", "", "pods/status", Some(namespace), Some(name))?;
+        let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "pods".to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+
+        let mut pod: Value = serde_json::from_slice(&kv.value)?;
+        pod["status"] = status;
+
+        let bytes = serde_json::to_vec(&pod)?;
+        let updated_kv = self
+            .storage
+            .update(&key, bytes, Some(kv.mod_revision))
+            .await?;
+        if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(updated_kv.mod_revision.to_string()),
+            );
+        }
+        Ok(pod)
+    }
+
     // --- Workload Resources (apps/v1 & batch/v1) ---
 
     async fn create_workload(
@@ -1740,7 +1774,7 @@ impl KubernetesApiClient {
     pub async fn update_node(&self, name: &str, mut node: Value) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("update", "", "nodes", None, Some(name))?;
         let key = format!("{}/nodes/{name}", self.storage.prefix());
-        let _existing_kv =
+        let existing_kv =
             self.storage
                 .get(&key)
                 .await?
@@ -1748,6 +1782,16 @@ impl KubernetesApiClient {
                     resource: "nodes".to_string(),
                     name: name.to_string(),
                 })?;
+
+        let old: Value = serde_json::from_slice(&existing_kv.value)?;
+        if let Some(meta) = node.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("name".to_string(), json!(name));
+            for k in ["uid", "creationTimestamp"] {
+                if let Some(v) = old.get("metadata").and_then(|m| m.get(k)) {
+                    meta.insert(k.to_string(), v.clone());
+                }
+            }
+        }
 
         let expected_version = node
             .get("metadata")
@@ -1829,7 +1873,7 @@ impl KubernetesApiClient {
     }
 
     pub async fn list_leases(&self, namespace: &str) -> Result<Value, ApiserverError> {
-        self.list_workload("coordination.k8s.io", "Lease", "leases", namespace)
+        self.list_workload("coordination.k8s.io", "LeaseList", "leases", namespace)
             .await
     }
 

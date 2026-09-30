@@ -250,7 +250,6 @@ impl RbacAuthorizer {
                         "pods".to_string(),
                         "pods/status".to_string(),
                         "configmaps".to_string(),
-                        "secrets".to_string(),
                     ],
                     resource_names: Vec::new(),
                     non_resource_urls: Vec::new(),
