@@ -1,6 +1,5 @@
 //! Tests for containerd shim resolution and PATH environment building.
 
-use std::ffi::OsStr;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
@@ -23,14 +22,26 @@ fn shim_is_resolved_via_prepended_path() {
     perms.set_mode(0o755);
     fs::set_permissions(&shim_path, perms).unwrap();
 
-    // With a PATH that does not include containerd_dir, lookup fails
-    let base_path = OsStr::new("/usr/bin:/bin");
-    assert!(find_shim_in_path(DEFAULT_SHIM_BINARY_NAME, base_path).is_none());
+    // With an isolated path that does not contain the shim, lookup returns None
+    let other_dir = temp.path().join("other_bin");
+    fs::create_dir_all(&other_dir).unwrap();
+    assert!(find_shim_in_path(DEFAULT_SHIM_BINARY_NAME, other_dir.as_os_str()).is_none());
 
     // Prepend containerd_dir to PATH
-    let configured_path = build_containerd_path(&containerd_dir, Some(base_path));
+    let configured_path = build_containerd_path(&containerd_dir, Some(other_dir.as_os_str()));
     let resolved = find_shim_in_path(DEFAULT_SHIM_BINARY_NAME, &configured_path);
-    assert_eq!(resolved, Some(shim_path));
+    assert_eq!(resolved, Some(shim_path.clone()));
+
+    // Even if a host/fallback directory later in PATH contains a shim,
+    // the prepended managed containerd directory takes precedence
+    let fallback_dir = temp.path().join("fallback_bin");
+    fs::create_dir_all(&fallback_dir).unwrap();
+    let fallback_shim = fallback_dir.join(DEFAULT_SHIM_BINARY_NAME);
+    fs::write(&fallback_shim, b"#!/bin/sh\necho host\n").unwrap();
+
+    let multi_path = build_containerd_path(&containerd_dir, Some(fallback_dir.as_os_str()));
+    let resolved_priority = find_shim_in_path(DEFAULT_SHIM_BINARY_NAME, &multi_path);
+    assert_eq!(resolved_priority, Some(shim_path));
 }
 
 #[test]
