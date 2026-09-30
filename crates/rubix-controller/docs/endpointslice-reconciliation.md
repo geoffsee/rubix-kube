@@ -29,7 +29,7 @@ For each `Service` with a non-empty `spec.selector`:
 1. **Pod Discovery**: Scans Pods within the namespace matching all key-value selector labels.
 2. **Backend Address Extraction**: Extracts Pod IP from `.status.podIP` or Calico annotation `cni.projectcalico.org/podIP`.
 3. **Condition Evaluation**:
-   - `ready`: Pod is `Running`, not in terminating state (`deletionTimestamp == None`), and has `Ready: True` condition.
+   - `ready`: Pod is not terminating (`deletionTimestamp == None`) and has a `Ready: True` condition; if no conditions are present, falls back to `phase == Running`.
    - `serving`: True if ready.
    - `terminating`: True if `deletionTimestamp != None`.
 4. **Port Mapping**: Translates `service.spec.ports` (name, port, protocol) into `EndpointPort` entries.

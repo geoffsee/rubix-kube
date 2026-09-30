@@ -128,13 +128,9 @@ impl EndpointSliceReconciler {
             .cloned()
             .unwrap_or_default();
 
-        let matching_existing = existing_items.into_iter().find(|es| {
-            es.get("metadata")
-                .and_then(|m| m.get("labels"))
-                .and_then(|l| l.get("kubernetes.io/service-name"))
-                .and_then(Value::as_str)
-                == Some(name)
-        });
+        let matching_existing = existing_items
+            .into_iter()
+            .find(|es| is_matching_endpointslice(es, name, uid));
 
         let slice_name = matching_existing
             .as_ref()
@@ -376,4 +372,32 @@ fn extract_service_slice_ports(service: &Value) -> Vec<Value> {
         slice_ports.push(Value::Object(port_obj));
     }
     slice_ports
+}
+
+fn is_matching_endpointslice(es: &Value, name: &str, uid: &str) -> bool {
+    let labels = es.get("metadata").and_then(|m| m.get("labels"));
+    let is_svc = labels
+        .and_then(|l| l.get("kubernetes.io/service-name"))
+        .and_then(Value::as_str)
+        == Some(name);
+    let is_managed = labels
+        .and_then(|l| l.get("endpointslice.kubernetes.io/managed-by"))
+        .and_then(Value::as_str)
+        == Some("endpointslice-controller.k8s.io");
+
+    let is_owner = if uid.is_empty() {
+        true
+    } else {
+        es.get("metadata")
+            .and_then(|m| m.get("ownerReferences"))
+            .and_then(Value::as_array)
+            .is_some_and(|owners| {
+                owners.iter().any(|o| {
+                    o.get("kind").and_then(Value::as_str) == Some("Service")
+                        && o.get("uid").and_then(Value::as_str) == Some(uid)
+                })
+            })
+    };
+
+    is_svc && is_managed && is_owner
 }

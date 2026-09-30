@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use rubix_apiserver::ApiserverError;
 use rubix_apiserver::client::KubernetesApiClient;
 use serde_json::{Map, Value, json};
 
@@ -212,7 +213,16 @@ impl EndpointsReconciler {
             tokio::time::sleep(self.batch_period).await;
         }
 
-        let existing = self.client.get_endpoints(namespace, name).await.ok();
+        let existing = match self.client.get_endpoints(namespace, name).await {
+            Ok(v) => Some(v),
+            Err(ApiserverError::NotFound { .. }) => None,
+            Err(e) => {
+                return Err(ControllerError::ReconciliationFailed {
+                    resource: "endpoints".to_string(),
+                    reason: e.to_string(),
+                });
+            },
+        };
 
         if let Some(existing) = existing {
             let existing_subsets = existing.get("subsets").unwrap_or(&Value::Null);
