@@ -1646,6 +1646,215 @@ impl KubernetesApiClient {
             .await
     }
 
+    // --- Node CRUD ---
+
+    pub async fn create_node(&self, mut node: Value) -> Result<Value, ApiserverError> {
+        let name = node
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "Node requires metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed("create", "", "nodes", None, Some(&name))?;
+
+        if let Some(meta) = node.get_mut("metadata").and_then(Value::as_object_mut) {
+            if !meta.contains_key("creationTimestamp") {
+                meta.insert(
+                    "creationTimestamp".to_string(),
+                    json!("2026-09-30T00:00:00Z"),
+                );
+            }
+            if !meta.contains_key("uid") {
+                let cur_rev = self.storage.current_revision().await + 1;
+                meta.insert(
+                    "uid".to_string(),
+                    json!(format!("uid-nodes-{name}-{cur_rev}")),
+                );
+            }
+        }
+
+        let key = format!("{}/nodes/{name}", self.storage.prefix());
+        let bytes = serde_json::to_vec(&node)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = node;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_node(&self, name: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "", "nodes", None, Some(name))?;
+        let key = format!("{}/nodes/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "nodes".to_string(),
+                name: name.to_string(),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    pub async fn list_nodes(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "", "nodes", None, None)?;
+        let prefix = format!("{}/nodes/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "v1",
+            "kind": "NodeList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn update_node(&self, name: &str, mut node: Value) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("update", "", "nodes", None, Some(name))?;
+        let key = format!("{}/nodes/{name}", self.storage.prefix());
+        let _existing_kv =
+            self.storage
+                .get(&key)
+                .await?
+                .ok_or_else(|| ApiserverError::NotFound {
+                    resource: "nodes".to_string(),
+                    name: name.to_string(),
+                })?;
+
+        let expected_version = node
+            .get("metadata")
+            .and_then(|m| m.get("resourceVersion"))
+            .and_then(Value::as_str)
+            .and_then(|s| s.parse::<u64>().ok());
+
+        let bytes = serde_json::to_vec(&node)?;
+        let kv = self.storage.update(&key, bytes, expected_version).await?;
+        if let Some(meta) = node.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(node)
+    }
+
+    pub async fn patch_node_status(
+        &self,
+        name: &str,
+        status: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("patch", "", "nodes/status", None, Some(name))?;
+        let key = format!("{}/nodes/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "nodes".to_string(),
+                name: name.to_string(),
+            })?;
+
+        let mut node: Value = serde_json::from_slice(&kv.value)?;
+        node["status"] = status;
+
+        let bytes = serde_json::to_vec(&node)?;
+        let updated_kv = self
+            .storage
+            .update(&key, bytes, Some(kv.mod_revision))
+            .await?;
+        if let Some(meta) = node.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(updated_kv.mod_revision.to_string()),
+            );
+        }
+        Ok(node)
+    }
+
+    pub async fn delete_node(&self, name: &str) -> Result<(), ApiserverError> {
+        self.check_auth_detailed("delete", "", "nodes", None, Some(name))?;
+        let key = format!("{}/nodes/{name}", self.storage.prefix());
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "nodes".to_string(),
+                name: name.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    // --- Coordination Lease CRUD ---
+
+    pub async fn create_lease(
+        &self,
+        namespace: &str,
+        lease: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("coordination.k8s.io", "Lease", "leases", namespace, lease)
+            .await
+    }
+
+    pub async fn get_lease(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
+        self.get_workload("coordination.k8s.io", "leases", namespace, name)
+            .await
+    }
+
+    pub async fn list_leases(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("coordination.k8s.io", "Lease", "leases", namespace)
+            .await
+    }
+
+    pub async fn update_lease(
+        &self,
+        namespace: &str,
+        name: &str,
+        lease: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "coordination.k8s.io",
+            "Lease",
+            "leases",
+            namespace,
+            name,
+            lease,
+        )
+        .await
+    }
+
+    pub async fn delete_lease(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.delete_workload("coordination.k8s.io", "leases", namespace, name)
+            .await
+    }
+
     // --- CustomResourceDefinition CRUD ---
 
     pub async fn create_crd(&self, crd: Value) -> Result<Value, ApiserverError> {
