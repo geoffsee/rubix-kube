@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod client;
 pub mod config;
 pub mod engine;
@@ -7,6 +8,7 @@ pub mod model;
 pub mod supervisor;
 pub mod wal;
 
+pub use backup::{BACKUP_FORMAT_VERSION, BackupMetadata};
 pub use client::DatastoreClient;
 pub use config::DatastoreConfig;
 pub use engine::DatastoreEngine;

@@ -5,6 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast};
 
+use crate::backup::{BACKUP_FORMAT_VERSION, BACKUP_META_FILE, BackupMetadata};
 use crate::config::DatastoreConfig;
 use crate::error::DatastoreError;
 use crate::lock::DatastoreLock;
@@ -298,6 +299,101 @@ impl DatastoreEngine {
 
         std::fs::rename(temp_path, snapshot_path)?;
         Ok(())
+    }
+
+    pub async fn create_backup(&self, backup_dir: &Path) -> Result<BackupMetadata, DatastoreError> {
+        self.checkpoint_snapshot().await?;
+
+        let snapshot_path = self.config.snapshot_path();
+        if !snapshot_path.exists() {
+            return Err(DatastoreError::Fatal(
+                "missing snapshot file for backup".into(),
+            ));
+        }
+
+        std::fs::create_dir_all(backup_dir)?;
+
+        let dest_snapshot = backup_dir.join("snapshot.db");
+        std::fs::copy(&snapshot_path, &dest_snapshot)?;
+
+        let wal_path = self.config.wal_path();
+        if wal_path.exists() {
+            let dest_wal_dir = backup_dir.join("member/wal");
+            std::fs::create_dir_all(&dest_wal_dir)?;
+            std::fs::copy(&wal_path, dest_wal_dir.join("00000001.wal"))?;
+        }
+
+        let state = self.state.read().await;
+        let sha256 = BackupMetadata::compute_file_sha256(&dest_snapshot)?;
+        let timestamp_secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        let meta = BackupMetadata {
+            format_version: BACKUP_FORMAT_VERSION.to_string(),
+            revision: state.revision,
+            timestamp_secs,
+            total_keys: state.kv.len(),
+            snapshot_sha256: sha256,
+        };
+
+        let meta_json = serde_json::to_vec_pretty(&meta)?;
+        std::fs::write(backup_dir.join(BACKUP_META_FILE), meta_json)?;
+
+        Ok(meta)
+    }
+
+    pub fn restore_backup(
+        backup_dir: &Path,
+        dest_data_dir: &Path,
+    ) -> Result<BackupMetadata, DatastoreError> {
+        let meta_file = backup_dir.join(BACKUP_META_FILE);
+        if !meta_file.exists() {
+            return Err(DatastoreError::Fatal(format!(
+                "missing backup metadata file: {}",
+                meta_file.display()
+            )));
+        }
+
+        let meta_bytes = std::fs::read(&meta_file)?;
+        let meta: BackupMetadata = serde_json::from_slice(&meta_bytes)
+            .map_err(|e| DatastoreError::Fatal(format!("corrupt backup metadata: {e}")))?;
+
+        if meta.format_version != BACKUP_FORMAT_VERSION {
+            return Err(DatastoreError::Fatal(format!(
+                "unsupported backup format version: expected {}, got {}",
+                BACKUP_FORMAT_VERSION, meta.format_version
+            )));
+        }
+
+        let src_snapshot = backup_dir.join("snapshot.db");
+        if !src_snapshot.exists() {
+            return Err(DatastoreError::Fatal(
+                "backup is missing snapshot.db".into(),
+            ));
+        }
+
+        let actual_sha256 = BackupMetadata::compute_file_sha256(&src_snapshot)?;
+        if actual_sha256 != meta.snapshot_sha256 {
+            return Err(DatastoreError::Fatal(format!(
+                "backup snapshot checksum mismatch: expected {}, got {}",
+                meta.snapshot_sha256, actual_sha256
+            )));
+        }
+
+        std::fs::create_dir_all(dest_data_dir)?;
+        let dest_snapshot = dest_data_dir.join("snapshot.db");
+        std::fs::copy(&src_snapshot, dest_snapshot)?;
+
+        let src_wal = backup_dir.join("member/wal/00000001.wal");
+        if src_wal.exists() {
+            let dest_wal_dir = dest_data_dir.join("member/wal");
+            std::fs::create_dir_all(&dest_wal_dir)?;
+            std::fs::copy(&src_wal, dest_wal_dir.join("00000001.wal"))?;
+        }
+
+        Ok(meta)
     }
 
     fn read_snapshot(path: &Path) -> Result<(BTreeMap<String, KeyValue>, u64), DatastoreError> {
