@@ -224,16 +224,32 @@ impl RuntimeOwnershipPolicy {
                 runtime_socket,
                 image_socket,
             } => {
-                if target == runtime_socket {
+                if target
+                    .components()
+                    .any(|component| matches!(component, std::path::Component::ParentDir))
+                {
                     return Err(OwnershipViolation::ProtectedPath {
                         path: target.to_path_buf(),
-                        reason: "matches external CRI runtime socket",
+                        reason: "path contains parent-directory components",
                     });
                 }
-                if target == image_socket {
+
+                if target == runtime_socket
+                    || target.starts_with(runtime_socket)
+                    || runtime_socket.starts_with(target)
+                {
                     return Err(OwnershipViolation::ProtectedPath {
                         path: target.to_path_buf(),
-                        reason: "matches external CRI image socket",
+                        reason: "matches or contains external CRI runtime socket",
+                    });
+                }
+                if target == image_socket
+                    || target.starts_with(image_socket)
+                    || image_socket.starts_with(target)
+                {
+                    return Err(OwnershipViolation::ProtectedPath {
+                        path: target.to_path_buf(),
+                        reason: "matches or contains external CRI image socket",
                     });
                 }
 
@@ -251,10 +267,11 @@ impl RuntimeOwnershipPolicy {
                 ];
 
                 for prefix in protected_prefixes {
-                    if target == prefix || target.starts_with(prefix) {
+                    if target == prefix || target.starts_with(prefix) || prefix.starts_with(target)
+                    {
                         return Err(OwnershipViolation::ProtectedPath {
                             path: target.to_path_buf(),
-                            reason: "path belongs to host-managed runtime installation",
+                            reason: "path belongs to or contains host-managed runtime installation",
                         });
                     }
                 }
@@ -293,10 +310,20 @@ impl RuntimeOwnershipPolicy {
         cni_path: &Path,
         owned_cni_dir: &Path,
     ) -> Result<(), OwnershipViolation> {
-        if matches!(self, Self::External { .. }) && !cni_path.starts_with(owned_cni_dir) {
-            return Err(OwnershipViolation::NonOwnedCniPath {
-                path: cni_path.to_path_buf(),
-            });
+        if matches!(self, Self::External { .. }) {
+            if cni_path
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir))
+            {
+                return Err(OwnershipViolation::NonOwnedCniPath {
+                    path: cni_path.to_path_buf(),
+                });
+            }
+            if !cni_path.starts_with(owned_cni_dir) {
+                return Err(OwnershipViolation::NonOwnedCniPath {
+                    path: cni_path.to_path_buf(),
+                });
+            }
         }
         Ok(())
     }

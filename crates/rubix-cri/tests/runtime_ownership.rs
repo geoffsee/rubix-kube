@@ -202,15 +202,19 @@ async fn external_lifecycle_preserves_host_process_socket_and_registry() {
     let _server =
         spawn_ownership_mock_server(&socket, Arc::clone(&connection_count), Arc::clone(&stopped));
 
-    let fake_host_daemon_pid: u32 = 4242;
+    let mut host_daemon = std::process::Command::new("sleep")
+        .arg("60")
+        .spawn()
+        .expect("spawn disposable host daemon process");
+    let host_daemon_pid = host_daemon.id();
     let policy = RuntimeOwnershipPolicy::external(&socket, &socket);
 
     // Invariant: external mode forbids process management and host runtime signalling
     assert!(!policy.allows_process_management());
     assert_eq!(
-        policy.validate_process_signal(fake_host_daemon_pid, &[fake_host_daemon_pid]),
+        policy.validate_process_signal(host_daemon_pid, &[host_daemon_pid]),
         Err(OwnershipViolation::ProtectedProcess {
-            pid: fake_host_daemon_pid
+            pid: host_daemon_pid
         })
     );
 
@@ -234,23 +238,31 @@ async fn external_lifecycle_preserves_host_process_socket_and_registry() {
     let sup_handle = tokio::spawn(async move { supervisor.run(stop_receiver).await });
     tokio::time::sleep(Duration::from_millis(300)).await;
 
-    // Verify socket exists, connection succeeded, and registry is pristine
+    // Verify socket exists, connection succeeded, registry is pristine, and host process is alive
     assert!(socket.exists());
     let registry_after_start = fs::read_to_string(&registry_conf).unwrap();
     assert_eq!(registry_after_start, initial_registry_content);
+    assert!(
+        host_daemon.try_wait().unwrap().is_none(),
+        "Host daemon process must remain alive after start"
+    );
 
     // 2. Stop: trigger supervisor shutdown
     stop_handle.stop();
     let report = sup_handle.await.expect("supervisor task joins");
     assert!(matches!(report.cause, StopCause::Requested));
 
-    // Verify socket still exists, registry is pristine, host process was never killed
+    // Verify socket still exists, registry is pristine, and host process is alive
     assert!(socket.exists());
     let registry_after_stop = fs::read_to_string(&registry_conf).unwrap();
     assert_eq!(registry_after_stop, initial_registry_content);
     assert!(
+        host_daemon.try_wait().unwrap().is_none(),
+        "Host daemon process must remain alive after stop"
+    );
+    assert!(
         policy
-            .validate_process_signal(fake_host_daemon_pid, &[fake_host_daemon_pid])
+            .validate_process_signal(host_daemon_pid, &[host_daemon_pid])
             .is_err()
     );
 
@@ -269,11 +281,18 @@ async fn external_lifecycle_preserves_host_process_socket_and_registry() {
     let report2 = sup_handle2.await.expect("supervisor task 2 joins");
     assert!(matches!(report2.cause, StopCause::Requested));
 
-    // Post-restart validation: socket, registry, host daemon intact
+    // Post-restart validation: socket, registry, host daemon intact and alive
     assert!(socket.exists());
     let registry_final = fs::read_to_string(&registry_conf).unwrap();
     assert_eq!(registry_final, initial_registry_content);
+    assert!(
+        host_daemon.try_wait().unwrap().is_none(),
+        "Host daemon process must remain alive after restart"
+    );
 
+    // Clean up disposable host daemon process
+    let _ = host_daemon.kill();
+    let _ = host_daemon.wait();
     stopped.store(true, Ordering::Relaxed);
 }
 
@@ -295,14 +314,24 @@ async fn uninstall_and_cleanup_refuses_to_target_external_runtime() {
         policy.validate_cleanup_path(&runtime_socket),
         Err(OwnershipViolation::ProtectedPath {
             path: runtime_socket.clone(),
-            reason: "matches external CRI runtime socket",
+            reason: "matches or contains external CRI runtime socket",
         })
     );
     assert_eq!(
         policy.validate_cleanup_path(&image_socket),
         Err(OwnershipViolation::ProtectedPath {
             path: image_socket.clone(),
-            reason: "matches external CRI image socket",
+            reason: "matches or contains external CRI image socket",
+        })
+    );
+
+    // Parent directory traversal rejection
+    let dotdot_cleanup = Path::new("/var/lib/rubix/../containerd");
+    assert_eq!(
+        policy.validate_cleanup_path(dotdot_cleanup),
+        Err(OwnershipViolation::ProtectedPath {
+            path: dotdot_cleanup.to_path_buf(),
+            reason: "path contains parent-directory components",
         })
     );
 
@@ -441,6 +470,7 @@ fn cni_ownership_allows_only_owned_configuration() {
         Path::new("/etc/cni/net.d/calico.conflist"),
         Path::new("/opt/cni/bin/bridge"),
         Path::new("/etc/cni/net.d"),
+        Path::new("/var/lib/rubix/containerd/cni/conf/../../etc/cni/net.d"),
     ];
 
     for host_cni in host_cni_paths {
