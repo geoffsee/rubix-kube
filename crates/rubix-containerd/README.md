@@ -1,6 +1,6 @@
 # rubix-containerd
 
-Managed containerd runtime configuration, shim resolution, and lifecycle integration for Rubix Kube.
+Managed containerd runtime configuration, shim resolution, image handling, and lifecycle integration for Rubix Kube.
 
 ## Features
 
@@ -10,7 +10,12 @@ Managed containerd runtime configuration, shim resolution, and lifecycle integra
 - **Registry Proxies & Mirrors**: Supports containerd `hosts.toml` configuration directory model, ensuring user snippets survive configuration regeneration and service restarts.
 - **Read-Only / Immutable Link Resilience**: Preserves existing correct symlinks on read-only filesystems.
 - **Custom Root Isolation**: Fully self-contained execution without requiring global `/usr/local/bin` or `/opt/cni/bin` symlinks.
+- **Supervised Lifecycle & Process Ownership**: Integrates with `rubix-supervisor` via `OwnedProcessAdapter` and `ContainerdService` for graceful signal management and clean termination.
+- **CRI & Native Health Probing**: Unix domain socket gRPC readiness probing via Kubernetes CRI `RuntimeService::Version` and containerd `VersionClient` with configurable retry intervals and timeouts.
+- **Namespace Management**: Ensures the required `k8s.io` namespace exists in containerd on startup.
+- **Image Import & Registry Pull**: Automatically imports enabled embedded image archives (CoreDNS, Pause, LocalPath, Portainer Agent, D2K) while strictly omitting disabled components and providing CRI registry pull fallback.
+- **Multi-Environment Fixtures**: Verified against ordinary Linux hosts, Alpine/OpenRC hosts, nested-container environments, and overlay root filesystems.
 
 ## Documentation
 
-- [CONTAINERD_CONFIG.md](CONTAINERD_CONFIG.md) - Detailed specification of configuration format, shim resolution, and snapshotter selection.
+- [CONTAINERD_CONFIG.md](CONTAINERD_CONFIG.md) - Detailed specification of configuration format, shim resolution, snapshotter selection, readiness probing, and image handling.
