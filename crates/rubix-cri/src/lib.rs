@@ -1,7 +1,22 @@
-//! Client bindings for the official Kubernetes v1.35.7 CRI v1 protocol.
+//! Client bindings and external runtime attachment for the official Kubernetes v1.35.7 CRI v1 protocol.
 //!
-//! Regenerate with the `rubix-upstream` maintenance CLI; ordinary builds do not fetch inputs
-//! or execute a protobuf compiler. These bindings do not implement a runtime.
+//! Regenerate protocol definitions with the `rubix-upstream` maintenance CLI; ordinary builds do not fetch inputs
+//! or execute a protobuf compiler.
+
+pub mod client;
+pub mod endpoint;
+pub mod external;
+pub mod provider;
+pub mod readiness;
+
+pub use client::connect_unix;
+pub use endpoint::{CriEndpoint, EndpointError, RuntimeEndpoints};
+pub use external::{COMPONENT_EXTERNAL_CRI, ExternalRuntimeOptions, ExternalRuntimeService};
+pub use provider::{CriProvider, ProviderInfo, detect_provider};
+pub use readiness::{
+    DEFAULT_READINESS_TIMEOUT, DEFAULT_RETRY_INTERVAL, ReadinessError, check_image_service,
+    check_runtime_version, probe_cri_readiness,
+};
 
 pub mod runtime {
     // Preserve upstream protocol comments/boolean fields and tonic's nested RPC templates.
