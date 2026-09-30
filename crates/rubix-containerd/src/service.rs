@@ -1,6 +1,7 @@
 //! Supervised containerd runtime service adapter.
 
 use crate::cgroup::use_systemd_cgroup;
+use crate::cleanup::{CleanupError, CleanupReport, clean_stale_runtime_state};
 use crate::config::{
     ContainerdConfigOptions, ContainerdServicePaths, write_containerd_config_file,
 };
@@ -82,6 +83,7 @@ pub struct ContainerdServiceOptions {
     pub readiness_timeout: Duration,
     pub retry_interval: Duration,
     pub ensure_socket_symlink: bool,
+    pub clean_stale_state_on_startup: bool,
     pub output_limit: Option<OutputLimit>,
 }
 
@@ -93,6 +95,7 @@ impl ContainerdServiceOptions {
             readiness_timeout: DEFAULT_READINESS_TIMEOUT,
             retry_interval: DEFAULT_RETRY_INTERVAL,
             ensure_socket_symlink: true,
+            clean_stale_state_on_startup: true,
             output_limit: None,
         }
     }
@@ -116,8 +119,20 @@ impl ContainerdService {
         Self { options }
     }
 
-    /// Prepares local filesystem: ensures directories exist and renders config.toml.
+    /// Cleans stale containerd runtime state from prior runs.
+    pub fn cleanup(&self, system_socket: Option<&Path>) -> Result<CleanupReport, CleanupError> {
+        clean_stale_runtime_state(&self.options.paths, system_socket)
+    }
+
+    /// Prepares local filesystem: cleans stale disposable state if enabled,
+    /// ensures directories exist, and renders config.toml.
     pub fn prepare(&self) -> Result<(), std::io::Error> {
+        if self.options.clean_stale_state_on_startup {
+            let _ = self
+                .cleanup(None)
+                .map_err(|e| std::io::Error::other(e.to_string()))?;
+        }
+
         let paths = &self.options.paths;
         std::fs::create_dir_all(&paths.root_dir)?;
         std::fs::create_dir_all(&paths.state_dir)?;

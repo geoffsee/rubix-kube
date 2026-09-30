@@ -5,6 +5,7 @@
 //! registry `hosts.toml` configuration, and immutable symlink handling.
 
 pub mod cgroup;
+pub mod cleanup;
 pub mod client;
 pub mod config;
 pub mod health;
@@ -17,6 +18,7 @@ pub mod snapshotter;
 pub mod symlink;
 
 pub use cgroup::{evaluate_systemd_cgroup, is_cgroup_v2, is_systemd_running, use_systemd_cgroup};
+pub use cleanup::{CleanupError, CleanupReport, clean_stale_runtime_state, validate_cleanup_path};
 pub use client::connect_unix;
 pub use config::{
     CONTAINERD_CONFIG_VERSION, ContainerdConfigFile, ContainerdConfigOptions,

@@ -120,7 +120,7 @@ pub async fn probe_containerd_readiness(
                 let info = check_cri_version(channel.clone()).await.ok()?;
                 Some((channel, info))
             };
-            if let Some(pair) = attempt.await {
+            if let Ok(Some(pair)) = tokio::time::timeout_at(deadline, attempt).await {
                 return Ok(pair);
             }
         }
