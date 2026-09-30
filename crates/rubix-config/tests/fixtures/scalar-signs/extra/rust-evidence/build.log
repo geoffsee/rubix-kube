@@ -29,38 +29,39 @@
 #8 DONE 0.0s
 
 #9 [build 5/5] RUN mkdir /out && go test -c -p 2 -tags external_deps -trimpath -o /out/scalar.test ./internal/config
-#9 0.232 go: downloading github.com/distribution/reference v0.6.0
-#9 0.233 go: downloading sigs.k8s.io/yaml v1.6.0
-#9 0.234 go: downloading github.com/rs/zerolog v1.33.0
-#9 0.236 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
-#9 0.237 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-#9 0.241 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
-#9 7.905 go: downloading go.yaml.in/yaml/v2 v2.4.4
-#9 7.905 go: downloading github.com/opencontainers/go-digest v1.0.0
-#9 7.905 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
-#9 7.905 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
-#9 7.906 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 8.106 go: downloading gopkg.in/inf.v0 v0.9.1
-#9 8.106 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
-#9 8.106 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
-#9 8.159 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 8.442 go: downloading golang.org/x/sys v0.47.0
-#9 8.442 go: downloading github.com/x448/float16 v0.8.4
-#9 DONE 14.0s
+#9 0.107 go: downloading sigs.k8s.io/yaml v1.6.0
+#9 0.110 go: downloading github.com/distribution/reference v0.6.0
+#9 0.110 go: downloading github.com/rs/zerolog v1.33.0
+#9 0.110 go: downloading github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.35.7-k3s1
+#9 0.110 go: downloading k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+#9 0.111 go: downloading github.com/alecthomas/kingpin/v2 v2.4.0
+#9 1.148 go: downloading go.yaml.in/yaml/v2 v2.4.4
+#9 1.148 go: downloading github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b
+#9 1.149 go: downloading github.com/xhit/go-str2duration/v2 v2.1.0
+#9 1.150 go: downloading github.com/opencontainers/go-digest v1.0.0
+#9 1.318 go: downloading github.com/mattn/go-colorable v0.1.13
+#9 1.327 go: downloading gopkg.in/inf.v0 v0.9.1
+#9 1.328 go: downloading sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730
+#9 1.328 go: downloading github.com/fxamacker/cbor/v2 v2.9.0
+#9 1.514 go: downloading github.com/mattn/go-isatty v0.0.20
+#9 1.572 go: downloading github.com/x448/float16 v0.8.4
+#9 1.704 go: downloading golang.org/x/sys v0.47.0
+#9 DONE 6.7s
 
 #10 [capture 1/1] WORKDIR /tmp
-#10 DONE 0.0s
+#10 DONE 0.1s
 
 #11 exporting to image
 #11 exporting layers
 #11 exporting layers 2.2s done
-#11 exporting manifest sha256:3014fdb29478911f3efd261ff0e4bdb33ac9780b1e1a38c6b83e0bf9e0ab1de4 done
-#11 exporting config sha256:3fc266109e50a5f8e2382d07ea6d3dbdcdf748936d4fe1677c19ef0d6410c6b5 done
-#11 exporting attestation manifest sha256:695e25142843f43dd868fb80d4788002d52ff85b397fb0a22b2134c288f604af done
-#11 exporting manifest list sha256:fc4fed1c9994d20ef8055c3b61e7ed168a41cc809a76da56de20bb484565754b done
-#11 naming to docker.io/library/rubix-config-scalar-extra-el3rbb:latest done
-#11 unpacking to docker.io/library/rubix-config-scalar-extra-el3rbb:latest
-#11 unpacking to docker.io/library/rubix-config-scalar-extra-el3rbb:latest 0.6s done
-#11 DONE 2.9s
+#11 exporting manifest sha256:cd2b71efb43f8a0481ab1091894b4dc2e0ddf3b99756138bccbee796fef0aac9
+#11 exporting manifest sha256:cd2b71efb43f8a0481ab1091894b4dc2e0ddf3b99756138bccbee796fef0aac9 done
+#11 exporting config sha256:2aedd0d82b1af13f7739bef3796960caad468fdb8091579c02d934175ab615a7 done
+#11 exporting attestation manifest sha256:af413894d35a04844af9b56b8983b18e48cd15ce99049f8fa659fe21974a4948 done
+#11 exporting manifest list sha256:8f0020925f6d1201df1b3662ba3b0331da071391f97e8ad76c9276d1577bdd2c done
+#11 naming to docker.io/library/rubix-config-scalar-extra-sa4xst:latest done
+#11 unpacking to docker.io/library/rubix-config-scalar-extra-sa4xst:latest
+#11 unpacking to docker.io/library/rubix-config-scalar-extra-sa4xst:latest 0.5s done
+#11 DONE 2.7s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/gbq4ucnkz9gbgm7k4wlv8uzjf
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/5srj5r35wgpnj73jv4cgn73na

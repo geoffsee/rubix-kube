@@ -1,0 +1,17 @@
+--- src/main.rs
++++ src/main.rs
+@@ -183,11 +183,11 @@
+     let alpine_base = root.join("tools/parity/fixtures/alpine-preparation/evidence-rust");
+     let alpine_rust_base = root.join("tools/parity/fixtures/alpine-rust-preparation/evidence-rust");
++    let alpine_first_res = alpine_base.join("first").join("result.json");
+     for sub in ["first", "repeat"] {
+-        let alpine_res = alpine_base.join(sub).join("result.json");
+         let rust_res = alpine_rust_base.join(sub).join("result.json");
+-        if alpine_res.exists() && rust_res.exists() {
++        if alpine_first_res.exists() && rust_res.exists() {
+             let mut res = load(&rust_res);
+-            res["baseline_result_sha256"] = digest(&alpine_res).into();
++            res["baseline_result_sha256"] = digest(&alpine_first_res).into();
+             save(&rust_res, &res);
+         }
+     }

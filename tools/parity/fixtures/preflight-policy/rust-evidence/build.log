@@ -15,43 +15,35 @@
 #4 resolve docker.io/library/golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd done
 #4 DONE 0.0s
 
-#5 [2/6] WORKDIR /src
-#5 CACHED
+#5 [internal] load build context
+#5 transferring context: 5.50kB done
+#5 DONE 0.0s
 
-#6 [internal] load build context
-#6 transferring context: 5.50kB done
-#6 DONE 0.0s
+#6 [2/6] WORKDIR /src
+#6 CACHED
 
-#7 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/preflight/preflight.go  && tar -xOf /tmp/source.tar.gz kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.sum > go.sum
-#7 0.091   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-#7 0.091                                  Dload  Upload   Total   Spent    Left  Speed
-#7 0.091   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  737k    0  737k    0     0   488k      0 --:--:--  0:00:01 --:--:--  487k100  874k    0  874k    0     0   558k      0 --:--:--  0:00:01 --:--:--  558k
-#7 1.660 /tmp/source.tar.gz: OK
-#7 DONE 1.7s
+#7 [4/6] COPY go.mod preflight_capture_test.go ./
+#7 CACHED
 
-#8 [4/6] COPY go.mod preflight_capture_test.go ./
-#8 DONE 0.0s
+#8 [5/6] RUN sha256sum preflight.go > /source.sha256 && go test -mod=readonly -c -trimpath -o /preflight.test . && sha256sum /preflight.test >> /source.sha256
+#8 CACHED
 
-#9 [5/6] RUN sha256sum preflight.go > /source.sha256 && go test -mod=readonly -c -trimpath -o /preflight.test . && sha256sum /preflight.test >> /source.sha256
-#9 0.139 go: downloading github.com/rs/zerolog v1.33.0
-#9 1.182 go: downloading github.com/mattn/go-colorable v0.1.13
-#9 1.416 go: downloading github.com/mattn/go-isatty v0.0.20
-#9 1.624 go: downloading golang.org/x/sys v0.47.0
-#9 DONE 7.1s
+#9 [3/6] RUN curl --fail --location --retry 3 --output /tmp/source.tar.gz https://codeload.github.com/portainer/kubesolo/tar.gz/2ef1c4787989f11f868f81bb84ae2afd4a49a81d  && echo '9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec  /tmp/source.tar.gz' | sha256sum --check  && tar -xzf /tmp/source.tar.gz --strip-components=4 kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/internal/cli/preflight/preflight.go  && tar -xOf /tmp/source.tar.gz kubesolo-2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.sum > go.sum
+#9 CACHED
 
 #10 [6/6] WORKDIR /tmp
-#10 DONE 0.0s
+#10 CACHED
 
 #11 exporting to image
-#11 exporting layers
-#11 exporting layers 1.6s done
-#11 exporting manifest sha256:def86e1eef1f640b2f7f3f9bacd1a4e1c8cba98b366cb1d50fb5614ea886fce8 done
-#11 exporting config sha256:aa8a4aacf19a23294760480624ac54118eb43ee037e4cfa4e6454aca0c50507c done
-#11 exporting attestation manifest sha256:749bcae4ce483a3fb09569f08fe8c4893df5fce440ddc790d6dc9d76f7591acc done
-#11 exporting manifest list sha256:286564f7cf34a3012201c2196ae458b2805f9f71931685b7a09d3a70cfa98c79 done
-#11 naming to docker.io/library/rubix-preflight-policy-te9tvx:latest done
-#11 unpacking to docker.io/library/rubix-preflight-policy-te9tvx:latest
-#11 unpacking to docker.io/library/rubix-preflight-policy-te9tvx:latest 0.3s done
-#11 DONE 2.0s
+#11 exporting layers done
+#11 exporting manifest sha256:4dadbe699bd7c9eb2015ed6634a12e0af15472224218cea38b43bbe9eecda174 done
+#11 exporting config sha256:4cc80e3a76f5b10cffe4ecad5a442eaa8738361f05d60b6b7af2a9648b8c3629 done
+#11 exporting attestation manifest sha256:f51e26694a6badd9027d394deed5bcd5ccad0db9b35980b3b5b8220789d0ccb9 done
+#11 exporting manifest list sha256:a2966f8b7134391db98c3414938acd96bc773b1c27c5cff16b2086b47197467b done
+#11 naming to docker.io/library/rubix-preflight-policy-lsc5mu:latest
+#11 naming to docker.io/library/rubix-preflight-policy-lsc5mu:latest done
+#11 unpacking to docker.io/library/rubix-preflight-policy-lsc5mu:latest
+#11 unpacking to docker.io/library/rubix-preflight-policy-lsc5mu:latest 0.4s done
+#11 DONE 0.5s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/2oi7mawzunbht25xbuw7yt3po
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/zkkopkiv05scfn977bzsqbwuq

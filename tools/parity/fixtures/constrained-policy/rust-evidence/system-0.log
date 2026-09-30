@@ -1,8 +1,8 @@
 === RUN   TestCapture
-{"level":"debug","component":"kubesolo","time":"2026-09-28T16:58:47Z","message":"iptables version: iptables v1 (nf_tables)"}
-{"level":"debug","component":"kubesolo","time":"2026-09-28T16:58:47Z","message":"iptables version: iptables v1 (legacy)"}
-{"level":"debug","component":"kubesolo","time":"2026-09-28T16:58:47Z","message":"iptables version: garbage"}
-{"level":"warn","component":"kubesolo","time":"2026-09-28T16:58:47Z","message":"failed to detect iptables backend: exit status 1 — assuming nf_tables"}
+{"level":"debug","component":"kubesolo","time":"2026-09-29T06:45:03Z","message":"iptables version: iptables v1 (nf_tables)"}
+{"level":"debug","component":"kubesolo","time":"2026-09-29T06:45:03Z","message":"iptables version: iptables v1 (legacy)"}
+{"level":"debug","component":"kubesolo","time":"2026-09-29T06:45:03Z","message":"iptables version: garbage"}
+{"level":"warn","component":"kubesolo","time":"2026-09-29T06:45:03Z","message":"failed to detect iptables backend: exit status 1 — assuming nf_tables"}
 RUBIX_CAPTURE ["nft\ttrue","legacy\tfalse","unrecognized\tfalse","failed_assumes_nft\ttrue"]
---- PASS: TestCapture (0.00s)
+--- PASS: TestCapture (0.01s)
 PASS
