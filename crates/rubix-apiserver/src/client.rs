@@ -1077,10 +1077,14 @@ impl KubernetesApiClient {
             doc = obj;
         }
 
-        let key = format!(
-            "{}/{group}/{plural}/{namespace}/{name}",
-            self.storage.prefix()
-        );
+        let key = if group.is_empty() {
+            format!("{}/{plural}/{namespace}/{name}", self.storage.prefix())
+        } else {
+            format!(
+                "{}/{group}/{plural}/{namespace}/{name}",
+                self.storage.prefix()
+            )
+        };
         let bytes = serde_json::to_vec(&doc)?;
         let kv = self.storage.create(&key, bytes).await?;
         let mut result = doc;
@@ -1101,10 +1105,14 @@ impl KubernetesApiClient {
         name: &str,
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("get", group, plural, Some(namespace), Some(name))?;
-        let key = format!(
-            "{}/{group}/{plural}/{namespace}/{name}",
-            self.storage.prefix()
-        );
+        let key = if group.is_empty() {
+            format!("{}/{plural}/{namespace}/{name}", self.storage.prefix())
+        } else {
+            format!(
+                "{}/{group}/{plural}/{namespace}/{name}",
+                self.storage.prefix()
+            )
+        };
         let kv = self
             .storage
             .get(&key)
@@ -1131,7 +1139,11 @@ impl KubernetesApiClient {
         namespace: &str,
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("list", group, plural, Some(namespace), None)?;
-        let prefix = format!("{}/{group}/{plural}/{namespace}/", self.storage.prefix());
+        let prefix = if group.is_empty() {
+            format!("{}/{plural}/{namespace}/", self.storage.prefix())
+        } else {
+            format!("{}/{group}/{plural}/{namespace}/", self.storage.prefix())
+        };
         let kvs = self.storage.list(&prefix).await?;
         let mut items = Vec::new();
         for kv in kvs {
@@ -1145,8 +1157,13 @@ impl KubernetesApiClient {
             items.push(doc);
         }
         let cur_rev = self.storage.current_revision().await;
+        let api_version = if group.is_empty() {
+            "v1".to_string()
+        } else {
+            format!("{group}/v1")
+        };
         Ok(json!({
-            "apiVersion": format!("{group}/v1"),
+            "apiVersion": api_version,
             "kind": kind_list,
             "metadata": {
                 "resourceVersion": cur_rev.to_string()
@@ -1165,10 +1182,14 @@ impl KubernetesApiClient {
         mut doc: Value,
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("update", group, plural, Some(namespace), Some(name))?;
-        let key = format!(
-            "{}/{group}/{plural}/{namespace}/{name}",
-            self.storage.prefix()
-        );
+        let key = if group.is_empty() {
+            format!("{}/{plural}/{namespace}/{name}", self.storage.prefix())
+        } else {
+            format!(
+                "{}/{group}/{plural}/{namespace}/{name}",
+                self.storage.prefix()
+            )
+        };
         let existing = self
             .storage
             .get(&key)
@@ -1239,10 +1260,14 @@ impl KubernetesApiClient {
         name: &str,
     ) -> Result<(), ApiserverError> {
         self.check_auth_detailed("delete", group, plural, Some(namespace), Some(name))?;
-        let key = format!(
-            "{}/{group}/{plural}/{namespace}/{name}",
-            self.storage.prefix()
-        );
+        let key = if group.is_empty() {
+            format!("{}/{plural}/{namespace}/{name}", self.storage.prefix())
+        } else {
+            format!(
+                "{}/{group}/{plural}/{namespace}/{name}",
+                self.storage.prefix()
+            )
+        };
         let res = self.storage.delete(&key, None).await?;
         if res.is_none() {
             return Err(ApiserverError::NotFound {
@@ -1496,6 +1521,128 @@ impl KubernetesApiClient {
     }
     pub async fn delete_cronjob(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
         self.delete_workload("batch", "cronjobs", namespace, name)
+            .await
+    }
+
+    // --- Service, Endpoints & EndpointSlice CRUD ---
+
+    pub async fn create_service(
+        &self,
+        namespace: &str,
+        service: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("", "Service", "services", namespace, service)
+            .await
+    }
+    pub async fn get_service(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
+        self.get_workload("", "services", namespace, name).await
+    }
+    pub async fn list_services(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("", "ServiceList", "services", namespace)
+            .await
+    }
+    pub async fn update_service(
+        &self,
+        namespace: &str,
+        name: &str,
+        service: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload("", "Service", "services", namespace, name, service)
+            .await
+    }
+    pub async fn delete_service(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.delete_workload("", "services", namespace, name).await
+    }
+
+    pub async fn create_endpoints(
+        &self,
+        namespace: &str,
+        endpoints: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("", "Endpoints", "endpoints", namespace, endpoints)
+            .await
+    }
+    pub async fn get_endpoints(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.get_workload("", "endpoints", namespace, name).await
+    }
+    pub async fn list_endpoints(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("", "EndpointsList", "endpoints", namespace)
+            .await
+    }
+    pub async fn update_endpoints(
+        &self,
+        namespace: &str,
+        name: &str,
+        endpoints: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload("", "Endpoints", "endpoints", namespace, name, endpoints)
+            .await
+    }
+    pub async fn delete_endpoints(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.delete_workload("", "endpoints", namespace, name).await
+    }
+
+    pub async fn create_endpointslice(
+        &self,
+        namespace: &str,
+        slice: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload(
+            "discovery.k8s.io",
+            "EndpointSlice",
+            "endpointslices",
+            namespace,
+            slice,
+        )
+        .await
+    }
+    pub async fn get_endpointslice(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.get_workload("discovery.k8s.io", "endpointslices", namespace, name)
+            .await
+    }
+    pub async fn list_endpointslices(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload(
+            "discovery.k8s.io",
+            "EndpointSliceList",
+            "endpointslices",
+            namespace,
+        )
+        .await
+    }
+    pub async fn update_endpointslice(
+        &self,
+        namespace: &str,
+        name: &str,
+        slice: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "discovery.k8s.io",
+            "EndpointSlice",
+            "endpointslices",
+            namespace,
+            name,
+            slice,
+        )
+        .await
+    }
+    pub async fn delete_endpointslice(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.delete_workload("discovery.k8s.io", "endpointslices", namespace, name)
             .await
     }
 

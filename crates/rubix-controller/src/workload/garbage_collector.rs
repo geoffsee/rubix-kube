@@ -54,10 +54,12 @@ impl GarbageCollector {
     }
 
     async fn reconcile_pass(&self, namespace: &str) -> Result<usize, ControllerError> {
-        let rs_del = self.reconcile_replicasets(namespace).await;
-        let job_del = self.reconcile_jobs(namespace).await;
-        let pod_del = self.reconcile_pods(namespace).await;
-        Ok(rs_del + job_del + pod_del)
+        let rs_count = self.reconcile_replicasets(namespace).await;
+        let job_count = self.reconcile_jobs(namespace).await;
+        let pod_count = self.reconcile_pods(namespace).await;
+        let slice_count = self.reconcile_endpointslices(namespace).await;
+        let endpoint_count = self.reconcile_endpoints(namespace).await;
+        Ok(rs_count + job_count + pod_count + slice_count + endpoint_count)
     }
 
     async fn reconcile_replicasets(&self, namespace: &str) -> usize {
@@ -141,6 +143,65 @@ impl GarbageCollector {
         deleted
     }
 
+    async fn reconcile_endpointslices(&self, namespace: &str) -> usize {
+        let Ok(list) = self.client.list_endpointslices(namespace).await else {
+            return 0;
+        };
+        let Some(items) = list.get("items").and_then(Value::as_array) else {
+            return 0;
+        };
+
+        let mut deleted = 0;
+        for item in items {
+            if !self.is_eligible_dependent(namespace, item).await {
+                continue;
+            }
+            let Some(name) = item
+                .get("metadata")
+                .and_then(|m| m.get("name"))
+                .and_then(Value::as_str)
+            else {
+                continue;
+            };
+            if self
+                .client
+                .delete_endpointslice(namespace, name)
+                .await
+                .is_ok()
+            {
+                deleted += 1;
+            }
+        }
+        deleted
+    }
+
+    async fn reconcile_endpoints(&self, namespace: &str) -> usize {
+        let Ok(list) = self.client.list_endpoints(namespace).await else {
+            return 0;
+        };
+        let Some(items) = list.get("items").and_then(Value::as_array) else {
+            return 0;
+        };
+
+        let mut deleted = 0;
+        for item in items {
+            if !self.is_eligible_dependent(namespace, item).await {
+                continue;
+            }
+            let Some(name) = item
+                .get("metadata")
+                .and_then(|m| m.get("name"))
+                .and_then(Value::as_str)
+            else {
+                continue;
+            };
+            if self.client.delete_endpoints(namespace, name).await.is_ok() {
+                deleted += 1;
+            }
+        }
+        deleted
+    }
+
     async fn check_owner_exists(
         &self,
         namespace: &str,
@@ -168,6 +229,9 @@ impl GarbageCollector {
             "Job" => owner_present(self.client.get_job(namespace, name).await, expected_uid),
             "CronJob" => {
                 owner_present(self.client.get_cronjob(namespace, name).await, expected_uid)
+            },
+            "Service" => {
+                owner_present(self.client.get_service(namespace, name).await, expected_uid)
             },
             _ => true,
         }
