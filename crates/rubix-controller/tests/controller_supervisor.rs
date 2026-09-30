@@ -82,7 +82,8 @@ async fn test_controller_manager_startup_and_authenticated_identity() {
     assert!(health.is_healthy);
     assert!(health.authenticated);
     assert!(health.apiserver_connected);
-    assert!(!health.active_controllers.is_empty());
+    assert!(!health.configured_controllers.is_empty());
+    assert!(health.active_controllers.is_empty());
 
     // 4. Stop service
     controller_svc.stop();
@@ -130,6 +131,8 @@ async fn test_controller_manager_supervision_lifecycle() {
     let report = controller_svc.check_readiness().await.unwrap();
     assert!(report.is_healthy);
     assert!(report.authenticated);
+    assert!(!report.configured_controllers.is_empty());
+    assert!(report.active_controllers.is_empty());
 
     // Stop supervisor gracefully
     stop_handle.stop();

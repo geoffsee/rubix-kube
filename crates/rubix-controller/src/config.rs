@@ -144,7 +144,7 @@ impl ControllerManagerConfig {
     /// Generates command line flags for official kube-controller-manager v1.35.7.
     #[must_use]
     pub fn to_cli_args(&self) -> Vec<String> {
-        let mut args = vec![
+        vec![
             format!("--kubeconfig={}", self.kubeconfig.display()),
             format!("--authentication-kubeconfig={}", self.kubeconfig.display()),
             format!("--authorization-kubeconfig={}", self.kubeconfig.display()),
@@ -170,12 +170,6 @@ impl ControllerManagerConfig {
             format!("--secure-port={}", self.secure_port),
             format!("--bind-address={}", self.bind_address),
             format!("--leader-elect={}", self.leader_elect),
-        ];
-
-        if let Some(ip) = self.node_ip {
-            args.push(format!("--node-ip={ip}"));
-        }
-
-        args
+        ]
     }
 }

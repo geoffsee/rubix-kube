@@ -66,6 +66,19 @@ impl ControllerManagerService {
             });
         }
 
+        // Validate kubeconfig content and user identity
+        let kubeconfig_content = std::fs::read_to_string(&self.config.kubeconfig).map_err(|e| {
+            ControllerError::InvalidConfiguration {
+                field: "kubeconfig".to_string(),
+                reason: format!("failed to read kubeconfig: {e}"),
+            }
+        })?;
+        if !kubeconfig_content.contains("kube-controller-manager") {
+            return Err(ControllerError::AuthenticationFailed {
+                reason: "kubeconfig missing kube-controller-manager identity".to_string(),
+            });
+        }
+
         // 2. Validate configuration against historical allowlists and upstream defaults
         self.config.validate_controllers()?;
         self.config.validate_batch_periods()?;
@@ -105,7 +118,7 @@ impl ControllerManagerService {
             )));
         }
 
-        let active = if self.config.controllers.iter().any(|c| c == "*") {
+        let configured = if self.config.controllers.iter().any(|c| c == "*") {
             crate::config::REQUIRED_CONTROLLERS
                 .iter()
                 .map(|&s| s.to_string())
@@ -114,7 +127,11 @@ impl ControllerManagerService {
             self.config.controllers.clone()
         };
 
-        Ok(ControllerHealthReport::new_healthy(active))
+        // In E12.01 baseline, reconciliation loops have not yet been registered.
+        // Active loops will be populated when individual controller loops run (E12.02 / E12.03).
+        let active = Vec::new();
+
+        Ok(ControllerHealthReport::new_healthy(configured, active))
     }
 
     /// Stops the controller manager service.
