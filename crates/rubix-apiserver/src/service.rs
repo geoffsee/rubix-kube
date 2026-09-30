@@ -305,6 +305,24 @@ impl ApiserverService {
     }
 
     #[must_use]
+    pub fn user_client(
+        &self,
+        username: impl Into<String>,
+        groups: Vec<String>,
+    ) -> KubernetesApiClient {
+        KubernetesApiClient::new(
+            self.storage.clone(),
+            ClientIdentity::User {
+                username: username.into(),
+                groups,
+            },
+            self.rbac.clone(),
+            self.token_service_opt(),
+            &self.config,
+        )
+    }
+
+    #[must_use]
     pub fn restricted_client(
         &self,
         username: impl Into<String>,

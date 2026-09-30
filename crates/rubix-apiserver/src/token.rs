@@ -2,9 +2,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-#[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
-
 use serde::{Deserialize, Serialize};
 
 use crate::error::ApiserverError;
@@ -277,30 +274,21 @@ impl TokenService {
         })?;
 
         let token_path = projection.target_dir.join("token");
-        fs::write(&token_path, token_str.as_bytes()).map_err(|e| ApiserverError::Internal {
-            reason: format!("failed to write projected token: {e}"),
+        rubix_pki::atomic_write(&token_path, token_str.as_bytes(), 0o600).map_err(|e| {
+            ApiserverError::Internal {
+                reason: format!("failed to write projected token: {e}"),
+            }
         })?;
 
-        #[cfg(unix)]
-        {
-            let mut perms = fs::metadata(&token_path)
-                .map_err(|e| ApiserverError::Internal {
-                    reason: format!("failed to stat token file: {e}"),
-                })?
-                .permissions();
-            perms.set_mode(0o600);
-            fs::set_permissions(&token_path, perms).map_err(|e| ApiserverError::Internal {
-                reason: format!("failed to set permissions on token file: {e}"),
-            })?;
-        }
-
         let ca_path = projection.target_dir.join("ca.crt");
-        fs::write(&ca_path, projection.ca_cert).map_err(|e| ApiserverError::Internal {
-            reason: format!("failed to write ca.crt: {e}"),
+        rubix_pki::atomic_write(&ca_path, projection.ca_cert, 0o644).map_err(|e| {
+            ApiserverError::Internal {
+                reason: format!("failed to write ca.crt: {e}"),
+            }
         })?;
 
         let ns_path = projection.target_dir.join("namespace");
-        fs::write(&ns_path, projection.namespace.as_bytes()).map_err(|e| {
+        rubix_pki::atomic_write(&ns_path, projection.namespace.as_bytes(), 0o644).map_err(|e| {
             ApiserverError::Internal {
                 reason: format!("failed to write namespace: {e}"),
             }

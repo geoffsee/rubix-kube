@@ -155,13 +155,13 @@ async fn rbac_cluster_roles_and_cluster_role_bindings() {
     admin.create_namespace("alpha").await.unwrap();
     admin.create_namespace("beta").await.unwrap();
 
-    // 1. Create a ClusterRole allowing namespace listing
+    // 1. Create a ClusterRole allowing configmaps reading across the cluster
     let auditor_role = ClusterRole {
-        name: "namespace-auditor".to_string(),
+        name: "configmap-reader".to_string(),
         rules: vec![PolicyRule {
             verbs: vec!["get".to_string(), "list".to_string()],
             api_groups: vec![String::new()],
-            resources: vec!["namespaces".to_string()],
+            resources: vec!["configmaps".to_string()],
             resource_names: Vec::new(),
             non_resource_urls: Vec::new(),
         }],
@@ -171,10 +171,18 @@ async fn rbac_cluster_roles_and_cluster_role_bindings() {
         .await
         .expect("create cluster role");
 
-    // 2. Bind ClusterRole to group 'auditors'
+    // 2. User with 'auditors' group before binding exists -> denied
+    let auditor_client = service.user_client("auditor-alice", vec!["auditors".to_string()]);
+    let pre_binding_err = auditor_client.list_configmaps("alpha").await;
+    assert!(
+        matches!(pre_binding_err, Err(ApiserverError::Unauthorized { .. })),
+        "Auditor cannot list configmaps before ClusterRoleBinding exists"
+    );
+
+    // 3. Bind ClusterRole to group 'auditors'
     let auditor_binding = ClusterRoleBinding {
         name: "auditors-crb".to_string(),
-        role_ref: "namespace-auditor".to_string(),
+        role_ref: "configmap-reader".to_string(),
         subjects: vec![Subject::Group {
             name: "auditors".to_string(),
         }],
@@ -184,20 +192,25 @@ async fn rbac_cluster_roles_and_cluster_role_bindings() {
         .await
         .expect("create cluster role binding");
 
-    // 3. User with 'auditors' group
-    let auditor_client = service.restricted_client("auditor-alice", vec!["auditors".to_string()]);
-
-    // Authorized: list namespaces
-    let list = auditor_client
-        .list_namespaces()
+    // 4. Authorized: list configmaps across multiple namespaces
+    let list_alpha = auditor_client
+        .list_configmaps("alpha")
         .await
-        .expect("list namespaces");
-    assert!(list["items"].as_array().unwrap().len() >= 2);
+        .expect("list configmaps in alpha");
+    assert!(list_alpha["items"].as_array().is_some());
 
-    // Unauthorized: delete namespace
-    let delete_err = auditor_client.delete_namespace("alpha").await;
+    let list_beta = auditor_client
+        .list_configmaps("beta")
+        .await
+        .expect("list configmaps in beta");
+    assert!(list_beta["items"].as_array().is_some());
+
+    // 5. Unauthorized: create configmap (write verb not granted)
+    let create_err = auditor_client
+        .create_configmap("alpha", "unauthorized-cfg", BTreeMap::new())
+        .await;
     assert!(
-        matches!(delete_err, Err(ApiserverError::Unauthorized { .. })),
-        "Auditor cannot delete namespaces"
+        matches!(create_err, Err(ApiserverError::Unauthorized { .. })),
+        "Auditor cannot create configmaps"
     );
 }
