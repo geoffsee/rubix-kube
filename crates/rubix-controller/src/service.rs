@@ -1,0 +1,124 @@
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use rubix_apiserver::{ApiserverService, KubernetesApiClient};
+
+use crate::config::ControllerManagerConfig;
+use crate::error::ControllerError;
+use crate::health::ControllerHealthReport;
+
+pub const CONTROLLER_MANAGER_USER: &str = "system:kube-controller-manager";
+
+#[derive(Clone, Debug)]
+pub struct ControllerManagerService {
+    config: ControllerManagerConfig,
+    apiserver: Arc<ApiserverService>,
+    running: Arc<AtomicBool>,
+}
+
+impl ControllerManagerService {
+    pub fn new(config: ControllerManagerConfig, apiserver: Arc<ApiserverService>) -> Self {
+        Self {
+            config,
+            apiserver,
+            running: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    #[must_use]
+    pub fn config(&self) -> &ControllerManagerConfig {
+        &self.config
+    }
+
+    #[must_use]
+    pub fn is_running(&self) -> bool {
+        self.running.load(Ordering::SeqCst)
+    }
+
+    /// Obtains an authenticated Kubernetes API client using the controller-manager identity.
+    #[must_use]
+    pub fn client(&self) -> KubernetesApiClient {
+        self.apiserver.controller_manager_client()
+    }
+
+    /// Checks that all required credentials exist, the configuration has no dropped
+    /// controllers, and the API server is reachable with controller-manager identity.
+    pub async fn check_prerequisites(&self) -> Result<(), ControllerError> {
+        // 1. Verify credential file paths
+        if !self.config.kubeconfig.exists() {
+            return Err(ControllerError::MissingCredential {
+                path: self.config.kubeconfig.clone(),
+                component: "kubeconfig",
+            });
+        }
+
+        if !self.config.root_ca_file.exists() {
+            return Err(ControllerError::MissingCredential {
+                path: self.config.root_ca_file.clone(),
+                component: "root-ca",
+            });
+        }
+
+        if !self.config.service_account_private_key_file.exists() {
+            return Err(ControllerError::MissingCredential {
+                path: self.config.service_account_private_key_file.clone(),
+                component: "service-account-key",
+            });
+        }
+
+        // 2. Validate configuration against historical allowlists and upstream defaults
+        self.config.validate_controllers()?;
+        self.config.validate_batch_periods()?;
+
+        // 3. Verify API server health & controller-manager authentication
+        let client = self.client();
+        client
+            .list_namespaces()
+            .await
+            .map_err(|e| ControllerError::AuthenticationFailed {
+                reason: format!("failed to list namespaces with controller-manager identity: {e}"),
+            })?;
+
+        Ok(())
+    }
+
+    /// Starts the controller manager service.
+    pub async fn start(&self) -> Result<(), ControllerError> {
+        self.check_prerequisites().await?;
+        self.running.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// Checks the health and readiness of the controller manager service.
+    pub async fn check_readiness(&self) -> Result<ControllerHealthReport, ControllerError> {
+        if !self.is_running() {
+            return Ok(ControllerHealthReport::new_unhealthy(
+                "controller manager service is not running",
+            ));
+        }
+
+        // Verify API server connectivity
+        let client = self.client();
+        if let Err(e) = client.list_namespaces().await {
+            return Ok(ControllerHealthReport::new_unhealthy(format!(
+                "API server communication failed: {e}"
+            )));
+        }
+
+        let active = if self.config.controllers.iter().any(|c| c == "*") {
+            crate::config::REQUIRED_CONTROLLERS
+                .iter()
+                .map(|&s| s.to_string())
+                .collect()
+        } else {
+            self.config.controllers.clone()
+        };
+
+        Ok(ControllerHealthReport::new_healthy(active))
+    }
+
+    /// Stops the controller manager service.
+    pub fn stop(&self) {
+        self.running.store(false, Ordering::SeqCst);
+    }
+}
