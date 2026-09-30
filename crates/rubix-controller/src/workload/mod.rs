@@ -19,6 +19,13 @@ pub use statefulset::StatefulSetReconciler;
 
 use crate::error::ControllerError;
 
+/// Outcome of reconciling a specific workload resource collection.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReconcileOutcome {
+    pub reconciled: usize,
+    pub errors: Vec<String>,
+}
+
 /// Coordinates workload controllers and garbage collection.
 #[derive(Clone, Debug)]
 pub struct WorkloadManager {
@@ -50,13 +57,81 @@ impl WorkloadManager {
         let job_reconciler = JobReconciler::new(self.client.clone());
         let gc = GarbageCollector::new(self.client.clone());
 
-        let deployments = deployment_reconciler.reconcile_all(namespace).await?;
-        let replicasets = replicaset_reconciler.reconcile_all(namespace).await?;
-        let statefulsets = statefulset_reconciler.reconcile_all(namespace).await?;
-        let daemonsets = daemonset_reconciler.reconcile_all(namespace).await?;
-        let cronjobs = cronjob_reconciler.reconcile_all(namespace).await?;
-        let jobs = job_reconciler.reconcile_all(namespace).await?;
-        let garbage_collected = gc.reconcile(namespace).await?;
+        let mut errors = Vec::new();
+
+        let deployments = match deployment_reconciler.reconcile_all(namespace).await {
+            Ok(outcome) => {
+                errors.extend(outcome.errors);
+                outcome.reconciled
+            },
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
+
+        let replicasets = match replicaset_reconciler.reconcile_all(namespace).await {
+            Ok(outcome) => {
+                errors.extend(outcome.errors);
+                outcome.reconciled
+            },
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
+
+        let statefulsets = match statefulset_reconciler.reconcile_all(namespace).await {
+            Ok(outcome) => {
+                errors.extend(outcome.errors);
+                outcome.reconciled
+            },
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
+
+        let daemonsets = match daemonset_reconciler.reconcile_all(namespace).await {
+            Ok(outcome) => {
+                errors.extend(outcome.errors);
+                outcome.reconciled
+            },
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
+
+        let cronjobs = match cronjob_reconciler.reconcile_all(namespace).await {
+            Ok(outcome) => {
+                errors.extend(outcome.errors);
+                outcome.reconciled
+            },
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
+
+        let jobs = match job_reconciler.reconcile_all(namespace).await {
+            Ok(outcome) => {
+                errors.extend(outcome.errors);
+                outcome.reconciled
+            },
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
+
+        let garbage_collected = match gc.reconcile(namespace).await {
+            Ok(count) => count,
+            Err(e) => {
+                errors.push(e.to_string());
+                0
+            },
+        };
 
         Ok(ReconciliationSummary {
             deployments_reconciled: deployments,
@@ -66,6 +141,7 @@ impl WorkloadManager {
             cronjobs_reconciled: cronjobs,
             jobs_reconciled: jobs,
             garbage_collected,
+            errors,
         })
     }
 }
@@ -79,4 +155,5 @@ pub struct ReconciliationSummary {
     pub cronjobs_reconciled: usize,
     pub jobs_reconciled: usize,
     pub garbage_collected: usize,
+    pub errors: Vec<String>,
 }

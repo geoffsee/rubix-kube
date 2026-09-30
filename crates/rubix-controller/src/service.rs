@@ -146,7 +146,12 @@ impl ControllerManagerService {
         ];
         let mut active = Vec::new();
         for wc in workload_controllers {
-            if self.config.controllers.iter().any(|c| c == "*" || c == wc) {
+            if self
+                .config
+                .controllers
+                .iter()
+                .any(|c| c == "*" || c.trim_start_matches('+') == wc)
+            {
                 active.push(wc.to_string());
             }
         }

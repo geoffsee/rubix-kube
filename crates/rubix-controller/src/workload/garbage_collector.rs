@@ -5,6 +5,8 @@ use serde_json::Value;
 
 use crate::error::ControllerError;
 
+use rubix_apiserver::ApiserverError;
+
 fn matches_uid(item: &Value, expected_uid: Option<&str>) -> bool {
     let Some(uid) = expected_uid else { return true };
     if uid.is_empty() {
@@ -14,6 +16,14 @@ fn matches_uid(item: &Value, expected_uid: Option<&str>) -> bool {
         .and_then(|m| m.get("uid"))
         .and_then(Value::as_str)
         == Some(uid)
+}
+
+fn owner_present(res: Result<Value, ApiserverError>, expected_uid: Option<&str>) -> bool {
+    match res {
+        Ok(owner) => matches_uid(&owner, expected_uid),
+        Err(ApiserverError::NotFound { .. }) => false,
+        Err(_) => true, // Transient/permission error: assume owner present to prevent eager deletion
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -139,36 +149,26 @@ impl GarbageCollector {
         expected_uid: Option<&str>,
     ) -> bool {
         match kind {
-            "Deployment" => self
-                .client
-                .get_deployment(namespace, name)
-                .await
-                .is_ok_and(|dep| matches_uid(&dep, expected_uid)),
-            "ReplicaSet" => self
-                .client
-                .get_replicaset(namespace, name)
-                .await
-                .is_ok_and(|rs| matches_uid(&rs, expected_uid)),
-            "StatefulSet" => self
-                .client
-                .get_statefulset(namespace, name)
-                .await
-                .is_ok_and(|ss| matches_uid(&ss, expected_uid)),
-            "DaemonSet" => self
-                .client
-                .get_daemonset(namespace, name)
-                .await
-                .is_ok_and(|ds| matches_uid(&ds, expected_uid)),
-            "Job" => self
-                .client
-                .get_job(namespace, name)
-                .await
-                .is_ok_and(|j| matches_uid(&j, expected_uid)),
-            "CronJob" => self
-                .client
-                .get_cronjob(namespace, name)
-                .await
-                .is_ok_and(|cj| matches_uid(&cj, expected_uid)),
+            "Deployment" => owner_present(
+                self.client.get_deployment(namespace, name).await,
+                expected_uid,
+            ),
+            "ReplicaSet" => owner_present(
+                self.client.get_replicaset(namespace, name).await,
+                expected_uid,
+            ),
+            "StatefulSet" => owner_present(
+                self.client.get_statefulset(namespace, name).await,
+                expected_uid,
+            ),
+            "DaemonSet" => owner_present(
+                self.client.get_daemonset(namespace, name).await,
+                expected_uid,
+            ),
+            "Job" => owner_present(self.client.get_job(namespace, name).await, expected_uid),
+            "CronJob" => {
+                owner_present(self.client.get_cronjob(namespace, name).await, expected_uid)
+            },
             _ => true,
         }
     }
@@ -186,6 +186,7 @@ impl GarbageCollector {
             return false;
         }
 
+        let mut valid_owner_count = 0;
         for owner in owner_refs {
             let Some(kind) = owner.get("kind").and_then(Value::as_str) else {
                 continue;
@@ -193,6 +194,7 @@ impl GarbageCollector {
             let Some(name) = owner.get("name").and_then(Value::as_str) else {
                 continue;
             };
+            valid_owner_count += 1;
             let expected_uid = owner.get("uid").and_then(Value::as_str);
 
             if self
@@ -203,6 +205,6 @@ impl GarbageCollector {
             }
         }
 
-        true
+        valid_owner_count > 0
     }
 }

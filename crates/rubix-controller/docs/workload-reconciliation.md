@@ -40,7 +40,7 @@ To guarantee that repeated reconciliation passes, controller restarts, and retry
    - CronJob -> `{cronjob_name}-scheduled`
    - Job -> `{job_name}-{index}`
 2. **Pre-Creation Existence Check**: Reconcilers check for existing objects matching the deterministic name before issuing create requests.
-3. **Owner Reference Validation**: Reconcilers inspect existing resources in the namespace to associate only those matching owner references (kind, name, uid).
+3. **Owner Reference Validation**: Reconcilers inspect existing resources in the namespace to associate only those matching owner references (matching `kind` plus `uid` or `name`).
 
 ## 4. Garbage Collection and Cascading Deletion
 The `GarbageCollector` reconciler inspects all dependents (Pods, Jobs, ReplicaSets) in a namespace.
@@ -53,12 +53,14 @@ Because owner graphs can be multi-tiered (e.g. `Deployment` -> `ReplicaSet` -> `
 3. **Pass 3**: Zero objects are eligible; cascading deletion is converged.
 
 ## 5. Verification Matrix
+
 | Controller | Primary Managed Child | Owner Reference Kind | Scaling Convergence | Cascading GC Verified |
 |------------|-----------------------|----------------------|---------------------|------------------------|
-| Deployment | ReplicaSet            | Deployment           | Yes                 | Yes                    |
-| ReplicaSet | Pod                   | ReplicaSet           | Yes                 | Yes                    |
-| StatefulSet| Pod (Ordinal)         | StatefulSet          | Yes (reverse order) | Yes                    |
-| DaemonSet  | Pod (Node)            | DaemonSet            | Yes                 | Yes                    |
-| Job        | Pod (Batch)           | Job                  | Yes                 | Yes                    |
-| CronJob    | Job                   | CronJob              | Yes                 | Yes                    |
-| GC         | Pod, Job, ReplicaSet  | Deployment/RS/Job/CJ | N/A                 | Converges to 0 orphans |
+| Deployment | ReplicaSet            | Deployment           | Yes                 | Yes (Deployment -> RS -> Pod) |
+| ReplicaSet | Pod                   | ReplicaSet           | Yes                 | Yes (ReplicaSet -> Pod) |
+| StatefulSet| Pod (Ordinal)         | StatefulSet          | Yes (reverse ordinal order) | Yes (StatefulSet -> Pods) |
+| DaemonSet  | Pod (Node)            | DaemonSet            | Yes                 | Yes (DaemonSet -> Pod) |
+| Job        | Pod (Batch)           | Job                  | Yes                 | Yes (Job -> Pods) |
+| CronJob    | Job                   | CronJob              | Yes                 | Yes (CronJob -> Job -> Pods) |
+| GC         | Pod, Job, ReplicaSet  | Deployment/RS/SS/DS/Job/CronJob | N/A     | Converges to 0 orphans |
+

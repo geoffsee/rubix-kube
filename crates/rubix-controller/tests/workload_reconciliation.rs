@@ -372,6 +372,69 @@ async fn test_garbage_collection_cascading_deletions() {
     assert!(client.get_replicaset(ns, "doomed-deploy-rs").await.is_err());
     assert!(client.get_pod(ns, "doomed-deploy-rs-0").await.is_err());
     assert!(client.get_pod(ns, "doomed-deploy-rs-1").await.is_err());
+
+    // 3. Create and cascade delete StatefulSet
+    let ss = json!({
+        "apiVersion": "apps/v1",
+        "kind": "StatefulSet",
+        "metadata": { "name": "doomed-ss", "namespace": ns },
+        "spec": {
+            "replicas": 2,
+            "template": { "spec": { "containers": [{ "name": "app", "image": "redis" }] } }
+        }
+    });
+    client.create_statefulset(ns, ss).await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+    assert!(client.get_pod(ns, "doomed-ss-0").await.is_ok());
+    assert!(client.get_pod(ns, "doomed-ss-1").await.is_ok());
+
+    client.delete_statefulset(ns, "doomed-ss").await.unwrap();
+    let statefulset_gc = wm.reconcile_namespace(ns).await.unwrap();
+    assert!(statefulset_gc.garbage_collected >= 2);
+    assert!(client.get_pod(ns, "doomed-ss-0").await.is_err());
+    assert!(client.get_pod(ns, "doomed-ss-1").await.is_err());
+
+    // 4. Create and cascade delete DaemonSet
+    let ds = json!({
+        "apiVersion": "apps/v1",
+        "kind": "DaemonSet",
+        "metadata": { "name": "doomed-ds", "namespace": ns },
+        "spec": {
+            "template": { "spec": { "containers": [{ "name": "app", "image": "exporter" }] } }
+        }
+    });
+    client.create_daemonset(ns, ds).await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+    assert!(client.get_pod(ns, "doomed-ds-node").await.is_ok());
+
+    client.delete_daemonset(ns, "doomed-ds").await.unwrap();
+    let daemonset_gc = wm.reconcile_namespace(ns).await.unwrap();
+    assert!(daemonset_gc.garbage_collected >= 1);
+    assert!(client.get_pod(ns, "doomed-ds-node").await.is_err());
+
+    // 5. Create and cascade delete CronJob (CronJob -> Job -> Pod)
+    let cj = json!({
+        "apiVersion": "batch/v1",
+        "kind": "CronJob",
+        "metadata": { "name": "doomed-cj", "namespace": ns },
+        "spec": {
+            "schedule": "* * * * *",
+            "jobTemplate": {
+                "spec": { "template": { "spec": { "containers": [{ "name": "c", "image": "busybox" }] } } }
+            }
+        }
+    });
+    client.create_cronjob(ns, cj).await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+    assert!(client.get_job(ns, "doomed-cj-scheduled").await.is_ok());
+    assert!(client.get_pod(ns, "doomed-cj-scheduled-0").await.is_ok());
+
+    client.delete_cronjob(ns, "doomed-cj").await.unwrap();
+    let cronjob_gc = wm.reconcile_namespace(ns).await.unwrap();
+    assert!(cronjob_gc.garbage_collected >= 2);
+    assert!(client.get_job(ns, "doomed-cj-scheduled").await.is_err());
+    assert!(client.get_pod(ns, "doomed-cj-scheduled-0").await.is_err());
 }
 
 #[tokio::test]
@@ -421,5 +484,83 @@ async fn test_idempotence_and_restart_convergence() {
         pods_after_restart["items"].as_array().unwrap().len(),
         2,
         "controller restart must converge without creating duplicate resources"
+    );
+}
+
+#[tokio::test]
+async fn test_replicaset_and_job_gap_recovery() {
+    let temp = TempDir::new().unwrap();
+    let controller_svc = setup_test_controller(&temp);
+    controller_svc.start().await.unwrap();
+
+    let client = controller_svc.client();
+    let wm = controller_svc.workload_manager();
+    let ns = "test-gap-ns";
+
+    client.create_namespace(ns).await.unwrap();
+
+    // 1. ReplicaSet gap recovery: create 3 replicas (gap-rs-0, gap-rs-1, gap-rs-2)
+    let rs = json!({
+        "apiVersion": "apps/v1",
+        "kind": "ReplicaSet",
+        "metadata": { "name": "gap-rs", "namespace": ns },
+        "spec": {
+            "replicas": 3,
+            "template": { "spec": { "containers": [{ "name": "app", "image": "nginx" }] } }
+        }
+    });
+    client.create_replicaset(ns, rs).await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+
+    let pods = client.list_pods(ns).await.unwrap();
+    assert_eq!(pods["items"].as_array().unwrap().len(), 3);
+
+    // Delete middle pod gap-rs-1 to create an index gap (gap-rs-0, gap-rs-2 remain)
+    client.delete_pod(ns, "gap-rs-1").await.unwrap();
+    let pods_after_del = client.list_pods(ns).await.unwrap();
+    assert_eq!(pods_after_del["items"].as_array().unwrap().len(), 2);
+
+    // Reconcile: must recover and fill the gap back to 3 replicas
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+    let pods_recovered = client.list_pods(ns).await.unwrap();
+    assert_eq!(
+        pods_recovered["items"].as_array().unwrap().len(),
+        3,
+        "ReplicaSet scale-up must recover when pod indices have gaps"
+    );
+
+    // 2. Job gap recovery: create Job with parallelism 3
+    let job = json!({
+        "apiVersion": "batch/v1",
+        "kind": "Job",
+        "metadata": { "name": "gap-job", "namespace": ns },
+        "spec": {
+            "parallelism": 3,
+            "template": { "spec": { "containers": [{ "name": "job", "image": "busybox" }] } }
+        }
+    });
+    client.create_job(ns, job).await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+
+    // Delete gap-job-1
+    client.delete_pod(ns, "gap-job-1").await.unwrap();
+    let _ = wm.reconcile_namespace(ns).await.unwrap();
+
+    let all_job_pods: Vec<_> = client.list_pods(ns).await.unwrap()["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|p| {
+            p["metadata"]["name"]
+                .as_str()
+                .unwrap_or("")
+                .starts_with("gap-job-")
+        })
+        .cloned()
+        .collect();
+    assert_eq!(
+        all_job_pods.len(),
+        3,
+        "Job scale-up must recover when pod indices have gaps"
     );
 }

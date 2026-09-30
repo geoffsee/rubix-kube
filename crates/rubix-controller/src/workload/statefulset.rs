@@ -4,6 +4,7 @@ use rubix_apiserver::client::KubernetesApiClient;
 use serde_json::{Value, json};
 
 use crate::error::ControllerError;
+use crate::workload::ReconcileOutcome;
 
 #[derive(Clone, Debug)]
 pub struct StatefulSetReconciler {
@@ -17,7 +18,10 @@ impl StatefulSetReconciler {
     }
 
     /// Reconciles all `StatefulSets` in the specified namespace.
-    pub async fn reconcile_all(&self, namespace: &str) -> Result<usize, ControllerError> {
+    pub async fn reconcile_all(
+        &self,
+        namespace: &str,
+    ) -> Result<ReconcileOutcome, ControllerError> {
         let list = self
             .client
             .list_statefulsets(namespace)
@@ -34,12 +38,18 @@ impl StatefulSetReconciler {
             .unwrap_or_default();
 
         let mut count = 0;
+        let mut errors = Vec::new();
         for ss in items {
-            self.reconcile_statefulset(namespace, &ss).await?;
-            count += 1;
+            match self.reconcile_statefulset(namespace, &ss).await {
+                Ok(_) => count += 1,
+                Err(err) => errors.push(err.to_string()),
+            }
         }
 
-        Ok(count)
+        Ok(ReconcileOutcome {
+            reconciled: count,
+            errors,
+        })
     }
 
     async fn ensure_ordinal_pods(
@@ -122,6 +132,7 @@ impl StatefulSetReconciler {
             .cloned()
             .unwrap_or_default();
 
+        let mut to_delete: Vec<(usize, String)> = Vec::new();
         for pod in all_pods {
             let is_owned = pod
                 .get("metadata")
@@ -147,8 +158,14 @@ impl StatefulSetReconciler {
                 && let Ok(idx) = suffix.parse::<usize>()
                 && idx >= desired_replicas
             {
-                let _ = self.client.delete_pod(namespace, pname).await;
+                to_delete.push((idx, pname.to_string()));
             }
+        }
+
+        // Delete in descending ordinal order (reverse order)
+        to_delete.sort_by_key(|b| std::cmp::Reverse(b.0));
+        for (_, pname) in to_delete {
+            let _ = self.client.delete_pod(namespace, &pname).await;
         }
         Ok(())
     }

@@ -4,6 +4,7 @@ use rubix_apiserver::client::KubernetesApiClient;
 use serde_json::{Value, json};
 
 use crate::error::ControllerError;
+use crate::workload::ReconcileOutcome;
 
 #[derive(Clone, Debug)]
 pub struct JobReconciler {
@@ -17,7 +18,10 @@ impl JobReconciler {
     }
 
     /// Reconciles all Jobs in the specified namespace.
-    pub async fn reconcile_all(&self, namespace: &str) -> Result<usize, ControllerError> {
+    pub async fn reconcile_all(
+        &self,
+        namespace: &str,
+    ) -> Result<ReconcileOutcome, ControllerError> {
         let list = self.client.list_jobs(namespace).await.map_err(|e| {
             ControllerError::ReconciliationFailed {
                 resource: "jobs".to_string(),
@@ -32,12 +36,18 @@ impl JobReconciler {
             .unwrap_or_default();
 
         let mut count = 0;
+        let mut errors = Vec::new();
         for job in items {
-            self.reconcile_job(namespace, &job).await?;
-            count += 1;
+            match self.reconcile_job(namespace, &job).await {
+                Ok(_) => count += 1,
+                Err(err) => errors.push(err.to_string()),
+            }
         }
 
-        Ok(count)
+        Ok(ReconcileOutcome {
+            reconciled: count,
+            errors,
+        })
     }
 
     async fn sync_job_pods(
@@ -80,43 +90,47 @@ impl JobReconciler {
 
         let current_count = owned_pods.len();
 
-        if current_count < parallelism {
-            for idx in current_count..parallelism {
-                let pod_name = format!("{name}-{idx}");
-                if self.client.get_pod(namespace, &pod_name).await.is_ok() {
-                    continue;
-                }
+        let needed = parallelism.saturating_sub(current_count);
+        let mut created = 0;
+        let mut idx = 0;
 
-                let new_pod = json!({
-                    "apiVersion": "v1",
-                    "kind": "Pod",
-                    "metadata": {
-                        "name": pod_name,
-                        "namespace": namespace,
-                        "labels": template_labels,
-                        "ownerReferences": [{
-                            "apiVersion": "batch/v1",
-                            "kind": "Job",
-                            "name": name,
-                            "uid": uid,
-                            "controller": true,
-                            "blockOwnerDeletion": true
-                        }]
-                    },
-                    "spec": template_spec,
-                    "status": {
-                        "phase": "Pending"
-                    }
-                });
-
-                self.client
-                    .create_pod(namespace, new_pod)
-                    .await
-                    .map_err(|e| ControllerError::ReconciliationFailed {
-                        resource: format!("pods/{pod_name}"),
-                        reason: e.to_string(),
-                    })?;
+        while created < needed {
+            let pod_name = format!("{name}-{idx}");
+            idx += 1;
+            if self.client.get_pod(namespace, &pod_name).await.is_ok() {
+                continue;
             }
+
+            let new_pod = json!({
+                "apiVersion": "v1",
+                "kind": "Pod",
+                "metadata": {
+                    "name": pod_name,
+                    "namespace": namespace,
+                    "labels": template_labels,
+                    "ownerReferences": [{
+                        "apiVersion": "batch/v1",
+                        "kind": "Job",
+                        "name": name,
+                        "uid": uid,
+                        "controller": true,
+                        "blockOwnerDeletion": true
+                    }]
+                },
+                "spec": template_spec,
+                "status": {
+                    "phase": "Pending"
+                }
+            });
+
+            self.client
+                .create_pod(namespace, new_pod)
+                .await
+                .map_err(|e| ControllerError::ReconciliationFailed {
+                    resource: format!("pods/{pod_name}"),
+                    reason: e.to_string(),
+                })?;
+            created += 1;
         }
         Ok(())
     }

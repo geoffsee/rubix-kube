@@ -968,6 +968,11 @@ impl KubernetesApiClient {
             }
         }
 
+        let expected_version = pod
+            .pointer("/metadata/resourceVersion")
+            .and_then(Value::as_str)
+            .and_then(|v| v.parse::<u64>().ok());
+
         let cur_rev = self.storage.current_revision().await + 1;
         let mut adm_req = AdmissionRequest {
             uid: format!("adm-{cur_rev}"),
@@ -996,7 +1001,7 @@ impl KubernetesApiClient {
         }
 
         let bytes = serde_json::to_vec(&pod)?;
-        let kv = self.storage.update(&key, bytes, None).await?;
+        let kv = self.storage.update(&key, bytes, expected_version).await?;
         let mut result = pod;
         if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert(
@@ -1182,6 +1187,11 @@ impl KubernetesApiClient {
             }
         }
 
+        let expected_version = doc
+            .pointer("/metadata/resourceVersion")
+            .and_then(Value::as_str)
+            .and_then(|v| v.parse::<u64>().ok());
+
         let cur_rev = self.storage.current_revision().await + 1;
         let mut adm_req = AdmissionRequest {
             uid: format!("adm-{cur_rev}"),
@@ -1210,7 +1220,7 @@ impl KubernetesApiClient {
         }
 
         let bytes = serde_json::to_vec(&doc)?;
-        let kv = self.storage.update(&key, bytes, None).await?;
+        let kv = self.storage.update(&key, bytes, expected_version).await?;
         let mut result = doc;
         if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert(

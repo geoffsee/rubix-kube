@@ -4,6 +4,7 @@ use rubix_apiserver::client::KubernetesApiClient;
 use serde_json::{Value, json};
 
 use crate::error::ControllerError;
+use crate::workload::ReconcileOutcome;
 
 #[derive(Clone, Debug)]
 pub struct ReplicaSetReconciler {
@@ -17,7 +18,10 @@ impl ReplicaSetReconciler {
     }
 
     /// Reconciles all `ReplicaSets` in the specified namespace.
-    pub async fn reconcile_all(&self, namespace: &str) -> Result<usize, ControllerError> {
+    pub async fn reconcile_all(
+        &self,
+        namespace: &str,
+    ) -> Result<ReconcileOutcome, ControllerError> {
         let list = self.client.list_replicasets(namespace).await.map_err(|e| {
             ControllerError::ReconciliationFailed {
                 resource: "replicasets".to_string(),
@@ -32,12 +36,18 @@ impl ReplicaSetReconciler {
             .unwrap_or_default();
 
         let mut count = 0;
+        let mut errors = Vec::new();
         for replicaset in items {
-            self.reconcile_replicaset(namespace, &replicaset).await?;
-            count += 1;
+            match self.reconcile_replicaset(namespace, &replicaset).await {
+                Ok(_) => count += 1,
+                Err(err) => errors.push(err.to_string()),
+            }
         }
 
-        Ok(count)
+        Ok(ReconcileOutcome {
+            reconciled: count,
+            errors,
+        })
     }
 
     async fn get_owned_pods(
@@ -112,8 +122,13 @@ impl ReplicaSetReconciler {
             .cloned()
             .unwrap_or_else(|| json!({ "containers": [] }));
 
-        for idx in current_count..desired_replicas {
+        let needed = desired_replicas.saturating_sub(current_count);
+        let mut created = 0;
+        let mut idx = 0;
+
+        while created < needed {
             let pod_name = format!("{name}-{idx}");
+            idx += 1;
             if self.client.get_pod(namespace, &pod_name).await.is_ok() {
                 continue;
             }
@@ -147,6 +162,7 @@ impl ReplicaSetReconciler {
                     resource: format!("pods/{pod_name}"),
                     reason: e.to_string(),
                 })?;
+            created += 1;
         }
         Ok(())
     }

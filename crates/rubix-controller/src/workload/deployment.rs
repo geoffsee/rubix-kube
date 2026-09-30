@@ -4,6 +4,7 @@ use rubix_apiserver::client::KubernetesApiClient;
 use serde_json::{Value, json};
 
 use crate::error::ControllerError;
+use crate::workload::ReconcileOutcome;
 
 #[derive(Clone, Debug)]
 pub struct DeploymentReconciler {
@@ -17,7 +18,10 @@ impl DeploymentReconciler {
     }
 
     /// Reconciles all Deployments in the specified namespace.
-    pub async fn reconcile_all(&self, namespace: &str) -> Result<usize, ControllerError> {
+    pub async fn reconcile_all(
+        &self,
+        namespace: &str,
+    ) -> Result<ReconcileOutcome, ControllerError> {
         let list = self.client.list_deployments(namespace).await.map_err(|e| {
             ControllerError::ReconciliationFailed {
                 resource: "deployments".to_string(),
@@ -32,12 +36,18 @@ impl DeploymentReconciler {
             .unwrap_or_default();
 
         let mut count = 0;
+        let mut errors = Vec::new();
         for deployment in items {
-            self.reconcile_deployment(namespace, &deployment).await?;
-            count += 1;
+            match self.reconcile_deployment(namespace, &deployment).await {
+                Ok(_) => count += 1,
+                Err(err) => errors.push(err.to_string()),
+            }
         }
 
-        Ok(count)
+        Ok(ReconcileOutcome {
+            reconciled: count,
+            errors,
+        })
     }
 
     async fn sync_child_replicaset(
