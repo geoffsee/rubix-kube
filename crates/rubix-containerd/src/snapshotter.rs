@@ -3,15 +3,15 @@
 use std::fmt;
 use std::path::Path;
 
-/// Statfs filesystem magic for OverlayFS (`0x794c7630`).
+/// Statfs filesystem magic for `OverlayFS` (`0x794c7630`).
 pub const OVERLAYFS_SUPER_MAGIC: u32 = 0x794c_7630;
 
 /// Snapshotter driver selected for containerd.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Snapshotter {
-    /// Kernel OverlayFS (fastest, standard on Linux).
+    /// Kernel `OverlayFS` (fastest, standard on Linux).
     Overlayfs,
-    /// FUSE userspace OverlayFS (used when containerd root is itself on an overlayfs
+    /// FUSE userspace `OverlayFS` (used when containerd root is itself on an overlayfs
     /// and `fuse-overlayfs` binary is present in PATH).
     FuseOverlayfs,
     /// Native snapshotter (copies layers instead of stacking; fallback when root is on
@@ -83,7 +83,7 @@ pub fn select_snapshotter(is_overlay_fs: bool, has_fuse_overlayfs: bool) -> Snap
     }
 }
 
-/// Check if a path is on an OverlayFS mount.
+/// Check if a path is on an `OverlayFS` mount.
 ///
 /// Inspects the directory (or its parent if the directory does not exist yet).
 /// On Linux, uses `rustix::fs::statfs`. On non-Linux or on error, returns false (safe default).
@@ -98,6 +98,7 @@ pub fn is_overlayfs(path: &Path) -> bool {
         };
 
         if let Ok(stat) = rustix::fs::statfs(target) {
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             return (stat.f_type as u32) == OVERLAYFS_SUPER_MAGIC;
         }
         false

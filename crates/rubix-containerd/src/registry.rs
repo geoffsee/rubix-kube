@@ -1,6 +1,6 @@
 //! Registry configuration management via containerd's `hosts.toml` directory model.
 //!
-//! KubeSolo configures containerd's `config_path` to point to a registry directory
+//! `KubeSolo` configures containerd's `config_path` to point to a registry directory
 //! (default: `<base_path>/containerd/registry`). Within this directory, operators
 //! place per-host configurations:
 //!
@@ -178,10 +178,11 @@ pub fn list_configured_registries(registry_dir: &Path) -> Result<Vec<String>, Re
         })?;
 
         let path = entry.path();
-        if path.is_dir() && path.join("hosts.toml").is_file() {
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                hosts.push(name.to_string());
-            }
+        if path.is_dir()
+            && path.join("hosts.toml").is_file()
+            && let Some(name) = path.file_name().and_then(|n| n.to_str())
+        {
+            hosts.push(name.to_string());
         }
     }
 

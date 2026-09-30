@@ -21,7 +21,7 @@ pub fn is_systemd_running() -> bool {
 /// Determines whether containerd/crun should use `SystemdCgroup = true`.
 ///
 /// Systemd cgroup driver requires BOTH cgroup v2 AND systemd as active init.
-/// On non-systemd hosts (e.g. Alpine with OpenRC), even if cgroup v2 is present,
+/// On non-systemd hosts (e.g. Alpine with `OpenRC`), even if cgroup v2 is present,
 /// systemd cgroup driver must not be used.
 #[must_use]
 pub fn use_systemd_cgroup() -> bool {

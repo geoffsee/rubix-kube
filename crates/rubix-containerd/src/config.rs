@@ -157,23 +157,12 @@ impl ContainerdServicePaths {
 }
 
 /// Options to control configuration generation.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ContainerdConfigOptions {
     pub snapshotter: Option<Snapshotter>,
     pub systemd_cgroup: Option<bool>,
     pub sandbox_image: Option<String>,
     pub image_pull_timeout: Option<String>,
-}
-
-impl Default for ContainerdConfigOptions {
-    fn default() -> Self {
-        Self {
-            snapshotter: None,
-            systemd_cgroup: None,
-            sandbox_image: None,
-            image_pull_timeout: None,
-        }
-    }
 }
 
 #[derive(Debug)]

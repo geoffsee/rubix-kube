@@ -89,27 +89,26 @@ impl std::error::Error for SymlinkError {
 ///
 /// If `target` points elsewhere or is broken, it is removed and recreated.
 pub fn ensure_symbolic_link(source: &Path, target: &Path) -> Result<(), SymlinkError> {
-    if let Ok(existing_dest) = fs::read_link(target) {
-        if existing_dest == source {
-            return Ok(());
-        }
+    if let Ok(existing_dest) = fs::read_link(target)
+        && existing_dest == source
+    {
+        return Ok(());
     }
 
-    if target.exists() || fs::symlink_metadata(target).is_ok() {
-        if let Err(err) = fs::remove_file(target) {
-            if err.kind() != io::ErrorKind::NotFound {
-                return Err(SymlinkError::RemoveFailed {
-                    target: target.to_path_buf(),
-                    source: err,
-                });
-            }
-        }
+    if (target.exists() || fs::symlink_metadata(target).is_ok())
+        && let Err(err) = fs::remove_file(target)
+        && err.kind() != io::ErrorKind::NotFound
+    {
+        return Err(SymlinkError::RemoveFailed {
+            target: target.to_path_buf(),
+            source: err,
+        });
     }
 
-    if let Some(parent) = target.parent() {
-        if !parent.exists() {
-            let _ = fs::create_dir_all(parent);
-        }
+    if let Some(parent) = target.parent()
+        && !parent.exists()
+    {
+        let _ = fs::create_dir_all(parent);
     }
 
     unix_fs::symlink(source, target).map_err(|err| SymlinkError::CreateFailed {
