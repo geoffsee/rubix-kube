@@ -8,6 +8,7 @@ pub mod client;
 pub mod consumer;
 pub mod endpoint;
 pub mod external;
+pub mod ownership;
 pub mod provider;
 pub mod readiness;
 pub mod workload;
@@ -20,6 +21,10 @@ pub use client::connect_unix;
 pub use consumer::{CniConsumerSettings, KubeletConsumerSettings, NegotiatedRuntime};
 pub use endpoint::{CriEndpoint, EndpointError, RuntimeEndpoints};
 pub use external::{COMPONENT_EXTERNAL_CRI, ExternalRuntimeOptions, ExternalRuntimeService};
+pub use ownership::{
+    BuildAndRuntimeMatrix, BuildProfile, OwnershipViolation, RuntimeMode, RuntimeOwnershipPolicy,
+    WorkloadScoping,
+};
 pub use provider::{CriProvider, ProviderInfo, detect_provider};
 pub use readiness::{
     DEFAULT_READINESS_TIMEOUT, DEFAULT_RETRY_INTERVAL, ReadinessError, check_image_service,
