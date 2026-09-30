@@ -9,3 +9,7 @@ __pycache__/
 
 # Standalone checks for the vendored parser.
 /third_party/saphyr-parser/target/
+
+# Ignore parity evidence receipts
+**/rust-evidence/*.json
+**/evidence/*.json
