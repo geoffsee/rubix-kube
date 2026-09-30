@@ -103,8 +103,14 @@ fn to_pkcs1_pem(pkcs8_pem: &str) -> Result<String, PkiError> {
 
 pub fn validate_certificate_pem(bytes: &[u8]) -> Result<(), PkiError> {
     let text = std::str::from_utf8(bytes).map_err(|_| PkiError::InvalidCert)?;
-    let begin_count = text.matches("-----BEGIN ").count();
-    let end_count = text.matches("-----END ").count();
+    let begin_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----BEGIN "))
+        .count();
+    let end_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----END "))
+        .count();
     if begin_count == 0 || begin_count != end_count {
         return Err(PkiError::InvalidCert);
     }
@@ -130,8 +136,14 @@ pub fn validate_certificate_pem(bytes: &[u8]) -> Result<(), PkiError> {
 
 pub fn validate_private_key_pem(bytes: &[u8]) -> Result<(), PkiError> {
     let text = std::str::from_utf8(bytes).map_err(|_| PkiError::InvalidKey)?;
-    let begin_count = text.matches("-----BEGIN ").count();
-    let end_count = text.matches("-----END ").count();
+    let begin_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----BEGIN "))
+        .count();
+    let end_count = text
+        .lines()
+        .filter(|line| line.starts_with("-----END "))
+        .count();
     if begin_count == 0 || begin_count != end_count {
         return Err(PkiError::InvalidKey);
     }
