@@ -1060,6 +1060,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "rubix-apiserver"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "http",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "k8s-openapi",
+ "rcgen",
+ "rubix-config",
+ "rubix-datastore",
+ "rubix-pki",
+ "rubix-platform",
+ "rubix-supervisor",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "rubix-assets"
 version = "0.1.0"
 dependencies = [

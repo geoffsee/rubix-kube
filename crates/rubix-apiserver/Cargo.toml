@@ -1,0 +1,32 @@
+[package]
+name = "rubix-apiserver"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+async-trait = "=0.1.89"
+bytes = "=1.12.1"
+http = "=1.5.0"
+http-body-util = "=0.1.5"
+hyper = { version = "=1.11.1", features = ["http1", "server", "client"] }
+hyper-util = { version = "=0.1.21", features = ["tokio", "server", "client", "http1"] }
+k8s-openapi = { version = "=0.28.0", default-features = false, features = ["v1_35"] }
+rcgen = { version = "=0.14.10", default-features = false, features = ["aws_lc_rs", "pem", "x509-parser"] }
+rubix-config = { version = "=0.1.0", path = "../rubix-config" }
+rubix-datastore = { version = "=0.1.0", path = "../rubix-datastore" }
+rubix-pki = { version = "=0.1.0", path = "../rubix-pki" }
+rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
+rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.151"
+thiserror = "=2.0.18"
+tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "net", "io-util", "fs"] }
+
+[dev-dependencies]
+tempfile = "3.8"
+tokio = { version = "=1.53.1", features = ["test-util", "rt-multi-thread"] }
+
+[lints]
+workspace = true

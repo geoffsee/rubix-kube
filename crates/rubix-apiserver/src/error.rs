@@ -1,0 +1,62 @@
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ApiserverError {
+    #[error("invalid PKI credentials: {reason}")]
+    InvalidCredentials { reason: String },
+
+    #[error("persistent storage unusable: {reason}")]
+    StorageUnusable { reason: String },
+
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("JSON serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
+
+    #[error("datastore error: {0}")]
+    Datastore(#[from] rubix_datastore::DatastoreError),
+
+    #[error("PKI error: {0}")]
+    Pki(#[from] rubix_pki::PkiError),
+
+    #[error("configuration error: {reason}")]
+    Config { reason: String },
+
+    #[error("readiness check failed on {endpoint}: {reason}")]
+    ReadinessFailed { endpoint: String, reason: String },
+
+    #[error("unauthenticated: {reason}")]
+    Unauthenticated { reason: String },
+
+    #[error("unauthorized: {reason}")]
+    Unauthorized { reason: String },
+
+    #[error("resource not found: {resource}/{name}")]
+    NotFound { resource: String, name: String },
+
+    #[error("resource conflict: {resource}/{name}")]
+    Conflict { resource: String, name: String },
+
+    #[error("bad request: {message}")]
+    BadRequest { message: String },
+}
+
+impl ApiserverError {
+    #[must_use]
+    pub fn diagnostic_code(&self) -> &'static str {
+        match self {
+            Self::InvalidCredentials { .. } | Self::Pki(_) => "apiserver-credentials-invalid",
+            Self::StorageUnusable { .. } | Self::Datastore(_) => "apiserver-storage-unusable",
+            Self::Config { .. } => "apiserver-config-error",
+            Self::ReadinessFailed { .. } => "apiserver-readiness-failed",
+            Self::Unauthenticated { .. } => "apiserver-unauthenticated",
+            Self::Unauthorized { .. } => "apiserver-unauthorized",
+            Self::NotFound { .. } => "apiserver-not-found",
+            Self::Conflict { .. } => "apiserver-conflict",
+            Self::BadRequest { .. } => "apiserver-bad-request",
+            Self::Io(_) => "apiserver-io-error",
+            Self::Serialization(_) => "apiserver-serialization-error",
+        }
+    }
+}
