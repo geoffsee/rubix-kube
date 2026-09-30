@@ -128,7 +128,7 @@ The managed containerd service is coordinated by `rubix-supervisor` via `Contain
 2. **Process Group Execution**: Starts `containerd --config <config.toml>` with an isolated process group and `PATH` prepended with the containerd binary directory.
 3. **CRI Readiness Probe**:
    - Probes the containerd gRPC socket over Unix domain transport (`connect_unix`).
-   - Issues a CRI `RuntimeService::Version` RPC (`check_cri_version`) and containerd `VersionClient::Version` RPC.
+   - Issues a CRI `RuntimeService::Version` RPC (`check_cri_version`) to verify that the runtime and CRI endpoints are operational.
    - Retries with a default interval of `500ms` up to a configurable deadline (`DEFAULT_READINESS_TIMEOUT = 1 minute`).
    - If the deadline expires without successful readiness, the probe returns `HealthError::TimedOut` and exits through supervision with fatal error code `containerd_readiness_failed`.
 4. **Namespace Verification**: Issues a `NamespacesClient::list` and `CreateNamespaceRequest` to verify the `k8s.io` namespace is registered.
@@ -168,3 +168,36 @@ The implementation is verified across four distinct operating environments:
 2. **Alpine / OpenRC**: Musl libc and non-systemd init (`SystemdCgroup = false`, `snapshotter = "overlayfs"`).
 3. **Nested Container**: Running inside Docker/Podman where rootfs is an overlay mount (`SystemdCgroup = false`, `snapshotter = "fuse-overlayfs"` when installed).
 4. **Overlay Root**: Ephemeral overlay mount without `fuse-overlayfs` (`SystemdCgroup = false`, `snapshotter = "native"` fallback).
+
+---
+
+## 10. Managed Runtime Restart Cleanup Boundaries
+
+To survive unclean host shutdowns, daemon crashes, and service restarts without pod synchronization failures, Rubix Kube establishes strict cleanup boundaries between disposable runtime state and durable configuration inputs.
+
+### Disposable vs Preserved Paths
+
+| Category | Path | Action on Restart | Rationale |
+| :--- | :--- | :--- | :--- |
+| **Disposable** | `<base>/containerd/root` | Purged | Contains bbolt `meta.db`, dead tasks, and container metadata. Purging prevents stale container IDs from conflicting with kubelet pod reconciliation. |
+| **Disposable** | `<base>/containerd/state` | Purged | Contains stale Unix domain sockets (`containerd.sock`), FIFO task pipes, and dead process locks. |
+| **Disposable** | `/run/containerd/containerd.sock` | Removed if owned | Removed only if it is a symbolic link pointing to `<base>/containerd/state/containerd.sock`. Host-managed sockets are preserved. |
+| **Preserved** | `<base>/containerd/registry` | Preserved | User and mirror `hosts.toml` configuration files are preserved intact. |
+| **Preserved** | `<base>/images` | Preserved | Source tarball archives (CoreDNS, Pause, etc.) remain intact for re-importing on startup. |
+| **Preserved** | `<base>/bin` | Preserved | Binaries (`containerd`, `containerd-shim-runc-v2`, `crun`) are preserved intact. |
+| **Preserved** | `<base>/containerd/config.d` | Preserved | Drop-in configuration directory for user containerd configuration overrides. |
+
+### Pod Synchronization Recovery
+
+Containerd tracks sandboxes and containers in `meta.db`. Following a crash, containerd's internal database may reference tasks that the kernel has already terminated. When the kubelet tries to reconcile running pods against its desired state, mismatched container task references cause continuous `pod sync failure` errors.
+
+By wiping `root/` and `state/` prior to starting containerd:
+1. Containerd starts with a fresh database and clean socket environment.
+2. The readiness probe re-verifies CRI availability and ensures the `k8s.io` namespace.
+3. Enabled image archives in `<base>/images/` are re-imported.
+4. Kubelet resynchronizes cleanly with the Kubernetes API server / etcd state, spawning new sandboxes and containers without state conflicts.
+
+### External Runtime Protection
+
+Rubix Kube verifies symbolic link ownership before removing the system compatibility link (`/run/containerd/containerd.sock`). If the file is a regular file, a live Unix domain socket, or a symbolic link targeting an external runtime, the cleanup boundary leaves it untouched. Arbitrary pulled images stored within disposable `root/` are intentionally evicted and not guaranteed to persist across restarts.
+
