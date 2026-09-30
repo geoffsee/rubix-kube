@@ -4,17 +4,13 @@ use std::path::Path;
 
 use crate::{PkiError, atomic_write, to_pkcs1_pem};
 
-pub fn ensure_leaf_certificate(
+pub fn issue_leaf_certificate(
     cert_path: &Path,
     key_path: &Path,
     signer_cert_path: &Path,
     signer_key_path: &Path,
     params: &CertificateParams,
 ) -> Result<(), PkiError> {
-    if cert_path.exists() && key_path.exists() {
-        return Ok(());
-    }
-
     if let Some(parent) = cert_path.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -45,4 +41,23 @@ pub fn ensure_leaf_certificate(
     atomic_write(key_path, key_pem.as_bytes(), 0o600)?;
 
     Ok(())
+}
+
+pub fn ensure_leaf_certificate(
+    cert_path: &Path,
+    key_path: &Path,
+    signer_cert_path: &Path,
+    signer_key_path: &Path,
+    params: &CertificateParams,
+) -> Result<(), PkiError> {
+    if cert_path.exists() && key_path.exists() {
+        return Ok(());
+    }
+    issue_leaf_certificate(
+        cert_path,
+        key_path,
+        signer_cert_path,
+        signer_key_path,
+        params,
+    )
 }
