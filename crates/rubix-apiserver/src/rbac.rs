@@ -233,24 +233,42 @@ impl RbacAuthorizer {
 
         self.add_cluster_role(ClusterRole {
             name: "system:node".to_string(),
-            rules: vec![PolicyRule {
-                verbs: vec![
-                    "get".to_string(),
-                    "list".to_string(),
-                    "watch".to_string(),
-                    "create".to_string(),
-                    "update".to_string(),
-                    "patch".to_string(),
-                ],
-                api_groups: vec![String::new()],
-                resources: vec![
-                    "nodes".to_string(),
-                    "pods".to_string(),
-                    "configmaps".to_string(),
-                ],
-                resource_names: Vec::new(),
-                non_resource_urls: Vec::new(),
-            }],
+            rules: vec![
+                PolicyRule {
+                    verbs: vec![
+                        "get".to_string(),
+                        "list".to_string(),
+                        "watch".to_string(),
+                        "create".to_string(),
+                        "update".to_string(),
+                        "patch".to_string(),
+                    ],
+                    api_groups: vec![String::new()],
+                    resources: vec![
+                        "nodes".to_string(),
+                        "nodes/status".to_string(),
+                        "pods".to_string(),
+                        "pods/status".to_string(),
+                        "configmaps".to_string(),
+                    ],
+                    resource_names: Vec::new(),
+                    non_resource_urls: Vec::new(),
+                },
+                PolicyRule {
+                    verbs: vec![
+                        "get".to_string(),
+                        "list".to_string(),
+                        "watch".to_string(),
+                        "create".to_string(),
+                        "update".to_string(),
+                        "patch".to_string(),
+                    ],
+                    api_groups: vec!["coordination.k8s.io".to_string()],
+                    resources: vec!["leases".to_string()],
+                    resource_names: Vec::new(),
+                    non_resource_urls: Vec::new(),
+                },
+            ],
         });
     }
 

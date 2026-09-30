@@ -91,8 +91,25 @@ impl ClusterPki {
             }
             params.subject_alt_names = san_types;
 
+            let expected_cn = match component {
+                Component::Kubelet => format!("system:node:{}", self.config.node_name),
+                _ => String::new(),
+            };
+            if !expected_cn.is_empty() {
+                params
+                    .distinguished_name
+                    .push(rcgen::DnType::CommonName, expected_cn.clone());
+            }
+
             let rotated = rotate_leaf_if_needed(
-                &cert_path, &key_path, signer_crt, signer_key, &params, "", dns, ips,
+                &cert_path,
+                &key_path,
+                signer_crt,
+                signer_key,
+                &params,
+                &expected_cn,
+                dns,
+                ips,
             )?;
 
             if rotated {
