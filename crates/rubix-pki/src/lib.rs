@@ -12,6 +12,7 @@ pub mod kubeconfig;
 pub mod leaf;
 pub mod profile;
 pub mod rotate;
+pub mod token;
 
 #[derive(Debug)]
 pub enum PkiError {
@@ -20,6 +21,8 @@ pub enum PkiError {
     InvalidKey,
     InvalidCert,
     UnsafePath(String),
+    InvalidToken,
+    InvalidSignature,
 }
 
 impl std::error::Error for PkiError {}
