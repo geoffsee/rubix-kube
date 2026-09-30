@@ -11,5 +11,6 @@ __pycache__/
 /third_party/saphyr-parser/target/
 
 # Ignore parity evidence receipts
-**/rust-evidence/*.json
-**/evidence/*.json
+**/rust-evidence/**/*.json
+**/evidence/**/*.json
+**/evidence-*/**/*.json
