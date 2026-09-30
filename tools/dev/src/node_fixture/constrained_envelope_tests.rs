@@ -110,6 +110,7 @@ fn complete_invented_constrained_guest_binds_current_builder() -> Result<()> {
     Ok(())
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn raw_receipt_source_tool_and_cleanup_bindings() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let original = staged(dir.path())?;

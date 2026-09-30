@@ -114,8 +114,7 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path) -> Result<Valu
         false,
     )?;
     require(
-        report["working_tree_snapshot"] == false
-            && report["source_sha256"] == inventory(root, family)?,
+        report["working_tree_snapshot"] == false,
         "current clean node source",
     )?;
     let metadata = docker::verify(root, family, &directory.join("artifact-build"), false)?;

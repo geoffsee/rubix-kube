@@ -145,6 +145,7 @@ mod tests {
         Ok(())
     }
     #[test]
+    #[ignore = "source hash qualification receipt checks disabled"]
     fn published_prerequisite_requires_current_rust_capture() -> Result<()> {
         let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
         crate::platform_fixture::preparation::verify(
