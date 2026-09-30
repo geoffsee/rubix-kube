@@ -83,7 +83,18 @@ async fn test_controller_manager_startup_and_authenticated_identity() {
     assert!(health.authenticated);
     assert!(health.apiserver_connected);
     assert!(!health.configured_controllers.is_empty());
-    assert!(health.active_controllers.is_empty());
+    assert_eq!(
+        health.active_controllers,
+        vec![
+            "cronjob",
+            "daemonset",
+            "deployment",
+            "garbagecollector",
+            "job",
+            "replicaset",
+            "statefulset",
+        ]
+    );
 
     // 4. Stop service
     controller_svc.stop();
@@ -132,7 +143,18 @@ async fn test_controller_manager_supervision_lifecycle() {
     assert!(report.is_healthy);
     assert!(report.authenticated);
     assert!(!report.configured_controllers.is_empty());
-    assert!(report.active_controllers.is_empty());
+    assert_eq!(
+        report.active_controllers,
+        vec![
+            "cronjob",
+            "daemonset",
+            "deployment",
+            "garbagecollector",
+            "job",
+            "replicaset",
+            "statefulset",
+        ]
+    );
 
     // Stop supervisor gracefully
     stop_handle.stop();

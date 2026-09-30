@@ -834,6 +834,13 @@ impl KubernetesApiClient {
                     json!("2026-09-30T00:00:00Z"),
                 );
             }
+            if !meta.contains_key("uid") {
+                let cur_rev = self.storage.current_revision().await + 1;
+                meta.insert(
+                    "uid".to_string(),
+                    json!(format!("uid-pods-{name}-{cur_rev}")),
+                );
+            }
         }
 
         let mut adm_req = AdmissionRequest {
@@ -933,6 +940,553 @@ impl KubernetesApiClient {
             });
         }
         Ok(())
+    }
+
+    pub async fn update_pod(
+        &self,
+        namespace: &str,
+        name: &str,
+        mut pod: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("update", "", "pods", Some(namespace), Some(name))?;
+        let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
+        let existing = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "pods".to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+        let old_pod: Value = serde_json::from_slice(&existing.value)?;
+
+        if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("namespace".to_string(), json!(namespace));
+            meta.insert("name".to_string(), json!(name));
+            if let Some(old_uid) = old_pod.get("metadata").and_then(|m| m.get("uid")) {
+                meta.insert("uid".to_string(), old_uid.clone());
+            }
+        }
+
+        let cur_rev = self.storage.current_revision().await + 1;
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{cur_rev}"),
+            kind: GroupVersionKind {
+                group: String::new(),
+                version: "v1".to_string(),
+                kind: "Pod".to_string(),
+            },
+            resource: GroupVersionResource {
+                group: String::new(),
+                version: "v1".to_string(),
+                resource: "pods".to_string(),
+            },
+            name: Some(name.to_string()),
+            namespace: Some(namespace.to_string()),
+            operation: "UPDATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(pod.clone()),
+            old_object: Some(old_pod),
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        self.admission.run_validating_admission(&adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            pod = obj;
+        }
+
+        let bytes = serde_json::to_vec(&pod)?;
+        let kv = self.storage.update(&key, bytes, None).await?;
+        let mut result = pod;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    // --- Workload Resources (apps/v1 & batch/v1) ---
+
+    async fn create_workload(
+        &self,
+        group: &str,
+        kind: &str,
+        plural: &str,
+        namespace: &str,
+        mut doc: Value,
+    ) -> Result<Value, ApiserverError> {
+        let name = doc
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: format!("{kind} requires metadata.name"),
+            })?
+            .to_string();
+
+        self.check_auth_detailed("create", group, plural, Some(namespace), Some(&name))?;
+
+        let cur_rev = self.storage.current_revision().await + 1;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("namespace".to_string(), json!(namespace));
+            if !meta.contains_key("creationTimestamp") {
+                meta.insert(
+                    "creationTimestamp".to_string(),
+                    json!("2026-09-30T00:00:00Z"),
+                );
+            }
+            if !meta.contains_key("uid") {
+                meta.insert(
+                    "uid".to_string(),
+                    json!(format!("uid-{plural}-{name}-{cur_rev}")),
+                );
+            }
+        }
+
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{cur_rev}"),
+            kind: GroupVersionKind {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                kind: kind.to_string(),
+            },
+            resource: GroupVersionResource {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                resource: plural.to_string(),
+            },
+            name: Some(name.clone()),
+            namespace: Some(namespace.to_string()),
+            operation: "CREATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(doc.clone()),
+            old_object: None,
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        self.admission.run_validating_admission(&adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            doc = obj;
+        }
+
+        let key = format!(
+            "{}/{group}/{plural}/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let bytes = serde_json::to_vec(&doc)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = doc;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    async fn get_workload(
+        &self,
+        group: &str,
+        plural: &str,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", group, plural, Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/{group}/{plural}/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: plural.to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    async fn list_workload(
+        &self,
+        group: &str,
+        kind_list: &str,
+        plural: &str,
+        namespace: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", group, plural, Some(namespace), None)?;
+        let prefix = format!("{}/{group}/{plural}/{namespace}/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": format!("{group}/v1"),
+            "kind": kind_list,
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    async fn update_workload(
+        &self,
+        group: &str,
+        kind: &str,
+        plural: &str,
+        namespace: &str,
+        name: &str,
+        mut doc: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("update", group, plural, Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/{group}/{plural}/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let existing = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: plural.to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+        let old_doc: Value = serde_json::from_slice(&existing.value)?;
+
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("namespace".to_string(), json!(namespace));
+            meta.insert("name".to_string(), json!(name));
+            if let Some(old_uid) = old_doc.get("metadata").and_then(|m| m.get("uid")) {
+                meta.insert("uid".to_string(), old_uid.clone());
+            }
+        }
+
+        let cur_rev = self.storage.current_revision().await + 1;
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{cur_rev}"),
+            kind: GroupVersionKind {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                kind: kind.to_string(),
+            },
+            resource: GroupVersionResource {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                resource: plural.to_string(),
+            },
+            name: Some(name.to_string()),
+            namespace: Some(namespace.to_string()),
+            operation: "UPDATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(doc.clone()),
+            old_object: Some(old_doc),
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        self.admission.run_validating_admission(&adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            doc = obj;
+        }
+
+        let bytes = serde_json::to_vec(&doc)?;
+        let kv = self.storage.update(&key, bytes, None).await?;
+        let mut result = doc;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    async fn delete_workload(
+        &self,
+        group: &str,
+        plural: &str,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.check_auth_detailed("delete", group, plural, Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/{group}/{plural}/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: plural.to_string(),
+                name: format!("{namespace}/{name}"),
+            });
+        }
+        Ok(())
+    }
+
+    // Deployments
+    pub async fn create_deployment(
+        &self,
+        namespace: &str,
+        deployment: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("apps", "Deployment", "deployments", namespace, deployment)
+            .await
+    }
+    pub async fn get_deployment(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.get_workload("apps", "deployments", namespace, name)
+            .await
+    }
+    pub async fn list_deployments(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("apps", "DeploymentList", "deployments", namespace)
+            .await
+    }
+    pub async fn update_deployment(
+        &self,
+        namespace: &str,
+        name: &str,
+        deployment: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "apps",
+            "Deployment",
+            "deployments",
+            namespace,
+            name,
+            deployment,
+        )
+        .await
+    }
+    pub async fn delete_deployment(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.delete_workload("apps", "deployments", namespace, name)
+            .await
+    }
+
+    // ReplicaSets
+    pub async fn create_replicaset(
+        &self,
+        namespace: &str,
+        replicaset: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("apps", "ReplicaSet", "replicasets", namespace, replicaset)
+            .await
+    }
+    pub async fn get_replicaset(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.get_workload("apps", "replicasets", namespace, name)
+            .await
+    }
+    pub async fn list_replicasets(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("apps", "ReplicaSetList", "replicasets", namespace)
+            .await
+    }
+    pub async fn update_replicaset(
+        &self,
+        namespace: &str,
+        name: &str,
+        replicaset: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "apps",
+            "ReplicaSet",
+            "replicasets",
+            namespace,
+            name,
+            replicaset,
+        )
+        .await
+    }
+    pub async fn delete_replicaset(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.delete_workload("apps", "replicasets", namespace, name)
+            .await
+    }
+
+    // StatefulSets
+    pub async fn create_statefulset(
+        &self,
+        namespace: &str,
+        statefulset: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload(
+            "apps",
+            "StatefulSet",
+            "statefulsets",
+            namespace,
+            statefulset,
+        )
+        .await
+    }
+    pub async fn get_statefulset(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.get_workload("apps", "statefulsets", namespace, name)
+            .await
+    }
+    pub async fn list_statefulsets(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("apps", "StatefulSetList", "statefulsets", namespace)
+            .await
+    }
+    pub async fn update_statefulset(
+        &self,
+        namespace: &str,
+        name: &str,
+        statefulset: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "apps",
+            "StatefulSet",
+            "statefulsets",
+            namespace,
+            name,
+            statefulset,
+        )
+        .await
+    }
+    pub async fn delete_statefulset(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.delete_workload("apps", "statefulsets", namespace, name)
+            .await
+    }
+
+    // DaemonSets
+    pub async fn create_daemonset(
+        &self,
+        namespace: &str,
+        daemonset: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("apps", "DaemonSet", "daemonsets", namespace, daemonset)
+            .await
+    }
+    pub async fn get_daemonset(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.get_workload("apps", "daemonsets", namespace, name)
+            .await
+    }
+    pub async fn list_daemonsets(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("apps", "DaemonSetList", "daemonsets", namespace)
+            .await
+    }
+    pub async fn update_daemonset(
+        &self,
+        namespace: &str,
+        name: &str,
+        daemonset: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "apps",
+            "DaemonSet",
+            "daemonsets",
+            namespace,
+            name,
+            daemonset,
+        )
+        .await
+    }
+    pub async fn delete_daemonset(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.delete_workload("apps", "daemonsets", namespace, name)
+            .await
+    }
+
+    // Jobs
+    pub async fn create_job(&self, namespace: &str, job: Value) -> Result<Value, ApiserverError> {
+        self.create_workload("batch", "Job", "jobs", namespace, job)
+            .await
+    }
+    pub async fn get_job(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
+        self.get_workload("batch", "jobs", namespace, name).await
+    }
+    pub async fn list_jobs(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("batch", "JobList", "jobs", namespace)
+            .await
+    }
+    pub async fn update_job(
+        &self,
+        namespace: &str,
+        name: &str,
+        job: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload("batch", "Job", "jobs", namespace, name, job)
+            .await
+    }
+    pub async fn delete_job(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.delete_workload("batch", "jobs", namespace, name).await
+    }
+
+    // CronJobs
+    pub async fn create_cronjob(
+        &self,
+        namespace: &str,
+        cronjob: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload("batch", "CronJob", "cronjobs", namespace, cronjob)
+            .await
+    }
+    pub async fn get_cronjob(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
+        self.get_workload("batch", "cronjobs", namespace, name)
+            .await
+    }
+    pub async fn list_cronjobs(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload("batch", "CronJobList", "cronjobs", namespace)
+            .await
+    }
+    pub async fn update_cronjob(
+        &self,
+        namespace: &str,
+        name: &str,
+        cronjob: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload("batch", "CronJob", "cronjobs", namespace, name, cronjob)
+            .await
+    }
+    pub async fn delete_cronjob(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.delete_workload("batch", "cronjobs", namespace, name)
+            .await
     }
 
     // --- CustomResourceDefinition CRUD ---

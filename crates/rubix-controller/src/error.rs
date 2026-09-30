@@ -21,6 +21,9 @@ pub enum ControllerError {
     #[error("required controller '{controller}' cannot be omitted: {reason}")]
     OmittedRequiredController { controller: String, reason: String },
 
+    #[error("failed to reconcile resource '{resource}': {reason}")]
+    ReconciliationFailed { resource: String, reason: String },
+
     #[error("controller manager service failed to start: {reason}")]
     ServiceStartFailed { reason: String },
 
@@ -37,6 +40,7 @@ impl ControllerError {
             Self::ApiserverUnavailable { .. } => "controller-apiserver-unavailable",
             Self::InvalidConfiguration { .. } => "controller-invalid-config",
             Self::OmittedRequiredController { .. } => "controller-omitted-required",
+            Self::ReconciliationFailed { .. } => "controller-reconciliation-failed",
             Self::ServiceStartFailed { .. } => "controller-start-failed",
             Self::Internal { .. } => "controller-internal-error",
         }

@@ -6,6 +6,7 @@ use rubix_apiserver::{ApiserverService, KubernetesApiClient};
 use crate::config::ControllerManagerConfig;
 use crate::error::ControllerError;
 use crate::health::ControllerHealthReport;
+use crate::workload::WorkloadManager;
 
 pub const CONTROLLER_MANAGER_USER: &str = "system:kube-controller-manager";
 
@@ -39,6 +40,12 @@ impl ControllerManagerService {
     #[must_use]
     pub fn client(&self) -> KubernetesApiClient {
         self.apiserver.controller_manager_client()
+    }
+
+    /// Obtains a workload manager configured with the controller-manager API client.
+    #[must_use]
+    pub fn workload_manager(&self) -> WorkloadManager {
+        WorkloadManager::new(Arc::new(self.client()))
     }
 
     /// Checks that all required credentials exist, the configuration has no dropped
@@ -127,9 +134,23 @@ impl ControllerManagerService {
             self.config.controllers.clone()
         };
 
-        // In E12.01 baseline, reconciliation loops have not yet been registered.
-        // Active loops will be populated when individual controller loops run (E12.02 / E12.03).
-        let active = Vec::new();
+        // Populated with active workload and garbage-collection reconciliation loops (E12.02)
+        let workload_controllers = [
+            "cronjob",
+            "daemonset",
+            "deployment",
+            "garbagecollector",
+            "job",
+            "replicaset",
+            "statefulset",
+        ];
+        let mut active = Vec::new();
+        for wc in workload_controllers {
+            if self.config.controllers.iter().any(|c| c == "*" || c == wc) {
+                active.push(wc.to_string());
+            }
+        }
+        active.sort();
 
         Ok(ControllerHealthReport::new_healthy(configured, active))
     }
