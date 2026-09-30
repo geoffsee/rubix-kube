@@ -670,11 +670,40 @@ impl KubernetesApiClient {
         rule: &PolicyRule,
         namespace: Option<&str>,
     ) -> Result<(), ApiserverError> {
+        let names: Vec<Option<&str>> = if rule.resource_names.is_empty() {
+            vec![None]
+        } else {
+            rule.resource_names
+                .iter()
+                .map(|n| Some(n.as_str()))
+                .collect()
+        };
+
         for verb in &rule.verbs {
             for group in &rule.api_groups {
-                for res in &rule.resources {
-                    self.check_auth_detailed(verb, group, res, namespace, None)?;
-                }
+                self.verify_caller_holds_verb_group(
+                    verb,
+                    group,
+                    &rule.resources,
+                    &names,
+                    namespace,
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    fn verify_caller_holds_verb_group(
+        &self,
+        verb: &str,
+        group: &str,
+        resources: &[String],
+        names: &[Option<&str>],
+        namespace: Option<&str>,
+    ) -> Result<(), ApiserverError> {
+        for res in resources {
+            for name in names {
+                self.check_auth_detailed(verb, group, res, namespace, *name)?;
             }
         }
         Ok(())
