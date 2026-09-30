@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use rubix_apiserver::ApiserverError;
 use rubix_apiserver::client::KubernetesApiClient;
 use serde_json::{Value, json};
 
@@ -165,7 +166,15 @@ impl StatefulSetReconciler {
         // Delete in descending ordinal order (reverse order)
         to_delete.sort_by_key(|b| std::cmp::Reverse(b.0));
         for (_, pname) in to_delete {
-            let _ = self.client.delete_pod(namespace, &pname).await;
+            match self.client.delete_pod(namespace, &pname).await {
+                Ok(()) | Err(ApiserverError::NotFound { .. }) => {},
+                Err(err) => {
+                    return Err(ControllerError::ReconciliationFailed {
+                        resource: "statefulsets".to_string(),
+                        reason: format!("failed to delete excess StatefulSet pod {pname}: {err}"),
+                    });
+                },
+            }
         }
         Ok(())
     }
