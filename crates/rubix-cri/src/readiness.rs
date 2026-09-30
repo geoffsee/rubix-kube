@@ -100,6 +100,52 @@ pub async fn check_image_service(channel: Channel) -> Result<(), tonic::Status> 
     Ok(())
 }
 
+async fn attempt_probe(
+    runtime_socket: &std::path::Path,
+    image_socket: &std::path::Path,
+    timeout: Duration,
+) -> Result<ProviderInfo, ReadinessError> {
+    let runtime_channel =
+        connect_unix(runtime_socket)
+            .await
+            .map_err(|_| ReadinessError::TimedOut {
+                endpoint: runtime_socket.to_path_buf(),
+                elapsed: timeout,
+            })?;
+    let info = check_runtime_version(runtime_channel.clone())
+        .await
+        .map_err(|status| ReadinessError::RpcFailed {
+            service: "RuntimeService",
+            status,
+        })?;
+
+    if !info.provider.is_supported() {
+        return Err(ReadinessError::UnsupportedProvider {
+            runtime_name: info.runtime_name,
+            runtime_version: info.runtime_version,
+        });
+    }
+
+    let image_channel = if runtime_socket == image_socket {
+        runtime_channel
+    } else {
+        connect_unix(image_socket)
+            .await
+            .map_err(|_| ReadinessError::TimedOut {
+                endpoint: image_socket.to_path_buf(),
+                elapsed: timeout,
+            })?
+    };
+    check_image_service(image_channel)
+        .await
+        .map_err(|status| ReadinessError::RpcFailed {
+            service: "ImageService",
+            status,
+        })?;
+
+    Ok(info)
+}
+
 /// Probes external CRI runtime and image service endpoints with bounded retries.
 pub async fn probe_cri_readiness(
     endpoints: &RuntimeEndpoints,
@@ -109,33 +155,36 @@ pub async fn probe_cri_readiness(
     let runtime_socket = endpoints.runtime.path().to_path_buf();
     let image_socket = endpoints.image.path().to_path_buf();
     let deadline = Instant::now() + timeout;
+    let mut last_error: Option<ReadinessError> = None;
 
     while Instant::now() < deadline {
-        let both_sockets_present = runtime_socket.exists() && image_socket.exists();
-        if both_sockets_present {
-            let attempt = async {
-                let runtime_channel = connect_unix(&runtime_socket).await.ok()?;
-                let info = check_runtime_version(runtime_channel.clone()).await.ok()?;
-
-                let image_channel = if runtime_socket == image_socket {
-                    runtime_channel
-                } else {
-                    connect_unix(&image_socket).await.ok()?
-                };
-                check_image_service(image_channel).await.ok()?;
-
-                Some(info)
-            };
-
+        if !runtime_socket.exists() {
+            last_error = Some(ReadinessError::TimedOut {
+                endpoint: runtime_socket.clone(),
+                elapsed: timeout,
+            });
+        } else if !image_socket.exists() {
+            last_error = Some(ReadinessError::TimedOut {
+                endpoint: image_socket.clone(),
+                elapsed: timeout,
+            });
+        } else {
             let remaining = deadline.saturating_duration_since(Instant::now());
-            if let Ok(Some(info)) = tokio::time::timeout(remaining, attempt).await {
-                if !info.provider.is_supported() {
-                    return Err(ReadinessError::UnsupportedProvider {
-                        runtime_name: info.runtime_name,
-                        runtime_version: info.runtime_version,
-                    });
+            let attempt = attempt_probe(&runtime_socket, &image_socket, timeout);
+            if let Ok(result) = tokio::time::timeout(remaining, attempt).await {
+                match result {
+                    Ok(info) => return Ok(info),
+                    Err(ReadinessError::UnsupportedProvider {
+                        runtime_name,
+                        runtime_version,
+                    }) => {
+                        return Err(ReadinessError::UnsupportedProvider {
+                            runtime_name,
+                            runtime_version,
+                        });
+                    },
+                    Err(err) => last_error = Some(err),
                 }
-                return Ok(info);
             }
         }
 
@@ -146,8 +195,8 @@ pub async fn probe_cri_readiness(
         tokio::time::sleep(sleep_duration).await;
     }
 
-    Err(ReadinessError::TimedOut {
+    Err(last_error.unwrap_or(ReadinessError::TimedOut {
         endpoint: runtime_socket,
         elapsed: timeout,
-    })
+    }))
 }

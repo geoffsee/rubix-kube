@@ -82,11 +82,20 @@ impl Adapter for ExternalRuntimeService {
             if context.stop_phase() != StopPhase::Running {
                 return Ok(());
             }
-            let _provider_info = self.probe().await.map_err(|_| AdapterError {
-                code: "external_cri_readiness_failed",
-            })?;
 
-            context.ready();
+            tokio::select! {
+                probe_res = self.probe() => {
+                    let _provider_info = probe_res.map_err(|_| AdapterError {
+                        code: "external_cri_readiness_failed",
+                    })?;
+                    context.ready();
+                }
+                phase = context.changed() => {
+                    if phase != StopPhase::Running {
+                        return Ok(());
+                    }
+                }
+            }
 
             // External mode: stay alive until shutdown is signaled.
             // Does not start, stop, or manage the host process.

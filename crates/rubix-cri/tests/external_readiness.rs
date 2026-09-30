@@ -251,7 +251,8 @@ async fn separate_runtime_and_image_sockets() {
 
 #[tokio::test]
 async fn missing_socket_times_out() {
-    let non_existent = PathBuf::from("/tmp/rubix-kube-nonexistent-socket.sock");
+    let temp = TempDir::new().unwrap();
+    let non_existent = temp.path().join("missing.sock");
     let endpoints = RuntimeEndpoints::single(CriEndpoint::from_path(&non_existent).unwrap());
 
     let err = probe_cri_readiness(
