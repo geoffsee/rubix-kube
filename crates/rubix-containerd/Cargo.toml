@@ -1,0 +1,23 @@
+[package]
+name = "rubix-containerd"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rubix-config = { version = "=0.1.0", path = "../rubix-config" }
+rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
+rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
+rustix = { version = "=1.1.5", features = ["fs"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.151"
+tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "fs"] }
+toml = "=0.9.6"
+
+[dev-dependencies]
+tempfile = "3.8"
+tokio = { version = "=1.53.1", features = ["test-util"] }
