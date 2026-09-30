@@ -141,6 +141,7 @@ impl WebhookHandler for FailingWebhookHandler {
 }
 
 #[tokio::test]
+#[allow(clippy::too_many_lines)]
 async fn test_mutating_webhook_runs_before_validating_webhook_and_applies_patch() {
     let temp = TempDir::new().unwrap();
     let service = setup_service(&temp);
@@ -180,7 +181,7 @@ async fn test_mutating_webhook_runs_before_validating_webhook_and_applies_patch(
             },
             rules: vec![RuleWithOperations {
                 operations: vec!["CREATE".to_string()],
-                api_groups: vec!["".to_string()],
+                api_groups: vec![String::new()],
                 api_versions: vec!["v1".to_string()],
                 resources: vec!["pods".to_string()],
                 scope: None,
@@ -210,7 +211,7 @@ async fn test_mutating_webhook_runs_before_validating_webhook_and_applies_patch(
             },
             rules: vec![RuleWithOperations {
                 operations: vec!["CREATE".to_string()],
-                api_groups: vec!["".to_string()],
+                api_groups: vec![String::new()],
                 api_versions: vec!["v1".to_string()],
                 resources: vec!["pods".to_string()],
                 scope: None,
@@ -308,7 +309,7 @@ async fn test_validating_webhook_admission_denial() {
             },
             rules: vec![RuleWithOperations {
                 operations: vec!["CREATE".to_string()],
-                api_groups: vec!["".to_string()],
+                api_groups: vec![String::new()],
                 api_versions: vec!["v1".to_string()],
                 resources: vec!["pods".to_string()],
                 scope: None,
@@ -403,7 +404,7 @@ async fn test_webhook_failure_policy_fail_vs_ignore() {
             },
             rules: vec![RuleWithOperations {
                 operations: vec!["CREATE".to_string()],
-                api_groups: vec!["".to_string()],
+                api_groups: vec![String::new()],
                 api_versions: vec!["v1".to_string()],
                 resources: vec!["pods".to_string()],
                 scope: None,
@@ -446,7 +447,7 @@ async fn test_webhook_failure_policy_fail_vs_ignore() {
             },
             rules: vec![RuleWithOperations {
                 operations: vec!["CREATE".to_string()],
-                api_groups: vec!["".to_string()],
+                api_groups: vec![String::new()],
                 api_versions: vec!["v1".to_string()],
                 resources: vec!["pods".to_string()],
                 scope: None,
@@ -510,7 +511,7 @@ async fn test_webhook_ca_bundle_verification() {
             },
             rules: vec![RuleWithOperations {
                 operations: vec!["CREATE".to_string()],
-                api_groups: vec!["".to_string()],
+                api_groups: vec![String::new()],
                 api_versions: vec!["v1".to_string()],
                 resources: vec!["pods".to_string()],
                 scope: None,
@@ -542,6 +543,7 @@ async fn test_webhook_ca_bundle_verification() {
 }
 
 #[tokio::test]
+#[allow(clippy::too_many_lines)]
 async fn test_crd_schema_validation_and_lifecycle() {
     let temp = TempDir::new().unwrap();
     let service = setup_service(&temp);
@@ -776,7 +778,7 @@ async fn test_webhook_configurations_crud_and_persistence() {
     let storage = KubernetesStorage::new(engine.client(), "/registry");
     let node_ip: IpAddr = "192.0.2.1".parse().unwrap();
     let restarted = ApiserverService::new(
-        ApiserverConfig::default_for_pki(&temp.path().join("pki"), node_ip),
+        ApiserverConfig::default_for_pki(temp.path().join("pki"), node_ip),
         storage,
     );
     restarted.check_prerequisites().await.unwrap();

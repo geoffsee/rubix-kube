@@ -354,7 +354,7 @@ async fn test_aggregated_apiservice_persistence_and_restore() {
     let storage = KubernetesStorage::new(engine.client(), "/registry");
     let node_ip: IpAddr = "192.0.2.1".parse().unwrap();
     let restarted = ApiserverService::new(
-        ApiserverConfig::default_for_pki(&temp.path().join("pki"), node_ip),
+        ApiserverConfig::default_for_pki(temp.path().join("pki"), node_ip),
         storage,
     );
     restarted.check_prerequisites().await.unwrap();

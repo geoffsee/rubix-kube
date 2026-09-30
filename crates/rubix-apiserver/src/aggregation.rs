@@ -61,14 +61,58 @@ impl std::fmt::Debug for AggregationManager {
         f.debug_struct("AggregationManager")
             .field(
                 "services_count",
-                &self.services.read().map(|s| s.len()).unwrap_or(0),
+                &self.services.read().map_or(0, |s| s.len()),
             )
             .field(
                 "endpoints_count",
-                &self.endpoints.read().map(|e| e.len()).unwrap_or(0),
+                &self.endpoints.read().map_or(0, |e| e.len()),
             )
             .finish()
     }
+}
+
+/// Verifies the aggregated service TLS certificate against its `caBundle`.
+fn verify_service_trust(
+    service_name: &str,
+    spec: &APIServiceSpec,
+    endpoint: &RegisteredService,
+) -> Result<(), ApiserverError> {
+    if spec.insecure_skip_tls_verify == Some(true) {
+        return Ok(());
+    }
+
+    let Some(ca_bundle_b64) = &spec.ca_bundle else {
+        return Ok(());
+    };
+
+    let ca_bytes = rubix_pki::base64_decode(ca_bundle_b64).map_err(|e| {
+        ApiserverError::InvalidCredentials {
+            reason: format!("invalid base64 in APIService '{service_name}' caBundle: {e}"),
+        }
+    })?;
+
+    let ca_pem =
+        std::str::from_utf8(&ca_bytes).map_err(|e| ApiserverError::InvalidCredentials {
+            reason: format!("invalid UTF-8 in APIService '{service_name}' caBundle: {e}"),
+        })?;
+
+    let Some(server_cert) = &endpoint.server_cert_pem else {
+        return Err(ApiserverError::InvalidCredentials {
+            reason: format!(
+                "APIService '{service_name}' expects TLS verification against caBundle, but endpoint provided no certificate"
+            ),
+        });
+    };
+
+    rubix_pki::verify_certificate_chain(server_cert, ca_pem).map_err(|e| {
+        ApiserverError::InvalidCredentials {
+            reason: format!(
+                "APIService '{service_name}' server TLS certificate rejected by caBundle trust: {e}"
+            ),
+        }
+    })?;
+
+    Ok(())
 }
 
 impl AggregationManager {
@@ -119,52 +163,6 @@ impl AggregationManager {
         );
     }
 
-    /// Verifies the aggregated service TLS certificate against its caBundle.
-    fn verify_service_trust(
-        &self,
-        service_name: &str,
-        spec: &APIServiceSpec,
-        endpoint: &RegisteredService,
-    ) -> Result<(), ApiserverError> {
-        if spec.insecure_skip_tls_verify == Some(true) {
-            return Ok(());
-        }
-
-        let Some(ca_bundle_b64) = &spec.ca_bundle else {
-            return Ok(());
-        };
-
-        let ca_bytes = rubix_pki::base64_decode(ca_bundle_b64).map_err(|e| {
-            ApiserverError::InvalidCredentials {
-                reason: format!("invalid base64 in APIService '{service_name}' caBundle: {e}"),
-            }
-        })?;
-
-        let ca_pem =
-            std::str::from_utf8(&ca_bytes).map_err(|e| ApiserverError::InvalidCredentials {
-                reason: format!("invalid UTF-8 in APIService '{service_name}' caBundle: {e}"),
-            })?;
-
-        let Some(server_cert) = &endpoint.server_cert_pem else {
-            return Err(ApiserverError::InvalidCredentials {
-                reason: format!(
-                    "APIService '{service_name}' expects TLS verification against caBundle, but endpoint provided no certificate"
-                ),
-            });
-        };
-
-        rubix_pki::verify_certificate_chain(server_cert, ca_pem).map_err(|e| {
-            ApiserverError::InvalidCredentials {
-                reason: format!(
-                    "APIService '{service_name}' server TLS certificate rejected by caBundle trust: {e}"
-                ),
-            }
-        })?;
-
-        Ok(())
-    }
-
-    /// Dispatches an aggregated request through the aggregation layer.
     pub async fn dispatch(
         &self,
         service_name: &str,
@@ -190,13 +188,13 @@ impl AggregationManager {
         };
 
         // Trust verification against caBundle
-        self.verify_service_trust(service_name, &service.spec, &endpoint)?;
+        verify_service_trust(service_name, &service.spec, &endpoint)?;
 
         // Invoke handler
         endpoint.handler.handle_request(ctx).await
     }
 
-    /// Restores persisted APIServices from storage upon startup or restart.
+    /// Restores persisted `APIServices` from storage upon startup or restart.
     pub async fn restore_from_storage(
         &self,
         storage: &KubernetesStorage,

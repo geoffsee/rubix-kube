@@ -60,11 +60,12 @@ impl std::fmt::Debug for KubernetesApiClient {
         f.debug_struct("KubernetesApiClient")
             .field("identity", &self.identity)
             .field("anonymous_auth_allowed", &self.anonymous_auth_allowed)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
 impl KubernetesApiClient {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         storage: KubernetesStorage,
         identity: ClientIdentity,
@@ -182,6 +183,7 @@ impl KubernetesApiClient {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn check_auth_detailed(
         &self,
         verb: &str,
@@ -412,24 +414,7 @@ impl KubernetesApiClient {
                     continue;
                 }
 
-                let mut versions = Vec::new();
-                if let Some(vers) = spec.get("versions").and_then(Value::as_array) {
-                    for v in vers {
-                        if let Some(v_name) = v.get("name").and_then(Value::as_str) {
-                            versions.push(json!({
-                                "groupVersion": format!("{group}/{v_name}"),
-                                "version": v_name
-                            }));
-                        }
-                    }
-                }
-                if versions.is_empty() {
-                    versions.push(json!({
-                        "groupVersion": format!("{group}/v1"),
-                        "version": "v1"
-                    }));
-                }
-
+                let versions = Self::extract_crd_versions(spec, group);
                 let pref = versions.first().cloned().unwrap_or(json!({}));
                 groups.push(json!({
                     "name": group,
@@ -688,12 +673,12 @@ impl KubernetesApiClient {
         let mut adm_req = AdmissionRequest {
             uid: format!("adm-{}", self.storage.current_revision().await + 1),
             kind: GroupVersionKind {
-                group: "".to_string(),
+                group: String::new(),
                 version: "v1".to_string(),
                 kind: "ConfigMap".to_string(),
             },
             resource: GroupVersionResource {
-                group: "".to_string(),
+                group: String::new(),
                 version: "v1".to_string(),
                 resource: "configmaps".to_string(),
             },
@@ -854,12 +839,12 @@ impl KubernetesApiClient {
         let mut adm_req = AdmissionRequest {
             uid: format!("adm-{}", self.storage.current_revision().await + 1),
             kind: GroupVersionKind {
-                group: "".to_string(),
+                group: String::new(),
                 version: "v1".to_string(),
                 kind: "Pod".to_string(),
             },
             resource: GroupVersionResource {
-                group: "".to_string(),
+                group: String::new(),
                 version: "v1".to_string(),
                 resource: "pods".to_string(),
             },
@@ -984,7 +969,7 @@ impl KubernetesApiClient {
         self.crd_registry
             .write()
             .unwrap()
-            .insert(name.to_string(), result.clone());
+            .insert(name.clone(), result.clone());
         Ok(result)
     }
 
@@ -1128,80 +1113,128 @@ impl KubernetesApiClient {
         }
 
         // 2. enum check
-        if let Some(enum_vals) = schema.get("enum").and_then(Value::as_array) {
-            if !enum_vals.contains(data) {
-                return Err(ApiserverError::InvalidInput {
-                    field: path.to_string(),
-                    reason: format!("value '{data}' is not in allowed enum values: {enum_vals:?}"),
-                });
-            }
+        if let Some(enum_vals) = schema.get("enum").and_then(Value::as_array)
+            && !enum_vals.contains(data)
+        {
+            return Err(ApiserverError::InvalidInput {
+                field: path.to_string(),
+                reason: format!("value '{data}' is not in allowed enum values: {enum_vals:?}"),
+            });
         }
 
         // 3. numeric limits
-        if let Some(min) = schema.get("minimum").and_then(Value::as_f64) {
-            if let Some(val) = data.as_f64() {
-                if val < min {
-                    return Err(ApiserverError::InvalidInput {
-                        field: path.to_string(),
-                        reason: format!("value {val} is less than minimum {min}"),
-                    });
-                }
-            }
+        if let Some(min) = schema.get("minimum").and_then(Value::as_f64)
+            && let Some(val) = data.as_f64()
+            && val < min
+        {
+            return Err(ApiserverError::InvalidInput {
+                field: path.to_string(),
+                reason: format!("value {val} is less than minimum {min}"),
+            });
         }
-        if let Some(max) = schema.get("maximum").and_then(Value::as_f64) {
-            if let Some(val) = data.as_f64() {
-                if val > max {
-                    return Err(ApiserverError::InvalidInput {
-                        field: path.to_string(),
-                        reason: format!("value {val} is greater than maximum {max}"),
-                    });
-                }
-            }
+        if let Some(max) = schema.get("maximum").and_then(Value::as_f64)
+            && let Some(val) = data.as_f64()
+            && val > max
+        {
+            return Err(ApiserverError::InvalidInput {
+                field: path.to_string(),
+                reason: format!("value {val} is greater than maximum {max}"),
+            });
         }
 
         // 4. object validation: required and properties
         if let Some(map) = data.as_object() {
             if let Some(required) = schema.get("required").and_then(Value::as_array) {
-                for req in required {
-                    if let Some(prop_name) = req.as_str() {
-                        if !map.contains_key(prop_name) {
-                            let field_path = if path.is_empty() {
-                                prop_name.to_string()
-                            } else {
-                                format!("{path}.{prop_name}")
-                            };
-                            return Err(ApiserverError::InvalidInput {
-                                field: field_path,
-                                reason: format!("missing required field '{prop_name}'"),
-                            });
-                        }
-                    }
-                }
+                Self::validate_object_required(map, required, path)?;
             }
             if let Some(props) = schema.get("properties").and_then(Value::as_object) {
-                for (prop_name, prop_val) in map {
-                    if let Some(prop_schema) = props.get(prop_name) {
-                        let next_path = if path.is_empty() {
-                            prop_name.clone()
-                        } else {
-                            format!("{path}.{prop_name}")
-                        };
-                        Self::validate_json_schema(prop_schema, prop_val, &next_path)?;
-                    }
-                }
+                Self::validate_object_properties(map, props, path)?;
             }
         }
 
         // 5. array validation: items
-        if let Some(arr) = data.as_array() {
-            if let Some(item_schema) = schema.get("items") {
-                for (idx, item) in arr.iter().enumerate() {
-                    Self::validate_json_schema(item_schema, item, &format!("{path}[{idx}]"))?;
-                }
-            }
+        if let Some(arr) = data.as_array()
+            && let Some(item_schema) = schema.get("items")
+        {
+            Self::validate_array_items(arr, item_schema, path)?;
         }
 
         Ok(())
+    }
+
+    fn validate_object_required(
+        map: &serde_json::Map<String, Value>,
+        required: &[Value],
+        path: &str,
+    ) -> Result<(), ApiserverError> {
+        for req in required {
+            if let Some(prop_name) = req.as_str()
+                && !map.contains_key(prop_name)
+            {
+                let field_path = if path.is_empty() {
+                    prop_name.to_string()
+                } else {
+                    format!("{path}.{prop_name}")
+                };
+                return Err(ApiserverError::InvalidInput {
+                    field: field_path,
+                    reason: format!("missing required field '{prop_name}'"),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_object_properties(
+        map: &serde_json::Map<String, Value>,
+        props: &serde_json::Map<String, Value>,
+        path: &str,
+    ) -> Result<(), ApiserverError> {
+        for (prop_name, prop_val) in map {
+            let Some(prop_schema) = props.get(prop_name) else {
+                continue;
+            };
+            let next_path = if path.is_empty() {
+                prop_name.clone()
+            } else {
+                format!("{path}.{prop_name}")
+            };
+            Self::validate_json_schema(prop_schema, prop_val, &next_path)?;
+        }
+        Ok(())
+    }
+
+    fn validate_array_items(
+        arr: &[Value],
+        item_schema: &Value,
+        path: &str,
+    ) -> Result<(), ApiserverError> {
+        for (idx, item) in arr.iter().enumerate() {
+            Self::validate_json_schema(item_schema, item, &format!("{path}[{idx}]"))?;
+        }
+        Ok(())
+    }
+
+    fn extract_crd_versions(spec: &Value, group: &str) -> Vec<Value> {
+        let mut versions = Vec::new();
+        if let Some(vers) = spec.get("versions").and_then(Value::as_array) {
+            for v in vers {
+                let Some(v_name) = v.get("name").and_then(Value::as_str) else {
+                    continue;
+                };
+                versions.push(json!({
+                    "groupVersion": format!("{group}/{v_name}"),
+                    "version": v_name
+                }));
+            }
+        }
+        if versions.is_empty() {
+            versions.push(json!({
+                "groupVersion": format!("{group}/v1"),
+                "version": "v1"
+            }));
+        }
+        versions
     }
 
     fn validate_crd_instance_schema(
@@ -1212,25 +1245,32 @@ impl KubernetesApiClient {
     ) -> Result<(), ApiserverError> {
         let registry = crd_registry.read().unwrap();
         for crd in registry.values() {
-            if let Some(spec) = crd.get("spec") {
-                let spec_group = spec.get("group").and_then(Value::as_str);
-                let spec_plural = spec
-                    .get("names")
-                    .and_then(|n| n.get("plural"))
-                    .and_then(Value::as_str);
-                if spec_group == Some(group) && spec_plural == Some(plural) {
-                    if let Some(versions) = spec.get("versions").and_then(Value::as_array) {
-                        for ver in versions {
-                            if let Some(schema) =
-                                ver.get("schema").and_then(|s| s.get("openAPIV3Schema"))
-                            {
-                                Self::validate_json_schema(schema, resource, "")?;
-                            }
-                        }
-                    }
-                    break;
-                }
+            let Some(spec) = crd.get("spec") else {
+                continue;
+            };
+            let spec_group = spec.get("group").and_then(Value::as_str);
+            let spec_plural = spec
+                .get("names")
+                .and_then(|n| n.get("plural"))
+                .and_then(Value::as_str);
+            if spec_group != Some(group) || spec_plural != Some(plural) {
+                continue;
             }
+            Self::validate_spec_schema(spec, resource)?;
+            break;
+        }
+        Ok(())
+    }
+
+    fn validate_spec_schema(spec: &Value, resource: &Value) -> Result<(), ApiserverError> {
+        let Some(versions) = spec.get("versions").and_then(Value::as_array) else {
+            return Ok(());
+        };
+        for ver in versions {
+            let Some(schema) = ver.get("schema").and_then(|s| s.get("openAPIV3Schema")) else {
+                continue;
+            };
+            Self::validate_json_schema(schema, resource, "")?;
         }
         Ok(())
     }
