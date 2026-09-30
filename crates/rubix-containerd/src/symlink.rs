@@ -89,8 +89,15 @@ impl std::error::Error for SymlinkError {
 ///
 /// If `target` points elsewhere or is broken, it is removed and recreated.
 pub fn ensure_symbolic_link(source: &Path, target: &Path) -> Result<(), SymlinkError> {
+    let source_abs = if source.is_absolute() {
+        source.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map_or_else(|_| source.to_path_buf(), |cwd| cwd.join(source))
+    };
+
     if let Ok(existing_dest) = fs::read_link(target)
-        && existing_dest == source
+        && existing_dest == source_abs
     {
         return Ok(());
     }
@@ -106,14 +113,17 @@ pub fn ensure_symbolic_link(source: &Path, target: &Path) -> Result<(), SymlinkE
     }
 
     if let Some(parent) = target.parent()
+        && !parent.as_os_str().is_empty()
         && !parent.exists()
     {
-        let _ = fs::create_dir_all(parent);
+        fs::create_dir_all(parent).map_err(|_| SymlinkError::ParentMissing {
+            target: target.to_path_buf(),
+        })?;
     }
 
-    unix_fs::symlink(source, target).map_err(|err| SymlinkError::CreateFailed {
+    unix_fs::symlink(&source_abs, target).map_err(|err| SymlinkError::CreateFailed {
         target: target.to_path_buf(),
-        destination: source.to_path_buf(),
+        destination: source_abs,
         source: err,
     })
 }
