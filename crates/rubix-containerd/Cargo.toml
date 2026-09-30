@@ -9,14 +9,20 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+rubix-assets = { version = "=0.1.0", path = "../rubix-assets" }
 rubix-config = { version = "=0.1.0", path = "../rubix-config" }
+rubix-containerd-api = { version = "=0.1.0", path = "../rubix-containerd-api" }
+rubix-cri = { version = "=0.1.0", path = "../rubix-cri" }
 rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
 rustix = { version = "=1.1.5", features = ["fs"] }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
-tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "fs"] }
+tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "fs", "net"] }
 toml = "=0.9.6"
+tonic = { version = "=0.14.6", default-features = false, features = ["transport"] }
+tower = { version = "=0.5.3", default-features = false, features = ["util"] }
+hyper-util = { version = "=0.1.21", default-features = false, features = ["tokio"] }
 
 [dev-dependencies]
 tempfile = "3.8"

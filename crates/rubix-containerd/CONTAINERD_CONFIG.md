@@ -116,3 +116,55 @@ These configuration files are read dynamically by containerd at pull time. The `
 
 - **System containerd socket**: `/run/containerd/containerd.sock` is symlinked to the managed socket path for tooling compatibility (`crictl`, host utilities).
 - **Immutable roots**: `ensure_symbolic_link` detects if an existing symlink already targets the desired source and avoids recreating it, ensuring smooth operation on read-only root filesystems.
+
+---
+
+## 7. Supervised Runtime Lifecycle & Readiness Probing
+
+The managed containerd service is coordinated by `rubix-supervisor` via `ContainerdService` and `OwnedProcessAdapter`.
+
+### Startup Sequence
+1. **Filesystem Preparation**: Ensures `root/`, `state/`, and `registry/` directories exist, evaluates cgroup/snapshotter settings, and renders `config.toml`.
+2. **Process Group Execution**: Starts `containerd --config <config.toml>` with an isolated process group and `PATH` prepended with the containerd binary directory.
+3. **CRI Readiness Probe**:
+   - Probes the containerd gRPC socket over Unix domain transport (`connect_unix`).
+   - Issues a CRI `RuntimeService::Version` RPC (`check_cri_version`) and containerd `VersionClient::Version` RPC.
+   - Retries with a default interval of `500ms` up to a configurable deadline (`DEFAULT_READINESS_TIMEOUT = 1 minute`).
+   - If the deadline expires without successful readiness, the probe returns `HealthError::TimedOut` and exits through supervision with fatal error code `containerd_readiness_failed`.
+4. **Namespace Verification**: Issues a `NamespacesClient::list` and `CreateNamespaceRequest` to verify the `k8s.io` namespace is registered.
+5. **Image Ingestion**: Imports enabled image archives or triggers CRI registry pulls.
+6. **Supervisor Notification**: Marks the component `Ready` in the supervisor coordinator.
+
+---
+
+## 8. Image Handling and Registry Fallback
+
+Managed containerd automatically provisions required system images into the `k8s.io` namespace on startup.
+
+### Enabled vs Disabled Image Mapping
+
+| Image Asset | Catalog Reference | Filename | Selection Criterion |
+| :--- | :--- | :--- | :--- |
+| `ImageCoredns` | `docker.io/coredns/coredns:1.14.4` | `coredns.tar.gz` | Always enabled (core DNS) |
+| `ImagePause` | `docker.io/portainer/pause:latest` | `pause.tar.gz` | Always enabled (sandbox pod infrastructure) |
+| `ImageLocalPath` | `docker.io/rancher/local-path-provisioner:v0.0.36` | `local-path-provisioner.tar.gz` | Enabled when `storage.local_path.enabled = true` |
+| `ImageLocalPathHelper` | `docker.io/library/busybox:latest` | `busybox.tar.gz` | Enabled when `storage.local_path.enabled = true` |
+| `ImagePortainerAgent` | `docker.io/portainer/agent:lts` (or custom reference) | `portainer-agent.tar.gz` (or empty if custom) | Enabled when `!portainer.edge_id.is_empty()` |
+| `ImageD2k` | `docker.io/portainer/d2k:1.2.3` | `d2k.tar.gz` | Enabled when `d2k.enabled = true` |
+
+### Import & Pull Semantics
+- **Embedded Archives**: If the local archive file exists in `<base_path>/images/<filename>`, the image is loaded from local disk.
+- **Registry Pull Fallback**: If the local archive is missing or empty, the runtime issues a CRI `ImageServiceClient::PullImage` request.
+- **Disabled Image Guarantee**: Disabled images are strictly omitted from `enabled_targets()` and never imported or pulled.
+- **Custom Edge Agent**: A custom Portainer agent image is pulled as a warm cache; pull errors do not abort node startup, allowing the kubelet to retry on pod creation.
+
+---
+
+## 9. Fixtures Matrix
+
+The implementation is verified across four distinct operating environments:
+
+1. **Ordinary Host**: Linux with cgroup v2 and active systemd (`SystemdCgroup = true`, `snapshotter = "overlayfs"`).
+2. **Alpine / OpenRC**: Musl libc and non-systemd init (`SystemdCgroup = false`, `snapshotter = "overlayfs"`).
+3. **Nested Container**: Running inside Docker/Podman where rootfs is an overlay mount (`SystemdCgroup = false`, `snapshotter = "fuse-overlayfs"` when installed).
+4. **Overlay Root**: Ephemeral overlay mount without `fuse-overlayfs` (`SystemdCgroup = false`, `snapshotter = "native"` fallback).
