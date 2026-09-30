@@ -245,12 +245,19 @@ async fn unauthenticated_and_unauthorized_requests_are_rejected() {
         "Anonymous client must be rejected when --anonymous-auth=false"
     );
 
-    // 2. Invalid bearer token rejection
+    // 2. Invalid bearer token rejection (including prefix spoofing attempts)
     let invalid_token_client = service.token_client("bad-token-xyz");
     let token_err = invalid_token_client.create_namespace("hacked").await;
     assert!(
         matches!(token_err, Err(ApiserverError::Unauthorized { .. })),
         "Invalid token must be rejected with Unauthorized"
+    );
+
+    let spoofed_token_client = service.token_client("system:adminX");
+    let spoof_err = spoofed_token_client.create_namespace("hacked2").await;
+    assert!(
+        matches!(spoof_err, Err(ApiserverError::Unauthorized { .. })),
+        "Token with system:admin prefix must not grant admin access"
     );
 
     // 3. Restricted user forbidden from cluster mutation

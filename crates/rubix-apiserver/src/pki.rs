@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::Path;
 
+use rubix_pki::{validate_certificate_pem, validate_private_key_pem};
+
 use crate::config::ApiserverConfig;
 use crate::error::ApiserverError;
 
@@ -43,15 +45,12 @@ fn validate_cert_file(path: &Path, name: &str) -> Result<(), ApiserverError> {
         });
     }
 
-    let text = String::from_utf8_lossy(&bytes);
-    if !text.contains("BEGIN CERTIFICATE") {
-        return Err(ApiserverError::InvalidCredentials {
-            reason: format!(
-                "{name} at {} is not a valid PEM certificate",
-                path.display()
-            ),
-        });
-    }
+    validate_certificate_pem(&bytes).map_err(|e| ApiserverError::InvalidCredentials {
+        reason: format!(
+            "{name} at {} is not a valid PEM certificate: {e}",
+            path.display()
+        ),
+    })?;
 
     Ok(())
 }
@@ -73,15 +72,12 @@ fn validate_key_file(path: &Path, name: &str) -> Result<(), ApiserverError> {
         });
     }
 
-    let text = String::from_utf8_lossy(&bytes);
-    if !text.contains("BEGIN RSA PRIVATE KEY") && !text.contains("BEGIN PRIVATE KEY") {
-        return Err(ApiserverError::InvalidCredentials {
-            reason: format!(
-                "{name} at {} is not a valid PEM private key",
-                path.display()
-            ),
-        });
-    }
+    validate_private_key_pem(&bytes).map_err(|e| ApiserverError::InvalidCredentials {
+        reason: format!(
+            "{name} at {} is not a valid PEM private key: {e}",
+            path.display()
+        ),
+    })?;
 
     Ok(())
 }

@@ -101,6 +101,52 @@ fn to_pkcs1_pem(pkcs8_pem: &str) -> Result<String, PkiError> {
     Ok(pkcs1_pem)
 }
 
+pub fn validate_certificate_pem(bytes: &[u8]) -> Result<(), PkiError> {
+    let pem_entries = pem::parse_many(bytes).map_err(|_| PkiError::InvalidCert)?;
+    if pem_entries.is_empty() {
+        return Err(PkiError::InvalidCert);
+    }
+    let mut found = false;
+    for entry in pem_entries {
+        if entry.tag() == "CERTIFICATE" {
+            found = true;
+            let (_, _cert) = x509_parser::parse_x509_certificate(entry.contents())
+                .map_err(|_| PkiError::InvalidCert)?;
+        }
+    }
+    if !found {
+        return Err(PkiError::InvalidCert);
+    }
+    Ok(())
+}
+
+pub fn validate_private_key_pem(bytes: &[u8]) -> Result<(), PkiError> {
+    let pem_entries = pem::parse_many(bytes).map_err(|_| PkiError::InvalidKey)?;
+    if pem_entries.is_empty() {
+        return Err(PkiError::InvalidKey);
+    }
+    let mut found = false;
+    for entry in pem_entries {
+        let tag = entry.tag();
+        if tag == "RSA PRIVATE KEY" || tag == "PRIVATE KEY" || tag == "EC PRIVATE KEY" {
+            found = true;
+            if entry.contents().is_empty() {
+                return Err(PkiError::InvalidKey);
+            }
+            let text = std::str::from_utf8(bytes).map_err(|_| PkiError::InvalidKey)?;
+            if KeyPair::from_pem(text).is_err()
+                && pkcs8::PrivateKeyInfo::try_from(entry.contents()).is_err()
+            {
+                return Err(PkiError::InvalidKey);
+            }
+        }
+    }
+    if !found {
+        return Err(PkiError::InvalidKey);
+    }
+    Ok(())
+}
+
 fn atomic_write(path: &Path, data: &[u8], mode: u32) -> Result<(), std::io::Error> {
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let mut temp = tempfile::Builder::new().tempfile_in(dir)?;

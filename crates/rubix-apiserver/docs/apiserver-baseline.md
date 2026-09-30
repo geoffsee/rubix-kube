@@ -7,7 +7,6 @@ Rubix targets the official **Kubernetes v1.35.7** control plane baseline. The AP
 - **Secure Port & Binding**:
   - `--bind-address=0.0.0.0` (or local `127.0.0.1` for single-node / container loops)
   - `--secure-port=6443`
-  - `--insecure-port=0` (disabled in line with modern Kubernetes security standards)
   - `--advertise-address`: explicit host node IP
 - **Networking & Service Ranges**:
   - `--service-cluster-ip-range=10.43.0.0/16` (default Kubernetes service CIDR)

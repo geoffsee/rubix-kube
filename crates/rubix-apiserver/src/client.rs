@@ -42,7 +42,10 @@ impl KubernetesApiClient {
         match &self.identity {
             ClientIdentity::AdminCertificate => Ok(()),
             ClientIdentity::BearerToken(token) => {
-                if token == "admin-token" || token.starts_with("system:admin") {
+                // Bearer tokens must be strictly validated against exact authorized tokens.
+                // Prefix matching (e.g. system:admin*) is strictly disallowed to prevent
+                // privilege escalation via unvalidated token strings.
+                if token == "admin-token" {
                     Ok(())
                 } else {
                     Err(ApiserverError::Unauthorized {

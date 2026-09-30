@@ -45,7 +45,6 @@ fn baseline_configuration_flags_match_kubernetes_v1_35_7_specification() {
     assert!(args.contains(&"--bind-address=127.0.0.1".to_string()));
     assert!(args.contains(&format!("--advertise-address={node_ip}")));
     assert!(args.contains(&format!("--secure-port={DEFAULT_SECURE_PORT}")));
-    assert!(args.contains(&"--insecure-port=0".to_string()));
     assert!(args.contains(&format!(
         "--service-cluster-ip-range={DEFAULT_SERVICE_CLUSTER_IP_RANGE}"
     )));
@@ -83,8 +82,11 @@ async fn apiserver_supervised_startup_and_graceful_shutdown() {
 
     let sup_handle = tokio::spawn(async move { supervisor.run(stop_receiver).await });
 
-    // Allow supervisor to start adapter and confirm readiness
-    tokio::time::sleep(Duration::from_millis(250)).await;
+    // Allow supervisor to start adapter and confirm readiness via bounded polling
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+    while !service.is_running() && tokio::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
     assert!(
         service.is_running(),
         "Apiserver service must be active after startup"

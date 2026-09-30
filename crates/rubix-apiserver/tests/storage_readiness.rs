@@ -141,3 +141,69 @@ async fn supervisor_rejects_startup_when_credentials_are_unusable() {
     );
     drop(stop_handle);
 }
+
+#[tokio::test]
+async fn readiness_fails_when_certificate_is_truncated() {
+    let temp = TempDir::new().unwrap();
+    let node_ip: IpAddr = "192.0.2.5".parse().unwrap();
+    let config = setup_pki(&temp, node_ip);
+    let storage = setup_storage(&temp);
+
+    // Read valid cert and truncate its base64 body
+    let valid_cert = std::fs::read_to_string(&config.tls_cert_file).unwrap();
+    let truncated_cert = format!(
+        "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----\n",
+        &valid_cert[30..60] // Truncated DER body
+    );
+    std::fs::write(&config.tls_cert_file, truncated_cert).unwrap();
+
+    let service = ApiserverService::new(config, storage);
+    let report = service
+        .check_readiness()
+        .await
+        .expect("readiness evaluation completes");
+
+    assert!(!report.is_healthy);
+    assert!(
+        report
+            .checks
+            .get("pki")
+            .unwrap()
+            .contains("not a valid PEM certificate"),
+        "Truncated certificate must fail validation"
+    );
+
+    let prereq_err = service.check_prerequisites().await;
+    assert!(prereq_err.is_err());
+}
+
+#[tokio::test]
+async fn readiness_fails_when_private_key_is_truncated() {
+    let temp = TempDir::new().unwrap();
+    let node_ip: IpAddr = "192.0.2.6".parse().unwrap();
+    let config = setup_pki(&temp, node_ip);
+    let storage = setup_storage(&temp);
+
+    // Write a key PEM with truncated payload
+    let truncated_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0123456789\n-----END RSA PRIVATE KEY-----\n";
+    std::fs::write(&config.tls_private_key_file, truncated_key).unwrap();
+
+    let service = ApiserverService::new(config, storage);
+    let report = service
+        .check_readiness()
+        .await
+        .expect("readiness evaluation completes");
+
+    assert!(!report.is_healthy);
+    assert!(
+        report
+            .checks
+            .get("pki")
+            .unwrap()
+            .contains("not a valid PEM private key"),
+        "Truncated private key must fail validation"
+    );
+
+    let prereq_err = service.check_prerequisites().await;
+    assert!(prereq_err.is_err());
+}

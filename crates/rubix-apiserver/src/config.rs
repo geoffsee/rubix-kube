@@ -102,7 +102,6 @@ impl ApiserverConfig {
             format!("--bind-address={}", self.bind_address),
             format!("--advertise-address={}", self.advertise_address),
             format!("--secure-port={}", self.secure_port),
-            "--insecure-port=0".to_string(),
             format!(
                 "--service-cluster-ip-range={}",
                 self.service_cluster_ip_range
