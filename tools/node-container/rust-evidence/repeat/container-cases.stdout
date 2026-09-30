@@ -293,8 +293,8 @@ test host_container::tests::migration_requires_observed_membership_before_delega
 test host_container::tests::mount_failure_and_uncertain_readback_suppress_all_cgroups ... ok
 test host_container::tests::only_positive_v1_skips_cgroup_operations ... ok
 test host_container::tests::ordered_effects_use_independent_controller_readback ... ok
-test host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain ... ok
 test host_container::tests::successful_write_never_substitutes_for_failed_or_missing_readback ... ok
+test host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain ... ok
 
 test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -317,8 +317,8 @@ TEST_host_network_BEGIN
 running 14 tests
 test cancellation_after_failed_write_retains_possible_effects ... ok
 test cancellation_after_ipv6_write_preserves_possible_effects_without_readback ... ok
-test cancellation_before_start_never_observes_or_mutates_network ... ok
 test cancellation_between_ipv6_read_and_write_prevents_write ... ok
+test cancellation_before_start_never_observes_or_mutates_network ... ok
 test complete_bounded_scalars_reject_prefixes_and_binary_data ... ok
 test fixed_backend_lists_and_external_runtime_keep_network_effects ... ok
 test fresh_root_backend_and_ipv4_unknown_guards_prevent_effects ... ok
@@ -330,7 +330,7 @@ test unjoined_module_owner_stops_all_further_effects ... ok
 test write_failures_continue_to_all_controls_and_retain_possible_effects ... ok
 test cancellation_during_module_waits_for_stop_acknowledgement ... ok
 
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
 TEST_host_network_END
 INJECTED_TESTS_END
@@ -351,7 +351,7 @@ PROTOCOL_wrong_END
 OBS_signal_READY_BEGIN
 PID 2579
 STAT_BEGIN
-2579 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 282 190 0 0 0 0 0 0 20 0 1 0 1070 2666496 539 18446744073709551615 4194304 6372816 281474245546576 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 20389888 281474245549626 281474245549753 281474245549753 281474245550036 0
+2579 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 279 192 0 0 0 0 0 0 20 0 1 0 1075 2666496 539 18446744073709551615 4194304 6372816 281474511256960 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 1077092352 281474511261242 281474511261369 281474511261369 281474511261652 0
 STAT_END
 EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2579/exe
 MNT_NS mnt:[4026532175]
@@ -460,7 +460,7 @@ PID_ABSENT 2579
 OBS_real_READY_BEGIN
 PID 2616
 STAT_BEGIN
-2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 282 192 0 0 0 0 0 0 20 0 1 0 1078 2666496 539 18446744073709551615 4194304 6372816 281474973689936 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 222744576 281474973691450 281474973691577 281474973691577 281474973691860 0
+2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 279 195 0 0 0 0 0 0 20 0 1 0 1083 2666496 539 18446744073709551615 4194304 6372816 281474930319344 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 23859200 281474930323002 281474930323129 281474930323129 281474930323412 0
 STAT_END
 EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2616/exe
 MNT_NS mnt:[4026532175]
@@ -539,7 +539,7 @@ OBS_real_READY_END
 OBS_real_FIRST_BEGIN
 PID 2616
 STAT_BEGIN
-2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 3144 3478 0 1 1 0 1 1 20 0 1 0 1078 2777088 554 18446744073709551615 4194304 6372816 281474973689936 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 222744576 281474973691450 281474973691577 281474973691577 281474973691860 0
+2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 3140 3445 0 1 1 0 0 1 20 0 1 0 1083 2777088 599 18446744073709551615 4194304 6372816 281474930319344 0 0 0 0 4100 17474 1 0 0 17 0 0 0 0 0 0 6444872 6622064 23859200 281474930323002 281474930323129 281474930323129 281474930323412 0
 STAT_END
 EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2616/exe
 MNT_NS mnt:[4026532175]
@@ -625,7 +625,7 @@ OBS_real_FIRST_END
 OBS_real_SECOND_BEGIN
 PID 2616
 STAT_BEGIN
-2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 6029 6198 0 1 3 1 1 1 20 0 1 0 1078 2777088 591 18446744073709551615 4194304 6372816 281474973689936 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 222744576 281474973691450 281474973691577 281474973691577 281474973691860 0
+2616 (prepare_node_ho) S 2333 2333 2333 0 -1 4194560 6024 6162 0 1 2 1 1 2 20 0 1 0 1083 2777088 615 18446744073709551615 4194304 6372816 281474930319344 0 0 0 0 4100 17474 1 0 0 17 1 0 0 0 0 0 6444872 6622064 23859200 281474930323002 281474930323129 281474930323129 281474930323412 0
 STAT_END
 EXE 924b292847d4e4e8b04f4a6120180b382f366a41f970d035c93ee409d9be309a  /proc/2616/exe
 MNT_NS mnt:[4026532175]

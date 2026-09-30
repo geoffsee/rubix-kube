@@ -1,16 +1,40 @@
-   Compiling serde_core v1.0.228
    Compiling libc v0.2.189
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling proc-macro2 v1.0.107
+   Compiling pkg-config v0.3.34
+   Compiling quote v1.0.47
+   Compiling typenum v1.20.1
+   Compiling unicode-ident v1.0.26
+   Compiling serde_core v1.0.228
    Compiling crc32fast v1.5.2
+   Compiling zmij v1.0.23
+   Compiling cfg-if v1.0.5
+   Compiling zstd-safe v7.3.0
+   Compiling adler2 v2.0.1
    Compiling memchr v2.8.3
+   Compiling simd-adler32 v0.3.10
+   Compiling serde v1.0.228
    Compiling object v0.39.1
-   Compiling rubix-platform v0.1.0 (/private/tmp/rubix-node-constrained-worktree-20260928/crates/rubix-platform)
+   Compiling serde_json v1.0.151
+   Compiling miniz_oxide v0.9.1
+   Compiling itoa v1.0.18
+   Compiling rubix-platform v0.1.0 (/Volumes/safe-vol/workspace/archives/playground/rubix-kube-main/crates/rubix-platform)
+   Compiling hybrid-array v0.4.15
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling digest v0.11.3
+   Compiling flate2 v1.1.10
+   Compiling syn v2.0.119
+   Compiling serde_derive v1.0.228
+   Compiling jobserver v0.1.35
+   Compiling cc v1.5.1
    Compiling cpufeatures v0.3.1
    Compiling sha2 v0.11.0
-   Compiling flate2 v1.1.10
-   Compiling serde_json v1.0.151
-   Compiling serde v1.0.228
-   Compiling rubix-assets v0.1.0 (/private/tmp/rubix-node-constrained-worktree-20260928/crates/rubix-assets)
-    Finished `release` profile [optimized + debuginfo] target(s) in 8.03s
+   Compiling zstd-sys v2.1.0+zstd.1.5.7
+   Compiling zstd v0.13.3
+   Compiling rubix-assets v0.1.0 (/Volumes/safe-vol/workspace/archives/playground/rubix-kube-main/crates/rubix-assets)
+    Finished `release` profile [optimized + debuginfo] target(s) in 11.52s
      Running tests/elf_real.rs (target/release/deps/elf_real-cd444e63e2fb17a8)
 
 running 1 test

@@ -8,19 +8,19 @@ TEST_rubix_kube_BEGIN
 running 18 tests
 test host_container::platform::tests::mount_paths_decode_only_kernel_escapes_and_keep_bytes ... ok
 test host_container::platform::tests::mount_tree_requires_complete_bounded_unique_records ... ok
-test host_container::platform::tests::process_membership_accepts_unordered_duplicates_but_not_truncation_or_bad_tokens ... ok
 test host_container::platform::tests::mount_tree_rejects_missing_root_disconnected_cycles_and_depth_overflow ... ok
+test host_container::platform::tests::process_membership_accepts_unordered_duplicates_but_not_truncation_or_bad_tokens ... ok
 test host_container::tests::bulk_and_individual_failures_continue_with_truthful_partial_readback ... ok
+test host_container::tests::cancellation_during_failed_controller_write_retains_prior_effects ... ok
 test host_container::tests::cancellation_future_becoming_ready_between_effects_suppresses_next_effect ... ok
 test host_container::tests::cancellation_observed_during_v1_probe_precedes_completed_skip ... ok
-test host_container::tests::changed_context_stops_controller_fallback_and_readback ... ok
 test host_container::tests::controller_tokens_reject_operations_duplicates_and_bounds ... ok
+test host_container::tests::changed_context_stops_controller_fallback_and_readback ... ok
 test host_container::tests::initially_ready_cancellation_never_acquires_a_session ... ok
 test host_container::tests::lost_admission_on_final_observation_is_fatal ... ok
-test host_container::tests::migration_requires_observed_membership_before_delegation ... ok
 test host_container::tests::mount_failure_and_uncertain_readback_suppress_all_cgroups ... ok
+test host_container::tests::migration_requires_observed_membership_before_delegation ... ok
 test host_container::tests::only_positive_v1_skips_cgroup_operations ... ok
-test host_container::tests::cancellation_during_failed_controller_write_retains_prior_effects ... ok
 test host_container::tests::ordered_effects_use_independent_controller_readback ... ok
 test host_container::tests::successful_write_never_substitutes_for_failed_or_missing_readback ... ok
 test host_preflight::tests::owner_launch_failure_is_command_failure_but_unfinished_owner_is_uncertain ... ok
@@ -35,8 +35,8 @@ test fresh_backend_guard_failure_prevents_all_effects ... ok
 test external_runtime_still_prepares_container_after_network_warnings ... ok
 test initially_cancelled_combined_operation_never_performs_effects ... ok
 test network_cancellation_stops_before_container_and_retains_effects ... ok
-test resolved_noncontainer_mode_never_acquires_container_session ... ok
 test uncertain_network_owner_stops_before_container_and_retains_effects ... ok
+test resolved_noncontainer_mode_never_acquires_container_session ... ok
 
 test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
@@ -59,7 +59,7 @@ test unjoined_module_owner_stops_all_further_effects ... ok
 test write_failures_continue_to_all_controls_and_retain_possible_effects ... ok
 test cancellation_during_module_waits_for_stop_acknowledgement ... ok
 
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
 TEST_host_network_END
 CLI_version_BEGIN
