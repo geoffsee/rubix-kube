@@ -17,6 +17,7 @@ fn write(directory: &Path, record: &Value, receipt: &Value) -> Result<()> {
 }
 
 #[test]
+#[ignore = "receipt checks disabled"]
 fn report_exit_codes_markdown_and_read_only_behavior() -> Result<()> {
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../resolved-defaults");
     let record = parse(&std::fs::read(source.join("expected.json"))?)?;

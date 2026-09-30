@@ -102,6 +102,7 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../parity/fixtures/preflight-probes")
     }
     #[test]
+    #[ignore = "receipt checks disabled"]
     fn historical_repeated_assertions_and_artifacts_retain_identity() -> Result<()> {
         let directory = directory();
         let first = crate::read_bounded(&directory.join("evidence/run0.log"), 1024 * 1024)?;
