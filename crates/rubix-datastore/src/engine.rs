@@ -303,15 +303,28 @@ impl DatastoreEngine {
     fn read_snapshot(path: &Path) -> Result<(BTreeMap<String, KeyValue>, u64), DatastoreError> {
         let mut file = File::open(path)?;
         let mut magic = [0u8; 8];
-        if file.read_exact(&mut magic).is_err() || &magic != SNAPSHOT_MAGIC {
-            return Err(DatastoreError::Fatal(
-                "invalid snapshot magic header".into(),
-            ));
+        match file.read_exact(&mut magic) {
+            Ok(()) if &magic != SNAPSHOT_MAGIC => {
+                return Err(DatastoreError::Fatal(
+                    "invalid snapshot magic header".into(),
+                ));
+            },
+            Ok(()) => {},
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                return Err(DatastoreError::Fatal(
+                    "truncated snapshot magic header".into(),
+                ));
+            },
+            Err(e) => return Err(DatastoreError::Io(e)),
         }
 
         let mut rev_bytes = [0u8; 8];
-        if file.read_exact(&mut rev_bytes).is_err() {
-            return Err(DatastoreError::Fatal("truncated snapshot header".into()));
+        match file.read_exact(&mut rev_bytes) {
+            Ok(()) => {},
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                return Err(DatastoreError::Fatal("truncated snapshot header".into()));
+            },
+            Err(e) => return Err(DatastoreError::Io(e)),
         }
         let revision = u64::from_be_bytes(rev_bytes);
 
