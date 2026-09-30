@@ -40,6 +40,12 @@ pub enum ApiserverError {
 
     #[error("bad request: {message}")]
     BadRequest { message: String },
+
+    #[error("invalid input for {field}: {reason}")]
+    InvalidInput { field: String, reason: String },
+
+    #[error("internal server error: {reason}")]
+    Internal { reason: String },
 }
 
 impl ApiserverError {
@@ -54,7 +60,8 @@ impl ApiserverError {
             Self::Unauthorized { .. } => "apiserver-unauthorized",
             Self::NotFound { .. } => "apiserver-not-found",
             Self::Conflict { .. } => "apiserver-conflict",
-            Self::BadRequest { .. } => "apiserver-bad-request",
+            Self::BadRequest { .. } | Self::InvalidInput { .. } => "apiserver-bad-request",
+            Self::Internal { .. } => "apiserver-internal-error",
             Self::Io(_) => "apiserver-io-error",
             Self::Serialization(_) => "apiserver-serialization-error",
         }

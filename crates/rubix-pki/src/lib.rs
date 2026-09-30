@@ -12,6 +12,7 @@ pub mod kubeconfig;
 pub mod leaf;
 pub mod profile;
 pub mod rotate;
+pub mod token;
 
 #[derive(Debug)]
 pub enum PkiError {
@@ -20,6 +21,8 @@ pub enum PkiError {
     InvalidKey,
     InvalidCert,
     UnsafePath(String),
+    InvalidToken,
+    InvalidSignature,
 }
 
 impl std::error::Error for PkiError {}
@@ -175,7 +178,7 @@ pub fn validate_private_key_pem(bytes: &[u8]) -> Result<(), PkiError> {
     Ok(())
 }
 
-fn atomic_write(path: &Path, data: &[u8], mode: u32) -> Result<(), std::io::Error> {
+pub fn atomic_write(path: &Path, data: &[u8], mode: u32) -> Result<(), std::io::Error> {
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
     let mut temp = tempfile::Builder::new().tempfile_in(dir)?;
 
