@@ -1137,9 +1137,11 @@ dependencies = [
 name = "rubix-pki"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "pem",
  "pkcs8",
  "rcgen",
+ "sha2",
  "tempfile",
  "x509-parser",
 ]
