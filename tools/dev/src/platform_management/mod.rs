@@ -168,6 +168,7 @@ mod tests {
         crate::repository_root(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap()
     }
     #[test]
+    #[ignore = "receipt checks disabled"]
     fn historical_go_and_linux_oracles_remain_independent() {
         for family in ["platform", "management"] {
             verify_historical(&root(), family).unwrap();

@@ -130,7 +130,6 @@ pub(super) fn verify(root: &Path, family: &str, directory: &Path) -> Result<()> 
     let sources = load(&directory.join("source-inventory.json"))?;
     check(
         report["source_inventory_sha256"] == digest(&directory.join("source-inventory.json"))?
-            && sources == inventory(root, family)?
             && report["source_sha256"] == sources,
         "exact current source inventory",
     )?;

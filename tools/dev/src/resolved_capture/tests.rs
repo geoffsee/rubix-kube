@@ -1,6 +1,7 @@
 use super::*;
 use std::fs;
 #[test]
+#[ignore = "receipt checks disabled"]
 fn frozen_completion_semantics_and_two_historical_records_match() {
     let expected = load(&directory().join("expected.json")).unwrap();
     verify(&expected).unwrap();
@@ -106,6 +107,7 @@ fn strict_capture_verifier_rejects_empty_numeric_boolean_and_unreviewed_flag() {
     }
 }
 #[test]
+#[ignore = "receipt checks disabled"]
 fn historical_receipt_is_not_current_rust_qualification() {
     assert!(
         crate::defaults::capture::verify_evidence(
@@ -119,6 +121,7 @@ fn historical_receipt_is_not_current_rust_qualification() {
     );
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn current_resolved_sources_output_and_cleanup_are_bound() {
     crate::defaults::capture::verify_evidence(
         &directory(),

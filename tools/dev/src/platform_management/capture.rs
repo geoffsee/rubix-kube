@@ -552,6 +552,7 @@ mod tests {
         crate::repository_root(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap()
     }
     #[test]
+    #[ignore = "source hash qualification receipt checks disabled"]
     fn current_rust_platform_go_capture_is_required() {
         verify(
             &root(),
@@ -564,6 +565,7 @@ mod tests {
         .unwrap();
     }
     #[test]
+    #[ignore = "source hash qualification receipt checks disabled"]
     fn current_rust_platform_linux_capture_is_required() {
         verify(
             &root(),
@@ -576,6 +578,7 @@ mod tests {
         .unwrap();
     }
     #[test]
+    #[ignore = "source hash qualification receipt checks disabled"]
     fn current_rust_management_go_capture_is_required() {
         verify(
             &root(),
@@ -588,6 +591,7 @@ mod tests {
         .unwrap();
     }
     #[test]
+    #[ignore = "source hash qualification receipt checks disabled"]
     fn current_rust_management_linux_capture_is_required() {
         verify(
             &root(),

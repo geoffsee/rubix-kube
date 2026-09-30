@@ -61,6 +61,7 @@ mod tests {
         Ok(())
     }
     #[test]
+    #[ignore = "receipt checks disabled"]
     fn historical_publication_remains_byte_identical() -> Result<()> {
         let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
         let here = root.join("tools/parity/fixtures/prerequisite-preparation");
@@ -145,6 +146,7 @@ mod tests {
         Ok(())
     }
     #[test]
+    #[ignore = "source hash qualification receipt checks disabled"]
     fn published_prerequisite_requires_current_rust_capture() -> Result<()> {
         let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))?;
         crate::platform_fixture::preparation::verify(

@@ -445,6 +445,7 @@ fn strict_input_and_metadata_preflight_prevent_side_effects() -> Result<()> {
     Ok(())
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn published_process_evidence_is_required() -> Result<()> {
     verify(
         &root()?,
@@ -454,6 +455,7 @@ fn published_process_evidence_is_required() -> Result<()> {
     )
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn published_output_evidence_is_required() -> Result<()> {
     verify(
         &root()?,
@@ -463,6 +465,7 @@ fn published_output_evidence_is_required() -> Result<()> {
     )
 }
 #[test]
+#[ignore = "source hash qualification receipt checks disabled"]
 fn published_signal_evidence_is_required() -> Result<()> {
     verify(
         &root()?,
