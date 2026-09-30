@@ -303,6 +303,37 @@ async fn test_disposable_nested_runtime_fixture_unprivileged_read_only_sysfs() {
 }
 
 #[tokio::test]
+async fn test_disposable_nested_runtime_fixture_disallowed_host_mutations() {
+    let fixture = DisposableNestedRuntimeFixture::new();
+    fixture.setup_cgroup_v2(&["cpu", "memory"]);
+    fixture.setup_ipv6_sysctls("0");
+
+    let env = fixture
+        .container_environment()
+        .with_allow_host_mutations(false);
+    assert!(!env.allow_host_mutations());
+
+    let mount_status = env.prepare_mounts().unwrap();
+    assert_eq!(mount_status, MountPropagationStatus::SimulatedRshared);
+
+    let cgroup_status = env.prepare_cgroups(4321).unwrap();
+    assert_eq!(
+        cgroup_status,
+        CgroupSetupStatus::Simulated {
+            controllers: Vec::new(),
+            pid: 4321,
+        }
+    );
+    assert!(!fixture.cgroup_dir.join("init").exists());
+
+    let ipv6_status = env.disable_ipv6().unwrap();
+    assert_eq!(ipv6_status, Ipv6DisableStatus::AlreadyDisabled);
+    let sysctl_val =
+        fs::read_to_string(fixture.proc_ipv6_dir.join("all").join("disable_ipv6")).unwrap();
+    assert_eq!(sysctl_val.trim(), "0");
+}
+
+#[tokio::test]
 async fn test_nested_container_mode_rejects_static_cpu_manager() {
     let fixture = DisposableNestedRuntimeFixture::new();
     let node_ip: IpAddr = "192.0.2.60".parse().unwrap();

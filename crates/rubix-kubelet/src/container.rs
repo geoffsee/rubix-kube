@@ -85,9 +85,15 @@ impl ContainerEnvironment {
             root_path,
             cgroup_root,
             proc_sys_net_ipv6,
-            allow_host_mutations: false,
+            allow_host_mutations: true,
             simulated: true,
         }
+    }
+
+    #[must_use]
+    pub fn with_allow_host_mutations(mut self, allow: bool) -> Self {
+        self.allow_host_mutations = allow;
+        self
     }
 
     #[must_use]
@@ -167,6 +173,13 @@ impl ContainerEnvironment {
     /// - If cgroup v2, creates `<cgroup_root>/init`, moves `pid` into it via `cgroup.procs`,
     ///   and enables available controllers on `<cgroup_root>/cgroup.subtree_control`.
     pub fn prepare_cgroups(&self, pid: u32) -> Result<CgroupSetupStatus, KubeletError> {
+        if !self.allow_host_mutations {
+            return Ok(CgroupSetupStatus::Simulated {
+                controllers: Vec::new(),
+                pid,
+            });
+        }
+
         let controllers_file = self.cgroup_root.join("cgroup.controllers");
         if !controllers_file.exists() {
             return Ok(CgroupSetupStatus::SkippedNotV2);
@@ -201,30 +214,22 @@ impl ContainerEnvironment {
             return Err(KubeletError::Io(e));
         }
 
-        if !controllers.is_empty() {
-            let subtree_control = self.cgroup_root.join("cgroup.subtree_control");
-            let enable_str = controllers
-                .iter()
-                .map(|c| format!("+{c}"))
-                .collect::<Vec<_>>()
-                .join(" ");
-
-            if let Err(e) = fs::write(&subtree_control, &enable_str) {
-                // If bulk write fails, attempt one by one
-                if e.kind() == std::io::ErrorKind::PermissionDenied {
-                    return Ok(CgroupSetupStatus::SkippedPermissionDenied);
-                }
-                for c in &controllers {
-                    let single = format!("+{c}\n");
-                    let _ = fs::write(&subtree_control, single);
-                }
-            }
-        }
+        let subtree_control = self.cgroup_root.join("cgroup.subtree_control");
+        let enabled_controllers = match enable_subtree_controllers(&subtree_control, &controllers) {
+            Ok(c) => c,
+            Err(status) => return Ok(status),
+        };
 
         if self.simulated {
-            Ok(CgroupSetupStatus::Simulated { controllers, pid })
+            Ok(CgroupSetupStatus::Simulated {
+                controllers: enabled_controllers,
+                pid,
+            })
         } else {
-            Ok(CgroupSetupStatus::Configured { controllers, pid })
+            Ok(CgroupSetupStatus::Configured {
+                controllers: enabled_controllers,
+                pid,
+            })
         }
     }
 
@@ -233,6 +238,10 @@ impl ContainerEnvironment {
     /// Applies to `all`, `default`, and `lo` sub-interfaces under `/proc/sys/net/ipv6/conf`.
     /// Missing paths or permission errors in constrained/unprivileged containers are ignored gracefully.
     pub fn disable_ipv6(&self) -> Result<Ipv6DisableStatus, KubeletError> {
+        if !self.allow_host_mutations {
+            return Ok(Ipv6DisableStatus::AlreadyDisabled);
+        }
+
         let targets = ["all", "default", "lo"];
         let mut modified = Vec::new();
         let mut all_already_disabled = true;
@@ -280,5 +289,37 @@ impl ContainerEnvironment {
         } else {
             Ok(Ipv6DisableStatus::SkippedNotFound)
         }
+    }
+}
+
+fn enable_subtree_controllers(
+    subtree_control: &Path,
+    controllers: &[String],
+) -> Result<Vec<String>, CgroupSetupStatus> {
+    if controllers.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let enable_str = controllers
+        .iter()
+        .map(|c| format!("+{c}"))
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    match fs::write(subtree_control, &enable_str) {
+        Ok(()) => Ok(controllers.to_vec()),
+        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+            Err(CgroupSetupStatus::SkippedPermissionDenied)
+        },
+        Err(_) => {
+            let mut enabled = Vec::new();
+            for c in controllers {
+                let single = format!("+{c}\n");
+                if fs::write(subtree_control, single).is_ok() {
+                    enabled.push(c.clone());
+                }
+            }
+            Ok(enabled)
+        },
     }
 }
