@@ -1083,6 +1083,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rubix-containerd"
+version = "0.1.0"
+dependencies = [
+ "rubix-config",
+ "rubix-platform",
+ "rubix-supervisor",
+ "rustix",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml",
+]
+
+[[package]]
 name = "rubix-containerd-api"
 version = "0.1.0"
 dependencies = [
