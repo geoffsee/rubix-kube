@@ -239,6 +239,10 @@ pub fn verify_certificate_chain(
     cert.verify_signature(Some(ca_cert.public_key()))
         .map_err(|_| PkiError::InvalidSignature)?;
 
+    if !cert.validity().is_valid() || !ca_cert.validity().is_valid() {
+        return Err(PkiError::InvalidCert);
+    }
+
     let mut common_name = String::new();
     for rdn in cert.subject().iter_rdn() {
         for attr in rdn.iter() {

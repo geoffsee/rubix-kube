@@ -383,7 +383,7 @@ async fn test_webhook_failure_policy_fail_vs_ignore() {
     let ca_bundle = rubix_pki::base64_encode(ca_pem.as_bytes());
 
     service.admission().register_webhook_endpoint(
-        "failing-endpoint",
+        "failing.webhook.local",
         Arc::new(FailingWebhookHandler),
         Some(server_pem),
     );
@@ -426,10 +426,13 @@ async fn test_webhook_failure_policy_fail_vs_ignore() {
     });
 
     let res_fail = admin.create_pod("default", pod_a).await;
-    assert!(
-        matches!(res_fail, Err(ApiserverError::WebhookFailure { .. })),
-        "Webhook failure under FailurePolicy::Fail must reject request with WebhookFailure"
-    );
+    match res_fail {
+        Err(ApiserverError::WebhookFailure { reason, .. }) => assert!(
+            reason.contains("503 Service Unavailable"),
+            "expected handler failure, got: {reason}"
+        ),
+        other => panic!("expected WebhookFailure, got: {other:?}"),
+    }
 
     // Case 2: FailurePolicy::Ignore
     let config_ignore = ValidatingWebhookConfiguration {
