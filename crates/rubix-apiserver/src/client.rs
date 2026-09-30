@@ -1,10 +1,14 @@
 use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use serde_json::{Value, json};
 
 use rubix_datastore::WatchReceiver;
 
+use crate::admission::{
+    AdmissionEngine, AdmissionRequest, GroupVersionKind, GroupVersionResource, UserInfo,
+};
+use crate::aggregation::{APIService, AggregatedRequestContext, AggregationManager};
 use crate::config::ApiserverConfig;
 use crate::error::ApiserverError;
 use crate::rbac::{
@@ -29,16 +33,35 @@ pub enum ClientIdentity {
         username: String,
         groups: Vec<String>,
     },
+    FrontProxy {
+        client_cert_pem: String,
+        username: String,
+        groups: Vec<String>,
+    },
     Anonymous,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct KubernetesApiClient {
     storage: KubernetesStorage,
     identity: ClientIdentity,
     rbac: Arc<RbacAuthorizer>,
     token_service: Option<Arc<TokenService>>,
+    admission: Arc<AdmissionEngine>,
+    aggregation: Arc<AggregationManager>,
+    crd_registry: Arc<RwLock<BTreeMap<String, Value>>>,
     anonymous_auth_allowed: bool,
+    request_header_ca_file: std::path::PathBuf,
+    request_header_allowed_names: Vec<String>,
+}
+
+impl std::fmt::Debug for KubernetesApiClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("KubernetesApiClient")
+            .field("identity", &self.identity)
+            .field("anonymous_auth_allowed", &self.anonymous_auth_allowed)
+            .finish()
+    }
 }
 
 impl KubernetesApiClient {
@@ -47,6 +70,9 @@ impl KubernetesApiClient {
         identity: ClientIdentity,
         rbac: Arc<RbacAuthorizer>,
         token_service: Option<Arc<TokenService>>,
+        admission: Arc<AdmissionEngine>,
+        aggregation: Arc<AggregationManager>,
+        crd_registry: Arc<RwLock<BTreeMap<String, Value>>>,
         config: &ApiserverConfig,
     ) -> Self {
         Self {
@@ -54,13 +80,70 @@ impl KubernetesApiClient {
             identity,
             rbac,
             token_service,
+            admission,
+            aggregation,
+            crd_registry,
             anonymous_auth_allowed: config.anonymous_auth,
+            request_header_ca_file: config.request_header_ca_file.clone(),
+            request_header_allowed_names: vec!["system:auth-proxy".to_string()],
         }
     }
 
     #[must_use]
     pub fn identity(&self) -> &ClientIdentity {
         &self.identity
+    }
+
+    pub fn admission(&self) -> &Arc<AdmissionEngine> {
+        &self.admission
+    }
+
+    pub fn aggregation(&self) -> &Arc<AggregationManager> {
+        &self.aggregation
+    }
+
+    fn current_user_info(&self) -> UserInfo {
+        match &self.identity {
+            ClientIdentity::AdminCertificate => UserInfo {
+                username: "system:admin".to_string(),
+                uid: None,
+                groups: vec![
+                    "system:masters".to_string(),
+                    "system:authenticated".to_string(),
+                ],
+            },
+            ClientIdentity::BearerToken(_) => UserInfo {
+                username: "system:serviceaccount:default:token".to_string(),
+                uid: None,
+                groups: vec![
+                    "system:serviceaccounts".to_string(),
+                    "system:authenticated".to_string(),
+                ],
+            },
+            ClientIdentity::ServiceAccount { namespace, name } => UserInfo {
+                username: format!("system:serviceaccount:{namespace}:{name}"),
+                uid: None,
+                groups: vec![
+                    "system:serviceaccounts".to_string(),
+                    format!("system:serviceaccounts:{namespace}"),
+                    "system:authenticated".to_string(),
+                ],
+            },
+            ClientIdentity::User { username, groups }
+            | ClientIdentity::RestrictedUser { username, groups }
+            | ClientIdentity::FrontProxy {
+                username, groups, ..
+            } => UserInfo {
+                username: username.clone(),
+                uid: None,
+                groups: groups.clone(),
+            },
+            ClientIdentity::Anonymous => UserInfo {
+                username: "system:anonymous".to_string(),
+                uid: None,
+                groups: vec!["system:unauthenticated".to_string()],
+            },
+        }
     }
 
     fn check_rbac_permission(&self, req: &AuthzRequest<'_>) -> Result<(), ApiserverError> {
@@ -164,6 +247,55 @@ impl KubernetesApiClient {
                     reason: format!("user '{username}' is forbidden from {verb} on {resource}"),
                 })
             },
+            ClientIdentity::FrontProxy {
+                client_cert_pem,
+                username,
+                groups,
+            } => {
+                if !self.request_header_ca_file.exists() {
+                    return Err(ApiserverError::InvalidCredentials {
+                        reason: format!(
+                            "request-header CA file not found at {}",
+                            self.request_header_ca_file.display()
+                        ),
+                    });
+                }
+                let ca_pem =
+                    std::fs::read_to_string(&self.request_header_ca_file).map_err(|e| {
+                        ApiserverError::InvalidCredentials {
+                            reason: format!("failed to read request-header CA: {e}"),
+                        }
+                    })?;
+
+                let id =
+                    rubix_pki::verify_certificate_chain(client_cert_pem, &ca_pem).map_err(|e| {
+                        ApiserverError::Unauthenticated {
+                            reason: format!(
+                                "front-proxy client certificate rejected by request-header CA: {e}"
+                            ),
+                        }
+                    })?;
+
+                let allowed = self
+                    .request_header_allowed_names
+                    .iter()
+                    .any(|allowed_name| id.matches(allowed_name));
+
+                if !allowed {
+                    return Err(ApiserverError::Unauthenticated {
+                        reason: format!(
+                            "front-proxy client certificate identity '{}' not in allowed names {:?}",
+                            id.common_name, self.request_header_allowed_names
+                        ),
+                    });
+                }
+
+                self.check_rbac_permission(&AuthzRequest {
+                    username,
+                    groups,
+                    ..base_req
+                })
+            },
             ClientIdentity::Anonymous => {
                 if self.anonymous_auth_allowed {
                     let groups = vec!["system:unauthenticated".to_string()];
@@ -229,50 +361,217 @@ impl KubernetesApiClient {
 
     pub fn discover_apis(&self) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("get", "", "discovery", None, None)?;
+        let mut groups = vec![
+            json!({
+                "name": "apps",
+                "versions": [
+                    { "groupVersion": "apps/v1", "version": "v1" }
+                ],
+                "preferredVersion": { "groupVersion": "apps/v1", "version": "v1" }
+            }),
+            json!({
+                "name": "apiextensions.k8s.io",
+                "versions": [
+                    { "groupVersion": "apiextensions.k8s.io/v1", "version": "v1" }
+                ],
+                "preferredVersion": { "groupVersion": "apiextensions.k8s.io/v1", "version": "v1" }
+            }),
+            json!({
+                "name": "rbac.authorization.k8s.io",
+                "versions": [
+                    { "groupVersion": "rbac.authorization.k8s.io/v1", "version": "v1" }
+                ],
+                "preferredVersion": { "groupVersion": "rbac.authorization.k8s.io/v1", "version": "v1" }
+            }),
+            json!({
+                "name": "admissionregistration.k8s.io",
+                "versions": [
+                    { "groupVersion": "admissionregistration.k8s.io/v1", "version": "v1" }
+                ],
+                "preferredVersion": { "groupVersion": "admissionregistration.k8s.io/v1", "version": "v1" }
+            }),
+            json!({
+                "name": "apiregistration.k8s.io",
+                "versions": [
+                    { "groupVersion": "apiregistration.k8s.io/v1", "version": "v1" }
+                ],
+                "preferredVersion": { "groupVersion": "apiregistration.k8s.io/v1", "version": "v1" }
+            }),
+        ];
+
+        // Dynamically add CRD groups
+        let crd_guard = self.crd_registry.read().unwrap();
+        for crd in crd_guard.values() {
+            if let Some(spec) = crd.get("spec")
+                && let Some(group) = spec.get("group").and_then(Value::as_str)
+            {
+                if groups
+                    .iter()
+                    .any(|g| g.get("name").and_then(Value::as_str) == Some(group))
+                {
+                    continue;
+                }
+
+                let mut versions = Vec::new();
+                if let Some(vers) = spec.get("versions").and_then(Value::as_array) {
+                    for v in vers {
+                        if let Some(v_name) = v.get("name").and_then(Value::as_str) {
+                            versions.push(json!({
+                                "groupVersion": format!("{group}/{v_name}"),
+                                "version": v_name
+                            }));
+                        }
+                    }
+                }
+                if versions.is_empty() {
+                    versions.push(json!({
+                        "groupVersion": format!("{group}/v1"),
+                        "version": "v1"
+                    }));
+                }
+
+                let pref = versions.first().cloned().unwrap_or(json!({}));
+                groups.push(json!({
+                    "name": group,
+                    "versions": versions,
+                    "preferredVersion": pref
+                }));
+            }
+        }
+
+        // Dynamically add APIService groups
+        for api_service in self.aggregation.list_api_services() {
+            let group = &api_service.spec.group;
+            let version = &api_service.spec.version;
+            if !groups
+                .iter()
+                .any(|g| g.get("name").and_then(Value::as_str) == Some(group.as_str()))
+            {
+                groups.push(json!({
+                    "name": group,
+                    "versions": [
+                        { "groupVersion": format!("{group}/{version}"), "version": version }
+                    ],
+                    "preferredVersion": { "groupVersion": format!("{group}/{version}"), "version": version }
+                }));
+            }
+        }
+
         Ok(json!({
             "kind": "APIGroupList",
             "apiVersion": "v1",
-            "groups": [
-                {
-                    "name": "apps",
-                    "versions": [
-                        {
-                            "groupVersion": "apps/v1",
-                            "version": "v1"
-                        }
-                    ],
-                    "preferredVersion": {
-                        "groupVersion": "apps/v1",
-                        "version": "v1"
-                    }
-                },
-                {
-                    "name": "apiextensions.k8s.io",
-                    "versions": [
-                        {
-                            "groupVersion": "apiextensions.k8s.io/v1",
-                            "version": "v1"
-                        }
-                    ],
-                    "preferredVersion": {
-                        "groupVersion": "apiextensions.k8s.io/v1",
-                        "version": "v1"
-                    }
-                },
-                {
-                    "name": "rbac.authorization.k8s.io",
-                    "versions": [
-                        {
-                            "groupVersion": "rbac.authorization.k8s.io/v1",
-                            "version": "v1"
-                        }
-                    ],
-                    "preferredVersion": {
-                        "groupVersion": "rbac.authorization.k8s.io/v1",
-                        "version": "v1"
-                    }
+            "groups": groups
+        }))
+    }
+
+    pub fn discover_group_resources(
+        &self,
+        group: &str,
+        version: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "", "discovery", None, None)?;
+
+        let gv = format!("{group}/{version}");
+        let mut resources = Vec::new();
+
+        match (group, version) {
+            ("apiextensions.k8s.io", "v1") => {
+                resources.push(json!({
+                    "name": "customresourcedefinitions",
+                    "singularName": "customresourcedefinition",
+                    "namespaced": false,
+                    "kind": "CustomResourceDefinition",
+                    "verbs": ["create", "delete", "get", "list", "watch"]
+                }));
+            },
+            ("admissionregistration.k8s.io", "v1") => {
+                resources.push(json!({
+                    "name": "validatingwebhookconfigurations",
+                    "singularName": "validatingwebhookconfiguration",
+                    "namespaced": false,
+                    "kind": "ValidatingWebhookConfiguration",
+                    "verbs": ["create", "delete", "get", "list", "watch"]
+                }));
+                resources.push(json!({
+                    "name": "mutatingwebhookconfigurations",
+                    "singularName": "mutatingwebhookconfiguration",
+                    "namespaced": false,
+                    "kind": "MutatingWebhookConfiguration",
+                    "verbs": ["create", "delete", "get", "list", "watch"]
+                }));
+            },
+            ("apiregistration.k8s.io", "v1") => {
+                resources.push(json!({
+                    "name": "apiservices",
+                    "singularName": "apiservice",
+                    "namespaced": false,
+                    "kind": "APIService",
+                    "verbs": ["create", "delete", "get", "list", "watch"]
+                }));
+            },
+            ("apps", "v1") => {
+                resources.push(json!({
+                    "name": "deployments",
+                    "singularName": "deployment",
+                    "namespaced": true,
+                    "kind": "Deployment",
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                }));
+            },
+            _ => {},
+        }
+
+        // Check CRDs
+        let crd_guard = self.crd_registry.read().unwrap();
+        for crd in crd_guard.values() {
+            if let Some(spec) = crd.get("spec")
+                && spec.get("group").and_then(Value::as_str) == Some(group)
+            {
+                let version_match = spec.get("versions").and_then(Value::as_array).map_or(
+                    version == "v1",
+                    |vers| {
+                        vers.iter()
+                            .any(|v| v.get("name").and_then(Value::as_str) == Some(version))
+                    },
+                );
+
+                if version_match {
+                    let plural = spec
+                        .get("names")
+                        .and_then(|n| n.get("plural"))
+                        .and_then(Value::as_str)
+                        .unwrap_or("customresources");
+                    let singular = spec
+                        .get("names")
+                        .and_then(|n| n.get("singular"))
+                        .and_then(Value::as_str)
+                        .unwrap_or("customresource");
+                    let kind = spec
+                        .get("names")
+                        .and_then(|n| n.get("kind"))
+                        .and_then(Value::as_str)
+                        .unwrap_or("CustomResource");
+                    let scope = spec
+                        .get("scope")
+                        .and_then(Value::as_str)
+                        .unwrap_or("Namespaced");
+
+                    resources.push(json!({
+                        "name": plural,
+                        "singularName": singular,
+                        "namespaced": scope == "Namespaced",
+                        "kind": kind,
+                        "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                    }));
                 }
-            ]
+            }
+        }
+
+        Ok(json!({
+            "kind": "APIResourceList",
+            "apiVersion": "v1",
+            "groupVersion": gv,
+            "resources": resources
         }))
     }
 
@@ -374,7 +673,7 @@ impl KubernetesApiClient {
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("create", "", "configmaps", Some(namespace), Some(name))?;
         let key = format!("{}/configmaps/{namespace}/{name}", self.storage.prefix());
-        let doc = json!({
+        let mut doc = json!({
             "apiVersion": "v1",
             "kind": "ConfigMap",
             "metadata": {
@@ -384,6 +683,34 @@ impl KubernetesApiClient {
             },
             "data": data
         });
+
+        // Admission reviews
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{}", self.storage.current_revision().await + 1),
+            kind: GroupVersionKind {
+                group: "".to_string(),
+                version: "v1".to_string(),
+                kind: "ConfigMap".to_string(),
+            },
+            resource: GroupVersionResource {
+                group: "".to_string(),
+                version: "v1".to_string(),
+                resource: "configmaps".to_string(),
+            },
+            name: Some(name.to_string()),
+            namespace: Some(namespace.to_string()),
+            operation: "CREATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(doc.clone()),
+            old_object: None,
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        self.admission.run_validating_admission(&adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            doc = obj;
+        }
+
         let bytes = serde_json::to_vec(&doc)?;
         let kv = self.storage.create(&key, bytes).await?;
         let mut result = doc;
@@ -495,6 +822,134 @@ impl KubernetesApiClient {
         Ok(())
     }
 
+    // --- Pod CRUD with Admission ---
+
+    pub async fn create_pod(
+        &self,
+        namespace: &str,
+        mut pod: Value,
+    ) -> Result<Value, ApiserverError> {
+        let name = pod
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "Pod requires metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed("create", "", "pods", Some(namespace), Some(&name))?;
+
+        if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("namespace".to_string(), json!(namespace));
+            if !meta.contains_key("creationTimestamp") {
+                meta.insert(
+                    "creationTimestamp".to_string(),
+                    json!("2026-09-30T00:00:00Z"),
+                );
+            }
+        }
+
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{}", self.storage.current_revision().await + 1),
+            kind: GroupVersionKind {
+                group: "".to_string(),
+                version: "v1".to_string(),
+                kind: "Pod".to_string(),
+            },
+            resource: GroupVersionResource {
+                group: "".to_string(),
+                version: "v1".to_string(),
+                resource: "pods".to_string(),
+            },
+            name: Some(name.clone()),
+            namespace: Some(namespace.to_string()),
+            operation: "CREATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(pod.clone()),
+            old_object: None,
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        self.admission.run_validating_admission(&adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            pod = obj;
+        }
+
+        let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
+        let bytes = serde_json::to_vec(&pod)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = pod;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_pod(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "", "pods", Some(namespace), Some(name))?;
+        let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "pods".to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    pub async fn list_pods(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "", "pods", Some(namespace), None)?;
+        let prefix = format!("{}/pods/{namespace}/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "v1",
+            "kind": "PodList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn delete_pod(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.check_auth_detailed("delete", "", "pods", Some(namespace), Some(name))?;
+        let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "pods".to_string(),
+                name: format!("{namespace}/{name}"),
+            });
+        }
+        Ok(())
+    }
+
     // --- CustomResourceDefinition CRUD ---
 
     pub async fn create_crd(&self, crd: Value) -> Result<Value, ApiserverError> {
@@ -505,14 +960,15 @@ impl KubernetesApiClient {
             .ok_or_else(|| ApiserverError::InvalidInput {
                 field: "metadata.name".to_string(),
                 reason: "CustomResourceDefinition requires metadata.name".to_string(),
-            })?;
+            })?
+            .to_string();
 
         self.check_auth_detailed(
             "create",
             "apiextensions.k8s.io",
             "customresourcedefinitions",
             None,
-            Some(name),
+            Some(&name),
         )?;
 
         let key = format!("{}/customresourcedefinitions/{name}", self.storage.prefix());
@@ -525,6 +981,10 @@ impl KubernetesApiClient {
                 json!(kv.mod_revision.to_string()),
             );
         }
+        self.crd_registry
+            .write()
+            .unwrap()
+            .insert(name.to_string(), result.clone());
         Ok(result)
     }
 
@@ -603,10 +1063,177 @@ impl KubernetesApiClient {
                 name: name.to_string(),
             });
         }
+        let crd_opt = self.crd_registry.write().unwrap().remove(name);
+        if let Some(crd) = crd_opt
+            && let Some(spec) = crd.get("spec")
+            && let Some(group) = spec.get("group").and_then(Value::as_str)
+            && let Some(plural) = spec
+                .get("names")
+                .and_then(|n| n.get("plural"))
+                .and_then(Value::as_str)
+        {
+            let instances_prefix = format!("{}/{group}/{plural}/", self.storage.prefix());
+            let instances = self.storage.list(&instances_prefix).await?;
+            for inst in instances {
+                let _ = self.storage.delete(&inst.key, None).await?;
+            }
+        }
         Ok(())
     }
 
-    // --- Dynamic Custom Resources ---
+    // --- Dynamic Custom Resources & Schema Validation ---
+
+    fn value_type_name(v: &Value) -> &'static str {
+        match v {
+            Value::Null => "null",
+            Value::Bool(_) => "boolean",
+            Value::Number(n) => {
+                if n.is_i64() || n.is_u64() {
+                    "integer"
+                } else {
+                    "number"
+                }
+            },
+            Value::String(_) => "string",
+            Value::Array(_) => "array",
+            Value::Object(_) => "object",
+        }
+    }
+
+    pub fn validate_json_schema(
+        schema: &Value,
+        data: &Value,
+        path: &str,
+    ) -> Result<(), ApiserverError> {
+        // 1. type check
+        if let Some(expected_type) = schema.get("type").and_then(Value::as_str) {
+            let matches = match expected_type {
+                "object" => data.is_object(),
+                "array" => data.is_array(),
+                "string" => data.is_string(),
+                "integer" => data.is_i64() || data.is_u64(),
+                "number" => data.is_number(),
+                "boolean" => data.is_boolean(),
+                _ => true,
+            };
+            if !matches {
+                return Err(ApiserverError::InvalidInput {
+                    field: path.to_string(),
+                    reason: format!(
+                        "expected type '{expected_type}', found {}",
+                        Self::value_type_name(data)
+                    ),
+                });
+            }
+        }
+
+        // 2. enum check
+        if let Some(enum_vals) = schema.get("enum").and_then(Value::as_array) {
+            if !enum_vals.contains(data) {
+                return Err(ApiserverError::InvalidInput {
+                    field: path.to_string(),
+                    reason: format!("value '{data}' is not in allowed enum values: {enum_vals:?}"),
+                });
+            }
+        }
+
+        // 3. numeric limits
+        if let Some(min) = schema.get("minimum").and_then(Value::as_f64) {
+            if let Some(val) = data.as_f64() {
+                if val < min {
+                    return Err(ApiserverError::InvalidInput {
+                        field: path.to_string(),
+                        reason: format!("value {val} is less than minimum {min}"),
+                    });
+                }
+            }
+        }
+        if let Some(max) = schema.get("maximum").and_then(Value::as_f64) {
+            if let Some(val) = data.as_f64() {
+                if val > max {
+                    return Err(ApiserverError::InvalidInput {
+                        field: path.to_string(),
+                        reason: format!("value {val} is greater than maximum {max}"),
+                    });
+                }
+            }
+        }
+
+        // 4. object validation: required and properties
+        if let Some(map) = data.as_object() {
+            if let Some(required) = schema.get("required").and_then(Value::as_array) {
+                for req in required {
+                    if let Some(prop_name) = req.as_str() {
+                        if !map.contains_key(prop_name) {
+                            let field_path = if path.is_empty() {
+                                prop_name.to_string()
+                            } else {
+                                format!("{path}.{prop_name}")
+                            };
+                            return Err(ApiserverError::InvalidInput {
+                                field: field_path,
+                                reason: format!("missing required field '{prop_name}'"),
+                            });
+                        }
+                    }
+                }
+            }
+            if let Some(props) = schema.get("properties").and_then(Value::as_object) {
+                for (prop_name, prop_val) in map {
+                    if let Some(prop_schema) = props.get(prop_name) {
+                        let next_path = if path.is_empty() {
+                            prop_name.clone()
+                        } else {
+                            format!("{path}.{prop_name}")
+                        };
+                        Self::validate_json_schema(prop_schema, prop_val, &next_path)?;
+                    }
+                }
+            }
+        }
+
+        // 5. array validation: items
+        if let Some(arr) = data.as_array() {
+            if let Some(item_schema) = schema.get("items") {
+                for (idx, item) in arr.iter().enumerate() {
+                    Self::validate_json_schema(item_schema, item, &format!("{path}[{idx}]"))?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_crd_instance_schema(
+        crd_registry: &Arc<RwLock<BTreeMap<String, Value>>>,
+        group: &str,
+        plural: &str,
+        resource: &Value,
+    ) -> Result<(), ApiserverError> {
+        let registry = crd_registry.read().unwrap();
+        for crd in registry.values() {
+            if let Some(spec) = crd.get("spec") {
+                let spec_group = spec.get("group").and_then(Value::as_str);
+                let spec_plural = spec
+                    .get("names")
+                    .and_then(|n| n.get("plural"))
+                    .and_then(Value::as_str);
+                if spec_group == Some(group) && spec_plural == Some(plural) {
+                    if let Some(versions) = spec.get("versions").and_then(Value::as_array) {
+                        for ver in versions {
+                            if let Some(schema) =
+                                ver.get("schema").and_then(|s| s.get("openAPIV3Schema"))
+                            {
+                                Self::validate_json_schema(schema, resource, "")?;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
 
     pub async fn create_custom_resource(
         &self,
@@ -614,9 +1241,42 @@ impl KubernetesApiClient {
         plural: &str,
         namespace: &str,
         name: &str,
-        resource: Value,
+        mut resource: Value,
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("create", group, plural, Some(namespace), Some(name))?;
+
+        // Admission reviews
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{}", self.storage.current_revision().await + 1),
+            kind: GroupVersionKind {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                kind: plural.to_string(),
+            },
+            resource: GroupVersionResource {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                resource: plural.to_string(),
+            },
+            name: Some(name.to_string()),
+            namespace: Some(namespace.to_string()),
+            operation: "CREATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(resource.clone()),
+            old_object: None,
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            resource = obj.clone();
+            adm_req.object = Some(obj);
+        }
+
+        // CRD OpenAPI v3 schema validation
+        Self::validate_crd_instance_schema(&self.crd_registry, group, plural, &resource)?;
+
+        self.admission.run_validating_admission(&adm_req).await?;
+
         let key = format!(
             "{}/{group}/{plural}/{namespace}/{name}",
             self.storage.prefix()
@@ -661,6 +1321,512 @@ impl KubernetesApiClient {
             );
         }
         Ok(doc)
+    }
+
+    pub async fn update_custom_resource(
+        &self,
+        group: &str,
+        plural: &str,
+        namespace: &str,
+        name: &str,
+        mut resource: Value,
+        expected_version: Option<u64>,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("update", group, plural, Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/{group}/{plural}/{namespace}/{name}",
+            self.storage.prefix()
+        );
+
+        let old_bytes = self.storage.get(&key).await?;
+        let old_obj: Option<Value> = old_bytes.and_then(|b| serde_json::from_slice(&b.value).ok());
+
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{}", self.storage.current_revision().await + 1),
+            kind: GroupVersionKind {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                kind: plural.to_string(),
+            },
+            resource: GroupVersionResource {
+                group: group.to_string(),
+                version: "v1".to_string(),
+                resource: plural.to_string(),
+            },
+            name: Some(name.to_string()),
+            namespace: Some(namespace.to_string()),
+            operation: "UPDATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(resource.clone()),
+            old_object: old_obj,
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            resource = obj.clone();
+            adm_req.object = Some(obj);
+        }
+
+        // CRD OpenAPI v3 schema validation
+        Self::validate_crd_instance_schema(&self.crd_registry, group, plural, &resource)?;
+
+        self.admission.run_validating_admission(&adm_req).await?;
+
+        let bytes = serde_json::to_vec(&resource)?;
+        let kv = self.storage.update(&key, bytes, expected_version).await?;
+        let mut result = resource;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn list_custom_resources(
+        &self,
+        group: &str,
+        plural: &str,
+        namespace: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", group, plural, Some(namespace), None)?;
+        let prefix = format!("{}/{group}/{plural}/{namespace}/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": format!("{group}/v1"),
+            "kind": format!("{plural}List"),
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn delete_custom_resource(
+        &self,
+        group: &str,
+        plural: &str,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.check_auth_detailed("delete", group, plural, Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/{group}/{plural}/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: plural.to_string(),
+                name: format!("{namespace}/{name}"),
+            });
+        }
+        Ok(())
+    }
+
+    // --- Webhook Configurations CRUD ---
+
+    pub async fn create_validating_webhook_configuration(
+        &self,
+        config: Value,
+    ) -> Result<Value, ApiserverError> {
+        let name = config
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "ValidatingWebhookConfiguration requires metadata.name".to_string(),
+            })?;
+
+        self.check_auth_detailed(
+            "create",
+            "admissionregistration.k8s.io",
+            "validatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+
+        let typed: crate::admission::ValidatingWebhookConfiguration =
+            serde_json::from_value(config.clone())?;
+        self.admission.add_validating_webhook_config(typed);
+
+        let key = format!(
+            "{}/validatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let bytes = serde_json::to_vec(&config)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = config;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_validating_webhook_configuration(
+        &self,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "get",
+            "admissionregistration.k8s.io",
+            "validatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+        let key = format!(
+            "{}/validatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "validatingwebhookconfigurations".to_string(),
+                name: name.to_string(),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    pub async fn list_validating_webhook_configurations(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "list",
+            "admissionregistration.k8s.io",
+            "validatingwebhookconfigurations",
+            None,
+            None,
+        )?;
+        let prefix = format!("{}/validatingwebhookconfigurations/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "admissionregistration.k8s.io/v1",
+            "kind": "ValidatingWebhookConfigurationList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn delete_validating_webhook_configuration(
+        &self,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.check_auth_detailed(
+            "delete",
+            "admissionregistration.k8s.io",
+            "validatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+        let key = format!(
+            "{}/validatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "validatingwebhookconfigurations".to_string(),
+                name: name.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    pub async fn create_mutating_webhook_configuration(
+        &self,
+        config: Value,
+    ) -> Result<Value, ApiserverError> {
+        let name = config
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "MutatingWebhookConfiguration requires metadata.name".to_string(),
+            })?;
+
+        self.check_auth_detailed(
+            "create",
+            "admissionregistration.k8s.io",
+            "mutatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+
+        let typed: crate::admission::MutatingWebhookConfiguration =
+            serde_json::from_value(config.clone())?;
+        self.admission.add_mutating_webhook_config(typed);
+
+        let key = format!(
+            "{}/mutatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let bytes = serde_json::to_vec(&config)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = config;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_mutating_webhook_configuration(
+        &self,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "get",
+            "admissionregistration.k8s.io",
+            "mutatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+        let key = format!(
+            "{}/mutatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "mutatingwebhookconfigurations".to_string(),
+                name: name.to_string(),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    pub async fn list_mutating_webhook_configurations(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "list",
+            "admissionregistration.k8s.io",
+            "mutatingwebhookconfigurations",
+            None,
+            None,
+        )?;
+        let prefix = format!("{}/mutatingwebhookconfigurations/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "admissionregistration.k8s.io/v1",
+            "kind": "MutatingWebhookConfigurationList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn delete_mutating_webhook_configuration(
+        &self,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.check_auth_detailed(
+            "delete",
+            "admissionregistration.k8s.io",
+            "mutatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+        let key = format!(
+            "{}/mutatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "mutatingwebhookconfigurations".to_string(),
+                name: name.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    // --- Aggregated APIService CRUD & Dispatch ---
+
+    pub async fn create_api_service(&self, service: Value) -> Result<Value, ApiserverError> {
+        let name = service
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "APIService requires metadata.name".to_string(),
+            })?;
+
+        self.check_auth_detailed(
+            "create",
+            "apiregistration.k8s.io",
+            "apiservices",
+            None,
+            Some(name),
+        )?;
+
+        let typed: APIService = serde_json::from_value(service.clone())?;
+        self.aggregation.register_api_service(typed);
+
+        let key = format!("{}/apiservices/{name}", self.storage.prefix());
+        let bytes = serde_json::to_vec(&service)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = service;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_api_service(&self, name: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "get",
+            "apiregistration.k8s.io",
+            "apiservices",
+            None,
+            Some(name),
+        )?;
+        let key = format!("{}/apiservices/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "apiservices".to_string(),
+                name: name.to_string(),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    pub async fn list_api_services(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "apiregistration.k8s.io", "apiservices", None, None)?;
+        let prefix = format!("{}/apiservices/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "apiregistration.k8s.io/v1",
+            "kind": "APIServiceList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn delete_api_service(&self, name: &str) -> Result<(), ApiserverError> {
+        self.check_auth_detailed(
+            "delete",
+            "apiregistration.k8s.io",
+            "apiservices",
+            None,
+            Some(name),
+        )?;
+        let key = format!("{}/apiservices/{name}", self.storage.prefix());
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "apiservices".to_string(),
+                name: name.to_string(),
+            });
+        }
+        self.aggregation.remove_api_service(name);
+        Ok(())
+    }
+
+    pub async fn dispatch_aggregated_request(
+        &self,
+        service_name: &str,
+        path: &str,
+        method: &str,
+        body: Option<Value>,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "", "aggregated-apis", None, Some(service_name))?;
+        let user_info = self.current_user_info();
+        let ctx = AggregatedRequestContext {
+            path: path.to_string(),
+            method: method.to_string(),
+            caller_username: user_info.username,
+            caller_groups: user_info.groups,
+            body,
+        };
+        self.aggregation.dispatch(service_name, &ctx).await
     }
 
     // --- RBAC API Management ---

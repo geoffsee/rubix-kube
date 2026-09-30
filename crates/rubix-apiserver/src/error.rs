@@ -44,6 +44,15 @@ pub enum ApiserverError {
     #[error("invalid input for {field}: {reason}")]
     InvalidInput { field: String, reason: String },
 
+    #[error("admission denied: {reason}")]
+    AdmissionDenied { reason: String },
+
+    #[error("webhook call failed for {webhook}: {reason}")]
+    WebhookFailure { webhook: String, reason: String },
+
+    #[error("aggregated API error for {service}: {reason}")]
+    AggregatedApiError { service: String, reason: String },
+
     #[error("internal server error: {reason}")]
     Internal { reason: String },
 }
@@ -58,6 +67,9 @@ impl ApiserverError {
             Self::ReadinessFailed { .. } => "apiserver-readiness-failed",
             Self::Unauthenticated { .. } => "apiserver-unauthenticated",
             Self::Unauthorized { .. } => "apiserver-unauthorized",
+            Self::AdmissionDenied { .. } => "apiserver-admission-denied",
+            Self::WebhookFailure { .. } => "apiserver-webhook-failure",
+            Self::AggregatedApiError { .. } => "apiserver-aggregated-api-error",
             Self::NotFound { .. } => "apiserver-not-found",
             Self::Conflict { .. } => "apiserver-conflict",
             Self::BadRequest { .. } | Self::InvalidInput { .. } => "apiserver-bad-request",

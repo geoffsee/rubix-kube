@@ -1,3 +1,5 @@
+pub mod admission;
+pub mod aggregation;
 pub mod client;
 pub mod config;
 pub mod error;
@@ -9,6 +11,14 @@ pub mod storage;
 pub mod supervisor;
 pub mod token;
 
+pub use admission::{
+    AdmissionEngine, AdmissionRequest, AdmissionResponse, AdmissionStatus, FailurePolicy,
+    MutatingWebhookConfiguration, RuleWithOperations, ValidatingWebhookConfiguration,
+    WebhookClientConfig, WebhookDefinition, WebhookHandler,
+};
+pub use aggregation::{
+    APIService, APIServiceSpec, AggregatedApiHandler, AggregatedRequestContext, AggregationManager,
+};
 pub use client::{ClientIdentity, KubernetesApiClient};
 pub use config::{
     ApiserverConfig, DEFAULT_ETCD_PREFIX, DEFAULT_SA_ISSUER, DEFAULT_SECURE_PORT,

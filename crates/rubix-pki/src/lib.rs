@@ -198,6 +198,76 @@ pub fn atomic_write(path: &Path, data: &[u8], mode: u32) -> Result<(), std::io::
     Ok(())
 }
 
+pub fn base64_encode(data: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.encode(data)
+}
+
+pub fn base64_decode(data: &str) -> Result<Vec<u8>, PkiError> {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD
+        .decode(data.trim())
+        .map_err(|_| PkiError::InvalidCert)
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CertificateIdentity {
+    pub common_name: String,
+    pub dns_names: Vec<String>,
+}
+
+impl CertificateIdentity {
+    #[must_use]
+    pub fn matches(&self, name: &str) -> bool {
+        self.common_name == name || self.dns_names.iter().any(|d| d == name)
+    }
+}
+
+pub fn verify_certificate_chain(
+    cert_pem: &str,
+    ca_cert_pem: &str,
+) -> Result<CertificateIdentity, PkiError> {
+    use x509_parser::prelude::{FromDer, GeneralName, ParsedExtension};
+    let cert_pem_parsed = ::pem::parse(cert_pem).map_err(|_| PkiError::InvalidCert)?;
+    let (_, cert) = x509_parser::prelude::X509Certificate::from_der(cert_pem_parsed.contents())
+        .map_err(|_| PkiError::InvalidCert)?;
+
+    let ca_pem_parsed = ::pem::parse(ca_cert_pem).map_err(|_| PkiError::InvalidCert)?;
+    let (_, ca_cert) = x509_parser::prelude::X509Certificate::from_der(ca_pem_parsed.contents())
+        .map_err(|_| PkiError::InvalidCert)?;
+
+    cert.verify_signature(Some(ca_cert.public_key()))
+        .map_err(|_| PkiError::InvalidSignature)?;
+
+    let mut common_name = String::new();
+    for rdn in cert.subject().iter_rdn() {
+        for attr in rdn.iter() {
+            if attr.attr_type() == &x509_parser::oid_registry::OID_X509_COMMON_NAME
+                && let Ok(name) = attr.as_str()
+            {
+                common_name = name.to_string();
+                break;
+            }
+        }
+    }
+
+    let mut dns_names = Vec::new();
+    for ext in cert.iter_extensions() {
+        if let ParsedExtension::SubjectAlternativeName(san) = ext.parsed_extension() {
+            for gn in &san.general_names {
+                if let GeneralName::DNSName(dns) = gn {
+                    dns_names.push((*dns).to_string());
+                }
+            }
+        }
+    }
+
+    Ok(CertificateIdentity {
+        common_name,
+        dns_names,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,5 +349,36 @@ mod tests {
         // Valid key followed by truncated PEM block
         let corrupt_bundle = format!("{pkcs1_pem}\n-----BEGIN RSA PRIVATE KEY-----\nMIIE\n");
         assert!(validate_private_key_pem(corrupt_bundle.as_bytes()).is_err());
+    }
+
+    #[test]
+    fn test_base64_helpers_and_cert_chain_verification() {
+        let raw = b"kubernetes-admission-webhook-token";
+        let enc = base64_encode(raw);
+        let dec = base64_decode(&enc).unwrap();
+        assert_eq!(dec, raw);
+
+        // Test valid certificate chain verification
+        let ca_pair = KeyPair::generate_rsa_for(&PKCS_RSA_SHA256, RsaKeySize::_2048).unwrap();
+        let mut ca_params = CertificateParams::new(vec!["test-ca".to_string()]).unwrap();
+        ca_params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
+        let ca_cert = ca_params.self_signed(&ca_pair).unwrap();
+
+        let leaf_pair = KeyPair::generate_rsa_for(&PKCS_RSA_SHA256, RsaKeySize::_2048).unwrap();
+        let leaf_params = CertificateParams::new(vec!["system:auth-proxy".to_string()]).unwrap();
+        let issuer = rcgen::Issuer::from_ca_cert_pem(&ca_cert.pem(), ca_pair).unwrap();
+        let leaf_cert = leaf_params.signed_by(&leaf_pair, &issuer).unwrap();
+
+        let id = verify_certificate_chain(&leaf_cert.pem(), &ca_cert.pem()).unwrap();
+        assert!(id.matches("system:auth-proxy"));
+
+        // Tampered / untrusted CA verification fails
+        let untrusted_pair =
+            KeyPair::generate_rsa_for(&PKCS_RSA_SHA256, RsaKeySize::_2048).unwrap();
+        let untrusted_ca = CertificateParams::new(vec!["other-ca".to_string()])
+            .unwrap()
+            .self_signed(&untrusted_pair)
+            .unwrap();
+        assert!(verify_certificate_chain(&leaf_cert.pem(), &untrusted_ca.pem()).is_err());
     }
 }

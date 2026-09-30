@@ -74,3 +74,15 @@ The API server's lifecycle is guarded by two mandatory prerequisite categories:
 3. **Lifecycle & Restart**:
    - Clean shutdown terminates background connections gracefully.
    - Restart restores state directly from the persistent datastore without requiring reinitialization or credential rotation.
+
+---
+
+## 5. Admission Control & Extension Integration
+
+For detailed architecture, upstream commit tracking, and verification specifications regarding:
+- Mutating and validating admission webhook pipelines
+- Front-proxy authentication and mutual TLS
+- Dynamic CRD OpenAPI v3 schema validation and lifecycle
+- Aggregated API server routing (`APIService`)
+
+See [admission-extension.md](file:///Volumes/safe-vol/workspace/archives/playground/rubix-kube/crates/rubix-apiserver/docs/admission-extension.md).

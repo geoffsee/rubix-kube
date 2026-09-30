@@ -1,9 +1,14 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
+use serde_json::Value;
+
+use crate::admission::AdmissionEngine;
+use crate::aggregation::AggregationManager;
 use crate::client::{ClientIdentity, KubernetesApiClient};
 use crate::config::ApiserverConfig;
 use crate::error::ApiserverError;
@@ -20,12 +25,18 @@ pub struct ApiserverService {
     running: Arc<AtomicBool>,
     rbac: Arc<RbacAuthorizer>,
     token_service: Arc<RwLock<Option<TokenService>>>,
+    admission: Arc<AdmissionEngine>,
+    aggregation: Arc<AggregationManager>,
+    crd_registry: Arc<RwLock<BTreeMap<String, Value>>>,
 }
 
 impl ApiserverService {
     pub fn new(config: ApiserverConfig, storage: KubernetesStorage) -> Self {
         let rbac = Arc::new(RbacAuthorizer::new());
         let token_service = Arc::new(RwLock::new(None));
+        let admission = Arc::new(AdmissionEngine::new());
+        let aggregation = Arc::new(AggregationManager::new());
+        let crd_registry = Arc::new(RwLock::new(BTreeMap::new()));
 
         // Attempt early initialization of TokenService if key files already exist
         if config.service_account_signing_key_file.exists()
@@ -46,6 +57,9 @@ impl ApiserverService {
             running: Arc::new(AtomicBool::new(false)),
             rbac,
             token_service,
+            admission,
+            aggregation,
+            crd_registry,
         }
     }
 
@@ -62,6 +76,21 @@ impl ApiserverService {
     #[must_use]
     pub fn rbac(&self) -> &Arc<RbacAuthorizer> {
         &self.rbac
+    }
+
+    #[must_use]
+    pub fn admission(&self) -> &Arc<AdmissionEngine> {
+        &self.admission
+    }
+
+    #[must_use]
+    pub fn aggregation(&self) -> &Arc<AggregationManager> {
+        &self.aggregation
+    }
+
+    #[must_use]
+    pub fn crd_registry(&self) -> &Arc<RwLock<BTreeMap<String, Value>>> {
+        &self.crd_registry
     }
 
     #[must_use]
@@ -102,9 +131,30 @@ impl ApiserverService {
         // Initialize TokenService
         let _ = self.token_service()?;
 
-        // Restore persisted RBAC definitions from datastore
+        // Restore persisted state from datastore
         self.restore_rbac_from_storage().await?;
+        self.restore_crds_from_storage().await?;
+        self.admission.restore_from_storage(&self.storage).await?;
+        self.aggregation.restore_from_storage(&self.storage).await?;
 
+        Ok(())
+    }
+
+    pub async fn restore_crds_from_storage(&self) -> Result<(), ApiserverError> {
+        let prefix = format!("{}/customresourcedefinitions", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut guard = self.crd_registry.write().unwrap();
+        guard.clear();
+        for kv in kvs {
+            let crd: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(name) = crd
+                .get("metadata")
+                .and_then(|m| m.get("name"))
+                .and_then(Value::as_str)
+            {
+                guard.insert(name.to_string(), crd);
+            }
+        }
         Ok(())
     }
 
@@ -219,37 +269,32 @@ impl ApiserverService {
 
     // --- Client Factory ---
 
-    #[must_use]
-    pub fn admin_client(&self) -> KubernetesApiClient {
+    fn create_client(&self, identity: ClientIdentity) -> KubernetesApiClient {
         KubernetesApiClient::new(
             self.storage.clone(),
-            ClientIdentity::AdminCertificate,
+            identity,
             self.rbac.clone(),
             self.token_service_opt(),
+            self.admission.clone(),
+            self.aggregation.clone(),
+            self.crd_registry.clone(),
             &self.config,
         )
+    }
+
+    #[must_use]
+    pub fn admin_client(&self) -> KubernetesApiClient {
+        self.create_client(ClientIdentity::AdminCertificate)
     }
 
     #[must_use]
     pub fn anonymous_client(&self) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::Anonymous,
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::Anonymous)
     }
 
     #[must_use]
     pub fn token_client(&self, token: impl Into<String>) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::BearerToken(token.into()),
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::BearerToken(token.into()))
     }
 
     #[must_use]
@@ -258,61 +303,37 @@ impl ApiserverService {
         namespace: impl Into<String>,
         name: impl Into<String>,
     ) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::ServiceAccount {
-                namespace: namespace.into(),
-                name: name.into(),
-            },
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::ServiceAccount {
+            namespace: namespace.into(),
+            name: name.into(),
+        })
     }
 
     #[must_use]
     pub fn controller_manager_client(&self) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::User {
-                username: "system:kube-controller-manager".to_string(),
-                groups: vec!["system:authenticated".to_string()],
-            },
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::User {
+            username: "system:kube-controller-manager".to_string(),
+            groups: vec!["system:authenticated".to_string()],
+        })
     }
 
     #[must_use]
     pub fn scheduler_client(&self) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::User {
-                username: "system:kube-scheduler".to_string(),
-                groups: vec!["system:authenticated".to_string()],
-            },
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::User {
+            username: "system:kube-scheduler".to_string(),
+            groups: vec!["system:authenticated".to_string()],
+        })
     }
 
     #[must_use]
     pub fn node_client(&self, node_name: &str) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::User {
-                username: format!("system:node:{node_name}"),
-                groups: vec![
-                    "system:nodes".to_string(),
-                    "system:authenticated".to_string(),
-                ],
-            },
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::User {
+            username: format!("system:node:{node_name}"),
+            groups: vec![
+                "system:nodes".to_string(),
+                "system:authenticated".to_string(),
+            ],
+        })
     }
 
     #[must_use]
@@ -321,16 +342,10 @@ impl ApiserverService {
         username: impl Into<String>,
         groups: Vec<String>,
     ) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::User {
-                username: username.into(),
-                groups,
-            },
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::User {
+            username: username.into(),
+            groups,
+        })
     }
 
     #[must_use]
@@ -339,15 +354,23 @@ impl ApiserverService {
         username: impl Into<String>,
         groups: Vec<String>,
     ) -> KubernetesApiClient {
-        KubernetesApiClient::new(
-            self.storage.clone(),
-            ClientIdentity::RestrictedUser {
-                username: username.into(),
-                groups,
-            },
-            self.rbac.clone(),
-            self.token_service_opt(),
-            &self.config,
-        )
+        self.create_client(ClientIdentity::RestrictedUser {
+            username: username.into(),
+            groups,
+        })
+    }
+
+    #[must_use]
+    pub fn front_proxy_client(
+        &self,
+        client_cert_pem: impl Into<String>,
+        username: impl Into<String>,
+        groups: Vec<String>,
+    ) -> KubernetesApiClient {
+        self.create_client(ClientIdentity::FrontProxy {
+            client_cert_pem: client_cert_pem.into(),
+            username: username.into(),
+            groups,
+        })
     }
 }
