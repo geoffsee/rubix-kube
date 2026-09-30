@@ -127,7 +127,35 @@ pub fn write_registry_hosts_toml(
     let content =
         toml::to_string(config).map_err(|err| RegistryError::Serialize { source: err })?;
 
-    fs::write(&target_file, content).map_err(|err| RegistryError::Io {
+    let tmp_file = host_dir.join(".hosts.toml.tmp");
+    {
+        use std::io::Write;
+        use std::os::unix::fs::OpenOptionsExt;
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(&tmp_file)
+            .map_err(|err| RegistryError::Io {
+                path: tmp_file.clone(),
+                source: err,
+            })?;
+
+        file.write_all(content.as_bytes())
+            .map_err(|err| RegistryError::Io {
+                path: tmp_file.clone(),
+                source: err,
+            })?;
+
+        file.sync_all().map_err(|err| RegistryError::Io {
+            path: tmp_file.clone(),
+            source: err,
+        })?;
+    }
+
+    fs::rename(&tmp_file, &target_file).map_err(|err| RegistryError::Io {
         path: target_file.clone(),
         source: err,
     })?;

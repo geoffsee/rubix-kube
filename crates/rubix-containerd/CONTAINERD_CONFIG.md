@@ -36,18 +36,18 @@ sandbox = "portainer/pause:latest"
 [plugins."io.containerd.cri.v1.images".registry]
 config_path = "/var/lib/kubesolo/containerd/registry"
 
-[plugins."io.containerd.cri.v1.runtime.cni"]
+[plugins."io.containerd.cri.v1.runtime".cni]
 bin_dirs = ["/var/lib/kubesolo/containerd/cni/plugins"]
 conf_dir = "/etc/cni/net.d"
 
-[plugins."io.containerd.cri.v1.runtime.containerd"]
+[plugins."io.containerd.cri.v1.runtime".containerd]
 default_runtime_name = "crun"
 
-[plugins."io.containerd.cri.v1.runtime.containerd.runtimes.crun"]
+[plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun]
 runtime_type = "io.containerd.runc.v2"
 snapshotter = "overlayfs"
 
-[plugins."io.containerd.cri.v1.runtime.containerd.runtimes.crun.options]
+[plugins."io.containerd.cri.v1.runtime".containerd.runtimes.crun.options]
 BinaryName = "/var/lib/kubesolo/containerd/crun"
 SystemdCgroup = false
 
