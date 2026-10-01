@@ -16,10 +16,13 @@ pub fn discover_host_interfaces() -> Vec<InterfaceCandidate> {
     let mut candidates = discover_linux_sysfs_interfaces();
 
     #[cfg(not(target_os = "linux"))]
-    let mut candidates = Vec::new();
+    let mut candidates: Vec<InterfaceCandidate> = Vec::new();
 
-    // If no candidates or on non-Linux, use safe UDP routing detection
-    if candidates.is_empty() {
+    // If no non-loopback candidate has an address, fallback to UDP routing detection
+    let has_non_loopback_addr = candidates
+        .iter()
+        .any(|c| !c.is_loopback && !c.addrs.is_empty());
+    if !has_non_loopback_addr {
         candidates = discover_udp_routing_interfaces();
     }
 
@@ -84,13 +87,27 @@ fn discover_udp_routing_interfaces() -> Vec<InterfaceCandidate> {
 }
 
 #[cfg(target_os = "linux")]
+fn get_default_route_interface() -> Option<String> {
+    let content = fs::read_to_string("/proc/net/route").ok()?;
+    for line in content.lines().skip(1) {
+        let mut parts = line.split_whitespace();
+        let iface = parts.next()?;
+        let dest = parts.next()?;
+        if dest == "00000000" {
+            return Some(iface.to_string());
+        }
+    }
+    None
+}
+
+#[cfg(target_os = "linux")]
 fn discover_linux_sysfs_interfaces() -> Vec<InterfaceCandidate> {
     let sys_net = Path::new("/sys/class/net");
     let Ok(entries) = fs::read_dir(sys_net) else {
         return Vec::new();
     };
 
-    let mut candidates = Vec::new();
+    let default_iface = get_default_route_interface();
 
     // Check outbound route IP to associate with the appropriate interface
     let routed_ip = UdpSocket::bind("0.0.0.0:0")
@@ -101,6 +118,8 @@ fn discover_linux_sysfs_interfaces() -> Vec<InterfaceCandidate> {
             IpAddr::V4(v4) if !v4.is_loopback() => Some(v4),
             _ => None,
         });
+
+    let mut candidates = Vec::new();
 
     for entry in entries.flatten() {
         let name = entry.file_name().to_string_lossy().to_string();
@@ -125,11 +144,11 @@ fn discover_linux_sysfs_interfaces() -> Vec<InterfaceCandidate> {
         let mut addrs = Vec::new();
         if is_loopback {
             addrs.push(IpAddr::V4(Ipv4Addr::LOCALHOST));
-        } else if let Some(ip) = routed_ip {
-            // If this is the active primary non-loopback interface, associate the routed IP
-            if candidates.is_empty() {
-                addrs.push(IpAddr::V4(ip));
-            }
+        } else if let Some(ip) = routed_ip
+            && let Some(ref def_iface) = default_iface
+            && name == *def_iface
+        {
+            addrs.push(IpAddr::V4(ip));
         }
 
         candidates.push(InterfaceCandidate {
@@ -139,6 +158,20 @@ fn discover_linux_sysfs_interfaces() -> Vec<InterfaceCandidate> {
             is_up,
             is_loopback,
         });
+    }
+
+    // If default_iface was not found or did not match any entry, assign routed_ip to the first active non-loopback interface
+    if let Some(ip) = routed_ip
+        && !candidates
+            .iter()
+            .any(|c| !c.is_loopback && !c.addrs.is_empty())
+    {
+        for candidate in &mut candidates {
+            if !candidate.is_loopback && candidate.is_up {
+                candidate.addrs.push(IpAddr::V4(ip));
+                break;
+            }
+        }
     }
 
     candidates
