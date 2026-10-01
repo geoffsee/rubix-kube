@@ -60,6 +60,8 @@ pub struct ContainerEnvironment {
     proc_sys_net_ipv6: PathBuf,
     allow_host_mutations: bool,
     simulated: bool,
+    pod_cidr: Option<String>,
+    snat_ready: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl Default for ContainerEnvironment {
@@ -70,6 +72,8 @@ impl Default for ContainerEnvironment {
             proc_sys_net_ipv6: PathBuf::from("/proc/sys/net/ipv6/conf"),
             allow_host_mutations: true,
             simulated: false,
+            pod_cidr: Some(rubix_network::DEFAULT_POD_CIDR.to_string()),
+            snat_ready: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 }
@@ -88,6 +92,74 @@ impl ContainerEnvironment {
             proc_sys_net_ipv6,
             allow_host_mutations: true,
             simulated: true,
+            pod_cidr: Some(rubix_network::DEFAULT_POD_CIDR.to_string()),
+            snat_ready: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
+    }
+
+    #[must_use]
+    pub fn with_pod_cidr(mut self, cidr: impl Into<String>) -> Self {
+        self.pod_cidr = Some(cidr.into());
+        self
+    }
+
+    #[must_use]
+    pub fn pod_cidr(&self) -> Option<&str> {
+        self.pod_cidr.as_deref()
+    }
+
+    #[must_use]
+    pub fn is_snat_ready(&self) -> bool {
+        self.snat_ready.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub fn prepare_pod_egress(
+        &self,
+        pod_cidr: &str,
+    ) -> Result<Option<rubix_network::MasqueradeBackend>, KubeletError> {
+        if !self.allow_host_mutations {
+            return Ok(None);
+        }
+        if self.simulated {
+            self.snat_ready
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            return Ok(Some(rubix_network::MasqueradeBackend::IpTables));
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = pod_cidr;
+            Ok(None)
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            if let Err(e) = rubix_network::ensure_ip_forward() {
+                match e {
+                    rubix_network::NetworkError::SysctlError { ref reason, .. }
+                        if reason.contains("Permission denied")
+                            || reason.contains("Read-only file system") =>
+                    {
+                        return Ok(None);
+                    },
+                    _ => return Err(KubeletError::Network(e)),
+                }
+            }
+
+            match rubix_network::ensure_pod_masquerade(pod_cidr) {
+                Ok(backend) => {
+                    self.snat_ready
+                        .store(true, std::sync::atomic::Ordering::SeqCst);
+                    Ok(Some(backend))
+                },
+                Err(rubix_network::NetworkError::MasqueradeError { reason })
+                    if reason.contains("Permission denied")
+                        || reason.contains("you must be root") =>
+                {
+                    Ok(None)
+                },
+                Err(e) => Err(KubeletError::Network(e)),
+            }
         }
     }
 
@@ -322,5 +394,32 @@ fn enable_subtree_controllers(
             }
             Ok(enabled)
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_prepare_pod_egress_when_host_mutations_disallowed() {
+        let env = ContainerEnvironment::default().with_allow_host_mutations(false);
+        assert!(!env.is_snat_ready());
+        let result = env.prepare_pod_egress("10.42.0.0/16").unwrap();
+        assert_eq!(result, None);
+        assert!(!env.is_snat_ready());
+    }
+
+    #[test]
+    fn test_prepare_pod_egress_simulated() {
+        let env = ContainerEnvironment::new_simulated(
+            PathBuf::from("/tmp/root"),
+            PathBuf::from("/tmp/cgroup"),
+            PathBuf::from("/tmp/ipv6"),
+        );
+        assert!(!env.is_snat_ready());
+        let result = env.prepare_pod_egress("10.42.0.0/16").unwrap();
+        assert_eq!(result, Some(rubix_network::MasqueradeBackend::IpTables));
+        assert!(env.is_snat_ready());
     }
 }

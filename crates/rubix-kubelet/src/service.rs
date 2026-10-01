@@ -81,6 +81,11 @@ impl KubeletService {
     }
 
     #[must_use]
+    pub fn is_snat_ready(&self) -> bool {
+        self.container_env.is_snat_ready()
+    }
+
+    #[must_use]
     pub fn client(&self) -> KubernetesApiClient {
         self.apiserver.node_client(&self.options.node_name)
     }
@@ -210,6 +215,9 @@ impl KubeletService {
         }
         if self.options.disable_ipv6 {
             let _ = self.container_env.disable_ipv6()?;
+        }
+        if let Some(cidr) = self.container_env.pod_cidr().map(ToString::to_string) {
+            let _ = self.container_env.prepare_pod_egress(&cidr)?;
         }
         let invalidated = self.options.write_kubelet_config_file()?;
         if invalidated {
