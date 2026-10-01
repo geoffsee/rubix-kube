@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
@@ -7,10 +7,18 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use rubix_apiserver::KubernetesApiClient;
+use rubix_apiserver::{ApiserverService, KubernetesApiClient};
 
 use crate::config::{KubeletConfigOptions, detect_host_cpu_count, format_cpuset, parse_cpuset};
 use crate::error::KubeletError;
+
+/// Result of executing a command in a container.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExecResult {
+    pub exit_code: i32,
+    pub stdout: String,
+    pub stderr: String,
+}
 
 /// Abstract interface for container runtime providers executing workloads.
 #[async_trait]
@@ -36,6 +44,40 @@ pub trait RuntimeProvider: std::fmt::Debug + Send + Sync {
 
     /// Queries the status of an active pod sandbox.
     async fn get_pod_status(&self, pod_id: &str) -> Result<String, KubeletError>;
+
+    /// Retrieves container logs.
+    async fn get_container_logs(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        tail_lines: Option<usize>,
+    ) -> Result<String, KubeletError> {
+        let _ = (pod_id, container_name, tail_lines);
+        Ok(String::new())
+    }
+
+    /// Executes a command in a running container.
+    async fn exec_in_container(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        cmd: &[String],
+    ) -> Result<ExecResult, KubeletError> {
+        let _ = (pod_id, container_name, cmd);
+        Ok(ExecResult {
+            exit_code: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        })
+    }
+}
+
+#[derive(Debug, Default)]
+struct MockRuntimeState {
+    logs: BTreeMap<String, String>,
+    exec_responses: BTreeMap<String, ExecResult>,
+    probe_results: BTreeMap<String, bool>,
+    active_pods: BTreeSet<String>,
 }
 
 /// Simulated in-memory runtime provider for testing managed and external runtime engines.
@@ -44,6 +86,7 @@ pub struct MockRuntimeProvider {
     name: String,
     pod_counter: AtomicUsize,
     is_external: bool,
+    state: Arc<std::sync::Mutex<MockRuntimeState>>,
 }
 
 impl MockRuntimeProvider {
@@ -53,6 +96,7 @@ impl MockRuntimeProvider {
             name: name.into(),
             pod_counter: AtomicUsize::new(1),
             is_external: false,
+            state: Arc::new(std::sync::Mutex::new(MockRuntimeState::default())),
         }
     }
 
@@ -62,11 +106,36 @@ impl MockRuntimeProvider {
             name: name.into(),
             pod_counter: AtomicUsize::new(1),
             is_external: true,
+            state: Arc::new(std::sync::Mutex::new(MockRuntimeState::default())),
         }
     }
 
     pub fn set_external(&mut self, external: bool) {
         self.is_external = external;
+    }
+
+    pub fn set_container_logs(&self, key: impl Into<String>, logs: impl Into<String>) {
+        if let Ok(mut state) = self.state.lock() {
+            state.logs.insert(key.into(), logs.into());
+        }
+    }
+
+    pub fn set_exec_response(&self, key: impl Into<String>, response: ExecResult) {
+        if let Ok(mut state) = self.state.lock() {
+            state.exec_responses.insert(key.into(), response);
+        }
+    }
+
+    pub fn set_probe_result(&self, key: impl Into<String>, success: bool) {
+        if let Ok(mut state) = self.state.lock() {
+            state.probe_results.insert(key.into(), success);
+        }
+    }
+
+    pub fn is_pod_active(&self, pod_id: &str) -> bool {
+        self.state
+            .lock()
+            .is_ok_and(|s| s.active_pods.contains(pod_id))
     }
 }
 
@@ -89,15 +158,120 @@ impl RuntimeProvider for MockRuntimeProvider {
 
         let id = self.pod_counter.fetch_add(1, Ordering::SeqCst);
         let pod_id = format!("{}-{}-{}", self.name, name, id);
+        if let Ok(mut state) = self.state.lock() {
+            state.active_pods.insert(pod_id.clone());
+        }
         Ok(pod_id)
     }
 
-    async fn stop_pod(&self, _pod_id: &str) -> Result<(), KubeletError> {
+    async fn stop_pod(&self, pod_id: &str) -> Result<(), KubeletError> {
+        if let Ok(mut state) = self.state.lock() {
+            state.active_pods.remove(pod_id);
+        }
         Ok(())
     }
 
-    async fn get_pod_status(&self, _pod_id: &str) -> Result<String, KubeletError> {
-        Ok("Running".to_string())
+    async fn get_pod_status(&self, pod_id: &str) -> Result<String, KubeletError> {
+        let active = self
+            .state
+            .lock()
+            .map_or(true, |s| s.active_pods.contains(pod_id));
+        if active {
+            Ok("Running".to_string())
+        } else {
+            Ok("Stopped".to_string())
+        }
+    }
+
+    async fn get_container_logs(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        tail_lines: Option<usize>,
+    ) -> Result<String, KubeletError> {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let key_full = format!("{pod_id}:{container_name}");
+        let raw_logs = state
+            .logs
+            .get(&key_full)
+            .or_else(|| state.logs.get(container_name))
+            .cloned()
+            .unwrap_or_else(|| format!("container {container_name} is running in {pod_id}\n"));
+
+        if let Some(n) = tail_lines {
+            let lines: Vec<&str> = raw_logs.lines().collect();
+            let start = lines.len().saturating_sub(n);
+            let tailed = lines[start..].join("\n");
+            if raw_logs.ends_with('\n') && !tailed.is_empty() {
+                Ok(format!("{tailed}\n"))
+            } else {
+                Ok(tailed)
+            }
+        } else {
+            Ok(raw_logs)
+        }
+    }
+
+    async fn exec_in_container(
+        &self,
+        _pod_id: &str,
+        container_name: &str,
+        cmd: &[String],
+    ) -> Result<ExecResult, KubeletError> {
+        let cmd_str = cmd.join(" ");
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let key_full = format!("{container_name}:{cmd_str}");
+
+        if let Some(res) = state
+            .exec_responses
+            .get(&key_full)
+            .or_else(|| state.exec_responses.get(&cmd_str))
+            .or_else(|| cmd.first().and_then(|c| state.exec_responses.get(c)))
+        {
+            return Ok(res.clone());
+        }
+
+        if let Some(&pass) = state
+            .probe_results
+            .get(&key_full)
+            .or_else(|| state.probe_results.get(&cmd_str))
+            .or_else(|| state.probe_results.get(container_name))
+        {
+            return Ok(ExecResult {
+                exit_code: i32::from(!pass),
+                stdout: if pass {
+                    "probe succeeded\n".to_string()
+                } else {
+                    "probe failed\n".to_string()
+                },
+                stderr: if pass {
+                    String::new()
+                } else {
+                    "failure\n".to_string()
+                },
+            });
+        }
+
+        if cmd.first().is_some_and(|c| c == "echo") {
+            let out = cmd[1..].join(" ");
+            return Ok(ExecResult {
+                exit_code: 0,
+                stdout: format!("{out}\n"),
+                stderr: String::new(),
+            });
+        }
+
+        Ok(ExecResult {
+            exit_code: 0,
+            stdout: format!("executed: {cmd_str}\n"),
+            stderr: String::new(),
+        })
     }
 }
 
@@ -538,6 +712,8 @@ pub struct PodReconciler {
     node_ip: String,
     cpu_manager: Arc<CpuManager>,
     checkpoint_invalidated: Arc<AtomicBool>,
+    root_dir: PathBuf,
+    apiserver: Option<Arc<ApiserverService>>,
 }
 
 impl PodReconciler {
@@ -570,6 +746,8 @@ impl PodReconciler {
             node_ip: effective_ip,
             cpu_manager: dummy_cpu_manager,
             checkpoint_invalidated: Arc::new(AtomicBool::new(false)),
+            root_dir: PathBuf::from("/var/lib/kubelet"),
+            apiserver: None,
         }
     }
 
@@ -577,6 +755,23 @@ impl PodReconciler {
     pub fn with_cpu_manager(mut self, cpu_manager: Arc<CpuManager>) -> Self {
         self.cpu_manager = cpu_manager;
         self
+    }
+
+    #[must_use]
+    pub fn with_root_dir(mut self, root_dir: impl Into<PathBuf>) -> Self {
+        self.root_dir = root_dir.into();
+        self
+    }
+
+    #[must_use]
+    pub fn with_apiserver(mut self, apiserver: Arc<ApiserverService>) -> Self {
+        self.apiserver = Some(apiserver);
+        self
+    }
+
+    #[must_use]
+    pub fn root_dir(&self) -> &Path {
+        &self.root_dir
     }
 
     #[must_use]
@@ -597,6 +792,43 @@ impl PodReconciler {
     #[must_use]
     pub fn runtime_provider_name(&self) -> &str {
         self.runtime.provider_name()
+    }
+
+    #[must_use]
+    pub fn get_pod_volume_dir(
+        &self,
+        pod_uid_or_name: &str,
+        plugin_name: &str,
+        volume_name: &str,
+    ) -> PathBuf {
+        self.root_dir
+            .join("pods")
+            .join(pod_uid_or_name)
+            .join("volumes")
+            .join(plugin_name)
+            .join(volume_name)
+    }
+
+    pub async fn get_container_logs(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        tail_lines: Option<usize>,
+    ) -> Result<String, KubeletError> {
+        self.runtime
+            .get_container_logs(pod_id, container_name, tail_lines)
+            .await
+    }
+
+    pub async fn exec_in_container(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        cmd: &[String],
+    ) -> Result<ExecResult, KubeletError> {
+        self.runtime
+            .exec_in_container(pod_id, container_name, cmd)
+            .await
     }
 
     /// Reports workload-restart needs for surviving external-runtime containers when
@@ -673,6 +905,224 @@ impl PodReconciler {
         Ok(reconciled_count)
     }
 
+    async fn stage_projected_source(
+        &self,
+        vol_dir: &Path,
+        namespace: &str,
+        pod: &Value,
+        source: &Value,
+    ) -> Result<(), KubeletError> {
+        if let Some(sa_tok) = source.get("serviceAccountToken") {
+            stage_projected_sa_token(vol_dir, namespace, pod, sa_tok, self.apiserver.as_ref())?;
+        }
+
+        if let Some(cm) = source.get("configMap") {
+            let cm_name = cm.get("name").and_then(Value::as_str).unwrap_or("");
+            if let Ok(cm_obj) = self.client.get_configmap(namespace, cm_name).await {
+                let _ = stage_configmap_files(vol_dir, cm, &cm_obj);
+            }
+        }
+
+        if let Some(sec) = source.get("secret") {
+            let sec_name = sec.get("name").and_then(Value::as_str).unwrap_or("");
+            if let Ok(sec_obj) = self.client.get_secret(namespace, sec_name).await {
+                let _ = stage_secret_files(vol_dir, sec, &sec_obj);
+            }
+        }
+
+        if let Some(dw) = source.get("downwardAPI")
+            && let Some(items) = dw.get("items").and_then(Value::as_array)
+        {
+            stage_projected_downward_api(vol_dir, namespace, pod, items)?;
+        }
+
+        Ok(())
+    }
+
+    async fn prepare_single_volume(
+        &self,
+        namespace: &str,
+        pod_name: &str,
+        pod_uid: &str,
+        pod: &Value,
+        vol: &Value,
+    ) -> Result<(), KubeletError> {
+        let vol_name = vol.get("name").and_then(Value::as_str).unwrap_or("unnamed");
+
+        if let Some(sec) = vol.get("secret") {
+            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~secret", vol_name);
+            std::fs::create_dir_all(&vol_dir).map_err(|e| {
+                KubeletError::PodReconciliationFailed {
+                    pod: pod_name.to_string(),
+                    reason: format!(
+                        "failed to create volume directory {}: {e}",
+                        vol_dir.display()
+                    ),
+                }
+            })?;
+            let sec_name = sec
+                .get("secretName")
+                .and_then(Value::as_str)
+                .unwrap_or(vol_name);
+            let sec_obj = self
+                .client
+                .get_secret(namespace, sec_name)
+                .await
+                .map_err(|e| KubeletError::PodReconciliationFailed {
+                    pod: pod_name.to_string(),
+                    reason: format!("failed to fetch secret '{sec_name}': {e}"),
+                })?;
+            stage_secret_files(&vol_dir, sec, &sec_obj)?;
+        } else if let Some(cm) = vol.get("configMap") {
+            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~configmap", vol_name);
+            std::fs::create_dir_all(&vol_dir).map_err(|e| {
+                KubeletError::PodReconciliationFailed {
+                    pod: pod_name.to_string(),
+                    reason: format!(
+                        "failed to create volume directory {}: {e}",
+                        vol_dir.display()
+                    ),
+                }
+            })?;
+            let cm_name = cm.get("name").and_then(Value::as_str).unwrap_or(vol_name);
+            let cm_obj = self
+                .client
+                .get_configmap(namespace, cm_name)
+                .await
+                .map_err(|e| KubeletError::PodReconciliationFailed {
+                    pod: pod_name.to_string(),
+                    reason: format!("failed to fetch configmap '{cm_name}': {e}"),
+                })?;
+            stage_configmap_files(&vol_dir, cm, &cm_obj)?;
+        } else if let Some(proj) = vol.get("projected")
+            && let Some(sources) = proj.get("sources").and_then(Value::as_array)
+        {
+            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~projected", vol_name);
+            std::fs::create_dir_all(&vol_dir).map_err(|e| {
+                KubeletError::PodReconciliationFailed {
+                    pod: pod_name.to_string(),
+                    reason: format!(
+                        "failed to create volume directory {}: {e}",
+                        vol_dir.display()
+                    ),
+                }
+            })?;
+            for source in sources {
+                self.stage_projected_source(&vol_dir, namespace, pod, source)
+                    .await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Prepares and populates volume mounts (Secrets, `ConfigMaps`, Projected) on the host filesystem.
+    pub async fn prepare_pod_volumes(
+        &self,
+        namespace: &str,
+        pod: &Value,
+    ) -> Result<(), KubeletError> {
+        let name = pod
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or("unknown");
+        let pod_uid = pod
+            .get("metadata")
+            .and_then(|m| m.get("uid"))
+            .and_then(Value::as_str)
+            .unwrap_or(name);
+
+        let Some(volumes) = pod
+            .get("spec")
+            .and_then(|s| s.get("volumes"))
+            .and_then(Value::as_array)
+        else {
+            return Ok(());
+        };
+
+        for vol in volumes {
+            self.prepare_single_volume(namespace, name, pod_uid, pod, vol)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    async fn evaluate_probe(
+        &self,
+        sandbox_id: &str,
+        container_name: &str,
+        probe: &Value,
+    ) -> Result<bool, KubeletError> {
+        if let Some(exec) = probe.get("exec")
+            && let Some(cmd_val) = exec.get("command").and_then(Value::as_array)
+        {
+            let cmd: Vec<String> = cmd_val
+                .iter()
+                .filter_map(Value::as_str)
+                .map(ToString::to_string)
+                .collect();
+            let res = self
+                .runtime
+                .exec_in_container(sandbox_id, container_name, &cmd)
+                .await?;
+            return Ok(res.exit_code == 0);
+        }
+
+        if let Some(http) = probe.get("httpGet") {
+            let path = http.get("path").and_then(Value::as_str).unwrap_or("/");
+            let cmd = vec!["curl".to_string(), path.to_string()];
+            let res = self
+                .runtime
+                .exec_in_container(sandbox_id, container_name, &cmd)
+                .await;
+            if let Ok(r) = res {
+                return Ok(r.exit_code == 0);
+            }
+        }
+
+        if let Some(tcp) = probe.get("tcpSocket") {
+            let port = tcp.get("port").and_then(Value::as_i64).unwrap_or(80);
+            let cmd = vec![
+                "nc".to_string(),
+                "-z".to_string(),
+                "127.0.0.1".to_string(),
+                port.to_string(),
+            ];
+            let res = self
+                .runtime
+                .exec_in_container(sandbox_id, container_name, &cmd)
+                .await;
+            if let Ok(r) = res {
+                return Ok(r.exit_code == 0);
+            }
+        }
+
+        Ok(true)
+    }
+
+    async fn evaluate_container_probes(
+        &self,
+        sandbox_id: &str,
+        c_name: &str,
+        c: &Value,
+    ) -> Result<(bool, bool), KubeletError> {
+        let mut liveness_ok = true;
+        if let Some(liveness) = c.get("livenessProbe") {
+            liveness_ok = self.evaluate_probe(sandbox_id, c_name, liveness).await?;
+        }
+
+        let mut readiness_ok = true;
+        if !liveness_ok {
+            readiness_ok = false;
+        } else if let Some(readiness) = c.get("readinessProbe") {
+            readiness_ok = self.evaluate_probe(sandbox_id, c_name, readiness).await?;
+        }
+
+        Ok((liveness_ok, readiness_ok))
+    }
+
     fn build_container_statuses(
         &self,
         namespace: &str,
@@ -730,6 +1180,99 @@ impl PodReconciler {
         container_statuses
     }
 
+    async fn sync_running_pod(&self, namespace: &str, pod: &Value) -> Result<(), KubeletError> {
+        let name = pod
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or("unknown");
+
+        let empty_containers = Vec::new();
+        let containers = pod
+            .get("spec")
+            .and_then(|s| s.get("containers"))
+            .and_then(Value::as_array)
+            .map_or(&empty_containers[..], |c| &c[..]);
+
+        let empty_statuses = Vec::new();
+        let existing_statuses = pod
+            .get("status")
+            .and_then(|s| s.get("containerStatuses"))
+            .and_then(Value::as_array)
+            .map_or(&empty_statuses[..], |s| &s[..]);
+
+        let sandbox_id = existing_statuses
+            .first()
+            .and_then(|cs| cs.get("containerID").and_then(Value::as_str))
+            .and_then(|cid| {
+                let after_slash = cid.split("://").nth(1)?;
+                let (sb_id, _) = after_slash.rsplit_once("-c-")?;
+                Some(sb_id.to_string())
+            })
+            .unwrap_or_else(|| format!("{}-{}-1", self.runtime.provider_name(), name));
+
+        let restart_policy = pod
+            .get("spec")
+            .and_then(|s| s.get("restartPolicy"))
+            .and_then(Value::as_str)
+            .unwrap_or("Always");
+
+        let mut updated_statuses = Vec::new();
+        let mut all_ready = true;
+
+        for (idx, c) in containers.iter().enumerate() {
+            let c_name = c.get("name").and_then(Value::as_str).unwrap_or("main");
+            let existing_status = existing_statuses
+                .iter()
+                .find(|s| s.get("name").and_then(Value::as_str) == Some(c_name));
+
+            let mut restart_count = existing_status
+                .and_then(|s| s.get("restartCount"))
+                .and_then(Value::as_i64)
+                .unwrap_or(0);
+
+            let (liveness_ok, ready) = self
+                .evaluate_container_probes(&sandbox_id, c_name, c)
+                .await?;
+            if !liveness_ok && restart_policy != "Never" {
+                restart_count += 1;
+                let _ = self.runtime.stop_pod(&sandbox_id).await;
+            }
+
+            if !ready {
+                all_ready = false;
+            }
+
+            let mut st = existing_status.cloned().unwrap_or_else(|| {
+                json!({
+                    "name": c_name,
+                    "image": c.get("image").and_then(Value::as_str).unwrap_or("unknown"),
+                    "containerID": format!("{}://{}-c-{}", self.runtime.provider_name(), sandbox_id, idx),
+                })
+            });
+
+            st["ready"] = json!(ready);
+            st["restartCount"] = json!(restart_count);
+            updated_statuses.push(st);
+        }
+
+        let status = json!({
+            "phase": "Running",
+            "conditions": build_pod_conditions(all_ready),
+            "containerStatuses": updated_statuses
+        });
+
+        self.client
+            .patch_pod_status(namespace, name, status)
+            .await
+            .map_err(|e| KubeletError::PodReconciliationFailed {
+                pod: format!("{namespace}/{name}"),
+                reason: format!("failed to patch pod status: {e}"),
+            })?;
+
+        Ok(())
+    }
+
     /// Synchronizes an individual pod's runtime state and updates its API status.
     pub async fn sync_pod(&self, namespace: &str, pod: &Value) -> Result<(), KubeletError> {
         let name = pod
@@ -741,20 +1284,21 @@ impl PodReconciler {
                 reason: "pod missing metadata.name".to_string(),
             })?;
 
-        // If the pod is already Running, skip re-execution
+        // 1. Prepare and stage volumes on host filesystem
+        self.prepare_pod_volumes(namespace, pod).await?;
+
+        // 2. If the pod is already Running, evaluate probes and sync status
         if let Some(phase) = pod
             .get("status")
             .and_then(|s| s.get("phase"))
             .and_then(Value::as_str)
             && phase == "Running"
         {
-            return Ok(());
+            return self.sync_running_pod(namespace, pod).await;
         }
 
-        // Determine QoS and CPU pinning eligibility
+        // 3. Determine QoS and execute pod on runtime provider
         let qos = determine_pod_qos(pod);
-
-        // Execute pod on runtime provider
         let sandbox_id = self.runtime.run_pod(pod).await?;
 
         let empty_containers = Vec::new();
@@ -764,8 +1308,23 @@ impl PodReconciler {
             .and_then(Value::as_array)
             .map_or(&empty_containers[..], |c| &c[..]);
 
-        let container_statuses =
+        let mut container_statuses =
             self.build_container_statuses(namespace, &sandbox_id, name, qos, containers);
+
+        // Evaluate initial probes
+        let mut all_ready = true;
+        for (idx, c) in containers.iter().enumerate() {
+            let c_name = c.get("name").and_then(Value::as_str).unwrap_or("main");
+            let (_, ready) = self
+                .evaluate_container_probes(&sandbox_id, c_name, c)
+                .await?;
+            if !ready {
+                all_ready = false;
+                if let Some(st) = container_statuses.get_mut(idx) {
+                    st["ready"] = json!(false);
+                }
+            }
+        }
 
         let status = json!({
             "phase": "Running",
@@ -777,32 +1336,7 @@ impl PodReconciler {
             "hostIP": self.node_ip,
             "podIP": self.node_ip,
             "startTime": "2026-09-30T12:00:00Z",
-            "conditions": [
-                {
-                    "type": "PodScheduled",
-                    "status": "True",
-                    "reason": "PodScheduled",
-                    "message": "pod assigned to node"
-                },
-                {
-                    "type": "Initialized",
-                    "status": "True",
-                    "reason": "PodInitialized",
-                    "message": "all init containers completed"
-                },
-                {
-                    "type": "ContainersReady",
-                    "status": "True",
-                    "reason": "ContainersReady",
-                    "message": "all containers ready"
-                },
-                {
-                    "type": "Ready",
-                    "status": "True",
-                    "reason": "PodReady",
-                    "message": "pod is ready"
-                }
-            ],
+            "conditions": build_pod_conditions(all_ready),
             "containerStatuses": container_statuses
         });
 
@@ -816,6 +1350,268 @@ impl PodReconciler {
 
         Ok(())
     }
+}
+
+fn safe_volume_path(vol_dir: &Path, rel: &str) -> Result<PathBuf, KubeletError> {
+    let p = Path::new(rel);
+    if rel.is_empty()
+        || p.is_absolute()
+        || p.components()
+            .any(|c| !matches!(c, std::path::Component::Normal(_)))
+    {
+        return Err(KubeletError::InvalidConfiguration {
+            field: "volume.items.path".into(),
+            reason: format!("invalid volume path '{rel}'"),
+        });
+    }
+    Ok(vol_dir.join(p))
+}
+
+fn write_volume_file(path: &Path, content: &[u8]) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    std::fs::write(path, content)
+}
+
+fn stage_secret_files(
+    vol_dir: &Path,
+    vol_spec: &Value,
+    sec_obj: &Value,
+) -> Result<(), KubeletError> {
+    let data_map = sec_obj.get("data").and_then(Value::as_object);
+    let string_data_map = sec_obj.get("stringData").and_then(Value::as_object);
+
+    if let Some(items) = vol_spec.get("items").and_then(Value::as_array) {
+        for item in items {
+            let key = item.get("key").and_then(Value::as_str).unwrap_or("");
+            let path = item.get("path").and_then(Value::as_str).unwrap_or(key);
+            let file_path = safe_volume_path(vol_dir, path)?;
+            if let Some(val) = data_map.and_then(|m| m.get(key)).and_then(Value::as_str) {
+                let bytes = rubix_pki::base64_decode(val.trim())
+                    .unwrap_or_else(|_| val.as_bytes().to_vec());
+                write_volume_file(&file_path, &bytes)?;
+            } else if let Some(val) = string_data_map
+                .and_then(|m| m.get(key))
+                .and_then(Value::as_str)
+            {
+                write_volume_file(&file_path, val.as_bytes())?;
+            }
+        }
+    } else {
+        if let Some(data) = data_map {
+            for (key, val_v) in data {
+                if let Some(val_str) = val_v.as_str() {
+                    let file_path = safe_volume_path(vol_dir, key)?;
+                    let bytes = rubix_pki::base64_decode(val_str.trim())
+                        .unwrap_or_else(|_| val_str.as_bytes().to_vec());
+                    write_volume_file(&file_path, &bytes)?;
+                }
+            }
+        }
+        if let Some(str_data) = string_data_map {
+            for (key, val_v) in str_data {
+                if let Some(val_str) = val_v.as_str() {
+                    let file_path = safe_volume_path(vol_dir, key)?;
+                    write_volume_file(&file_path, val_str.as_bytes())?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn stage_configmap_files(
+    vol_dir: &Path,
+    vol_spec: &Value,
+    cm_obj: &Value,
+) -> Result<(), KubeletError> {
+    let data_map = cm_obj.get("data").and_then(Value::as_object);
+    let binary_data_map = cm_obj.get("binaryData").and_then(Value::as_object);
+
+    if let Some(items) = vol_spec.get("items").and_then(Value::as_array) {
+        for item in items {
+            let key = item.get("key").and_then(Value::as_str).unwrap_or("");
+            let path = item.get("path").and_then(Value::as_str).unwrap_or(key);
+            let file_path = safe_volume_path(vol_dir, path)?;
+            if let Some(val) = data_map.and_then(|m| m.get(key)).and_then(Value::as_str) {
+                write_volume_file(&file_path, val.as_bytes())?;
+            } else if let Some(val) = binary_data_map
+                .and_then(|m| m.get(key))
+                .and_then(Value::as_str)
+            {
+                let bytes = rubix_pki::base64_decode(val.trim())
+                    .unwrap_or_else(|_| val.as_bytes().to_vec());
+                write_volume_file(&file_path, &bytes)?;
+            }
+        }
+    } else {
+        if let Some(data) = data_map {
+            for (key, val_v) in data {
+                if let Some(val_str) = val_v.as_str() {
+                    let file_path = safe_volume_path(vol_dir, key)?;
+                    write_volume_file(&file_path, val_str.as_bytes())?;
+                }
+            }
+        }
+        if let Some(bin_data) = binary_data_map {
+            for (key, val_v) in bin_data {
+                if let Some(val_str) = val_v.as_str() {
+                    let file_path = safe_volume_path(vol_dir, key)?;
+                    let bytes = rubix_pki::base64_decode(val_str.trim())
+                        .unwrap_or_else(|_| val_str.as_bytes().to_vec());
+                    write_volume_file(&file_path, &bytes)?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn stage_projected_sa_token(
+    vol_dir: &Path,
+    namespace: &str,
+    pod: &Value,
+    sa_tok: &Value,
+    apiserver: Option<&Arc<ApiserverService>>,
+) -> Result<(), KubeletError> {
+    let rel_path = sa_tok
+        .get("path")
+        .and_then(Value::as_str)
+        .unwrap_or("token");
+    let audience = sa_tok
+        .get("audience")
+        .and_then(Value::as_str)
+        .unwrap_or("api");
+    let lifetime = sa_tok
+        .get("expirationSeconds")
+        .and_then(Value::as_u64)
+        .unwrap_or(3600);
+    let sa_name = pod
+        .get("spec")
+        .and_then(|s| s.get("serviceAccountName"))
+        .and_then(Value::as_str)
+        .unwrap_or("default");
+    let pod_name = pod
+        .get("metadata")
+        .and_then(|m| m.get("name"))
+        .and_then(Value::as_str)
+        .unwrap_or("unknown");
+
+    let token_str = if let Some(srv) = apiserver {
+        srv.issue_service_account_token(
+            namespace,
+            sa_name,
+            &[audience.to_string()],
+            std::time::Duration::from_secs(lifetime),
+        )
+        .map_err(|e| KubeletError::PodReconciliationFailed {
+            pod: pod_name.to_string(),
+            reason: format!("failed to issue service account token for {namespace}/{sa_name}: {e}"),
+        })?
+    } else {
+        format!("mock-token-{namespace}-{sa_name}")
+    };
+
+    let token_path = safe_volume_path(vol_dir, rel_path)?;
+    write_volume_file(&token_path, token_str.as_bytes())?;
+
+    let ns_path = safe_volume_path(vol_dir, "namespace")?;
+    if !ns_path.exists() {
+        let _ = write_volume_file(&ns_path, namespace.as_bytes());
+    }
+
+    let ca_path = safe_volume_path(vol_dir, "ca.crt")?;
+    if !ca_path.exists() {
+        let ca_bytes = apiserver
+            .and_then(|srv| {
+                if srv.config().client_ca_file.exists() {
+                    std::fs::read(&srv.config().client_ca_file).ok()
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| b"mock-ca-cert".to_vec());
+        let _ = write_volume_file(&ca_path, &ca_bytes);
+    }
+
+    Ok(())
+}
+
+fn stage_projected_downward_api(
+    vol_dir: &Path,
+    namespace: &str,
+    pod: &Value,
+    items: &[Value],
+) -> Result<(), KubeletError> {
+    for item in items {
+        let path = item.get("path").and_then(Value::as_str).unwrap_or("");
+        let field_path = item
+            .get("fieldRef")
+            .and_then(|f| f.get("fieldPath"))
+            .and_then(Value::as_str)
+            .unwrap_or("");
+
+        let val = match field_path {
+            "metadata.name" => pod
+                .get("metadata")
+                .and_then(|m| m.get("name"))
+                .and_then(Value::as_str)
+                .unwrap_or(""),
+            "metadata.namespace" => namespace,
+            "metadata.uid" => pod
+                .get("metadata")
+                .and_then(|m| m.get("uid"))
+                .and_then(Value::as_str)
+                .unwrap_or(""),
+            _ => "",
+        };
+
+        let target = safe_volume_path(vol_dir, path)?;
+        write_volume_file(&target, val.as_bytes())?;
+    }
+    Ok(())
+}
+
+fn build_pod_conditions(all_ready: bool) -> Vec<Value> {
+    let ready_status_str = if all_ready { "True" } else { "False" };
+    let ready_reason = if all_ready {
+        "PodReady"
+    } else {
+        "ContainersNotReady"
+    };
+    let ready_msg = if all_ready {
+        "pod is ready"
+    } else {
+        "containers not ready"
+    };
+
+    vec![
+        json!({
+            "type": "PodScheduled",
+            "status": "True",
+            "reason": "PodScheduled",
+            "message": "pod assigned to node"
+        }),
+        json!({
+            "type": "Initialized",
+            "status": "True",
+            "reason": "PodInitialized",
+            "message": "all init containers completed"
+        }),
+        json!({
+            "type": "ContainersReady",
+            "status": ready_status_str,
+            "reason": ready_reason,
+            "message": ready_msg
+        }),
+        json!({
+            "type": "Ready",
+            "status": ready_status_str,
+            "reason": ready_reason,
+            "message": ready_msg
+        }),
+    ]
 }
 
 fn check_pod_restart_need(

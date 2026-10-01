@@ -29,7 +29,7 @@ pub use registration::NodeRegistration;
 pub use service::KubeletService;
 pub use supervisor::{COMPONENT_KUBELET, DEFAULT_STARTUP_TIMEOUT, KubeletAdapter};
 pub use workload::{
-    CpuManager, CpuManagerState, MockRuntimeProvider, PodQoSClass, PodReconciler, RuntimeProvider,
-    WorkloadRestartReport, determine_pod_qos, is_container_cpu_pinning_eligible,
+    CpuManager, CpuManagerState, ExecResult, MockRuntimeProvider, PodQoSClass, PodReconciler,
+    RuntimeProvider, WorkloadRestartReport, determine_pod_qos, is_container_cpu_pinning_eligible,
     parse_cpu_quantity_milli, parse_memory_quantity_bytes,
 };
