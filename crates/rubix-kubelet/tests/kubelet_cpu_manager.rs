@@ -131,10 +131,12 @@ fn test_checkpoint_transitions_parity_matrix() {
 
 #[test]
 fn test_cpu_manager_validation_rules() {
-    let mut options = KubeletConfigOptions::default();
+    let mut options = KubeletConfigOptions {
+        cpu_manager_policy: "dynamic".to_string(),
+        ..KubeletConfigOptions::default()
+    };
 
     // 1. Unknown policy rejected
-    options.cpu_manager_policy = "dynamic".to_string();
     assert!(options.validate_cpu_manager(4).is_err());
 
     // 2. None policy rejects options or reservations
@@ -229,7 +231,7 @@ fn test_cpu_manager_validation_rules() {
 }
 
 #[test]
-fn test_pod_qos_and_cpu_pinning_eligibility() {
+fn test_pod_qos_guaranteed_pinning_eligibility() {
     // 1. Guaranteed QoS with integer CPU (Eligible: 2 cores)
     let guaranteed_integer_pod = serde_json::json!({
         "spec": {
@@ -285,7 +287,10 @@ fn test_pod_qos_and_cpu_pinning_eligibility() {
     assert_eq!(qos, PodQoSClass::Guaranteed);
     let c1 = &guaranteed_fractional["spec"]["containers"][0];
     assert_eq!(is_container_cpu_pinning_eligible(qos, c1), None);
+}
 
+#[test]
+fn test_pod_qos_burstable_and_best_effort() {
     // 4. Burstable QoS: cpu only, no memory (Ineligible)
     let burstable_pod = serde_json::json!({
         "spec": {

@@ -122,7 +122,9 @@ pub fn parse_cpu_quantity_milli(s: &str) -> Option<u64> {
     } else if let Ok(val) = s.parse::<u64>() {
         Some(val * 1000)
     } else if let Ok(f) = s.parse::<f64>() {
-        if f.is_sign_negative() || f.is_nan() || f.is_infinite() || f > (u64::MAX / 1000) as f64 {
+        #[allow(clippy::cast_precision_loss)]
+        let max_f64 = (u64::MAX / 1000) as f64;
+        if f.is_sign_negative() || f.is_nan() || f.is_infinite() || f > max_f64 {
             None
         } else {
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]

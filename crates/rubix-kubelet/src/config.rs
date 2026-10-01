@@ -214,25 +214,7 @@ impl KubeletConfigOptions {
         map.insert("kind".to_string(), json!("KubeletConfiguration"));
         map.insert("readOnlyPort".to_string(), json!(self.read_only_port));
 
-        if self.cpu_manager_policy == "static" {
-            map.insert("cpuManagerPolicy".to_string(), json!("static"));
-            let effective_reserved = if !self.reserved_cpus.is_empty() {
-                self.reserved_cpus.clone()
-            } else if !self.system_reserved.contains_key("cpu") {
-                "0".to_string()
-            } else {
-                String::new()
-            };
-            if !effective_reserved.is_empty() {
-                map.insert("reservedSystemCPUs".to_string(), json!(effective_reserved));
-            }
-            if !self.cpu_manager_policy_options.is_empty() {
-                map.insert(
-                    "cpuManagerPolicyOptions".to_string(),
-                    json!(self.cpu_manager_policy_options),
-                );
-            }
-        }
+        self.populate_cpu_manager_config(&mut map);
 
         if !self.system_reserved.is_empty() {
             map.insert("systemReserved".to_string(), json!(self.system_reserved));
@@ -279,6 +261,28 @@ impl KubeletConfigOptions {
         );
 
         Value::Object(map)
+    }
+
+    fn populate_cpu_manager_config(&self, map: &mut serde_json::Map<String, Value>) {
+        if self.cpu_manager_policy == "static" {
+            map.insert("cpuManagerPolicy".to_string(), json!("static"));
+            let effective_reserved = if !self.reserved_cpus.is_empty() {
+                self.reserved_cpus.clone()
+            } else if !self.system_reserved.contains_key("cpu") {
+                "0".to_string()
+            } else {
+                String::new()
+            };
+            if !effective_reserved.is_empty() {
+                map.insert("reservedSystemCPUs".to_string(), json!(effective_reserved));
+            }
+            if !self.cpu_manager_policy_options.is_empty() {
+                map.insert(
+                    "cpuManagerPolicyOptions".to_string(),
+                    json!(self.cpu_manager_policy_options),
+                );
+            }
+        }
     }
 
     /// Renders Kubelet configuration into canonical YAML matching the official golden fixture.
@@ -344,9 +348,8 @@ impl KubeletConfigOptions {
     ///
     /// Returns `true` if the checkpoint was removed/invalidated, `false` otherwise.
     pub fn invalidate_cpu_manager_checkpoint(&self, new_yaml: &str) -> bool {
-        let previous = match fs::read_to_string(&self.config_file) {
-            Ok(content) => content,
-            Err(_) => return false,
+        let Ok(previous) = fs::read_to_string(&self.config_file) else {
+            return false;
         };
 
         let previous_settings = Self::read_cpu_manager_settings(&previous);
@@ -602,7 +605,7 @@ fn validate_cpu_reservations(
                 reason: format!("invalid --system-reserved quantity \"{sys_cpu}\" for \"cpu\""),
             }
         })?;
-        let count = ((milli + 999) / 1000) as usize;
+        let count = usize::try_from(milli.div_ceil(1000)).unwrap_or(usize::MAX);
         if count >= host_cpus {
             return Err(KubeletError::InvalidConfiguration {
                 field: "system_reserved.cpu".to_string(),
@@ -694,9 +697,7 @@ pub fn format_cpuset(cpus: &BTreeSet<usize>) -> String {
 /// Detects available CPUs on the host, defaulting to 2 if query fails.
 #[must_use]
 pub fn detect_host_cpu_count() -> usize {
-    std::thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(2)
+    std::thread::available_parallelism().map_or(2, std::num::NonZero::get)
 }
 
 /// Renders a JSON Value into deterministic, alphabetically sorted YAML.
