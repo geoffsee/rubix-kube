@@ -123,7 +123,7 @@ pub fn remove_if_symlink(path: &Path) -> Result<bool, NetworkError> {
             } else {
                 Ok(false)
             }
-        }
+        },
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
         Err(e) => Err(NetworkError::Io(e)),
     }
@@ -153,8 +153,8 @@ pub fn write_managed_cni_config(
         Ok(_) => {
             // Remove existing symlink or regular file left by previous managed or external runs
             fs::remove_file(&symlink_path)?;
-        }
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        },
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {},
         Err(e) => return Err(NetworkError::Io(e)),
     }
 
@@ -444,7 +444,10 @@ mod tests {
             let symlink = standard_conf_dir.join("10-bridge.conflist");
             assert!(symlink.is_symlink());
             let target = fs::read_link(&symlink).expect("read symlink");
-            assert_eq!(target, fs::canonicalize(&written_path).expect("canonicalize"));
+            assert_eq!(
+                target,
+                fs::canonicalize(&written_path).expect("canonicalize")
+            );
         }
     }
 }

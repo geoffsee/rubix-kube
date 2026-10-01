@@ -120,7 +120,10 @@ fn test_managed_mode_writes_owned_config_and_links_standard_path() {
         assert!(standard_file.exists());
         assert!(standard_file.is_symlink());
         let target = fs::read_link(&standard_file).expect("read symlink");
-        assert_eq!(target, fs::canonicalize(&expected_managed_file).expect("canonicalize"));
+        assert_eq!(
+            target,
+            fs::canonicalize(&expected_managed_file).expect("canonicalize")
+        );
     }
 }
 
@@ -262,13 +265,9 @@ fn test_external_followed_by_managed_mode_replaces_regular_file() {
     assert!(ext_content.contains("\"mtu\": 1400"));
 
     // 2. Next run managed mode with different settings (e.g. MTU 1500, pod CIDR 10.43.0.0/16)
-    let managed_written = write_managed_cni_config(
-        &base_path,
-        1500,
-        Some("10.43.0.0/16"),
-        Some(&standard_dir),
-    )
-    .expect("write managed");
+    let managed_written =
+        write_managed_cni_config(&base_path, 1500, Some("10.43.0.0/16"), Some(&standard_dir))
+            .expect("write managed");
 
     // Managed file exists and contains new MTU 1500
     assert!(managed_written.exists());
@@ -282,7 +281,10 @@ fn test_external_followed_by_managed_mode_replaces_regular_file() {
     {
         assert!(standard_file.is_symlink());
         let target = fs::read_link(&standard_file).expect("read symlink");
-        assert_eq!(target, fs::canonicalize(&managed_written).expect("canonicalize"));
+        assert_eq!(
+            target,
+            fs::canonicalize(&managed_written).expect("canonicalize")
+        );
     }
     // Reading through standard_file yields the managed content
     let linked_content = fs::read_to_string(&standard_file).expect("read through symlink");
@@ -312,4 +314,3 @@ fn test_managed_mode_relative_base_path_canonicalization() {
         assert_eq!(target, fs::canonicalize(&written).expect("canonicalize"));
     }
 }
-
