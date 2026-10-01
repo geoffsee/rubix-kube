@@ -52,10 +52,17 @@ impl WebhookServer {
     pub async fn run(
         addr: SocketAddr,
         handler: Arc<NodeSetterHandler>,
-        mut shutdown_rx: watch::Receiver<bool>,
+        shutdown_rx: watch::Receiver<bool>,
     ) -> Result<(), WebhookError> {
         let listener = TcpListener::bind(addr).await?;
+        Self::run_with_listener(listener, handler, shutdown_rx).await
+    }
 
+    pub async fn run_with_listener(
+        listener: TcpListener,
+        handler: Arc<NodeSetterHandler>,
+        mut shutdown_rx: watch::Receiver<bool>,
+    ) -> Result<(), WebhookError> {
         loop {
             tokio::select! {
                 res = listener.accept() => {

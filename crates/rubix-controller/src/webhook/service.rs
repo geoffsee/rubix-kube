@@ -50,6 +50,7 @@ pub struct WebhookService {
     handler: Arc<NodeSetterHandler>,
     running: Arc<AtomicBool>,
     shutdown_tx: Arc<tokio::sync::Mutex<Option<watch::Sender<bool>>>>,
+    server_task: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
 }
 
 impl WebhookService {
@@ -67,6 +68,7 @@ impl WebhookService {
             handler,
             running: Arc::new(AtomicBool::new(false)),
             shutdown_tx: Arc::new(tokio::sync::Mutex::new(None)),
+            server_task: Arc::new(tokio::sync::Mutex::new(None)),
         }
     }
 
@@ -186,10 +188,16 @@ impl WebhookService {
 
     /// Starts the webhook service, registers the configuration, and begins listening on the network.
     pub async fn start(&self) -> Result<(), WebhookError> {
+        if self.running.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+
         self.check_prerequisites().await?;
         self.register_webhook().await?;
 
         let addr = SocketAddr::new(self.config.bind_address, self.config.port);
+        let listener = tokio::net::TcpListener::bind(addr).await?;
+
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
         {
             let mut guard = self.shutdown_tx.lock().await;
@@ -197,9 +205,15 @@ impl WebhookService {
         }
 
         let handler = self.handler.clone();
-        tokio::spawn(async move {
-            let _ = WebhookServer::run(addr, handler, shutdown_rx).await;
+        let task = tokio::spawn(async move {
+            if let Err(e) = WebhookServer::run_with_listener(listener, handler, shutdown_rx).await {
+                eprintln!("webhook server error: {e}");
+            }
         });
+        {
+            let mut guard = self.server_task.lock().await;
+            *guard = Some(task);
+        }
 
         self.running.store(true, Ordering::SeqCst);
         Ok(())
@@ -231,11 +245,20 @@ impl WebhookService {
         ))
     }
 
-    /// Stops the webhook service.
+    /// Stops the webhook service and awaits server task termination.
     pub async fn stop(&self) {
-        let mut guard = self.shutdown_tx.lock().await;
-        if let Some(tx) = guard.take() {
-            let _ = tx.send(true);
+        {
+            let mut guard = self.shutdown_tx.lock().await;
+            if let Some(tx) = guard.take() {
+                let _ = tx.send(true);
+            }
+        }
+        let task = {
+            let mut guard = self.server_task.lock().await;
+            guard.take()
+        };
+        if let Some(handle) = task {
+            let _ = handle.await;
         }
         self.running.store(false, Ordering::SeqCst);
     }
