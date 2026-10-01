@@ -134,11 +134,41 @@ impl ContainerEnvironment {
 
         #[cfg(target_os = "linux")]
         {
-            rubix_network::ensure_ip_forward()?;
-            let backend = rubix_network::ensure_pod_masquerade(pod_cidr)?;
-            self.snat_ready
-                .store(true, std::sync::atomic::Ordering::SeqCst);
-            Ok(Some(backend))
+            if let Err(e) = rubix_network::ensure_ip_forward() {
+                match e {
+                    rubix_network::NetworkError::SysctlError { ref reason, .. }
+                        if reason.contains("Permission denied")
+                            || reason.contains("Read-only file system") =>
+                    {
+                        tracing::debug!(
+                            component = "network",
+                            error = %e,
+                            "ip_forward sysctl unprivileged or read-only"
+                        );
+                    },
+                    _ => return Err(KubeletError::Network(e)),
+                }
+            }
+
+            match rubix_network::ensure_pod_masquerade(pod_cidr) {
+                Ok(backend) => {
+                    self.snat_ready
+                        .store(true, std::sync::atomic::Ordering::SeqCst);
+                    Ok(Some(backend))
+                },
+                Err(rubix_network::NetworkError::MasqueradeError { reason })
+                    if reason.contains("Permission denied")
+                        || reason.contains("you must be root") =>
+                {
+                    tracing::debug!(
+                        component = "network",
+                        reason = %reason,
+                        "pod egress masquerade skipped in unprivileged environment"
+                    );
+                    Ok(None)
+                },
+                Err(e) => Err(KubeletError::Network(e)),
+            }
         }
     }
 
