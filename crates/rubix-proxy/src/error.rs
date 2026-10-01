@@ -38,6 +38,17 @@ pub enum ProxyError {
     #[error("command execution failed for '{command}': {reason}")]
     CommandExecutionFailed { command: String, reason: String },
 
+    #[error(
+        "dataplane probe failed for service '{service}': {reason}. Startup succeeded but dataplane routing is non-functional"
+    )]
+    DataplaneProbeFailed { service: String, reason: String },
+
+    #[error("no ready endpoints available for service '{service}'")]
+    NoReadyEndpoints { service: String },
+
+    #[error("routing rule verification failed for '{rule}': {reason}")]
+    RoutingVerificationFailed { rule: String, reason: String },
+
     #[error("internal proxy error: {reason}")]
     Internal { reason: String },
 }
@@ -55,6 +66,9 @@ impl ProxyError {
             Self::MasqueradeFailed { .. } => "proxy-masquerade-failed",
             Self::ServiceStartFailed { .. } => "proxy-start-failed",
             Self::CommandExecutionFailed { .. } => "proxy-command-failed",
+            Self::DataplaneProbeFailed { .. } => "proxy-dataplane-probe-failed",
+            Self::NoReadyEndpoints { .. } => "proxy-no-ready-endpoints",
+            Self::RoutingVerificationFailed { .. } => "proxy-routing-verification-failed",
             Self::Internal { .. } => "proxy-internal-error",
         }
     }
