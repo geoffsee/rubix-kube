@@ -175,6 +175,9 @@ impl KubeletService {
             let _ = self.container_env.disable_ipv6()?;
         }
         let invalidated = self.options.write_kubelet_config_file()?;
+        if invalidated {
+            self.reconciler.cpu_manager().reset();
+        }
         self.reconciler.mark_checkpoint_invalidated(invalidated);
         self.registration.register_or_update().await?;
         self.registration.update_lease().await?;

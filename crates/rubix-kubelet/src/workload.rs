@@ -120,7 +120,7 @@ pub fn parse_cpu_quantity_milli(s: &str) -> Option<u64> {
     if let Some(rest) = s.strip_suffix('m') {
         rest.parse::<u64>().ok()
     } else if let Ok(val) = s.parse::<u64>() {
-        Some(val * 1000)
+        val.checked_mul(1000)
     } else if let Ok(f) = s.parse::<f64>() {
         #[allow(clippy::cast_precision_loss)]
         let max_f64 = (u64::MAX / 1000) as f64;
@@ -326,12 +326,14 @@ impl CpuManager {
     pub fn from_options(options: &KubeletConfigOptions) -> Self {
         let reserved = if !options.reserved_cpus.is_empty() {
             parse_cpuset(&options.reserved_cpus).unwrap_or_default()
-        } else if options.cpu_manager_policy == "static"
-            && !options.system_reserved.contains_key("cpu")
-        {
-            let mut s = BTreeSet::new();
-            s.insert(0);
-            s
+        } else if options.cpu_manager_policy == "static" {
+            let count = options
+                .system_reserved
+                .get("cpu")
+                .and_then(|q| parse_cpu_quantity_milli(q))
+                .map_or(1, |m| usize::try_from(m.div_ceil(1000)).unwrap_or(1))
+                .max(1);
+            (0..count).collect()
         } else {
             BTreeSet::new()
         };
@@ -371,6 +373,14 @@ impl CpuManager {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
+    }
+
+    /// Drops all in-memory allocations (e.g. after checkpoint invalidation).
+    pub fn reset(&self) {
+        self.allocations
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clear();
     }
 
     /// Computes the shared CPU pool (all host CPUs excluding reserved and exclusively allocated cores).
@@ -663,6 +673,7 @@ impl PodReconciler {
 
     fn build_container_statuses(
         &self,
+        namespace: &str,
         sandbox_id: &str,
         pod_name: &str,
         qos: PodQoSClass,
@@ -672,7 +683,7 @@ impl PodReconciler {
         for (idx, c) in containers.iter().enumerate() {
             let c_name = c.get("name").and_then(Value::as_str).unwrap_or("main");
             let c_image = c.get("image").and_then(Value::as_str).unwrap_or("unknown");
-            let container_key = format!("{pod_name}/{c_name}");
+            let container_key = format!("{namespace}/{pod_name}/{c_name}");
 
             let (assigned_cpuset, is_exclusive) =
                 if let Some(cores) = is_container_cpu_pinning_eligible(qos, c) {
@@ -751,7 +762,8 @@ impl PodReconciler {
             .and_then(Value::as_array)
             .map_or(&empty_containers[..], |c| &c[..]);
 
-        let container_statuses = self.build_container_statuses(&sandbox_id, name, qos, containers);
+        let container_statuses =
+            self.build_container_statuses(namespace, &sandbox_id, name, qos, containers);
 
         let status = json!({
             "phase": "Running",
@@ -845,7 +857,17 @@ fn check_pod_restart_need(
     for c in containers {
         let c_name = c.get("name").and_then(Value::as_str).unwrap_or("unknown");
         if is_container_cpu_pinning_eligible(qos, c).is_some() {
-            let c_id = format!("{provider_name}://{pod_name}-{c_name}-c");
+            let c_id = pod
+                .get("status")
+                .and_then(|s| s.get("containerStatuses"))
+                .and_then(Value::as_array)
+                .and_then(|cs| {
+                    cs.iter()
+                        .find(|s| s.get("name").and_then(Value::as_str) == Some(c_name))
+                })
+                .and_then(|s| s.get("containerID"))
+                .and_then(Value::as_str)
+                .map_or_else(|| format!("{provider_name}://unknown"), ToString::to_string);
             let reason = format!(
                 "CPU manager checkpoint invalidated; surviving external container '{c_name}' in pod '{namespace}/{pod_name}' runs in shared pool until restarted"
             );

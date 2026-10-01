@@ -434,7 +434,7 @@ async fn test_exclusive_cpu_allocation_and_checkpoint_state() {
     assert!(checkpoint_file.exists());
     let checkpoint_content = fs::read_to_string(&checkpoint_file).unwrap();
     assert!(checkpoint_content.contains("\"policyName\": \"static\""));
-    assert!(checkpoint_content.contains("\"guaranteed-pinned-pod/audio-dsp\": \"1-2\""));
+    assert!(checkpoint_content.contains("\"default/guaranteed-pinned-pod/audio-dsp\": \"1-2\""));
     assert!(checkpoint_content.contains("\"defaultCpuSet\": \"3\"")); // Remaining shared pool core
 
     // 5. Shared pool pod runs on remaining core 3
@@ -553,6 +553,11 @@ async fn test_external_runtime_workload_restart_diagnostics() {
     assert_eq!(restart_reports.len(), 1);
     assert_eq!(restart_reports[0].pod_name, "surviving-pod");
     assert_eq!(restart_reports[0].container_name, "realtime-app");
+    assert!(
+        restart_reports[0]
+            .container_id
+            .starts_with("external-containerd://")
+    );
     assert!(
         restart_reports[0]
             .reason
