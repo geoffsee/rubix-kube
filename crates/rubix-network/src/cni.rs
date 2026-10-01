@@ -77,32 +77,61 @@ pub fn generate_cni_config_json(mtu: u32, pod_cidr: Option<&str>) -> Result<Stri
 }
 
 /// Writes the CNI configuration JSON file to `path` with permissions 0644.
+static TEMP_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 pub fn write_cni_config_file(
     path: &Path,
     mtu: u32,
     pod_cidr: Option<&str>,
 ) -> Result<(), NetworkError> {
+    use std::io::Write;
+    use std::sync::atomic::Ordering;
+
     let content = generate_cni_config_json(mtu, pod_cidr)?;
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent)?;
 
-    // Atomic replacement: write to a temporary file in the same directory, set permissions, then rename
+    // Atomic replacement: write to a unique temporary file in the same directory, set permissions, then rename
     let file_name = path
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("cni-config");
-    let temp_path = parent.join(format!(".{file_name}.tmp-{}", std::process::id()));
+    let counter = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let temp_name = format!(
+        ".{file_name}.tmp-{}-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos(),
+        counter
+    );
+    let temp_path = parent.join(temp_name);
 
-    fs::write(&temp_path, content.as_bytes())?;
+    let mut temp_file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temp_path)?;
 
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        if let Err(e) = fs::set_permissions(&temp_path, fs::Permissions::from_mode(0o644)) {
+        if let Err(e) = temp_file.set_permissions(fs::Permissions::from_mode(0o644)) {
             let _ = fs::remove_file(&temp_path);
             return Err(NetworkError::Io(e));
         }
     }
+
+    if let Err(e) = temp_file.write_all(content.as_bytes()) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(NetworkError::Io(e));
+    }
+
+    if let Err(e) = temp_file.sync_all() {
+        let _ = fs::remove_file(&temp_path);
+        return Err(NetworkError::Io(e));
+    }
+    drop(temp_file);
 
     if let Err(e) = fs::rename(&temp_path, path) {
         let _ = fs::remove_file(&temp_path);
@@ -132,13 +161,15 @@ pub fn remove_if_symlink(path: &Path) -> Result<bool, NetworkError> {
 /// Writes CNI configuration in managed mode (embedded containerd).
 ///
 /// Writes the configuration to `<base_path>/containerd/cni/conf/10-bridge.conflist`
-/// and creates a symlink from `<standard_conf_dir>/10-bridge.conflist` pointing to it.
+/// and atomically installs or updates a symlink from `<standard_conf_dir>/10-bridge.conflist` pointing to it.
 pub fn write_managed_cni_config(
     base_path: &Path,
     mtu: u32,
     pod_cidr: Option<&str>,
     standard_conf_dir: Option<&Path>,
 ) -> Result<PathBuf, NetworkError> {
+    use std::sync::atomic::Ordering;
+
     let managed_conf_dir = base_path.join("containerd/cni/conf");
     let managed_config_file = managed_conf_dir.join(DEFAULT_CNI_CONFIG_NAME);
 
@@ -149,19 +180,25 @@ pub fn write_managed_cni_config(
     fs::create_dir_all(target_dir)?;
 
     let symlink_path = target_dir.join(DEFAULT_CNI_CONFIG_NAME);
-    match fs::symlink_metadata(&symlink_path) {
-        Ok(_) => {
-            // Remove existing symlink or regular file left by previous managed or external runs
-            fs::remove_file(&symlink_path)?;
-        },
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {},
-        Err(e) => return Err(NetworkError::Io(e)),
-    }
 
     #[cfg(unix)]
     {
         let symlink_target = fs::canonicalize(&managed_config_file)?;
-        std::os::unix::fs::symlink(&symlink_target, &symlink_path)?;
+        let temp_symlink_name = format!(
+            ".{DEFAULT_CNI_CONFIG_NAME}.symlink-tmp-{}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos(),
+            TEMP_COUNTER.fetch_add(1, Ordering::Relaxed)
+        );
+        let temp_symlink_path = target_dir.join(temp_symlink_name);
+        std::os::unix::fs::symlink(&symlink_target, &temp_symlink_path)?;
+        if let Err(e) = fs::rename(&temp_symlink_path, &symlink_path) {
+            let _ = fs::remove_file(&temp_symlink_path);
+            return Err(NetworkError::Io(e));
+        }
     }
 
     Ok(managed_config_file)
@@ -169,7 +206,7 @@ pub fn write_managed_cni_config(
 
 /// Writes CNI configuration in external runtime mode (host-managed containerd or CRI-O).
 ///
-/// Writes directly to `<conf_dir>/10-bridge.conflist`, removing any dangling symlink
+/// Writes directly to `<conf_dir>/10-bridge.conflist`, atomically replacing any dangling symlink
 /// from a previous embedded run. Other unrelated files and runtime configurations
 /// in `conf_dir` are strictly preserved.
 pub fn write_external_cni_config(
@@ -181,11 +218,13 @@ pub fn write_external_cni_config(
 
     let cni_config_file = conf_dir.join(DEFAULT_CNI_CONFIG_NAME);
 
-    if remove_if_symlink(&cni_config_file)? {
+    if let Ok(meta) = fs::symlink_metadata(&cni_config_file)
+        && meta.file_type().is_symlink()
+    {
         tracing::info!(
             component = "network",
             path = %cni_config_file.display(),
-            "removed CNI config symlink left by previous embedded run"
+            "replacing CNI config symlink left by previous embedded run"
         );
     }
 
