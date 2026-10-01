@@ -1,5 +1,4 @@
 use serde_json::Value;
-use std::path::{Path, PathBuf};
 
 use rubix_dns::{
     COREDNS_CLUSTER_ROLE_NAME, COREDNS_CONFIGMAP_NAME, COREDNS_DEPLOYMENT_NAME, COREDNS_NAMESPACE,
@@ -8,24 +7,9 @@ use rubix_dns::{
     should_recreate_service,
 };
 
-fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("crates dir")
-        .parent()
-        .expect("repo root")
-        .to_path_buf()
-}
-
 fn load_golden_fixtures() -> Value {
-    let fixture_path = repo_root().join("tools/parity/fixtures/rust-evidence/coredns.json");
-    let content = std::fs::read_to_string(&fixture_path).unwrap_or_else(|e| {
-        panic!(
-            "failed to read golden fixture at {}: {e}",
-            fixture_path.display()
-        )
-    });
-    serde_json::from_str(&content).expect("valid JSON fixture")
+    let content = include_str!("fixtures/coredns.json");
+    serde_json::from_str(content).expect("valid JSON fixture")
 }
 
 #[test]
