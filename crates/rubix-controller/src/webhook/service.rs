@@ -49,6 +49,7 @@ pub struct WebhookService {
     apiserver: Arc<ApiserverService>,
     handler: Arc<NodeSetterHandler>,
     running: Arc<AtomicBool>,
+    lifecycle_lock: Arc<tokio::sync::Mutex<()>>,
     shutdown_tx: Arc<tokio::sync::Mutex<Option<watch::Sender<bool>>>>,
     server_task: Arc<tokio::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
 }
@@ -67,6 +68,7 @@ impl WebhookService {
             apiserver,
             handler,
             running: Arc::new(AtomicBool::new(false)),
+            lifecycle_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown_tx: Arc::new(tokio::sync::Mutex::new(None)),
             server_task: Arc::new(tokio::sync::Mutex::new(None)),
         }
@@ -189,6 +191,7 @@ impl WebhookService {
 
     /// Starts the webhook service, registers the configuration, and begins listening on the network.
     pub async fn start(&self) -> Result<(), WebhookError> {
+        let _guard = self.lifecycle_lock.lock().await;
         if self.running.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -248,6 +251,7 @@ impl WebhookService {
 
     /// Stops the webhook service and awaits server task termination.
     pub async fn stop(&self) {
+        let _guard = self.lifecycle_lock.lock().await;
         {
             let mut guard = self.shutdown_tx.lock().await;
             if let Some(tx) = guard.take() {
