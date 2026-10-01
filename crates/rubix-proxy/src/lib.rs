@@ -3,12 +3,16 @@
 //! Provides configuration generation matching official upstream `kubeproxy.config.k8s.io/v1alpha1`,
 //! automatic detection and selection between `iptables` and native `nftables` backends,
 //! conntrack zeroing in container mode to accommodate read-only `/proc/sys` environments,
-//! preservation of upstream host defaults, and integration with `rubix-supervisor`.
+//! preservation of upstream host defaults, dataplane Service routing across `ClusterIP` and `NodePort`,
+//! `EndpointSlice` dynamic synchronization, TCP/UDP workload probing, and integration with `rubix-supervisor`.
 
 pub mod backend;
 pub mod config;
+pub mod dataplane;
 pub mod error;
 pub mod health;
+pub mod prober;
+pub mod routing;
 pub mod service;
 pub mod supervisor;
 
@@ -23,7 +27,15 @@ pub use config::{
     DEFAULT_METRICS_BIND_ADDRESS, DEFAULT_OOM_SCORE_ADJ, IptablesConfiguration,
     KubeProxyConfiguration, KubeProxyOptions, NftablesConfiguration,
 };
+pub use dataplane::{
+    IptablesDataplane, IptablesRule, NftablesDataplane, NftablesRule, service_chain_hash,
+};
 pub use error::ProxyError;
 pub use health::ProxyHealthReport;
+pub use prober::{DataplaneProbeReport, DataplaneProber, ProbeResult, WorkloadProbe};
+pub use routing::{
+    EndpointConditions, EndpointItem, EndpointPort, EndpointSliceDefinition, Protocol,
+    ServiceDefinition, ServicePort, ServiceRoutingTable, ServiceType, TargetEndpoint,
+};
 pub use service::ProxyService;
 pub use supervisor::{COMPONENT_PROXY, DEFAULT_STARTUP_TIMEOUT, ProxyAdapter};

@@ -16,6 +16,8 @@ pub struct ProxyHealthReport {
     pub container_mode: bool,
     pub all_conntrack_zero: bool,
     pub snat_ready: bool,
+    pub startup_ready: bool,
+    pub dataplane_ready: bool,
     pub details: BTreeMap<String, String>,
 }
 
@@ -36,6 +38,8 @@ impl ProxyHealthReport {
             all_conntrack_zero.to_string(),
         );
         details.insert("snat_ready".to_string(), snat_ready.to_string());
+        details.insert("startup_ready".to_string(), "true".to_string());
+        details.insert("dataplane_ready".to_string(), "false".to_string());
 
         Self {
             is_healthy: true,
@@ -43,8 +47,20 @@ impl ProxyHealthReport {
             container_mode,
             all_conntrack_zero,
             snat_ready,
+            startup_ready: true,
+            dataplane_ready: false,
             details,
         }
+    }
+
+    #[must_use]
+    pub fn with_dataplane_ready(mut self, ready: bool, status_message: impl Into<String>) -> Self {
+        self.dataplane_ready = ready;
+        self.details
+            .insert("dataplane_ready".to_string(), ready.to_string());
+        self.details
+            .insert("dataplane_status".to_string(), status_message.into());
+        self
     }
 
     #[must_use]
@@ -62,6 +78,8 @@ impl ProxyHealthReport {
             container_mode,
             all_conntrack_zero: false,
             snat_ready: false,
+            startup_ready: false,
+            dataplane_ready: false,
             details,
         }
     }

@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use rubix_network::{CommandExecutor, MasqueradeBackend, SystemCommandExecutor};
+use tokio::sync::RwLock;
 
 use crate::backend::{
     ProxyMode, check_sysctl_conntrack_writable, detect_proxy_backend, flush_nftables_nat,
@@ -10,9 +11,11 @@ use crate::backend::{
 use crate::config::KubeProxyOptions;
 use crate::error::ProxyError;
 use crate::health::ProxyHealthReport;
+use crate::prober::{DataplaneProbeReport, DataplaneProber};
+use crate::routing::{EndpointSliceDefinition, ServiceDefinition, ServiceRoutingTable};
 
 /// Supervised kube-proxy service managing configuration, backend selection,
-/// readiness verification, and lifecycle.
+/// readiness verification, dataplane routing, and lifecycle.
 #[derive(Clone)]
 pub struct ProxyService {
     options: KubeProxyOptions,
@@ -21,6 +24,9 @@ pub struct ProxyService {
     running: Arc<AtomicBool>,
     ready: Arc<AtomicBool>,
     snat_ready: Arc<AtomicBool>,
+    dataplane_ready: Arc<AtomicBool>,
+    verified_generation: Arc<AtomicU64>,
+    routing_table: Arc<RwLock<ServiceRoutingTable>>,
 }
 
 impl std::fmt::Debug for ProxyService {
@@ -31,6 +37,7 @@ impl std::fmt::Debug for ProxyService {
             .field("running", &self.is_running())
             .field("ready", &self.is_ready())
             .field("snat_ready", &self.is_snat_ready())
+            .field("dataplane_ready", &self.is_dataplane_ready())
             .finish_non_exhaustive()
     }
 }
@@ -45,6 +52,9 @@ impl ProxyService {
             running: Arc::new(AtomicBool::new(false)),
             ready: Arc::new(AtomicBool::new(false)),
             snat_ready: Arc::new(AtomicBool::new(false)),
+            dataplane_ready: Arc::new(AtomicBool::new(false)),
+            verified_generation: Arc::new(AtomicU64::new(0)),
+            routing_table: Arc::new(RwLock::new(ServiceRoutingTable::new())),
         }
     }
 
@@ -78,6 +88,58 @@ impl ProxyService {
     #[must_use]
     pub fn is_snat_ready(&self) -> bool {
         self.snat_ready.load(Ordering::SeqCst)
+    }
+
+    #[must_use]
+    pub fn is_dataplane_ready(&self) -> bool {
+        if !self.dataplane_ready.load(Ordering::SeqCst) {
+            return false;
+        }
+        if let Ok(table) = self.routing_table.try_read() {
+            let verified = self.verified_generation.load(Ordering::SeqCst);
+            verified > 0 && verified == table.generation()
+        } else {
+            false
+        }
+    }
+
+    #[must_use]
+    pub fn routing_table(&self) -> &Arc<RwLock<ServiceRoutingTable>> {
+        &self.routing_table
+    }
+
+    /// Registers or updates a Service in the routing table, clearing dataplane readiness.
+    pub async fn apply_service(&self, service: ServiceDefinition) {
+        let mut table = self.routing_table.write().await;
+        table.apply_service(service);
+        self.dataplane_ready.store(false, Ordering::SeqCst);
+    }
+
+    /// Removes a Service from the routing table, clearing dataplane readiness.
+    pub async fn remove_service(&self, namespace: &str, name: &str) -> Option<ServiceDefinition> {
+        let mut table = self.routing_table.write().await;
+        let removed = table.remove_service(namespace, name);
+        self.dataplane_ready.store(false, Ordering::SeqCst);
+        removed
+    }
+
+    /// Registers or updates an `EndpointSlice` in the routing table, clearing dataplane readiness.
+    pub async fn apply_endpoint_slice(&self, slice: EndpointSliceDefinition) {
+        let mut table = self.routing_table.write().await;
+        table.apply_endpoint_slice(slice);
+        self.dataplane_ready.store(false, Ordering::SeqCst);
+    }
+
+    /// Removes an `EndpointSlice` from the routing table, clearing dataplane readiness.
+    pub async fn remove_endpoint_slice(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Option<EndpointSliceDefinition> {
+        let mut table = self.routing_table.write().await;
+        let removed = table.remove_endpoint_slice(namespace, name);
+        self.dataplane_ready.store(false, Ordering::SeqCst);
+        removed
     }
 
     /// Checks and prepares all prerequisites for running kube-proxy.
@@ -119,7 +181,7 @@ impl ProxyService {
     pub fn start(&self) -> Result<(), ProxyError> {
         let flags = self.options.generate_flags();
         tracing::info!(
-            component = "kubeproxy",
+            target: "kubeproxy::startup",
             mode = %self.options.proxy_mode,
             container_mode = self.options.container_mode,
             flags = ?flags,
@@ -129,18 +191,17 @@ impl ProxyService {
         Ok(())
     }
 
-    /// Verifies post-startup health and pod egress masquerade readiness.
+    /// Verifies component startup readiness and pod egress masquerade rules.
     ///
-    /// Matches upstream `KubeSolo` `postSetup`: kube-proxy programs its own rules on startup,
-    /// so this ensures readiness only fires once SNAT for pod egress is confirmed.
-    pub fn check_readiness(&self) -> Result<ProxyHealthReport, ProxyError> {
+    /// Distinct from dataplane probes: confirms that the process is alive and host
+    /// SNAT rules are established before network packets are routed.
+    pub fn check_startup_readiness(&self) -> Result<ProxyHealthReport, ProxyError> {
         if !self.is_running() {
             return Err(ProxyError::HealthCheckFailed {
                 reason: "kube-proxy is not running".to_string(),
             });
         }
 
-        // Ensure pod masquerade rules are present on the host
         let masquerade_backend = match self.options.proxy_mode {
             ProxyMode::IpTables => MasqueradeBackend::IpTables,
             ProxyMode::Nftables => MasqueradeBackend::Nftables,
@@ -162,6 +223,14 @@ impl ProxyService {
         self.snat_ready.store(true, Ordering::SeqCst);
         self.ready.store(true, Ordering::SeqCst);
 
+        tracing::info!(
+            target: "kubeproxy::startup",
+            mode = %self.options.proxy_mode,
+            container_mode = self.options.container_mode,
+            snat_ready = true,
+            "kube-proxy component startup verified (process running, SNAT ready)"
+        );
+
         let report = ProxyHealthReport::new_healthy(
             self.options.proxy_mode,
             self.options.container_mode,
@@ -172,11 +241,72 @@ impl ProxyService {
         Ok(report)
     }
 
+    /// Verifies dataplane packet routing against all ready endpoints in the routing table.
+    ///
+    /// Distinctly logs and reports dataplane routing probe success or failure,
+    /// separate from component process startup.
+    pub async fn verify_dataplane(
+        &self,
+        prober: &DataplaneProber,
+    ) -> Result<DataplaneProbeReport, ProxyError> {
+        if !self.is_ready() {
+            return Err(ProxyError::HealthCheckFailed {
+                reason: "kube-proxy component is not startup-ready before dataplane verification"
+                    .to_string(),
+            });
+        }
+
+        let table = self.routing_table.read().await;
+        let current_gen = table.generation();
+        match prober.verify_all_dataplane_routes(&table) {
+            Ok(report) => {
+                self.verified_generation
+                    .store(current_gen, Ordering::SeqCst);
+                self.dataplane_ready.store(true, Ordering::SeqCst);
+                tracing::info!(
+                    target: "kubeproxy::dataplane",
+                    total_probes = report.total_probes,
+                    successful = report.successful_probes,
+                    endpoints_reached = report.endpoints_reached.len(),
+                    "dataplane verification succeeded: all Service routes reached ready endpoints"
+                );
+                Ok(report)
+            },
+            Err(e) => {
+                self.dataplane_ready.store(false, Ordering::SeqCst);
+                self.verified_generation.store(0, Ordering::SeqCst);
+                tracing::error!(
+                    target: "kubeproxy::dataplane",
+                    reason = %e,
+                    "dataplane verification failed: component is running but dataplane traffic is not routing"
+                );
+                Err(e)
+            },
+        }
+    }
+
+    /// Verifies overall readiness, combining component startup and (if verified) dataplane readiness.
+    pub fn check_readiness(&self) -> Result<ProxyHealthReport, ProxyError> {
+        let mut report = self.check_startup_readiness()?;
+        let dp_ready = self.is_dataplane_ready();
+        if dp_ready {
+            report = report.with_dataplane_ready(true, "dataplane probes verified");
+        } else {
+            report = report.with_dataplane_ready(false, "dataplane probes not yet verified");
+        }
+        Ok(report)
+    }
+
     /// Stops kube-proxy.
     pub fn stop(&self) {
-        tracing::info!(component = "kubeproxy", "stopping kubeproxy service...");
+        tracing::info!(
+            target: "kubeproxy::startup",
+            "stopping kubeproxy service..."
+        );
         self.running.store(false, Ordering::SeqCst);
         self.ready.store(false, Ordering::SeqCst);
         self.snat_ready.store(false, Ordering::SeqCst);
+        self.dataplane_ready.store(false, Ordering::SeqCst);
+        self.verified_generation.store(0, Ordering::SeqCst);
     }
 }
