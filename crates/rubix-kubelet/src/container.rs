@@ -138,7 +138,10 @@ impl ContainerEnvironment {
                 match e {
                     rubix_network::NetworkError::SysctlError { ref reason, .. }
                         if reason.contains("Permission denied")
-                            || reason.contains("Read-only file system") => {},
+                            || reason.contains("Read-only file system") =>
+                    {
+                        return Ok(None);
+                    },
                     _ => return Err(KubeletError::Network(e)),
                 }
             }
