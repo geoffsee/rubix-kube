@@ -227,12 +227,27 @@ impl KubeProxyOptions {
         flags.push(format!("--proxy-mode={}", self.proxy_mode.as_str()));
 
         if self.container_mode {
-            flags.push("--conntrack-max-per-core=0".to_string());
-            flags.push("--conntrack-min=0".to_string());
-            flags.push("--conntrack-tcp-timeout-established=0s".to_string());
-            flags.push("--conntrack-tcp-timeout-close-wait=0s".to_string());
-            flags.push("--conntrack-udp-timeout=0s".to_string());
-            flags.push("--conntrack-udp-timeout-stream=0s".to_string());
+            let max = self.conntrack.max_per_core.unwrap_or(0);
+            let min = self.conntrack.min.unwrap_or(0);
+            let tcp_est = self
+                .conntrack
+                .tcp_established_timeout
+                .as_deref()
+                .unwrap_or("0s");
+            let tcp_close = self
+                .conntrack
+                .tcp_close_wait_timeout
+                .as_deref()
+                .unwrap_or("0s");
+            let udp = self.conntrack.udp_timeout.as_deref().unwrap_or("0s");
+            let udp_stream = self.conntrack.udp_stream_timeout.as_deref().unwrap_or("0s");
+
+            flags.push(format!("--conntrack-max-per-core={max}"));
+            flags.push(format!("--conntrack-min={min}"));
+            flags.push(format!("--conntrack-tcp-timeout-established={tcp_est}"));
+            flags.push(format!("--conntrack-tcp-timeout-close-wait={tcp_close}"));
+            flags.push(format!("--conntrack-udp-timeout={udp}"));
+            flags.push(format!("--conntrack-udp-timeout-stream={udp_stream}"));
         }
 
         if self.proxy_mode == ProxyMode::IpTables {

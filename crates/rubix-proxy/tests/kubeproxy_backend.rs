@@ -140,6 +140,27 @@ fn test_flush_nftables_nat_table_success_and_benign_missing_table() {
         }
     });
     assert!(flush_nftables_nat(&custom_missing).is_ok());
+
+    // 3. Non-benign failure (e.g. Permission denied) returns CommandExecutionFailed error
+    let custom_fail = CustomCommandExecutor::new(|program, args| {
+        if program == "nft" && args.first() == Some(&"flush") {
+            Ok(CommandOutput {
+                success: false,
+                stdout: String::new(),
+                stderr: "Error: Permission denied (you must be root)\n".to_string(),
+            })
+        } else {
+            Ok(CommandOutput::default())
+        }
+    });
+    let err = flush_nftables_nat(&custom_fail).unwrap_err();
+    match err {
+        ProxyError::CommandExecutionFailed { command, reason } => {
+            assert!(command.contains("nft flush table ip nat"));
+            assert!(reason.contains("Permission denied"));
+        },
+        other => panic!("expected CommandExecutionFailed error, got: {other:?}"),
+    }
 }
 
 #[test]
@@ -222,4 +243,59 @@ fn test_nftables_only_service_full_prerequisites_and_startup() {
     service.stop();
     assert!(!service.is_running());
     assert!(!service.is_ready());
+}
+
+#[test]
+fn test_check_readiness_masquerade_failure_propagates_error() {
+    let temp = TempDir::new().unwrap();
+    let kubeconfig = temp.path().join("admin.kubeconfig");
+    fs::write(&kubeconfig, "apiVersion: v1\nkind: Config\n").unwrap();
+
+    let proc_net = temp.path().join("proc/net");
+    fs::create_dir_all(&proc_net).unwrap();
+    fs::write(proc_net.join("ip_tables_names"), "filter\nnat\n").unwrap();
+
+    let custom_fail = CustomCommandExecutor::new(|program, args| {
+        if program == "iptables" && args.contains(&"--version") {
+            Ok(CommandOutput {
+                success: true,
+                stdout: "iptables v1.8.10".to_string(),
+                stderr: String::new(),
+            })
+        } else if program == "iptables" && args.contains(&"POSTROUTING") {
+            // Fails masquerade rule check and addition
+            Ok(CommandOutput {
+                success: false,
+                stdout: String::new(),
+                stderr: "iptables: Permission denied (you must be root)".to_string(),
+            })
+        } else {
+            Ok(CommandOutput::default())
+        }
+    });
+
+    let options = KubeProxyOptions::new(kubeconfig, true, ProxyMode::IpTables);
+
+    let mut service = ProxyService::new(options)
+        .with_executor(Arc::new(custom_fail))
+        .with_sys_root(temp.path().to_path_buf());
+
+    assert!(service.check_prerequisites().is_ok());
+    assert!(service.start().is_ok());
+    assert!(service.is_running());
+
+    // Masquerade fails -> check_readiness returns Err(ProxyError::MasqueradeFailed)
+    let err = service.check_readiness().unwrap_err();
+    match err {
+        ProxyError::MasqueradeFailed { reason } => {
+            assert!(
+                reason.contains("Permission denied") || reason.contains("failed"),
+                "reason should report masquerade failure: {reason}"
+            );
+        },
+        other => panic!("expected MasqueradeFailed error, got: {other:?}"),
+    }
+
+    assert!(!service.is_ready());
+    assert!(!service.is_snat_ready());
 }

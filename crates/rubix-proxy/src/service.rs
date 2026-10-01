@@ -114,14 +114,18 @@ impl ProxyService {
     }
 
     /// Starts kube-proxy supervision.
+    ///
+    /// Validates the generated command flags and establishes service running state.
     pub fn start(&self) -> Result<(), ProxyError> {
-        self.running.store(true, Ordering::SeqCst);
+        let flags = self.options.generate_flags();
         tracing::info!(
             component = "kubeproxy",
             mode = %self.options.proxy_mode,
             container_mode = self.options.container_mode,
+            flags = ?flags,
             "starting kubeproxy service..."
         );
+        self.running.store(true, Ordering::SeqCst);
         Ok(())
     }
 
@@ -142,20 +146,16 @@ impl ProxyService {
             ProxyMode::Nftables => MasqueradeBackend::Nftables,
         };
 
-        if let Err(e) = rubix_network::ensure_pod_masquerade_with_backend_and_executor(
+        rubix_network::ensure_pod_masquerade_with_backend_and_executor(
             &self.options.cluster_cidr,
             masquerade_backend,
             self.executor.as_ref(),
-        ) {
-            tracing::warn!(
-                component = "kubeproxy",
-                error = %e,
-                "failed to ensure pod masquerade during kube-proxy post-setup check"
-            );
-        } else {
-            self.snat_ready.store(true, Ordering::SeqCst);
-        }
+        )
+        .map_err(|e| ProxyError::MasqueradeFailed {
+            reason: e.to_string(),
+        })?;
 
+        self.snat_ready.store(true, Ordering::SeqCst);
         self.ready.store(true, Ordering::SeqCst);
 
         let report = ProxyHealthReport::new_healthy(

@@ -131,11 +131,10 @@ pub fn flush_nftables_nat(executor: &dyn CommandExecutor) -> Result<(), ProxyErr
             return Ok(());
         }
 
-        tracing::warn!(
-            component = "kubeproxy",
-            stderr = %out.stderr.trim(),
-            "nft flush table ip nat exited non-zero"
-        );
+        return Err(ProxyError::CommandExecutionFailed {
+            command: "nft flush table ip nat".to_string(),
+            reason: out.stderr.trim().to_string(),
+        });
     }
 
     Ok(())
@@ -163,34 +162,33 @@ pub fn check_sysctl_conntrack_writable(
         return Ok(());
     }
 
-    // Check directory permissions / readonly status
-    if let Ok(metadata) = conntrack_dir.metadata()
-        && metadata.permissions().readonly()
-    {
-        return Err(ProxyError::ReadOnlySysctl {
-            path: conntrack_dir,
-            reason: "directory permissions indicate read-only filesystem".to_string(),
-        });
-    }
-
-    // Test writability if specific conntrack file exists
-    let conntrack_max = conntrack_dir.join("nf_conntrack_max");
-    if conntrack_max.exists() {
-        match OpenOptions::new().write(true).open(&conntrack_max) {
+    let probe_file = conntrack_dir.join("nf_conntrack_max");
+    if probe_file.exists() {
+        match OpenOptions::new().write(true).open(&probe_file) {
+            Ok(_) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::ReadOnlyFilesystem => {
+                Err(ProxyError::ReadOnlySysctl {
+                    path: probe_file,
+                    reason: "read-only file system (EROFS)".to_string(),
+                })
+            },
             Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
                 Err(ProxyError::ReadOnlySysctl {
-                    path: conntrack_max,
+                    path: probe_file,
                     reason: format!("write permission denied: {e}"),
                 })
             },
             Err(e) if e.raw_os_error() == Some(30) => {
-                // EROFS = 30 (Read-only file system)
+                // EROFS = 30
                 Err(ProxyError::ReadOnlySysctl {
-                    path: conntrack_max,
+                    path: probe_file,
                     reason: "read-only file system (EROFS)".to_string(),
                 })
             },
-            Ok(_) | Err(_) => Ok(()),
+            Err(e) => Err(ProxyError::ReadOnlySysctl {
+                path: probe_file,
+                reason: format!("sysctl writability check failed: {e}"),
+            }),
         }
     } else {
         Ok(())
