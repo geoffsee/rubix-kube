@@ -967,10 +967,15 @@ impl KubernetesApiClient {
 
     // --- Pod CRUD with Admission ---
 
-    pub async fn create_pod(
+    pub async fn create_pod(&self, namespace: &str, pod: Value) -> Result<Value, ApiserverError> {
+        self.create_pod_options(namespace, pod, false).await
+    }
+
+    pub async fn create_pod_options(
         &self,
         namespace: &str,
         mut pod: Value,
+        dry_run: bool,
     ) -> Result<Value, ApiserverError> {
         let name = pod
             .get("metadata")
@@ -1019,12 +1024,16 @@ impl KubernetesApiClient {
             user_info: self.current_user_info(),
             object: Some(pod.clone()),
             old_object: None,
-            dry_run: None,
+            dry_run: if dry_run { Some(true) } else { None },
         };
         self.admission.run_mutating_admission(&mut adm_req).await?;
         self.admission.run_validating_admission(&adm_req).await?;
         if let Some(obj) = adm_req.object {
             pod = obj;
+        }
+
+        if dry_run {
+            return Ok(pod);
         }
 
         let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
@@ -1104,7 +1113,17 @@ impl KubernetesApiClient {
         &self,
         namespace: &str,
         name: &str,
+        pod: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_pod_options(namespace, name, pod, false).await
+    }
+
+    pub async fn update_pod_options(
+        &self,
+        namespace: &str,
+        name: &str,
         mut pod: Value,
+        dry_run: bool,
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("update", "", "pods", Some(namespace), Some(name))?;
         let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
@@ -1149,13 +1168,40 @@ impl KubernetesApiClient {
             operation: "UPDATE".to_string(),
             user_info: self.current_user_info(),
             object: Some(pod.clone()),
-            old_object: Some(old_pod),
-            dry_run: None,
+            old_object: Some(old_pod.clone()),
+            dry_run: if dry_run { Some(true) } else { None },
         };
         self.admission.run_mutating_admission(&mut adm_req).await?;
+
+        let old_node = old_pod.pointer("/spec/nodeName").and_then(Value::as_str);
+        let new_node = adm_req
+            .object
+            .as_ref()
+            .and_then(|obj| obj.pointer("/spec/nodeName"))
+            .and_then(Value::as_str);
+        if let Some(old) = old_node {
+            if let Some(new) = new_node {
+                if old != new {
+                    return Err(ApiserverError::InvalidInput {
+                        field: "spec.nodeName".to_string(),
+                        reason: "spec.nodeName is immutable once assigned".to_string(),
+                    });
+                }
+            } else {
+                return Err(ApiserverError::InvalidInput {
+                    field: "spec.nodeName".to_string(),
+                    reason: "spec.nodeName cannot be unset once assigned".to_string(),
+                });
+            }
+        }
+
         self.admission.run_validating_admission(&adm_req).await?;
         if let Some(obj) = adm_req.object {
             pod = obj;
+        }
+
+        if dry_run {
+            return Ok(pod);
         }
 
         let bytes = serde_json::to_vec(&pod)?;
@@ -1212,7 +1258,20 @@ impl KubernetesApiClient {
         kind: &str,
         plural: &str,
         namespace: &str,
+        doc: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload_options(group, kind, plural, namespace, doc, false)
+            .await
+    }
+
+    async fn create_workload_options(
+        &self,
+        group: &str,
+        kind: &str,
+        plural: &str,
+        namespace: &str,
         mut doc: Value,
+        dry_run: bool,
     ) -> Result<Value, ApiserverError> {
         let name = doc
             .get("metadata")
@@ -1261,12 +1320,16 @@ impl KubernetesApiClient {
             user_info: self.current_user_info(),
             object: Some(doc.clone()),
             old_object: None,
-            dry_run: None,
+            dry_run: if dry_run { Some(true) } else { None },
         };
         self.admission.run_mutating_admission(&mut adm_req).await?;
         self.admission.run_validating_admission(&adm_req).await?;
         if let Some(obj) = adm_req.object {
             doc = obj;
+        }
+
+        if dry_run {
+            return Ok(doc);
         }
 
         let key = if group.is_empty() {
@@ -1371,7 +1434,22 @@ impl KubernetesApiClient {
         plural: &str,
         namespace: &str,
         name: &str,
+        doc: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload_options(group, kind, plural, namespace, name, doc, false)
+            .await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn update_workload_options(
+        &self,
+        group: &str,
+        kind: &str,
+        plural: &str,
+        namespace: &str,
+        name: &str,
         mut doc: Value,
+        dry_run: bool,
     ) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("update", group, plural, Some(namespace), Some(name))?;
         let key = if group.is_empty() {
@@ -1423,13 +1501,32 @@ impl KubernetesApiClient {
             operation: "UPDATE".to_string(),
             user_info: self.current_user_info(),
             object: Some(doc.clone()),
-            old_object: Some(old_doc),
-            dry_run: None,
+            old_object: Some(old_doc.clone()),
+            dry_run: if dry_run { Some(true) } else { None },
         };
         self.admission.run_mutating_admission(&mut adm_req).await?;
+
+        if kind == "Job" {
+            let old_tmpl = old_doc.pointer("/spec/template");
+            let new_tmpl = adm_req
+                .object
+                .as_ref()
+                .and_then(|obj| obj.pointer("/spec/template"));
+            if old_tmpl.is_some() && old_tmpl != new_tmpl {
+                return Err(ApiserverError::InvalidInput {
+                    field: "spec.template".to_string(),
+                    reason: "spec.template is immutable for jobs".to_string(),
+                });
+            }
+        }
+
         self.admission.run_validating_admission(&adm_req).await?;
         if let Some(obj) = adm_req.object {
             doc = obj;
+        }
+
+        if dry_run {
+            return Ok(doc);
         }
 
         let bytes = serde_json::to_vec(&doc)?;
@@ -1662,7 +1759,15 @@ impl KubernetesApiClient {
 
     // Jobs
     pub async fn create_job(&self, namespace: &str, job: Value) -> Result<Value, ApiserverError> {
-        self.create_workload("batch", "Job", "jobs", namespace, job)
+        self.create_job_options(namespace, job, false).await
+    }
+    pub async fn create_job_options(
+        &self,
+        namespace: &str,
+        job: Value,
+        dry_run: bool,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload_options("batch", "Job", "jobs", namespace, job, dry_run)
             .await
     }
     pub async fn get_job(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
@@ -1678,7 +1783,16 @@ impl KubernetesApiClient {
         name: &str,
         job: Value,
     ) -> Result<Value, ApiserverError> {
-        self.update_workload("batch", "Job", "jobs", namespace, name, job)
+        self.update_job_options(namespace, name, job, false).await
+    }
+    pub async fn update_job_options(
+        &self,
+        namespace: &str,
+        name: &str,
+        job: Value,
+        dry_run: bool,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload_options("batch", "Job", "jobs", namespace, name, job, dry_run)
             .await
     }
     pub async fn delete_job(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
@@ -1718,12 +1832,21 @@ impl KubernetesApiClient {
 
     // PersistentVolumeClaims
     pub async fn create_pvc(&self, namespace: &str, pvc: Value) -> Result<Value, ApiserverError> {
-        self.create_workload(
+        self.create_pvc_options(namespace, pvc, false).await
+    }
+    pub async fn create_pvc_options(
+        &self,
+        namespace: &str,
+        pvc: Value,
+        dry_run: bool,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload_options(
             "",
             "PersistentVolumeClaim",
             "persistentvolumeclaims",
             namespace,
             pvc,
+            dry_run,
         )
         .await
     }
@@ -1746,13 +1869,23 @@ impl KubernetesApiClient {
         name: &str,
         pvc: Value,
     ) -> Result<Value, ApiserverError> {
-        self.update_workload(
+        self.update_pvc_options(namespace, name, pvc, false).await
+    }
+    pub async fn update_pvc_options(
+        &self,
+        namespace: &str,
+        name: &str,
+        pvc: Value,
+        dry_run: bool,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload_options(
             "",
             "PersistentVolumeClaim",
             "persistentvolumeclaims",
             namespace,
             name,
             pvc,
+            dry_run,
         )
         .await
     }
