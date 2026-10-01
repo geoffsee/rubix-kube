@@ -10,6 +10,15 @@ const IPV6_SYSCTL_REL_PATHS: [&str; 3] = [
     "net/ipv6/conf/lo/disable_ipv6",
 ];
 
+/// Returns true if an IO error on sysctl read/write can be safely ignored (e.g. read-only container root or missing path).
+#[must_use]
+pub fn is_ignorable_sysctl_error(kind: ErrorKind) -> bool {
+    matches!(
+        kind,
+        ErrorKind::NotFound | ErrorKind::PermissionDenied | ErrorKind::ReadOnlyFilesystem
+    )
+}
+
 /// Writes `1` to kernel sysctl paths to disable IPv6 on all interfaces.
 ///
 /// Idempotent: paths already set to `1` are skipped.
@@ -37,9 +46,7 @@ pub fn disable_ipv6_sysctls_in_root(sysctl_root: &Path) -> Result<(), NetworkErr
                     continue;
                 }
             },
-            Err(e)
-                if e.kind() == ErrorKind::NotFound || e.kind() == ErrorKind::PermissionDenied =>
-            {
+            Err(e) if is_ignorable_sysctl_error(e.kind()) => {
                 tracing::debug!(
                     component = "network",
                     path = %path.display(),
@@ -59,7 +66,7 @@ pub fn disable_ipv6_sysctls_in_root(sysctl_root: &Path) -> Result<(), NetworkErr
         }
 
         if let Err(e) = fs::write(&path, b"1") {
-            if e.kind() == ErrorKind::PermissionDenied || e.kind() == ErrorKind::NotFound {
+            if is_ignorable_sysctl_error(e.kind()) {
                 tracing::debug!(
                     component = "network",
                     path = %path.display(),
@@ -86,4 +93,19 @@ pub fn disable_ipv6_sysctls_in_root(sysctl_root: &Path) -> Result<(), NetworkErr
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::ErrorKind;
+
+    #[test]
+    fn test_is_ignorable_sysctl_error() {
+        assert!(is_ignorable_sysctl_error(ErrorKind::NotFound));
+        assert!(is_ignorable_sysctl_error(ErrorKind::PermissionDenied));
+        assert!(is_ignorable_sysctl_error(ErrorKind::ReadOnlyFilesystem));
+        assert!(!is_ignorable_sysctl_error(ErrorKind::Other));
+        assert!(!is_ignorable_sysctl_error(ErrorKind::AlreadyExists));
+    }
 }

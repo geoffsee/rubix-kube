@@ -137,12 +137,15 @@ pub fn get_host_resolv_conf_with_candidates(
         return PathBuf::from("/dev/null");
     }
 
+    let mut rejected_candidates = Vec::new();
     for &conf in candidates {
         if is_valid_resolv_conf(conf) {
-            if conf != Path::new("/etc/resolv.conf") {
+            if !rejected_candidates.is_empty() {
                 tracing::info!(
                     component = "network",
-                    "/etc/resolv.conf has unusable nameservers, using {}",
+                    earlier_unusable = ?rejected_candidates,
+                    selected = %conf.display(),
+                    "earlier resolv.conf candidate(s) were unusable; selected {}",
                     conf.display()
                 );
             }
@@ -158,6 +161,7 @@ pub fn get_host_resolv_conf_with_candidates(
                 },
             }
         }
+        rejected_candidates.push(conf.display().to_string());
     }
 
     // No valid resolv.conf found — generate fallback with public DNS servers
