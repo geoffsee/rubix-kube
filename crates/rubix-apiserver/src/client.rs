@@ -2864,9 +2864,19 @@ impl KubernetesApiClient {
             Some(name),
         )?;
 
+        let body_name = config
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str);
+        if body_name != Some(name) {
+            return Err(ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: format!("body name {body_name:?} does not match '{name}'"),
+            });
+        }
+
         let typed: crate::admission::MutatingWebhookConfiguration =
             serde_json::from_value(config.clone())?;
-        self.admission.add_mutating_webhook_config(typed);
 
         let key = format!(
             "{}/mutatingwebhookconfigurations/{name}",
@@ -2874,6 +2884,7 @@ impl KubernetesApiClient {
         );
         let bytes = serde_json::to_vec(&config)?;
         let kv = self.storage.update(&key, bytes, None).await?;
+        self.admission.add_mutating_webhook_config(typed);
         let mut result = config;
         if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert(

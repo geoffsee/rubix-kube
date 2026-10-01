@@ -14,6 +14,8 @@ use tokio::sync::watch;
 use super::error::WebhookError;
 use super::handler::NodeSetterHandler;
 
+pub const MAX_WEBHOOK_BODY_BYTES: usize = 3 * 1024 * 1024;
+
 #[derive(Debug)]
 pub struct WebhookServer {
     addr: SocketAddr,
@@ -84,9 +86,23 @@ impl WebhookServer {
                                 let method = req.method().as_str().to_string();
                                 let path = req.uri().path().to_string();
 
-                                let body_bytes = match req.into_body().collect().await {
+                                let body_bytes = match http_body_util::Limited::new(req.into_body(), MAX_WEBHOOK_BODY_BYTES).collect().await {
                                     Ok(collected) => collected.to_bytes().to_vec(),
-                                    Err(_) => Vec::new(),
+                                    Err(err) => {
+                                        let is_limit = err.downcast_ref::<http_body_util::LengthLimitError>().is_some();
+                                        let status = if is_limit { 413 } else { 400 };
+                                        let msg = if is_limit {
+                                            "request body too large\n".to_string()
+                                        } else {
+                                            format!("error reading request body: {err}\n")
+                                        };
+                                        let resp = Response::builder()
+                                            .status(status)
+                                            .header("Content-Type", "text/plain; charset=utf-8")
+                                            .body(Full::new(Bytes::from(msg)))
+                                            .unwrap_or_default();
+                                        return Ok::<_, Infallible>(resp);
+                                    }
                                 };
 
                                 let http_resp = h.handle_http_request(&method, &path, &body_bytes).await;
