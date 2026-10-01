@@ -189,6 +189,7 @@ impl RbacAuthorizer {
                 api_groups: vec![String::new(), "apps".to_string()],
                 resources: vec![
                     "configmaps".to_string(),
+                    "secrets".to_string(),
                     "pods".to_string(),
                     "services".to_string(),
                 ],
@@ -250,6 +251,7 @@ impl RbacAuthorizer {
                         "pods".to_string(),
                         "pods/status".to_string(),
                         "configmaps".to_string(),
+                        "secrets".to_string(),
                     ],
                     resource_names: Vec::new(),
                     non_resource_urls: Vec::new(),

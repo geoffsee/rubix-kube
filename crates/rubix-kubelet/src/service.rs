@@ -9,7 +9,9 @@ use crate::container::ContainerEnvironment;
 use crate::error::KubeletError;
 use crate::health::KubeletHealthReport;
 use crate::registration::NodeRegistration;
-use crate::workload::{CpuManager, PodReconciler, RuntimeProvider, WorkloadRestartReport};
+use crate::workload::{
+    CpuManager, ExecResult, PodReconciler, RuntimeProvider, WorkloadRestartReport,
+};
 
 /// Kubelet service orchestrating node lifecycle, registration, and workload execution.
 #[derive(Clone, Debug)]
@@ -42,7 +44,9 @@ impl KubeletService {
             &options.node_name,
             &options.node_ip,
         )
-        .with_cpu_manager(cpu_manager);
+        .with_cpu_manager(cpu_manager)
+        .with_root_dir(options.root_dir.clone())
+        .with_apiserver(apiserver.clone());
 
         Self {
             options,
@@ -89,6 +93,39 @@ impl KubeletService {
     #[must_use]
     pub fn registration(&self) -> &NodeRegistration {
         &self.registration
+    }
+
+    pub async fn get_container_logs(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        tail_lines: Option<usize>,
+    ) -> Result<String, KubeletError> {
+        self.reconciler
+            .get_container_logs(pod_id, container_name, tail_lines)
+            .await
+    }
+
+    pub async fn exec_in_container(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        cmd: &[String],
+    ) -> Result<ExecResult, KubeletError> {
+        self.reconciler
+            .exec_in_container(pod_id, container_name, cmd)
+            .await
+    }
+
+    #[must_use]
+    pub fn get_pod_volume_dir(
+        &self,
+        pod_uid_or_name: &str,
+        plugin_name: &str,
+        volume_name: &str,
+    ) -> std::path::PathBuf {
+        self.reconciler
+            .get_pod_volume_dir(pod_uid_or_name, plugin_name, volume_name)
     }
 
     /// Validates all credentials, CRI runtime endpoints, and API server reachability.

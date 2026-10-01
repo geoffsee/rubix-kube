@@ -27,6 +27,9 @@ pub enum KubeletError {
     #[error("pod reconciliation failed for '{pod}': {reason}")]
     PodReconciliationFailed { pod: String, reason: String },
 
+    #[error("container operation failed for '{container}': {reason}")]
+    ContainerOperationFailed { container: String, reason: String },
+
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
@@ -48,6 +51,7 @@ impl KubeletError {
             Self::InvalidConfiguration { .. } => "kubelet-config-invalid",
             Self::NodeRegistrationFailed { .. } => "kubelet-node-registration-failed",
             Self::PodReconciliationFailed { .. } => "kubelet-pod-reconciliation-failed",
+            Self::ContainerOperationFailed { .. } => "kubelet-container-operation-failed",
             Self::Io(_) => "kubelet-io-error",
             Self::Serialization(_) => "kubelet-serialization-error",
             Self::Apiserver(_) => "kubelet-apiserver-error",
