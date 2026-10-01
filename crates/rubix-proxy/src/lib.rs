@@ -10,6 +10,7 @@ pub mod backend;
 pub mod config;
 pub mod dataplane;
 pub mod error;
+pub mod firewall;
 pub mod health;
 pub mod prober;
 pub mod routing;
@@ -31,6 +32,10 @@ pub use dataplane::{
     IptablesDataplane, IptablesRule, NftablesDataplane, NftablesRule, service_chain_hash,
 };
 pub use error::ProxyError;
+pub use firewall::{
+    DataplaneReconciler, FirewallSnapshot, KUBE_PROXY_NFT_TABLE, KUBESOLO_MASQ_NFT_TABLE,
+    ReconciliationSummary,
+};
 pub use health::ProxyHealthReport;
 pub use prober::{DataplaneProbeReport, DataplaneProber, ProbeResult, WorkloadProbe};
 pub use routing::{

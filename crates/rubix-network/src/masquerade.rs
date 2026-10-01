@@ -555,6 +555,7 @@ impl MockCommandExecutor {
             .lock()
             .unwrap()
             .push("table ip nat { chain postrouting { ... } }".to_string());
+        executor.nft_tables.lock().unwrap().push("nat".to_string());
         executor
     }
 
@@ -636,6 +637,36 @@ impl MockCommandExecutor {
             });
         }
 
+        if args.contains(&"-S") {
+            let mut out = String::new();
+            for r in rules.iter() {
+                let _ = writeln!(out, "{r}");
+            }
+            return Ok(CommandOutput {
+                success: true,
+                stdout: out,
+                stderr: String::new(),
+            });
+        }
+
+        if let Some(pos) = args.iter().position(|&a| a == "-F" || a == "-X") {
+            let chain_opt = args.get(pos + 1).copied();
+            if let Some(chain) = chain_opt
+                && !chain.starts_with('-')
+            {
+                let pattern = format!("-A {chain}");
+                rules.retain(|r| !r.contains(&pattern));
+            } else {
+                rules.clear();
+                self.unrelated_nat_rules.lock().unwrap().clear();
+            }
+            return Ok(CommandOutput {
+                success: true,
+                stdout: String::new(),
+                stderr: String::new(),
+            });
+        }
+
         if args.contains(&"-A") {
             rules.push(cmd_str.to_string());
             return Ok(CommandOutput {
@@ -688,11 +719,29 @@ impl MockCommandExecutor {
         match args.first().copied() {
             Some("list") => Ok(self.handle_nft_list(args)),
             Some("add") => Ok(self.handle_nft_add(args, cmd_str)),
+            Some("flush") if args.get(1) == Some(&"table") => {
+                let target = args.get(3).copied().unwrap_or_default();
+                self.nft_rules
+                    .lock()
+                    .unwrap()
+                    .retain(|r| r.split_whitespace().nth(4) != Some(target));
+                if target == "nat" {
+                    self.unrelated_nat_rules.lock().unwrap().clear();
+                }
+                Ok(CommandOutput {
+                    success: true,
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
+            },
             Some("delete") if args.get(1) == Some(&"table") => {
                 let target = args.get(3).copied().unwrap_or_default();
                 self.nft_tables.lock().unwrap().retain(|t| t != target);
                 self.nft_chains.lock().unwrap().clear();
-                self.nft_rules.lock().unwrap().clear();
+                self.nft_rules
+                    .lock()
+                    .unwrap()
+                    .retain(|r| r.split_whitespace().nth(4) != Some(target));
                 Ok(CommandOutput {
                     success: true,
                     stdout: String::new(),
@@ -708,14 +757,33 @@ impl MockCommandExecutor {
     }
 
     fn handle_nft_list(&self, args: &[&str]) -> CommandOutput {
+        if args.get(1) == Some(&"tables") {
+            let tables = self.nft_tables.lock().unwrap();
+            let mut out = String::new();
+            for t in tables.iter() {
+                let _ = writeln!(out, "table ip {t}");
+            }
+            return CommandOutput {
+                success: true,
+                stdout: out,
+                stderr: String::new(),
+            };
+        }
         if args.get(1) == Some(&"table") {
             let tables = self.nft_tables.lock().unwrap();
             let target = args.get(3).copied().unwrap_or_default();
             let exists = tables.iter().any(|t| t == target);
+            let rules = self.nft_rules.lock().unwrap();
+            let mut body = String::new();
+            for r in rules.iter() {
+                if r.split_whitespace().nth(4) == Some(target) {
+                    let _ = writeln!(body, "    {r}");
+                }
+            }
             return CommandOutput {
                 success: exists,
                 stdout: if exists {
-                    format!("table ip {target} {{\n}}\n")
+                    format!("table ip {target} {{\n{body}}}\n")
                 } else {
                     String::new()
                 },

@@ -49,6 +49,9 @@ pub enum ProxyError {
     #[error("routing rule verification failed for '{rule}': {reason}")]
     RoutingVerificationFailed { rule: String, reason: String },
 
+    #[error("foreign firewall state corrupted or blanket flush detected: {reason}")]
+    ForeignFirewallCorrupted { reason: String },
+
     #[error("internal proxy error: {reason}")]
     Internal { reason: String },
 }
@@ -69,6 +72,7 @@ impl ProxyError {
             Self::DataplaneProbeFailed { .. } => "proxy-dataplane-probe-failed",
             Self::NoReadyEndpoints { .. } => "proxy-no-ready-endpoints",
             Self::RoutingVerificationFailed { .. } => "proxy-routing-verification-failed",
+            Self::ForeignFirewallCorrupted { .. } => "proxy-foreign-firewall-corrupted",
             Self::Internal { .. } => "proxy-internal-error",
         }
     }
