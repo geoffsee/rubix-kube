@@ -138,14 +138,7 @@ impl ContainerEnvironment {
                 match e {
                     rubix_network::NetworkError::SysctlError { ref reason, .. }
                         if reason.contains("Permission denied")
-                            || reason.contains("Read-only file system") =>
-                    {
-                        tracing::debug!(
-                            component = "network",
-                            error = %e,
-                            "ip_forward sysctl unprivileged or read-only"
-                        );
-                    },
+                            || reason.contains("Read-only file system") => {},
                     _ => return Err(KubeletError::Network(e)),
                 }
             }
@@ -160,11 +153,6 @@ impl ContainerEnvironment {
                     if reason.contains("Permission denied")
                         || reason.contains("you must be root") =>
                 {
-                    tracing::debug!(
-                        component = "network",
-                        reason = %reason,
-                        "pod egress masquerade skipped in unprivileged environment"
-                    );
                     Ok(None)
                 },
                 Err(e) => Err(KubeletError::Network(e)),
