@@ -108,6 +108,20 @@ fn test_container_mode_sets_all_six_conntrack_settings_to_zero() {
             "container mode flags must contain {expected}"
         );
     }
+
+    // Even if conntrack is manually set to non-zero values on the options struct,
+    // container_mode = true must strictly override and zero all six settings in flags and v1alpha1 config.
+    let mut overridden = options;
+    overridden.conntrack = ConntrackConfiguration::default_host();
+    let overridden_flags = overridden.generate_flags();
+    for expected in zeroed_flags {
+        assert!(
+            overridden_flags.contains(&expected.to_string()),
+            "container mode flags must enforce {expected} even if options had host defaults"
+        );
+    }
+    let overridden_cfg = overridden.to_v1alpha1_config();
+    assert!(overridden_cfg.conntrack.is_all_zero());
 }
 
 #[test]

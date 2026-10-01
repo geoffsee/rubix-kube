@@ -151,8 +151,12 @@ impl ProxyService {
             masquerade_backend,
             self.executor.as_ref(),
         )
-        .map_err(|e| ProxyError::MasqueradeFailed {
-            reason: e.to_string(),
+        .map_err(|e| {
+            self.ready.store(false, Ordering::SeqCst);
+            self.snat_ready.store(false, Ordering::SeqCst);
+            ProxyError::MasqueradeFailed {
+                reason: e.to_string(),
+            }
         })?;
 
         self.snat_ready.store(true, Ordering::SeqCst);

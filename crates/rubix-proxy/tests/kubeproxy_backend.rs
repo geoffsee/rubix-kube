@@ -299,3 +299,71 @@ fn test_check_readiness_masquerade_failure_propagates_error() {
     assert!(!service.is_ready());
     assert!(!service.is_snat_ready());
 }
+
+#[test]
+fn test_check_readiness_failure_resets_ready_and_snat_flags() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let temp = TempDir::new().unwrap();
+    let kubeconfig = temp.path().join("admin.kubeconfig");
+    fs::write(&kubeconfig, "apiVersion: v1\nkind: Config\n").unwrap();
+
+    let proc_net = temp.path().join("proc/net");
+    fs::create_dir_all(&proc_net).unwrap();
+    fs::write(proc_net.join("ip_tables_names"), "filter\nnat\n").unwrap();
+
+    let should_fail = Arc::new(AtomicBool::new(false));
+    let should_fail_clone = Arc::clone(&should_fail);
+
+    let custom = CustomCommandExecutor::new(move |program, args| {
+        if program == "iptables" && args.contains(&"--version") {
+            Ok(CommandOutput {
+                success: true,
+                stdout: "iptables v1.8.10".to_string(),
+                stderr: String::new(),
+            })
+        } else if program == "iptables" && args.contains(&"POSTROUTING") {
+            if should_fail_clone.load(Ordering::SeqCst) {
+                Ok(CommandOutput {
+                    success: false,
+                    stdout: String::new(),
+                    stderr: "iptables: table flushed or removed".to_string(),
+                })
+            } else {
+                Ok(CommandOutput {
+                    success: true,
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
+            }
+        } else {
+            Ok(CommandOutput::default())
+        }
+    });
+
+    let options = KubeProxyOptions::new(kubeconfig, true, ProxyMode::IpTables);
+    let mut service = ProxyService::new(options)
+        .with_executor(Arc::new(custom))
+        .with_sys_root(temp.path().to_path_buf());
+
+    assert!(service.check_prerequisites().is_ok());
+    assert!(service.start().is_ok());
+
+    // First readiness check succeeds
+    let health = service.check_readiness().unwrap();
+    assert!(health.is_healthy);
+    assert!(service.is_ready());
+    assert!(service.is_snat_ready());
+
+    // Trigger failure on next readiness check
+    should_fail.store(true, Ordering::SeqCst);
+    let err = service.check_readiness().unwrap_err();
+    match err {
+        ProxyError::MasqueradeFailed { .. } => {},
+        other => panic!("expected MasqueradeFailed error, got: {other:?}"),
+    }
+
+    // Flags must be reset to false
+    assert!(!service.is_ready());
+    assert!(!service.is_snat_ready());
+}
