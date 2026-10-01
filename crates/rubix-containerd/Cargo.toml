@@ -13,6 +13,7 @@ rubix-assets = { version = "=0.1.0", path = "../rubix-assets" }
 rubix-config = { version = "=0.1.0", path = "../rubix-config" }
 rubix-containerd-api = { version = "=0.1.0", path = "../rubix-containerd-api" }
 rubix-cri = { version = "=0.1.0", path = "../rubix-cri" }
+rubix-network = { version = "=0.1.0", path = "../rubix-network" }
 rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
 rustix = { version = "=1.1.5", features = ["fs"] }

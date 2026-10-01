@@ -18,6 +18,12 @@ pub enum NetworkError {
     #[error("sysctl error on '{path}': {reason}")]
     SysctlError { path: String, reason: String },
 
+    #[error("cni configuration error: {reason}")]
+    CniError { reason: String },
+
+    #[error("serialization error: {reason}")]
+    SerializationError { reason: String },
+
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -32,6 +38,8 @@ impl NetworkError {
             Self::InvalidMTU { .. } => "network-invalid-mtu",
             Self::ResolvConfError { .. } => "network-resolv-conf-error",
             Self::SysctlError { .. } => "network-sysctl-error",
+            Self::CniError { .. } => "network-cni-error",
+            Self::SerializationError { .. } => "network-serialization-error",
             Self::Io(_) => "network-io-error",
         }
     }
