@@ -38,6 +38,9 @@ pub enum KubeletError {
 
     #[error("API server error: {0}")]
     Apiserver(#[from] rubix_apiserver::ApiserverError),
+
+    #[error("Network error: {0}")]
+    Network(#[from] rubix_network::NetworkError),
 }
 
 impl KubeletError {
@@ -55,6 +58,7 @@ impl KubeletError {
             Self::Io(_) => "kubelet-io-error",
             Self::Serialization(_) => "kubelet-serialization-error",
             Self::Apiserver(_) => "kubelet-apiserver-error",
+            Self::Network(_) => "kubelet-network-error",
         }
     }
 }

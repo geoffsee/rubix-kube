@@ -291,3 +291,45 @@ fn test_unsupported_host_detection_fails_actionably() {
     assert_eq!(err.diagnostic_code(), "network-masquerade-error");
     assert!(err.to_string().contains("neither iptables"));
 }
+
+#[test]
+fn test_iptables_and_nftables_cleanup_unexpected_errors_are_reported() {
+    struct FailingExecutor {
+        stderr: String,
+    }
+    impl CommandExecutor for FailingExecutor {
+        fn run(&self, _program: &str, _args: &[&str]) -> Result<CommandOutput, std::io::Error> {
+            Ok(CommandOutput {
+                success: false,
+                stdout: String::new(),
+                stderr: self.stderr.clone(),
+            })
+        }
+    }
+
+    // iptables lock timeout or permission error:
+    let fail_iptables = FailingExecutor {
+        stderr: "iptables: Resource temporarily unavailable (xtables lock timeout)\n".to_string(),
+    };
+    let err_iptables = clean_pod_masquerade_with_backend_and_executor(
+        "10.42.0.0/16",
+        MasqueradeBackend::IpTables,
+        &fail_iptables,
+    )
+    .unwrap_err();
+    assert_eq!(err_iptables.diagnostic_code(), "network-masquerade-error");
+    assert!(err_iptables.to_string().contains("xtables lock timeout"));
+
+    // nftables unexpected error (e.g. Operation not permitted):
+    let fail_nft = FailingExecutor {
+        stderr: "Error: Could not process rule: Operation not permitted\n".to_string(),
+    };
+    let err_nft = clean_pod_masquerade_with_backend_and_executor(
+        "10.42.0.0/16",
+        MasqueradeBackend::Nftables,
+        &fail_nft,
+    )
+    .unwrap_err();
+    assert_eq!(err_nft.diagnostic_code(), "network-masquerade-error");
+    assert!(err_nft.to_string().contains("Operation not permitted"));
+}

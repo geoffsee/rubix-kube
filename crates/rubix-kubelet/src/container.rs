@@ -116,17 +116,29 @@ impl ContainerEnvironment {
     pub fn prepare_pod_egress(
         &self,
         pod_cidr: &str,
-    ) -> Result<rubix_network::MasqueradeBackend, KubeletError> {
-        if !self.allow_host_mutations || self.simulated {
+    ) -> Result<Option<rubix_network::MasqueradeBackend>, KubeletError> {
+        if !self.allow_host_mutations {
+            return Ok(None);
+        }
+        if self.simulated {
             self.snat_ready
                 .store(true, std::sync::atomic::Ordering::SeqCst);
-            return Ok(rubix_network::MasqueradeBackend::IpTables);
+            return Ok(Some(rubix_network::MasqueradeBackend::IpTables));
         }
-        let backend = rubix_network::ensure_pod_masquerade(pod_cidr)
-            .unwrap_or(rubix_network::MasqueradeBackend::IpTables);
-        self.snat_ready
-            .store(true, std::sync::atomic::Ordering::SeqCst);
-        Ok(backend)
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = pod_cidr;
+            Ok(None)
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            let backend = rubix_network::ensure_pod_masquerade(pod_cidr)?;
+            self.snat_ready
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            Ok(Some(backend))
+        }
     }
 
     #[must_use]
@@ -360,5 +372,32 @@ fn enable_subtree_controllers(
             }
             Ok(enabled)
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_prepare_pod_egress_when_host_mutations_disallowed() {
+        let env = ContainerEnvironment::default().with_allow_host_mutations(false);
+        assert!(!env.is_snat_ready());
+        let result = env.prepare_pod_egress("10.42.0.0/16").unwrap();
+        assert_eq!(result, None);
+        assert!(!env.is_snat_ready());
+    }
+
+    #[test]
+    fn test_prepare_pod_egress_simulated() {
+        let env = ContainerEnvironment::new_simulated(
+            PathBuf::from("/tmp/root"),
+            PathBuf::from("/tmp/cgroup"),
+            PathBuf::from("/tmp/ipv6"),
+        );
+        assert!(!env.is_snat_ready());
+        let result = env.prepare_pod_egress("10.42.0.0/16").unwrap();
+        assert_eq!(result, Some(rubix_network::MasqueradeBackend::IpTables));
+        assert!(env.is_snat_ready());
     }
 }

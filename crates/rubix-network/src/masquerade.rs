@@ -429,9 +429,19 @@ pub fn clean_pod_masquerade_with_backend_and_executor(
                         });
                     },
                 };
-                if !out.success {
+                if out.success {
+                    continue;
+                }
+                // Exit code 1 with "Bad rule" or "does a matching rule exist" indicates the rule is absent.
+                if out.stderr.contains("Bad rule")
+                    || out.stderr.contains("does a matching rule exist")
+                    || out.stderr.contains("No chain/target/match by that name")
+                {
                     break;
                 }
+                return Err(NetworkError::MasqueradeError {
+                    reason: format!("iptables delete failed: {}", out.stderr),
+                });
             }
             Ok(())
         },
@@ -439,17 +449,19 @@ pub fn clean_pod_masquerade_with_backend_and_executor(
             // Delete our dedicated table `ip kubesolo-masq`.
             // Crucial: this never flushes or touches system tables such as `table ip nat` or Podman netavark.
             let del_args = ["delete", "table", "ip", DEFAULT_NFT_MASQ_TABLE];
-            if let Ok(out) = executor.run("nft", &del_args)
-                && !out.success
+            let out =
+                executor
+                    .run("nft", &del_args)
+                    .map_err(|e| NetworkError::MasqueradeError {
+                        reason: format!("failed to execute nft delete table: {e}"),
+                    })?;
+            if !out.success
                 && !out.stderr.contains("No such file or directory")
                 && !out.stderr.contains("does not exist")
             {
-                tracing::debug!(
-                    component = "network",
-                    table = %DEFAULT_NFT_MASQ_TABLE,
-                    stderr = %out.stderr,
-                    "nft delete table completed or table was absent"
-                );
+                return Err(NetworkError::MasqueradeError {
+                    reason: format!("nft delete table failed: {}", out.stderr),
+                });
             }
             Ok(())
         },
