@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
@@ -7,6 +7,20 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::error::KubeletError;
+
+/// Kubelet CPU manager checkpoint file name.
+pub const CPU_MANAGER_CHECKPOINT_FILE: &str = "cpu_manager_state";
+
+/// Settings that invalidate the CPU manager checkpoint when they change.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CpuManagerSettings {
+    #[serde(default)]
+    pub policy: String,
+    #[serde(default)]
+    pub options: BTreeMap<String, String>,
+    #[serde(default)]
+    pub reserved_cpus: String,
+}
 
 /// Default upstream Kubelet ports and endpoints.
 pub const DEFAULT_KUBELET_PORT: u16 = 10250;
@@ -202,8 +216,15 @@ impl KubeletConfigOptions {
 
         if self.cpu_manager_policy == "static" {
             map.insert("cpuManagerPolicy".to_string(), json!("static"));
-            if !self.reserved_cpus.is_empty() {
-                map.insert("reservedSystemCPUs".to_string(), json!(self.reserved_cpus));
+            let effective_reserved = if !self.reserved_cpus.is_empty() {
+                self.reserved_cpus.clone()
+            } else if !self.system_reserved.contains_key("cpu") {
+                "0".to_string()
+            } else {
+                String::new()
+            };
+            if !effective_reserved.is_empty() {
+                map.insert("reservedSystemCPUs".to_string(), json!(effective_reserved));
             }
             if !self.cpu_manager_policy_options.is_empty() {
                 map.insert(
@@ -267,8 +288,97 @@ impl KubeletConfigOptions {
         render_canonical_yaml(&val)
     }
 
+    /// Returns the CPU manager checkpoint path under the kubelet root directory.
+    #[must_use]
+    pub fn cpu_manager_checkpoint_path(&self) -> PathBuf {
+        self.root_dir.join(CPU_MANAGER_CHECKPOINT_FILE)
+    }
+
+    /// Reads CPU manager settings from YAML config content.
+    #[must_use]
+    pub fn read_cpu_manager_settings(yaml_content: &str) -> CpuManagerSettings {
+        let Ok(value) = rubix_config::decode_yaml_value(yaml_content) else {
+            return CpuManagerSettings::default();
+        };
+
+        let Value::Object(map) = value else {
+            return CpuManagerSettings::default();
+        };
+
+        let policy = match map.get("cpuManagerPolicy") {
+            Some(Value::String(s)) => s.clone(),
+            _ => String::new(),
+        };
+
+        let reserved_cpus = match map.get("reservedSystemCPUs") {
+            Some(Value::String(s)) => s.clone(),
+            Some(Value::Number(n)) => n.to_string(),
+            _ => String::new(),
+        };
+
+        let mut options = BTreeMap::new();
+        if let Some(opts) = map
+            .get("cpuManagerPolicyOptions")
+            .and_then(Value::as_object)
+        {
+            for (k, v) in opts {
+                let val_str = match v {
+                    Value::String(s) => s.clone(),
+                    Value::Bool(b) => b.to_string(),
+                    Value::Number(n) => n.to_string(),
+                    _ => String::new(),
+                };
+                options.insert(k.clone(), val_str);
+            }
+        }
+
+        CpuManagerSettings {
+            policy,
+            options,
+            reserved_cpus,
+        }
+    }
+
+    /// Invalidates the CPU manager checkpoint if the effective CPU manager settings differ
+    /// from the previously written configuration file.
+    ///
+    /// Returns `true` if the checkpoint was removed/invalidated, `false` otherwise.
+    pub fn invalidate_cpu_manager_checkpoint(&self, new_yaml: &str) -> bool {
+        let previous = match fs::read_to_string(&self.config_file) {
+            Ok(content) => content,
+            Err(_) => return false,
+        };
+
+        let previous_settings = Self::read_cpu_manager_settings(&previous);
+        let new_settings = Self::read_cpu_manager_settings(new_yaml);
+
+        if previous_settings == new_settings {
+            return false;
+        }
+
+        let checkpoint = self.cpu_manager_checkpoint_path();
+        if checkpoint.exists() {
+            if let Err(e) = fs::remove_file(&checkpoint) {
+                eprintln!(
+                    "failed to remove stale cpu manager checkpoint {}: {}",
+                    checkpoint.display(),
+                    e
+                );
+                return true;
+            }
+            eprintln!(
+                "cpu manager settings changed, removed {}. exclusive cores are reassigned as pinned workloads restart; with an external container runtime, restart them yourself",
+                checkpoint.display()
+            );
+        }
+
+        true
+    }
+
     /// Writes the generated YAML document to `self.config_file`.
-    pub fn write_kubelet_config_file(&self) -> Result<(), KubeletError> {
+    ///
+    /// Returns `true` if the CPU manager checkpoint was invalidated, `false` otherwise.
+    pub fn write_kubelet_config_file(&self) -> Result<bool, KubeletError> {
         let parent =
             self.config_file
                 .parent()
@@ -289,8 +399,9 @@ impl KubeletConfigOptions {
 
         fs::create_dir_all(parent)?;
         let yaml = self.render_yaml();
+        let invalidated = self.invalidate_cpu_manager_checkpoint(&yaml);
         fs::write(&self.config_file, yaml)?;
-        Ok(())
+        Ok(invalidated)
     }
 
     /// Generates CLI arguments for Kubelet process execution.
@@ -326,25 +437,266 @@ impl KubeletConfigOptions {
 
     /// Validates that upstream resource defaults are preserved without reviving removed KS-68 edge overrides.
     pub fn validate_upstream_resource_defaults(&self) -> Result<(), KubeletError> {
-        if self.container_mode {
-            if self.cpu_manager_policy == "static" {
-                return Err(KubeletError::InvalidConfiguration {
-                    field: "cpu_manager_policy".to_string(),
-                    reason: "static CPU manager policy is unsupported in container mode"
-                        .to_string(),
-                });
-            }
-        } else {
-            // In host mode, edge memory overrides must not be revived
-            if self.read_only_port != 0 {
-                return Err(KubeletError::InvalidConfiguration {
-                    field: "read_only_port".to_string(),
-                    reason: "read_only_port must default to 0 for security".to_string(),
-                });
-            }
+        self.validate_cpu_manager(detect_host_cpu_count())?;
+
+        if !self.container_mode && self.read_only_port != 0 {
+            return Err(KubeletError::InvalidConfiguration {
+                field: "read_only_port".to_string(),
+                reason: "read_only_port must default to 0 for security".to_string(),
+            });
         }
         Ok(())
     }
+
+    /// Validates CPU manager configuration against a host CPU count.
+    pub fn validate_cpu_manager(&self, host_cpus: usize) -> Result<(), KubeletError> {
+        if self.container_mode && self.cpu_manager_policy == "static" {
+            return Err(KubeletError::InvalidConfiguration {
+                field: "cpu_manager_policy".to_string(),
+                reason: "static CPU manager policy is unsupported in container mode".to_string(),
+            });
+        }
+
+        match self.cpu_manager_policy.as_str() {
+            "" | "none" => {
+                if !self.cpu_manager_policy_options.is_empty() || !self.reserved_cpus.is_empty() {
+                    return Err(KubeletError::InvalidConfiguration {
+                        field: "cpu_manager_policy".to_string(),
+                        reason: "--cpu-manager-policy-options and --reserved-cpus require --cpu-manager-policy=static".to_string(),
+                    });
+                }
+            },
+            "static" => {
+                if host_cpus < 2 {
+                    return Err(KubeletError::InvalidConfiguration {
+                        field: "cpu_manager_policy".to_string(),
+                        reason: format!(
+                            "static CPU manager policy requires at least 2 host CPUs, but host has {host_cpus}"
+                        ),
+                    });
+                }
+
+                validate_policy_options(&self.cpu_manager_policy_options)?;
+                validate_system_reserved_keys(&self.system_reserved)?;
+                validate_cpu_reservations(&self.reserved_cpus, &self.system_reserved, host_cpus)?;
+            },
+            other => {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "cpu_manager_policy".to_string(),
+                    reason: format!(
+                        "invalid --cpu-manager-policy \"{other}\": must be none or static"
+                    ),
+                });
+            },
+        }
+
+        Ok(())
+    }
+}
+
+fn validate_policy_options(options: &BTreeMap<String, String>) -> Result<(), KubeletError> {
+    for (key, val) in options {
+        match key.as_str() {
+            "full-pcpus-only"
+            | "strict-cpu-reservation"
+            | "distribute-cpus-across-numa"
+            | "prefer-align-cpus-by-uncorecache" => {},
+            _ => {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "cpu_manager_policy_options".to_string(),
+                    reason: format!(
+                        "unsupported --cpu-manager-policy-options key \"{key}\": supported keys are full-pcpus-only, strict-cpu-reservation, distribute-cpus-across-numa, prefer-align-cpus-by-uncorecache"
+                    ),
+                });
+            },
+        }
+
+        match val.as_str() {
+            "true" | "false" | "1" | "0" => {},
+            _ => {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "cpu_manager_policy_options".to_string(),
+                    reason: format!(
+                        "invalid value \"{val}\" for --cpu-manager-policy-options key \"{key}\": expected a boolean"
+                    ),
+                });
+            },
+        }
+    }
+
+    let uncore = options
+        .get("prefer-align-cpus-by-uncorecache")
+        .is_some_and(|v| v == "true" || v == "1");
+    let numa = options
+        .get("distribute-cpus-across-numa")
+        .is_some_and(|v| v == "true" || v == "1");
+    if uncore && numa {
+        return Err(KubeletError::InvalidConfiguration {
+            field: "cpu_manager_policy_options".to_string(),
+            reason: "--cpu-manager-policy-options prefer-align-cpus-by-uncorecache and distribute-cpus-across-numa cannot both be enabled".to_string(),
+        });
+    }
+
+    Ok(())
+}
+
+fn validate_system_reserved_keys(
+    system_reserved: &BTreeMap<String, String>,
+) -> Result<(), KubeletError> {
+    for key in system_reserved.keys() {
+        match key.as_str() {
+            "cpu" | "memory" | "ephemeral-storage" | "pid" => {},
+            _ => {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "system_reserved".to_string(),
+                    reason: format!(
+                        "unsupported --system-reserved resource \"{key}\": supported resources are cpu, memory, ephemeral-storage, pid"
+                    ),
+                });
+            },
+        }
+    }
+    Ok(())
+}
+
+fn validate_cpu_reservations(
+    reserved_cpus: &str,
+    system_reserved: &BTreeMap<String, String>,
+    host_cpus: usize,
+) -> Result<(), KubeletError> {
+    if !reserved_cpus.is_empty() {
+        let set = parse_cpuset(reserved_cpus).map_err(|e| KubeletError::InvalidConfiguration {
+            field: "reserved_cpus".to_string(),
+            reason: format!("invalid --reserved-cpus \"{reserved_cpus}\": {e}"),
+        })?;
+
+        for &cpu in &set {
+            if cpu >= host_cpus {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "reserved_cpus".to_string(),
+                    reason: format!(
+                        "invalid --reserved-cpus \"{reserved_cpus}\": CPU {cpu} does not exist, this host has {host_cpus} CPUs"
+                    ),
+                });
+            }
+        }
+
+        if set.len() >= host_cpus {
+            return Err(KubeletError::InvalidConfiguration {
+                field: "reserved_cpus".to_string(),
+                reason: format!(
+                    "--reserved-cpus \"{reserved_cpus}\" reserves all {host_cpus} CPUs, leaving none to pin workloads to"
+                ),
+            });
+        }
+
+        if let Some(sys_cpu) = system_reserved.get("cpu") {
+            eprintln!(
+                "--reserved-cpus \"{reserved_cpus}\" takes precedence over --system-reserved cpu={sys_cpu}, which is ignored"
+            );
+        }
+    } else if let Some(sys_cpu) = system_reserved.get("cpu") {
+        let milli = crate::workload::parse_cpu_quantity_milli(sys_cpu).ok_or_else(|| {
+            KubeletError::InvalidConfiguration {
+                field: "system_reserved.cpu".to_string(),
+                reason: format!("invalid --system-reserved quantity \"{sys_cpu}\" for \"cpu\""),
+            }
+        })?;
+        let count = ((milli + 999) / 1000) as usize;
+        if count >= host_cpus {
+            return Err(KubeletError::InvalidConfiguration {
+                field: "system_reserved.cpu".to_string(),
+                reason: format!(
+                    "--system-reserved cpu={sys_cpu} reserves {count} of this host's {host_cpus} CPUs, leaving none for workloads"
+                ),
+            });
+        }
+    } else {
+        eprintln!(
+            "neither --reserved-cpus nor --system-reserved cpu is set, defaulting to cpu \"0\""
+        );
+    }
+    Ok(())
+}
+
+/// Parses a CPU list string (e.g. "0", "0-1", "0,2-3") into a set of CPU indexes.
+pub fn parse_cpuset(s: &str) -> Result<BTreeSet<usize>, String> {
+    let s = s.trim();
+    if s.is_empty() {
+        return Ok(BTreeSet::new());
+    }
+    let mut cpus = BTreeSet::new();
+    for part in s.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if let Some((start_s, end_s)) = part.split_once('-') {
+            let start = start_s
+                .trim()
+                .parse::<usize>()
+                .map_err(|e| format!("invalid cpu index in range '{part}': {e}"))?;
+            let end = end_s
+                .trim()
+                .parse::<usize>()
+                .map_err(|e| format!("invalid cpu index in range '{part}': {e}"))?;
+            if start > end {
+                return Err(format!(
+                    "invalid cpu range '{part}': start {start} > end {end}"
+                ));
+            }
+            for cpu in start..=end {
+                cpus.insert(cpu);
+            }
+        } else {
+            let cpu = part
+                .parse::<usize>()
+                .map_err(|e| format!("invalid cpu index '{part}': {e}"))?;
+            cpus.insert(cpu);
+        }
+    }
+    Ok(cpus)
+}
+
+/// Formats a set of CPU indexes into a compact cpuset string (e.g. "0-1,3").
+#[must_use]
+pub fn format_cpuset(cpus: &BTreeSet<usize>) -> String {
+    if cpus.is_empty() {
+        return String::new();
+    }
+    let mut ranges = Vec::new();
+    let mut iter = cpus.iter();
+    if let Some(&first) = iter.next() {
+        let mut start = first;
+        let mut end = first;
+        for &cpu in iter {
+            if cpu == end + 1 {
+                end = cpu;
+            } else {
+                if start == end {
+                    ranges.push(format!("{start}"));
+                } else {
+                    ranges.push(format!("{start}-{end}"));
+                }
+                start = cpu;
+                end = cpu;
+            }
+        }
+        if start == end {
+            ranges.push(format!("{start}"));
+        } else {
+            ranges.push(format!("{start}-{end}"));
+        }
+    }
+    ranges.join(",")
+}
+
+/// Detects available CPUs on the host, defaulting to 2 if query fails.
+#[must_use]
+pub fn detect_host_cpu_count() -> usize {
+    std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(2)
 }
 
 /// Renders a JSON Value into deterministic, alphabetically sorted YAML.

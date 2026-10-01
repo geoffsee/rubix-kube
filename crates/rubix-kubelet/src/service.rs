@@ -9,7 +9,7 @@ use crate::container::ContainerEnvironment;
 use crate::error::KubeletError;
 use crate::health::KubeletHealthReport;
 use crate::registration::NodeRegistration;
-use crate::workload::{PodReconciler, RuntimeProvider};
+use crate::workload::{CpuManager, PodReconciler, RuntimeProvider, WorkloadRestartReport};
 
 /// Kubelet service orchestrating node lifecycle, registration, and workload execution.
 #[derive(Clone, Debug)]
@@ -35,12 +35,14 @@ impl KubeletService {
             options.clone(),
             format!("{}://v1.35.7", runtime.provider_name()),
         );
+        let cpu_manager = Arc::new(CpuManager::from_options(&options));
         let reconciler = PodReconciler::new(
             client,
             runtime.clone(),
             &options.node_name,
             &options.node_ip,
-        );
+        )
+        .with_cpu_manager(cpu_manager);
 
         Self {
             options,
@@ -172,11 +174,22 @@ impl KubeletService {
         if self.options.disable_ipv6 {
             let _ = self.container_env.disable_ipv6()?;
         }
-        self.options.write_kubelet_config_file()?;
+        let invalidated = self.options.write_kubelet_config_file()?;
+        self.reconciler.mark_checkpoint_invalidated(invalidated);
         self.registration.register_or_update().await?;
         self.registration.update_lease().await?;
         self.running.store(true, Ordering::SeqCst);
         Ok(())
+    }
+
+    /// Reports any surviving external-runtime containers that require restart after a CPU manager settings change.
+    pub async fn report_workload_restart_needs(
+        &self,
+        namespace: &str,
+    ) -> Result<Vec<WorkloadRestartReport>, KubeletError> {
+        self.reconciler
+            .report_workload_restart_needs(namespace)
+            .await
     }
 
     /// Checks the health and readiness of the Kubelet service.
