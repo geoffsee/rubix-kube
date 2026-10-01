@@ -323,7 +323,10 @@ fn ensure_nftables_masquerade(
             reason: format!("failed to list nft chain: {e}"),
         })?;
 
-    if chain_out.stdout.contains(MASQUERADE_COMMENT) {
+    let expected_cidr_match = format!("ip saddr {pod_cidr} ip daddr != {pod_cidr}");
+    if chain_out.stdout.contains(MASQUERADE_COMMENT)
+        && chain_out.stdout.contains(&expected_cidr_match)
+    {
         tracing::debug!(
             component = "network",
             table = %DEFAULT_NFT_MASQ_TABLE,
@@ -383,7 +386,7 @@ fn ensure_nftables_masquerade(
 /// Idempotent: repeated clean calls neither error nor flush unrelated NAT state.
 pub fn clean_pod_masquerade(pod_cidr: &str) -> Result<(), NetworkError> {
     let executor = SystemCommandExecutor;
-    let backend = detect_backend(None, &executor).unwrap_or(MasqueradeBackend::IpTables);
+    let backend = detect_backend(None, &executor)?;
     clean_pod_masquerade_with_backend_and_executor(pod_cidr, backend, &executor)
 }
 

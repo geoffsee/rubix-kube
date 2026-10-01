@@ -134,6 +134,7 @@ impl ContainerEnvironment {
 
         #[cfg(target_os = "linux")]
         {
+            rubix_network::ensure_ip_forward()?;
             let backend = rubix_network::ensure_pod_masquerade(pod_cidr)?;
             self.snat_ready
                 .store(true, std::sync::atomic::Ordering::SeqCst);

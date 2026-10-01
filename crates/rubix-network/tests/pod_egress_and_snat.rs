@@ -333,3 +333,30 @@ fn test_iptables_and_nftables_cleanup_unexpected_errors_are_reported() {
     assert_eq!(err_nft.diagnostic_code(), "network-masquerade-error");
     assert!(err_nft.to_string().contains("Operation not permitted"));
 }
+
+#[test]
+fn test_nftables_idempotency_detects_cidr_change() {
+    let executor = MockCommandExecutor::new_nftables_host();
+    let old_cidr = "10.42.0.0/16";
+    let new_cidr = "10.43.0.0/16";
+
+    // Establish old CIDR
+    ensure_pod_masquerade_with_backend_and_executor(
+        old_cidr,
+        MasqueradeBackend::Nftables,
+        &executor,
+    )
+    .expect("setup old cidr");
+    assert_eq!(executor.owned_nft_rule_count(), 1);
+
+    // Call setup again with NEW CIDR: must add the new rule and not falsely skip
+    ensure_pod_masquerade_with_backend_and_executor(
+        new_cidr,
+        MasqueradeBackend::Nftables,
+        &executor,
+    )
+    .expect("setup new cidr");
+
+    let rules = executor.nft_rules.lock().unwrap();
+    assert!(rules.iter().any(|r| r.contains("10.43.0.0/16")));
+}
