@@ -555,6 +555,7 @@ impl MockCommandExecutor {
             .lock()
             .unwrap()
             .push("table ip nat { chain postrouting { ... } }".to_string());
+        executor.nft_tables.lock().unwrap().push("nat".to_string());
         executor
     }
 
@@ -636,6 +637,28 @@ impl MockCommandExecutor {
             });
         }
 
+        if args.contains(&"-S") {
+            let mut out = String::new();
+            for r in rules.iter() {
+                let _ = writeln!(out, "{r}");
+            }
+            return Ok(CommandOutput {
+                success: true,
+                stdout: out,
+                stderr: String::new(),
+            });
+        }
+
+        if args.contains(&"-F") {
+            rules.clear();
+            self.unrelated_nat_rules.lock().unwrap().clear();
+            return Ok(CommandOutput {
+                success: true,
+                stdout: String::new(),
+                stderr: String::new(),
+            });
+        }
+
         if args.contains(&"-A") {
             rules.push(cmd_str.to_string());
             return Ok(CommandOutput {
@@ -688,6 +711,17 @@ impl MockCommandExecutor {
         match args.first().copied() {
             Some("list") => Ok(self.handle_nft_list(args)),
             Some("add") => Ok(self.handle_nft_add(args, cmd_str)),
+            Some("flush") if args.get(1) == Some(&"table") => {
+                let target = args.get(3).copied().unwrap_or_default();
+                if target == "nat" {
+                    self.unrelated_nat_rules.lock().unwrap().clear();
+                }
+                Ok(CommandOutput {
+                    success: true,
+                    stdout: String::new(),
+                    stderr: String::new(),
+                })
+            },
             Some("delete") if args.get(1) == Some(&"table") => {
                 let target = args.get(3).copied().unwrap_or_default();
                 self.nft_tables.lock().unwrap().retain(|t| t != target);
@@ -708,6 +742,18 @@ impl MockCommandExecutor {
     }
 
     fn handle_nft_list(&self, args: &[&str]) -> CommandOutput {
+        if args.get(1) == Some(&"tables") {
+            let tables = self.nft_tables.lock().unwrap();
+            let mut out = String::new();
+            for t in tables.iter() {
+                let _ = writeln!(out, "table ip {t}");
+            }
+            return CommandOutput {
+                success: true,
+                stdout: out,
+                stderr: String::new(),
+            };
+        }
         if args.get(1) == Some(&"table") {
             let tables = self.nft_tables.lock().unwrap();
             let target = args.get(3).copied().unwrap_or_default();

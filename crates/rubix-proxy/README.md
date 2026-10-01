@@ -12,9 +12,11 @@
 - **Dataplane Rule Synthesis**: Generates and inspects deterministic `iptables` (KUBE-SERVICES, KUBE-NODEPORTS, KUBE-SVC, KUBE-SEP) and `nftables` (tables, chains, and maps) rules.
 - **Diagnostic Distinction**: Rigorously separates component startup readiness from active dataplane probe results in logs and health reports.
 - **Supervised Lifecycle & Health**: Fully integrated with `rubix-supervisor`, checking health and verifying SNAT pod egress masquerade readiness before signaling component ready.
+- **Routing & Foreign Firewall Preservation Across Restart**: Preserves foreign firewall rules and E15 pod egress SNAT masquerade rules across proxy restarts and backend churn without blanket NAT flushes.
 - **Actionable Diagnostics**: Actionable operator guidance on missing backends, read-only `/proc/sys`, and credential failures.
 
 ## Documentation
 
 - [Proxy Baseline Configuration & Backend Selection](docs/proxy-baseline.md)
 - [Service Routing & EndpointSlice Verification](docs/service-routing.md)
+- [Routing and Foreign Firewall Preservation Across Restart](docs/restart-and-firewall-preservation.md)

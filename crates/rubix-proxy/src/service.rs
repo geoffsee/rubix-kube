@@ -5,11 +5,10 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use rubix_network::{CommandExecutor, MasqueradeBackend, SystemCommandExecutor};
 use tokio::sync::RwLock;
 
-use crate::backend::{
-    ProxyMode, check_sysctl_conntrack_writable, detect_proxy_backend, flush_nftables_nat,
-};
+use crate::backend::{ProxyMode, check_sysctl_conntrack_writable, detect_proxy_backend};
 use crate::config::KubeProxyOptions;
 use crate::error::ProxyError;
+use crate::firewall::{DataplaneReconciler, FirewallSnapshot, ReconciliationSummary};
 use crate::health::ProxyHealthReport;
 use crate::prober::{DataplaneProbeReport, DataplaneProber};
 use crate::routing::{EndpointSliceDefinition, ServiceDefinition, ServiceRoutingTable};
@@ -150,7 +149,7 @@ impl ProxyService {
     ///    - In container mode, zeroes all six conntrack settings and skips writing to `/proc/sys`.
     ///    - In host mode, checks if `/proc/sys/net/netfilter` is writable; if read-only, reports
     ///      actionable error recommending `--container-mode`.
-    /// 4. Flushes conflicting nftables nat table rules if running in nftables mode.
+    /// 4. Ensures no blanket NAT-table flush occurs, preserving foreign firewall and CNI/E15 pod egress rules.
     pub fn check_prerequisites(&mut self) -> Result<(), ProxyError> {
         // 1. Validate kubeconfig credential if path is specified
         if !self.options.kubeconfig.as_os_str().is_empty() && !self.options.kubeconfig.exists() {
@@ -167,10 +166,8 @@ impl ProxyService {
         // 3. Check /proc/sys conntrack writability
         check_sysctl_conntrack_writable(self.sys_root.as_deref(), self.options.container_mode)?;
 
-        // 4. In nftables mode, flush any pre-existing nat table to avoid nftables conflicts
-        if self.options.proxy_mode == ProxyMode::Nftables {
-            flush_nftables_nat(self.executor.as_ref())?;
-        }
+        // Note: No blanket flush of table ip nat is performed, ensuring foreign firewall
+        // rules and E15 pod egress masquerade rules remain intact across startup/restart.
 
         Ok(())
     }
@@ -308,5 +305,39 @@ impl ProxyService {
         self.snat_ready.store(false, Ordering::SeqCst);
         self.dataplane_ready.store(false, Ordering::SeqCst);
         self.verified_generation.store(0, Ordering::SeqCst);
+    }
+
+    /// Restarts kube-proxy, preserving registered routing table state without blanket NAT flushes.
+    pub fn restart(&mut self) -> Result<(), ProxyError> {
+        tracing::info!(
+            target: "kubeproxy::startup",
+            "restarting kubeproxy service..."
+        );
+        self.stop();
+        self.check_prerequisites()?;
+        self.start()?;
+        Ok(())
+    }
+
+    /// Captures a snapshot of current host firewall state (foreign rules and E15 pod egress).
+    #[must_use]
+    pub fn capture_firewall_snapshot(&self) -> FirewallSnapshot {
+        FirewallSnapshot::capture(self.executor.as_ref(), self.options.proxy_mode)
+    }
+
+    /// Reconciles dataplane routing rules against the current routing table, verifying
+    /// that foreign firewall rules remain completely preserved across backend updates.
+    pub async fn reconcile_dataplane(
+        &self,
+        reconciler: &DataplaneReconciler,
+        previous_endpoints: Option<&[String]>,
+    ) -> Result<ReconciliationSummary, ProxyError> {
+        let table = self.routing_table.read().await;
+        reconciler.reconcile(
+            &table,
+            self.options.proxy_mode,
+            self.executor.as_ref(),
+            previous_endpoints,
+        )
     }
 }
