@@ -724,7 +724,7 @@ impl MockCommandExecutor {
                 self.nft_rules
                     .lock()
                     .unwrap()
-                    .retain(|r| !r.contains(target));
+                    .retain(|r| r.split_whitespace().nth(4) != Some(target));
                 if target == "nat" {
                     self.unrelated_nat_rules.lock().unwrap().clear();
                 }
@@ -738,7 +738,10 @@ impl MockCommandExecutor {
                 let target = args.get(3).copied().unwrap_or_default();
                 self.nft_tables.lock().unwrap().retain(|t| t != target);
                 self.nft_chains.lock().unwrap().clear();
-                self.nft_rules.lock().unwrap().clear();
+                self.nft_rules
+                    .lock()
+                    .unwrap()
+                    .retain(|r| r.split_whitespace().nth(4) != Some(target));
                 Ok(CommandOutput {
                     success: true,
                     stdout: String::new(),
@@ -773,7 +776,7 @@ impl MockCommandExecutor {
             let rules = self.nft_rules.lock().unwrap();
             let mut body = String::new();
             for r in rules.iter() {
-                if r.contains(target) {
+                if r.split_whitespace().nth(4) == Some(target) {
                     let _ = writeln!(body, "    {r}");
                 }
             }

@@ -196,11 +196,19 @@ impl IptablesDataplane {
         if !out.success {
             return;
         }
-        for token in out.stdout.split_whitespace() {
-            if token.starts_with("KUBE-SEP-") && !custom_chains.contains(token) {
-                let _ = executor.run("iptables", &["-t", "nat", "-F", token]);
-                let _ = executor.run("iptables", &["-t", "nat", "-X", token]);
-            }
+        let stale: BTreeSet<&str> = out
+            .stdout
+            .split_whitespace()
+            .filter(|t| {
+                (t.starts_with("KUBE-SEP-") || t.starts_with("KUBE-SVC-"))
+                    && !custom_chains.contains(*t)
+            })
+            .collect();
+        for chain in &stale {
+            let _ = executor.run("iptables", &["-t", "nat", "-F", chain]);
+        }
+        for chain in &stale {
+            let _ = executor.run("iptables", &["-t", "nat", "-X", chain]);
         }
     }
 
@@ -362,11 +370,83 @@ impl NftablesDataplane {
     ) -> Result<(), ProxyError> {
         // Ensure table and base chains exist
         let _ = executor.run("nft", &["add", "table", "ip", "kube-proxy"]);
+        let _ = executor.run(
+            "nft",
+            &[
+                "add",
+                "chain",
+                "ip",
+                "kube-proxy",
+                "prerouting",
+                "{ type nat hook prerouting priority dstnat; policy accept; }",
+            ],
+        );
+        let _ = executor.run(
+            "nft",
+            &[
+                "add",
+                "chain",
+                "ip",
+                "kube-proxy",
+                "output",
+                "{ type nat hook output priority dstnat; policy accept; }",
+            ],
+        );
         let _ = executor.run("nft", &["add", "chain", "ip", "kube-proxy", "services"]);
         let _ = executor.run("nft", &["add", "chain", "ip", "kube-proxy", "nodeports"]);
 
-        // Flush only the owned ip kube-proxy table
+        // Flush only the owned ip kube-proxy table rules
         let _ = executor.run("nft", &["flush", "table", "ip", "kube-proxy"]);
+
+        // Install dispatch jump rules from prerouting and output to services and nodeports
+        let _ = executor.run(
+            "nft",
+            &[
+                "add",
+                "rule",
+                "ip",
+                "kube-proxy",
+                "prerouting",
+                "jump",
+                "services",
+            ],
+        );
+        let _ = executor.run(
+            "nft",
+            &[
+                "add",
+                "rule",
+                "ip",
+                "kube-proxy",
+                "prerouting",
+                "jump",
+                "nodeports",
+            ],
+        );
+        let _ = executor.run(
+            "nft",
+            &[
+                "add",
+                "rule",
+                "ip",
+                "kube-proxy",
+                "output",
+                "jump",
+                "services",
+            ],
+        );
+        let _ = executor.run(
+            "nft",
+            &[
+                "add",
+                "rule",
+                "ip",
+                "kube-proxy",
+                "output",
+                "jump",
+                "nodeports",
+            ],
+        );
 
         for rule in rules {
             let mut args = vec!["add", "rule", "ip", "kube-proxy", rule.chain];
