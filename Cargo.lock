@@ -1115,6 +1115,7 @@ dependencies = [
  "rubix-config",
  "rubix-containerd-api",
  "rubix-cri",
+ "rubix-network",
  "rubix-platform",
  "rubix-supervisor",
  "rustix",
