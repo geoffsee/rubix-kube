@@ -5,9 +5,9 @@ use std::sync::Arc;
 
 use rubix_network::MockCommandExecutor;
 use rubix_proxy::{
-    DataplaneProber, EndpointItem, EndpointPort, EndpointSliceDefinition, IptablesDataplane,
-    KubeProxyOptions, NftablesDataplane, Protocol, ProxyError, ProxyMode, ProxyService,
-    ServiceDefinition, ServicePort, ServiceRoutingTable, ServiceType,
+    DataplaneProber, EndpointConditions, EndpointItem, EndpointPort, EndpointSliceDefinition,
+    IptablesDataplane, KubeProxyOptions, NftablesDataplane, Protocol, ProxyError, ProxyMode,
+    ProxyService, ServiceDefinition, ServicePort, ServiceRoutingTable, ServiceType,
 };
 use tempfile::TempDir;
 
@@ -694,4 +694,146 @@ async fn test_routing_table_mutation_invalidates_dataplane_ready() {
     );
 
     service.stop();
+}
+
+#[test]
+fn test_incompatible_slice_ports_are_skipped() {
+    let mut table = ServiceRoutingTable::new();
+
+    let svc = ServiceDefinition::new(
+        "default",
+        "api",
+        ServiceType::ClusterIP,
+        Some("10.43.0.60".to_string()),
+        vec![ServicePort {
+            name: Some("http".to_string()),
+            protocol: Protocol::Tcp,
+            port: 80,
+            target_port: 8080,
+            node_port: None,
+        }],
+    );
+    table.apply_service(svc);
+
+    // Incompatible slice (only UDP port "dns", no "http" port)
+    let incompatible_slice = EndpointSliceDefinition::new(
+        "default",
+        "api-udp-slice",
+        "api",
+        vec![EndpointPort {
+            name: Some("dns".to_string()),
+            port: Some(53),
+            protocol: Some(Protocol::Udp),
+        }],
+        vec![EndpointItem::new(
+            vec!["10.42.0.88".to_string()],
+            true,
+            None,
+        )],
+    );
+    table.apply_endpoint_slice(incompatible_slice);
+
+    // Compatible slice (has TCP port "http")
+    let compatible_slice = EndpointSliceDefinition::new(
+        "default",
+        "api-tcp-slice",
+        "api",
+        vec![EndpointPort {
+            name: Some("http".to_string()),
+            port: Some(8080),
+            protocol: Some(Protocol::Tcp),
+        }],
+        vec![EndpointItem::new(
+            vec!["10.42.0.99".to_string()],
+            true,
+            None,
+        )],
+    );
+    table.apply_endpoint_slice(compatible_slice);
+
+    let endpoints = table
+        .get_ready_endpoints("default", "api", 80, Protocol::Tcp)
+        .unwrap();
+    assert_eq!(endpoints.len(), 1);
+    assert_eq!(endpoints[0].ip, "10.42.0.99");
+    assert_eq!(endpoints[0].port, 8080);
+}
+
+#[test]
+fn test_terminating_endpoints_are_excluded_when_ready_is_none() {
+    let terminating_conditions = EndpointConditions {
+        ready: None,
+        serving: Some(true),
+        terminating: Some(true),
+    };
+    assert!(
+        !terminating_conditions.is_ready(),
+        "terminating endpoints must be excluded even if serving is true when ready is None"
+    );
+
+    let non_terminating_conditions = EndpointConditions {
+        ready: None,
+        serving: Some(true),
+        terminating: Some(false),
+    };
+    assert!(
+        non_terminating_conditions.is_ready(),
+        "non-terminating serving endpoints must be ready when ready is None"
+    );
+}
+
+#[test]
+fn test_live_socket_probe_verification() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+
+    let mut table = ServiceRoutingTable::new();
+    table.apply_service(ServiceDefinition::new(
+        "default",
+        "live-test",
+        ServiceType::ClusterIP,
+        Some("127.0.0.1".to_string()),
+        vec![ServicePort {
+            name: Some("http".to_string()),
+            protocol: Protocol::Tcp,
+            port,
+            target_port: port,
+            node_port: None,
+        }],
+    ));
+
+    table.apply_endpoint_slice(EndpointSliceDefinition::new(
+        "default",
+        "live-test-slice",
+        "live-test",
+        vec![EndpointPort {
+            name: Some("http".to_string()),
+            port: Some(port),
+            protocol: Some(Protocol::Tcp),
+        }],
+        vec![EndpointItem::new(vec!["127.0.0.1".to_string()], true, None)],
+    ));
+
+    let prober = DataplaneProber::new_live(std::time::Duration::from_millis(500));
+    let result = prober
+        .probe_route(&table, "127.0.0.1", port, Protocol::Tcp)
+        .unwrap();
+    assert!(result.success);
+    assert_eq!(result.reached_endpoint.unwrap().port, port);
+
+    // Drop listener so subsequent live probe fails
+    drop(listener);
+
+    let err = prober
+        .probe_route(&table, "127.0.0.1", port, Protocol::Tcp)
+        .unwrap_err();
+    match err {
+        ProxyError::DataplaneProbeFailed { reason, .. } => {
+            assert!(
+                reason.contains("TCP connect to backend failed"),
+                "expected TCP connect failure reason, got: {reason}"
+            );
+        },
+        other => panic!("expected DataplaneProbeFailed, got: {other:?}"),
+    }
 }

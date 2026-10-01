@@ -1,4 +1,5 @@
-use std::time::{Instant, SystemTime};
+use std::net::{TcpStream, ToSocketAddrs, UdpSocket};
+use std::time::{Duration, Instant, SystemTime};
 
 use serde::{Deserialize, Serialize};
 
@@ -6,6 +7,15 @@ use crate::error::ProxyError;
 use crate::routing::{
     Protocol, ServiceDefinition, ServicePort, ServiceRoutingTable, TargetEndpoint,
 };
+
+/// Transport strategy for dataplane verification.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProbeTransport {
+    /// Verifies route translation against the in-memory dataplane routing table.
+    Synthetic,
+    /// Executes live network socket I/O (TCP connect or UDP ping) against the selected target endpoint.
+    Live { timeout: Duration },
+}
 
 /// Specification of a workload dataplane probe.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -112,12 +122,84 @@ impl ProbeAccumulator {
 
 /// Executes dataplane routing probes against the current `ServiceRoutingTable`.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct DataplaneProber;
+pub struct DataplaneProber {
+    transport: Option<ProbeTransport>,
+}
 
 impl DataplaneProber {
     #[must_use]
     pub fn new() -> Self {
-        Self
+        Self {
+            transport: Some(ProbeTransport::Synthetic),
+        }
+    }
+
+    #[must_use]
+    pub fn new_live(timeout: Duration) -> Self {
+        Self {
+            transport: Some(ProbeTransport::Live { timeout }),
+        }
+    }
+
+    #[must_use]
+    pub fn with_transport(mut self, transport: ProbeTransport) -> Self {
+        self.transport = Some(transport);
+        self
+    }
+
+    fn execute_live_probe(endpoint: &TargetEndpoint, timeout: Duration) -> Result<(), ProxyError> {
+        let addr_str = format!("{}:{}", endpoint.ip, endpoint.port);
+        let mut addrs =
+            addr_str
+                .to_socket_addrs()
+                .map_err(|e| ProxyError::DataplaneProbeFailed {
+                    service: addr_str.clone(),
+                    reason: format!("failed to resolve endpoint address: {e}"),
+                })?;
+        let addr = addrs
+            .next()
+            .ok_or_else(|| ProxyError::DataplaneProbeFailed {
+                service: addr_str.clone(),
+                reason: "no socket address resolved".to_string(),
+            })?;
+
+        match endpoint.protocol {
+            Protocol::Tcp => {
+                TcpStream::connect_timeout(&addr, timeout).map_err(|e| {
+                    ProxyError::DataplaneProbeFailed {
+                        service: addr_str.clone(),
+                        reason: format!("TCP connect to backend failed: {e}"),
+                    }
+                })?;
+            },
+            Protocol::Udp => {
+                let bind_addr = if addr.is_ipv4() {
+                    "0.0.0.0:0"
+                } else {
+                    "[::]:0"
+                };
+                let socket =
+                    UdpSocket::bind(bind_addr).map_err(|e| ProxyError::DataplaneProbeFailed {
+                        service: addr_str.clone(),
+                        reason: format!("UDP bind failed: {e}"),
+                    })?;
+                socket.set_read_timeout(Some(timeout)).ok();
+                socket.set_write_timeout(Some(timeout)).ok();
+                socket
+                    .connect(addr)
+                    .map_err(|e| ProxyError::DataplaneProbeFailed {
+                        service: addr_str.clone(),
+                        reason: format!("UDP connect failed: {e}"),
+                    })?;
+                socket
+                    .send(&[0u8; 1])
+                    .map_err(|e| ProxyError::DataplaneProbeFailed {
+                        service: addr_str,
+                        reason: format!("UDP probe send failed: {e}"),
+                    })?;
+            },
+        }
+        Ok(())
     }
 
     /// Probes packet routing through the dataplane routing table.
@@ -153,6 +235,10 @@ impl DataplaneProber {
                     reason: e.to_string(),
                 }
             })?;
+
+        if let Some(ProbeTransport::Live { timeout }) = self.transport {
+            Self::execute_live_probe(&target_endpoint, timeout)?;
+        }
 
         let latency_ms = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
         let details =

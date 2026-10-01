@@ -169,9 +169,12 @@ impl IptablesDataplane {
                 continue;
             };
             for port in &svc.ports {
-                let dport_pattern = format!("--dport {}", port.port);
-                if !existing_rules.contains(cluster_ip) || !existing_rules.contains(&dport_pattern)
-                {
+                let proto = port.protocol.as_str().to_lowercase();
+                let needle = format!(
+                    "-d {cluster_ip}/32 -p {proto} -m {proto} --dport {} ",
+                    port.port
+                );
+                if !existing_rules.lines().any(|l| l.contains(&needle)) {
                     return Err(ProxyError::RoutingVerificationFailed {
                         rule: format!("ClusterIP {cluster_ip}:{}", port.port),
                         reason: "matching rule missing from iptables nat table".to_string(),
@@ -317,9 +320,9 @@ impl NftablesDataplane {
                 continue;
             };
             for port in &svc.ports {
-                let dport_pattern = format!("dport {}", port.port);
-                if !existing_rules.contains(cluster_ip) || !existing_rules.contains(&dport_pattern)
-                {
+                let proto = port.protocol.as_str().to_lowercase();
+                let needle = format!("ip daddr {cluster_ip} {proto} dport {} ", port.port);
+                if !existing_rules.lines().any(|l| l.contains(&needle)) {
                     return Err(ProxyError::RoutingVerificationFailed {
                         rule: format!("ClusterIP {cluster_ip}:{}", port.port),
                         reason: "matching rule missing from nftables table".to_string(),

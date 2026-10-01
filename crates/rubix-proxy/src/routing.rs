@@ -100,10 +100,10 @@ impl EndpointConditions {
         match self.ready {
             Some(ready) => ready,
             None => {
-                if let Some(serving) = self.serving {
-                    serving
+                if self.terminating.unwrap_or(false) {
+                    false
                 } else {
-                    !self.terminating.unwrap_or(false)
+                    self.serving.unwrap_or(true)
                 }
             },
         }
@@ -327,15 +327,14 @@ impl ServiceRoutingTable {
                 continue;
             }
 
-            // Determine target port from slice or default to service target_port
-            let ep_port = slice
-                .ports
-                .iter()
-                .find(|p| {
-                    p.name == port_spec.name && p.protocol.is_none_or(|proto| proto == protocol)
-                })
-                .and_then(|p| p.port)
-                .unwrap_or(port_spec.target_port);
+            // Determine target port from matching slice port, or skip slice
+            let Some(slice_port) = slice.ports.iter().find(|p| {
+                p.name == port_spec.name && p.protocol.is_none_or(|proto| proto == protocol)
+            }) else {
+                continue;
+            };
+
+            let ep_port = slice_port.port.unwrap_or(port_spec.target_port);
 
             for ep in &slice.endpoints {
                 if !ep.conditions.is_ready() {
