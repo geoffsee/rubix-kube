@@ -176,11 +176,12 @@ impl WebhookService {
                     .update_mutating_webhook_configuration(DEFAULT_WEBHOOK_NAME, config_val)
                     .await?;
             },
-            Err(_) => {
+            Err(rubix_apiserver::ApiserverError::NotFound { .. }) => {
                 admin
                     .create_mutating_webhook_configuration(config_val)
                     .await?;
             },
+            Err(e) => return Err(e.into()),
         }
 
         Ok(())
