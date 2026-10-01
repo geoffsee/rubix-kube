@@ -189,6 +189,8 @@ async fn test_mutating_webhook_runs_before_validating_webhook_and_applies_patch(
             failure_policy: FailurePolicy::Fail,
             timeout_seconds: Some(10),
             admission_review_versions: vec!["v1".to_string()],
+            side_effects: None,
+            reinvocation_policy: None,
         }],
     };
     service
@@ -219,6 +221,8 @@ async fn test_mutating_webhook_runs_before_validating_webhook_and_applies_patch(
             failure_policy: FailurePolicy::Fail,
             timeout_seconds: Some(10),
             admission_review_versions: vec!["v1".to_string()],
+            side_effects: None,
+            reinvocation_policy: None,
         }],
     };
     service
@@ -317,6 +321,8 @@ async fn test_validating_webhook_admission_denial() {
             failure_policy: FailurePolicy::Fail,
             timeout_seconds: Some(10),
             admission_review_versions: vec!["v1".to_string()],
+            side_effects: None,
+            reinvocation_policy: None,
         }],
     };
     service
@@ -412,6 +418,8 @@ async fn test_webhook_failure_policy_fail_vs_ignore() {
             failure_policy: FailurePolicy::Fail,
             timeout_seconds: None,
             admission_review_versions: vec!["v1".to_string()],
+            side_effects: None,
+            reinvocation_policy: None,
         }],
     };
     service
@@ -458,6 +466,8 @@ async fn test_webhook_failure_policy_fail_vs_ignore() {
             failure_policy: FailurePolicy::Ignore,
             timeout_seconds: None,
             admission_review_versions: vec!["v1".to_string()],
+            side_effects: None,
+            reinvocation_policy: None,
         }],
     };
     service
@@ -522,6 +532,8 @@ async fn test_webhook_ca_bundle_verification() {
             failure_policy: FailurePolicy::Fail,
             timeout_seconds: None,
             admission_review_versions: vec!["v1".to_string()],
+            side_effects: None,
+            reinvocation_policy: None,
         }],
     };
     service.admission().add_mutating_webhook_config(config);

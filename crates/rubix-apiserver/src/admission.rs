@@ -67,10 +67,22 @@ pub struct WebhookDefinition {
     pub client_config: WebhookClientConfig,
     #[serde(default, rename = "failurePolicy")]
     pub failure_policy: FailurePolicy,
+    #[serde(
+        default,
+        rename = "sideEffects",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub side_effects: Option<String>,
     #[serde(rename = "timeoutSeconds")]
     pub timeout_seconds: Option<u32>,
     #[serde(default, rename = "admissionReviewVersions")]
     pub admission_review_versions: Vec<String>,
+    #[serde(
+        default,
+        rename = "reinvocationPolicy",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub reinvocation_policy: Option<String>,
 }
 
 impl WebhookDefinition {

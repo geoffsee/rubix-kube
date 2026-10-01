@@ -1716,6 +1716,51 @@ impl KubernetesApiClient {
             .await
     }
 
+    // PersistentVolumeClaims
+    pub async fn create_pvc(&self, namespace: &str, pvc: Value) -> Result<Value, ApiserverError> {
+        self.create_workload(
+            "",
+            "PersistentVolumeClaim",
+            "persistentvolumeclaims",
+            namespace,
+            pvc,
+        )
+        .await
+    }
+    pub async fn get_pvc(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
+        self.get_workload("", "persistentvolumeclaims", namespace, name)
+            .await
+    }
+    pub async fn list_pvcs(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.list_workload(
+            "",
+            "PersistentVolumeClaimList",
+            "persistentvolumeclaims",
+            namespace,
+        )
+        .await
+    }
+    pub async fn update_pvc(
+        &self,
+        namespace: &str,
+        name: &str,
+        pvc: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload(
+            "",
+            "PersistentVolumeClaim",
+            "persistentvolumeclaims",
+            namespace,
+            name,
+            pvc,
+        )
+        .await
+    }
+    pub async fn delete_pvc(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.delete_workload("", "persistentvolumeclaims", namespace, name)
+            .await
+    }
+
     // --- Service, Endpoints & EndpointSlice CRUD ---
 
     pub async fn create_service(
@@ -2804,6 +2849,39 @@ impl KubernetesApiClient {
             );
         }
         Ok(doc)
+    }
+
+    pub async fn update_mutating_webhook_configuration(
+        &self,
+        name: &str,
+        config: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "update",
+            "admissionregistration.k8s.io",
+            "mutatingwebhookconfigurations",
+            None,
+            Some(name),
+        )?;
+
+        let typed: crate::admission::MutatingWebhookConfiguration =
+            serde_json::from_value(config.clone())?;
+        self.admission.add_mutating_webhook_config(typed);
+
+        let key = format!(
+            "{}/mutatingwebhookconfigurations/{name}",
+            self.storage.prefix()
+        );
+        let bytes = serde_json::to_vec(&config)?;
+        let kv = self.storage.update(&key, bytes, None).await?;
+        let mut result = config;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
     }
 
     pub async fn list_mutating_webhook_configurations(&self) -> Result<Value, ApiserverError> {
