@@ -183,8 +183,18 @@ impl DataplaneProber {
                         service: addr_str.clone(),
                         reason: format!("UDP bind failed: {e}"),
                     })?;
-                socket.set_read_timeout(Some(timeout)).ok();
-                socket.set_write_timeout(Some(timeout)).ok();
+                socket.set_read_timeout(Some(timeout)).map_err(|e| {
+                    ProxyError::DataplaneProbeFailed {
+                        service: addr_str.clone(),
+                        reason: format!("UDP set_read_timeout failed: {e}"),
+                    }
+                })?;
+                socket.set_write_timeout(Some(timeout)).map_err(|e| {
+                    ProxyError::DataplaneProbeFailed {
+                        service: addr_str.clone(),
+                        reason: format!("UDP set_write_timeout failed: {e}"),
+                    }
+                })?;
                 socket
                     .connect(addr)
                     .map_err(|e| ProxyError::DataplaneProbeFailed {
@@ -194,8 +204,15 @@ impl DataplaneProber {
                 socket
                     .send(&[0u8; 1])
                     .map_err(|e| ProxyError::DataplaneProbeFailed {
-                        service: addr_str,
+                        service: addr_str.clone(),
                         reason: format!("UDP probe send failed: {e}"),
+                    })?;
+                let mut buf = [0u8; 512];
+                socket
+                    .recv(&mut buf)
+                    .map_err(|e| ProxyError::DataplaneProbeFailed {
+                        service: addr_str,
+                        reason: format!("UDP probe reply failed or timed out: {e}"),
                     })?;
             },
         }

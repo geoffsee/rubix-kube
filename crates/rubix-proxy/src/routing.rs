@@ -329,7 +329,7 @@ impl ServiceRoutingTable {
 
             // Determine target port from matching slice port, or skip slice
             let Some(slice_port) = slice.ports.iter().find(|p| {
-                p.name == port_spec.name && p.protocol.is_none_or(|proto| proto == protocol)
+                p.name == port_spec.name && p.protocol.unwrap_or(Protocol::Tcp) == protocol
             }) else {
                 continue;
             };

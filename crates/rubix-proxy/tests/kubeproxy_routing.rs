@@ -837,3 +837,134 @@ fn test_live_socket_probe_verification() {
         other => panic!("expected DataplaneProbeFailed, got: {other:?}"),
     }
 }
+
+#[test]
+fn test_endpoint_slice_protocol_defaults_to_tcp() {
+    let mut table = ServiceRoutingTable::new();
+
+    // TCP Service
+    table.apply_service(ServiceDefinition::new(
+        "default",
+        "web-tcp",
+        ServiceType::ClusterIP,
+        Some("10.43.0.70".to_string()),
+        vec![ServicePort {
+            name: Some("http".to_string()),
+            protocol: Protocol::Tcp,
+            port: 80,
+            target_port: 8080,
+            node_port: None,
+        }],
+    ));
+
+    // UDP Service
+    table.apply_service(ServiceDefinition::new(
+        "default",
+        "dns-udp",
+        ServiceType::ClusterIP,
+        Some("10.43.0.71".to_string()),
+        vec![ServicePort {
+            name: Some("http".to_string()),
+            protocol: Protocol::Udp,
+            port: 80,
+            target_port: 8080,
+            node_port: None,
+        }],
+    ));
+
+    // EndpointSlice with protocol: None (must default to TCP)
+    table.apply_endpoint_slice(EndpointSliceDefinition::new(
+        "default",
+        "slice-no-proto",
+        "web-tcp",
+        vec![EndpointPort {
+            name: Some("http".to_string()),
+            port: Some(8080),
+            protocol: None, // defaults to TCP
+        }],
+        vec![EndpointItem::new(
+            vec!["10.42.0.70".to_string()],
+            true,
+            None,
+        )],
+    ));
+
+    table.apply_endpoint_slice(EndpointSliceDefinition::new(
+        "default",
+        "slice-no-proto-udp",
+        "dns-udp",
+        vec![EndpointPort {
+            name: Some("http".to_string()),
+            port: Some(8080),
+            protocol: None, // defaults to TCP, should NOT match UDP service!
+        }],
+        vec![EndpointItem::new(
+            vec!["10.42.0.71".to_string()],
+            true,
+            None,
+        )],
+    ));
+
+    // TCP service should successfully match the slice with protocol: None
+    let tcp_eps = table
+        .get_ready_endpoints("default", "web-tcp", 80, Protocol::Tcp)
+        .unwrap();
+    assert_eq!(tcp_eps.len(), 1);
+    assert_eq!(tcp_eps[0].ip, "10.42.0.70");
+
+    // UDP service should skip the slice because protocol defaults to TCP!
+    let udp_res = table.get_ready_endpoints("default", "dns-udp", 80, Protocol::Udp);
+    assert!(
+        udp_res.is_err(),
+        "UDP service must not match slice defaulting to TCP"
+    );
+}
+
+#[test]
+fn test_live_udp_socket_probe_verification() {
+    let echo_socket = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+    let port = echo_socket.local_addr().unwrap().port();
+
+    let echo_server = std::thread::spawn(move || {
+        let mut buf = [0u8; 512];
+        if let Ok((len, src)) = echo_socket.recv_from(&mut buf) {
+            let _ = echo_socket.send_to(&buf[..len], src);
+        }
+    });
+
+    let mut table = ServiceRoutingTable::new();
+    table.apply_service(ServiceDefinition::new(
+        "default",
+        "udp-echo",
+        ServiceType::ClusterIP,
+        Some("127.0.0.1".to_string()),
+        vec![ServicePort {
+            name: Some("echo".to_string()),
+            protocol: Protocol::Udp,
+            port,
+            target_port: port,
+            node_port: None,
+        }],
+    ));
+
+    table.apply_endpoint_slice(EndpointSliceDefinition::new(
+        "default",
+        "udp-echo-slice",
+        "udp-echo",
+        vec![EndpointPort {
+            name: Some("echo".to_string()),
+            port: Some(port),
+            protocol: Some(Protocol::Udp),
+        }],
+        vec![EndpointItem::new(vec!["127.0.0.1".to_string()], true, None)],
+    ));
+
+    let prober = DataplaneProber::new_live(std::time::Duration::from_millis(500));
+    let result = prober
+        .probe_route(&table, "127.0.0.1", port, Protocol::Udp)
+        .unwrap();
+    assert!(result.success);
+    assert_eq!(result.reached_endpoint.unwrap().port, port);
+
+    echo_server.join().unwrap();
+}
