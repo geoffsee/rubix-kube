@@ -324,6 +324,7 @@ impl CpuManager {
 
     #[must_use]
     pub fn from_options(options: &KubeletConfigOptions) -> Self {
+        let host_cpus = detect_host_cpu_count();
         let reserved = if !options.reserved_cpus.is_empty() {
             parse_cpuset(&options.reserved_cpus).unwrap_or_default()
         } else if options.cpu_manager_policy == "static" {
@@ -332,6 +333,7 @@ impl CpuManager {
                 .get("cpu")
                 .and_then(|q| parse_cpu_quantity_milli(q))
                 .map_or(1, |m| usize::try_from(m.div_ceil(1000)).unwrap_or(1))
+                .min(host_cpus)
                 .max(1);
             (0..count).collect()
         } else {
@@ -342,7 +344,7 @@ impl CpuManager {
             &options.cpu_manager_policy,
             options.cpu_manager_policy_options.clone(),
             reserved,
-            detect_host_cpu_count(),
+            host_cpus,
             options.cpu_manager_checkpoint_path(),
         )
     }
