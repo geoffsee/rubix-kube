@@ -12,12 +12,11 @@ use crate::mtu::select_mtu;
 /// Discovers candidate network interfaces from the host environment.
 #[must_use]
 pub fn discover_host_interfaces() -> Vec<InterfaceCandidate> {
-    let mut candidates = Vec::new();
-
     #[cfg(target_os = "linux")]
-    {
-        candidates = discover_linux_sysfs_interfaces();
-    }
+    let mut candidates = discover_linux_sysfs_interfaces();
+
+    #[cfg(not(target_os = "linux"))]
+    let mut candidates = Vec::new();
 
     // If no candidates or on non-Linux, use safe UDP routing detection
     if candidates.is_empty() {
