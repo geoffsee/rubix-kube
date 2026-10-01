@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
 use serde::{Deserialize, Serialize};
 
@@ -193,6 +193,7 @@ pub struct ServiceRoutingTable {
     services: BTreeMap<(String, String), ServiceDefinition>,
     endpoint_slices: BTreeMap<(String, String), EndpointSliceDefinition>,
     rr_counter: Arc<AtomicUsize>,
+    generation: Arc<AtomicU64>,
 }
 
 impl ServiceRoutingTable {
@@ -202,7 +203,14 @@ impl ServiceRoutingTable {
             services: BTreeMap::new(),
             endpoint_slices: BTreeMap::new(),
             rr_counter: Arc::new(AtomicUsize::new(0)),
+            generation: Arc::new(AtomicU64::new(0)),
         }
+    }
+
+    /// Returns the current mutation generation counter of the routing table.
+    #[must_use]
+    pub fn generation(&self) -> u64 {
+        self.generation.load(Ordering::SeqCst)
     }
 
     /// Registers or updates a Service in the routing table.
@@ -216,6 +224,7 @@ impl ServiceRoutingTable {
             "applying service to routing table"
         );
         self.services.insert(key, service);
+        self.generation.fetch_add(1, Ordering::SeqCst);
     }
 
     /// Removes a Service from the routing table.
@@ -226,8 +235,13 @@ impl ServiceRoutingTable {
             name = %name,
             "removing service from routing table"
         );
-        self.services
-            .remove(&(namespace.to_string(), name.to_string()))
+        let removed = self
+            .services
+            .remove(&(namespace.to_string(), name.to_string()));
+        if removed.is_some() {
+            self.generation.fetch_add(1, Ordering::SeqCst);
+        }
+        removed
     }
 
     /// Registers or updates an `EndpointSlice` in the routing table.
@@ -242,6 +256,7 @@ impl ServiceRoutingTable {
             "applying endpoint slice to routing table"
         );
         self.endpoint_slices.insert(key, slice);
+        self.generation.fetch_add(1, Ordering::SeqCst);
     }
 
     /// Removes an `EndpointSlice` from the routing table.
@@ -256,8 +271,13 @@ impl ServiceRoutingTable {
             slice_name = %name,
             "removing endpoint slice from routing table"
         );
-        self.endpoint_slices
-            .remove(&(namespace.to_string(), name.to_string()))
+        let removed = self
+            .endpoint_slices
+            .remove(&(namespace.to_string(), name.to_string()));
+        if removed.is_some() {
+            self.generation.fetch_add(1, Ordering::SeqCst);
+        }
+        removed
     }
 
     /// Lists all registered services.
@@ -312,7 +332,7 @@ impl ServiceRoutingTable {
                 .ports
                 .iter()
                 .find(|p| {
-                    p.name == port_spec.name || (p.port.is_some() && p.protocol == Some(protocol))
+                    p.name == port_spec.name && p.protocol.is_none_or(|proto| proto == protocol)
                 })
                 .and_then(|p| p.port)
                 .unwrap_or(port_spec.target_port);

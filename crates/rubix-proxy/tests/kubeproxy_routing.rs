@@ -520,3 +520,178 @@ async fn test_logs_and_readiness_distinguish_component_startup_from_dataplane_pr
     assert!(!service.is_ready());
     assert!(!service.is_dataplane_ready());
 }
+
+#[test]
+fn test_multi_port_service_routing_selects_correct_named_ports() {
+    let mut table = ServiceRoutingTable::new();
+
+    // Service with two TCP ports: http (80 -> 8080) and metrics (9090 -> 9091)
+    let multi_svc = ServiceDefinition::new(
+        "default",
+        "app",
+        ServiceType::ClusterIP,
+        Some("10.43.0.50".to_string()),
+        vec![
+            ServicePort {
+                name: Some("http".to_string()),
+                protocol: Protocol::Tcp,
+                port: 80,
+                target_port: 8080,
+                node_port: None,
+            },
+            ServicePort {
+                name: Some("metrics".to_string()),
+                protocol: Protocol::Tcp,
+                port: 9090,
+                target_port: 9091,
+                node_port: None,
+            },
+        ],
+    );
+    table.apply_service(multi_svc);
+
+    // EndpointSlice defining ports in reverse order: metrics first, then http
+    let slice = EndpointSliceDefinition::new(
+        "default",
+        "app-slice",
+        "app",
+        vec![
+            EndpointPort {
+                name: Some("metrics".to_string()),
+                port: Some(9091),
+                protocol: Some(Protocol::Tcp),
+            },
+            EndpointPort {
+                name: Some("http".to_string()),
+                port: Some(8080),
+                protocol: Some(Protocol::Tcp),
+            },
+        ],
+        vec![EndpointItem::new(
+            vec!["10.42.0.100".to_string()],
+            true,
+            Some("node-1".to_string()),
+        )],
+    );
+    table.apply_endpoint_slice(slice);
+
+    // Resolving port 80 (http) should map to 8080, NOT 9091
+    let http_targets = table
+        .get_ready_endpoints("default", "app", 80, Protocol::Tcp)
+        .unwrap();
+    assert_eq!(http_targets.len(), 1);
+    assert_eq!(http_targets[0].port, 8080);
+    assert_eq!(http_targets[0].ip, "10.42.0.100");
+
+    // Resolving port 9090 (metrics) should map to 9091, NOT 8080
+    let metrics_targets = table
+        .get_ready_endpoints("default", "app", 9090, Protocol::Tcp)
+        .unwrap();
+    assert_eq!(metrics_targets.len(), 1);
+    assert_eq!(metrics_targets[0].port, 9091);
+    assert_eq!(metrics_targets[0].ip, "10.42.0.100");
+}
+
+#[tokio::test]
+async fn test_routing_table_mutation_invalidates_dataplane_ready() {
+    let temp = TempDir::new().unwrap();
+    let kubeconfig = temp.path().join("admin.kubeconfig");
+    fs::write(&kubeconfig, "apiVersion: v1\nkind: Config\n").unwrap();
+
+    let proc_net = temp.path().join("proc/net");
+    fs::create_dir_all(&proc_net).unwrap();
+    fs::write(proc_net.join("ip_tables_names"), "filter\nnat\n").unwrap();
+
+    let mock = MockCommandExecutor::new_iptables_host();
+    let opts = KubeProxyOptions::new(kubeconfig, true, ProxyMode::IpTables);
+
+    let service = ProxyService::new(opts)
+        .with_executor(Arc::new(mock))
+        .with_sys_root(temp.path().to_path_buf());
+    service.start().unwrap();
+    service.check_startup_readiness().unwrap();
+
+    // Initially dataplane is not ready
+    assert!(!service.is_dataplane_ready());
+
+    // Add service and endpoint slice
+    service
+        .apply_service(ServiceDefinition::new(
+            "default",
+            "web",
+            ServiceType::ClusterIP,
+            Some("10.43.0.10".to_string()),
+            vec![ServicePort {
+                name: Some("http".to_string()),
+                protocol: Protocol::Tcp,
+                port: 80,
+                target_port: 8080,
+                node_port: None,
+            }],
+        ))
+        .await;
+
+    service
+        .apply_endpoint_slice(EndpointSliceDefinition::new(
+            "default",
+            "web-slice",
+            "web",
+            vec![EndpointPort {
+                name: Some("http".to_string()),
+                port: Some(8080),
+                protocol: Some(Protocol::Tcp),
+            }],
+            vec![EndpointItem::new(
+                vec!["10.42.0.10".to_string()],
+                true,
+                None,
+            )],
+        ))
+        .await;
+
+    let prober = DataplaneProber::new();
+    let report = service.verify_dataplane(&prober).await.unwrap();
+    assert!(report.all_passed());
+    assert!(service.is_dataplane_ready());
+
+    // Applying another slice mutates the table and must immediately invalidate dataplane_ready
+    service
+        .apply_endpoint_slice(EndpointSliceDefinition::new(
+            "default",
+            "web-slice-2",
+            "web",
+            vec![EndpointPort {
+                name: Some("http".to_string()),
+                port: Some(8080),
+                protocol: Some(Protocol::Tcp),
+            }],
+            vec![EndpointItem::new(
+                vec!["10.42.0.11".to_string()],
+                true,
+                None,
+            )],
+        ))
+        .await;
+
+    assert!(
+        !service.is_dataplane_ready(),
+        "mutation should invalidate dataplane readiness until reverified"
+    );
+
+    // Re-verify dataplane
+    let report2 = service.verify_dataplane(&prober).await.unwrap();
+    assert!(report2.all_passed());
+    assert!(service.is_dataplane_ready());
+
+    // Removing an endpoint slice also invalidates dataplane readiness
+    let removed = service
+        .remove_endpoint_slice("default", "web-slice-2")
+        .await;
+    assert!(removed.is_some());
+    assert!(
+        !service.is_dataplane_ready(),
+        "removing endpoint slice should invalidate dataplane readiness"
+    );
+
+    service.stop();
+}
