@@ -11,6 +11,7 @@ k8s-openapi = { version = "=0.28.0", default-features = false, features = ["v1_3
 rubix-apiserver = { version = "=0.1.0", path = "../rubix-apiserver" }
 rubix-config = { version = "=0.1.0", path = "../rubix-config" }
 rubix-cri = { version = "=0.1.0", path = "../rubix-cri" }
+rubix-network = { version = "=0.1.0", path = "../rubix-network" }
 rubix-pki = { version = "=0.1.0", path = "../rubix-pki" }
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
 serde = { version = "=1.0.228", features = ["derive"] }
