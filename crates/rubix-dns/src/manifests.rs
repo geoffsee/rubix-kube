@@ -327,8 +327,8 @@ pub fn generate_config_map_patch(corefile: &str) -> serde_json::Value {
     })
 }
 
-/// Returns true if an existing Service differs from the desired Service specification,
-/// necessitating a recreation (because `ClusterIP` cannot be changed in-place on Kubernetes).
+/// Returns true if an existing Service differs from the desired Service in its immutable
+/// `cluster_ip` field, necessitating a deletion and recreation of the Service.
 #[must_use]
 pub fn should_recreate_service(existing: &Service, desired: &Service) -> bool {
     let Some(existing_spec) = &existing.spec else {
@@ -337,5 +337,5 @@ pub fn should_recreate_service(existing: &Service, desired: &Service) -> bool {
     let Some(desired_spec) = &desired.spec else {
         return false;
     };
-    existing_spec != desired_spec
+    existing_spec.cluster_ip != desired_spec.cluster_ip
 }

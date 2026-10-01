@@ -447,8 +447,23 @@ fn test_should_recreate_service_comparison() {
     // Identical service should not require recreation
     assert!(!should_recreate_service(&desired, &desired));
 
+    // Defaulted or modified mutable fields with same clusterIP should NOT trigger recreation
+    let mut modified_mutable = desired.clone();
+    modified_mutable.spec.as_mut().unwrap().session_affinity = Some("ClientIP".to_string());
+    assert!(!should_recreate_service(&modified_mutable, &desired));
+
     // Changed clusterIP requires recreation
-    let mut modified = desired.clone();
-    modified.spec.as_mut().unwrap().cluster_ip = Some("10.43.0.99".to_string());
-    assert!(should_recreate_service(&modified, &desired));
+    let mut modified_ip = desired.clone();
+    modified_ip.spec.as_mut().unwrap().cluster_ip = Some("10.43.0.99".to_string());
+    assert!(should_recreate_service(&modified_ip, &desired));
+
+    // Missing existing spec triggers recreation
+    let mut missing_spec = desired.clone();
+    missing_spec.spec = None;
+    assert!(should_recreate_service(&missing_spec, &desired));
+
+    // Missing desired spec does not trigger recreation
+    let mut missing_desired = desired;
+    missing_desired.spec = None;
+    assert!(!should_recreate_service(&modified_ip, &missing_desired));
 }
