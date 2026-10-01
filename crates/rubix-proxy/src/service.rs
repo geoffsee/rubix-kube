@@ -165,7 +165,7 @@ impl ProxyService {
         let report = ProxyHealthReport::new_healthy(
             self.options.proxy_mode,
             self.options.container_mode,
-            self.options.conntrack.is_all_zero(),
+            self.options.effective_conntrack().is_all_zero(),
             self.is_snat_ready(),
         );
 

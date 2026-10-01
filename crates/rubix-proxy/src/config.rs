@@ -244,6 +244,17 @@ impl KubeProxyOptions {
         flags
     }
 
+    /// Returns the effective conntrack configuration, enforcing container mode zeroing
+    /// when `container_mode` is enabled.
+    #[must_use]
+    pub fn effective_conntrack(&self) -> ConntrackConfiguration {
+        if self.container_mode {
+            ConntrackConfiguration::container_mode()
+        } else {
+            self.conntrack.clone()
+        }
+    }
+
     /// Converts these options to a structured `KubeProxyConfiguration` object.
     #[must_use]
     pub fn to_v1alpha1_config(&self) -> KubeProxyConfiguration {
@@ -253,11 +264,7 @@ impl KubeProxyOptions {
         }
 
         let nftables = NftablesConfiguration::default();
-        let conntrack = if self.container_mode {
-            ConntrackConfiguration::container_mode()
-        } else {
-            self.conntrack.clone()
-        };
+        let conntrack = self.effective_conntrack();
 
         KubeProxyConfiguration {
             api_version: "kubeproxy.config.k8s.io/v1alpha1".to_string(),

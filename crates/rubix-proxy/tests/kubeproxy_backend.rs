@@ -367,3 +367,35 @@ fn test_check_readiness_failure_resets_ready_and_snat_flags() {
     assert!(!service.is_ready());
     assert!(!service.is_snat_ready());
 }
+
+#[test]
+fn test_check_readiness_reports_all_conntrack_zero_when_container_mode_overridden() {
+    use rubix_proxy::ConntrackConfiguration;
+
+    let temp = TempDir::new().unwrap();
+    let kubeconfig = temp.path().join("admin.kubeconfig");
+    fs::write(&kubeconfig, "apiVersion: v1\nkind: Config\n").unwrap();
+
+    let mock = MockCommandExecutor::new_nftables_host();
+    let mut options = KubeProxyOptions::new(
+        kubeconfig,
+        true, // container_mode = true
+        ProxyMode::Nftables,
+    );
+    // Explicitly set non-zero conntrack on options struct
+    options.conntrack = ConntrackConfiguration::default_host();
+    assert!(!options.conntrack.is_all_zero());
+
+    let mut service = ProxyService::new(options)
+        .with_executor(Arc::new(mock))
+        .with_sys_root(temp.path().to_path_buf());
+
+    assert!(service.check_prerequisites().is_ok());
+    assert!(service.start().is_ok());
+
+    let health = service.check_readiness().unwrap();
+    assert!(health.is_healthy);
+    assert!(health.container_mode);
+    // Even though options.conntrack had non-zero values, effective_conntrack is all zero!
+    assert!(health.all_conntrack_zero);
+}
