@@ -1213,6 +1213,7 @@ name = "rubix-kube"
 version = "0.1.0"
 dependencies = [
  "rubix-config",
+ "rubix-network",
  "rubix-platform",
  "rubix-supervisor",
  "rustix",
@@ -1230,6 +1231,7 @@ dependencies = [
  "rubix-config",
  "rubix-cri",
  "rubix-datastore",
+ "rubix-network",
  "rubix-pki",
  "rubix-supervisor",
  "serde",
@@ -1237,6 +1239,17 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "rubix-network"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
