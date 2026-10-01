@@ -24,6 +24,9 @@ pub enum NetworkError {
     #[error("serialization error: {reason}")]
     SerializationError { reason: String },
 
+    #[error("masquerade error: {reason}")]
+    MasqueradeError { reason: String },
+
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -40,6 +43,7 @@ impl NetworkError {
             Self::SysctlError { .. } => "network-sysctl-error",
             Self::CniError { .. } => "network-cni-error",
             Self::SerializationError { .. } => "network-serialization-error",
+            Self::MasqueradeError { .. } => "network-masquerade-error",
             Self::Io(_) => "network-io-error",
         }
     }

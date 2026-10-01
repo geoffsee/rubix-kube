@@ -60,6 +60,8 @@ pub struct ContainerEnvironment {
     proc_sys_net_ipv6: PathBuf,
     allow_host_mutations: bool,
     simulated: bool,
+    pod_cidr: Option<String>,
+    snat_ready: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl Default for ContainerEnvironment {
@@ -70,6 +72,8 @@ impl Default for ContainerEnvironment {
             proc_sys_net_ipv6: PathBuf::from("/proc/sys/net/ipv6/conf"),
             allow_host_mutations: true,
             simulated: false,
+            pod_cidr: Some(rubix_network::DEFAULT_POD_CIDR.to_string()),
+            snat_ready: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 }
@@ -88,7 +92,41 @@ impl ContainerEnvironment {
             proc_sys_net_ipv6,
             allow_host_mutations: true,
             simulated: true,
+            pod_cidr: Some(rubix_network::DEFAULT_POD_CIDR.to_string()),
+            snat_ready: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
+    }
+
+    #[must_use]
+    pub fn with_pod_cidr(mut self, cidr: impl Into<String>) -> Self {
+        self.pod_cidr = Some(cidr.into());
+        self
+    }
+
+    #[must_use]
+    pub fn pod_cidr(&self) -> Option<&str> {
+        self.pod_cidr.as_deref()
+    }
+
+    #[must_use]
+    pub fn is_snat_ready(&self) -> bool {
+        self.snat_ready.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub fn prepare_pod_egress(
+        &self,
+        pod_cidr: &str,
+    ) -> Result<rubix_network::MasqueradeBackend, KubeletError> {
+        if !self.allow_host_mutations || self.simulated {
+            self.snat_ready
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            return Ok(rubix_network::MasqueradeBackend::IpTables);
+        }
+        let backend = rubix_network::ensure_pod_masquerade(pod_cidr)
+            .unwrap_or(rubix_network::MasqueradeBackend::IpTables);
+        self.snat_ready
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        Ok(backend)
     }
 
     #[must_use]
