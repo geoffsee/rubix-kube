@@ -120,7 +120,7 @@ fn test_managed_mode_writes_owned_config_and_links_standard_path() {
         assert!(standard_file.exists());
         assert!(standard_file.is_symlink());
         let target = fs::read_link(&standard_file).expect("read symlink");
-        assert_eq!(target, expected_managed_file);
+        assert_eq!(target, fs::canonicalize(&expected_managed_file).expect("canonicalize"));
     }
 }
 
@@ -226,11 +226,11 @@ fn test_remove_if_symlink_behavior() {
     fs::write(&regular_file, b"content").expect("write regular");
 
     // Regular file is not removed
-    assert!(!remove_if_symlink(&regular_file));
+    assert!(!remove_if_symlink(&regular_file).expect("remove_if_symlink"));
     assert!(regular_file.exists());
 
     // Non-existent file returns false
-    assert!(!remove_if_symlink(&dir.path().join("nonexistent.txt")));
+    assert!(!remove_if_symlink(&dir.path().join("nonexistent.txt")).expect("remove_if_symlink"));
 
     #[cfg(unix)]
     {
@@ -239,8 +239,77 @@ fn test_remove_if_symlink_behavior() {
         assert!(symlink.is_symlink());
 
         // Symlink is removed, original is untouched
-        assert!(remove_if_symlink(&symlink));
+        assert!(remove_if_symlink(&symlink).expect("remove_if_symlink"));
         assert!(!symlink.exists());
         assert!(regular_file.exists());
     }
 }
+
+#[test]
+fn test_external_followed_by_managed_mode_replaces_regular_file() {
+    let dir = tempdir().expect("tempdir");
+    let standard_dir = dir.path().join("etc/cni/net.d");
+    let base_path = dir.path().join("var/lib/kubesolo");
+
+    // 1. First place external config (creates a regular file in standard_dir)
+    let ext_written = write_external_cni_config(&standard_dir, 1400, Some("10.42.0.0/16"))
+        .expect("write external");
+    assert!(ext_written.is_file());
+    assert!(!ext_written.is_symlink());
+
+    // Verify it contains MTU 1400
+    let ext_content = fs::read_to_string(&ext_written).expect("read external content");
+    assert!(ext_content.contains("\"mtu\": 1400"));
+
+    // 2. Next run managed mode with different settings (e.g. MTU 1500, pod CIDR 10.43.0.0/16)
+    let managed_written = write_managed_cni_config(
+        &base_path,
+        1500,
+        Some("10.43.0.0/16"),
+        Some(&standard_dir),
+    )
+    .expect("write managed");
+
+    // Managed file exists and contains new MTU 1500
+    assert!(managed_written.exists());
+    let managed_content = fs::read_to_string(&managed_written).expect("read managed content");
+    assert!(managed_content.contains("\"mtu\": 1500"));
+    assert!(managed_content.contains("\"subnet\": \"10.43.0.0/16\""));
+
+    // Standard path is now a symlink pointing to the managed file
+    let standard_file = standard_dir.join("10-bridge.conflist");
+    #[cfg(unix)]
+    {
+        assert!(standard_file.is_symlink());
+        let target = fs::read_link(&standard_file).expect("read symlink");
+        assert_eq!(target, fs::canonicalize(&managed_written).expect("canonicalize"));
+    }
+    // Reading through standard_file yields the managed content
+    let linked_content = fs::read_to_string(&standard_file).expect("read through symlink");
+    assert!(linked_content.contains("\"mtu\": 1500"));
+}
+
+#[test]
+fn test_managed_mode_relative_base_path_canonicalization() {
+    let dir = tempdir().expect("tempdir");
+    let relative_base = dir.path().join("relative_data");
+    let standard_dir = dir.path().join("etc/cni/net.d");
+
+    let written = write_managed_cni_config(
+        &relative_base,
+        1420,
+        Some("10.42.0.0/16"),
+        Some(&standard_dir),
+    )
+    .expect("write managed with relative base");
+
+    #[cfg(unix)]
+    {
+        let standard_file = standard_dir.join("10-bridge.conflist");
+        assert!(standard_file.is_symlink());
+        let target = fs::read_link(&standard_file).expect("read symlink");
+        assert!(target.is_absolute());
+        assert_eq!(target, fs::canonicalize(&written).expect("canonicalize"));
+    }
+}
+

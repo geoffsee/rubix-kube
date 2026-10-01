@@ -83,30 +83,50 @@ pub fn write_cni_config_file(
     pod_cidr: Option<&str>,
 ) -> Result<(), NetworkError> {
     let content = generate_cni_config_json(mtu, pod_cidr)?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(path, content.as_bytes())?;
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    fs::create_dir_all(parent)?;
+
+    // Atomic replacement: write to a temporary file in the same directory, set permissions, then rename
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("cni-config");
+    let temp_path = parent.join(format!(".{file_name}.tmp-{}", std::process::id()));
+
+    fs::write(&temp_path, content.as_bytes())?;
 
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o644));
+        if let Err(e) = fs::set_permissions(&temp_path, fs::Permissions::from_mode(0o644)) {
+            let _ = fs::remove_file(&temp_path);
+            return Err(NetworkError::Io(e));
+        }
+    }
+
+    if let Err(e) = fs::rename(&temp_path, path) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(NetworkError::Io(e));
     }
 
     Ok(())
 }
 
 /// Removes a file at `path` if it is a symbolic link.
-/// Returns true if a symlink was detected and removed.
-pub fn remove_if_symlink(path: &Path) -> bool {
-    if let Ok(metadata) = fs::symlink_metadata(path)
-        && metadata.file_type().is_symlink()
-    {
-        let _ = fs::remove_file(path);
-        return true;
+/// Returns Ok(true) if a symlink was detected and removed, Ok(false) if absent or regular file.
+pub fn remove_if_symlink(path: &Path) -> Result<bool, NetworkError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if metadata.file_type().is_symlink() {
+                fs::remove_file(path)?;
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(NetworkError::Io(e)),
     }
-    false
 }
 
 /// Writes CNI configuration in managed mode (embedded containerd).
@@ -126,20 +146,22 @@ pub fn write_managed_cni_config(
     write_cni_config_file(&managed_config_file, mtu, pod_cidr)?;
 
     let target_dir = standard_conf_dir.unwrap_or_else(|| Path::new(DEFAULT_STANDARD_CNI_CONF_DIR));
-    if let Err(e) = fs::create_dir_all(target_dir) {
-        tracing::warn!(
-            component = "network",
-            target_dir = %target_dir.display(),
-            error = %e,
-            "failed to create standard CNI config directory for symlink"
-        );
-    } else {
-        let symlink_path = target_dir.join(DEFAULT_CNI_CONFIG_NAME);
-        remove_if_symlink(&symlink_path);
-        #[cfg(unix)]
-        {
-            let _ = std::os::unix::fs::symlink(&managed_config_file, &symlink_path);
+    fs::create_dir_all(target_dir)?;
+
+    let symlink_path = target_dir.join(DEFAULT_CNI_CONFIG_NAME);
+    match fs::symlink_metadata(&symlink_path) {
+        Ok(_) => {
+            // Remove existing symlink or regular file left by previous managed or external runs
+            fs::remove_file(&symlink_path)?;
         }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(NetworkError::Io(e)),
+    }
+
+    #[cfg(unix)]
+    {
+        let symlink_target = fs::canonicalize(&managed_config_file)?;
+        std::os::unix::fs::symlink(&symlink_target, &symlink_path)?;
     }
 
     Ok(managed_config_file)
@@ -159,7 +181,7 @@ pub fn write_external_cni_config(
 
     let cni_config_file = conf_dir.join(DEFAULT_CNI_CONFIG_NAME);
 
-    if remove_if_symlink(&cni_config_file) {
+    if remove_if_symlink(&cni_config_file)? {
         tracing::info!(
             component = "network",
             path = %cni_config_file.display(),
@@ -422,7 +444,7 @@ mod tests {
             let symlink = standard_conf_dir.join("10-bridge.conflist");
             assert!(symlink.is_symlink());
             let target = fs::read_link(&symlink).expect("read symlink");
-            assert_eq!(target, written_path);
+            assert_eq!(target, fs::canonicalize(&written_path).expect("canonicalize"));
         }
     }
 }
