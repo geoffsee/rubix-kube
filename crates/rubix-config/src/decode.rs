@@ -609,7 +609,24 @@ pub fn decode(input: &str) -> Result<DecodedConfig, ConfigError> {
     decode_with_limits(input, DecodeLimits::default())
 }
 
-pub fn decode_with_limits(input: &str, limits: DecodeLimits) -> Result<DecodedConfig, ConfigError> {
+/// Decode a YAML document into a `serde_json::Value` without imposing a configuration schema.
+pub fn decode_yaml_value(input: &str) -> Result<Value, ConfigError> {
+    decode_yaml_value_with_limits(input, DecodeLimits::default())
+}
+
+/// Decode a YAML document into a `serde_json::Value` with custom limits.
+pub fn decode_yaml_value_with_limits(
+    input: &str,
+    limits: DecodeLimits,
+) -> Result<Value, ConfigError> {
+    let (val, _) = parse_yaml_raw_value(input, limits)?;
+    Ok(val)
+}
+
+fn parse_yaml_raw_value(
+    input: &str,
+    limits: DecodeLimits,
+) -> Result<(Value, BTreeSet<String>), ConfigError> {
     if input.len() > limits.input_bytes {
         return Err(error(
             ErrorKind::Limit,
@@ -639,6 +656,11 @@ pub fn decode_with_limits(input: &str, limits: DecodeLimits) -> Result<DecodedCo
             },
         }
     };
+    Ok((value, duplicates))
+}
+
+pub fn decode_with_limits(input: &str, limits: DecodeLimits) -> Result<DecodedConfig, ConfigError> {
+    let (value, duplicates) = parse_yaml_raw_value(input, limits)?;
     // The baseline reads schema metadata before decoding known field types.
     let mut metadata = serde_json::json!({"apiVersion": "", "kind": ""});
     overlay(

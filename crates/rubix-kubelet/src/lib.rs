@@ -14,9 +14,10 @@ pub mod supervisor;
 pub mod workload;
 
 pub use config::{
-    DEFAULT_CLUSTER_DNS, DEFAULT_CLUSTER_DOMAIN, DEFAULT_HEALTHZ_BIND_ADDRESS,
-    DEFAULT_HEALTHZ_PORT, DEFAULT_KUBELET_PORT, DEFAULT_KUBELET_READ_ONLY_PORT,
-    DEFAULT_KUBELET_ROOT_DIR, KubeletConfigOptions, render_canonical_yaml,
+    CPU_MANAGER_CHECKPOINT_FILE, CpuManagerSettings, DEFAULT_CLUSTER_DNS, DEFAULT_CLUSTER_DOMAIN,
+    DEFAULT_HEALTHZ_BIND_ADDRESS, DEFAULT_HEALTHZ_PORT, DEFAULT_KUBELET_PORT,
+    DEFAULT_KUBELET_READ_ONLY_PORT, DEFAULT_KUBELET_ROOT_DIR, KubeletConfigOptions,
+    detect_host_cpu_count, format_cpuset, parse_cpuset, render_canonical_yaml,
 };
 pub use container::{
     CgroupSetupStatus, ContainerEnvironment, Ipv6DisableStatus, KubeletCgroupVersion,
@@ -27,4 +28,8 @@ pub use health::KubeletHealthReport;
 pub use registration::NodeRegistration;
 pub use service::KubeletService;
 pub use supervisor::{COMPONENT_KUBELET, DEFAULT_STARTUP_TIMEOUT, KubeletAdapter};
-pub use workload::{MockRuntimeProvider, PodReconciler, RuntimeProvider};
+pub use workload::{
+    CpuManager, CpuManagerState, MockRuntimeProvider, PodQoSClass, PodReconciler, RuntimeProvider,
+    WorkloadRestartReport, determine_pod_qos, is_container_cpu_pinning_eligible,
+    parse_cpu_quantity_milli, parse_memory_quantity_bytes,
+};

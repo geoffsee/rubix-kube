@@ -4,7 +4,7 @@ pub use model::*;
 mod decode;
 pub use decode::{
     ConfigError, DecodeLimits, DecodedConfig, ErrorKind, Presence, Warning, decode, decode_bytes,
-    decode_with_limits, read_file,
+    decode_with_limits, decode_yaml_value, decode_yaml_value_with_limits, read_file,
 };
 mod validate;
 pub use validate::{
