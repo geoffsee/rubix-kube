@@ -1137,24 +1137,6 @@ impl KubernetesApiClient {
             })?;
         let old_pod: Value = serde_json::from_slice(&existing.value)?;
 
-        let old_node = old_pod.pointer("/spec/nodeName").and_then(Value::as_str);
-        let new_node = pod.pointer("/spec/nodeName").and_then(Value::as_str);
-        if let Some(old) = old_node {
-            if let Some(new) = new_node {
-                if old != new {
-                    return Err(ApiserverError::InvalidInput {
-                        field: "spec.nodeName".to_string(),
-                        reason: "spec.nodeName is immutable once assigned".to_string(),
-                    });
-                }
-            } else {
-                return Err(ApiserverError::InvalidInput {
-                    field: "spec.nodeName".to_string(),
-                    reason: "spec.nodeName cannot be unset once assigned".to_string(),
-                });
-            }
-        }
-
         if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert("namespace".to_string(), json!(namespace));
             meta.insert("name".to_string(), json!(name));
@@ -1186,10 +1168,33 @@ impl KubernetesApiClient {
             operation: "UPDATE".to_string(),
             user_info: self.current_user_info(),
             object: Some(pod.clone()),
-            old_object: Some(old_pod),
+            old_object: Some(old_pod.clone()),
             dry_run: if dry_run { Some(true) } else { None },
         };
         self.admission.run_mutating_admission(&mut adm_req).await?;
+
+        let old_node = old_pod.pointer("/spec/nodeName").and_then(Value::as_str);
+        let new_node = adm_req
+            .object
+            .as_ref()
+            .and_then(|obj| obj.pointer("/spec/nodeName"))
+            .and_then(Value::as_str);
+        if let Some(old) = old_node {
+            if let Some(new) = new_node {
+                if old != new {
+                    return Err(ApiserverError::InvalidInput {
+                        field: "spec.nodeName".to_string(),
+                        reason: "spec.nodeName is immutable once assigned".to_string(),
+                    });
+                }
+            } else {
+                return Err(ApiserverError::InvalidInput {
+                    field: "spec.nodeName".to_string(),
+                    reason: "spec.nodeName cannot be unset once assigned".to_string(),
+                });
+            }
+        }
+
         self.admission.run_validating_admission(&adm_req).await?;
         if let Some(obj) = adm_req.object {
             pod = obj;
@@ -1465,19 +1470,6 @@ impl KubernetesApiClient {
             })?;
         let old_doc: Value = serde_json::from_slice(&existing.value)?;
 
-        if kind == "Job" {
-            let old_tmpl = old_doc.pointer("/spec/template");
-            let new_tmpl = doc.pointer("/spec/template");
-            if let (Some(old), Some(new)) = (old_tmpl, new_tmpl)
-                && old != new
-            {
-                return Err(ApiserverError::InvalidInput {
-                    field: "spec.template".to_string(),
-                    reason: "spec.template is immutable for jobs".to_string(),
-                });
-            }
-        }
-
         if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert("namespace".to_string(), json!(namespace));
             meta.insert("name".to_string(), json!(name));
@@ -1509,10 +1501,25 @@ impl KubernetesApiClient {
             operation: "UPDATE".to_string(),
             user_info: self.current_user_info(),
             object: Some(doc.clone()),
-            old_object: Some(old_doc),
+            old_object: Some(old_doc.clone()),
             dry_run: if dry_run { Some(true) } else { None },
         };
         self.admission.run_mutating_admission(&mut adm_req).await?;
+
+        if kind == "Job" {
+            let old_tmpl = old_doc.pointer("/spec/template");
+            let new_tmpl = adm_req
+                .object
+                .as_ref()
+                .and_then(|obj| obj.pointer("/spec/template"));
+            if old_tmpl.is_some() && old_tmpl != new_tmpl {
+                return Err(ApiserverError::InvalidInput {
+                    field: "spec.template".to_string(),
+                    reason: "spec.template is immutable for jobs".to_string(),
+                });
+            }
+        }
+
         self.admission.run_validating_admission(&adm_req).await?;
         if let Some(obj) = adm_req.object {
             doc = obj;

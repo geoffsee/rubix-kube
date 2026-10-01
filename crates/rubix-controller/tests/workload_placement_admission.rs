@@ -343,6 +343,21 @@ async fn test_job_node_selector_and_immutability() {
         "Updating spec.template on Job must be rejected as immutable, got: {err:?}"
     );
 
+    // 5. Update Job removing spec.template entirely: rejected as immutable
+    let mut remove_tmpl_job = update_res.clone();
+    remove_tmpl_job["spec"]
+        .as_object_mut()
+        .unwrap()
+        .remove("template");
+    let err_remove = client
+        .update_job(ns, "auto-job", remove_tmpl_job)
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(err_remove, ApiserverError::InvalidInput { ref field, .. } if field == "spec.template"),
+        "Removing spec.template on Job must be rejected as immutable, got: {err_remove:?}"
+    );
+
     webhook_service.stop().await;
 }
 
