@@ -22,6 +22,9 @@ pub enum WebhookError {
     #[error("webhook request not allowed: {reason}")]
     NotAllowed { reason: String },
 
+    #[error("LoadBalancer status update error: {reason}")]
+    StatusUpdateFailed { reason: String },
+
     #[error("apiserver communication error: {0}")]
     Apiserver(#[from] ApiserverError),
 
@@ -41,6 +44,7 @@ impl WebhookError {
             Self::AuthenticationFailed { .. } => "webhook-auth-failed",
             Self::DecodeError { .. } => "webhook-decode-error",
             Self::NotAllowed { .. } => "webhook-not-allowed",
+            Self::StatusUpdateFailed { .. } => "webhook-status-update-failed",
             Self::Apiserver(_) => "webhook-apiserver-error",
             Self::Io(_) => "webhook-io-error",
             Self::Json(_) => "webhook-json-error",

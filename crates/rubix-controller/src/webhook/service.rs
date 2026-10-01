@@ -57,11 +57,15 @@ pub struct WebhookService {
 impl WebhookService {
     #[must_use]
     pub fn new(config: WebhookConfig, apiserver: Arc<ApiserverService>) -> Self {
-        let handler = Arc::new(NodeSetterHandler::new(
-            &config.node_name,
-            &config.load_balancer_ip,
-            config.load_balancer,
-        ));
+        let admin = apiserver.admin_client();
+        let handler = Arc::new(
+            NodeSetterHandler::new(
+                &config.node_name,
+                &config.load_balancer_ip,
+                config.load_balancer,
+            )
+            .with_client(Arc::new(admin)),
+        );
 
         Self {
             config,

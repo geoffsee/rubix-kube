@@ -6,6 +6,8 @@ use rubix_apiserver::{AdmissionRequest, AdmissionResponse, ApiserverError, Webho
 use serde_json::{Value, json};
 use tokio::sync::Mutex;
 
+use super::loadbalancer::{LoadBalancerClient, update_load_balancer_status_with_retry};
+
 #[derive(Clone, Debug)]
 pub struct HttpResponse {
     pub status: u16,
@@ -14,7 +16,7 @@ pub struct HttpResponse {
     pub scheduled_status_update: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct NodeSetterHandler {
     node_name: String,
     load_balancer_ip: String,
@@ -23,6 +25,23 @@ pub struct NodeSetterHandler {
     node_selector_patch_b64: String,
     pvc_annotation_patch_b64: String,
     load_balancer_update_locks: Arc<Mutex<HashSet<String>>>,
+    client: Arc<tokio::sync::RwLock<Option<Arc<dyn LoadBalancerClient>>>>,
+    max_steps: usize,
+    base_duration: std::time::Duration,
+    lock_release_delay: std::time::Duration,
+}
+
+impl std::fmt::Debug for NodeSetterHandler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NodeSetterHandler")
+            .field("node_name", &self.node_name)
+            .field("load_balancer_ip", &self.load_balancer_ip)
+            .field("load_balancer", &self.load_balancer)
+            .field("max_steps", &self.max_steps)
+            .field("base_duration", &self.base_duration)
+            .field("lock_release_delay", &self.lock_release_delay)
+            .finish_non_exhaustive()
+    }
 }
 
 impl NodeSetterHandler {
@@ -70,7 +89,32 @@ impl NodeSetterHandler {
             node_selector_patch_b64,
             pvc_annotation_patch_b64,
             load_balancer_update_locks: Arc::new(Mutex::new(HashSet::new())),
+            client: Arc::new(tokio::sync::RwLock::new(None)),
+            max_steps: 5,
+            base_duration: std::time::Duration::from_millis(50),
+            lock_release_delay: std::time::Duration::from_millis(100),
         }
+    }
+
+    #[must_use]
+    pub fn with_client(self, client: Arc<dyn LoadBalancerClient>) -> Self {
+        Self {
+            client: Arc::new(tokio::sync::RwLock::new(Some(client))),
+            ..self
+        }
+    }
+
+    #[must_use]
+    pub fn with_retry_params(
+        mut self,
+        max_steps: usize,
+        base_duration: std::time::Duration,
+        lock_release_delay: std::time::Duration,
+    ) -> Self {
+        self.max_steps = max_steps;
+        self.base_duration = base_duration;
+        self.lock_release_delay = lock_release_delay;
+        self
     }
 
     #[must_use]
@@ -94,6 +138,7 @@ impl NodeSetterHandler {
     }
 
     /// Evaluates mutation patches for a given `AdmissionReview` request object.
+    #[allow(clippy::too_many_lines)]
     pub async fn evaluate_mutation(
         &self,
         request: &Value,
@@ -197,12 +242,55 @@ impl NodeSetterHandler {
 
                 let key = format!("{namespace}/{name}");
                 let mut locks = self.load_balancer_update_locks.lock().await;
-                let scheduled = locks.insert(key);
+                let scheduled = locks.insert(key.clone());
+                drop(locks);
+
+                if scheduled {
+                    let client_opt = self.client.read().await.clone();
+                    if let Some(client) = client_opt {
+                        self.spawn_load_balancer_update(client, namespace, name, key);
+                    }
+                }
 
                 Ok((None, scheduled))
             },
             _ => Ok((None, false)),
         }
+    }
+
+    fn spawn_load_balancer_update(
+        &self,
+        client: Arc<dyn LoadBalancerClient>,
+        namespace: &str,
+        name: &str,
+        lock_key: String,
+    ) {
+        let handler = self.clone();
+        let ns = namespace.to_string();
+        let n = name.to_string();
+        tokio::spawn(async move {
+            if let Err(e) = update_load_balancer_status_with_retry(
+                &*client,
+                &ns,
+                &n,
+                &handler.load_balancer_ip,
+                handler.max_steps,
+                handler.base_duration,
+            )
+            .await
+            {
+                eprintln!("[{}] {ns}/{n}: {e}", e.diagnostic_code());
+            }
+
+            if !handler.lock_release_delay.is_zero() {
+                tokio::time::sleep(handler.lock_release_delay).await;
+            }
+            handler
+                .load_balancer_update_locks
+                .lock()
+                .await
+                .remove(&lock_key);
+        });
     }
 
     /// Handles an incoming HTTP request and returns an `HttpResponse`.

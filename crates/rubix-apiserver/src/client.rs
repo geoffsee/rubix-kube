@@ -1901,7 +1901,15 @@ impl KubernetesApiClient {
         namespace: &str,
         service: Value,
     ) -> Result<Value, ApiserverError> {
-        self.create_workload("", "Service", "services", namespace, service)
+        self.create_service_options(namespace, service, false).await
+    }
+    pub async fn create_service_options(
+        &self,
+        namespace: &str,
+        service: Value,
+        dry_run: bool,
+    ) -> Result<Value, ApiserverError> {
+        self.create_workload_options("", "Service", "services", namespace, service, dry_run)
             .await
     }
     pub async fn get_service(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {
@@ -1917,8 +1925,76 @@ impl KubernetesApiClient {
         name: &str,
         service: Value,
     ) -> Result<Value, ApiserverError> {
-        self.update_workload("", "Service", "services", namespace, name, service)
+        self.update_service_options(namespace, name, service, false)
             .await
+    }
+    pub async fn update_service_options(
+        &self,
+        namespace: &str,
+        name: &str,
+        service: Value,
+        dry_run: bool,
+    ) -> Result<Value, ApiserverError> {
+        self.update_workload_options("", "Service", "services", namespace, name, service, dry_run)
+            .await
+    }
+    pub async fn patch_service_status(
+        &self,
+        namespace: &str,
+        name: &str,
+        status: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("patch", "", "services/status", Some(namespace), Some(name))?;
+        let key = format!("{}/services/{namespace}/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "services".to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+
+        let expected_version = status
+            .pointer("/metadata/resourceVersion")
+            .and_then(Value::as_str)
+            .and_then(|v| v.parse::<u64>().ok());
+
+        if let Some(expected_rev) = expected_version
+            && kv.mod_revision != expected_rev
+        {
+            return Err(ApiserverError::Conflict {
+                resource: "services".to_string(),
+                name: format!("{namespace}/{name}"),
+            });
+        }
+
+        let mut service: Value = serde_json::from_slice(&kv.value)?;
+        let status_value = status.get("status").unwrap_or(&status);
+        if let Some(status_obj) = service.get_mut("status").and_then(Value::as_object_mut) {
+            if let Some(new_status) = status_value.as_object() {
+                for (k, v) in new_status {
+                    status_obj.insert(k.clone(), v.clone());
+                }
+            } else {
+                service["status"] = status_value.clone();
+            }
+        } else {
+            service["status"] = status_value.clone();
+        }
+
+        let bytes = serde_json::to_vec(&service)?;
+        let updated_kv = self
+            .storage
+            .update(&key, bytes, expected_version.or(Some(kv.mod_revision)))
+            .await?;
+        if let Some(meta) = service.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(updated_kv.mod_revision.to_string()),
+            );
+        }
+        Ok(service)
     }
     pub async fn delete_service(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
         self.delete_workload("", "services", namespace, name).await
