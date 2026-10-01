@@ -106,15 +106,26 @@ pub async fn update_load_balancer_status_with_retry(
             return Ok(());
         }
 
-        let patch_obj = json!({
-            "loadBalancer": {
-                "ingress": [
-                    {
-                        "ip": load_balancer_ip
-                    }
-                ]
+        let resource_version = svc
+            .pointer("/metadata/resourceVersion")
+            .and_then(Value::as_str);
+
+        let mut patch_obj = json!({
+            "status": {
+                "loadBalancer": {
+                    "ingress": [
+                        {
+                            "ip": load_balancer_ip
+                        }
+                    ]
+                }
             }
         });
+        if let Some(rv) = resource_version {
+            patch_obj["metadata"] = json!({
+                "resourceVersion": rv
+            });
+        }
 
         if client
             .patch_service_status(namespace, name, patch_obj)

@@ -1955,23 +1955,38 @@ impl KubernetesApiClient {
                 name: format!("{namespace}/{name}"),
             })?;
 
+        let expected_version = status
+            .pointer("/metadata/resourceVersion")
+            .and_then(Value::as_str)
+            .and_then(|v| v.parse::<u64>().ok());
+
+        if let Some(expected_rev) = expected_version
+            && kv.mod_revision != expected_rev
+        {
+            return Err(ApiserverError::Conflict {
+                resource: "services".to_string(),
+                name: format!("{namespace}/{name}"),
+            });
+        }
+
         let mut service: Value = serde_json::from_slice(&kv.value)?;
+        let status_value = status.get("status").unwrap_or(&status);
         if let Some(status_obj) = service.get_mut("status").and_then(Value::as_object_mut) {
-            if let Some(new_status) = status.as_object() {
+            if let Some(new_status) = status_value.as_object() {
                 for (k, v) in new_status {
                     status_obj.insert(k.clone(), v.clone());
                 }
             } else {
-                service["status"] = status;
+                service["status"] = status_value.clone();
             }
         } else {
-            service["status"] = status;
+            service["status"] = status_value.clone();
         }
 
         let bytes = serde_json::to_vec(&service)?;
         let updated_kv = self
             .storage
-            .update(&key, bytes, Some(kv.mod_revision))
+            .update(&key, bytes, expected_version.or(Some(kv.mod_revision)))
             .await?;
         if let Some(meta) = service.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert(

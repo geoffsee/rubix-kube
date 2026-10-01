@@ -151,7 +151,7 @@ async fn test_fixture_oracle_parity_cases() {
     let recorded = client.recorded_patches.lock().await;
     assert_eq!(
         recorded[0].2,
-        json!({"loadBalancer": {"ingress": [{"ip": lb_ip}]}})
+        json!({"status": {"loadBalancer": {"ingress": [{"ip": lb_ip}]}}})
     );
 
     // Case 2: "already_correct" -> 1 get, 0 patch
@@ -648,4 +648,63 @@ async fn test_restart_and_address_change_characterization_without_background_con
     );
 
     webhook_service_2.stop().await;
+}
+
+#[tokio::test]
+async fn test_stale_resource_version_detection_and_conflict() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, _webhook_service) = setup_test_apiserver(&temp, "test-node", "192.0.2.1", true);
+
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+
+    let client = apiserver.admin_client();
+    let ns = "test-stale-rv";
+    client.create_namespace(ns).await.unwrap();
+
+    let svc = json!({
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": { "name": "rv-svc", "namespace": ns },
+        "spec": { "type": "LoadBalancer", "ports": [{ "port": 80 }] }
+    });
+    let created = client.create_service(ns, svc).await.unwrap();
+    let initial_rv = created
+        .pointer("/metadata/resourceVersion")
+        .and_then(Value::as_str)
+        .unwrap();
+
+    // Modify the service to bump its resourceVersion
+    let mut modified = created.clone();
+    modified["metadata"]["labels"] = json!({"foo": "bar"});
+    let updated = client.update_service(ns, "rv-svc", modified).await.unwrap();
+    let new_rv = updated
+        .pointer("/metadata/resourceVersion")
+        .and_then(Value::as_str)
+        .unwrap();
+    assert_ne!(initial_rv, new_rv);
+
+    // Attempting to patch status using the STALE initial_rv must fail with Conflict
+    let stale_patch = json!({
+        "metadata": { "resourceVersion": initial_rv },
+        "status": {
+            "loadBalancer": {
+                "ingress": [{ "ip": "1.2.3.4" }]
+            }
+        }
+    });
+    let patch_res = client.patch_service_status(ns, "rv-svc", stale_patch).await;
+    assert!(patch_res.is_err(), "Stale resourceVersion must be rejected");
+
+    // Patching with the current new_rv must succeed
+    let fresh_patch = json!({
+        "metadata": { "resourceVersion": new_rv },
+        "status": {
+            "loadBalancer": {
+                "ingress": [{ "ip": "1.2.3.4" }]
+            }
+        }
+    });
+    let patch_res = client.patch_service_status(ns, "rv-svc", fresh_patch).await;
+    assert!(patch_res.is_ok(), "Fresh resourceVersion must succeed");
 }

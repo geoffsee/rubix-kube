@@ -269,7 +269,7 @@ impl NodeSetterHandler {
         let ns = namespace.to_string();
         let n = name.to_string();
         tokio::spawn(async move {
-            let _ = update_load_balancer_status_with_retry(
+            if let Err(e) = update_load_balancer_status_with_retry(
                 &*client,
                 &ns,
                 &n,
@@ -277,7 +277,10 @@ impl NodeSetterHandler {
                 handler.max_steps,
                 handler.base_duration,
             )
-            .await;
+            .await
+            {
+                eprintln!("[{}] {ns}/{n}: {e}", e.diagnostic_code());
+            }
 
             if !handler.lock_release_delay.is_zero() {
                 tokio::time::sleep(handler.lock_release_delay).await;
