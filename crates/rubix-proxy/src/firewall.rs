@@ -201,10 +201,22 @@ impl FirewallSnapshot {
             }
         }
 
+        // 4. Verify foreign nftables rules preservation
+        for foreign_rule in &self.foreign_nft_rules {
+            if !current.foreign_nft_rules.contains(foreign_rule) {
+                return Err(ProxyError::ForeignFirewallCorrupted {
+                    reason: format!(
+                        "foreign nftables rule '{foreign_rule}' missing after kube-proxy operation; blanket flush detected"
+                    ),
+                });
+            }
+        }
+
         tracing::info!(
             target: "kubeproxy::firewall",
             foreign_iptables_retained = current.foreign_iptables_rules.len(),
             foreign_nft_tables_retained = current.foreign_nft_tables.len(),
+            foreign_nft_rules_retained = current.foreign_nft_rules.len(),
             e15_masquerade_intact = current.e15_masquerade_present,
             "foreign firewall rules and E15 pod egress rules successfully preserved"
         );
@@ -277,10 +289,12 @@ impl DataplaneReconciler {
             }
         }
 
-        // Synthesize current rules according to proxy mode
+        // Apply synthesized rules and verify active dataplane rules
         match mode {
             ProxyMode::IpTables => {
                 let rules = IptablesDataplane::generate_rules(table);
+                IptablesDataplane::apply_rules(&rules, executor)?;
+                IptablesDataplane::verify_active_rules(table, executor)?;
                 tracing::debug!(
                     target: "kubeproxy::dataplane",
                     rule_count = rules.len(),
@@ -289,6 +303,8 @@ impl DataplaneReconciler {
             },
             ProxyMode::Nftables => {
                 let rules = NftablesDataplane::generate_rules(table);
+                NftablesDataplane::apply_rules(&rules, executor)?;
+                NftablesDataplane::verify_active_rules(table, executor)?;
                 tracing::debug!(
                     target: "kubeproxy::dataplane",
                     rule_count = rules.len(),

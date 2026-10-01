@@ -649,9 +649,17 @@ impl MockCommandExecutor {
             });
         }
 
-        if args.contains(&"-F") {
-            rules.clear();
-            self.unrelated_nat_rules.lock().unwrap().clear();
+        if let Some(pos) = args.iter().position(|&a| a == "-F" || a == "-X") {
+            let chain_opt = args.get(pos + 1).copied();
+            if let Some(chain) = chain_opt
+                && !chain.starts_with('-')
+            {
+                let pattern = format!("-A {chain}");
+                rules.retain(|r| !r.contains(&pattern));
+            } else {
+                rules.clear();
+                self.unrelated_nat_rules.lock().unwrap().clear();
+            }
             return Ok(CommandOutput {
                 success: true,
                 stdout: String::new(),
@@ -713,6 +721,10 @@ impl MockCommandExecutor {
             Some("add") => Ok(self.handle_nft_add(args, cmd_str)),
             Some("flush") if args.get(1) == Some(&"table") => {
                 let target = args.get(3).copied().unwrap_or_default();
+                self.nft_rules
+                    .lock()
+                    .unwrap()
+                    .retain(|r| !r.contains(target));
                 if target == "nat" {
                     self.unrelated_nat_rules.lock().unwrap().clear();
                 }
@@ -758,10 +770,17 @@ impl MockCommandExecutor {
             let tables = self.nft_tables.lock().unwrap();
             let target = args.get(3).copied().unwrap_or_default();
             let exists = tables.iter().any(|t| t == target);
+            let rules = self.nft_rules.lock().unwrap();
+            let mut body = String::new();
+            for r in rules.iter() {
+                if r.contains(target) {
+                    let _ = writeln!(body, "    {r}");
+                }
+            }
             return CommandOutput {
                 success: exists,
                 stdout: if exists {
-                    format!("table ip {target} {{\n}}\n")
+                    format!("table ip {target} {{\n{body}}}\n")
                 } else {
                     String::new()
                 },

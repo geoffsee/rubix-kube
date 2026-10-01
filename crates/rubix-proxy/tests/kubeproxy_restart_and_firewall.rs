@@ -21,11 +21,12 @@ async fn test_clusterip_and_nodeport_traffic_recovers_after_restart_and_endpoint
     fs::create_dir_all(&proc_net).unwrap();
     fs::write(proc_net.join("ip_tables_names"), "filter\nnat\n").unwrap();
 
-    let mock = MockCommandExecutor::new_iptables_host();
+    let mock = Arc::new(MockCommandExecutor::new_iptables_host());
     let options = KubeProxyOptions::new(kubeconfig, true, ProxyMode::IpTables);
+    let executor: Arc<dyn CommandExecutor> = mock.clone();
 
     let mut service = ProxyService::new(options)
-        .with_executor(Arc::new(mock))
+        .with_executor(executor)
         .with_sys_root(temp.path().to_path_buf());
 
     service.check_prerequisites().unwrap();
@@ -143,6 +144,34 @@ async fn test_clusterip_and_nodeport_traffic_recovers_after_restart_and_endpoint
     assert_eq!(summary.active_endpoints, 2); // 1 TCP (8080), 1 UDP (53)
     assert_eq!(summary.stale_endpoints_cleared, 2); // 2 old endpoints pruned
     assert!(summary.foreign_rules_preserved);
+
+    // Verify actual dataplane rules in kernel/mock firewall:
+    // DNAT targets the replacement backend 10.42.0.25 and no longer targets the stale 10.42.0.10
+    {
+        let active_rules = mock.iptables_rules.lock().unwrap();
+        assert!(
+            active_rules.iter().any(|r| r.contains("10.42.0.25")),
+            "dataplane must contain DNAT rules targeting replacement endpoint 10.42.0.25"
+        );
+        assert!(
+            !active_rules.iter().any(|r| r.contains("10.42.0.10")),
+            "dataplane must NOT contain any DNAT rules targeting stale endpoint 10.42.0.10"
+        );
+    }
+
+    // Verify command log demonstrates scoped chain repopulation
+    {
+        let log = mock.command_log.lock().unwrap();
+        assert!(
+            log.iter()
+                .any(|cmd| cmd.contains("iptables -t nat -F KUBE-SERVICES")),
+            "reconciliation must flush owned KUBE-SERVICES chain"
+        );
+        assert!(
+            log.iter().any(|cmd| cmd.contains("10.42.0.25")),
+            "reconciliation must program DNAT to replacement endpoint"
+        );
+    }
 
     // 4. Verify that ClusterIP and NodePort traffic recovers and routes to the replacement endpoint
     service.check_startup_readiness().unwrap();
@@ -372,11 +401,12 @@ async fn test_repeated_backend_churn_and_scaling_reconciliation() {
     fs::create_dir_all(&proc_net).unwrap();
     fs::write(proc_net.join("ip_tables_names"), "filter\nnat\n").unwrap();
 
-    let mock = MockCommandExecutor::new_iptables_host();
+    let mock = Arc::new(MockCommandExecutor::new_iptables_host());
     let options = KubeProxyOptions::new(kubeconfig, true, ProxyMode::IpTables);
+    let executor: Arc<dyn CommandExecutor> = mock.clone();
 
     let service = ProxyService::new(options)
-        .with_executor(Arc::new(mock))
+        .with_executor(executor)
         .with_sys_root(temp.path().to_path_buf());
     service.start().unwrap();
     service.check_startup_readiness().unwrap();
@@ -494,6 +524,16 @@ async fn test_repeated_backend_churn_and_scaling_reconciliation() {
     assert_eq!(ips, vec!["10.42.0.3", "10.42.0.4", "10.42.0.5"]);
     assert!(!ips.contains(&"10.42.0.1"));
     assert!(!ips.contains(&"10.42.0.2"));
+
+    // Verify dataplane in mock firewall reflects active endpoints and clears stale ones
+    {
+        let active_rules = mock.iptables_rules.lock().unwrap();
+        assert!(active_rules.iter().any(|r| r.contains("10.42.0.3")));
+        assert!(active_rules.iter().any(|r| r.contains("10.42.0.4")));
+        assert!(active_rules.iter().any(|r| r.contains("10.42.0.5")));
+        assert!(!active_rules.iter().any(|r| r.contains("10.42.0.1")));
+        assert!(!active_rules.iter().any(|r| r.contains("10.42.0.2")));
+    }
 
     service.stop();
 }

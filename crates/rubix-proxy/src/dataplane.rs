@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use rubix_network::CommandExecutor;
 
 use crate::error::ProxyError;
@@ -135,6 +137,70 @@ impl IptablesDataplane {
                 chain: sep_chain,
                 rule: "-j KUBE-MARK-MASQ".to_string(),
             });
+        }
+    }
+
+    /// Programs the synthesized iptables NAT rules via the command executor, ensuring owned chains exist
+    /// and are repopulated without wiping foreign tables.
+    pub fn apply_rules(
+        rules: &[IptablesRule],
+        executor: &dyn CommandExecutor,
+    ) -> Result<(), ProxyError> {
+        // Ensure base chains exist
+        let _ = executor.run("iptables", &["-t", "nat", "-N", "KUBE-SERVICES"]);
+        let _ = executor.run("iptables", &["-t", "nat", "-N", "KUBE-NODEPORTS"]);
+        let _ = executor.run("iptables", &["-t", "nat", "-N", "KUBE-POSTROUTING"]);
+
+        // Flush only owned base chains to clear previous service/nodeport mappings
+        let _ = executor.run("iptables", &["-t", "nat", "-F", "KUBE-SERVICES"]);
+        let _ = executor.run("iptables", &["-t", "nat", "-F", "KUBE-NODEPORTS"]);
+
+        let mut custom_chains = BTreeSet::new();
+        for rule in rules {
+            if rule.chain.starts_with("KUBE-SVC-") || rule.chain.starts_with("KUBE-SEP-") {
+                custom_chains.insert(rule.chain.clone());
+            }
+        }
+
+        Self::purge_stale_chains(executor, &custom_chains);
+
+        for chain in &custom_chains {
+            let _ = executor.run("iptables", &["-t", "nat", "-N", chain]);
+            let _ = executor.run("iptables", &["-t", "nat", "-F", chain]);
+        }
+
+        for rule in rules {
+            let mut args = vec!["-t", rule.table, "-A", &rule.chain];
+            let parts: Vec<&str> = rule.rule.split_whitespace().collect();
+            args.extend(parts);
+            let out = executor.run("iptables", &args).map_err(|e| {
+                ProxyError::CommandExecutionFailed {
+                    command: format!("iptables {}", args.join(" ")),
+                    reason: e.to_string(),
+                }
+            })?;
+            if !out.success {
+                return Err(ProxyError::RoutingVerificationFailed {
+                    rule: format!("iptables {}", args.join(" ")),
+                    reason: out.stderr,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn purge_stale_chains(executor: &dyn CommandExecutor, custom_chains: &BTreeSet<String>) {
+        let Ok(out) = executor.run("iptables", &["-t", "nat", "-S"]) else {
+            return;
+        };
+        if !out.success {
+            return;
+        }
+        for token in out.stdout.split_whitespace() {
+            if token.starts_with("KUBE-SEP-") && !custom_chains.contains(token) {
+                let _ = executor.run("iptables", &["-t", "nat", "-F", token]);
+                let _ = executor.run("iptables", &["-t", "nat", "-X", token]);
+            }
         }
     }
 
@@ -287,6 +353,40 @@ impl NftablesDataplane {
                 ),
             }
         }
+    }
+
+    /// Programs the synthesized nftables rules into the dedicated `ip kube-proxy` table via the command executor.
+    pub fn apply_rules(
+        rules: &[NftablesRule],
+        executor: &dyn CommandExecutor,
+    ) -> Result<(), ProxyError> {
+        // Ensure table and base chains exist
+        let _ = executor.run("nft", &["add", "table", "ip", "kube-proxy"]);
+        let _ = executor.run("nft", &["add", "chain", "ip", "kube-proxy", "services"]);
+        let _ = executor.run("nft", &["add", "chain", "ip", "kube-proxy", "nodeports"]);
+
+        // Flush only the owned ip kube-proxy table
+        let _ = executor.run("nft", &["flush", "table", "ip", "kube-proxy"]);
+
+        for rule in rules {
+            let mut args = vec!["add", "rule", "ip", "kube-proxy", rule.chain];
+            let parts: Vec<&str> = rule.statement.split_whitespace().collect();
+            args.extend(parts);
+            let out =
+                executor
+                    .run("nft", &args)
+                    .map_err(|e| ProxyError::CommandExecutionFailed {
+                        command: format!("nft {}", args.join(" ")),
+                        reason: e.to_string(),
+                    })?;
+            if !out.success {
+                return Err(ProxyError::RoutingVerificationFailed {
+                    rule: format!("nft {}", args.join(" ")),
+                    reason: out.stderr,
+                });
+            }
+        }
+        Ok(())
     }
 
     /// Verifies that the required nftables rules exist using the command executor.
