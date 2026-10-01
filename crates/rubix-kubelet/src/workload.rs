@@ -1352,6 +1352,21 @@ impl PodReconciler {
     }
 }
 
+fn safe_volume_path(vol_dir: &Path, rel: &str) -> Result<PathBuf, KubeletError> {
+    let p = Path::new(rel);
+    if rel.is_empty()
+        || p.is_absolute()
+        || p.components()
+            .any(|c| !matches!(c, std::path::Component::Normal(_)))
+    {
+        return Err(KubeletError::InvalidConfiguration {
+            field: "volume.items.path".into(),
+            reason: format!("invalid volume path '{rel}'"),
+        });
+    }
+    Ok(vol_dir.join(p))
+}
+
 fn write_volume_file(path: &Path, content: &[u8]) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
@@ -1371,7 +1386,7 @@ fn stage_secret_files(
         for item in items {
             let key = item.get("key").and_then(Value::as_str).unwrap_or("");
             let path = item.get("path").and_then(Value::as_str).unwrap_or(key);
-            let file_path = vol_dir.join(path);
+            let file_path = safe_volume_path(vol_dir, path)?;
             if let Some(val) = data_map.and_then(|m| m.get(key)).and_then(Value::as_str) {
                 let bytes = rubix_pki::base64_decode(val.trim())
                     .unwrap_or_else(|_| val.as_bytes().to_vec());
@@ -1387,16 +1402,18 @@ fn stage_secret_files(
         if let Some(data) = data_map {
             for (key, val_v) in data {
                 if let Some(val_str) = val_v.as_str() {
+                    let file_path = safe_volume_path(vol_dir, key)?;
                     let bytes = rubix_pki::base64_decode(val_str.trim())
                         .unwrap_or_else(|_| val_str.as_bytes().to_vec());
-                    write_volume_file(&vol_dir.join(key), &bytes)?;
+                    write_volume_file(&file_path, &bytes)?;
                 }
             }
         }
         if let Some(str_data) = string_data_map {
             for (key, val_v) in str_data {
                 if let Some(val_str) = val_v.as_str() {
-                    write_volume_file(&vol_dir.join(key), val_str.as_bytes())?;
+                    let file_path = safe_volume_path(vol_dir, key)?;
+                    write_volume_file(&file_path, val_str.as_bytes())?;
                 }
             }
         }
@@ -1416,7 +1433,7 @@ fn stage_configmap_files(
         for item in items {
             let key = item.get("key").and_then(Value::as_str).unwrap_or("");
             let path = item.get("path").and_then(Value::as_str).unwrap_or(key);
-            let file_path = vol_dir.join(path);
+            let file_path = safe_volume_path(vol_dir, path)?;
             if let Some(val) = data_map.and_then(|m| m.get(key)).and_then(Value::as_str) {
                 write_volume_file(&file_path, val.as_bytes())?;
             } else if let Some(val) = binary_data_map
@@ -1432,16 +1449,18 @@ fn stage_configmap_files(
         if let Some(data) = data_map {
             for (key, val_v) in data {
                 if let Some(val_str) = val_v.as_str() {
-                    write_volume_file(&vol_dir.join(key), val_str.as_bytes())?;
+                    let file_path = safe_volume_path(vol_dir, key)?;
+                    write_volume_file(&file_path, val_str.as_bytes())?;
                 }
             }
         }
         if let Some(bin_data) = binary_data_map {
             for (key, val_v) in bin_data {
                 if let Some(val_str) = val_v.as_str() {
+                    let file_path = safe_volume_path(vol_dir, key)?;
                     let bytes = rubix_pki::base64_decode(val_str.trim())
                         .unwrap_or_else(|_| val_str.as_bytes().to_vec());
-                    write_volume_file(&vol_dir.join(key), &bytes)?;
+                    write_volume_file(&file_path, &bytes)?;
                 }
             }
         }
@@ -1473,33 +1492,36 @@ fn stage_projected_sa_token(
         .and_then(|s| s.get("serviceAccountName"))
         .and_then(Value::as_str)
         .unwrap_or("default");
+    let pod_name = pod
+        .get("metadata")
+        .and_then(|m| m.get("name"))
+        .and_then(Value::as_str)
+        .unwrap_or("unknown");
 
     let token_str = if let Some(srv) = apiserver {
-        match srv.issue_service_account_token(
+        srv.issue_service_account_token(
             namespace,
             sa_name,
             &[audience.to_string()],
             std::time::Duration::from_secs(lifetime),
-        ) {
-            Ok(tok) => tok,
-            Err(e) => {
-                eprintln!("token issuance fallback: {e}");
-                format!("mock-token-{namespace}-{sa_name}")
-            },
-        }
+        )
+        .map_err(|e| KubeletError::PodReconciliationFailed {
+            pod: pod_name.to_string(),
+            reason: format!("failed to issue service account token for {namespace}/{sa_name}: {e}"),
+        })?
     } else {
         format!("mock-token-{namespace}-{sa_name}")
     };
 
-    let token_path = vol_dir.join(rel_path);
+    let token_path = safe_volume_path(vol_dir, rel_path)?;
     write_volume_file(&token_path, token_str.as_bytes())?;
 
-    let ns_path = vol_dir.join("namespace");
+    let ns_path = safe_volume_path(vol_dir, "namespace")?;
     if !ns_path.exists() {
-        let _ = std::fs::write(&ns_path, namespace.as_bytes());
+        let _ = write_volume_file(&ns_path, namespace.as_bytes());
     }
 
-    let ca_path = vol_dir.join("ca.crt");
+    let ca_path = safe_volume_path(vol_dir, "ca.crt")?;
     if !ca_path.exists() {
         let ca_bytes = apiserver
             .and_then(|srv| {
@@ -1510,7 +1532,7 @@ fn stage_projected_sa_token(
                 }
             })
             .unwrap_or_else(|| b"mock-ca-cert".to_vec());
-        let _ = std::fs::write(&ca_path, ca_bytes);
+        let _ = write_volume_file(&ca_path, &ca_bytes);
     }
 
     Ok(())
@@ -1545,7 +1567,7 @@ fn stage_projected_downward_api(
             _ => "",
         };
 
-        let target = vol_dir.join(path);
+        let target = safe_volume_path(vol_dir, path)?;
         write_volume_file(&target, val.as_bytes())?;
     }
     Ok(())

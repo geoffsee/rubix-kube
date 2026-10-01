@@ -438,6 +438,7 @@ async fn test_secret_and_configmap_volume_mounts() {
     let kubelet = KubeletService::new(kubelet_options, apiserver_arc.clone(), runtime);
     kubelet.start().await.unwrap();
 
+    let admin_client = apiserver_arc.admin_client();
     let client = kubelet.client();
 
     // 1. Create Secret in default namespace
@@ -450,7 +451,7 @@ async fn test_secret_and_configmap_volume_mounts() {
         "password".to_string(),
         rubix_pki::base64_encode(b"super-secret-pwd"),
     );
-    client
+    admin_client
         .create_secret("default", "db-secret", secret_data, None)
         .await
         .unwrap();
@@ -462,7 +463,7 @@ async fn test_secret_and_configmap_volume_mounts() {
         "database_url = postgres://admin-user:super-secret-pwd@db:5432/main".to_string(),
     );
     cm_data.insert("features.env".to_string(), "ENABLE_METRICS=1".to_string());
-    client
+    admin_client
         .create_configmap("default", "app-config", cm_data)
         .await
         .unwrap();
@@ -591,6 +592,7 @@ async fn test_projected_volume_and_persistence_across_kubelet_restart() {
     );
     kubelet1.start().await.unwrap();
 
+    let admin_client = apiserver_arc.admin_client();
     let client = kubelet1.client();
 
     // Create supporting ConfigMap and Secret
@@ -599,7 +601,7 @@ async fn test_projected_volume_and_persistence_across_kubelet_restart() {
         "ca.crt".to_string(),
         "-----BEGIN CERTIFICATE-----\nMOCK_CA\n-----END CERTIFICATE-----".to_string(),
     );
-    client
+    admin_client
         .create_configmap("default", "kube-root-ca", cm_data)
         .await
         .unwrap();
@@ -609,7 +611,7 @@ async fn test_projected_volume_and_persistence_across_kubelet_restart() {
         "api-key".to_string(),
         rubix_pki::base64_encode(b"vault-secret-api-key-xyz"),
     );
-    client
+    admin_client
         .create_secret("default", "vault-creds", sec_data, None)
         .await
         .unwrap();
