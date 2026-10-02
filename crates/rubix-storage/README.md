@@ -28,4 +28,7 @@ Storage configuration honors upstream KubeSolo contract decisions (including D04
   - Memory limit is set to `128Mi` with requests of `32Mi` memory and `50m` CPU. This eliminates historical edge memory override OOM bugs.
   - Image reference defaults to pinned `docker.io/rancher/local-path-provisioner:v0.0.36`.
 
-See [docs/localpath-generation.md](docs/localpath-generation.md) for full architecture details and parity verification.
+## Architecture & Documentation
+
+- [docs/localpath-generation.md](docs/localpath-generation.md): Manifest generation, RBAC rules, helper pods, and Go parity.
+- [docs/localpath-reconciliation.md](docs/localpath-reconciliation.md): Lifecycle service, idempotent reconciliation, optional provisioner deployment, and supervisor degradation policies.

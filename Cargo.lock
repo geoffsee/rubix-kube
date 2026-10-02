@@ -1316,10 +1316,17 @@ name = "rubix-storage"
 version = "0.1.0"
 dependencies = [
  "k8s-openapi",
+ "rubix-apiserver",
  "rubix-config",
+ "rubix-datastore",
+ "rubix-pki",
+ "rubix-supervisor",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

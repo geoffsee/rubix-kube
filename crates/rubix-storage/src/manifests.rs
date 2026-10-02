@@ -472,3 +472,12 @@ pub fn generate_deployment(config: &LocalPathConfig, namespace: &str) -> Deploym
         ..Default::default()
     }
 }
+
+/// Generate a merge-patch JSON value to update configuration and helper scripts
+/// in an existing `ConfigMap` while preserving any unrelated keys, labels, and metadata.
+#[must_use]
+pub fn generate_config_map_patch(config_map: &ConfigMap) -> serde_json::Value {
+    serde_json::json!({
+        "data": config_map.data
+    })
+}
