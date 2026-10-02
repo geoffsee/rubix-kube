@@ -513,9 +513,18 @@ impl DnsProber {
                 if nibbles.len() == 32 {
                     let mut bytes = [0u8; 16];
                     let mut valid = true;
+                    let parse_nibble = |s: &str| {
+                        let mut chars = s.chars();
+                        match (chars.next(), chars.next()) {
+                            (Some(c), None) => {
+                                c.to_digit(16).and_then(|d| u8::try_from(d).ok()).ok_or(())
+                            },
+                            _ => Err(()),
+                        }
+                    };
                     for i in 0..16 {
-                        let low_nibble = u8::from_str_radix(nibbles[2 * i], 16);
-                        let high_nibble = u8::from_str_radix(nibbles[2 * i + 1], 16);
+                        let low_nibble = parse_nibble(nibbles[2 * i]);
+                        let high_nibble = parse_nibble(nibbles[2 * i + 1]);
                         if let (Ok(h), Ok(l)) = (high_nibble, low_nibble) {
                             bytes[15 - i] = (h << 4) | l;
                         } else {
