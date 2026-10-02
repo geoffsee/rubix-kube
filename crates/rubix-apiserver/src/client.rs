@@ -64,6 +64,31 @@ impl std::fmt::Debug for KubernetesApiClient {
     }
 }
 
+/// Applies an RFC 7386 JSON Merge Patch to a target JSON value.
+pub fn json_merge_patch(target: &mut Value, patch: Value) {
+    if let Value::Object(patch_obj) = patch {
+        if !target.is_object() {
+            *target = Value::Object(serde_json::Map::new());
+        }
+        let target_obj = target.as_object_mut().unwrap();
+        for (key, value) in patch_obj {
+            if value.is_null() {
+                target_obj.remove(&key);
+            } else if value.is_object() {
+                if let Some(existing_sub) = target_obj.get_mut(&key) {
+                    json_merge_patch(existing_sub, value);
+                } else {
+                    target_obj.insert(key, value);
+                }
+            } else {
+                target_obj.insert(key, value);
+            }
+        }
+    } else {
+        *target = patch;
+    }
+}
+
 impl KubernetesApiClient {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -763,6 +788,96 @@ impl KubernetesApiClient {
         Ok(result)
     }
 
+    pub async fn create_configmap_object(
+        &self,
+        namespace: &str,
+        mut doc: Value,
+    ) -> Result<Value, ApiserverError> {
+        let name = doc
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "ConfigMap missing metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed("create", "", "configmaps", Some(namespace), Some(&name))?;
+        let key = format!("{}/configmaps/{namespace}/{name}", self.storage.prefix());
+
+        let mut adm_req = AdmissionRequest {
+            uid: format!("adm-{}", self.storage.current_revision().await + 1),
+            kind: GroupVersionKind {
+                group: String::new(),
+                version: "v1".to_string(),
+                kind: "ConfigMap".to_string(),
+            },
+            resource: GroupVersionResource {
+                group: String::new(),
+                version: "v1".to_string(),
+                resource: "configmaps".to_string(),
+            },
+            name: Some(name),
+            namespace: Some(namespace.to_string()),
+            operation: "CREATE".to_string(),
+            user_info: self.current_user_info(),
+            object: Some(doc.clone()),
+            old_object: None,
+            dry_run: None,
+        };
+        self.admission.run_mutating_admission(&mut adm_req).await?;
+        self.admission.run_validating_admission(&adm_req).await?;
+        if let Some(obj) = adm_req.object {
+            doc = obj;
+        }
+
+        let bytes = serde_json::to_vec(&doc)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = doc;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn patch_configmap(
+        &self,
+        namespace: &str,
+        name: &str,
+        patch: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("patch", "", "configmaps", Some(namespace), Some(name))?;
+        let key = format!("{}/configmaps/{namespace}/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "configmaps".to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+
+        let mut configmap: Value = serde_json::from_slice(&kv.value)?;
+        json_merge_patch(&mut configmap, patch);
+
+        let bytes = serde_json::to_vec(&configmap)?;
+        let updated_kv = self
+            .storage
+            .update(&key, bytes, Some(kv.mod_revision))
+            .await?;
+        if let Some(meta) = configmap.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(updated_kv.mod_revision.to_string()),
+            );
+        }
+        Ok(configmap)
+    }
+
     pub async fn list_configmaps(&self, namespace: &str) -> Result<Value, ApiserverError> {
         self.check_auth_detailed("list", "", "configmaps", Some(namespace), None)?;
         let prefix = format!("{}/configmaps/{namespace}/", self.storage.prefix());
@@ -959,6 +1074,121 @@ impl KubernetesApiClient {
         if res.is_none() {
             return Err(ApiserverError::NotFound {
                 resource: "secrets".to_string(),
+                name: format!("{namespace}/{name}"),
+            });
+        }
+        Ok(())
+    }
+
+    // --- ServiceAccount CRUD ---
+
+    pub async fn create_service_account(
+        &self,
+        namespace: &str,
+        doc: Value,
+    ) -> Result<Value, ApiserverError> {
+        let name = doc
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "ServiceAccount missing metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed(
+            "create",
+            "",
+            "serviceaccounts",
+            Some(namespace),
+            Some(&name),
+        )?;
+        let key = format!(
+            "{}/serviceaccounts/{namespace}/{name}",
+            self.storage.prefix()
+        );
+
+        let bytes = serde_json::to_vec(&doc)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = doc;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_service_account(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "", "serviceaccounts", Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/serviceaccounts/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "serviceaccounts".to_string(),
+                name: format!("{namespace}/{name}"),
+            })?;
+        let mut doc: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(doc)
+    }
+
+    pub async fn list_service_accounts(&self, namespace: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "", "serviceaccounts", Some(namespace), None)?;
+        let prefix = format!("{}/serviceaccounts/{namespace}/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "v1",
+            "kind": "ServiceAccountList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn delete_service_account(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Result<(), ApiserverError> {
+        self.check_auth_detailed("delete", "", "serviceaccounts", Some(namespace), Some(name))?;
+        let key = format!(
+            "{}/serviceaccounts/{namespace}/{name}",
+            self.storage.prefix()
+        );
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "serviceaccounts".to_string(),
                 name: format!("{namespace}/{name}"),
             });
         }
@@ -1476,6 +1706,13 @@ impl KubernetesApiClient {
             if let Some(old_uid) = old_doc.get("metadata").and_then(|m| m.get("uid")) {
                 meta.insert("uid".to_string(), old_uid.clone());
             }
+        }
+
+        if let (true, Some(old_status)) = (
+            doc.get("status").is_none_or(Value::is_null),
+            old_doc.get("status").filter(|s| !s.is_null()),
+        ) {
+            doc["status"] = old_status.clone();
         }
 
         let expected_version = doc
@@ -3518,6 +3755,25 @@ impl KubernetesApiClient {
         Ok(role)
     }
 
+    pub async fn update_cluster_role(
+        &self,
+        role: ClusterRole,
+    ) -> Result<ClusterRole, ApiserverError> {
+        self.check_auth_detailed(
+            "update",
+            "rbac.authorization.k8s.io",
+            "clusterroles",
+            None,
+            Some(&role.name),
+        )?;
+        self.verify_cluster_role_creation_privileges(&role)?;
+        let key = format!("{}/clusterroles/{}", self.storage.prefix(), role.name);
+        let bytes = serde_json::to_vec(&role)?;
+        self.storage.update(&key, bytes, None).await?;
+        self.rbac.add_cluster_role(role.clone());
+        Ok(role)
+    }
+
     pub async fn create_cluster_role_binding(
         &self,
         binding: ClusterRoleBinding,
@@ -3565,6 +3821,29 @@ impl KubernetesApiClient {
                 name: name.to_string(),
             })?;
         let binding: ClusterRoleBinding = serde_json::from_slice(&kv.value)?;
+        self.rbac.add_cluster_role_binding(binding.clone());
+        Ok(binding)
+    }
+
+    pub async fn update_cluster_role_binding(
+        &self,
+        binding: ClusterRoleBinding,
+    ) -> Result<ClusterRoleBinding, ApiserverError> {
+        self.check_auth_detailed(
+            "update",
+            "rbac.authorization.k8s.io",
+            "clusterrolebindings",
+            None,
+            Some(&binding.name),
+        )?;
+        self.verify_cluster_role_binding_privileges(&binding.role_ref)?;
+        let key = format!(
+            "{}/clusterrolebindings/{}",
+            self.storage.prefix(),
+            binding.name
+        );
+        let bytes = serde_json::to_vec(&binding)?;
+        self.storage.update(&key, bytes, None).await?;
         self.rbac.add_cluster_role_binding(binding.clone());
         Ok(binding)
     }

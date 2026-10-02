@@ -1,6 +1,10 @@
 pub mod config;
 pub mod error;
+pub mod health;
 pub mod manifests;
+pub mod reconciler;
+pub mod service;
+pub mod supervisor;
 
 pub use config::{
     COREDNS_CLUSTER_ROLE_NAME, COREDNS_CONFIGMAP_NAME, COREDNS_DEPLOYMENT_NAME, COREDNS_NAMESPACE,
@@ -8,8 +12,12 @@ pub use config::{
     DEFAULT_COREDNS_IMAGE, DEFAULT_COREDNS_IP,
 };
 pub use error::{DnsError, Result};
+pub use health::CoreDnsHealthReport;
 pub use manifests::{
     CoreDnsManifests, coredns_labels, coredns_selector, generate_cluster_role,
     generate_cluster_role_binding, generate_config_map, generate_config_map_patch,
     generate_deployment, generate_service, generate_service_account, should_recreate_service,
 };
+pub use reconciler::{DnsReconciler, ReconciliationReport};
+pub use service::CoreDnsService;
+pub use supervisor::{COMPONENT_COREDNS, CoreDnsAdapter, DEFAULT_STARTUP_TIMEOUT};

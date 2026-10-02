@@ -19,7 +19,7 @@ pub use admission::{
 pub use aggregation::{
     APIService, APIServiceSpec, AggregatedApiHandler, AggregatedRequestContext, AggregationManager,
 };
-pub use client::{ClientIdentity, KubernetesApiClient};
+pub use client::{ClientIdentity, KubernetesApiClient, json_merge_patch};
 pub use config::{
     ApiserverConfig, DEFAULT_ETCD_PREFIX, DEFAULT_SA_ISSUER, DEFAULT_SECURE_PORT,
     DEFAULT_SERVICE_CLUSTER_IP_RANGE,
