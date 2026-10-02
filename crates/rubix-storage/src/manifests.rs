@@ -42,6 +42,28 @@ pub struct LocalPathManifests {
 impl LocalPathManifests {
     /// Generate all manifests based on the provided `LocalPathConfig`.
     pub fn new(config: &LocalPathConfig) -> Result<Self, StorageError> {
+        if !config.enabled {
+            return Err(StorageError::InvalidConfiguration(
+                "local-path storage is disabled in configuration".to_string(),
+            ));
+        }
+
+        if config.reclaim_policy != "Retain" && config.reclaim_policy != "Delete" {
+            return Err(StorageError::InvalidConfiguration(format!(
+                "unsupported reclaim policy '{}': must be Retain or Delete",
+                config.reclaim_policy
+            )));
+        }
+
+        if config.volume_binding_mode != "WaitForFirstConsumer"
+            && config.volume_binding_mode != "Immediate"
+        {
+            return Err(StorageError::InvalidConfiguration(format!(
+                "unsupported volume binding mode '{}': must be WaitForFirstConsumer or Immediate",
+                config.volume_binding_mode
+            )));
+        }
+
         let namespace = LOCAL_PATH_NAMESPACE;
         Ok(Self {
             namespace: generate_namespace(namespace),

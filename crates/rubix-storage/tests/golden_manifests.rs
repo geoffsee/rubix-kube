@@ -475,3 +475,30 @@ fn test_from_rubix_config_default_and_custom() {
     let disabled_cfg = LocalPathConfig::from_rubix_config(&root_config);
     assert!(!disabled_cfg.enabled);
 }
+
+#[test]
+fn test_disabled_config_rejects_manifest_generation() {
+    let config = LocalPathConfig::new().with_enabled(false);
+    let err = LocalPathManifests::new(&config).unwrap_err();
+    assert!(
+        matches!(err, rubix_storage::StorageError::InvalidConfiguration(ref msg) if msg.contains("disabled"))
+    );
+}
+
+#[test]
+fn test_invalid_reclaim_policy_rejected() {
+    let config = LocalPathConfig::new().with_reclaim_policy("Recycle");
+    let err = LocalPathManifests::new(&config).unwrap_err();
+    assert!(
+        matches!(err, rubix_storage::StorageError::InvalidConfiguration(ref msg) if msg.contains("unsupported reclaim policy"))
+    );
+}
+
+#[test]
+fn test_invalid_volume_binding_mode_rejected() {
+    let config = LocalPathConfig::new().with_volume_binding_mode("CustomMode");
+    let err = LocalPathManifests::new(&config).unwrap_err();
+    assert!(
+        matches!(err, rubix_storage::StorageError::InvalidConfiguration(ref msg) if msg.contains("unsupported volume binding mode"))
+    );
+}

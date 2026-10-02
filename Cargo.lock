@@ -1315,15 +1315,11 @@ dependencies = [
 name = "rubix-storage"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "k8s-openapi",
  "rubix-config",
  "serde",
  "serde_json",
- "tempfile",
  "thiserror",
- "tokio",
- "tracing",
 ]
 
 [[package]]
