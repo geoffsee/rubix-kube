@@ -33,7 +33,8 @@
           { "context": "Clippy", "integration_id": 15368 },
           { "context": "Tests (debug)", "integration_id": 15368 },
           { "context": "Dependencies", "integration_id": 15368 },
-          { "context": "Security", "integration_id": 15368 }
+          { "context": "Security", "integration_id": 15368 },
+          { "context": "Estimate tokens", "integration_id": 15368 }
         ]
       }
     }

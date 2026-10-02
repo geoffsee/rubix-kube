@@ -1,10 +1,26 @@
 # CI and repository rules
 
 The default branch accepts squash or rebase merges with passing `Format`, `Clippy`,
-`Tests (debug)`, `Dependencies` and `Security` checks from GitHub Actions.
+`Tests (debug)`, `Dependencies`, `Security`, and `Estimate tokens` checks from GitHub Actions.
 The branch must be current with its base. Linear history, resolved review conversations,
 and protection against force-pushes/deletion apply without bypass actors. Human approvals
 are optional to support solo development; automated checks remain mandatory.
+
+## Agent token counts
+
+Every human pull request body includes the two lines from
+[pull_request_template.md](pull_request_template.md):
+
+```
+era-issue: <roadmap issue number, or 0>
+era-tokens: <whole token count, or 0>
+```
+
+`Estimate tokens` fails while either line is missing or not a plain integer. `gh pr create` does not insert the template, so the body still has to contain those lines. Dependabot pull requests are exempt. On merge, a positive `era-tokens` value is stored for `pr:<number>` and, when `era-issue` is positive, for `issue:<number>`. Zero stores nothing. The accuracy table is commented on the merged pull request.
+
+`Estimate tokens` is part of the required-check list in
+[default-branch.json](rulesets/default-branch.json). Apply that ruleset after the
+check has reported on the default branch, using the update command in Applying rules.
 
 ## Fast feedback
 
