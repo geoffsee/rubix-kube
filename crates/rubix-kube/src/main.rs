@@ -105,12 +105,18 @@ fn run() -> io::Result<u8> {
                 match rubix_kube::NodeRuntime::from_config(*config) {
                     Ok(node) => node.run_to_completion().await,
                     Err(error) => {
-                        let (sender, receiver) = rubix_kube::lifecycle_logs::log_channel(1)
-                            .map_err(|_| io::Error::other("channel creation"))?;
-                        drop(sender);
+                        let component = match &error {
+                            rubix_kube::RuntimeError::Pki(_) => "pki",
+                            rubix_kube::RuntimeError::Datastore(_) => "datastore",
+                            rubix_kube::RuntimeError::Apiserver(_) => "apiserver",
+                            rubix_kube::RuntimeError::Supervisor(_) => "supervisor",
+                            rubix_kube::RuntimeError::Io(_) => "io",
+                            rubix_kube::RuntimeError::ChannelCapacity => "logging",
+                        };
                         let _ = writeln!(
                             io::stderr().lock(),
-                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"component_failure\",\"component\":\"datastore\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
+                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"component_failure\",\"component\":\"{}\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
+                            component,
                             error.diagnostic_code()
                         );
                         let _ = writeln!(
@@ -118,12 +124,6 @@ fn run() -> io::Result<u8> {
                             "{{\"schema\":1,\"level\":\"error\",\"event\":\"supervisor_stop\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
                             error.diagnostic_code()
                         );
-                        let _ = rubix_kube::lifecycle_sink::deliver_logs(
-                            receiver,
-                            io::stderr(),
-                            rubix_kube::lifecycle_sink::FlushPolicy::OnClose,
-                        )
-                        .await;
                         Ok(1)
                     },
                 }

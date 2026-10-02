@@ -204,11 +204,21 @@ fn startup_action_debug_does_not_disclose_resolved_values() {
 
 #[test]
 fn actual_executable_prints_then_enters_supervised_startup() {
+    let temp = tempfile::TempDir::new().expect("temp dir");
+    let unwritable_cfg = temp.path().join("unwritable.yaml");
+    std::fs::write(
+        &unwritable_cfg,
+        "path: /dev/null/forbidden_rubix_kube_path\n",
+    )
+    .expect("write config");
+
     for (printing, expected_success) in [(true, true), (false, false)] {
         let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_rubix-kube"));
-        command.env_clear().arg("--config=");
+        command.env_clear();
         if printing {
-            command.arg("--print-config");
+            command.arg("--config=").arg("--print-config");
+        } else {
+            command.arg(format!("--config={}", unwritable_cfg.display()));
         }
         let output = command.output().expect("startup process");
         assert_eq!(output.status.success(), expected_success);
@@ -223,7 +233,8 @@ fn actual_executable_prints_then_enters_supervised_startup() {
             let err = String::from_utf8_lossy(&output.stderr);
             assert!(err.contains("\"schema\":1"));
             assert!(err.contains("\"event\":\"component_failure\""));
-            assert!(err.contains("\"component\":\"datastore\""));
+            assert!(err.contains("\"event\":\"supervisor_stop\""));
+            assert!(err.contains("\"code\":\"adapter\""));
         }
     }
 }

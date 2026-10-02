@@ -331,18 +331,15 @@ impl NodeRuntime {
             vec![COMPONENT_APISERVER.to_string()],
             timeout,
         );
-        let coredns_reg = CoreDnsAdapter::registration(
-            COMPONENT_COREDNS,
-            dns_service,
-            vec![COMPONENT_APISERVER.to_string()],
-            timeout,
-        );
-
         builder = builder
             .register_component(datastore_reg)
             .register_component(apiserver_reg)
             .register_component(controller_reg)
-            .register_component(coredns_reg);
+            .register_optional(
+                COMPONENT_COREDNS,
+                vec![COMPONENT_APISERVER.to_string()],
+                CoreDnsAdapter::new(dns_service),
+            );
 
         if builder.config().config().storage.local_path.enabled {
             let storage_config = LocalPathConfig::new().with_enabled(true);

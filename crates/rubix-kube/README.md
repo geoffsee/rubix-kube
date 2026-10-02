@@ -51,7 +51,7 @@ cargo test -p rubix-kube --locked
 cargo clippy -p rubix-kube --all-targets --all-features --locked -- -D warnings
 ```
 
-Runtime startup, live CRI connection, host installation, and cluster lifecycle
+Live CRI connection, host installation, and multi-node cluster lifecycle
 remain separate implementation and qualification work.
 
 `tests/evidence/linux-arm64.json` records a fresh disposable comparison against
