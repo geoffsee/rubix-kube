@@ -505,20 +505,106 @@ impl DnsProber {
             } else {
                 rcode = DnsRcode::FormErr.as_u8();
             }
-        } else if clean_name.ends_with(".ip6.arpa") {
+        } else if let Some(ip_part) = clean_name.strip_suffix(".ip6.arpa") {
             // Reverse IPv6 lookup - absent (NXDomain) when IPv6 is disabled
             let corefile = config.generate_corefile();
-            if !corefile.contains("ip6.arpa") {
-                rcode = DnsRcode::NXDomain.as_u8();
-            } else if let Ok(svc) = client.get_service("kube-system", "kube-dns").await {
-                if let (Some(name), Some(ns)) = (
-                    svc.pointer("/metadata/name")
-                        .and_then(serde_json::Value::as_str),
-                    svc.pointer("/metadata/namespace")
-                        .and_then(serde_json::Value::as_str),
-                ) {
-                    resolved_ptrs.push(format!("{name}.{ns}.svc.{}", config.cluster_domain));
+            if corefile.contains("ip6.arpa") {
+                let nibbles: Vec<&str> = ip_part.split('.').collect();
+                if nibbles.len() == 32 {
+                    let mut bytes = [0u8; 16];
+                    let mut valid = true;
+                    for i in 0..16 {
+                        let low_nibble = u8::from_str_radix(nibbles[2 * i], 16);
+                        let high_nibble = u8::from_str_radix(nibbles[2 * i + 1], 16);
+                        if let (Ok(h), Ok(l)) = (high_nibble, low_nibble) {
+                            bytes[15 - i] = (h << 4) | l;
+                        } else {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if valid {
+                        let target_ipv6 = std::net::Ipv6Addr::from(bytes);
+                        let mut found = false;
+                        if let Ok(ns_list) = client.list_namespaces().await {
+                            if let Some(namespaces) =
+                                ns_list.get("items").and_then(serde_json::Value::as_array)
+                            {
+                                for ns_val in namespaces {
+                                    let ns_name = ns_val
+                                        .pointer("/metadata/name")
+                                        .and_then(serde_json::Value::as_str)
+                                        .unwrap_or("");
+                                    if let Ok(svc_list) = client.list_services(ns_name).await {
+                                        if let Some(items) = svc_list
+                                            .get("items")
+                                            .and_then(serde_json::Value::as_array)
+                                        {
+                                            for svc in items {
+                                                let mut matches = false;
+                                                if let Some(cip) = svc
+                                                    .pointer("/spec/clusterIP")
+                                                    .and_then(serde_json::Value::as_str)
+                                                {
+                                                    if cip.parse::<std::net::Ipv6Addr>()
+                                                        == Ok(target_ipv6)
+                                                    {
+                                                        matches = true;
+                                                    }
+                                                }
+                                                if !matches {
+                                                    if let Some(cips) = svc
+                                                        .pointer("/spec/clusterIPs")
+                                                        .and_then(serde_json::Value::as_array)
+                                                    {
+                                                        for ip_val in cips {
+                                                            if let Some(ip_str) = ip_val.as_str() {
+                                                                if ip_str
+                                                                    .parse::<std::net::Ipv6Addr>()
+                                                                    == Ok(target_ipv6)
+                                                                {
+                                                                    matches = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                if matches {
+                                                    if let (Some(name), Some(ns)) = (
+                                                        svc.pointer("/metadata/name")
+                                                            .and_then(serde_json::Value::as_str),
+                                                        svc.pointer("/metadata/namespace")
+                                                            .and_then(serde_json::Value::as_str),
+                                                    ) {
+                                                        resolved_ptrs.push(format!(
+                                                            "{name}.{ns}.svc.{}",
+                                                            config.cluster_domain
+                                                        ));
+                                                        found = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if found {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if !found {
+                            rcode = DnsRcode::NXDomain.as_u8();
+                        }
+                    } else {
+                        rcode = DnsRcode::FormErr.as_u8();
+                    }
+                } else {
+                    rcode = DnsRcode::FormErr.as_u8();
                 }
+            } else {
+                rcode = DnsRcode::NXDomain.as_u8();
             }
         } else {
             // Upstream query: resolve via local upstream dependencies if available

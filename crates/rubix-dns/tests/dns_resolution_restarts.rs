@@ -470,6 +470,17 @@ async fn test_ipv6_reverse_forwarding_omitted_when_ipv6_disabled() {
         .await
         .unwrap();
 
+    // Configure dual-stack clusterIPs on kube-dns
+    let mut svc = client
+        .get_service(COREDNS_NAMESPACE, "kube-dns")
+        .await
+        .unwrap();
+    svc["spec"]["clusterIPs"] = json!(["10.43.0.10", "2001:db8::567:89ab"]);
+    client
+        .update_service(COREDNS_NAMESPACE, "kube-dns", svc)
+        .await
+        .unwrap();
+
     let client_arc = Arc::new(client);
     let prober_no_ipv6 = DnsProber::new(ProbeTransport::Synthetic {
         client: Arc::clone(&client_arc),
@@ -513,6 +524,28 @@ async fn test_ipv6_reverse_forwarding_omitted_when_ipv6_disabled() {
     assert!(
         res_ipv6_enabled.success,
         "IPv6 reverse forwarding should be enabled when IPv6 is enabled"
+    );
+
+    // Unassigned IPv6 address must return NXDomain
+    let unassigned_probe = DnsResolutionProbe {
+        category: rubix_dns::ProbeCategory::ReverseLookup,
+        query_name: "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa"
+            .to_string(),
+        record_type: DnsRecordType::PTR.as_u16(),
+        protocol: DnsProtocol::Udp,
+        client_namespace: "default".to_string(),
+        expected_ip: None,
+        expected_cname: None,
+        expected_ptr: None,
+        expected_rcode: rubix_dns::DnsRcode::NXDomain.as_u8(),
+    };
+    let unassigned_res = prober_with_ipv6
+        .execute_probe(&unassigned_probe)
+        .await
+        .unwrap();
+    assert!(
+        unassigned_res.success,
+        "Unassigned IPv6 address query must return NXDomain"
     );
 }
 
