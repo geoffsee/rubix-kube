@@ -30,10 +30,10 @@ jobs:
           issue=""
           tokens=""
           while IFS= read -r line || [ -n "$line" ]; do
-            if [ -z "$issue" ] && [[ "$line" =~ ^era-issue:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+            if [ -z "$issue" ] && [[ "$line" =~ ^era-issue:[[:space:]]*(0|[1-9][0-9]*)[[:space:]]*$ ]]; then
               issue=$line
             fi
-            if [ -z "$tokens" ] && [[ "$line" =~ ^era-tokens:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+            if [ -z "$tokens" ] && [[ "$line" =~ ^era-tokens:[[:space:]]*(0|[1-9][0-9]*)[[:space:]]*$ ]]; then
               tokens=$line
             fi
           done <<< "$body"
@@ -69,10 +69,10 @@ jobs:
           issue_line=""
           token_line=""
           while IFS= read -r line || [ -n "$line" ]; do
-            if [ -z "$issue_line" ] && [[ "$line" =~ ^era-issue:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+            if [ -z "$issue_line" ] && [[ "$line" =~ ^era-issue:[[:space:]]*(0|[1-9][0-9]*)[[:space:]]*$ ]]; then
               issue_line=$line
             fi
-            if [ -z "$token_line" ] && [[ "$line" =~ ^era-tokens:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+            if [ -z "$token_line" ] && [[ "$line" =~ ^era-tokens:[[:space:]]*(0|[1-9][0-9]*)[[:space:]]*$ ]]; then
               token_line=$line
             fi
           done <<< "$body"
