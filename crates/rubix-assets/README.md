@@ -136,3 +136,24 @@ stored-layer descriptors, and Linux platform to a caller-declared raw manifest
 pin. The opaque result proves byte agreement with that declaration. Registry/index
 selection, publisher authentication, production pin approval, ABI compatibility,
 inner-tar safety, and installation eligibility remain outside the proof.
+
+## Variant matrix and artifact naming (E27.01/#114)
+
+`Matrix` defines the exhaustive 16 node variant cells (4 architectures: amd64, arm64,
+ARMv7 hard-float, riscv64 × 2 libcs: glibc, musl × 2 variants: online, offline) and
+the 4 supported management CLI targets (Linux amd64/arm64, Darwin amd64/arm64).
+Per E01 and the compatibility contract, native Windows binaries are explicitly excluded,
+with WSL2 supported via Linux userspace.
+
+`NodeVariant` models cell index (1..=16), architecture, libc, variant, OCI container image
+platform string (`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/riscv64`), optional
+image restrictions (Portainer supported on amd64/arm64/armv7, unsupported on riscv64;
+D2K supported on amd64/arm64, disabled on armv7 and riscv64; local-path supported on all),
+and whether optional images are bundled (false for online, supported for offline).
+
+`ArtifactNaming` provides reproducible parsing and clean-checkout input validation for:
+- Node archives: `<prefix>-<version>-linux-<arch>[-musl][-offline].tar.gz`
+- Management binaries: `<prefix>-<os>-<arch>`
+
+Validation requires version format, target, libc, variant, and asset naming consistency
+before release assembly or installation.
