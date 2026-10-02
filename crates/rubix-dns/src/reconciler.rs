@@ -5,6 +5,7 @@ use rubix_apiserver::rbac::{
     ClusterRole as ApiserverClusterRole, ClusterRoleBinding as ApiserverClusterRoleBinding,
     PolicyRule, Subject,
 };
+use serde_json::{Value, json};
 use tracing::{debug, info, warn};
 
 use crate::config::{
@@ -227,7 +228,7 @@ impl DnsReconciler {
         {
             Ok(existing_val) => {
                 let existing_svc: k8s_openapi::api::core::v1::Service =
-                    serde_json::from_value(existing_val)?;
+                    serde_json::from_value(existing_val.clone())?;
                 if should_recreate_service(&existing_svc, &manifests.service) {
                     warn!("CoreDNS service ClusterIP changed; deleting and recreating Service");
                     client
@@ -238,8 +239,10 @@ impl DnsReconciler {
                         .await?;
                     report.service_recreated = true;
                 } else {
+                    let mut desired_svc_val = desired_val;
+                    merge_service_metadata(&mut desired_svc_val, &existing_val);
                     client
-                        .update_service(COREDNS_NAMESPACE, COREDNS_SERVICE_NAME, desired_val)
+                        .update_service(COREDNS_NAMESPACE, COREDNS_SERVICE_NAME, desired_svc_val)
                         .await?;
                     report.service_updated = true;
                     debug!("updated CoreDNS Service in-place");
@@ -350,5 +353,49 @@ impl DnsReconciler {
             elapsed: start.elapsed(),
             attempts,
         })
+    }
+}
+
+/// Merges custom metadata (labels, annotations, creationTimestamp) from an existing Service
+/// into the desired Service value to preserve user/operator modifications during in-place updates.
+fn merge_service_metadata(desired: &mut Value, existing: &Value) {
+    let Some(existing_meta) = existing.get("metadata").and_then(Value::as_object) else {
+        return;
+    };
+    let Some(desired_meta) = desired.get_mut("metadata").and_then(Value::as_object_mut) else {
+        return;
+    };
+
+    if let Some(existing_labels) = existing_meta.get("labels").and_then(Value::as_object) {
+        let labels = desired_meta
+            .entry("labels".to_string())
+            .or_insert_with(|| json!({}))
+            .as_object_mut();
+        if let Some(labels_map) = labels {
+            for (k, v) in existing_labels {
+                if !labels_map.contains_key(k) {
+                    labels_map.insert(k.clone(), v.clone());
+                }
+            }
+        }
+    }
+
+    if let Some(existing_annotations) = existing_meta.get("annotations").and_then(Value::as_object)
+    {
+        let annotations = desired_meta
+            .entry("annotations".to_string())
+            .or_insert_with(|| json!({}))
+            .as_object_mut();
+        if let Some(ann_map) = annotations {
+            for (k, v) in existing_annotations {
+                if !ann_map.contains_key(k) {
+                    ann_map.insert(k.clone(), v.clone());
+                }
+            }
+        }
+    }
+
+    if let Some(creation_ts) = existing_meta.get("creationTimestamp") {
+        desired_meta.insert("creationTimestamp".to_string(), creation_ts.clone());
     }
 }

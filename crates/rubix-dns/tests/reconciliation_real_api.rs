@@ -137,27 +137,21 @@ async fn test_repeated_startup_preserves_unrelated_configmap_keys_and_metadata()
     reconciler.reconcile(&client).await.unwrap();
 
     // Mutate existing ConfigMap with extra custom data key and custom metadata label
-    let mut cm = client
-        .get_configmap(COREDNS_NAMESPACE, COREDNS_CONFIGMAP_NAME)
-        .await
-        .unwrap();
-    cm["metadata"]["labels"] = json!({"operator.custom/managed": "true"});
-    cm["data"]["custom.server"] = json!("external.domain:53 { errors }");
-    // Update configmap with custom metadata and keys
     client
-        .update_configmap(
+        .patch_configmap(
             COREDNS_NAMESPACE,
             COREDNS_CONFIGMAP_NAME,
-            [
-                ("Corefile".to_string(), "old-corefile".to_string()),
-                (
-                    "custom.server".to_string(),
-                    "external.domain:53 { errors }".to_string(),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-            None,
+            json!({
+                "metadata": {
+                    "labels": {
+                        "operator.custom/managed": "true"
+                    }
+                },
+                "data": {
+                    "Corefile": "old-corefile",
+                    "custom.server": "external.domain:53 { errors }"
+                }
+            }),
         )
         .await
         .unwrap();
@@ -178,6 +172,10 @@ async fn test_repeated_startup_preserves_unrelated_configmap_keys_and_metadata()
         .get_configmap(COREDNS_NAMESPACE, COREDNS_CONFIGMAP_NAME)
         .await
         .unwrap();
+    assert_eq!(
+        updated_cm["metadata"]["labels"]["operator.custom/managed"], "true",
+        "Unrelated metadata labels must be preserved"
+    );
     let data = updated_cm["data"].as_object().unwrap();
     assert_eq!(
         data.get("custom.server")
@@ -250,12 +248,14 @@ async fn test_service_updated_without_recreation_when_cluster_ip_unchanged() {
     // Initial reconciliation
     reconciler.reconcile(&client).await.unwrap();
 
-    // Modify a mutable field on the service without touching clusterIP
+    // Modify a mutable field and add custom label/annotation on the service without touching clusterIP
     let mut svc = client
         .get_service(COREDNS_NAMESPACE, COREDNS_SERVICE_NAME)
         .await
         .unwrap();
     svc["spec"]["sessionAffinity"] = json!("ClientIP");
+    svc["metadata"]["labels"]["custom.service/label"] = json!("preserved-label");
+    svc["metadata"]["annotations"] = json!({"custom.service/annotation": "preserved-annotation"});
     client
         .update_service(COREDNS_NAMESPACE, COREDNS_SERVICE_NAME, svc)
         .await
@@ -270,6 +270,23 @@ async fn test_service_updated_without_recreation_when_cluster_ip_unchanged() {
     assert!(
         report.service_updated,
         "Service mutable specification should be updated in-place"
+    );
+
+    let updated_svc = client
+        .get_service(COREDNS_NAMESPACE, COREDNS_SERVICE_NAME)
+        .await
+        .unwrap();
+    assert_eq!(
+        updated_svc["metadata"]["labels"]["custom.service/label"], "preserved-label",
+        "Custom service labels must be preserved on in-place update"
+    );
+    assert_eq!(
+        updated_svc["metadata"]["annotations"]["custom.service/annotation"], "preserved-annotation",
+        "Custom service annotations must be preserved on in-place update"
+    );
+    assert_eq!(
+        updated_svc["metadata"]["labels"]["k8s-app"], "coredns",
+        "Standard service labels must be present"
     );
 }
 
