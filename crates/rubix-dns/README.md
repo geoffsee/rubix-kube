@@ -30,3 +30,13 @@ The Corefile is generated according to the cluster's network and execution confi
 - **IPv4-Only Mode (`disable_ipv6 = true`)**: Omits `ip6.arpa` reverse-zone forwarding from the kubernetes plugin block (`in-addr.arpa` only), avoiding upstream reverse lookups for non-existent IPv6 subnets.
 - **Dual-Stack Mode (`disable_ipv6 = false`)**: Includes both `in-addr.arpa` and `ip6.arpa` reverse-zone forwarding.
 - **Custom Upstream Resolvers**: When explicit upstream resolvers are supplied, queries forward directly to those specified servers.
+
+## Resolution Verification and Probes
+
+`rubix-dns` provides `DnsProber`, `DnsResolutionProbe`, and `LocalDnsServer` for verifying DNS functionality across restarts and offline environments:
+- UDP and TCP same-namespace and cross-namespace service queries.
+- `ExternalName` CNAME queries.
+- Egress-denied offline resolution via locally-provided external dependencies.
+- Recovery across Node and DNS restarts, detecting historical readiness regressions.
+
+See [docs/coredns-resolution-verification.md](docs/coredns-resolution-verification.md) for full details.
