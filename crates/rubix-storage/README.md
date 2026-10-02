@@ -32,3 +32,4 @@ Storage configuration honors upstream KubeSolo contract decisions (including D04
 
 - [docs/localpath-generation.md](docs/localpath-generation.md): Manifest generation, RBAC rules, helper pods, and Go parity.
 - [docs/localpath-reconciliation.md](docs/localpath-reconciliation.md): Lifecycle service, idempotent reconciliation, optional provisioner deployment, and supervisor degradation policies.
+- [docs/localpath-volume-lifecycle.md](docs/localpath-volume-lifecycle.md): First-consumer binding (`WaitForFirstConsumer`), replacement pods, Retain/Delete reclaim, and host data protection.

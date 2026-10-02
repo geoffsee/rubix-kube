@@ -44,6 +44,22 @@ pub enum StorageError {
     #[error("injected storage deployment failure: {0}")]
     InjectedFailure(String),
 
+    /// Volume binding failed.
+    #[error("volume binding failed: {0}")]
+    VolumeBindingFailed(String),
+
+    /// Persistent volume or claim not found.
+    #[error("volume not found: {0}")]
+    VolumeNotFound(String),
+
+    /// Path security violation (attempt to escape volume root or mutate unrelated host data).
+    #[error("path security violation: {0}")]
+    PathSecurityViolation(String),
+
+    /// Persistent volume reclaim or teardown failed.
+    #[error("volume reclaim failed: {0}")]
+    ReclaimFailed(String),
+
     /// I/O error.
     #[error("storage I/O error: {0}")]
     Io(#[from] std::io::Error),
@@ -62,6 +78,10 @@ impl StorageError {
             Self::ReconciliationFailed { .. } => "storage-reconciliation-failed",
             Self::Disabled => "storage-provisioner-disabled",
             Self::InjectedFailure(_) => "storage-injected-failure",
+            Self::VolumeBindingFailed(_) => "storage-volume-binding-failed",
+            Self::VolumeNotFound(_) => "storage-volume-not-found",
+            Self::PathSecurityViolation(_) => "storage-path-security-violation",
+            Self::ReclaimFailed(_) => "storage-reclaim-failed",
             Self::Io(_) => "storage-io-error",
         }
     }
