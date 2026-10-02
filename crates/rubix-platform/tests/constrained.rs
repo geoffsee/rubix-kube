@@ -138,3 +138,64 @@ fn collector_never_claims_unsupported_platform_or_invalid_limits() {
         );
     }
 }
+
+#[test]
+fn constrained_hosts_and_external_runtime_behavior() {
+    // 1. Read-only sysctl host with already correct values requires no write.
+    let mut readonly_facts = facts();
+    readonly_facts.sysctls = std::array::from_fn(|_| Observation::Present("1\n".into()));
+    let report = evaluate_constrained(&readonly_facts, &inputs());
+    assert_eq!(
+        report.sysctls,
+        [
+            SysctlState::AlreadyCorrect,
+            SysctlState::AlreadyCorrect,
+            SysctlState::AlreadyCorrect,
+            SysctlState::AlreadyCorrect
+        ]
+    );
+
+    // 2. Read-only host where IPv4 forwarding requires preparation.
+    let mut unready_facts = facts();
+    unready_facts.sysctls[0] = Observation::Present("0\n".into());
+    let unready_report = evaluate_constrained(&unready_facts, &inputs());
+    assert_eq!(unready_report.sysctls[0], SysctlState::NeedsPreparation);
+
+    // 3. Absent IPv6 controls are optional and do not require write.
+    let mut absent_ipv6 = facts();
+    absent_ipv6.sysctls[1] = Observation::Absent;
+    absent_ipv6.sysctls[2] = Observation::Absent;
+    absent_ipv6.sysctls[3] = Observation::Absent;
+    let ipv6_report = evaluate_constrained(&absent_ipv6, &inputs());
+    assert_eq!(
+        &ipv6_report.sysctls[1..],
+        &[
+            SysctlState::OptionalAbsent,
+            SysctlState::OptionalAbsent,
+            SysctlState::OptionalAbsent
+        ]
+    );
+
+    // 4. nftables-only kernel selects nftables backend but does not waive xt_comment.
+    let mut nft_facts = facts();
+    nft_facts.ip_tables_names = Observation::Absent;
+    let mut nft_inputs = inputs();
+    nft_inputs.iptables_version = Observation::Present("iptables v1.8.10 (nf_tables)".into());
+    nft_inputs.xtables_comment = CheckStatus::Blocker;
+    let nft_report = evaluate_constrained(&nft_facts, &nft_inputs);
+    assert_eq!(
+        nft_report.proxy_selection,
+        Observation::Present(ProxyBackend::Nftables)
+    );
+    assert_eq!(
+        nft_report.module_family,
+        Observation::Present(ModuleFamily::NfTables)
+    );
+    assert_eq!(nft_report.xtables_comment, CheckStatus::Blocker);
+
+    // 5. External runtime ownership preserves external responsibilities.
+    assert_eq!(
+        nft_report.responsibilities,
+        RuntimeResponsibilities::External
+    );
+}
