@@ -374,26 +374,21 @@ async fn test_node_and_dns_restart_recovers_resolution() {
         "TCP probe must not succeed while DNS server is stopped"
     );
 
-    // 3. Restart DNS server (recovering resolution)
-    let server2 = LocalDnsServer::start_loopback().await.unwrap();
+    // 3. Restart DNS server on the original address (recovering resolution for existing clients)
+    let server2 = LocalDnsServer::start_on(addr).await.unwrap();
     server2.add_a_record(domain, service_ip).await;
 
-    let recovered_prober = DnsProber::new(ProbeTransport::Live {
-        server_addr: server2.local_addr(),
-        timeout: Duration::from_secs(2),
-    });
-
-    let rec_udp = recovered_prober.execute_probe(&probe_udp).await.unwrap();
+    let rec_udp = prober.execute_probe(&probe_udp).await.unwrap();
     assert!(
         rec_udp.success,
-        "UDP resolution must recover after DNS restart"
+        "UDP resolution must recover on original endpoint after DNS restart"
     );
     assert_eq!(rec_udp.resolved_ips, vec![service_ip]);
 
-    let rec_tcp = recovered_prober.execute_probe(&probe_tcp).await.unwrap();
+    let rec_tcp = prober.execute_probe(&probe_tcp).await.unwrap();
     assert!(
         rec_tcp.success,
-        "TCP resolution must recover after DNS restart"
+        "TCP resolution must recover on original endpoint after DNS restart"
     );
     assert_eq!(rec_tcp.resolved_ips, vec![service_ip]);
 }
@@ -466,11 +461,16 @@ async fn test_ipv6_reverse_forwarding_omitted_when_ipv6_disabled() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-
-    let client_arc = Arc::new(client);
+    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
 
     // Case A: IPv6 is disabled
     let config_no_ipv6 = CoreDnsConfig::new().with_disable_ipv6(true);
+    rubix_dns::DnsReconciler::new(&config_no_ipv6)
+        .reconcile(&client)
+        .await
+        .unwrap();
+
+    let client_arc = Arc::new(client);
     let prober_no_ipv6 = DnsProber::new(ProbeTransport::Synthetic {
         client: Arc::clone(&client_arc),
         config: config_no_ipv6,

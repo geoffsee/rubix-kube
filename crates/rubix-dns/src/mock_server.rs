@@ -33,7 +33,30 @@ impl LocalDnsServer {
         let udp_socket = UdpSocket::bind("127.0.0.1:0").await?;
         let local_addr = udp_socket.local_addr()?;
         let tcp_listener = TcpListener::bind(local_addr).await?;
+        Ok(Self::start_with_sockets(
+            udp_socket,
+            tcp_listener,
+            local_addr,
+        ))
+    }
 
+    /// Starts a new local DNS server on the specified socket address for both UDP and TCP.
+    pub async fn start_on(addr: SocketAddr) -> Result<Self> {
+        let udp_socket = UdpSocket::bind(addr).await?;
+        let local_addr = udp_socket.local_addr()?;
+        let tcp_listener = TcpListener::bind(local_addr).await?;
+        Ok(Self::start_with_sockets(
+            udp_socket,
+            tcp_listener,
+            local_addr,
+        ))
+    }
+
+    fn start_with_sockets(
+        udp_socket: UdpSocket,
+        tcp_listener: TcpListener,
+        local_addr: SocketAddr,
+    ) -> Self {
         let records = Arc::new(RwLock::new(HashMap::new()));
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
@@ -113,11 +136,11 @@ impl LocalDnsServer {
             }
         });
 
-        Ok(Self {
+        Self {
             local_addr,
             records,
             shutdown_tx,
-        })
+        }
     }
 
     #[must_use]

@@ -311,6 +311,8 @@ impl DnsMessage {
         let mut header = self.header;
         header.qdcount = self.questions.len() as u16;
         header.ancount = self.answers.len() as u16;
+        header.nscount = 0;
+        header.arcount = 0;
         header.write_to(&mut buf);
 
         for q in &self.questions {
@@ -336,7 +338,8 @@ impl DnsMessage {
         let header = DnsHeader::read_from(raw)?;
         let mut cursor = 12;
 
-        let mut questions = Vec::with_capacity(header.qdcount as usize);
+        let qd_cap = (header.qdcount as usize).min(raw.len() / 5);
+        let mut questions = Vec::with_capacity(qd_cap);
         for _ in 0..header.qdcount {
             let (name, next_cursor) = decode_domain_name(raw, cursor)?;
             cursor = next_cursor;
@@ -353,7 +356,8 @@ impl DnsMessage {
             });
         }
 
-        let mut answers = Vec::with_capacity(header.ancount as usize);
+        let an_cap = (header.ancount as usize).min(raw.len() / 11);
+        let mut answers = Vec::with_capacity(an_cap);
         for _ in 0..header.ancount {
             let (name, next_cursor) = decode_domain_name(raw, cursor)?;
             cursor = next_cursor;

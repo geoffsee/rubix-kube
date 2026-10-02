@@ -257,40 +257,58 @@ impl DnsProber {
         };
 
         for probe in probes {
-            let res = self.execute_probe(probe).await?;
-            if res.success {
-                report.successful_probes += 1;
-            } else {
-                report.failed_probes += 1;
-                report.details.push(res.details.clone());
-                match (probe.category, probe.protocol) {
-                    (ProbeCategory::SameNamespace, DnsProtocol::Udp) => {
-                        report.udp_same_namespace_passed = false;
-                    },
-                    (ProbeCategory::SameNamespace, DnsProtocol::Tcp) => {
-                        report.tcp_same_namespace_passed = false;
-                    },
-                    (ProbeCategory::CrossNamespace, DnsProtocol::Udp) => {
-                        report.udp_cross_namespace_passed = false;
-                    },
-                    (ProbeCategory::CrossNamespace, DnsProtocol::Tcp) => {
-                        report.tcp_cross_namespace_passed = false;
-                    },
-                    (ProbeCategory::ExternalName, DnsProtocol::Udp) => {
-                        report.udp_external_name_passed = false;
-                    },
-                    (ProbeCategory::ExternalName, DnsProtocol::Tcp) => {
-                        report.tcp_external_name_passed = false;
-                    },
-                    (ProbeCategory::Upstream, _) => {
-                        report.upstream_passed = false;
-                    },
-                    (ProbeCategory::ReverseLookup, _) => {},
-                }
+            match self.execute_probe(probe).await {
+                Ok(res) if res.success => {
+                    report.successful_probes += 1;
+                },
+                Ok(res) => {
+                    report.failed_probes += 1;
+                    report.details.push(res.details.clone());
+                    Self::record_probe_failure(&mut report, probe.category, probe.protocol);
+                },
+                Err(err) => {
+                    report.failed_probes += 1;
+                    report.details.push(format!(
+                        "[{:?}] {:?} error: {err}",
+                        probe.protocol, probe.query_name
+                    ));
+                    Self::record_probe_failure(&mut report, probe.category, probe.protocol);
+                },
             }
         }
 
         Ok(report)
+    }
+
+    fn record_probe_failure(
+        report: &mut DnsResolutionReport,
+        category: ProbeCategory,
+        protocol: DnsProtocol,
+    ) {
+        match (category, protocol) {
+            (ProbeCategory::SameNamespace, DnsProtocol::Udp) => {
+                report.udp_same_namespace_passed = false;
+            },
+            (ProbeCategory::SameNamespace, DnsProtocol::Tcp) => {
+                report.tcp_same_namespace_passed = false;
+            },
+            (ProbeCategory::CrossNamespace, DnsProtocol::Udp) => {
+                report.udp_cross_namespace_passed = false;
+            },
+            (ProbeCategory::CrossNamespace, DnsProtocol::Tcp) => {
+                report.tcp_cross_namespace_passed = false;
+            },
+            (ProbeCategory::ExternalName, DnsProtocol::Udp) => {
+                report.udp_external_name_passed = false;
+            },
+            (ProbeCategory::ExternalName, DnsProtocol::Tcp) => {
+                report.tcp_external_name_passed = false;
+            },
+            (ProbeCategory::Upstream, _) => {
+                report.upstream_passed = false;
+            },
+            (ProbeCategory::ReverseLookup, _) => {},
+        }
     }
 
     async fn execute_live_probe(
@@ -434,30 +452,114 @@ impl DnsProber {
             } else {
                 rcode = DnsRcode::NXDomain.as_u8();
             }
-        } else if clean_name.ends_with(".in-addr.arpa") {
-            // Reverse IPv4 lookup
-            if let Some(expected_ptr) = &probe.expected_ptr {
-                resolved_ptrs.push(expected_ptr.clone());
-            }
-        } else if clean_name.ends_with(".ip6.arpa") {
-            // Reverse IPv6 lookup - if disable_ipv6 is true, should be NXDomain or refused
-            if config.disable_ipv6 {
-                rcode = DnsRcode::NXDomain.as_u8();
-            } else if let Some(expected_ptr) = &probe.expected_ptr {
-                resolved_ptrs.push(expected_ptr.clone());
-            }
-        } else {
-            // Upstream query: check if forwarders are configured or public fallback
-            if config.upstream_resolvers.is_empty() && config.container_mode {
-                // public fallback
-                if let Some(expected_ip) = probe.expected_ip {
-                    resolved_ips.push(expected_ip);
+        } else if let Some(ip_part) = clean_name.strip_suffix(".in-addr.arpa") {
+            // Reverse IPv4 lookup: find Service matching clusterIP
+            let octets: Vec<&str> = ip_part.split('.').collect();
+            if octets.len() == 4 {
+                let ip_str = format!("{}.{}.{}.{}", octets[3], octets[2], octets[1], octets[0]);
+                let mut found = false;
+                if let Ok(ns_list) = client.list_namespaces().await {
+                    if let Some(namespaces) =
+                        ns_list.get("items").and_then(serde_json::Value::as_array)
+                    {
+                        for ns_val in namespaces {
+                            let ns_name = ns_val
+                                .pointer("/metadata/name")
+                                .and_then(serde_json::Value::as_str)
+                                .unwrap_or("");
+                            if let Ok(svc_list) = client.list_services(ns_name).await {
+                                if let Some(items) =
+                                    svc_list.get("items").and_then(serde_json::Value::as_array)
+                                {
+                                    for svc in items {
+                                        let cluster_ip = svc
+                                            .pointer("/spec/clusterIP")
+                                            .and_then(serde_json::Value::as_str);
+                                        if cluster_ip == Some(&ip_str) {
+                                            if let (Some(name), Some(ns)) = (
+                                                svc.pointer("/metadata/name")
+                                                    .and_then(serde_json::Value::as_str),
+                                                svc.pointer("/metadata/namespace")
+                                                    .and_then(serde_json::Value::as_str),
+                                            ) {
+                                                resolved_ptrs.push(format!(
+                                                    "{name}.{ns}.svc.{}",
+                                                    config.cluster_domain
+                                                ));
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if found {
+                                break;
+                            }
+                        }
+                    }
                 }
-            } else if !config.upstream_resolvers.is_empty() {
-                if let Some(expected_ip) = probe.expected_ip {
-                    resolved_ips.push(expected_ip);
+                if !found {
+                    rcode = DnsRcode::NXDomain.as_u8();
                 }
             } else {
+                rcode = DnsRcode::FormErr.as_u8();
+            }
+        } else if clean_name.ends_with(".ip6.arpa") {
+            // Reverse IPv6 lookup - absent (NXDomain) when IPv6 is disabled
+            let corefile = config.generate_corefile();
+            if !corefile.contains("ip6.arpa") {
+                rcode = DnsRcode::NXDomain.as_u8();
+            } else if let Ok(svc) = client.get_service("kube-system", "kube-dns").await {
+                if let (Some(name), Some(ns)) = (
+                    svc.pointer("/metadata/name")
+                        .and_then(serde_json::Value::as_str),
+                    svc.pointer("/metadata/namespace")
+                        .and_then(serde_json::Value::as_str),
+                ) {
+                    resolved_ptrs.push(format!("{name}.{ns}.svc.{}", config.cluster_domain));
+                }
+            }
+        } else {
+            // Upstream query: resolve via local upstream dependencies if available
+            let resolvers = if !config.upstream_resolvers.is_empty() {
+                config.upstream_resolvers.clone()
+            } else if config.container_mode {
+                vec!["1.1.1.1:53".to_string(), "8.8.8.8:53".to_string()]
+            } else {
+                Vec::new()
+            };
+
+            let mut resolved = false;
+            for resolver in &resolvers {
+                let addr = if resolver.contains(':') {
+                    resolver.parse::<SocketAddr>().ok()
+                } else {
+                    format!("{resolver}:53").parse::<SocketAddr>().ok()
+                };
+                if let Some(target_addr) = addr {
+                    if target_addr.ip().is_loopback() {
+                        let rtype = DnsRecordType::from_u16(probe.record_type);
+                        let query = DnsMessage::new_query(1, &probe.query_name, rtype);
+                        if let Ok(Ok(resp)) = tokio::time::timeout(
+                            Duration::from_millis(500),
+                            send_udp_query(target_addr, &query),
+                        )
+                        .await
+                        {
+                            rcode = resp.header.rcode.as_u8();
+                            for ans in resp.answers {
+                                if let DnsRecordData::A(ip) = ans.rdata {
+                                    resolved_ips.push(ip);
+                                }
+                            }
+                            resolved = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if !resolved {
                 rcode = DnsRcode::ServFail.as_u8();
             }
         }
