@@ -1,7 +1,7 @@
 # CI and repository rules
 
 The default branch accepts squash or rebase merges with passing `Format`, `Clippy`,
-`Tests (debug)`, `Tests (release)`, `Dependencies` and `Security` checks from GitHub Actions.
+`Tests (debug)`, `Dependencies` and `Security` checks from GitHub Actions.
 The branch must be current with its base. Linear history, resolved review conversations,
 and protection against force-pushes/deletion apply without bypass actors. Human approvals
 are optional to support solo development; automated checks remain mandatory.
@@ -15,8 +15,16 @@ branch. All PR edits, including title/body edits, run validation with the same r
 names. During rollout, metadata-only skipped suites left native stack merges reporting missing
 checks despite earlier successful runs. Full validation avoids that ambiguity; caches and
 cancellation limit repeated work. Merge-group events are supported if a merge queue is introduced.
-Both test profiles include all targets and doctests. Commands use the committed lockfile
+Pull requests run debug tests for all targets and doctests. Commands use the committed lockfile
 and toolchain rather than a moving Rust channel.
+
+Release tests, doctests, the `rubix-kube` and `rubixctl` `--profile dist` build, and upstream
+input verification run from [landing.yml](workflows/landing.yml) on default-branch pushes and
+merge groups. They are not pull-request checks. Qodana scans run from
+[code_quality.yml](workflows/code_quality.yml) on pushes to `main` only. GitHub applies one required-check list to a
+pull request and to its merge group, so requiring `Tests (release)` would put that job back
+on the pull-request critical path. A merge queue therefore does not wait for the landing
+workflow. The landing run still fails when those jobs fail.
 
 Rust caches contain downloaded dependencies and reusable dependency compilation, separated
 by job/profile. Only default-branch pushes save caches; PRs restore them. Cold caches remain
@@ -57,7 +65,7 @@ New PRs are drafts; update their generated descriptions with issue links, behavi
 then mark only ready layers for review. Consult the installed gh-stack skill and command help for
 merge scope and recovery. Verify stack state after synchronization; an aborted sync can exit zero.
 
-Before landing a prefix, verify its exact stack/PR membership and all six check results for each
+Before landing a prefix, verify its exact stack/PR membership and all five required check results for each
 layer's current head and base. Native GitHub stacks enforce the trunk's protections on every layer,
 as described in the [stack rules](https://docs.github.com/en/pull-requests/reference/stacked-pull-requests).
 Retargeting and rebasing require fresh validation; tests on an earlier base are insufficient.
@@ -124,13 +132,13 @@ and cache-write policy follow the repository's default branch automatically.
 
 ## Upstream and fixture gates
 
-The debug test job explicitly prepares verified upstream inputs, builds the maintenance
+The landing workflow prepares verified upstream inputs, builds the maintenance
 generator, compares committed CRI/containerd clients, checks published Kubernetes binding
 provenance, and compares independent official schema/protocol inventories. These operations
-are CI checks and explicit refresh commands; ordinary Rust builds still consume committed
-clients. Rust tooling regressions run with workspace tests. The prepared-parser integration test
-runs explicitly after input preparation against the verified compiler. Clippy CI also enforces
-the repository policy rejecting Python sources, packaging and interpreter invocations.
+run on default-branch pushes and merge groups; ordinary Rust builds still consume committed
+clients. Rust tooling regressions run with workspace tests on pull requests. The prepared-parser
+integration test runs explicitly after input preparation against the verified compiler. Clippy CI
+also enforces the repository policy rejecting Python sources, packaging and interpreter invocations.
 
 Prepared inputs have a manifest/OS/architecture cache key. Every restored byte is reverified;
 only successful default-branch push jobs save caches. Cold caches download the same pinned

@@ -47,60 +47,20 @@ jobs:
       - run: cargo lint
 
   test:
-    name: Tests (${{ matrix.profile }})
+    name: Tests (debug)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        profile: [debug, release]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: $/.github/actions/setup-rust
         with:
-          cache-key: test-${{ matrix.profile }}
+          cache-key: test-debug
       - name: Test all targets and doctests
-        env:
-          TEST_PROFILE: ${{ matrix.profile }}
         run: |
-          profile_args=()
-          if [[ "$TEST_PROFILE" == release ]]; then
-            profile_args+=(--release)
-          fi
-          cargo test --locked --workspace --all-targets --all-features "${profile_args[@]}"
-          cargo test --locked --workspace --doc --all-features "${profile_args[@]}"
-
-      - name: Restore prepared upstream inputs
-        if: matrix.profile == 'debug'
-        id: upstream-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: target/upstream
-          key: upstream-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/upstream/inputs.json') }}
-      - name: Verify generated clients and independent source inventories
-        if: matrix.profile == 'debug'
-        run: |
-          cargo run --locked -p rubix-dev --bin rubix-upstream -- fetch
-          cargo fetch --locked
-          cargo build -p rubix-upstream-codegen --locked
-          cargo run --locked -p rubix-dev --bin rubix-upstream -- verify
-          cargo run --locked -p rubix-dev --bin rubix-upstream -- check-cri
-          cargo run --locked -p rubix-dev --bin rubix-upstream -- check-containerd
-          cargo run --locked -p rubix-dev --bin rubix-upstream -- check-kubernetes-bindings
-          cargo run --locked -p rubix-dev --bin rubix-drift -- check
-      - name: Test prepared protocol parser with verified compiler
-        if: matrix.profile == 'debug'
-        env:
-          RUBIX_UPSTREAM_CACHE: ${{ github.workspace }}/target/upstream
-        run: cargo test --locked -p rubix-dev --test upstream_internals -- --ignored --exact drift::tests::actual_verified_protoc_detects_field_number_type_rpc_and_streaming_mutations
-      - name: Save verified upstream inputs
-        if: matrix.profile == 'debug' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.upstream-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: target/upstream
-          key: ${{ steps.upstream-cache.outputs.cache-primary-key }}
+          cargo test --locked --workspace --all-targets --all-features
+          cargo test --locked --workspace --doc --all-features
 
   dependencies:
     name: Dependencies
