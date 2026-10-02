@@ -107,6 +107,11 @@ pub enum Remediation {
     ObtainObservation,
     RecheckAfterPreparation,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ErrorSeverity {
+    Fatal,
+    Recoverable,
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Finding {
     pub check: CheckId,
@@ -118,6 +123,28 @@ pub struct Finding {
     pub plans: Vec<PreparationAction>,
 }
 impl Finding {
+    pub fn severity(&self) -> Option<ErrorSeverity> {
+        match self.status {
+            CheckStatus::Pass | CheckStatus::NotApplicable => None,
+            CheckStatus::NeedsPreparation => Some(ErrorSeverity::Recoverable),
+            CheckStatus::Blocker => match self.reason {
+                Reason::AlpineToolsMissing | Reason::AlpineCgroupsSetup => {
+                    Some(ErrorSeverity::Recoverable)
+                },
+                _ => Some(ErrorSeverity::Fatal),
+            },
+            CheckStatus::Unknown => Some(ErrorSeverity::Fatal),
+        }
+    }
+
+    pub fn is_fatal(&self) -> bool {
+        self.severity() == Some(ErrorSeverity::Fatal)
+    }
+
+    pub fn is_recoverable(&self) -> bool {
+        self.severity() == Some(ErrorSeverity::Recoverable)
+    }
+
     fn new(check: CheckId, status: CheckStatus, reason: Reason) -> Self {
         Self {
             check,
@@ -164,6 +191,22 @@ pub struct PreflightReport {
 impl PreflightReport {
     pub fn ready(&self) -> bool {
         self.first_blocker.is_none()
+    }
+
+    pub fn fatal_findings(&self) -> impl Iterator<Item = &Finding> {
+        self.findings.iter().filter(|f| f.is_fatal())
+    }
+
+    pub fn recoverable_findings(&self) -> impl Iterator<Item = &Finding> {
+        self.findings.iter().filter(|f| f.is_recoverable())
+    }
+
+    pub fn has_fatal_errors(&self) -> bool {
+        self.findings.iter().any(Finding::is_fatal)
+    }
+
+    pub fn has_recoverable_limitations(&self) -> bool {
+        self.findings.iter().any(Finding::is_recoverable)
     }
 }
 fn landmark(e: &HostEvidence, path: &str) -> Observation<bool> {

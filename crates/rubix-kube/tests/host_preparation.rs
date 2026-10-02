@@ -375,3 +375,21 @@ async fn initially_cancelled_combined_operation_never_performs_effects() {
     assert!(fake.container_calls.lock().unwrap().is_empty());
     assert!(!report.shared_effects_possible);
 }
+
+#[tokio::test]
+async fn repeatable_host_preparation_and_clean_failure_without_partial_service() {
+    let mut fake = Fake::default();
+    let report1 =
+        prepare_node_host_with(&config(false, true), std::future::pending(), &mut fake).await;
+    assert_eq!(report1.status, HostPreparationStatus::Completed);
+    assert_eq!(report1.container.status, ContainerStatus::Completed);
+    assert!(report1.shared_effects_possible);
+
+    fake.modules.clear();
+    fake.container_calls.lock().unwrap().clear();
+
+    let report2 =
+        prepare_node_host_with(&config(false, true), std::future::pending(), &mut fake).await;
+    assert_eq!(report2.status, HostPreparationStatus::Completed);
+    assert_eq!(report2.container.status, ContainerStatus::Completed);
+}

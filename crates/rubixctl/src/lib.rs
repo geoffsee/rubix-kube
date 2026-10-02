@@ -145,11 +145,17 @@ fn render_finding(finding: &Finding, stderr: &mut dyn Write) -> io::Result<bool>
         writeln!(stderr, "     {}", check_name(finding.check))?;
         Ok(true)
     } else {
+        let severity_note = if finding.is_recoverable() {
+            " (recoverable limitation)"
+        } else {
+            " (fatal error)"
+        };
         writeln!(
             stderr,
-            "  [fail] pre-flight checks: {}: {}",
+            "  [fail] pre-flight checks: {}: {}{}",
             check_name(finding.check),
-            reason_text(finding.reason)
+            reason_text(finding.reason),
+            severity_note
         )?;
         if let Some(remediation) = finding.remediation {
             writeln!(stderr, "     {}", remediation_text(remediation))?;
