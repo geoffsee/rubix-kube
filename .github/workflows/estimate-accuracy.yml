@@ -45,5 +45,5 @@ jobs:
           subject: ${{ inputs.subject }}
           metric: ${{ inputs.metric || 'tokens' }}
           value: ${{ inputs.value }}
-          comment: "true"
+          comment: ${{ github.event_name == 'pull_request' }}
           github-token: ${{ github.token }}
