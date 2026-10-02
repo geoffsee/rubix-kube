@@ -27,6 +27,15 @@ pub enum DnsError {
 
     #[error("reconciliation failed for {resource}: {reason}")]
     ReconciliationFailed { resource: String, reason: String },
+
+    #[error("DNS wire format encoding/decoding error: {0}")]
+    Wire(String),
+
+    #[error("DNS probe failed: {0}")]
+    ProbeFailed(String),
+
+    #[error("DNS I/O error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
 impl DnsError {
@@ -40,6 +49,9 @@ impl DnsError {
             Self::ReadinessTimeout { .. } => "dns-readiness-timeout",
             Self::ReadinessFailed { .. } => "dns-readiness-failed",
             Self::ReconciliationFailed { .. } => "dns-reconciliation-failed",
+            Self::Wire(_) => "dns-wire-error",
+            Self::ProbeFailed(_) => "dns-probe-failed",
+            Self::Io(_) => "dns-io-error",
         }
     }
 }
