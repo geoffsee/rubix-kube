@@ -1,11 +1,12 @@
 name: Qodana
 on:
   workflow_dispatch:
-  pull_request:
   push:
-    branches:
-      - main
-      - 'releases/*'
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   qodana:
@@ -14,7 +15,6 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      pull-requests: write
       checks: write
     strategy:
       fail-fast: false
@@ -31,7 +31,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - name: Qodana Scan
         uses: JetBrains/qodana-action@4861e015da555e86a72b862892aba6c2b93e6891 # v2026.1.3

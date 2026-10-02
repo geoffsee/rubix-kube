@@ -20,7 +20,8 @@ and toolchain rather than a moving Rust channel.
 
 Release tests, doctests, the `rubix-kube` and `rubixctl` `--profile dist` build, and upstream
 input verification run from [landing.yml](workflows/landing.yml) on default-branch pushes and
-merge groups. They are not pull-request checks. GitHub applies one required-check list to a
+merge groups. They are not pull-request checks. Qodana scans run from
+[code_quality.yml](workflows/code_quality.yml) on pushes to `main` only. GitHub applies one required-check list to a
 pull request and to its merge group, so requiring `Tests (release)` would put that job back
 on the pull-request critical path. A merge queue therefore does not wait for the landing
 workflow. The landing run still fails when those jobs fail.
