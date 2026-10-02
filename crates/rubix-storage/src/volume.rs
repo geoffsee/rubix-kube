@@ -109,8 +109,34 @@ pub fn safe_teardown_volume_dir(base_dir: &Path, vol_dir: &Path) -> Result<()> {
         )));
     }
 
+    // Validate that no component between base_dir and vol_dir is a symlink
+    let mut current = base_dir.to_path_buf();
+    if let Ok(rel) = vol_dir.strip_prefix(base_dir) {
+        for component in rel.components() {
+            current.push(component);
+            if std::fs::symlink_metadata(&current).is_ok_and(|m| m.file_type().is_symlink()) {
+                return Err(StorageError::PathSecurityViolation(format!(
+                    "symlink component detected in volume path: {}",
+                    current.display()
+                )));
+            }
+        }
+    }
+
     if vol_dir.exists() {
-        if !vol_dir.is_dir() {
+        let meta = std::fs::symlink_metadata(vol_dir).map_err(|e| {
+            StorageError::ReclaimFailed(format!(
+                "failed to inspect volume directory metadata {}: {e}",
+                vol_dir.display()
+            ))
+        })?;
+        if meta.file_type().is_symlink() {
+            return Err(StorageError::PathSecurityViolation(format!(
+                "refusing to remove symlinked volume path {}",
+                vol_dir.display()
+            )));
+        }
+        if !meta.is_dir() {
             return Err(StorageError::PathSecurityViolation(format!(
                 "volume path {} is not a directory",
                 vol_dir.display()
@@ -227,11 +253,49 @@ impl LocalPathVolumeManager {
             )));
         }
 
+        let pvc_uid = pvc
+            .get("metadata")
+            .and_then(|m| m.get("uid"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                StorageError::VolumeBindingFailed(format!(
+                    "PVC '{pvc_name}' in namespace '{pvc_namespace}' is missing metadata.uid"
+                ))
+            })?;
+
         let base_dir = self.effective_base_path();
-        let pv_name = format!("pv-{pvc_namespace}-{pvc_name}");
+        let pv_name = format!("pvc-{pvc_uid}");
         let dir_name = format!("{pvc_namespace}_{pvc_name}_{pv_name}");
 
         let vol_dir = safe_resolve_volume_path(&base_dir, &dir_name)?;
+
+        // Recover existing deterministic PV if it was created in a previous attempt
+        if let Ok(existing_pv) = self.client.get_pv(&pv_name).await {
+            let claim_ns = existing_pv
+                .pointer("/spec/claimRef/namespace")
+                .and_then(Value::as_str);
+            let claim_name = existing_pv
+                .pointer("/spec/claimRef/name")
+                .and_then(Value::as_str);
+            if claim_ns != Some(pvc_namespace) || claim_name != Some(pvc_name) {
+                return Err(StorageError::VolumeBindingFailed(format!(
+                    "PV '{pv_name}' already exists with mismatched claimRef ({claim_ns:?}/{claim_name:?})"
+                )));
+            }
+
+            std::fs::create_dir_all(&vol_dir)?;
+
+            if let Some(spec) = pvc.get_mut("spec").and_then(Value::as_object_mut) {
+                spec.insert("volumeName".to_string(), json!(pv_name));
+            }
+            if let Some(status) = pvc.get_mut("status").and_then(Value::as_object_mut) {
+                status.insert("phase".to_string(), json!("Bound"));
+            } else if let Some(pvc_obj) = pvc.as_object_mut() {
+                pvc_obj.insert("status".to_string(), json!({ "phase": "Bound" }));
+            }
+            self.client.update_pvc(pvc_namespace, pvc_name, pvc).await?;
+            return Ok(existing_pv);
+        }
 
         // Create volume directory with 0777 permissions (per setup script)
         std::fs::create_dir_all(&vol_dir)?;
@@ -400,9 +464,6 @@ impl LocalPathVolumeManager {
 
         let mut pv = self.client.get_pv(&vol_name).await?;
 
-        // Delete the PVC first
-        self.client.delete_pvc(pvc_namespace, pvc_name).await?;
-
         let vol_path_str = pv
             .get("spec")
             .and_then(|s| s.get("local"))
@@ -419,16 +480,16 @@ impl LocalPathVolumeManager {
 
         let base_dir = self.effective_base_path();
 
-        if reclaim_policy == "Delete" {
+        let action = if reclaim_policy == "Delete" {
             if !vol_path_str.is_empty() {
                 let vol_path = PathBuf::from(&vol_path_str);
                 safe_teardown_volume_dir(&base_dir, &vol_path)?;
             }
             self.client.delete_pv(&vol_name).await?;
-            Ok(VolumeReclaimAction::Deleted {
+            VolumeReclaimAction::Deleted {
                 pv_name: vol_name,
                 path: vol_path_str,
-            })
+            }
         } else {
             // Retain behavior
             if let Some(status) = pv.get_mut("status").and_then(Value::as_object_mut) {
@@ -441,10 +502,15 @@ impl LocalPathVolumeManager {
                 "retained volume {} on host at {} with phase Released",
                 vol_name, vol_path_str
             );
-            Ok(VolumeReclaimAction::Retained {
+            VolumeReclaimAction::Retained {
                 pv_name: vol_name,
                 path: vol_path_str,
-            })
-        }
+            }
+        };
+
+        // Delete the PVC only after the PV reclaim step succeeds
+        self.client.delete_pvc(pvc_namespace, pvc_name).await?;
+
+        Ok(action)
     }
 }

@@ -526,3 +526,67 @@ fn test_path_security_and_traversal_protection() {
     assert!(safe_teardown_volume_dir(&root, &valid_vol).is_ok());
     assert!(!valid_vol.exists());
 }
+
+#[tokio::test]
+async fn test_deterministic_pv_recovery_on_retry() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, client) = setup_test_cluster(&temp);
+    apiserver.check_prerequisites().await.unwrap();
+
+    let storage_root = temp.path().join("local-path-storage");
+    std::fs::create_dir_all(&storage_root).unwrap();
+
+    let config = LocalPathConfig::new().with_storage_path(storage_root.display().to_string());
+    let reconciler = LocalPathReconciler::new(&config);
+    reconciler.reconcile(&client).await.unwrap();
+
+    let ns = "retry-recovery-ns";
+    client.create_namespace(ns).await.unwrap();
+
+    let pvc = json!({
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": { "name": "retry-claim", "namespace": ns },
+        "spec": { "accessModes": ["ReadWriteOnce"], "storageClassName": "local-path" },
+        "status": { "phase": "Pending" }
+    });
+    let created_pvc = client.create_pvc(ns, pvc).await.unwrap();
+    let pvc_uid = created_pvc["metadata"]["uid"].as_str().unwrap();
+    let pv_name = format!("pvc-{pvc_uid}");
+
+    // Simulate scenario: PV was created in API server, but PVC update had failed
+    let partial_pv = json!({
+        "apiVersion": "v1",
+        "kind": "PersistentVolume",
+        "metadata": { "name": &pv_name },
+        "spec": {
+            "capacity": { "storage": "1Gi" },
+            "accessModes": ["ReadWriteOnce"],
+            "persistentVolumeReclaimPolicy": "Retain",
+            "storageClassName": "local-path",
+            "local": { "path": storage_root.join(format!("{ns}_retry-claim_{pv_name}")).display().to_string() },
+            "claimRef": { "namespace": ns, "name": "retry-claim" }
+        },
+        "status": { "phase": "Bound" }
+    });
+    client.create_pv(partial_pv).await.unwrap();
+
+    // Verify PVC is still Pending
+    let pending_pvc = client.get_pvc(ns, "retry-claim").await.unwrap();
+    assert_eq!(pending_pvc["status"]["phase"], "Pending");
+
+    let volume_mgr = LocalPathVolumeManager::new(config, client.clone());
+
+    // Call provision_volume_for_pvc to recover the PV
+    let recovered_pv = volume_mgr
+        .provision_volume_for_pvc(ns, "retry-claim", "node-recovery")
+        .await
+        .unwrap();
+
+    assert_eq!(recovered_pv["metadata"]["name"], pv_name);
+
+    // PVC should now be Bound
+    let bound_pvc = client.get_pvc(ns, "retry-claim").await.unwrap();
+    assert_eq!(bound_pvc["status"]["phase"], "Bound");
+    assert_eq!(bound_pvc["spec"]["volumeName"], pv_name);
+}

@@ -2401,8 +2401,12 @@ impl KubernetesApiClient {
                 }
             }
         }
+        let expected_version = pv
+            .pointer("/metadata/resourceVersion")
+            .and_then(Value::as_str)
+            .and_then(|v| v.parse::<u64>().ok());
         let bytes = serde_json::to_vec(&pv)?;
-        let kv = self.storage.update(&key, bytes, None).await?;
+        let kv = self.storage.update(&key, bytes, expected_version).await?;
         if let Some(meta) = pv.get_mut("metadata").and_then(Value::as_object_mut) {
             meta.insert(
                 "resourceVersion".to_string(),
