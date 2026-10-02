@@ -12,6 +12,16 @@ CoreDNS deployment and reconciliation for KubeSolo clusters.
 - **Service**: `kube-dns` on cluster IP `10.43.0.10` exposing DNS on port 53 (UDP and TCP)
 - **Deployment**: `coredns` running `docker.io/coredns/coredns:1.14.4` with health and readiness probes
 
+## Reconciliation and Lifecycle
+
+`DnsReconciler` and `CoreDnsService` manage the lifecycle of CoreDNS on cluster startup and restart:
+- **Dependency Ordering**: Applies ConfigMap, ServiceAccount, ClusterRole, ClusterRoleBinding, Service, and Deployment in strict dependency order.
+- **Idempotency & Patching**: ConfigMap updates use RFC 7386 JSON Merge Patch to preserve custom user keys and metadata.
+- **Immutable Service Handling**: Recreates the Service only if `spec.clusterIP` changed, avoiding unnecessary recreation and DNS downtime.
+- **Supervisor Integration**: `CoreDnsAdapter` manages startup readiness polling against the deployment `readyReplicas` count and participates in coordinated supervisor shutdowns.
+
+See [docs/coredns-reconciliation.md](docs/coredns-reconciliation.md) for detailed architecture and reconciliation contracts.
+
 ## Corefile Generation
 
 The Corefile is generated according to the cluster's network and execution configuration:

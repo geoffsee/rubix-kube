@@ -34,7 +34,7 @@ pub struct CoreDnsConfig {
     ///
     /// In container mode:
     /// - Memory limits are omitted on the `CoreDNS` deployment to avoid OOM in constrained environments.
-    /// - Fallback public resolvers (`1.1.1.1 8.8.8.8`) are used when `/etc/resolv.conf` is empty.
+    /// - Public resolvers (`1.1.1.1 8.8.8.8`) are used unless `upstream_resolvers` is set.
     pub container_mode: bool,
 
     /// Whether IPv6 support is disabled on the cluster.
@@ -53,6 +53,9 @@ pub struct CoreDnsConfig {
 
     /// Explicit upstream resolvers to forward queries to. If empty, defaults according to `container_mode`.
     pub upstream_resolvers: Vec<String>,
+
+    /// Timeout for waiting for `CoreDNS` pods to become ready. Defaults to 90 seconds.
+    pub readiness_timeout: std::time::Duration,
 }
 
 impl Default for CoreDnsConfig {
@@ -64,6 +67,7 @@ impl Default for CoreDnsConfig {
             image: DEFAULT_COREDNS_IMAGE.to_string(),
             cluster_domain: DEFAULT_CLUSTER_DOMAIN.to_string(),
             upstream_resolvers: Vec::new(),
+            readiness_timeout: std::time::Duration::from_secs(90),
         }
     }
 }
@@ -114,6 +118,13 @@ impl CoreDnsConfig {
     #[must_use]
     pub fn with_upstream_resolvers(mut self, resolvers: Vec<String>) -> Self {
         self.upstream_resolvers = resolvers;
+        self
+    }
+
+    /// Set readiness polling timeout.
+    #[must_use]
+    pub fn with_readiness_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.readiness_timeout = timeout;
         self
     }
 

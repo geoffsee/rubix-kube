@@ -8,13 +8,18 @@ publish.workspace = true
 [dependencies]
 async-trait = "=0.1.89"
 k8s-openapi = { version = "=0.28.0", default-features = false, features = ["v1_35"] }
+rubix-apiserver = { version = "=0.1.0", path = "../rubix-apiserver" }
 rubix-config = { version = "=0.1.0", path = "../rubix-config" }
+rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 thiserror = "=2.0.18"
+tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time"] }
 tracing = "=0.1.44"
 
 [dev-dependencies]
+rubix-datastore = { version = "=0.1.0", path = "../rubix-datastore" }
+rubix-pki = { version = "=0.1.0", path = "../rubix-pki" }
 tempfile = "3.8"
 tokio = { version = "=1.53.1", features = ["test-util", "rt-multi-thread"] }
 
