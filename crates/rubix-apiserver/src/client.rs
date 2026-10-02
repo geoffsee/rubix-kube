@@ -2289,6 +2289,142 @@ impl KubernetesApiClient {
         Ok(())
     }
 
+    // --- PersistentVolume CRUD ---
+
+    pub async fn create_pv(&self, mut pv: Value) -> Result<Value, ApiserverError> {
+        let name = pv
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "PersistentVolume requires metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed("create", "", "persistentvolumes", None, Some(&name))?;
+
+        if let Some(meta) = pv.get_mut("metadata").and_then(Value::as_object_mut) {
+            if !meta.contains_key("creationTimestamp") {
+                meta.insert(
+                    "creationTimestamp".to_string(),
+                    json!("2026-09-30T00:00:00Z"),
+                );
+            }
+            if !meta.contains_key("uid") {
+                let cur_rev = self.storage.current_revision().await + 1;
+                meta.insert(
+                    "uid".to_string(),
+                    json!(format!("uid-persistentvolumes-{name}-{cur_rev}")),
+                );
+            }
+        }
+
+        let key = format!("{}/persistentvolumes/{name}", self.storage.prefix());
+        let bytes = serde_json::to_vec(&pv)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = pv;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_pv(&self, name: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "", "persistentvolumes", None, Some(name))?;
+        let key = format!("{}/persistentvolumes/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "persistentvolumes".to_string(),
+                name: name.to_string(),
+            })?;
+        let mut val: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = val.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(val)
+    }
+
+    pub async fn list_pvs(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "", "persistentvolumes", None, None)?;
+        let prefix = format!("{}/persistentvolumes/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            if let Ok(mut val) = serde_json::from_slice::<Value>(&kv.value) {
+                if let Some(meta) = val.get_mut("metadata").and_then(Value::as_object_mut) {
+                    meta.insert(
+                        "resourceVersion".to_string(),
+                        json!(kv.mod_revision.to_string()),
+                    );
+                }
+                items.push(val);
+            }
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn update_pv(&self, name: &str, mut pv: Value) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("update", "", "persistentvolumes", None, Some(name))?;
+        let key = format!("{}/persistentvolumes/{name}", self.storage.prefix());
+        let existing = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "persistentvolumes".to_string(),
+                name: name.to_string(),
+            })?;
+        let old: Value = serde_json::from_slice(&existing.value)?;
+        if let Some(meta) = pv.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("name".to_string(), json!(name));
+            for k in ["uid", "creationTimestamp"] {
+                if let Some(v) = old.get("metadata").and_then(|m| m.get(k)) {
+                    meta.insert(k.to_string(), v.clone());
+                }
+            }
+        }
+        let bytes = serde_json::to_vec(&pv)?;
+        let kv = self.storage.update(&key, bytes, None).await?;
+        if let Some(meta) = pv.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(pv)
+    }
+
+    pub async fn delete_pv(&self, name: &str) -> Result<(), ApiserverError> {
+        self.check_auth_detailed("delete", "", "persistentvolumes", None, Some(name))?;
+        let key = format!("{}/persistentvolumes/{name}", self.storage.prefix());
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "persistentvolumes".to_string(),
+                name: name.to_string(),
+            });
+        }
+        Ok(())
+    }
+
     // --- Service, Endpoints & EndpointSlice CRUD ---
 
     pub async fn create_service(

@@ -14,6 +14,7 @@ pub mod manifests;
 pub mod reconciler;
 pub mod service;
 pub mod supervisor;
+pub mod volume;
 
 pub use config::{
     DEFAULT_APP_LABEL_KEY, DEFAULT_APP_LABEL_VALUE, DEFAULT_BASE_STORAGE_PATH,
@@ -37,3 +38,6 @@ pub use manifests::{
 pub use reconciler::{LocalPathReconciler, ReconciliationReport};
 pub use service::LocalPathService;
 pub use supervisor::{COMPONENT_LOCAL_PATH, DEFAULT_STARTUP_TIMEOUT, LocalPathAdapter};
+pub use volume::{
+    LocalPathVolumeManager, VolumeReclaimAction, safe_resolve_volume_path, safe_teardown_volume_dir,
+};
