@@ -16,6 +16,19 @@ hex digests and size budgets. It returns `DeclaredInventory`: **declared metadat
 not authenticated content, provenance or release readiness. Its immutable iterators
 expose sorted role/delivery records and bundled metadata to E27 without duplicating
 the component list.
+`optional_feature_support()` separately reports target-policy support for local-path
+storage, the default Portainer agent and D2K. `SupportedTarget` is not an enabled
+feature or proof of a pinned payload; E27 must combine it with the declared role
+delivery and the selected runtime configuration. The offline contract bundles every
+supported optional image (including the local-path helper) while marking only
+target-restricted Portainer/D2K roles unavailable. CoreDNS and pause remain bundled
+in both variants.
+
+Release consumers must decode and validate the complete manifest for the requested
+target/variant before performing installation side effects. Wrong-target, missing-role,
+malformed and truncated manifest inputs are rejected by this same API. Validation does
+not authenticate otherwise well-formed manifest bytes, authorize installation, or
+replace verification of the exact bytes later materialized.
 
 `DeclaredInventory::verification_session()` creates an aggregate encoded-read
 budget. `verify_encoded_blob(id, reader)` checks exact encoded length and SHA-256,
