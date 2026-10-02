@@ -443,3 +443,33 @@ async fn owner_launch_failure_reports_unknown_command_without_ports_or_quiet_exi
     );
     assert!(!fake.calls.borrow().contains(&"ports"));
 }
+
+#[tokio::test]
+async fn external_runtime_assessment_preserves_external_responsibilities_and_docker_conflict() {
+    let mut fake = Fake::default();
+    let report = assess_node_with(&config(true, false), std::future::pending(), &mut fake).await;
+    assert_eq!(report.status, AssessmentStatus::Observed);
+    assert_eq!(report.runtime, RuntimeOwnership::External);
+    assert_eq!(
+        report.constrained.as_ref().unwrap().responsibilities,
+        RuntimeResponsibilities::External
+    );
+
+    // Docker conflict remains an independent check.
+    let mut fake_docker = Fake::default();
+    fake_docker
+        .facts
+        .landmarks
+        .insert("/var/run/docker.sock".into(), Observation::Present(true));
+    let blocked = assess_node_with(
+        &config(true, false),
+        std::future::pending(),
+        &mut fake_docker,
+    )
+    .await;
+    assert_eq!(blocked.status, AssessmentStatus::Blocked);
+    assert_eq!(
+        blocked.preflight.as_ref().unwrap().first_blocker,
+        Some(CheckId::DockerConflict)
+    );
+}
