@@ -1,49 +1,110 @@
 name: Estimate accuracy
 
 on:
-  workflow_dispatch:
-    inputs:
-      subject:
-        description: Tracker subject, such as pr:12 or issue:4. Required when value is set from a manual run.
-        required: false
-        type: string
-      metric:
-        description: Metric name
-        required: false
-        default: tokens
-        type: string
-      value:
-        description: Observed value, such as a token count
-        required: false
-        type: string
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened, edited, closed]
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}-${{ github.event.action }}
   cancel-in-progress: true
 
 jobs:
+  tokens:
+    name: Estimate tokens
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require era-issue and era-tokens
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            exit 0
+          fi
+          body=$(printf '%s\n' "$PR_BODY" | tr -d '\r')
+          issue=""
+          tokens=""
+          while IFS= read -r line || [ -n "$line" ]; do
+            if [ -z "$issue" ] && [[ "$line" =~ ^era-issue:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+              issue=$line
+            fi
+            if [ -z "$tokens" ] && [[ "$line" =~ ^era-tokens:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+              tokens=$line
+            fi
+          done <<< "$body"
+          if [ -z "$issue" ] || [ -z "$tokens" ]; then
+            printf '%s\n' \
+              "The pull request body must include both lines, with plain integers:" \
+              "era-issue: <roadmap issue number, or 0>" \
+              "era-tokens: <whole token count, or 0>" \
+              >&2
+            exit 1
+          fi
+
   accuracy:
     name: Estimate accuracy
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true &&
-      github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       id-token: write
       pull-requests: write
     steps:
+      - name: Read the token count from the pull request body
+        id: era
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          body=$(printf '%s\n' "$PR_BODY" | tr -d '\r')
+          issue_line=""
+          token_line=""
+          while IFS= read -r line || [ -n "$line" ]; do
+            if [ -z "$issue_line" ] && [[ "$line" =~ ^era-issue:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+              issue_line=$line
+            fi
+            if [ -z "$token_line" ] && [[ "$line" =~ ^era-tokens:[[:space:]]*[0-9]+[[:space:]]*$ ]]; then
+              token_line=$line
+            fi
+          done <<< "$body"
+          if [ "$AUTHOR" = "dependabot[bot]" ] && { [ -z "$issue_line" ] || [ -z "$token_line" ]; }; then
+            exit 0
+          fi
+          if [ -z "$issue_line" ] || [ -z "$token_line" ]; then
+            printf '%s\n' "Merged pull request is missing era-issue or era-tokens." >&2
+            exit 1
+          fi
+          issue=${issue_line#era-issue:}
+          tokens=${token_line#era-tokens:}
+          issue=${issue//[[:space:]]/}
+          tokens=${tokens//[[:space:]]/}
+          if [ "$tokens" = "0" ]; then
+            exit 0
+          fi
+          records="[{\"kind\":\"observation\",\"subject\":\"pr:${PR_NUMBER}\",\"metric\":\"tokens\",\"value\":${tokens},\"source\":\"pull-request\"}"
+          if [ "$issue" != "0" ]; then
+            records="${records},{\"kind\":\"observation\",\"subject\":\"issue:${issue}\",\"metric\":\"tokens\",\"value\":${tokens},\"source\":\"pull-request\"}"
+          fi
+          records="${records}]"
+          {
+            echo "records<<EOF"
+            printf '%s\n' "$records"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Record the observation and comment on accuracy
         uses: geoffsee/era/actions/track-estimate@1db6eab5eb83b0f72497454315e3f9e061773589 # era main
         with:
           mode: sync
-          subject: ${{ inputs.subject }}
-          metric: ${{ inputs.metric || 'tokens' }}
-          value: ${{ inputs.value }}
-          comment: ${{ github.event_name == 'pull_request' }}
+          records: ${{ steps.era.outputs.records }}
+          comment: "true"
           github-token: ${{ github.token }}
