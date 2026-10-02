@@ -1,6 +1,6 @@
 use rubix_assets::{
-    AssetId, DeclaredInventory, Delivery, InventoryError, InventoryRequest, Limits, Manifest,
-    Scope, Variant,
+    AssetId, DeclaredInventory, Delivery, FeatureSupport, InventoryError, InventoryRequest, Limits,
+    Manifest, OptionalFeature, Scope, Variant, feature_support,
 };
 use rubix_platform::{Architecture, Libc, NodeTarget};
 use serde_json::{Value, json};
@@ -37,6 +37,67 @@ fn configure_images(records: &mut [Value], variant: Variant, unavailable: usize)
         } else if variant == Variant::Offline && id.starts_with("image-") {
             row["delivery"] = json!({"kind":"bundled","path":format!("fixtures/{id}"),"encoding":"gzip","encoded_bytes":3,"sha256":HASH});
         }
+    }
+}
+fn assert_delivery(inventory: &DeclaredInventory, id: AssetId, bundled: bool) {
+    let delivery = inventory
+        .assets()
+        .find(|(asset, _)| *asset == id)
+        .expect("catalog role")
+        .1;
+    assert_eq!(
+        matches!(delivery, Delivery::Bundled { .. }),
+        bundled,
+        "{id:?}"
+    );
+}
+fn assert_optional_support(inventory: &DeclaredInventory, architecture: Architecture) {
+    assert_eq!(
+        inventory.optional_feature_support().collect::<Vec<_>>(),
+        [
+            (
+                OptionalFeature::LocalPathStorage,
+                FeatureSupport::SupportedTarget,
+            ),
+            (
+                OptionalFeature::PortainerAgent,
+                if architecture == Architecture::Riscv64 {
+                    FeatureSupport::UnsupportedTarget
+                } else {
+                    FeatureSupport::SupportedTarget
+                },
+            ),
+            (
+                OptionalFeature::D2k,
+                if matches!(architecture, Architecture::Amd64 | Architecture::Arm64) {
+                    FeatureSupport::SupportedTarget
+                } else {
+                    FeatureSupport::UnsupportedTarget
+                },
+            ),
+        ]
+    );
+}
+fn assert_image_contract(
+    inventory: &DeclaredInventory,
+    architecture: Architecture,
+    variant: Variant,
+) {
+    assert_delivery(inventory, AssetId::ImageCoredns, true);
+    assert_delivery(inventory, AssetId::ImagePause, true);
+    if variant == Variant::Offline {
+        assert_delivery(inventory, AssetId::ImageLocalPath, true);
+        assert_delivery(inventory, AssetId::ImageLocalPathHelper, true);
+        assert_delivery(
+            inventory,
+            AssetId::ImagePortainerAgent,
+            architecture != Architecture::Riscv64,
+        );
+        assert_delivery(
+            inventory,
+            AssetId::ImageD2k,
+            matches!(architecture, Architecture::Amd64 | Architecture::Arm64),
+        );
     }
 }
 #[test]
@@ -110,11 +171,102 @@ fn all_sixteen_target_variant_cells_have_exact_declared_roles() {
                         .count(),
                     unavailable
                 );
+                assert_optional_support(&inventory, architecture);
+                assert_image_contract(&inventory, architecture, variant);
                 cells += 1;
             }
         }
     }
     assert_eq!(cells, 16);
+}
+#[test]
+fn feature_support_matches_expected_architecture_policy() {
+    for arch in [
+        Architecture::Amd64,
+        Architecture::Arm64,
+        Architecture::ArmV7,
+        Architecture::Riscv64,
+    ] {
+        assert_eq!(
+            feature_support(arch, OptionalFeature::LocalPathStorage),
+            FeatureSupport::SupportedTarget
+        );
+    }
+    assert_eq!(
+        feature_support(Architecture::Amd64, OptionalFeature::PortainerAgent),
+        FeatureSupport::SupportedTarget
+    );
+    assert_eq!(
+        feature_support(Architecture::Arm64, OptionalFeature::PortainerAgent),
+        FeatureSupport::SupportedTarget
+    );
+    assert_eq!(
+        feature_support(Architecture::ArmV7, OptionalFeature::PortainerAgent),
+        FeatureSupport::SupportedTarget
+    );
+    assert_eq!(
+        feature_support(Architecture::Riscv64, OptionalFeature::PortainerAgent),
+        FeatureSupport::UnsupportedTarget
+    );
+
+    assert_eq!(
+        feature_support(Architecture::Amd64, OptionalFeature::D2k),
+        FeatureSupport::SupportedTarget
+    );
+    assert_eq!(
+        feature_support(Architecture::Arm64, OptionalFeature::D2k),
+        FeatureSupport::SupportedTarget
+    );
+    assert_eq!(
+        feature_support(Architecture::ArmV7, OptionalFeature::D2k),
+        FeatureSupport::UnsupportedTarget
+    );
+    assert_eq!(
+        feature_support(Architecture::Riscv64, OptionalFeature::D2k),
+        FeatureSupport::UnsupportedTarget
+    );
+}
+#[test]
+fn accepted_linux_arm64_glibc_payload_cell_validates_both_variants() {
+    let online_bytes = include_bytes!("fixtures/online-arm64.json");
+    let online = Manifest::decode(online_bytes, Limits::default())
+        .expect("valid online manifest")
+        .validate_inventory(
+            request(Architecture::Arm64, Libc::Glibc, Variant::Online),
+            Limits::default(),
+        )
+        .expect("valid online arm64 glibc inventory");
+    assert_eq!(online.assets().len(), 19);
+    assert_eq!(online.bundled_assets().len(), 15);
+    assert_image_contract(&online, Architecture::Arm64, Variant::Online);
+    assert_optional_support(&online, Architecture::Arm64);
+
+    let offline_bytes = include_bytes!("fixtures/offline-arm64.json");
+    let offline = Manifest::decode(offline_bytes, Limits::default())
+        .expect("valid offline manifest")
+        .validate_inventory(
+            request(Architecture::Arm64, Libc::Glibc, Variant::Offline),
+            Limits::default(),
+        )
+        .expect("valid offline arm64 glibc inventory");
+    assert_eq!(offline.assets().len(), 19);
+    assert_eq!(offline.bundled_assets().len(), 19);
+    assert_image_contract(&offline, Architecture::Arm64, Variant::Offline);
+    assert_optional_support(&offline, Architecture::Arm64);
+}
+#[test]
+fn absent_or_truncated_manifest_bytes_fail_before_inventory_validation() {
+    for bytes in [&b""[..], &b"{\"schema_version\":1"[..]] {
+        assert!(matches!(
+            Manifest::decode(bytes, Limits::default()),
+            Err(InventoryError::InvalidJson { .. })
+        ));
+    }
+    let complete = SOURCE.trim_end().as_bytes();
+    assert!(matches!(
+        Manifest::decode(&complete[..complete.len() - 1], Limits::default()),
+        Err(InventoryError::InvalidJson { .. })
+    ));
 }
 #[test]
 fn unknown_duplicate_fields_ids_and_versions_fail() {
