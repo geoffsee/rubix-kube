@@ -203,7 +203,7 @@ fn startup_action_debug_does_not_disclose_resolved_values() {
 }
 
 #[test]
-fn actual_executable_prints_then_refuses_unimplemented_startup() {
+fn actual_executable_prints_then_enters_supervised_startup() {
     for (printing, expected_success) in [(true, true), (false, false)] {
         let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_rubix-kube"));
         command.env_clear().arg("--config=");
@@ -220,10 +220,10 @@ fn actual_executable_prints_then_refuses_unimplemented_startup() {
             assert!(!String::from_utf8_lossy(&output.stderr).contains("runtime startup"));
         } else {
             assert!(output.stdout.is_empty());
-            assert!(
-                String::from_utf8_lossy(&output.stderr)
-                    .contains("runtime startup is not implemented")
-            );
+            let err = String::from_utf8_lossy(&output.stderr);
+            assert!(err.contains("\"schema\":1"));
+            assert!(err.contains("\"event\":\"component_failure\""));
+            assert!(err.contains("\"component\":\"datastore\""));
         }
     }
 }

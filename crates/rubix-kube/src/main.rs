@@ -95,9 +95,39 @@ fn run() -> io::Result<u8> {
         &mut stderr,
     )? {
         StartupAction::Exit(code) => Ok(code),
-        StartupAction::Start(_) => {
-            writeln!(stderr, "rubix-kube: runtime startup is not implemented")?;
-            Ok(1)
+        StartupAction::Start(config) => {
+            drop(stdout);
+            drop(stderr);
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?;
+            runtime.block_on(async move {
+                match rubix_kube::NodeRuntime::from_config(*config) {
+                    Ok(node) => node.run_to_completion().await,
+                    Err(error) => {
+                        let (sender, receiver) = rubix_kube::lifecycle_logs::log_channel(1)
+                            .map_err(|_| io::Error::other("channel creation"))?;
+                        drop(sender);
+                        let _ = writeln!(
+                            io::stderr().lock(),
+                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"component_failure\",\"component\":\"datastore\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
+                            error.diagnostic_code()
+                        );
+                        let _ = writeln!(
+                            io::stderr().lock(),
+                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"supervisor_stop\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
+                            error.diagnostic_code()
+                        );
+                        let _ = rubix_kube::lifecycle_sink::deliver_logs(
+                            receiver,
+                            io::stderr(),
+                            rubix_kube::lifecycle_sink::FlushPolicy::OnClose,
+                        )
+                        .await;
+                        Ok(1)
+                    },
+                }
+            })
         },
     }
 }
