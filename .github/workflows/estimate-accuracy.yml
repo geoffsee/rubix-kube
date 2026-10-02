@@ -1,0 +1,49 @@
+name: Estimate accuracy
+
+on:
+  workflow_dispatch:
+    inputs:
+      subject:
+        description: Tracker subject, such as pr:12 or issue:4. Required when value is set from a manual run.
+        required: false
+        type: string
+      metric:
+        description: Metric name
+        required: false
+        default: tokens
+        type: string
+      value:
+        description: Observed value, such as a token count
+        required: false
+        type: string
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  accuracy:
+    name: Estimate accuracy
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Record the observation and comment on accuracy
+        uses: geoffsee/era/actions/track-estimate@1db6eab5eb83b0f72497454315e3f9e061773589 # era main
+        with:
+          mode: sync
+          subject: ${{ inputs.subject }}
+          metric: ${{ inputs.metric || 'tokens' }}
+          value: ${{ inputs.value }}
+          comment: ${{ github.event_name == 'pull_request' }}
+          github-token: ${{ github.token }}
