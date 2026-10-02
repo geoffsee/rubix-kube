@@ -54,7 +54,7 @@ flowchart TD
 
 Storage provisioner deployment adapts dynamically to configuration:
 - **Provisioner Image**: Defaults to `docker.io/rancher/local-path-provisioner:v0.0.36`. Can be overridden with private/offline registry targets.
-- **Helper Image**: Defaults to `docker.io/rancher/library-busybox:1.36.1` embedded in `helperPod.yaml`.
+- **Helper Image**: Defaults to `busybox` embedded in `helperPod.yaml`.
 - **Storage Paths**: Supports local filesystem directory mapping (`nodePathMap`) or shared cluster volume paths (`sharedFileSystemPath`).
 
 ---

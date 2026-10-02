@@ -2242,6 +2242,23 @@ impl KubernetesApiClient {
             Some(name),
         )?;
         let key = format!("{}/storageclasses/{name}", self.storage.prefix());
+        let existing = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "storageclasses".to_string(),
+                name: name.to_string(),
+            })?;
+        let old: Value = serde_json::from_slice(&existing.value)?;
+        if let Some(meta) = sc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert("name".to_string(), json!(name));
+            for k in ["uid", "creationTimestamp"] {
+                if let Some(v) = old.get("metadata").and_then(|m| m.get(k)) {
+                    meta.insert(k.to_string(), v.clone());
+                }
+            }
+        }
         let bytes = serde_json::to_vec(&sc)?;
         let kv = self.storage.update(&key, bytes, None).await?;
         if let Some(meta) = sc.get_mut("metadata").and_then(Value::as_object_mut) {
