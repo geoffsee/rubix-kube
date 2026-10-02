@@ -2131,6 +2131,147 @@ impl KubernetesApiClient {
             .await
     }
 
+    // --- StorageClass CRUD ---
+
+    pub async fn create_storage_class(&self, mut sc: Value) -> Result<Value, ApiserverError> {
+        let name = sc
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "StorageClass requires metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed(
+            "create",
+            "storage.k8s.io",
+            "storageclasses",
+            None,
+            Some(&name),
+        )?;
+
+        if let Some(meta) = sc.get_mut("metadata").and_then(Value::as_object_mut) {
+            if !meta.contains_key("creationTimestamp") {
+                meta.insert(
+                    "creationTimestamp".to_string(),
+                    json!("2026-09-30T00:00:00Z"),
+                );
+            }
+            if !meta.contains_key("uid") {
+                let cur_rev = self.storage.current_revision().await + 1;
+                meta.insert(
+                    "uid".to_string(),
+                    json!(format!("uid-storageclasses-{name}-{cur_rev}")),
+                );
+            }
+        }
+
+        let key = format!("{}/storageclasses/{name}", self.storage.prefix());
+        let bytes = serde_json::to_vec(&sc)?;
+        let kv = self.storage.create(&key, bytes).await?;
+        let mut result = sc;
+        if let Some(meta) = result.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(result)
+    }
+
+    pub async fn get_storage_class(&self, name: &str) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("get", "storage.k8s.io", "storageclasses", None, Some(name))?;
+        let key = format!("{}/storageclasses/{name}", self.storage.prefix());
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
+                resource: "storageclasses".to_string(),
+                name: name.to_string(),
+            })?;
+        let mut val: Value = serde_json::from_slice(&kv.value)?;
+        if let Some(meta) = val.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(val)
+    }
+
+    pub async fn list_storage_classes(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "storage.k8s.io", "storageclasses", None, None)?;
+        let prefix = format!("{}/storageclasses/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            if let Ok(mut val) = serde_json::from_slice::<Value>(&kv.value) {
+                if let Some(meta) = val.get_mut("metadata").and_then(Value::as_object_mut) {
+                    meta.insert(
+                        "resourceVersion".to_string(),
+                        json!(kv.mod_revision.to_string()),
+                    );
+                }
+                items.push(val);
+            }
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "storage.k8s.io/v1",
+            "kind": "StorageClassList",
+            "metadata": {
+                "resourceVersion": cur_rev.to_string()
+            },
+            "items": items
+        }))
+    }
+
+    pub async fn update_storage_class(
+        &self,
+        name: &str,
+        mut sc: Value,
+    ) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed(
+            "update",
+            "storage.k8s.io",
+            "storageclasses",
+            None,
+            Some(name),
+        )?;
+        let key = format!("{}/storageclasses/{name}", self.storage.prefix());
+        let bytes = serde_json::to_vec(&sc)?;
+        let kv = self.storage.update(&key, bytes, None).await?;
+        if let Some(meta) = sc.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(kv.mod_revision.to_string()),
+            );
+        }
+        Ok(sc)
+    }
+
+    pub async fn delete_storage_class(&self, name: &str) -> Result<(), ApiserverError> {
+        self.check_auth_detailed(
+            "delete",
+            "storage.k8s.io",
+            "storageclasses",
+            None,
+            Some(name),
+        )?;
+        let key = format!("{}/storageclasses/{name}", self.storage.prefix());
+        let res = self.storage.delete(&key, None).await?;
+        if res.is_none() {
+            return Err(ApiserverError::NotFound {
+                resource: "storageclasses".to_string(),
+                name: name.to_string(),
+            });
+        }
+        Ok(())
+    }
+
     // --- Service, Endpoints & EndpointSlice CRUD ---
 
     pub async fn create_service(
@@ -3894,6 +4035,27 @@ impl KubernetesApiClient {
         Ok(role)
     }
 
+    pub async fn update_role(&self, role: Role) -> Result<Role, ApiserverError> {
+        self.check_auth_detailed(
+            "update",
+            "rbac.authorization.k8s.io",
+            "roles",
+            Some(&role.namespace),
+            Some(&role.name),
+        )?;
+        self.verify_role_creation_privileges(&role.namespace, &role)?;
+        let key = format!(
+            "{}/roles/{}/{}",
+            self.storage.prefix(),
+            role.namespace,
+            role.name
+        );
+        let bytes = serde_json::to_vec(&role)?;
+        self.storage.update(&key, bytes, None).await?;
+        self.rbac.add_role(role.clone());
+        Ok(role)
+    }
+
     pub async fn create_role_binding(
         &self,
         binding: RoleBinding,
@@ -3943,6 +4105,30 @@ impl KubernetesApiClient {
                 name: format!("{namespace}/{name}"),
             })?;
         let binding: RoleBinding = serde_json::from_slice(&kv.value)?;
+        self.rbac.add_role_binding(binding.clone());
+        Ok(binding)
+    }
+
+    pub async fn update_role_binding(
+        &self,
+        binding: RoleBinding,
+    ) -> Result<RoleBinding, ApiserverError> {
+        self.check_auth_detailed(
+            "update",
+            "rbac.authorization.k8s.io",
+            "rolebindings",
+            Some(&binding.namespace),
+            Some(&binding.name),
+        )?;
+        self.verify_role_binding_privileges(&binding.namespace, &binding.role_ref)?;
+        let key = format!(
+            "{}/rolebindings/{}/{}",
+            self.storage.prefix(),
+            binding.namespace,
+            binding.name
+        );
+        let bytes = serde_json::to_vec(&binding)?;
+        self.storage.update(&key, bytes, None).await?;
         self.rbac.add_role_binding(binding.clone());
         Ok(binding)
     }

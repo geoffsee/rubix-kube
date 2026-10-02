@@ -1,6 +1,14 @@
 use std::path::Path;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+
+/// Default timeout for deployment readiness polling.
+pub const DEFAULT_READINESS_TIMEOUT: Duration = Duration::from_mins(1);
+
+const fn default_readiness_timeout() -> Duration {
+    DEFAULT_READINESS_TIMEOUT
+}
 
 /// Namespace where `local-path-provisioner` and its RBAC/ConfigMap/Deployment run.
 pub const LOCAL_PATH_NAMESPACE: &str = "local-path-storage";
@@ -104,6 +112,10 @@ pub struct LocalPathConfig {
 
     /// Whether to mark this class as the default `StorageClass`.
     pub default_class: bool,
+
+    /// Timeout for deployment readiness polling.
+    #[serde(default = "default_readiness_timeout")]
+    pub readiness_timeout: Duration,
 }
 
 impl Default for LocalPathConfig {
@@ -117,6 +129,7 @@ impl Default for LocalPathConfig {
             reclaim_policy: DEFAULT_RECLAIM_POLICY.to_string(),
             volume_binding_mode: DEFAULT_VOLUME_BINDING_MODE.to_string(),
             default_class: true,
+            readiness_timeout: DEFAULT_READINESS_TIMEOUT,
         }
     }
 }
@@ -126,6 +139,13 @@ impl LocalPathConfig {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Set timeout for deployment readiness polling.
+    #[must_use]
+    pub fn with_readiness_timeout(mut self, timeout: Duration) -> Self {
+        self.readiness_timeout = timeout;
+        self
     }
 
     /// Set whether local-path storage is enabled.
@@ -210,6 +230,7 @@ impl LocalPathConfig {
             reclaim_policy: DEFAULT_RECLAIM_POLICY.to_string(),
             volume_binding_mode: DEFAULT_VOLUME_BINDING_MODE.to_string(),
             default_class: true,
+            readiness_timeout: DEFAULT_READINESS_TIMEOUT,
         }
     }
 }
