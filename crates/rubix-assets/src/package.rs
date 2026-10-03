@@ -10,7 +10,12 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeMap, fmt, io::Read, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt,
+    io::Read,
+    path::Path,
+};
 
 /// Release package metadata for a single node distribution archive cell.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -80,6 +85,8 @@ pub enum PackageError {
     },
     MissingCell(u8),
     DuplicateCell(u8),
+    DuplicateManagementTarget(String),
+    InvalidMetadata(String),
     InvalidManagementCount {
         expected: usize,
         observed: usize,
@@ -118,6 +125,10 @@ pub enum PackageError {
 impl fmt::Display for PackageError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DuplicateManagementTarget(target) => {
+                write!(f, "duplicate management target: {target}")
+            },
+            Self::InvalidMetadata(message) => write!(f, "invalid release metadata: {message}"),
             Self::InvalidCellCount { expected, observed } => write!(
                 f,
                 "invalid node archive cell count: expected {expected}, observed {observed}"
@@ -242,7 +253,12 @@ impl ReleasePackager {
         expected_version: &str,
     ) -> Result<NodeVariant, PackageError> {
         let variant = Matrix::from_cell(artifact.cell)?;
-        let parsed = ArtifactNaming::parse_node_archive(&artifact.filename)?;
+        if artifact.filename.contains(['/', '\\']) {
+            return Err(PackageError::InvalidMetadata(
+                "node archive filename must be a bare canonical name".into(),
+            ));
+        }
+        let parsed = ArtifactNaming::canonical_node_archive(&artifact.filename)?;
 
         if parsed.prefix != expected_prefix {
             return Err(ArtifactNamingError::PrefixMismatch {
@@ -267,7 +283,68 @@ impl ReleasePackager {
         }
 
         // Verify SHA-256 hex string validity
-        if artifact.sha256.len() != 64 || !artifact.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        let architecture = match variant.architecture {
+            rubix_platform::Architecture::Amd64 => "amd64",
+            rubix_platform::Architecture::Arm64 => "arm64",
+            rubix_platform::Architecture::ArmV7 => "arm",
+            rubix_platform::Architecture::Riscv64 => "riscv64",
+        };
+        let libc = match variant.libc {
+            rubix_platform::Libc::Glibc => "glibc",
+            rubix_platform::Libc::Musl => "musl",
+        };
+        let delivery = match variant.variant {
+            crate::Variant::Online => "online",
+            crate::Variant::Offline => "offline",
+        };
+        if artifact.architecture != architecture
+            || artifact.libc != libc
+            || artifact.variant != delivery
+            || artifact.size_bytes == 0
+        {
+            return Err(PackageError::InvalidMetadata(format!(
+                "node cell {} selectors or size",
+                artifact.cell
+            )));
+        }
+        let mut observed_assets = BTreeSet::new();
+        for name in &artifact.bundled_assets {
+            let id: AssetId = serde_json::from_value(serde_json::Value::String(name.clone()))?;
+            if !observed_assets.insert(id) {
+                return Err(PackageError::InvalidMetadata(format!(
+                    "duplicate bundled asset {name}"
+                )));
+            }
+        }
+        let required_assets: BTreeSet<_> = catalog()
+            .iter()
+            .filter(|entry| match entry.id {
+                AssetId::ImagePortainerAgent => {
+                    variant.variant == crate::Variant::Offline
+                        && variant.architecture != rubix_platform::Architecture::Riscv64
+                },
+                AssetId::ImageD2k => {
+                    variant.variant == crate::Variant::Offline
+                        && matches!(
+                            variant.architecture,
+                            rubix_platform::Architecture::Amd64
+                                | rubix_platform::Architecture::Arm64
+                        )
+                },
+                AssetId::ImageLocalPath | AssetId::ImageLocalPathHelper => {
+                    variant.variant == crate::Variant::Offline
+                },
+                _ => true,
+            })
+            .map(|entry| entry.id)
+            .collect();
+        if observed_assets != required_assets {
+            return Err(PackageError::InvalidMetadata(format!(
+                "bundled inventory for node cell {}",
+                artifact.cell
+            )));
+        }
+        if !valid_sha256_hex(&artifact.sha256) {
             return Err(PackageError::DigestMismatch {
                 target: artifact.filename.clone(),
                 expected: "64 hex chars".to_string(),
@@ -278,7 +355,7 @@ impl ReleasePackager {
         Ok(variant)
     }
 
-    /// Perform layout and installation smoke check on a node archive tar.gz stream.
+    /// Check dependency materialization only; this does not qualify a node installation.
     ///
     /// Verifies:
     /// 1. The archive can be unpacked into the given root path by `Materializer`.
@@ -290,7 +367,7 @@ impl ReleasePackager {
         root: &Path,
         archive_reader: R,
     ) -> Result<MaterializationOutcome, PackageError> {
-        let layout = AssetLayout::from_manifest(&inventory);
+        let layout = AssetLayout::canonical();
         let limits = MaterializationLimits::default();
         let materializer = Materializer::new(inventory, root)
             .with_layout(layout)
@@ -364,7 +441,17 @@ impl ReleasePackager {
             ));
         }
 
+        if artifact.filename.contains(['/', '\\']) {
+            return Err(PackageError::InvalidMetadata(
+                "management filename must be a bare canonical name".into(),
+            ));
+        }
         let parsed = ArtifactNaming::parse_management_binary(&artifact.filename)?;
+        if artifact.filename != parsed.target.binary_filename(expected_prefix) {
+            return Err(PackageError::InvalidMetadata(
+                "management filename is not canonical".into(),
+            ));
+        }
         if parsed.prefix != expected_prefix {
             return Err(ArtifactNamingError::PrefixMismatch {
                 expected: expected_prefix.to_string(),
@@ -391,12 +478,18 @@ impl ReleasePackager {
             return Err(ArtifactNamingError::TargetMismatch.into());
         }
 
-        if artifact.sha256.len() != 64 || !artifact.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        if !valid_sha256_hex(&artifact.sha256) {
             return Err(PackageError::DigestMismatch {
                 target: artifact.filename.clone(),
                 expected: "64 hex chars".to_string(),
                 observed: artifact.sha256.clone(),
             });
+        }
+
+        if artifact.size_bytes == 0 {
+            return Err(PackageError::InvalidMetadata(
+                "empty management artifact".into(),
+            ));
         }
 
         Ok(parsed.target)
@@ -413,30 +506,57 @@ impl ReleasePackager {
         let valid_oci_platforms = Matrix::all_oci_platforms();
 
         // Check asset identity in catalog
-        let catalog_entry = catalog()
-            .iter()
-            .find(|e| match artifact.asset_id.as_str() {
-                "image-coredns" => e.id == AssetId::ImageCoredns,
-                "image-pause" => e.id == AssetId::ImagePause,
-                "image-local-path" => e.id == AssetId::ImageLocalPath,
-                "image-local-path-helper" => e.id == AssetId::ImageLocalPathHelper,
-                "image-portainer-agent" => e.id == AssetId::ImagePortainerAgent,
-                "image-d2k" => e.id == AssetId::ImageD2k,
-                _ => false,
-            })
-            .ok_or_else(|| PackageError::InvalidOciPlatform {
+        let catalog_entry = catalog().iter().find(|e| match artifact.asset_id.as_str() {
+            "image-coredns" => e.id == AssetId::ImageCoredns,
+            "image-pause" => e.id == AssetId::ImagePause,
+            "image-local-path" => e.id == AssetId::ImageLocalPath,
+            "image-local-path-helper" => e.id == AssetId::ImageLocalPathHelper,
+            "image-portainer-agent" => e.id == AssetId::ImagePortainerAgent,
+            "image-d2k" => e.id == AssetId::ImageD2k,
+            _ => false,
+        });
+        if catalog_entry.is_none() && artifact.asset_id != "image-rubix-kube" {
+            return Err(PackageError::InvalidOciPlatform {
                 image: artifact.asset_id.clone(),
                 platform: "unknown asset id".to_string(),
-            })?;
+            });
+        }
+        if artifact.image_reference.is_empty()
+            || catalog_entry.is_some_and(|entry| entry.reference != artifact.image_reference)
+        {
+            return Err(PackageError::InvalidMetadata(format!(
+                "image reference for {}",
+                artifact.asset_id
+            )));
+        }
+        if !matches!(
+            artifact.index_media_type.as_str(),
+            "application/vnd.oci.image.index.v1+json"
+                | "application/vnd.docker.distribution.manifest.list.v2+json"
+        ) || !valid_oci_digest(&artifact.index_digest)
+            || artifact.index_size_bytes == 0
+        {
+            return Err(PackageError::InvalidMetadata(format!(
+                "index metadata for {}",
+                artifact.asset_id
+            )));
+        }
 
         // Determine expected unsupported platforms based on policy
-        let expected_unsupported: &[&'static str] = match catalog_entry.id {
-            AssetId::ImagePortainerAgent => &["linux/riscv64"],
-            AssetId::ImageD2k => &["linux/arm/v7", "linux/riscv64"],
+        let expected_unsupported: &[&'static str] = match catalog_entry.map(|e| e.id) {
+            Some(AssetId::ImagePortainerAgent) => &["linux/riscv64"],
+            Some(AssetId::ImageD2k) => &["linux/arm/v7", "linux/riscv64"],
             _ => &[],
         };
 
+        let mut seen_platforms = BTreeSet::new();
         for p in &artifact.platforms {
+            if !seen_platforms.insert(p.platform.as_str()) {
+                return Err(PackageError::InvalidMetadata(format!(
+                    "duplicate OCI platform {}",
+                    p.platform
+                )));
+            }
             if !valid_oci_platforms.contains(&p.platform.as_str()) {
                 return Err(PackageError::InvalidOciPlatform {
                     image: artifact.asset_id.clone(),
@@ -452,13 +572,22 @@ impl ReleasePackager {
                 });
             }
 
-            if p.digest.len() != 71 || !p.digest.starts_with("sha256:") {
-                return Err(PackageError::DigestMismatch {
-                    target: format!("{} ({})", artifact.asset_id, p.platform),
-                    expected: "sha256:<64 hex>".to_string(),
-                    observed: p.digest.clone(),
-                });
-            }
+            verify_platform_metadata(&artifact.asset_id, p)?;
+        }
+
+        let unsupported: BTreeSet<_> = artifact
+            .unsupported_platforms
+            .iter()
+            .map(String::as_str)
+            .collect();
+        if unsupported.len() != artifact.unsupported_platforms.len()
+            || unsupported
+                .iter()
+                .any(|p| !expected_unsupported.contains(p))
+        {
+            return Err(PackageError::InvalidMetadata(
+                "OCI unsupported platform partition".into(),
+            ));
         }
 
         // Verify that all expected unsupported platforms are listed in `unsupported_platforms`
@@ -493,6 +622,14 @@ impl ReleasePackager {
         expected_management_prefix: &str,
         expected_version: &str,
     ) -> Result<(), PackageError> {
+        if manifest.schema_version != 1
+            || manifest.product_name != expected_node_prefix
+            || manifest.version != expected_version
+        {
+            return Err(PackageError::InvalidMetadata(
+                "schema, product or release version".into(),
+            ));
+        }
         // 1. Verify 16 cells are exhaustive and uniquely present (1..=16)
         if manifest.node_archives.len() != 16 {
             return Err(PackageError::InvalidCellCount {
@@ -532,7 +669,9 @@ impl ReleasePackager {
             let target = Self::verify_management_artifact(binary, expected_management_prefix)?;
             let key = (target.os, target.architecture);
             if target_set.insert(key, binary.filename.clone()).is_some() {
-                return Err(PackageError::DuplicateCell(0));
+                return Err(PackageError::DuplicateManagementTarget(
+                    binary.filename.clone(),
+                ));
             }
         }
 
@@ -558,10 +697,75 @@ impl ReleasePackager {
         }
 
         // 4. Verify OCI container image index manifests
+        let mut images = BTreeSet::new();
         for oci in &manifest.oci_images {
+            if !images.insert(oci.asset_id.as_str()) {
+                return Err(PackageError::InvalidMetadata(format!(
+                    "duplicate image {}",
+                    oci.asset_id
+                )));
+            }
             Self::verify_oci_image_index(oci)?;
+        }
+        for required in [
+            "image-rubix-kube",
+            "image-coredns",
+            "image-pause",
+            "image-local-path",
+            "image-local-path-helper",
+            "image-portainer-agent",
+            "image-d2k",
+        ] {
+            if !images.contains(required) {
+                return Err(PackageError::InvalidMetadata(format!(
+                    "missing required OCI image {required}"
+                )));
+            }
         }
 
         Ok(())
     }
+}
+
+fn valid_oci_digest(digest: &str) -> bool {
+    digest.strip_prefix("sha256:").is_some_and(valid_sha256_hex)
+}
+
+fn valid_sha256_hex(hex: &str) -> bool {
+    hex.len() == 64
+        && hex
+            .bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+}
+
+fn verify_platform_metadata(image: &str, p: &OciPlatformDescriptor) -> Result<(), PackageError> {
+    let expected_arch = match p.platform.as_str() {
+        "linux/amd64" => "amd64",
+        "linux/arm64" => "arm64",
+        "linux/arm/v7" => "arm",
+        "linux/riscv64" => "riscv64",
+        _ => "",
+    };
+    if p.os != "linux"
+        || p.architecture != expected_arch
+        || p.size_bytes == 0
+        || !matches!(
+            p.media_type.as_str(),
+            "application/vnd.oci.image.manifest.v1+json"
+                | "application/vnd.docker.distribution.manifest.v2+json"
+        )
+    {
+        return Err(PackageError::InvalidMetadata(format!(
+            "platform descriptor {}",
+            p.platform
+        )));
+    }
+    if !valid_oci_digest(&p.digest) {
+        return Err(PackageError::DigestMismatch {
+            target: format!("{} ({})", image, p.platform),
+            expected: "sha256:<64 hex>".to_string(),
+            observed: p.digest.clone(),
+        });
+    }
+    Ok(())
 }

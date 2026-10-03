@@ -375,7 +375,13 @@ pub fn generate_manifest(
                 node_archives.push(NodeArchiveArtifact {
                     cell: parsed.variant.cell,
                     filename: filename.clone(),
-                    architecture: format!("{:?}", parsed.variant.architecture).to_ascii_lowercase(),
+                    architecture: match parsed.variant.architecture {
+                        rubix_assets::Architecture::Amd64 => "amd64",
+                        rubix_assets::Architecture::Arm64 => "arm64",
+                        rubix_assets::Architecture::ArmV7 => "arm",
+                        rubix_assets::Architecture::Riscv64 => "riscv64",
+                    }
+                    .to_string(),
                     libc: format!("{:?}", parsed.variant.libc).to_ascii_lowercase(),
                     variant: format!("{:?}", parsed.variant.variant).to_ascii_lowercase(),
                     size_bytes,

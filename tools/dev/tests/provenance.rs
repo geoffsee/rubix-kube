@@ -4,6 +4,9 @@ use rubix_dev::provenance::{
 };
 use std::fs;
 
+#[path = "common/publication.rs"]
+mod publication;
+
 const GENERATOR: &str = r#"{"sources":[{"id":"openapi","path":"a","url":"https://x/a",
 "sha256":"483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446","bytes":3}]}"#;
 const INVENTORY: &str = r#"{"baseline":"2ef1c47","sources":[{"repository":"https://github.com/k/k",
@@ -156,7 +159,7 @@ fn publication_checks_management_files_digests_and_sizes_before_layout() {
     for target in Matrix::all_management_targets() {
         fs::write(dir.path().join(target.binary_filename("rubixctl")), b"cli").unwrap();
     }
-    let manifest = generate_manifest(dir.path(), "0.1.0", "rubix-kube", "rubixctl").unwrap();
+    let manifest = publication::candidate(dir.path(), "0.1.0");
     let verify = |manifest: &rubix_assets::ReleasePackageManifest, checksums: &ChecksumManifest| {
         verify_publication(
             dir.path(),
