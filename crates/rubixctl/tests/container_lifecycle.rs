@@ -70,10 +70,11 @@ impl ContainerEngineClient for Engine {
         Ok(self
             .containers
             .get(n)
-            .map(|(_, running, ports)| ContainerInspect {
+            .map(|(config, running, ports)| ContainerInspect {
                 id: format!("id-{n}"),
                 name: n.to_string(),
                 running: *running,
+                d2k_enabled: config.env.iter().any(|value| value == "KUBESOLO_D2K=true"),
                 exit_code: if *running { 0 } else { 137 },
                 allocated_ports: ports.clone(),
             }))
@@ -209,4 +210,21 @@ fn purge_reports_inspection_errors_and_continues_with_other_resources() {
         assert_eq!(engine.volumes.contains(&volume_name("dev")), volume);
         assert!(!engine.containers.contains_key(&container_name("dev")));
     }
+}
+
+#[test]
+fn status_does_not_identify_disabled_d2k_workload_as_a_service() {
+    let mut engine = Engine::default();
+    let mut options = params("dev");
+    options.container_ports = Some("8237:2376".into());
+    install_container(&mut engine, &options).unwrap();
+    let status = instance_status(&mut engine, "dev").unwrap();
+    assert!(status.endpoints.unwrap().d2k.is_none());
+    stop_instance(&mut engine, "dev").unwrap();
+    assert!(
+        instance_status(&mut engine, "dev")
+            .unwrap()
+            .endpoints
+            .is_none()
+    );
 }
