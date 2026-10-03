@@ -1390,6 +1390,7 @@ dependencies = [
 name = "rubixctl"
 version = "0.1.0"
 dependencies = [
+ "rubix-config",
  "rubix-platform",
  "rubix-supervisor",
  "serde_json",

@@ -7,6 +7,7 @@ pub mod container_fixtures;
 pub mod container_ports;
 pub mod contract;
 pub mod download;
+pub mod migrate;
 mod parse;
 pub mod preparation;
 pub mod service;
@@ -24,6 +25,9 @@ pub use contract::{
     UninstallOptions, UpgradeOptions,
 };
 pub use download::execute_download;
+pub use migrate::{
+    ServiceMigrationResult, migrate_legacy_service, rewrite_service_content, service_file_path,
+};
 pub use parse::{Command, HelpTopic, ParseError, parse_command};
 pub use service::{
     CustomServicePaths, InitBackend, LifecycleAction, LifecyclePlan, RunMode, ServiceConfig,
