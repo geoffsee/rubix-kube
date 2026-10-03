@@ -137,6 +137,7 @@ pub fn backup_state(
     for name in BACKED_UP_STATE_DIRS {
         reject_symlink_state(data_path, name)?;
     }
+    reject_symlink_state(data_path, BACKUP_DIR)?;
     let parent = data_path.join(BACKUP_DIR);
     fs::create_dir_all(&parent)?;
     let dir = tempfile::Builder::new()
