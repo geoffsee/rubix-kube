@@ -139,3 +139,63 @@ fn manifest_generation_uses_real_digests_and_ignores_foreign_versions() {
         .is_err()
     );
 }
+
+#[test]
+fn publication_checks_management_files_digests_and_sizes_before_layout() {
+    use rubix_assets::Matrix;
+    use rubix_dev::provenance::verify_publication;
+    let dir = tempfile::tempdir().unwrap();
+    for variant in Matrix::all_node_variants() {
+        fs::write(
+            dir.path()
+                .join(variant.archive_filename("rubix-kube", "0.1.0")),
+            b"node",
+        )
+        .unwrap();
+    }
+    for target in Matrix::all_management_targets() {
+        fs::write(dir.path().join(target.binary_filename("rubixctl")), b"cli").unwrap();
+    }
+    let manifest = generate_manifest(dir.path(), "0.1.0", "rubix-kube", "rubixctl").unwrap();
+    let verify = |manifest: &rubix_assets::ReleasePackageManifest, checksums: &ChecksumManifest| {
+        verify_publication(
+            dir.path(),
+            manifest,
+            checksums,
+            "rubix-kube",
+            "rubixctl",
+            &|_| Err("layout reached".into()),
+        )
+    };
+    let checksums = ChecksumManifest::generate(dir.path()).unwrap();
+    assert_eq!(
+        verify(&manifest, &checksums).unwrap_err().to_string(),
+        "layout reached"
+    );
+    let mut bad_digest = manifest.clone();
+    bad_digest.management_binaries[0].sha256 = "0".repeat(64);
+    assert!(
+        verify(&bad_digest, &checksums)
+            .unwrap_err()
+            .to_string()
+            .contains("disagrees")
+    );
+    let mut bad_size = manifest.clone();
+    bad_size.management_binaries[0].size_bytes += 1;
+    assert!(
+        verify(&bad_size, &checksums)
+            .unwrap_err()
+            .to_string()
+            .contains("manifest size")
+    );
+    for binary in &manifest.management_binaries {
+        fs::remove_file(dir.path().join(&binary.filename)).unwrap();
+    }
+    let missing = ChecksumManifest::generate(dir.path()).unwrap();
+    assert!(
+        verify(&manifest, &missing)
+            .unwrap_err()
+            .to_string()
+            .contains("disagrees")
+    );
+}
