@@ -954,3 +954,114 @@ fn rebaseline_policy_cli_accepts_directory_alias_and_preserves_unqualified_label
     );
     assert!(String::from_utf8_lossy(&output.stdout).contains("live performance NOT QUALIFIED"));
 }
+
+fn write_rehashed_report(directory: &Path, path: &str, report: &serde_json::Value) {
+    let bytes = serde_json::to_vec(report).unwrap();
+    std::fs::write(directory.join(path), &bytes).unwrap();
+    let provenance_path = directory.join("provenance.json");
+    let mut provenance: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&provenance_path).unwrap()).unwrap();
+    provenance["files"][path] = serde_json::json!(rubix_dev::sha256(&bytes));
+    std::fs::write(provenance_path, serde_json::to_vec(&provenance).unwrap()).unwrap();
+}
+
+#[test]
+fn ci_gate_rejects_short_or_failed_soaks_for_every_report() {
+    for path in [
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+    ] {
+        for (field, value, expected) in [
+            ("duration_hours", 23, "duration must be >= 24h"),
+            ("oom_kill_count", 1, "observed failures"),
+            ("crash_count", 1, "observed failures"),
+            ("unexplained_failures", 1, "observed failures"),
+        ] {
+            let directory = copy_ci_fixture_tree();
+            let mut report: serde_json::Value =
+                serde_json::from_slice(&std::fs::read(directory.path().join(path)).unwrap())
+                    .unwrap();
+            report["sustained_growth"][field] = serde_json::json!(value);
+            write_rehashed_report(directory.path(), path, &report);
+            let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(path) && error.contains(expected), "{error}");
+        }
+    }
+}
+
+#[test]
+fn ci_gate_binds_report_files_to_architecture() {
+    for (target, replacement) in [("amd64", "arm64"), ("arm64", "amd64")] {
+        let directory = copy_ci_fixture_tree();
+        for kind in ["reference-go", "candidate-rust"] {
+            let report: serde_json::Value = serde_json::from_slice(
+                &std::fs::read(
+                    directory
+                        .path()
+                        .join(format!("fixtures/{replacement}-{kind}.json")),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            write_rehashed_report(
+                directory.path(),
+                &format!("fixtures/{target}-{kind}.json"),
+                &report,
+            );
+        }
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains(&format!("expected {target} architecture")),
+            "{error}"
+        );
+    }
+}
+
+#[test]
+fn ci_gate_rejects_unhealthy_reference_shutdown_and_probes() {
+    for architecture in ["amd64", "arm64"] {
+        let path = format!("fixtures/{architecture}-reference-go.json");
+        for field in [
+            "surviving_owned_processes",
+            "unrelated_processes_killed",
+            "graceful_duration_seconds",
+            "escalation_duration_seconds",
+            "probe_success_rate",
+        ] {
+            let directory = copy_ci_fixture_tree();
+            let mut report: serde_json::Value =
+                serde_json::from_slice(&std::fs::read(directory.path().join(&path)).unwrap())
+                    .unwrap();
+            let expected = match field {
+                "probe_success_rate" => {
+                    report["pod_density"][field] = serde_json::json!(0.99);
+                    "successful probes"
+                },
+                "graceful_duration_seconds" | "escalation_duration_seconds" => {
+                    let mut samples = vec![1.0; 20];
+                    samples[19] = 36.0;
+                    report["shutdown"][field] = serde_json::to_value(
+                        rubix_dev::perf::VarianceSummary::from_samples(samples).unwrap(),
+                    )
+                    .unwrap();
+                    "per-run deadline"
+                },
+                _ => {
+                    report["shutdown"][field] = serde_json::json!(1);
+                    "shutdown unclean"
+                },
+            };
+            write_rehashed_report(directory.path(), &path, &report);
+            let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(expected), "{error}");
+        }
+    }
+}
