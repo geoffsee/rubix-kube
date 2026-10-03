@@ -1,5 +1,30 @@
 use std::{fs, process::Command};
 
+#[test]
+fn matrix_requires_an_independent_expected_version() {
+    let dir = tempfile::tempdir().unwrap();
+    let manifest = publication::candidate(dir.path(), "9.9.9");
+    let path = dir.path().join("manifest.json");
+    fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    let rejected = Command::new(env!("CARGO_BIN_EXE_rubix-matrix"))
+        .args(["verify-manifest"])
+        .arg(&path)
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    let accepted = Command::new(env!("CARGO_BIN_EXE_rubix-matrix"))
+        .args(["verify-manifest"])
+        .arg(&path)
+        .args(["--expected-version", "9.9.9"])
+        .output()
+        .unwrap();
+    assert!(
+        accepted.status.success(),
+        "{}",
+        String::from_utf8_lossy(&accepted.stderr)
+    );
+}
+
 #[path = "common/publication.rs"]
 mod publication;
 

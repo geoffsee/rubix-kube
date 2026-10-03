@@ -55,7 +55,7 @@ jobs:
         run: |
           # Missing artifacts, incomplete target matrices and invalid inventories fail closed.
           cargo run --locked -p rubix-dev --bin rubix-provenance -- candidate/dist "$VERSION" . candidate/inventories
-          cargo run --locked -p rubix-dev --bin rubix-matrix -- verify-manifest candidate/dist/release-manifest.json
+          cargo run --locked -p rubix-dev --bin rubix-matrix -- verify-manifest candidate/dist/release-manifest.json --expected-version "$VERSION"
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
