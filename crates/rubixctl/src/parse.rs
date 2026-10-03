@@ -255,25 +255,25 @@ pub fn parse_command(
             continue;
         }
 
+        // Share value handling between documented short and long options.
+        let get_string_val = |val_opt: Option<&str>,
+                              idx: &mut usize,
+                              args: &[String]|
+         -> Result<String, ParseError> {
+            if let Some(v) = val_opt {
+                Ok(v.to_string())
+            } else if *idx + 1 < args.len() && !args[*idx + 1].starts_with('-') {
+                *idx += 1;
+                Ok(args[*idx].clone())
+            } else {
+                Err(ParseError::UnknownFlag)
+            }
+        };
+
         if let Some(flag) = arg.strip_prefix("--") {
             let (name, value) = flag
                 .split_once('=')
                 .map_or((flag, None), |(n, v)| (n, Some(v)));
-
-            // Helper to get string value either from inline '=' or next positional token
-            let get_string_val = |val_opt: Option<&str>,
-                                  idx: &mut usize,
-                                  args: &[String]|
-             -> Result<String, ParseError> {
-                if let Some(v) = val_opt {
-                    Ok(v.to_string())
-                } else if *idx + 1 < args.len() && !args[*idx + 1].starts_with('-') {
-                    *idx += 1;
-                    Ok(args[*idx].clone())
-                } else {
-                    Err(ParseError::UnknownFlag)
-                }
-            };
 
             match name {
                 "help" => {
@@ -457,10 +457,22 @@ pub fn parse_command(
             let (letters, value) = arg[1..]
                 .split_once('=')
                 .map_or((&arg[1..], None), |(n, v)| (n, Some(v)));
-            if letters.is_empty() || !letters.bytes().all(|b| b == b'h') {
-                return Err(ParseError::UnknownFlag);
+            match letters {
+                "f" if topic == HelpTopic::Config => {
+                    config_opts.file = Some(PathBuf::from(get_string_val(value, &mut i, args)?));
+                },
+                "o" if topic == HelpTopic::Kubeconfig => {
+                    kubeconfig_opts.output =
+                        Some(PathBuf::from(get_string_val(value, &mut i, args)?));
+                },
+                "o" if topic == HelpTopic::D2k => {
+                    d2k_opts.output = Some(PathBuf::from(get_string_val(value, &mut i, args)?));
+                },
+                _ if !letters.is_empty() && letters.bytes().all(|b| b == b'h') => {
+                    help = value.map_or(Ok(true), boolean)?;
+                },
+                _ => return Err(ParseError::UnknownFlag),
             }
-            help = value.map_or(Ok(true), boolean)?;
         }
         i += 1;
     }

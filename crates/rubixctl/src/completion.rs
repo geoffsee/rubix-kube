@@ -133,6 +133,7 @@ _rubixctl() {
             _describe -t commands 'rubixctl commands' commands
             ;;
         args)
+            # The *:: action above rebases words to the normal arguments.
             case $words[1] in
                 completion)
                     _values 'shells' 'bash' 'zsh' 'fish' 'powershell'
@@ -199,10 +200,15 @@ const POWERSHELL_COMPLETION: &str = r#"Register-ArgumentCompleter -Native -Comma
     param($wordToComplete, $commandAst, $cursorPosition)
     $commands = @('check', 'completion', 'config', 'd2k', 'download', 'help', 'install', 'kubeconfig', 'reset', 'uninstall', 'upgrade', 'version')
     $elements = $commandAst.CommandElements
-    if ($elements.Count -le 2) {
-        $commands | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
+    $candidates = if ($elements.Count -ge 2 -and $elements[1].Value -eq 'completion' -and $cursorPosition -gt $elements[1].Extent.EndOffset) {
+        @('bash', 'zsh', 'fish', 'powershell')
+    } elseif ($elements.Count -le 2) {
+        $commands
+    } else {
+        @()
+    }
+    $candidates | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
     }
 }
 "#;
