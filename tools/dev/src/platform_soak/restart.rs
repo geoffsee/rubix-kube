@@ -80,6 +80,18 @@ impl RestartSummary {
             let found = cases.iter().find(|c| c.id == *case_id);
             match found {
                 Some(case) => {
+                    let expected = Self::canonical_cases()
+                        .into_iter()
+                        .find(|expected| expected.id == *case_id)
+                        .expect("canonical case");
+                    if case.bound_duration_ms != expected.bound_duration_ms
+                        || case.declared_bound != expected.declared_bound
+                        || case.name != expected.name
+                    {
+                        return Err(format!(
+                            "restart case '{case_id}' has a noncanonical bound or identity"
+                        ));
+                    }
                     if !seen.insert(*case_id) {
                         return Err(format!("duplicate restart case '{case_id}'"));
                     }

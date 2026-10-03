@@ -62,6 +62,32 @@ pub struct PlatformSoakReport {
 impl PlatformSoakReport {
     /// Validate the qualification report fail-closed against all contractual requirements.
     pub fn validate(&self, expected_version: Option<&str>) -> Result<(), PlatformSoakError> {
+        self.validate_fixture(expected_version)?;
+        Err(PlatformSoakError::RegressionFailed(
+            "C14 qualification is not implemented; synthetic fixtures cannot qualify".into(),
+        ))
+    }
+
+    /// Check synthetic record consistency, without accepting execution evidence.
+    pub fn validate_fixture(
+        &self,
+        expected_version: Option<&str>,
+    ) -> Result<(), PlatformSoakError> {
+        if self.schema_version != 2
+            || self.product != "rubix-kube"
+            || self.version.is_empty()
+            || self.evidence_kind != "SyntheticFixture"
+            || self.overall_qualified
+            || self
+                .timestamp
+                .strip_prefix("unix:")
+                .and_then(|value| value.parse::<u64>().ok())
+                .is_none_or(|value| value == 0)
+        {
+            return Err(PlatformSoakError::Serialization(
+                "invalid unqualified fixture metadata".into(),
+            ));
+        }
         // 1. Version check
         if let Some(expected) = expected_version
             && self.version != expected
@@ -77,14 +103,9 @@ impl PlatformSoakReport {
             .map_err(PlatformSoakError::MatrixIncomplete)?;
 
         // 3. Candidate digests matching
-        if !self.candidate_verification.all_matched
-            || self.candidate_verification.mismatched_artifacts > 0
-        {
-            return Err(PlatformSoakError::CandidateDigestMismatch(format!(
-                "{} artifacts failed candidate digest verification",
-                self.candidate_verification.mismatched_artifacts
-            )));
-        }
+        self.candidate_verification
+            .validate_unobserved_fixture()
+            .map_err(PlatformSoakError::CandidateDigestMismatch)?;
 
         // 4. Soak bounds: independent recomputation of ratios, durations, cycles, positive memory, and complete architecture set
         SustainedSoakSummary::validate_records(&self.soak_results)
@@ -103,9 +124,9 @@ impl PlatformSoakReport {
             .map_err(PlatformSoakError::RegressionFailed)?;
 
         // 8. Overall qualification consistency
-        if !self.overall_qualified {
+        if self.overall_qualified {
             return Err(PlatformSoakError::RegressionFailed(
-                "overall_qualified must be true when all criteria pass".into(),
+                "synthetic fixture cannot be qualified".into(),
             ));
         }
 
@@ -115,6 +136,9 @@ impl PlatformSoakReport {
     /// Formats the report as clean, GitHub-flavored Markdown.
     #[must_use]
     pub fn to_markdown(&self) -> String {
+        if self.validate_fixture(None).is_err() {
+            return "# Invalid Platform Fixture\n\nNOT QUALIFIED: report consistency validation failed.\n".into();
+        }
         let mut out = String::with_capacity(8192);
 
         let _ = writeln!(
@@ -127,27 +151,20 @@ impl PlatformSoakReport {
         let _ = writeln!(out, "**Timestamp:** `{}`", self.timestamp);
         let _ = writeln!(
             out,
-            "**Overall Status:** {}\n",
-            if self.overall_qualified {
-                "PASS (Qualified)"
-            } else {
-                "FAIL (Unqualified)"
-            }
+            "**Overall Status:** NOT QUALIFIED (Synthetic fixture)\n"
         );
 
         out.push_str("## 1. Executive Summary\n\n");
         let _ = writeln!(
             out,
-            "This report satisfies Issue #120 ([E28.03]) for Gate C14. It comprehensively maps \
-             the accepted platform/runtime/variant/container matrix (amd64, arm64, ARMv7, riscv64; \
-             glibc and musl), asserts candidate artifact digests match verified release manifests, \
-             confirms sustained 24-hour soak memory stability within contractual bounds (<= 1.10x growth, \
-             0 OOMs, 0 crashes, 0 probe failures), validates component restart and crash recovery timing bounds, \
-             and verifies all ten historical and thirty per-epic regressions."
+            "Synthetic record consistency only. No installations, candidate bytes, 24-hour workloads, \
+             restarts or historical/per-epic execution have been observed by this report. \
+             Numerical PASS values below exercise fixture arithmetic; they are not execution results. \
+             Gate C14 and Issue #120 remain unqualified."
         );
 
         out.push_str("\n## 2. Platform & Environment Matrix\n\n");
-        out.push_str("Every promised environment is mapped to an execution result or an explicit unsupported decision with technical rationale.\n\n");
+        out.push_str("Promised environments are listed as synthetic plans or explicit unsupported decisions, not passing execution.\n\n");
 
         let categories = [
             DimensionCategory::NodeVariantCell,
@@ -258,7 +275,11 @@ impl PlatformSoakReport {
                 soak.oom_count,
                 soak.crash_count,
                 soak.unexplained_probe_failures,
-                if soak.passed { "PASS" } else { "FAIL" }
+                if soak.passed {
+                    "PASS (fixture arithmetic)"
+                } else {
+                    "FAIL"
+                }
             );
         }
 
@@ -275,8 +296,16 @@ impl PlatformSoakReport {
                 rst.name,
                 rst.declared_bound,
                 rst.observed_duration_ms,
-                if rst.state_preserved { "YES" } else { "NO" },
-                if rst.passed { "PASS" } else { "FAIL" }
+                if rst.state_preserved {
+                    "SIMULATED"
+                } else {
+                    "NO"
+                },
+                if rst.passed {
+                    "PASS (fixture arithmetic)"
+                } else {
+                    "FAIL"
+                }
             );
         }
 
@@ -286,12 +315,8 @@ impl PlatformSoakReport {
         for reg in &self.historical_regressions {
             let _ = writeln!(
                 out,
-                "| `{}` | {} | {} | {} | {} |",
-                reg.id,
-                reg.upstream_ref,
-                reg.description,
-                reg.declared_bound,
-                if reg.passed { "PASS" } else { "FAIL" }
+                "| `{}` | {} | {} | {} | NOT EXECUTED |",
+                reg.id, reg.upstream_ref, reg.description, reg.declared_bound
             );
         }
 
@@ -301,12 +326,8 @@ impl PlatformSoakReport {
         for epic in &self.epic_regressions {
             let _ = writeln!(
                 out,
-                "| `{}` | `{}` | {} | {} | {} |",
-                epic.epic,
-                epic.qualification_gate,
-                epic.name,
-                if epic.passed { "PASS" } else { "FAIL" },
-                epic.summary
+                "| `{}` | `{}` | {} | NOT EXECUTED | {} |",
+                epic.epic, epic.qualification_gate, epic.name, epic.summary
             );
         }
 

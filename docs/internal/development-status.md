@@ -56,12 +56,12 @@ Evidence: Native/in-process recovery fixtures include an actually killed owned R
 Next step: Capture current-source disposable Linux evidence for the selected production boundary and every unresolved historical recovery gate; timestamp: 2026-10-03T19:30:00Z
 
 Work item: E28.03 (https://github.com/geoffsee/rubix-kube/issues/120); Parent criteria 1, 2, 3
-Outcome: Completed
-Readiness: Platform & soak qualification published
+Outcome: In progress / Not qualified
+Readiness: Synthetic platform and soak fixture consistency; C14 execution pending
 Ownership: Platform Matrix & Soak Engineer
 Stack: qual/platform-soak
-Evidence: Full platform/runtime/variant/container matrix (16 cells, 4 management targets, 28 OCI image records, providers, init systems, container modes, host capabilities) mapped with zero silent omissions and explicit technical rationale for unsupported targets. Verified candidate artifact digests against release package manifests. Confirmed sustained 24-hour soak memory stability within contractual bounds (growth <= 1.10x, 0 OOMs, 0 crashes, 0 probe failures), component restart/recovery timing bounds (clean restart <= 10s, datastore crash <= 10s, escalation <= 5s, cancellation re-entry <= 5s, cleanup <= 30s), and tracked all ten historical (REG-01..REG-10) and thirty per-epic (E01..E30) regressions.
-Next step: None; timestamp: 2026-10-03T22:45:00Z
+Evidence: Synthetic plan and arithmetic fixtures cover the matrix and record inventories. Candidate verification requires independently read files and an independent expected version; fixture reports contain no candidate observations. No retained-node platform execution, 24-hour soak, restart/state preservation or historical/per-epic execution is qualified. Qualification run/verify fail closed.
+Next step: Implement and capture authenticated current-source disposable Linux execution receipts for every C14 requirement.
 
 Work item: E30.01 (https://github.com/geoffsee/rubix-kube/issues/124)
 Outcome: In progress

@@ -23,7 +23,7 @@ impl PlatformSoakRunner {
         Self
     }
 
-    /// Construct a verified synthetic release package manifest covering all 16 cells and 4 management targets.
+    /// Construct synthetic manifest metadata for fixtures, without observing candidate bytes.
     #[must_use]
     pub fn synthetic_candidate_manifest(version: &str) -> ReleasePackageManifest {
         let mut archives = Vec::with_capacity(16);
@@ -91,6 +91,7 @@ impl PlatformSoakRunner {
                 .collect();
 
             let sha256 = ReleasePackager::sha256_hex(filename.as_bytes());
+            let size_bytes = filename.len() as u64;
 
             archives.push(NodeArchiveArtifact {
                 cell: variant.cell,
@@ -98,7 +99,7 @@ impl PlatformSoakRunner {
                 architecture: arch_str.to_string(),
                 libc: libc_str.to_string(),
                 variant: variant_str.to_string(),
-                size_bytes: 52_428_800 + u64::from(variant.cell) * 1024,
+                size_bytes,
                 sha256,
                 bundled_assets,
             });
@@ -109,28 +110,28 @@ impl PlatformSoakRunner {
                 os: "linux".into(),
                 architecture: "amd64".into(),
                 filename: "rubixctl-linux-amd64".into(),
-                size_bytes: 15_728_640,
+                size_bytes: b"rubixctl-linux-amd64".len() as u64,
                 sha256: ReleasePackager::sha256_hex(b"rubixctl-linux-amd64"),
             },
             rubix_assets::ManagementArtifact {
                 os: "linux".into(),
                 architecture: "arm64".into(),
                 filename: "rubixctl-linux-arm64".into(),
-                size_bytes: 15_204_352,
+                size_bytes: b"rubixctl-linux-arm64".len() as u64,
                 sha256: ReleasePackager::sha256_hex(b"rubixctl-linux-arm64"),
             },
             rubix_assets::ManagementArtifact {
                 os: "darwin".into(),
                 architecture: "amd64".into(),
                 filename: "rubixctl-darwin-amd64".into(),
-                size_bytes: 16_252_928,
+                size_bytes: b"rubixctl-darwin-amd64".len() as u64,
                 sha256: ReleasePackager::sha256_hex(b"rubixctl-darwin-amd64"),
             },
             rubix_assets::ManagementArtifact {
                 os: "darwin".into(),
                 architecture: "arm64".into(),
                 filename: "rubixctl-darwin-arm64".into(),
-                size_bytes: 15_990_784,
+                size_bytes: b"rubixctl-darwin-arm64".len() as u64,
                 sha256: ReleasePackager::sha256_hex(b"rubixctl-darwin-arm64"),
             },
         ];
@@ -178,7 +179,7 @@ impl PlatformSoakRunner {
                             "sha256:{}",
                             ReleasePackager::sha256_hex(format!("{id}-{platform}").as_bytes())
                         ),
-                        size_bytes: 2048,
+                        size_bytes: format!("{id}-{platform}").len() as u64,
                     }
                 })
                 .collect();
@@ -190,7 +191,7 @@ impl PlatformSoakRunner {
                 image_reference: reference.to_string(),
                 index_media_type: "application/vnd.oci.image.index.v1+json".into(),
                 index_digest: format!("sha256:{index_hash}"),
-                index_size_bytes: 4096,
+                index_size_bytes: format!("index-{id}").len() as u64,
                 platforms,
                 unsupported_platforms: unsupported,
             });
@@ -211,75 +212,40 @@ impl PlatformSoakRunner {
         }
     }
 
-    /// Run the comprehensive platform coverage, candidate verification, and soak qualification.
+    /// Retained-node qualification is unavailable until independent live receipts exist.
     pub fn run_qualification(
         &self,
-        version: &str,
-        candidate_manifest: Option<&ReleasePackageManifest>,
+        _: &str,
+        _: Option<&ReleasePackageManifest>,
     ) -> Result<PlatformSoakReport, PlatformSoakError> {
-        let manifest_storage;
-        let manifest = if let Some(m) = candidate_manifest {
-            m
-        } else {
-            manifest_storage = Self::synthetic_candidate_manifest(version);
-            &manifest_storage
-        };
+        Err(PlatformSoakError::RegressionFailed(
+            "C14 qualification runner is not implemented; synthetic fixtures cannot qualify".into(),
+        ))
+    }
 
-        // 1. Generate full canonical environment matrix
-        let environments = EnvironmentMapping::canonical_matrix();
-
-        // 2. Candidate digest verification
-        let observed_hashes: Vec<(&str, &str, u64)> = manifest
-            .node_archives
-            .iter()
-            .map(|a| (a.filename.as_str(), a.sha256.as_str(), a.size_bytes))
-            .chain(
-                manifest
-                    .management_binaries
-                    .iter()
-                    .map(|m| (m.filename.as_str(), m.sha256.as_str(), m.size_bytes)),
-            )
-            .collect();
-
-        let candidate_verification =
-            CandidateVerificationSummary::verify(manifest, &observed_hashes)
-                .map_err(PlatformSoakError::CandidateDigestMismatch)?;
-
-        // 3. Sustained 24h soak results
-        let soak_results = SustainedSoakSummary::canonical_soak_records();
-
-        // 4. Restart bounds results
-        let restart_results = RestartSummary::canonical_cases();
-
-        // 5. Historical regressions
-        let historical_regressions = RegressionSuite::historical_regressions();
-
-        // 6. Per-epic regressions
-        let epic_regressions = RegressionSuite::epic_regressions();
-
+    /// Generate deterministic synthetic records solely to exercise report arithmetic.
+    pub fn run_fixture(&self, version: &str) -> Result<PlatformSoakReport, PlatformSoakError> {
         let report = PlatformSoakReport {
-            schema_version: 1,
+            schema_version: 2,
             product: "rubix-kube".into(),
-            version: version.to_string(),
+            version: version.into(),
             evidence_kind: "SyntheticFixture".into(),
             timestamp: format!(
                 "unix:{}",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
+                    .map_err(|e| PlatformSoakError::Serialization(e.to_string()))?
                     .as_secs()
             ),
-            environments,
-            candidate_verification,
-            soak_results,
-            restart_results,
-            historical_regressions,
-            epic_regressions,
-            overall_qualified: true,
+            environments: EnvironmentMapping::canonical_matrix(),
+            candidate_verification: CandidateVerificationSummary::unobserved(),
+            soak_results: SustainedSoakSummary::canonical_soak_records(),
+            restart_results: RestartSummary::canonical_cases(),
+            historical_regressions: RegressionSuite::historical_regressions(),
+            epic_regressions: RegressionSuite::epic_regressions(),
+            overall_qualified: false,
         };
-
-        report.validate(Some(version))?;
-
+        report.validate_fixture(Some(version))?;
         Ok(report)
     }
 }

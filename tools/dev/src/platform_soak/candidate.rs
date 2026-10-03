@@ -1,23 +1,74 @@
-//! Candidate digest verification and artifact matching.
-//!
-//! Asserts that all tested candidate artifacts match the authoritative candidate digests
-//! in the release package manifest without discrepancy or silent omission.
-
-use rubix_assets::ReleasePackageManifest;
+//! Candidate byte observations and digest consistency. This is not execution qualification.
+use rubix_assets::{ReleasePackageManifest, ReleasePackager};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::{collections::BTreeMap, io::Read, path::Path};
 
-/// Detailed record of a verified candidate artifact digest.
+/// Observation can only be constructed by independently reading a regular file.
+#[derive(Debug)]
+pub struct ObservedArtifact {
+    name: String,
+    sha256: String,
+    size_bytes: u64,
+}
+impl ObservedArtifact {
+    pub fn from_file(name: &str, path: &Path) -> Result<Self, String> {
+        if !std::fs::symlink_metadata(path)
+            .map_err(|e| format!("{}: {e}", path.display()))?
+            .is_file()
+        {
+            return Err(format!("{} is not a regular file", path.display()));
+        }
+        let mut options = std::fs::OpenOptions::new();
+        options.read(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            // A replacement symlink or FIFO between inspection and open must not
+            // redirect the observation or block it before descriptor validation.
+            options.custom_flags(
+                (rustix::fs::OFlags::NOFOLLOW | rustix::fs::OFlags::NONBLOCK)
+                    .bits()
+                    .cast_signed(),
+            );
+        }
+        let mut file = options
+            .open(path)
+            .map_err(|e| format!("{}: {e}", path.display()))?;
+        if !file.metadata().map_err(|e| e.to_string())?.is_file() {
+            return Err(format!("{} is not a regular file", path.display()));
+        }
+        let mut hash = Sha256::new();
+        let mut size = 0_u64;
+        let mut buffer = [0_u8; 8192];
+        loop {
+            let count = file.read(&mut buffer).map_err(|e| e.to_string())?;
+            if count == 0 {
+                break;
+            }
+            hash.update(&buffer[..count]);
+            size = size
+                .checked_add(count as u64)
+                .ok_or("artifact size overflow")?;
+        }
+        Ok(Self {
+            name: name.into(),
+            sha256: ReleasePackager::hex_digest(&hash.finalize()),
+            size_bytes: size,
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CandidateArtifactRecord {
     pub name: String,
     pub artifact_type: String,
     pub expected_sha256: String,
     pub observed_sha256: String,
+    pub expected_size_bytes: u64,
     pub size_bytes: u64,
     pub matches: bool,
 }
-
-/// Overall candidate digest verification summary.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CandidateVerificationSummary {
     pub total_artifacts: usize,
@@ -26,125 +77,135 @@ pub struct CandidateVerificationSummary {
     pub all_matched: bool,
     pub artifacts: Vec<CandidateArtifactRecord>,
 }
-
 impl CandidateVerificationSummary {
-    /// Perform digest cross-verification against a release package manifest and observed artifacts.
+    pub fn unobserved() -> Self {
+        Self {
+            total_artifacts: 0,
+            matched_artifacts: 0,
+            mismatched_artifacts: 0,
+            all_matched: false,
+            artifacts: vec![],
+        }
+    }
+
+    /// Fixed local paths: node/management filenames, oci/ASSET/index.json,
+    /// and oci/ASSET/sha256/DIGEST.json for every platform manifest descriptor.
+    pub fn verify_files(
+        manifest: &ReleasePackageManifest,
+        root: &Path,
+        expected_version: &str,
+    ) -> Result<Self, String> {
+        let expected = expected_artifacts(manifest, expected_version)?;
+        let observed = expected
+            .iter()
+            .map(|(name, _, _, _, relative)| {
+                ObservedArtifact::from_file(name, &root.join(relative))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Self::verify(manifest, &observed, expected_version)
+    }
+
     pub fn verify(
         manifest: &ReleasePackageManifest,
-        observed_hashes: &[(&str, &str, u64)], // (name, sha256, size_bytes)
+        observed: &[ObservedArtifact],
+        expected_version: &str,
     ) -> Result<Self, String> {
-        let mut records =
-            Vec::with_capacity(manifest.node_archives.len() + manifest.management_binaries.len());
-        let mut matched = 0;
-        let mut mismatched = 0;
-
-        // 1. Verify 16 node archive cells
-        for archive in &manifest.node_archives {
-            let observed = observed_hashes
-                .iter()
-                .find(|(name, _, _)| *name == archive.filename);
-
-            let (obs_hash, obs_size) = match observed {
-                Some((_, hash, size)) => ((*hash).to_string(), *size),
-                None => {
-                    // If no explicit observed map provided, use candidate hash as self-attested
-                    (archive.sha256.clone(), archive.size_bytes)
-                },
-            };
-
-            let matches = obs_hash == archive.sha256 && obs_size == archive.size_bytes;
-            if matches {
-                matched += 1;
-            } else {
-                mismatched += 1;
+        let expected = expected_artifacts(manifest, expected_version)?;
+        let mut by_name = BTreeMap::new();
+        for observation in observed {
+            if by_name
+                .insert(observation.name.as_str(), observation)
+                .is_some()
+            {
+                return Err(format!(
+                    "duplicate artifact observation {}",
+                    observation.name
+                ));
             }
-
+        }
+        let mut records = vec![];
+        for (name, kind, hash, size, _) in expected {
+            let observation = by_name
+                .remove(name.as_str())
+                .ok_or_else(|| format!("missing artifact observation {name}"))?;
+            if observation.sha256 != hash || observation.size_bytes != size {
+                return Err(format!("candidate digest mismatch: {name}"));
+            }
             records.push(CandidateArtifactRecord {
-                name: archive.filename.clone(),
-                artifact_type: format!("NodeArchive (Cell {:02})", archive.cell),
-                expected_sha256: archive.sha256.clone(),
-                observed_sha256: obs_hash,
-                size_bytes: archive.size_bytes,
-                matches,
+                name,
+                artifact_type: kind,
+                expected_sha256: hash,
+                observed_sha256: observation.sha256.clone(),
+                expected_size_bytes: size,
+                size_bytes: observation.size_bytes,
+                matches: true,
             });
         }
-
-        // 2. Verify 4 management targets
-        for mgmt in &manifest.management_binaries {
-            let observed = observed_hashes
-                .iter()
-                .find(|(name, _, _)| *name == mgmt.filename);
-
-            let (obs_hash, obs_size) = match observed {
-                Some((_, hash, size)) => ((*hash).to_string(), *size),
-                None => (mgmt.sha256.clone(), mgmt.size_bytes),
-            };
-
-            let matches = obs_hash == mgmt.sha256 && obs_size == mgmt.size_bytes;
-            if matches {
-                matched += 1;
-            } else {
-                mismatched += 1;
-            }
-
-            records.push(CandidateArtifactRecord {
-                name: mgmt.filename.clone(),
-                artifact_type: format!("ManagementBinary ({}-{})", mgmt.os, mgmt.architecture),
-                expected_sha256: mgmt.sha256.clone(),
-                observed_sha256: obs_hash,
-                size_bytes: mgmt.size_bytes,
-                matches,
-            });
+        if !by_name.is_empty() {
+            return Err("unexpected artifact observation".into());
         }
-
-        // 3. Verify OCI images (7 multi-arch images)
-        for img in &manifest.oci_images {
-            let digest_clean = img
-                .index_digest
-                .strip_prefix("sha256:")
-                .unwrap_or(&img.index_digest);
-
-            let observed = observed_hashes
-                .iter()
-                .find(|(name, _, _)| *name == img.asset_id);
-
-            let (obs_hash, obs_size) = match observed {
-                Some((_, hash, size)) => ((*hash).to_string(), *size),
-                None => (digest_clean.to_string(), img.index_size_bytes),
-            };
-
-            let matches = obs_hash == digest_clean && obs_size == img.index_size_bytes;
-            if matches {
-                matched += 1;
-            } else {
-                mismatched += 1;
-            }
-
-            records.push(CandidateArtifactRecord {
-                name: img.asset_id.clone(),
-                artifact_type: "OciImageIndex".into(),
-                expected_sha256: digest_clean.to_string(),
-                observed_sha256: obs_hash,
-                size_bytes: img.index_size_bytes,
-                matches,
-            });
-        }
-
-        let total = records.len();
-        let all_matched = mismatched == 0;
-
-        if !all_matched {
-            return Err(format!(
-                "candidate digest mismatch: {mismatched} of {total} artifacts failed digest verification"
-            ));
-        }
-
         Ok(Self {
-            total_artifacts: total,
-            matched_artifacts: matched,
-            mismatched_artifacts: mismatched,
-            all_matched,
+            total_artifacts: records.len(),
+            matched_artifacts: records.len(),
+            mismatched_artifacts: 0,
+            all_matched: true,
             artifacts: records,
         })
     }
+
+    /// Serialized values prove consistency only, never independently observed bytes.
+    pub fn validate_unobserved_fixture(&self) -> Result<(), String> {
+        if self != &Self::unobserved() {
+            return Err("fixture must not claim candidate byte verification".into());
+        }
+        Ok(())
+    }
+}
+
+type ExpectedArtifact = (String, String, String, u64, String);
+fn expected_artifacts(
+    manifest: &ReleasePackageManifest,
+    expected_version: &str,
+) -> Result<Vec<ExpectedArtifact>, String> {
+    ReleasePackager::verify_release_manifest(manifest, "rubix-kube", "rubixctl", expected_version)
+        .map_err(|e| e.to_string())?;
+    let mut expected = vec![];
+    for archive in &manifest.node_archives {
+        expected.push((
+            archive.filename.clone(),
+            "NodeArchive".into(),
+            archive.sha256.clone(),
+            archive.size_bytes,
+            archive.filename.clone(),
+        ));
+    }
+    for binary in &manifest.management_binaries {
+        expected.push((
+            binary.filename.clone(),
+            "ManagementBinary".into(),
+            binary.sha256.clone(),
+            binary.size_bytes,
+            binary.filename.clone(),
+        ));
+    }
+    for image in &manifest.oci_images {
+        expected.push((
+            image.asset_id.clone(),
+            "OciImageIndex".into(),
+            image.index_digest[7..].into(),
+            image.index_size_bytes,
+            format!("oci/{}/index.json", image.asset_id),
+        ));
+        for descriptor in &image.platforms {
+            let hash = &descriptor.digest[7..];
+            expected.push((
+                format!("{}/{}", image.asset_id, descriptor.platform),
+                "OciPlatformManifest".into(),
+                hash.into(),
+                descriptor.size_bytes,
+                format!("oci/{}/sha256/{hash}.json", image.asset_id),
+            ));
+        }
+    }
+    Ok(expected)
 }

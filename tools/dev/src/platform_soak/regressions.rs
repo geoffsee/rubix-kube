@@ -354,6 +354,16 @@ impl RegressionSuite {
             let found = regressions.iter().find(|r| r.id == *expected_id);
             match found {
                 Some(r) => {
+                    let canonical = Self::historical_regressions();
+                    let expected = canonical
+                        .iter()
+                        .find(|expected| expected.id == *expected_id)
+                        .expect("canonical regression");
+                    if r != expected {
+                        return Err(format!(
+                            "historical regression '{expected_id}' differs from the canonical fixture"
+                        ));
+                    }
                     if !seen.insert(*expected_id) {
                         return Err(format!("duplicate historical regression '{expected_id}'"));
                     }
@@ -406,6 +416,16 @@ impl RegressionSuite {
             let found = epics.iter().find(|e| e.epic == epic_id);
             match found {
                 Some(e) => {
+                    let canonical = Self::epic_regressions();
+                    let expected = canonical
+                        .iter()
+                        .find(|expected| expected.epic == epic_id)
+                        .expect("canonical epic");
+                    if e != expected {
+                        return Err(format!(
+                            "epic '{epic_id}' differs from the canonical fixture"
+                        ));
+                    }
                     if !seen.insert(epic_id.clone()) {
                         return Err(format!("duplicate epic regression record '{epic_id}'"));
                     }

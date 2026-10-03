@@ -134,6 +134,19 @@ impl EnvironmentMapping {
         // 11. Addon Components
         list.extend(Self::addon_components());
 
+        for record in &mut list {
+            record.candidate_digest = None;
+            record.details = format!("Synthetic plan (not executed): {}", record.details);
+            if matches!(record.support_status, SupportStatus::Supported) {
+                record.result = EnvironmentResult::Simulated {
+                    caveat: "Synthetic matrix plan; execution not qualified".into(),
+                };
+            } else if let SupportStatus::Unsupported { rationale } = &record.support_status {
+                record.result = EnvironmentResult::Unsupported {
+                    rationale: rationale.clone(),
+                };
+            }
+        }
         list
     }
 
@@ -734,6 +747,37 @@ pub struct MatrixCompleteness;
 impl MatrixCompleteness {
     /// Validate that all promised environments exist and unsupported decisions are justified.
     pub fn validate(records: &[EnvironmentRecord]) -> Result<(), String> {
+        let canonical = EnvironmentMapping::canonical_matrix();
+        let mut seen = BTreeSet::new();
+        for record in records {
+            if !seen.insert(record.id.as_str()) {
+                return Err(format!("duplicate environment '{}'", record.id));
+            }
+            let expected = canonical
+                .iter()
+                .find(|expected| expected.id == record.id)
+                .ok_or_else(|| format!("unexpected environment '{}'", record.id))?;
+            if record.dimension != expected.dimension
+                || record.name != expected.name
+                || record.support_status != expected.support_status
+                || record.result != expected.result
+                || record.candidate_digest != expected.candidate_digest
+                || record.details != expected.details
+            {
+                return Err(format!(
+                    "environment '{}' disagrees with canonical synthetic plan",
+                    record.id
+                ));
+            }
+        }
+        for expected in &canonical {
+            if !seen.contains(expected.id.as_str()) {
+                return Err(format!(
+                    "missing environment '{}'; silent omission prohibited",
+                    expected.id
+                ));
+            }
+        }
         // 1. Verify all 16 node cells are present
         let mut observed_cells = BTreeSet::new();
         for rec in records {

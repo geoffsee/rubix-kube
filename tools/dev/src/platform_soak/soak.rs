@@ -57,8 +57,10 @@ impl SustainedSoakSummary {
         let mut details = Vec::new();
         let mut passed = true;
 
-        if initial_rss_bytes == 0 {
-            return Err("initial settled idle RSS cannot be zero".into());
+        if initial_rss_bytes == 0 || final_rss_bytes == 0 || workload_cycles == 0 {
+            return Err(
+                "initial/final settled idle RSS and workload cycles must be positive".into(),
+            );
         }
 
         let growth_ratio = (final_rss_bytes as f64) / (initial_rss_bytes as f64);
@@ -78,7 +80,7 @@ impl SustainedSoakSummary {
         let initial_mib = (initial_rss_bytes as f64) / (1024.0 * 1024.0);
         let final_mib = (final_rss_bytes as f64) / (1024.0 * 1024.0);
 
-        if growth_ratio > SOAK_MAX_GROWTH_RATIO {
+        if u128::from(final_rss_bytes) * 10 > u128::from(initial_rss_bytes) * 11 {
             passed = false;
             details.push(format!(
                 "Memory growth ratio {growth_ratio:.3}x exceeds bound {SOAK_MAX_GROWTH_RATIO:.2}x (Initial: {initial_mib:.1} MiB, Final: {final_mib:.1} MiB)"
@@ -173,16 +175,25 @@ impl SustainedSoakSummary {
                             "workload cycles completed cannot be zero for '{arch}'"
                         ));
                     }
+                    if record.declared_duration_hours != SOAK_REQUIRED_HOURS
+                        || !record.derived_growth_ratio.is_finite()
+                    {
+                        return Err(format!(
+                            "invalid declared duration or non-finite ratio for '{arch}'"
+                        ));
+                    }
 
                     let recomputed_ratio = (record.final_settled_idle_rss_bytes as f64)
                         / (record.initial_settled_idle_rss_bytes as f64);
-                    if (record.derived_growth_ratio - recomputed_ratio).abs() > 1e-4 {
+                    if record.derived_growth_ratio.to_bits() != recomputed_ratio.to_bits() {
                         return Err(format!(
                             "derived growth ratio {:.4} does not match recomputed ratio {:.4} for '{arch}'",
                             record.derived_growth_ratio, recomputed_ratio
                         ));
                     }
-                    if recomputed_ratio > SOAK_MAX_GROWTH_RATIO {
+                    if u128::from(record.final_settled_idle_rss_bytes) * 10
+                        > u128::from(record.initial_settled_idle_rss_bytes) * 11
+                    {
                         return Err(format!(
                             "recomputed memory growth ratio {recomputed_ratio:.3}x exceeds bound {SOAK_MAX_GROWTH_RATIO:.2}x for '{arch}'"
                         ));
@@ -228,7 +239,7 @@ impl SustainedSoakSummary {
         Ok(())
     }
 
-    /// Canonical synthetic/simulated soak records representing verified candidate architecture profiles.
+    /// Synthetic arithmetic fixtures; these values are not measured candidate profiles.
     #[must_use]
     pub fn canonical_soak_records() -> Vec<SustainedSoakRecord> {
         let amd64 = Self::evaluate_record(

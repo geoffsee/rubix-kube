@@ -22,7 +22,7 @@ pub mod restart;
 pub mod runner;
 pub mod soak;
 
-pub use candidate::{CandidateArtifactRecord, CandidateVerificationSummary};
+pub use candidate::{CandidateArtifactRecord, CandidateVerificationSummary, ObservedArtifact};
 pub use matrix::{
     DimensionCategory, EnvironmentMapping, EnvironmentRecord, EnvironmentResult,
     MatrixCompleteness, SupportStatus,
