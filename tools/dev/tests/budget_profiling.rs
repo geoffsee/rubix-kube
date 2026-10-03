@@ -135,8 +135,8 @@ fn scoped_optimizations_quantified_with_parity_invariants() {
         "daemon memory optimization must achieve > 50% reduction"
     );
     assert!(
-        !daemon_mem.parity_invariants_verified.is_empty(),
-        "parity invariants must be verified"
+        daemon_mem.parity_invariants_verified.is_empty(),
+        "input comparisons cannot establish protocol or lifecycle parity"
     );
 
     let daemon_bin = profile
@@ -162,7 +162,7 @@ fn scoped_optimizations_quantified_with_parity_invariants() {
     let boot_opt = profile
         .optimizations
         .iter()
-        .find(|o| o.title.contains("Asynchronous Supervisor"))
+        .find(|o| o.title.contains("Boot-to-API Comparison"))
         .unwrap();
     assert!(
         boot_opt.reduction_percent > 20.0,
@@ -327,4 +327,46 @@ fn markdown_report_generation_structure() {
     assert!(md.contains("## 5. Scoped Optimizations with Before/After Justifications"));
     assert!(md.contains("## 6. Explicit Budget Scope Decisions with Evidence"));
     assert!(md.contains("ALL 12 GATES SATISFIED WITHIN E01 CONTRACT BUDGETS"));
+}
+
+#[test]
+fn report_conclusions_use_actual_inputs_without_verified_attribution() {
+    let (mut reference, mut candidate) = fixture_pair(Architecture::Arm64);
+    reference.startup_latencies.first_pod_cold_seconds =
+        VarianceSummary::from_samples(vec![71.23; 20]).unwrap();
+    candidate
+        .idle_footprint
+        .retained_processes
+        .iter_mut()
+        .find(|p| p.process_name == "kubelet")
+        .unwrap()
+        .pss_bytes = 900 * 1024 * 1024;
+    candidate.idle_footprint.summed_pss_bytes =
+        VarianceSummary::from_samples(vec![900_000_000.0; 5]).unwrap();
+    let report = BudgetProfileReport::analyze(&reference, &candidate).unwrap();
+    assert!(
+        report
+            .optimizations
+            .iter()
+            .all(|o| o.parity_invariants_verified.is_empty())
+    );
+    let decision = report
+        .scope_decisions
+        .iter()
+        .find(|d| d.decision_id.starts_with("DEC-03"))
+        .unwrap();
+    assert!(decision.empirical_evidence.contains("71.23s"));
+    assert!(decision.empirical_evidence.contains("arm64"));
+    assert!(!decision.empirical_evidence.contains("amd64"));
+    let md = generate_budget_markdown_report(&report);
+    assert!(!md.contains("equal or better on all primary metrics"));
+    assert!(md.contains("`kubelet` has the largest"));
+    assert!(!md.contains("zstd-19"));
+    assert!(!md.contains("Parity Invariants Verified"));
+    let binary_share: f64 = report
+        .binary_profiles
+        .iter()
+        .map(|p| p.fraction_percent)
+        .sum();
+    assert!((binary_share - 100.0).abs() < 0.001);
 }

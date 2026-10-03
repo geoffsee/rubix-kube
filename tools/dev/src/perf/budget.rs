@@ -392,7 +392,11 @@ impl BudgetProfileReport {
         process_profiles.sort_by_key(|b| std::cmp::Reverse(b.pss_bytes));
 
         // Component Binary Size Profiling
-        let total_cand_extracted = candidate.artifact_footprint.extracted_executable_bytes;
+        let total_cand_extracted: u64 = candidate
+            .artifact_footprint
+            .component_binary_sizes
+            .values()
+            .sum();
         let mut binary_profiles = Vec::new();
         for (name, &size) in &candidate.artifact_footprint.component_binary_sizes {
             let fraction_percent = if total_cand_extracted > 0 {
@@ -412,7 +416,7 @@ impl BudgetProfileReport {
         let optimizations = default_scoped_optimizations(reference, candidate);
 
         // Explicit Budget Scope Decisions
-        let scope_decisions = default_budget_scope_decisions(candidate);
+        let scope_decisions = default_budget_scope_decisions(reference, candidate);
 
         Ok(Self {
             architecture: candidate.architecture,
@@ -505,14 +509,7 @@ fn default_scoped_optimizations(
         after_metric_value: cand_daemon_mem,
         reduction_percent: mem_reduction,
         unit: "bytes".to_string(),
-        parity_invariants_verified: vec![
-            "Preserves kubesolo.io/v1alpha1 configuration decoding and precedence".to_string(),
-            "Maintains full supervision lifecycle for all 7 downstream component processes"
-                .to_string(),
-            "Does NOT modify Kubernetes controller or kubelet default sync loops (D09/KS-68)"
-                .to_string(),
-            "Retains identical health, probe, and metric endpoints".to_string(),
-        ],
+        parity_invariants_verified: Vec::new(),
     });
 
     // 2. Rust Node Daemon Executable Size Reduction
@@ -536,17 +533,19 @@ fn default_scoped_optimizations(
     opts.push(ScopedOptimization {
         title: "Node Executable Distribution Size (Rust rubix-kube vs Go kubesolo)".to_string(),
         domain: BudgetDomain::BinaryDistribution,
-        before_description: format!("Go kubesolo binary: {:.2} MiB", ref_daemon_bin / (1024.0 * 1024.0)),
+        before_description: format!(
+            "Go kubesolo binary: {:.2} MiB",
+            ref_daemon_bin / (1024.0 * 1024.0)
+        ),
         before_metric_value: ref_daemon_bin,
-        after_description: format!("Rust rubix-kube binary: {:.2} MiB", cand_daemon_bin / (1024.0 * 1024.0)),
+        after_description: format!(
+            "Rust rubix-kube binary: {:.2} MiB",
+            cand_daemon_bin / (1024.0 * 1024.0)
+        ),
         after_metric_value: cand_daemon_bin,
         reduction_percent: bin_reduction,
         unit: "bytes".to_string(),
-        parity_invariants_verified: vec![
-            "Retains all CLI command trees, version output, and startup adapters".to_string(),
-            "Retains all host preflight probes and environment assessment logic".to_string(),
-            "Compiled with locked dependencies on stable Rust toolchain without embedded Go runtime".to_string(),
-        ],
+        parity_invariants_verified: Vec::new(),
     });
 
     // 3. Distribution Archive Compression (zstd multithreaded)
@@ -558,19 +557,21 @@ fn default_scoped_optimizations(
         0.0
     };
     opts.push(ScopedOptimization {
-        title: "Release Archive Compression (zstd level 19 vs gzip tarball)".to_string(),
+        title: "Release Archive Compression Comparison (mechanism unverified)".to_string(),
         domain: BudgetDomain::BinaryDistribution,
-        before_description: format!("Go reference archive (gzip): {:.2} MiB", ref_archive / (1024.0 * 1024.0)),
+        before_description: format!(
+            "Reference archive input: {:.2} MiB",
+            ref_archive / (1024.0 * 1024.0)
+        ),
         before_metric_value: ref_archive,
-        after_description: format!("Rust candidate archive (zstd-19): {:.2} MiB", cand_archive / (1024.0 * 1024.0)),
+        after_description: format!(
+            "Candidate archive input: {:.2} MiB",
+            cand_archive / (1024.0 * 1024.0)
+        ),
         after_metric_value: cand_archive,
         reduction_percent: archive_reduction,
         unit: "bytes".to_string(),
-        parity_invariants_verified: vec![
-            "Bundles exact bit-for-bit upstream executables (kube-apiserver, controller-manager, kubelet, proxy, kine, containerd, crun)".to_string(),
-            "Bundles all 6 required container image archives without omission".to_string(),
-            "Deterministic extraction and decompression verified across candidate platforms".to_string(),
-        ],
+        parity_invariants_verified: Vec::new(),
     });
 
     // 4. Asynchronous Supervisor Readiness & Startup Latency
@@ -582,28 +583,24 @@ fn default_scoped_optimizations(
         0.0
     };
     opts.push(ScopedOptimization {
-        title: "Asynchronous Supervisor Dependency Sequencing (Boot-to-API)".to_string(),
+        title: "Boot-to-API Comparison (sequencing unverified)".to_string(),
         domain: BudgetDomain::Startup,
-        before_description: format!("Go sequential boot-to-API p95: {ref_boot:.3}s"),
+        before_description: format!("Reference boot-to-API p95: {ref_boot:.3}s"),
         before_metric_value: ref_boot,
-        after_description: format!("Rust async dependency boot-to-API p95: {cand_boot:.3}s"),
+        after_description: format!("Candidate boot-to-API p95: {cand_boot:.3}s"),
         after_metric_value: cand_boot,
         reduction_percent: boot_improvement,
         unit: "seconds".to_string(),
-        parity_invariants_verified: vec![
-            "Strict dependency sequencing preserved: Kine mTLS ready before API server launch"
-                .to_string(),
-            "API server authenticated ready before controller-manager and kubelet launch"
-                .to_string(),
-            "Loopback mTLS datastore transport with dedicated CA verified on every boot"
-                .to_string(),
-        ],
+        parity_invariants_verified: Vec::new(),
     });
 
     opts
 }
 
-fn default_budget_scope_decisions(candidate: &PerformanceReport) -> Vec<BudgetScopeDecision> {
+fn default_budget_scope_decisions(
+    reference: &PerformanceReport,
+    candidate: &PerformanceReport,
+) -> Vec<BudgetScopeDecision> {
     let apiserver_pss = candidate
         .idle_footprint
         .retained_processes
@@ -619,9 +616,9 @@ fn default_budget_scope_decisions(candidate: &PerformanceReport) -> Vec<BudgetSc
             title: "Refusal of Unmeasured Sub-200MB Memory Claim".to_string(),
             status: "Enforced & Documented".to_string(),
             empirical_evidence: format!(
-                "Supervised kube-apiserver alone consumes {:.1} MiB PSS ({:.1}% of whole-distribution idle memory). \
+                "Supervised kube-apiserver alone consumes {:.1} MiB PSS (ratio to separate summed-PSS median: {:.1}%; not an additive share). \
                 Total candidate node idle PSS is {:.1} MiB across all 8 required supervised processes. \
-                Claiming sub-200MB whole-node memory is physically impossible for a compliant Kubernetes node without dropping core components.",
+                These input values do not establish live memory usage; sub-200MB claims require independent matched captures.",
                 apiserver_pss as f64 / (1024.0 * 1024.0),
                 (apiserver_pss as f64 / total_pss.max(1.0)) * 100.0,
                 total_pss / (1024.0 * 1024.0),
@@ -644,11 +641,11 @@ fn default_budget_scope_decisions(candidate: &PerformanceReport) -> Vec<BudgetSc
             title: "Refusal of Unmeasured Under-60s Startup Marketing Claims".to_string(),
             status: "Enforced & Documented".to_string(),
             empirical_evidence: format!(
-                "Cold first-pod startup p95 is measured at {:.2}s (amd64) and {:.2}s (arm64), beating the reference ({:.2}s). \
+                "Input cold first-pod startup p95 is {:.2}s ({}) versus reference {:.2}s. \
                 The 600-second configurable startup timeout in rubix-config is an operational safety limit for degraded environments, not a measured boot target.",
                 cold_p95,
-                candidate.startup_latencies.first_pod_cold_seconds.p95,
-                candidate.startup_latencies.first_pod_cold_seconds.p95 * 1.2,
+                candidate.architecture.as_str(),
+                reference.startup_latencies.first_pod_cold_seconds.p95,
             ),
             contract_justification: "Compatibility contract (lines 243-244) establishes: 'The 600-second configurable per-component startup timeout is a compatibility default, \
                 not an acceptable measured boot target or a global startup deadline.' Benchmark reports must reflect measured monotonic latencies, not timeout defaults.".to_string(),
@@ -708,7 +705,7 @@ pub fn generate_budget_markdown_report(report: &BudgetProfileReport) -> String {
     let _ = writeln!(out, "**Budget Compliance:** {overall_budget_status}");
     let _ = writeln!(
         out,
-        "- **Total Regressions Detected Against Reference:** {} (Candidate performs equal or better on all primary metrics)",
+        "- **Total Regressions Detected Against Reference:** {}",
         report.total_regressions_detected
     );
     let _ = writeln!(
@@ -776,7 +773,7 @@ pub fn generate_budget_markdown_report(report: &BudgetProfileReport) -> String {
     let _ = writeln!(out);
     let _ = writeln!(
         out,
-        "| Rank | Process Role | Executable Name | PSS (MiB) | RSS (MiB) | % of Total PSS |"
+        "| Rank | Process Role | Executable Name | PSS (MiB) | RSS (MiB) | % of Retained Role Sum |"
     );
     let _ = writeln!(out, "|---|---|---|---|---|---|");
     for (i, p) in report.process_profiles.iter().enumerate() {
@@ -792,27 +789,22 @@ pub fn generate_budget_markdown_report(report: &BudgetProfileReport) -> String {
         );
     }
     let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "> [!IMPORTANT]\n\
-        > `kube-apiserver` is the dominant memory consumer, accounting for {:.1}% of total node idle PSS ({:.2} MiB).\n\
-        > This empirical observation decisively refutes marketing claims of 'sub-200MB' whole-node footprint.\n",
-        report
-            .process_profiles
-            .first()
-            .map_or(0.0, |p| p.pss_fraction_percent),
-        report
-            .process_profiles
-            .first()
-            .map_or(0.0, |p| p.pss_bytes as f64 / mib)
-    );
+    if let Some(top) = report.process_profiles.first() {
+        let _ = writeln!(
+            out,
+            "> `{}` has the largest retained-process PSS input: {:.2} MiB ({:.1}% of the role sum).",
+            top.process_name,
+            top.pss_bytes as f64 / mib,
+            top.pss_fraction_percent
+        );
+    }
 
     // Section 4: Component Binary Footprint Profiling
     let _ = writeln!(out, "## 4. Component Binary Footprint Profiling");
     let _ = writeln!(out);
     let _ = writeln!(
         out,
-        "| Rank | Component Binary | Size (MiB) | % of Extracted Binaries |"
+        "| Rank | Component Binary | Size (MiB) | % of Listed Binary Sum |"
     );
     let _ = writeln!(out, "|---|---|---|---|");
     for (i, b) in report.binary_profiles.iter().enumerate() {
@@ -849,10 +841,13 @@ pub fn generate_budget_markdown_report(report: &BudgetProfileReport) -> String {
         );
         let _ = writeln!(
             out,
-            "- **Measured Reduction:** {:.2}%",
+            "- **Input Difference (causal attribution unverified):** {:.2}%",
             opt.reduction_percent
         );
-        let _ = writeln!(out, "- **Parity Invariants Verified:**");
+        let _ = writeln!(
+            out,
+            "- **Parity:** Unverified; independent protocol, lifecycle and artifact receipts are required."
+        );
         for inv in &opt.parity_invariants_verified {
             let _ = writeln!(out, "  * {inv}");
         }

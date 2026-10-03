@@ -68,6 +68,6 @@ Outcome: In progress
 Readiness: Profiled fixture baselines; C14 not qualified
 Ownership: Unassigned
 Stack: perf/budget-regressions
-Evidence: Profiling compares candidate measurements to E01 budgets across startup (10.42s boot-to-API vs 14.05s ref p95), idle memory (450.0 MiB PSS vs 540.0 MiB ref, with kube-apiserver consuming 208.0 MiB), and distribution size (148.0 MiB archive vs 165.0 MiB ref). Scoped optimizations in rubix-kube reduce daemon memory by 57% and binary size by 55% without reviving removed KS-68 edge defaults or dropping controllers. Explicit budget decisions document refusal of unmeasured sub-200MB and under-60s claims. Verified live-capture importer remains unimplemented, failing closed.
+Evidence: Profiling compares candidate measurements to E01 budgets across startup (10.42s boot-to-API vs 14.05s ref p95), idle memory (450.0 MiB PSS vs 540.0 MiB ref, with kube-apiserver consuming 208.0 MiB), and distribution size (148.0 MiB archive vs 165.0 MiB ref). Synthetic fixture differences illustrate daemon memory and binary comparisons; no optimization implementation, causal attribution, protocol parity or live reduction is qualified. Explicit budget decisions document refusal of unmeasured sub-200MB and under-60s claims. Verified live-capture importer remains unimplemented, failing closed.
 Next step: Ingest verified paired Linux hardware captures for amd64 and arm64 to qualify E29; timestamp: 2026-10-03T23:00:00Z
 
