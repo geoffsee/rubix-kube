@@ -171,14 +171,37 @@ pub fn remove_instance(cfg: &mut Value, context: &str) -> bool {
 
 /// Narrow seam for container engine port inspection.
 ///
-/// The real Docker/Podman integration lives in other pull requests (#296/#297)
-/// and is intentionally not depended on here. Implementations return the raw
+/// Implementations resolve the instance's container name and return the raw
 /// `docker port <container> <port>/tcp` output for [`resolve_published_endpoint`].
 pub trait EnginePortInspector {
     fn inspect_port(&mut self, container: &str, container_port: u16) -> io::Result<String>;
 }
 
-/// Inspector used until a real engine integration is supplied.
+/// Production inspector for the named Docker instance's published API port.
+#[derive(Debug)]
+pub struct DockerPortInspector;
+
+impl EnginePortInspector for DockerPortInspector {
+    fn inspect_port(&mut self, instance: &str, container_port: u16) -> io::Result<String> {
+        let output = std::process::Command::new("docker")
+            .args([
+                "port",
+                &crate::container::container_name(instance),
+                &format!("{container_port}/tcp"),
+            ])
+            .output()?;
+        if !output.status.success() {
+            return Err(io::Error::other(format!(
+                "docker port failed with {}",
+                output.status
+            )));
+        }
+        String::from_utf8(output.stdout)
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid Docker port output"))
+    }
+}
+
+/// Explicit unavailable inspector for callers that do not permit Engine access.
 #[derive(Debug)]
 pub struct UnavailableEngine;
 
@@ -219,14 +242,17 @@ pub fn execute_endpoint_command(
         )?;
         return Ok(1);
     };
-    let mut cfg = parse_kubeconfig_content(&content)?;
+    let Ok(mut cfg) = parse_kubeconfig_content(&content) else {
+        writeln!(stderr, "error: invalid kubeconfig {}", dest.display())?;
+        return Ok(1);
+    };
     let remove = options.subcommand.as_deref() == Some("remove");
-    if remove {
+    let message = if remove {
         if !remove_instance(&mut cfg, name) {
             writeln!(stderr, "error: context '{name}' not found")?;
             return Ok(1);
         }
-        writeln!(stdout, "Removed context '{name}' from {}", dest.display())?;
+        format!("Removed context '{name}' from {}", dest.display())
     } else {
         let raw = match engine.inspect_port(name, CONTAINER_API_PORT) {
             Ok(raw) => raw,
@@ -246,13 +272,16 @@ pub fn execute_endpoint_command(
             writeln!(stderr, "error: {err}")?;
             return Ok(1);
         }
+        format!("Routed context '{name}' to {}", endpoint.server_url())
+    };
+    if let Some(backup) = create_premerge_backup(&dest, SystemTime::now())? {
         writeln!(
-            stdout,
-            "Routed context '{name}' to {}",
-            endpoint.server_url()
+            stderr,
+            "Created backup of existing kubeconfig at {}",
+            backup.display()
         )?;
     }
-    create_premerge_backup(&dest, SystemTime::now())?;
     atomic_write_secure(&dest, serialize_kubeconfig(&cfg).as_bytes(), &user)?;
+    writeln!(stdout, "{message}")?;
     Ok(0)
 }
