@@ -1242,6 +1242,7 @@ dependencies = [
  "rubix-network",
  "rubix-pki",
  "rubix-platform",
+ "rubix-portainer",
  "rubix-proxy",
  "rubix-storage",
  "rubix-supervisor",
