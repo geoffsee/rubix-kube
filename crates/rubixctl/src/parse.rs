@@ -461,6 +461,9 @@ pub fn parse_command(
                 "output" if topic == HelpTopic::D2k => {
                     d2k_opts.output = Some(PathBuf::from(get_string_val(value, &mut i, args)?));
                 },
+                "name" if topic == HelpTopic::D2k => {
+                    d2k_opts.name = Some(get_string_val(value, &mut i, args)?);
+                },
                 _ => return Err(ParseError::UnknownFlag),
             }
         } else {
@@ -477,6 +480,9 @@ pub fn parse_command(
                 },
                 "o" if topic == HelpTopic::D2k => {
                     d2k_opts.output = Some(PathBuf::from(get_string_val(value, &mut i, args)?));
+                },
+                "name" if topic == HelpTopic::D2k => {
+                    d2k_opts.name = Some(get_string_val(value, &mut i, args)?);
                 },
                 _ if !letters.is_empty() && letters.bytes().all(|b| b == b'h') => {
                     help = value.map_or(Ok(true), boolean)?;
