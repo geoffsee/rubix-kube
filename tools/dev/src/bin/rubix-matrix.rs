@@ -185,7 +185,7 @@ fn handle_verify_manifest(filename: &str) -> ExitCode {
     ) {
         Ok(()) => {
             println!(
-                "release manifest '{}' (version {}) verified successfully: 16 node archives, 4 management binaries, {} OCI images",
+                "release metadata '{}' (version {}) verified: 16 node archive descriptors, 4 management descriptors, {} OCI image descriptors; artifact bytes and installation are not qualified",
                 manifest.product_name,
                 manifest.version,
                 manifest.oci_images.len()

@@ -1,16 +1,15 @@
 use std::{fs, process::Command};
 
+#[path = "common/publication.rs"]
+mod publication;
+
 fn complete_names(dir: &std::path::Path) {
-    for variant in rubix_assets::Matrix::all_node_variants() {
-        fs::write(
-            dir.join(variant.archive_filename("rubix-kube", "v1.0.0")),
-            b"node",
-        )
-        .unwrap();
-    }
-    for target in rubix_assets::Matrix::all_management_targets() {
-        fs::write(dir.join(target.binary_filename("rubixctl")), b"cli").unwrap();
-    }
+    let manifest = publication::candidate(dir, "v1.0.0");
+    fs::write(
+        dir.join("release-manifest.json"),
+        serde_json::to_vec(&manifest).unwrap(),
+    )
+    .unwrap();
 }
 
 #[test]
@@ -35,13 +34,37 @@ fn unexpected_artifacts_and_missing_required_inventories_fail_before_writes() {
         .output()
         .unwrap();
     assert!(!output.status.success());
-    for filename in [
-        "SHA256SUMS",
-        "release-manifest.json",
-        "provenance.json",
-        "licenses.json",
-    ] {
+    assert!(String::from_utf8_lossy(&output.stderr).contains("archive inventory"));
+    for filename in ["SHA256SUMS", "provenance.json", "licenses.json"] {
         assert!(!dir.path().join(filename).exists());
+    }
+    assert_eq!(
+        fs::read(dir.path().join("release-manifest.json")).unwrap(),
+        serde_json::to_vec(&publication::candidate(dir.path(), "v1.0.0")).unwrap()
+    );
+}
+
+#[test]
+fn prepared_manifest_file_digests_are_checked_even_without_layout_inventories() {
+    let dir = tempfile::tempdir().unwrap();
+    complete_names(dir.path());
+    let before = fs::read(dir.path().join("release-manifest.json")).unwrap();
+    fs::write(dir.path().join("rubixctl-linux-amd64"), b"tampered cli").unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-provenance"))
+        .arg(dir.path())
+        .arg("v1.0.0")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("disagrees with the checksum manifest")
+    );
+    assert_eq!(
+        fs::read(dir.path().join("release-manifest.json")).unwrap(),
+        before
+    );
+    for name in ["SHA256SUMS", "provenance.json", "licenses.json"] {
+        assert!(!dir.path().join(name).exists());
     }
 }
 
@@ -56,7 +79,7 @@ fn raw_native_binaries_fail_before_any_publication_metadata_is_written() {
         .output()
         .unwrap();
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("node archive cell count"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("missing prepared release manifest"));
     for filename in [
         "SHA256SUMS",
         "release-manifest.json",
@@ -109,5 +132,5 @@ fn matrix_rejects_a_self_declared_foreign_product() {
         .output()
         .unwrap();
     assert!(!output.status.success());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("prefix"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("invalid release metadata"));
 }

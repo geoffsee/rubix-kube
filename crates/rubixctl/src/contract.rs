@@ -241,6 +241,7 @@ pub struct ConfigOptions {
     pub key: Option<String>,
     pub value: Option<String>,
     pub file: Option<PathBuf>,
+    pub environment: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -354,24 +355,22 @@ pub trait CommandHandler {
 
     fn execute_config(
         &mut self,
-        _options: ConfigOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: ConfigOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'config' is not yet implemented")?;
-        Ok(1)
+        crate::execute_config(&options, inputs, stdout, stderr)
     }
 
     fn execute_kubeconfig(
         &mut self,
-        _options: KubeconfigOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: KubeconfigOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'kubeconfig' is not yet implemented")?;
-        Ok(1)
+        crate::execute_kubeconfig(&options, inputs, stdout, stderr)
     }
 
     fn execute_d2k(

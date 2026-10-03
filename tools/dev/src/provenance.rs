@@ -353,7 +353,8 @@ pub fn generate_license_inventory(cargo_metadata_json: &str) -> Result<LicenseIn
     })
 }
 
-/// Build the release manifest from artifacts in `dist_dir` using their real digests.
+/// Build draft file descriptors using real digests. This cannot infer bundled asset
+/// inventories or OCI indices and does not produce a qualified release manifest.
 pub fn generate_manifest(
     dist_dir: &Path,
     version: &str,
@@ -417,16 +418,14 @@ pub fn generate_manifest(
     })
 }
 
-/// Verify checksums, manifest completeness (16 cells, 4 management targets) and layout
-/// integrity of every node archive. `inventory_for` supplies each archive's declared
-/// inventory; its archive bytes are smoke-extracted into a scratch root.
-pub fn verify_publication(
+/// Verify prepared manifest completeness and actual file digests/sizes. OCI
+/// descriptors are validated as metadata; this does not fetch registry content.
+pub fn verify_publication_artifacts(
     dist_dir: &Path,
     manifest: &ReleasePackageManifest,
     checksums: &ChecksumManifest,
     node_prefix: &str,
     management_prefix: &str,
-    inventory_for: &dyn Fn(&NodeArchiveArtifact) -> Result<DeclaredInventory>,
 ) -> Result<()> {
     checksums.verify(dist_dir)?;
     ReleasePackager::verify_release_manifest(
@@ -469,6 +468,29 @@ pub fn verify_publication(
                 format!("manifest size for {} disagrees with file", archive.filename).into(),
             );
         }
+    }
+    Ok(())
+}
+
+/// Verify a prepared publication's files and materialize dependency assets against
+/// each supplied inventory. This does not run or qualify a node installation.
+pub fn verify_publication(
+    dist_dir: &Path,
+    manifest: &ReleasePackageManifest,
+    checksums: &ChecksumManifest,
+    node_prefix: &str,
+    management_prefix: &str,
+    inventory_for: &dyn Fn(&NodeArchiveArtifact) -> Result<DeclaredInventory>,
+) -> Result<()> {
+    verify_publication_artifacts(
+        dist_dir,
+        manifest,
+        checksums,
+        node_prefix,
+        management_prefix,
+    )?;
+    for archive in &manifest.node_archives {
+        let bytes = fs::read(dist_dir.join(&archive.filename))?;
         let root = tempfile::tempdir()?;
         ReleasePackager::smoke_check_node_archive_layout(
             inventory_for(archive)?,

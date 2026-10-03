@@ -89,3 +89,18 @@ cargo clippy -p rubixctl --all-targets --locked -- -D warnings
 
 Real host-check executable qualification runs only in disposable Linux containers;
 ordinary tests use injected effects or invoke only help/version.
+
+Legacy service migration stages a private, exclusive backup and replacement
+before publishing configuration. A matching `.migration-pending` marker allows
+retry after interruption between config and service publication. Conflicting
+backups, markers and existing configs are preserved. This is file-level evidence;
+live init-system restart qualification remains outstanding.
+Service definitions and lifecycle plans cover the six Linux init backends.
+Daemon and foreground definitions describe paths only; lifecycle operations in
+those two modes return explicit unsupported-action errors pending a process
+executor. These plans do not establish live init-system or reboot qualification.
+Container port mappings without a host IP (`8080:80` or `80`) publish on all
+host interfaces. Specify `127.0.0.1:8080:80` for local access. User mappings may
+not add a binding for the built-in API server or enabled D2K port. Reinstalling
+recreates only the selected container, retaining its volume and reconciling its
+instance bridge MTU; a bridge still in use causes an explicit Engine error.

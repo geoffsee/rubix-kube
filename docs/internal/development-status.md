@@ -40,10 +40,9 @@ Evidence: Implemented `AssetSelector` and `SelectedDelivery` in `rubix-assets` r
 Next step: None; timestamp: 2026-10-02T20:20:00Z
 
 Work item: E27.02 (https://github.com/geoffsee/rubix-kube/issues/115); Parent criteria 1, 2, 3
-Outcome: Completed
-Readiness: Done
+Outcome: In progress
+Readiness: Not qualified
 Ownership: Unassigned
 Stack: packages/release-artifacts
-Evidence: Implemented release descriptor and layout verification tooling in rubix-assets and rubix-matrix, exercised with synthetic fixtures across 16 node cells, four management targets and OCI platform policies. No real complete release candidate was assembled or qualified.
-Next step: Assemble and qualify real candidates after E27.01 builds and E06.01 asset digests are available; timestamp: 2026-10-03T07:17:00Z
-
+Evidence: Descriptor validation and synthetic dependency materialization cover the required matrix. No real node archives, target executables, images or installer executions were produced; these checks do not qualify a release.
+Next step: Assemble real artifacts, verify bytes and machine targets, and capture disposable installation evidence for every required cell; timestamp: 2026-10-03T07:17:00Z
