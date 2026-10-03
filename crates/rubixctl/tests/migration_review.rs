@@ -71,3 +71,18 @@ fn interrupted_publication_resumes_only_matching_pending_migration() {
     assert!(!marker.exists());
     assert_eq!(fs::read_to_string(config).unwrap(), yaml);
 }
+#[cfg(unix)]
+#[test]
+fn library_migration_preserves_a_dangling_destination_link() {
+    use rubix_config::legacy::{MigrationOutcome, migrate_service_flags};
+    let directory = tempfile::tempdir().unwrap();
+    let destination = directory.path().join("config.yaml");
+    let absent = directory.path().join("absent.yaml");
+    std::os::unix::fs::symlink(&absent, &destination).unwrap();
+    assert_eq!(
+        migrate_service_flags("exec kubesolo --debug", Some(&destination), None).unwrap(),
+        MigrationOutcome::DestinationConfigExists
+    );
+    assert_eq!(std::fs::read_link(destination).unwrap(), absent);
+    assert!(!absent.exists());
+}
