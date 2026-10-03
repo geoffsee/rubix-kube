@@ -35,6 +35,25 @@ fn resolve_prefixed(root: Option<&Path>, default_rel: &str) -> PathBuf {
 pub fn generate_service_definition(
     config: &ServiceConfig,
 ) -> Result<ServiceDefinition, UnsupportedTargetError> {
+    if config.name.is_empty()
+        || matches!(config.name.as_str(), "." | "..")
+        || !config
+            .name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
+    {
+        return Err(UnsupportedTargetError::InvalidServiceName);
+    }
+    for key in config.environment.keys() {
+        let mut bytes = key.bytes();
+        if !bytes
+            .next()
+            .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_')
+            || !bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        {
+            return Err(UnsupportedTargetError::InvalidEnvironmentKey);
+        }
+    }
     match config.run_mode {
         RunMode::Service => {
             let backend = config
