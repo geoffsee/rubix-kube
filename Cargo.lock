@@ -1197,8 +1197,12 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "flate2",
+ "rcgen",
  "regex",
  "rubix-assets",
+ "rubix-config",
+ "rubix-datastore",
+ "rubix-pki",
  "rubix-platform",
  "rubixctl",
  "rustix",
@@ -1210,6 +1214,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "toml",
+ "x509-parser",
  "zip",
  "zstd",
 ]

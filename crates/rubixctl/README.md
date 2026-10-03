@@ -132,6 +132,13 @@ disposable managed runtime root/state. It retains runtime executables, image
 archives, registry configuration, PKI and `local-path-storage` volume data.
 Ordinary uninstall retains installation data; `--purge` explicitly removes the
 selected instance's owned state, including upgrade receipts and recovery backups.
+Uninstall removes the selected `config.yaml` and `config.yaml.bak` unless
+`--keep-config` is set, including when combined with `--purge`. Host commands select
+`/etc/kubesolo`; container commands select only an explicit configuration bind
+recorded in `container.spec`, preserving unrelated host configuration. Named volumes
+and noncanonical configuration bindings require explicit operator cleanup and fail
+before lifecycle effects. Other files in the configuration directory are retained.
+Library cleanup without an explicit configuration directory performs no configuration I/O.
 Reset and ordinary uninstall retain those recovery records. The upgrade lock
 file remains in place so concurrent operations cannot acquire a different inode.
 An active pending or committing upgrade receipt blocks reset and ordinary
@@ -173,3 +180,19 @@ protects transport to the chosen endpoint, but this download slice does not
 verify release signatures or independently trusted artifact digests. A staged
 bundle is not authenticated release qualification and must not be treated as
 such by a future installer.
+
+`rubixctl d2k fetch|install --name <instance>` exports the flat node PKI files
+`pki/ca.crt`, `pki/d2k-client.crt` and `pki/d2k-client.key`. The default output is
+`~/.docker/d2k/<instance>` for the invoking user; `--output` selects a certificate
+**directory**. All exported files are private (0600) in a private directory (0700).
+Symlinked directory components are rejected and leaf symlinks are atomically
+replaced without modifying their targets. Existing directories must belong to
+that user. For privileged export to a different user's identity, precreate the
+output directory as that user; missing directories fail closed instead of
+chowning entries in a directory that the user can rename concurrently.
+Container exports use the managed `kubesolo[-<instance>]` identity and
+require a valid, unambiguous loopback-reachable published port. Docker context
+configuration runs with the invoking user's identity and Docker configuration,
+not root's configuration under sudo. Exported credentials may remain after a
+Docker context error, but the command reports failure and never claims the
+context was configured. These unit-tested adapters do not qualify live D2K nodes.
