@@ -115,6 +115,8 @@ pub struct ContainerInspect {
     pub id: String,
     pub name: String,
     pub running: bool,
+    /// Effective D2K configuration observed on this instance, independent of workload ports.
+    pub d2k_enabled: bool,
     pub exit_code: i32,
     /// Host port mapping discovered from running container inspection.
     /// Maps e.g. "6443/tcp" to the allocated host port (such as 32768 or 6443).
@@ -596,6 +598,9 @@ pub struct PublishedEndpoints {
 /// never fabricate an address that the engine did not allocate.
 #[must_use]
 pub fn published_endpoints(inspect: &ContainerInspect) -> Option<PublishedEndpoints> {
+    if !inspect.running {
+        return None;
+    }
     let loopback = std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
     let api = *inspect
         .allocated_ports
@@ -606,6 +611,7 @@ pub fn published_endpoints(inspect: &ContainerInspect) -> Option<PublishedEndpoi
         d2k: inspect
             .allocated_ports
             .get("2376/tcp")
+            .filter(|_| inspect.d2k_enabled)
             .filter(|port| **port != 0)
             .map(|p| std::net::SocketAddr::new(loopback, *p)),
     })
