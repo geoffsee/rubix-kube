@@ -186,3 +186,10 @@ pub mod host_network;
 
 pub mod host_container;
 pub mod host_preparation;
+
+pub mod runtime;
+pub use runtime::{
+    COMPONENT_APISERVER, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS, COMPONENT_DATASTORE,
+    COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER, COMPONENT_PROXY, NodeRuntime,
+    RuntimeBuilder, RuntimeError,
+};
