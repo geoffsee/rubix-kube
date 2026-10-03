@@ -130,6 +130,38 @@ fn test_recovery_rehearsal_across_all_transition_stages() {
         };
 
         let result = run_rehearsal(&scenario).unwrap();
+        match stage {
+            TransitionStage::Validation | TransitionStage::Preparation => {
+                assert!(
+                    !result
+                        .backend_calls
+                        .iter()
+                        .any(|c| c.starts_with("systemctl "))
+                );
+                assert_eq!(result.retained_backup_count, 0);
+            },
+            TransitionStage::Quiesce | TransitionStage::Snapshot => {
+                assert!(
+                    result
+                        .backend_calls
+                        .iter()
+                        .any(|c| c == "systemctl start kubesolo")
+                );
+                assert_eq!(result.retained_backup_count, 0);
+            },
+            TransitionStage::ReceiptPending => {
+                assert!(
+                    result
+                        .backend_calls
+                        .iter()
+                        .any(|c| c == "systemctl start kubesolo")
+                );
+                assert_eq!(result.retained_backup_count, 1);
+                assert!(result.backup_validated);
+                assert!(result.receipt_observed_before_recovery.is_none());
+            },
+            _ => {},
+        }
         assert!(
             result.overall_success,
             "stage {stage:?} rehearsal failed: {:?}",

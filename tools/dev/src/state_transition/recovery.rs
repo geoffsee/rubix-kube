@@ -512,6 +512,8 @@ pub struct RehearsalResult {
     pub manifests_restored: bool,
     pub receipts_cleaned: bool,
     pub overall_success: bool,
+    pub backend_calls: Vec<String>,
+    pub retained_backup_count: usize,
     pub known_limitations: Vec<String>,
 }
 
@@ -966,6 +968,11 @@ fn run_rehearsal_inner(
         recovery_refused
     };
 
+    let retained_backup_count = match fs::read_dir(inst.data_path.join("backups")) {
+        Ok(entries) => entries.collect::<io::Result<Vec<_>>>()?.len(),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => 0,
+        Err(e) => return Err(e),
+    };
     Ok(RehearsalResult {
         scenario: scenario.clone(),
         stage_interrupted: stage,
@@ -982,6 +989,8 @@ fn run_rehearsal_inner(
         manifests_restored,
         receipts_cleaned,
         overall_success,
+        backend_calls: backend.runner.calls.clone(),
+        retained_backup_count,
         known_limitations: version_recovery_limitations(scenario.starting_version),
     })
 }

@@ -66,18 +66,7 @@ fn rehearse_supported_versions() -> Result<(), String> {
 fn rehearse_interrupted_stages() -> Result<(), String> {
     println!("--- Rehearsing Interrupted Transition Stages (v1.2.0 baseline) ---");
 
-    let stages_to_test = [
-        TransitionStage::Validation,
-        TransitionStage::Preparation,
-        TransitionStage::Quiesce,
-        TransitionStage::Snapshot,
-        TransitionStage::ReceiptPending,
-        TransitionStage::ArtifactReplacement,
-        TransitionStage::ConfigMigration,
-        TransitionStage::ServiceStart,
-        TransitionStage::ReceiptCommitting,
-        TransitionStage::PostCommitCleanup,
-    ];
+    let stages_to_test = TransitionStage::ALL;
 
     for stage in stages_to_test {
         let scenario = RehearsalScenario {
@@ -112,7 +101,11 @@ fn rehearse_interrupted_stages() -> Result<(), String> {
 fn rehearse_unavailable_backup_refusal() -> Result<(), String> {
     println!("--- Rehearsing Refusal on Missing/Corrupted Backups ---");
 
-    for condition in [BackupCondition::Missing, BackupCondition::Corrupted] {
+    for condition in [
+        BackupCondition::Missing,
+        BackupCondition::Corrupted,
+        BackupCondition::Symlink,
+    ] {
         let scenario = RehearsalScenario {
             starting_version: SupportedStartingVersion::V1_3_0,
             target_version: "v1.4.0".into(),
