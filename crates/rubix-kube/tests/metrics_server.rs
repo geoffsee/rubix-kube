@@ -163,7 +163,11 @@ async fn test_standalone_metrics_server_endpoints_and_shutdown() {
         Some(1_700_000_000.0)
     );
     let build_sample = scrape
-        .get_sample("kubesolo_build_info", "rust_version", "1.97.1")
+        .get_sample(
+            "kubesolo_build_info",
+            "rust_version",
+            env!("RUBIX_RUSTC_VERSION"),
+        )
         .expect("build info present");
     assert!((build_sample.value - 1.0).abs() < f64::EPSILON);
 
@@ -386,7 +390,11 @@ async fn metrics_serving_attempt(reclaim_before_bind: bool) -> bool {
 
     // Assert build info is present
     let build_sample = scrape
-        .get_sample("kubesolo_build_info", "rust_version", "1.97.1")
+        .get_sample(
+            "kubesolo_build_info",
+            "rust_version",
+            env!("RUBIX_RUSTC_VERSION"),
+        )
         .expect("kubesolo_build_info");
     assert!((build_sample.value - 1.0).abs() < f64::EPSILON);
 

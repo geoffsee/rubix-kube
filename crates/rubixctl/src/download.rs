@@ -59,7 +59,7 @@ pub fn stage_installer(
     Ok(())
 }
 
-/// Curl receives a bounded protocol policy and an explicit end of options.
+/// Curl bounds connection and stalled-transfer time; private settings arrive on stdin.
 pub fn curl_download_command(
     _url: &str,
     dest: &Path,
@@ -69,6 +69,12 @@ pub fn curl_download_command(
     command
         .args([
             "-fSL",
+            "--connect-timeout",
+            "30",
+            "--speed-limit",
+            "1",
+            "--speed-time",
+            "120",
             "--proto",
             "=https,http",
             "--proto-redir",

@@ -148,6 +148,13 @@ fn custom_url_cannot_inject_curl_options_or_change_protocol_policy() {
         .collect();
     assert_eq!(&args[args.len() - 2..], &["--config", "-"]);
     assert!(!args.contains(&"-K/etc/private"));
+    for setting in [
+        ["--connect-timeout", "30"],
+        ["--speed-limit", "1"],
+        ["--speed-time", "120"],
+    ] {
+        assert!(args.windows(2).any(|pair| pair == setting));
+    }
     assert_eq!(
         rubixctl::download::curl_download_config("-K/etc/private", None),
         "url = \"-K/etc/private\"\n"
