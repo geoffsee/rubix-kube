@@ -5,7 +5,7 @@ use rubix_platform::{Architecture, Libc, NodeTarget};
 use std::fmt;
 
 /// Operating system for management release targets.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ManagementOs {
     Linux,
     Darwin,
@@ -21,7 +21,7 @@ impl fmt::Display for ManagementOs {
 }
 
 /// Architecture for management release targets.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ManagementArch {
     Amd64,
     Arm64,
@@ -37,7 +37,7 @@ impl fmt::Display for ManagementArch {
 }
 
 /// Supported management CLI target.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ManagementTarget {
     pub os: ManagementOs,
     pub architecture: ManagementArch,

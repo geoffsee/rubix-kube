@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub const API_VERSION: &str = "kubesolo.io/v1alpha1";
 pub const KIND: &str = "Config";
+pub const DEFAULT_CONFIG_PATH: &str = "/etc/kubesolo/config.yaml";
 
 /// Desired configuration. Runtime discovery and precedence are separate operations.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

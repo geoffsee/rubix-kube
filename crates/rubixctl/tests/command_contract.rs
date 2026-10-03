@@ -801,7 +801,7 @@ fn test_default_command_handler_unimplemented_stubs() {
         String::from_utf8_lossy(&test_stderr).contains("command 'install' is not yet implemented")
     );
 
-    let unimplemented_cmds = ["install", "uninstall", "upgrade", "reset", "config", "d2k"];
+    let unimplemented_cmds = ["install", "uninstall", "upgrade", "reset", "d2k"];
 
     for cmd in unimplemented_cmds {
         let mut stdout = Vec::new();
@@ -962,7 +962,6 @@ fn mismatched_bundle_installer_is_rejected_before_any_output() {
         assert!(!String::from_utf8_lossy(&stderr).contains("Bundle ready"));
     }
 }
-
 struct FakeEngine {
     output: io::Result<String>,
     calls: Vec<(String, u16)>,

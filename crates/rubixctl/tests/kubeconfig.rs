@@ -5,6 +5,30 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
 
+#[cfg(unix)]
+#[test]
+fn publication_rejects_symlinked_and_foreign_owned_parents() {
+    use std::os::unix::fs::{MetadataExt, symlink};
+    let dir = tempfile::tempdir().unwrap();
+    let real = dir.path().join("real");
+    fs::create_dir(&real).unwrap();
+    let destination = real.join("config");
+    fs::write(&destination, b"unrelated credentials").unwrap();
+    let link = dir.path().join("link");
+    symlink(&real, &link).unwrap();
+    let owner = fs::metadata(&real).unwrap().uid();
+    let mut user = InvokingUser {
+        username: "test".into(),
+        home_dir: dir.path().to_owned(),
+        uid: Some(owner),
+        gid: None,
+    };
+    assert!(atomic_write_secure(&link.join("config"), b"new", &user).is_err());
+    user.uid = Some(owner.wrapping_add(1));
+    assert!(atomic_write_secure(&destination, b"new", &user).is_err());
+    assert_eq!(fs::read(destination).unwrap(), b"unrelated credentials");
+}
+
 #[test]
 fn test_invoking_user_resolution_sudo() {
     let mut env = BTreeMap::new();
@@ -237,4 +261,61 @@ fn test_atomic_write_secure_permissions() {
     }
 
     let _ = fs::remove_dir_all(&temp_dir);
+}
+
+#[test]
+fn full_yaml_document_survives_merge_and_serialization() {
+    let original = parse_kubeconfig_content(
+        r#"
+apiVersion: v1
+kind: Config
+preferences: {colors: true}
+extensions: [{name: custom, extension: {nested: [1, true, "123"]}}]
+users:
+- name: "true"
+  user:
+    exec:
+      command: "a: b # c"
+      args: ["*literal", "123", "true"]
+      env: [{name: SPECIAL, value: "&literal"}]
+    token: |
+      multiline
+      token
+clusters: []
+contexts: []
+"#,
+    )
+    .unwrap();
+    let mut merged = original.clone();
+    merge_kubeconfigs(
+        &mut merged,
+        &serde_json::json!({"current-context": "new", "users": [{"name": "new", "user": {"token": "new"}}]}),
+    );
+    let roundtrip = parse_kubeconfig_content(&serialize_kubeconfig(&merged)).unwrap();
+    assert_eq!(roundtrip["users"][0], original["users"][0]);
+    assert_eq!(roundtrip["preferences"], original["preferences"]);
+    assert_eq!(roundtrip["extensions"], original["extensions"]);
+    assert_eq!(roundtrip, merged);
+    assert!(parse_kubeconfig_content("[not, a, mapping]").is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn backup_rejects_source_symlinks_and_preserves_existing_backup_links() {
+    use std::os::unix::fs::symlink;
+    let dir = tempfile::tempdir().unwrap();
+    let victim = dir.path().join("unrelated");
+    fs::write(&victim, "private").unwrap();
+    let dest = dir.path().join("config");
+    symlink(&victim, &dest).unwrap();
+    let now = UNIX_EPOCH + Duration::from_secs(1_774_773_015);
+    assert!(create_premerge_backup(&dest, now).is_err());
+    fs::remove_file(&dest).unwrap();
+    fs::write(&dest, "config").unwrap();
+    let backup = dir.path().join("config.backup-20260329083015");
+    symlink(&victim, &backup).unwrap();
+    let new_backup = create_premerge_backup(&dest, now).unwrap().unwrap();
+    assert_ne!(new_backup, backup);
+    assert_eq!(fs::read_to_string(new_backup).unwrap(), "config");
+    assert_eq!(fs::read_to_string(victim).unwrap(), "private");
 }

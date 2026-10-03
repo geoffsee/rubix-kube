@@ -33,6 +33,7 @@ pub enum EndpointError {
     NoPublishedPort,
     ContextNotFound(String),
     ClusterNotFound(String),
+    SharedCluster(String),
 }
 
 impl fmt::Display for EndpointError {
@@ -41,6 +42,10 @@ impl fmt::Display for EndpointError {
             Self::NoPublishedPort => f.write_str("no published host port found"),
             Self::ContextNotFound(n) => write!(f, "context '{n}' not found"),
             Self::ClusterNotFound(n) => write!(f, "cluster '{n}' not found"),
+            Self::SharedCluster(n) => write!(
+                f,
+                "cluster '{n}' is shared with another context; routing would change its endpoint"
+            ),
         }
     }
 }
@@ -80,6 +85,22 @@ pub fn route_context(
         .and_then(Value::as_str)
         .ok_or_else(|| EndpointError::ClusterNotFound(String::new()))?
         .to_string();
+    if cfg
+        .get("contexts")
+        .and_then(Value::as_array)
+        .is_some_and(|contexts| {
+            contexts.iter().any(|entry| {
+                entry.get("name").and_then(Value::as_str) != Some(context)
+                    && entry
+                        .get("context")
+                        .and_then(|value| value.get("cluster"))
+                        .and_then(Value::as_str)
+                        == Some(cluster_name.as_str())
+            })
+        })
+    {
+        return Err(EndpointError::SharedCluster(cluster_name));
+    }
     let cluster = cfg
         .get_mut("clusters")
         .and_then(Value::as_array_mut)
