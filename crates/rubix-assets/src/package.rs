@@ -253,7 +253,12 @@ impl ReleasePackager {
         expected_version: &str,
     ) -> Result<NodeVariant, PackageError> {
         let variant = Matrix::from_cell(artifact.cell)?;
-        let parsed = ArtifactNaming::parse_node_archive(&artifact.filename)?;
+        if artifact.filename.contains(['/', '\\']) {
+            return Err(PackageError::InvalidMetadata(
+                "node archive filename must be a bare canonical name".into(),
+            ));
+        }
+        let parsed = ArtifactNaming::canonical_node_archive(&artifact.filename)?;
 
         if parsed.prefix != expected_prefix {
             return Err(ArtifactNamingError::PrefixMismatch {
@@ -339,7 +344,7 @@ impl ReleasePackager {
                 artifact.cell
             )));
         }
-        if artifact.sha256.len() != 64 || !artifact.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        if !valid_sha256_hex(&artifact.sha256) {
             return Err(PackageError::DigestMismatch {
                 target: artifact.filename.clone(),
                 expected: "64 hex chars".to_string(),
@@ -436,7 +441,17 @@ impl ReleasePackager {
             ));
         }
 
+        if artifact.filename.contains(['/', '\\']) {
+            return Err(PackageError::InvalidMetadata(
+                "management filename must be a bare canonical name".into(),
+            ));
+        }
         let parsed = ArtifactNaming::parse_management_binary(&artifact.filename)?;
+        if artifact.filename != parsed.target.binary_filename(expected_prefix) {
+            return Err(PackageError::InvalidMetadata(
+                "management filename is not canonical".into(),
+            ));
+        }
         if parsed.prefix != expected_prefix {
             return Err(ArtifactNamingError::PrefixMismatch {
                 expected: expected_prefix.to_string(),
@@ -463,7 +478,7 @@ impl ReleasePackager {
             return Err(ArtifactNamingError::TargetMismatch.into());
         }
 
-        if artifact.sha256.len() != 64 || !artifact.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        if !valid_sha256_hex(&artifact.sha256) {
             return Err(PackageError::DigestMismatch {
                 target: artifact.filename.clone(),
                 expected: "64 hex chars".to_string(),
@@ -713,9 +728,14 @@ impl ReleasePackager {
 }
 
 fn valid_oci_digest(digest: &str) -> bool {
-    digest
-        .strip_prefix("sha256:")
-        .is_some_and(|hex| hex.len() == 64 && hex.bytes().all(|c| c.is_ascii_hexdigit()))
+    digest.strip_prefix("sha256:").is_some_and(valid_sha256_hex)
+}
+
+fn valid_sha256_hex(hex: &str) -> bool {
+    hex.len() == 64
+        && hex
+            .bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
 }
 
 fn verify_platform_metadata(image: &str, p: &OciPlatformDescriptor) -> Result<(), PackageError> {

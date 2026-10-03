@@ -329,7 +329,7 @@ pub fn migrate_service_flags(
     }
 
     // 2. Check if destination config file already exists
-    if dest.exists() {
+    if std::fs::symlink_metadata(dest).is_ok() {
         return Ok(MigrationOutcome::DestinationConfigExists);
     }
 
