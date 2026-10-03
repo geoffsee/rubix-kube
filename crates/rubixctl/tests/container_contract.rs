@@ -496,6 +496,24 @@ fn regression_params() -> ContainerInstallParams {
 }
 
 #[test]
+fn reinstall_pull_failure_preserves_instance_and_later_failure_reports_removal() {
+    let mut engine = MockContainerEngine::default();
+    let mut params = regression_params();
+    install_container(&mut engine, &params).unwrap();
+    let cname = container_name(&params.instance_name);
+    params.image = "node:replacement".into();
+    engine.fail_pull_image = true;
+    assert!(install_container(&mut engine, &params).is_err());
+    assert!(engine.containers[&cname].1);
+    assert!(engine.removed_containers.is_empty());
+    engine.fail_pull_image = false;
+    engine.fail_create_container = true;
+    let error = install_container(&mut engine, &params).unwrap_err();
+    assert!(error.to_string().contains("previous container was removed"));
+    assert!(engine.removed_volumes.is_empty());
+}
+
+#[test]
 fn reinstall_replaces_running_or_stopped_instance_and_reconciles_mtu() {
     for running in [false, true] {
         let mut engine = MockContainerEngine::default();

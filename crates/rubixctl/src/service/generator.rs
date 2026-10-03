@@ -360,7 +360,11 @@ PIDFILE="{pid_str}"
 LOGFILE="{log_str}"
 LAUNCH="{launch}"
 
-[ -x "$DAEMON" ] || exit 0
+case "$1" in
+    status) ;;
+    start|restart|force-reload) [ -x "$DAEMON" ] || exit 1 ;;
+    *) [ -x "$DAEMON" ] || exit 0 ;;
+esac
 
 {env_exports}start() {{
     echo "Starting $DESC: $NAME"
