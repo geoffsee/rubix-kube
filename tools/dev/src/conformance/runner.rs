@@ -495,7 +495,7 @@ impl QualificationRunner {
             passed: true,
             duration_ms: start.elapsed().as_millis() as u64,
             details: format!(
-                "Pod scheduled with NodeSetter mutation, nodeName='{}', Phase=Pending",
+                "Synthetic Pod API admission applied NodeSetter mutation, nodeName='{}'; no workload executed",
                 assigned_node
             ),
         })
@@ -548,7 +548,7 @@ impl QualificationRunner {
             name: SmokeCheck::InClusterDns.display_name().to_string(),
             passed: true,
             duration_ms: start.elapsed().as_millis() as u64,
-            details: "CoreDNS resolves kubernetes.default.svc.cluster.local to ClusterIP 10.43.0.1"
+            details: "Synthetic DNS model matched kubernetes.default.svc.cluster.local to ClusterIP 10.43.0.1; no CoreDNS server or pod query executed"
                 .to_string(),
         })
     }
@@ -653,7 +653,9 @@ impl QualificationRunner {
             }
             assertions += 1;
         }
-        details.push("ReplicaSet generated 2 Pods mutated with NodeSetter placement".to_string());
+        details.push(
+            "ReplicaSet generated 2 Pod API objects mutated with NodeSetter placement".to_string(),
+        );
 
         // 2. Create Services (ClusterIP and NodePort)
         let svc_clusterip = json!({
@@ -905,7 +907,7 @@ impl QualificationRunner {
             .map_err(|e| e.to_string())?;
         assertions += 1;
 
-        // Verify data survived across pods
+        // Read host-fixture data after changing Pod API objects; no pod ran.
         let marker_content =
             std::fs::read_to_string(vol_dir.join("marker")).map_err(|e| e.to_string())?;
         if marker_content.trim() != "persisted-ok" {
@@ -915,7 +917,7 @@ impl QualificationRunner {
             ));
         }
         assertions += 1;
-        details.push("Reader pod verified data persisted across pod boundary".to_string());
+        details.push("Host fixture read the marker after Pod API object replacement; no reader workload executed".to_string());
 
         // Cleanup
         client
@@ -1038,7 +1040,7 @@ impl QualificationRunner {
         }
         assertions += 1;
         details.push(
-            "Consumer pod verified with ConfigMap env, Secret mount, and projected SA token"
+            "Stored Pod spec retained Secret/projected-token volume declarations and token audience; no container consumed configuration, mounted volumes or received a token"
                 .to_string(),
         );
 
@@ -1268,7 +1270,7 @@ impl QualificationRunner {
             return Err("StatefulSet ordinal pod stateful-0 not found".to_string());
         }
         assertions += 1;
-        details.push("StatefulSet reconciled ordinal child pod stateful-0".to_string());
+        details.push("StatefulSet reconciled ordinal child Pod API object stateful-0".to_string());
 
         // Verify child pods from Job oneshot
         let oneshot_pod = client.get_pod(TIER4_NAMESPACE, "oneshot-0").await;
@@ -1276,7 +1278,7 @@ impl QualificationRunner {
             return Err("Job oneshot child pod oneshot-0 not found".to_string());
         }
         assertions += 1;
-        details.push("Job oneshot reconciled child pod oneshot-0".to_string());
+        details.push("Job oneshot reconciled child Pod API object oneshot-0".to_string());
 
         // Verify DaemonSet agent pod
         let ds_pod = client.get_pod(TIER4_NAMESPACE, "agent-node").await;
@@ -1284,7 +1286,7 @@ impl QualificationRunner {
             return Err("DaemonSet child pod agent-node not found".to_string());
         }
         assertions += 1;
-        details.push("DaemonSet agent reconciled node pod agent-node".to_string());
+        details.push("DaemonSet agent reconciled node Pod API object agent-node".to_string());
 
         // Cleanup
         client
@@ -1394,7 +1396,7 @@ impl QualificationRunner {
         }
         assertions += 1;
         details.push(format!(
-            "Cross-namespace DNS resolved web.tier5-a.svc.cluster.local -> {svc_ip}"
+            "Synthetic DNS model matched web.tier5-a.svc.cluster.local -> {svc_ip}; no CoreDNS server or pod query executed"
         ));
 
         // Cleanup
@@ -1504,7 +1506,7 @@ impl QualificationRunner {
         let flipped_ip = wait_for_lb_ip(client, TIER6_NAMESPACE, "flip-me", &born_ip).await?;
         assertions += 1;
         details.push(format!(
-            "UPDATE path [KS-75] successfully assigned EXTERNAL-IP: {flipped_ip}"
+            "API UPDATE fixture [KS-75] assigned loadBalancer status IP: {flipped_ip}; external connectivity unexecuted"
         ));
 
         // 5. Guard Job: rule split verification.

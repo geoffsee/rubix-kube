@@ -58,9 +58,19 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
 
     let d2 = &report.manifest_domain_results[1];
     assert_eq!(d2.name, "Tier 2 — Storage Persistence");
+    assert!(
+        d2.details
+            .iter()
+            .any(|d| d.contains("no reader workload executed"))
+    );
 
     let d3 = &report.manifest_domain_results[2];
     assert_eq!(d3.name, "Tier 3 — Config & Identity");
+    assert!(
+        d3.details
+            .iter()
+            .any(|d| d.contains("no container consumed configuration"))
+    );
 
     let d4 = &report.manifest_domain_results[3];
     assert_eq!(d4.name, "Tier 4 — Controllers");
@@ -122,6 +132,9 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
     assert!(md.contains("## 3. Selected Single-Node Conformance Summary"));
     assert!(md.contains(CERTIFICATION_DISCLAIMER));
     assert!(md.contains("YAML and JSON"));
+    assert!(md.contains("no CoreDNS server or pod query executed"));
+    assert!(!md.contains("Reader pod verified"));
+    assert!(!md.contains("Consumer pod verified"));
 
     // 6. Verify JSON serialization round-trip
     let json_str = serde_json::to_string_pretty(&report).expect("Serialize to JSON");
