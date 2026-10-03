@@ -1,5 +1,4 @@
-//! Conformance qualification runner executing smoke, the six baseline manifest domains,
-//! and explicitly selected single-node upstream Kubernetes conformance.
+//! Synthetic API/controller fixtures; retained-node conformance remains unimplemented.
 
 use std::collections::BTreeMap;
 use std::net::{IpAddr, Ipv4Addr};
@@ -124,7 +123,7 @@ impl QualificationReport {
             (ManifestDomain::ConfigIdentity, 6),
             (ManifestDomain::Controllers, 11),
             (ManifestDomain::DnsLoadBalancer, 5),
-            (ManifestDomain::LbUpdate, 11),
+            (ManifestDomain::LbUpdate, 10),
         ];
         if self.evidence_kind != "synthetic_fixture"
             || self.smoke_results.len() != smoke.len()
@@ -1074,10 +1073,6 @@ impl QualificationRunner {
         let mut details = Vec::new();
 
         client
-            .create_namespace(TIER4_CONTROLLERS_YAML)
-            .await
-            .unwrap_or_default();
-        client
             .create_namespace(TIER4_NAMESPACE)
             .await
             .map_err(|e| e.to_string())?;
@@ -1491,24 +1486,7 @@ impl QualificationRunner {
         assertions += 1;
         details.push("Verified flip-me has no loadBalancer ingress IP while ClusterIP".to_string());
 
-        // 3. Server-side dry-run: must not mutate real state
-        // (apiserver dry-run flag does not write changes to datastore)
-        let mut dry_run_spec = created_flip.clone();
-        dry_run_spec["spec"]["type"] = json!("LoadBalancer");
-        // We verify the actual service in storage is still ClusterIP
-        let current_stored = client
-            .get_service(TIER6_NAMESPACE, "flip-me")
-            .await
-            .map_err(|e| e.to_string())?;
-        if current_stored["spec"]["type"] != "ClusterIP" {
-            return Err("Unexpected mutation of flip-me spec.type".to_string());
-        }
-        assertions += 1;
-        details.push(
-            "Server dry-run verified to have zero side effects on stored service".to_string(),
-        );
-
-        // 4. Real UPDATE path: flip-me updated to LoadBalancer [KS-75 regression]
+        // Real UPDATE path: flip-me updated to LoadBalancer [KS-75 regression]
         let mut updated_flip = created_flip.clone();
         updated_flip["spec"]["type"] = json!("LoadBalancer");
         updated_flip["spec"]["ports"] = json!([

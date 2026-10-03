@@ -10,6 +10,10 @@ use rubix_dev::conformance::{
 
 #[tokio::test]
 async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
+    let started = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let runner = QualificationRunner::new();
     let report = runner
         .run_fixture()
@@ -36,6 +40,18 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
         );
     }
 
+    let timestamp: u64 = report
+        .timestamp
+        .strip_prefix("unix:")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let ended = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    assert!((started..=ended).contains(&timestamp));
+
     // Check specific domains
     let d1 = &report.manifest_domain_results[0];
     assert_eq!(d1.name, "Tier 1 — Workloads & Networking");
@@ -54,6 +70,8 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
 
     let d6 = &report.manifest_domain_results[5];
     assert_eq!(d6.name, "Tier 6 — LoadBalancer UPDATE path [KS-75]");
+    assert_eq!(d6.assertions_count, 10);
+    assert!(d6.details.iter().all(|detail| !detail.contains("dry-run")));
 
     // 3. Verify selected conformance results
     let conf = &report.conformance_summary;
