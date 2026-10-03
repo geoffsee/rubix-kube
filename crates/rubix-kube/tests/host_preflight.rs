@@ -124,6 +124,7 @@ impl AssessmentInputs for Fake {
                     Observation::Present("1\n".into())
                 }
             }),
+            proc_sys_read_only: Observation::Present(false),
             ip_tables_names: Observation::Absent,
             default_cni_plugins: [Observation::Absent; 4],
             cni_config_names: Observation::Present(vec!["01-host.conflist".into()]),
@@ -472,4 +473,56 @@ async fn external_runtime_assessment_preserves_external_responsibilities_and_doc
         blocked.preflight.as_ref().unwrap().first_blocker,
         Some(CheckId::DockerConflict)
     );
+    assert_eq!(
+        fake.calls.borrow().as_slice(),
+        [
+            "discover",
+            "supplemental",
+            "constrained",
+            "version",
+            "ports"
+        ]
+    );
+    assert_eq!(
+        fake_docker.calls.borrow().as_slice(),
+        ["discover", "supplemental"]
+    );
+
+    let mut missing_comment = Fake::default();
+    missing_comment
+        .facts
+        .files
+        .insert("/proc/modules".into(), Observation::Present(String::new()));
+    missing_comment
+        .facts
+        .files
+        .insert("/proc/net/ip_tables_matches".into(), Observation::Absent);
+    let comment_blocked = assess_node_with(
+        &config(true, false),
+        std::future::pending(),
+        &mut missing_comment,
+    )
+    .await;
+    assert_eq!(comment_blocked.status, AssessmentStatus::Blocked);
+    assert_eq!(
+        comment_blocked.preflight.as_ref().unwrap().first_blocker,
+        Some(CheckId::XtablesComment)
+    );
+    assert_eq!(
+        comment_blocked
+            .preflight
+            .as_ref()
+            .unwrap()
+            .findings
+            .iter()
+            .find(|finding| finding.check == CheckId::XtablesComment)
+            .unwrap()
+            .status,
+        CheckStatus::Blocker
+    );
+    assert_eq!(
+        missing_comment.calls.borrow().as_slice(),
+        ["discover", "supplemental"]
+    );
+    assert!(comment_blocked.constrained.is_none());
 }
