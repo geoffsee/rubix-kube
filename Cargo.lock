@@ -1203,6 +1203,7 @@ dependencies = [
  "rubix-config",
  "rubix-datastore",
  "rubix-pki",
+ "rubix-platform",
  "rubixctl",
  "rustix",
  "serde",

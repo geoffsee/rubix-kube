@@ -412,9 +412,10 @@ impl ReleasePackager {
 
         // Idempotency check: verify re-extraction succeeds without conflict
         let second_outcome = materializer.materialize_from_archive(archive_reader)?;
-        if second_outcome.assets.len() != outcome.assets.len() {
+        if second_outcome.assets != outcome.assets {
             return Err(MaterializationError::CorruptArchive(
-                "idempotency check produced different asset count".to_string(),
+                "idempotency check produced different asset paths, modes, sizes or digests"
+                    .to_string(),
             )
             .into());
         }
