@@ -203,12 +203,22 @@ fn startup_action_debug_does_not_disclose_resolved_values() {
 }
 
 #[test]
-fn actual_executable_prints_then_refuses_unimplemented_startup() {
+fn actual_executable_prints_then_enters_supervised_startup() {
+    let temp = tempfile::TempDir::new().expect("temp dir");
+    let unwritable_cfg = temp.path().join("unwritable.yaml");
+    std::fs::write(
+        &unwritable_cfg,
+        "path: /dev/null/forbidden_rubix_kube_path\n",
+    )
+    .expect("write config");
+
     for (printing, expected_success) in [(true, true), (false, false)] {
         let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_rubix-kube"));
-        command.env_clear().arg("--config=");
+        command.env_clear();
         if printing {
-            command.arg("--print-config");
+            command.arg("--config=").arg("--print-config");
+        } else {
+            command.arg(format!("--config={}", unwritable_cfg.display()));
         }
         let output = command.output().expect("startup process");
         assert_eq!(output.status.success(), expected_success);
@@ -220,10 +230,75 @@ fn actual_executable_prints_then_refuses_unimplemented_startup() {
             assert!(!String::from_utf8_lossy(&output.stderr).contains("runtime startup"));
         } else {
             assert!(output.stdout.is_empty());
-            assert!(
-                String::from_utf8_lossy(&output.stderr)
-                    .contains("runtime startup is not implemented")
-            );
+            let err = String::from_utf8_lossy(&output.stderr);
+            assert!(err.contains("\"schema\":1"));
+            assert!(err.contains("\"event\":\"runtime_assembly_failed\""));
+            assert!(err.contains("\"code\":\"io_failure\""));
+            assert!(!err.contains("\"event\":\"component_failure\""));
+            assert!(!err.contains("\"event\":\"supervisor_stop\""));
+            assert!(!err.contains("\"code\":\"adapter\""));
         }
     }
+}
+
+#[test]
+fn requested_stop_preserves_success_after_ready() {
+    let temp = tempfile::TempDir::new().expect("temp dir");
+    let config_path = temp.path().join("config.yaml");
+    let state = temp.path().join("state");
+    std::fs::write(
+        &config_path,
+        format!("path: \"{}\"\nlogging:\n  debug: true\n", state.display()),
+    )
+    .expect("write config");
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_rubix-kube"))
+        .arg(format!("--config={}", config_path.display()))
+        .env_clear()
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn node");
+    let mut stderr = child.stderr.take().expect("stderr");
+    let (ready_sender, ready_receiver) = std::sync::mpsc::channel();
+    let (done_sender, done_receiver) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let mut captured = Vec::new();
+        let mut chunk = [0_u8; 512];
+        let mut signaled = false;
+        loop {
+            match std::io::Read::read(&mut stderr, &mut chunk) {
+                Ok(0) | Err(_) => break,
+                Ok(count) => {
+                    captured.extend_from_slice(&chunk[..count]);
+                    if !signaled
+                        && String::from_utf8_lossy(&captured).contains("\"state\":\"ready\"")
+                    {
+                        signaled = true;
+                        let _ = ready_sender.send(());
+                    }
+                },
+            }
+        }
+        let _ = done_sender.send(captured);
+    });
+    if let Err(error) = ready_receiver.recv_timeout(std::time::Duration::from_secs(20)) {
+        let _ = std::process::Command::new("kill")
+            .args(["-TERM", &child.id().to_string()])
+            .status();
+        let _ = child.wait();
+        panic!("ready log was not observed: {error}");
+    }
+    let killed = std::process::Command::new("kill")
+        .args(["-TERM", &child.id().to_string()])
+        .status()
+        .expect("signal process");
+    assert!(killed.success());
+    let status = child.wait().expect("wait for node");
+    let captured = done_receiver
+        .recv_timeout(std::time::Duration::from_secs(20))
+        .expect("stderr capture");
+    let err = String::from_utf8_lossy(&captured);
+    assert!(status.success(), "requested stop failed: {err}");
+    assert!(err.contains("\"event\":\"supervisor_stop\""), "{err}");
+    assert!(err.contains("\"code\":\"requested\""), "{err}");
 }

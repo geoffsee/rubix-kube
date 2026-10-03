@@ -29,8 +29,9 @@ Release consumers must decode and validate the complete manifest for the request
 target/variant before performing installation side effects. Wrong-target, missing-role,
 malformed and truncated manifest inputs are rejected by this same API. Validation does
 not authenticate otherwise well-formed manifest bytes, authorize installation, or
-replace verification of the exact bytes later materialized. Accepted Linux ARM64/glibc
-production payload cells for online and offline variants are provided in fixtures.
+replace verification of the exact bytes later materialized. Linux ARM64/glibc fixtures
+are structural manifests: Kubernetes arm64 pins match published releases, and the
+remaining bundled digests are placeholders rather than an accepted production cell.
 
 `DeclaredInventory::verification_session()` creates an aggregate encoded-read
 budget. `verify_encoded_blob(id, reader)` checks exact encoded length and SHA-256,

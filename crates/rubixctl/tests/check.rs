@@ -11,12 +11,15 @@ use std::io;
 fn args(values: &[&str]) -> Vec<String> {
     values.iter().map(|v| (*v).into()).collect()
 }
+#[allow(clippy::struct_excessive_bools)]
 struct Fake {
     calls: Vec<&'static str>,
     root: bool,
     port_result: Observation<PortAvailability>,
     expected_pprof: bool,
     failure: Option<&'static str>,
+    alpine: bool,
+    tools: bool,
 }
 impl Fake {
     fn new() -> Self {
@@ -26,6 +29,8 @@ impl Fake {
             port_result: Observation::Present(PortAvailability::Available),
             expected_pprof: false,
             failure: None,
+            alpine: false,
+            tools: true,
         }
     }
 }
@@ -34,6 +39,40 @@ impl CheckInputs for Fake {
         self.calls.push("discover");
         if self.failure == Some("discover") {
             return Err(PlatformError::UnsupportedHost);
+        }
+        let mut landmarks = [
+            "/var/run/docker.sock",
+            "/usr/bin/docker",
+            "/usr/local/bin/docker",
+        ]
+        .into_iter()
+        .map(|p| (p.into(), Observation::Absent))
+        .collect::<BTreeMap<_, _>>();
+        landmarks.insert(
+            "/etc/alpine-release".into(),
+            if self.alpine {
+                Observation::Present(true)
+            } else {
+                Observation::Absent
+            },
+        );
+        for path in [
+            "/usr/sbin/nft",
+            "/sbin/nft",
+            "/usr/bin/nft",
+            "/sbin/iptables",
+            "/usr/sbin/iptables",
+            "/bin/iptables",
+            "/usr/bin/iptables",
+        ] {
+            landmarks.insert(
+                path.into(),
+                if self.tools {
+                    Observation::Present(true)
+                } else {
+                    Observation::Absent
+                },
+            );
         }
         Ok(HostEvidence {
             executable: ExecutableAbi {
@@ -48,15 +87,7 @@ impl CheckInputs for Fake {
             }),
             hostname: Observation::Present("node".into()),
             container_environment_set: false,
-            landmarks: [
-                "/var/run/docker.sock",
-                "/usr/bin/docker",
-                "/usr/local/bin/docker",
-                "/etc/alpine-release",
-            ]
-            .into_iter()
-            .map(|p| (p.into(), Observation::Absent))
-            .collect(),
+            landmarks,
             musl_linkers: Observation::Present(vec![]),
             files: [(
                 "/sys/fs/cgroup/cgroup.controllers".into(),
@@ -264,5 +295,33 @@ fn probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress() {
     let result = execute(&["check"], &mut fake);
     assert_eq!(result.0, 1);
     assert!(result.2.contains("host information could not be read"));
+    assert!(result.2.contains("(uncertain observation)"));
+    assert!(!result.2.contains("(fatal error)"));
     assert!(!result.2.contains("All 7 checks passed"));
+}
+
+#[test]
+fn check_reports_fatal_errors_and_recoverable_limitations() {
+    let mut fake = Fake::new();
+    fake.root = false;
+    let result = execute(&["check"], &mut fake);
+    assert_eq!(result.0, 1);
+    assert!(result.2.contains("root privileges required (fatal error)"));
+    assert!(result.2.contains("Run the check as root."));
+
+    let mut fake_alpine = Fake::new();
+    fake_alpine.alpine = true;
+    fake_alpine.tools = false;
+    let result = execute(&["check"], &mut fake_alpine);
+    assert_eq!(result.0, 1);
+    assert!(
+        result
+            .2
+            .contains("required Alpine networking tools are missing (recoverable limitation)")
+    );
+    assert!(
+        result
+            .2
+            .contains("Install the missing networking packages, or opt in with --install-prereqs.")
+    );
 }

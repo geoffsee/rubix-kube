@@ -95,9 +95,27 @@ fn run() -> io::Result<u8> {
         &mut stderr,
     )? {
         StartupAction::Exit(code) => Ok(code),
-        StartupAction::Start(_) => {
-            writeln!(stderr, "rubix-kube: runtime startup is not implemented")?;
-            Ok(1)
+        StartupAction::Start(config) => {
+            drop(stdout);
+            drop(stderr);
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?;
+            runtime.block_on(async move {
+                match rubix_kube::NodeRuntime::from_config(*config) {
+                    Ok(node) => node.run_to_completion().await,
+                    Err(error) => {
+                        // Assembly failed before a supervisor existed. Keep the
+                        // original diagnostic and do not invent lifecycle events.
+                        let _ = writeln!(
+                            io::stderr().lock(),
+                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"runtime_assembly_failed\",\"code\":\"{}\"}}",
+                            error.diagnostic_code()
+                        );
+                        Ok(1)
+                    },
+                }
+            })
         },
     }
 }

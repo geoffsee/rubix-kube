@@ -1,4 +1,6 @@
-use crate::{FeatureSupport, OptionalFeature, Variant, feature_support};
+use crate::{
+    AssetId, DeclaredInventory, Delivery, FeatureSupport, OptionalFeature, Variant, feature_support,
+};
 use rubix_platform::{Architecture, Libc, NodeTarget};
 use std::fmt;
 
@@ -301,6 +303,20 @@ pub enum ArtifactNamingError {
     TargetMismatch,
     EmptyVersion,
     InvalidVersion(String),
+    NonCanonical {
+        filename: String,
+        canonical: String,
+    },
+    OptionalImageRejected {
+        cell: u8,
+        feature: String,
+    },
+    DigestMismatch {
+        asset: String,
+    },
+    MissingPackagedAsset {
+        asset: String,
+    },
 }
 
 impl fmt::Display for ArtifactNamingError {
@@ -340,6 +356,24 @@ impl fmt::Display for ArtifactNamingError {
             Self::TargetMismatch => write!(f, "target mismatch"),
             Self::EmptyVersion => write!(f, "version string must not be empty"),
             Self::InvalidVersion(ver) => write!(f, "invalid version string format: '{ver}'"),
+            Self::NonCanonical {
+                filename,
+                canonical,
+            } => {
+                write!(
+                    f,
+                    "non-canonical archive '{filename}', expected '{canonical}'"
+                )
+            },
+            Self::OptionalImageRejected { cell, feature } => {
+                write!(f, "optional image {feature} is not bundled for cell {cell}")
+            },
+            Self::DigestMismatch { asset } => {
+                write!(f, "packaged digest mismatch for {asset}")
+            },
+            Self::MissingPackagedAsset { asset } => {
+                write!(f, "bundled asset {asset} has no expected digest")
+            },
         }
     }
 }
@@ -411,20 +445,17 @@ impl ArtifactNaming {
             },
         };
 
-        let mut libc = Libc::Glibc;
-        let mut variant = Variant::Online;
-
-        for token in &tokens[1..] {
-            match *token {
-                "musl" => libc = Libc::Musl,
-                "offline" => variant = Variant::Offline,
-                other => {
-                    return Err(ArtifactNamingError::InvalidFormat(format!(
-                        "unknown token '{other}' in '{base}'"
-                    )));
-                },
-            }
-        }
+        let (libc, variant) = match &tokens[1..] {
+            [] => (Libc::Glibc, Variant::Online),
+            ["musl"] => (Libc::Musl, Variant::Online),
+            ["offline"] => (Libc::Glibc, Variant::Offline),
+            ["musl", "offline"] => (Libc::Musl, Variant::Offline),
+            _ => {
+                return Err(ArtifactNamingError::InvalidFormat(format!(
+                    "suffix order must be arch[-musl][-offline] in '{base}'"
+                )));
+            },
+        };
 
         let node_variant = Matrix::find_node_variant(arch, libc, variant)
             .ok_or_else(|| ArtifactNamingError::InvalidFormat(base.to_string()))?;
@@ -480,11 +511,69 @@ impl ArtifactNaming {
         Ok(ParsedManagementBinary { prefix, target })
     }
 
+    /// Accepts only the filename `archive_filename` emits for the parsed cell.
+    pub fn canonical_node_archive(
+        filename: &str,
+    ) -> Result<ParsedNodeArchive, ArtifactNamingError> {
+        let parsed = Self::parse_node_archive(filename)?;
+        let base = filename.rsplit(['/', '\\']).next().unwrap_or(filename);
+        let canonical = parsed
+            .variant
+            .archive_filename(&parsed.prefix, &parsed.version);
+        if base != canonical {
+            return Err(ArtifactNamingError::NonCanonical {
+                filename: base.to_string(),
+                canonical,
+            });
+        }
+        Ok(parsed)
+    }
+
+    /// Rejects an optional image that this cell does not bundle.
+    pub fn validate_bundled_optional_images(
+        node_variant: NodeVariant,
+        bundled: &[OptionalFeature],
+    ) -> Result<(), ArtifactNamingError> {
+        for feature in bundled {
+            if !node_variant.is_image_bundled(*feature) {
+                return Err(ArtifactNamingError::OptionalImageRejected {
+                    cell: node_variant.cell,
+                    feature: format!("{feature:?}"),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Compares every bundled delivery digest with the caller-supplied pin.
+    pub fn validate_packaged_digests(
+        inventory: &DeclaredInventory,
+        expected: &[(AssetId, &str)],
+    ) -> Result<(), ArtifactNamingError> {
+        for (id, delivery) in inventory.assets() {
+            let Delivery::Bundled { sha256, .. } = delivery else {
+                continue;
+            };
+            let Some((_, expected_digest)) = expected.iter().find(|(asset, _)| *asset == id) else {
+                return Err(ArtifactNamingError::MissingPackagedAsset {
+                    asset: format!("{id:?}"),
+                });
+            };
+            if sha256 != expected_digest {
+                return Err(ArtifactNamingError::DigestMismatch {
+                    asset: format!("{id:?}"),
+                });
+            }
+        }
+        Ok(())
+    }
+
     /// Validate clean-checkout build inputs and naming reproducibility.
     pub fn validate_clean_checkout_inputs(
         prefix: &str,
         version: &str,
         node_variant: NodeVariant,
+        bundled_optional_images: &[OptionalFeature],
     ) -> Result<String, ArtifactNamingError> {
         if prefix.is_empty() {
             return Err(ArtifactNamingError::InvalidFormat(
@@ -504,8 +593,9 @@ impl ArtifactNaming {
             return Err(ArtifactNamingError::InvalidVersion(version.to_string()));
         }
 
+        Self::validate_bundled_optional_images(node_variant, bundled_optional_images)?;
         let generated_name = node_variant.archive_filename(prefix, version);
-        let parsed = Self::parse_node_archive(&generated_name)?;
+        let parsed = Self::canonical_node_archive(&generated_name)?;
 
         if parsed.prefix != prefix {
             return Err(ArtifactNamingError::PrefixMismatch {

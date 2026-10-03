@@ -19,7 +19,7 @@ fn validate_all() -> Result<(), String> {
         }
 
         let canonical_name =
-            ArtifactNaming::validate_clean_checkout_inputs("rubix-kube", "0.1.0", *variant)
+            ArtifactNaming::validate_clean_checkout_inputs("rubix-kube", "0.1.0", *variant, &[])
                 .map_err(|e| {
                     format!("clean-checkout validation failed for cell {expected_cell}: {e}")
                 })?;
@@ -139,37 +139,39 @@ fn main() -> ExitCode {
             print_cells();
             ExitCode::SUCCESS
         },
-        [cmd, filename] if cmd == "archive" => match ArtifactNaming::parse_node_archive(filename) {
-            Ok(parsed) => {
-                println!("Parsed node archive:");
-                println!("  Prefix:       {}", parsed.prefix);
-                println!("  Version:      {}", parsed.version);
-                println!("  Cell:         {}", parsed.variant.cell);
-                println!("  OCI Platform: {}", parsed.variant.oci_platform());
-                println!(
-                    "  Portainer:    {:?}",
-                    parsed
-                        .variant
-                        .optional_feature_support(OptionalFeature::PortainerAgent)
-                );
-                println!(
-                    "  D2K:          {:?}",
-                    parsed
-                        .variant
-                        .optional_feature_support(OptionalFeature::D2k)
-                );
-                println!(
-                    "  LocalPath:    {:?}",
-                    parsed
-                        .variant
-                        .optional_feature_support(OptionalFeature::LocalPathStorage)
-                );
-                ExitCode::SUCCESS
-            },
-            Err(e) => {
-                eprintln!("invalid archive filename: {e}");
-                ExitCode::FAILURE
-            },
+        [cmd, filename] if cmd == "archive" => {
+            match ArtifactNaming::canonical_node_archive(filename) {
+                Ok(parsed) => {
+                    println!("Parsed node archive:");
+                    println!("  Prefix:       {}", parsed.prefix);
+                    println!("  Version:      {}", parsed.version);
+                    println!("  Cell:         {}", parsed.variant.cell);
+                    println!("  OCI Platform: {}", parsed.variant.oci_platform());
+                    println!(
+                        "  Portainer:    {:?}",
+                        parsed
+                            .variant
+                            .optional_feature_support(OptionalFeature::PortainerAgent)
+                    );
+                    println!(
+                        "  D2K:          {:?}",
+                        parsed
+                            .variant
+                            .optional_feature_support(OptionalFeature::D2k)
+                    );
+                    println!(
+                        "  LocalPath:    {:?}",
+                        parsed
+                            .variant
+                            .optional_feature_support(OptionalFeature::LocalPathStorage)
+                    );
+                    ExitCode::SUCCESS
+                },
+                Err(e) => {
+                    eprintln!("invalid archive filename: {e}");
+                    ExitCode::FAILURE
+                },
+            }
         },
         [cmd, filename] if cmd == "binary" => {
             match ArtifactNaming::parse_management_binary(filename) {
