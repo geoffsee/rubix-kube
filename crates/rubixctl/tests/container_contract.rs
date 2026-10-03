@@ -26,6 +26,7 @@ struct MockContainerEngine {
     fail_create_container: bool,
     fail_start_container: bool,
     fail_post_start_inspect: bool,
+    omit_inspected_port: Option<String>,
 
     // Audit logs of operations
     created_networks: Vec<String>,
@@ -94,12 +95,16 @@ impl ContainerEngineClient for MockContainerEngine {
             return Err(io::Error::other("mock fail post start inspect"));
         }
         if let Some((_, running, ports)) = self.containers.get(name) {
+            let mut allocated_ports = ports.clone();
+            if let Some(port) = &self.omit_inspected_port {
+                allocated_ports.remove(port);
+            }
             Ok(Some(ContainerInspect {
                 id: format!("id-{name}"),
                 name: name.to_string(),
                 running: *running,
                 exit_code: 0,
-                allocated_ports: ports.clone(),
+                allocated_ports,
             }))
         } else {
             Ok(None)
@@ -620,4 +625,17 @@ fn published_endpoints_require_a_nonzero_inspected_api_port() {
             .port(),
         49153
     );
+}
+
+#[test]
+fn missing_inspected_api_or_enabled_d2k_binding_fails_installation() {
+    for port in ["6443/tcp", "2376/tcp"] {
+        let mut engine = MockContainerEngine {
+            omit_inspected_port: Some(port.into()),
+            ..Default::default()
+        };
+        let error = install_container(&mut engine, &regression_params()).unwrap_err();
+        assert!(error.to_string().contains("missing allocated"));
+        assert_eq!(engine.removed_containers.len(), 1);
+    }
 }
