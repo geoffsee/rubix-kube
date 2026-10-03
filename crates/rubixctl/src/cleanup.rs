@@ -233,7 +233,8 @@ pub fn run_host_cleanup_with_configuration(
     let _lock = lock_cleanup(kind, data)?;
     let mut plan = plan_cleanup(kind, data);
     validate_removal_ancestors(data, &plan)?;
-    add_configuration_plan(kind, configuration, &mut plan)?;
+    let selection = configuration.map(|p| ConfigurationSelection::Directory(p.to_path_buf()));
+    add_configuration_plan(kind, selection.as_ref(), &mut plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -302,6 +303,13 @@ pub fn run_container_cleanup(
     )
 }
 
+/// Configuration ownership established by a directory or an exact file binding.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ConfigurationSelection {
+    Directory(PathBuf),
+    File(PathBuf),
+}
+
 /// Container cleanup using the same explicit configuration retention policy as host cleanup.
 #[allow(clippy::too_many_arguments)]
 pub fn run_container_cleanup_with_configuration(
@@ -311,6 +319,33 @@ pub fn run_container_cleanup_with_configuration(
     kind: CleanupKind,
     data: &Path,
     configuration: Option<&Path>,
+    force: bool,
+    input: &mut dyn BufRead,
+    stderr: &mut dyn Write,
+) -> io::Result<CleanupReport> {
+    let selection = configuration.map(|p| ConfigurationSelection::Directory(p.to_path_buf()));
+    run_container_cleanup_with_selection(
+        runner,
+        engine,
+        spec,
+        kind,
+        data,
+        selection.as_ref(),
+        force,
+        input,
+        stderr,
+    )
+}
+
+/// Container cleanup with configuration ownership scoped to the recorded binding.
+#[allow(clippy::too_many_arguments)]
+pub fn run_container_cleanup_with_selection(
+    runner: &mut dyn Runner,
+    engine: &str,
+    spec: &ContainerSpec,
+    kind: CleanupKind,
+    data: &Path,
+    configuration: Option<&ConfigurationSelection>,
     force: bool,
     input: &mut dyn BufRead,
     stderr: &mut dyn Write,
@@ -393,13 +428,25 @@ fn validate_removal_ancestors(data: &Path, plan: &CleanupPlan) -> io::Result<()>
 
 fn add_configuration_plan(
     kind: CleanupKind,
-    directory: Option<&Path>,
+    selection: Option<&ConfigurationSelection>,
     plan: &mut CleanupPlan,
 ) -> io::Result<()> {
-    let (CleanupKind::Uninstall { keep_config, .. }, Some(directory)) = (kind, directory) else {
+    let (CleanupKind::Uninstall { keep_config, .. }, Some(selection)) = (kind, selection) else {
         return Ok(());
     };
-    validate_data_path(directory)
+    let (directory, paths) = match selection {
+        ConfigurationSelection::Directory(directory) => (
+            directory.as_path(),
+            vec![
+                directory.join("config.yaml"),
+                directory.join("config.yaml.bak"),
+            ],
+        ),
+        ConfigurationSelection::File(file) => {
+            (file.parent().unwrap_or(Path::new("")), vec![file.clone()])
+        },
+    };
+    validate_configuration_directory(directory)
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
     // Configuration is outside the data root; validate its own parent chain before effects.
     let mut parent = PathBuf::new();
@@ -407,8 +454,7 @@ fn add_configuration_plan(
         parent.push(component);
         crate::upgrade::reject_symlink_state(&parent, "")?;
     }
-    for name in ["config.yaml", "config.yaml.bak"] {
-        let path = directory.join(name);
+    for path in paths {
         match path.symlink_metadata() {
             Ok(meta) if meta.is_dir() => {
                 return Err(io::Error::new(
@@ -426,6 +472,23 @@ fn add_configuration_plan(
             Err(error) if error.kind() == io::ErrorKind::NotFound => {},
             Err(error) => return Err(error),
         }
+    }
+    Ok(())
+}
+
+fn validate_configuration_directory(path: &Path) -> Result<(), String> {
+    if !path.is_absolute()
+        || !path
+            .components()
+            .any(|c| matches!(c, std::path::Component::Normal(_)))
+        || path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(format!(
+            "refusing unsafe configuration directory '{}'",
+            path.display()
+        ));
     }
     Ok(())
 }
@@ -614,28 +677,20 @@ fn detected_service_config() -> io::Result<crate::service::ServiceConfig> {
     })
 }
 
-fn container_configuration_directory(spec: &ContainerSpec) -> io::Result<Option<PathBuf>> {
+fn container_configuration_selection(
+    spec: &ContainerSpec,
+) -> io::Result<Option<ConfigurationSelection>> {
     let mut selected = None;
     for mount in &spec.mounts {
         let mut fields = mount.split(':');
         let source = Path::new(fields.next().unwrap_or(""));
         let target = fields.next().unwrap_or("");
-        let directory = match target {
-            "/etc/kubesolo" => source.to_path_buf(),
-            "/etc/kubesolo/config.yaml"
-                if source.file_name().is_some_and(|name| name == "config.yaml") =>
-            {
-                source.parent().unwrap_or(Path::new(".")).to_path_buf()
-            },
-            "/etc/kubesolo/config.yaml" => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "noncanonical configuration bind source; explicit cleanup is required",
-                ));
-            },
+        let selection = match target {
+            "/etc/kubesolo" => ConfigurationSelection::Directory(source.to_path_buf()),
+            "/etc/kubesolo/config.yaml" => ConfigurationSelection::File(source.to_path_buf()),
             _ => continue,
         };
-        if !directory.is_absolute() || selected.replace(directory).is_some() {
+        if !source.is_absolute() || selected.replace(selection).is_some() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "ambiguous configuration binding; explicit cleanup is required",
@@ -665,16 +720,16 @@ pub fn execute_cleanup(
             Ok(spec) => (if kind == CleanupKind::Reset {
                 Ok(None)
             } else {
-                container_configuration_directory(&spec)
+                container_configuration_selection(&spec)
             })
             .and_then(|configuration| {
-                run_container_cleanup_with_configuration(
+                run_container_cleanup_with_selection(
                     &mut runner,
                     "docker",
                     &spec,
                     kind,
                     data,
-                    configuration.as_deref(),
+                    configuration.as_ref(),
                     force,
                     &mut input,
                     stderr,
@@ -713,21 +768,34 @@ mod tests {
     #[test]
     fn container_configuration_selection_requires_an_explicit_owned_binding() {
         let mut spec = ContainerSpec::default();
-        assert_eq!(container_configuration_directory(&spec).unwrap(), None);
+        assert_eq!(container_configuration_selection(&spec).unwrap(), None);
         spec.mounts = vec!["/srv/instance/config:/etc/kubesolo:ro".into()];
         assert_eq!(
-            container_configuration_directory(&spec).unwrap(),
-            Some(PathBuf::from("/srv/instance/config"))
+            container_configuration_selection(&spec).unwrap(),
+            Some(ConfigurationSelection::Directory(PathBuf::from(
+                "/srv/instance/config"
+            )))
         );
         spec.mounts = vec!["/srv/instance/config.yaml:/etc/kubesolo/config.yaml:ro".into()];
         assert_eq!(
-            container_configuration_directory(&spec).unwrap(),
-            Some(PathBuf::from("/srv/instance"))
+            container_configuration_selection(&spec).unwrap(),
+            Some(ConfigurationSelection::File(PathBuf::from(
+                "/srv/instance/config.yaml"
+            )))
         );
         spec.mounts = vec!["foreign-volume:/etc/kubesolo".into()];
-        assert!(container_configuration_directory(&spec).is_err());
+        assert!(container_configuration_selection(&spec).is_err());
         spec.mounts = vec!["/srv/foreign.yaml:/etc/kubesolo/config.yaml".into()];
-        assert!(container_configuration_directory(&spec).is_err());
+        assert_eq!(
+            container_configuration_selection(&spec).unwrap(),
+            Some(ConfigurationSelection::File(PathBuf::from(
+                "/srv/foreign.yaml"
+            )))
+        );
+        assert!(validate_configuration_directory(Path::new("/tmp")).is_ok());
+        for path in ["/", "relative", "/tmp/../etc"] {
+            assert!(validate_configuration_directory(Path::new(path)).is_err());
+        }
     }
 
     #[derive(Debug, Default)]
