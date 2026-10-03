@@ -23,6 +23,9 @@ use rubix_kube::runtime::{
     RuntimeBuilder,
 };
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
+use rubix_platform::Architecture;
+use rubix_portainer::config::PortainerAgentConfig;
+use rubix_portainer::service::PortainerService;
 use rubix_supervisor::{
     Adapter, AdapterContext, AdapterError, AdapterFuture, CleanupKind, ComponentKind,
     ComponentSpec, FailureKind, FailurePolicy, Registration, StopCause, StopPhase, stop_channel,
@@ -505,6 +508,348 @@ async fn test_c02_runtime_contract_downstream_wiring_interface() {
 
     assert!(runtime.client().is_some());
     assert!(runtime.apiserver().is_some());
+}
+
+async fn assert_all_portainer_resources_exist(
+    client: &rubix_apiserver::client::KubernetesApiClient,
+) {
+    assert!(client.get_namespace("portainer").await.is_ok());
+    assert!(
+        client
+            .get_service_account("portainer", "portainer-sa-clusteradmin")
+            .await
+            .is_ok()
+    );
+    assert!(
+        client
+            .get_cluster_role_binding("portainer-crb-clusteradmin")
+            .await
+            .is_ok()
+    );
+    assert!(
+        client
+            .get_configmap("portainer", "portainer-agent-edge")
+            .await
+            .is_ok()
+    );
+    assert!(
+        client
+            .get_secret("portainer", "portainer-agent-edge-key")
+            .await
+            .is_ok()
+    );
+    assert!(
+        client
+            .get_service("portainer", "portainer-agent")
+            .await
+            .is_ok()
+    );
+    assert!(
+        client
+            .get_deployment("portainer", "portainer-agent")
+            .await
+            .is_ok()
+    );
+}
+
+async fn mutate_portainer_configmap(client: &rubix_apiserver::client::KubernetesApiClient) {
+    let mut data = BTreeMap::new();
+    data.insert("EDGE_ID".to_string(), "edge-cluster-99".to_string());
+    data.insert(
+        "USER_CUSTOM_SETTING".to_string(),
+        "persisted-value-12345".to_string(),
+    );
+    client
+        .update_configmap("portainer", "portainer-agent-edge", data, None)
+        .await
+        .unwrap();
+
+    let updated_cm = client
+        .get_configmap("portainer", "portainer-agent-edge")
+        .await
+        .unwrap();
+    assert_eq!(
+        updated_cm["data"]["USER_CUSTOM_SETTING"],
+        "persisted-value-12345"
+    );
+}
+
+fn reopen_cluster_infra(dir: &Path) -> (DatastoreEngine, Arc<ApiserverService>, ApiserverConfig) {
+    let datastore_dir = dir.join("datastore");
+    let ds_config = DatastoreConfig::new(datastore_dir);
+    let (engine, _) = DatastoreEngine::open(ds_config).expect("datastore reopen");
+    let storage = KubernetesStorage::new(engine.client(), "/registry");
+    let pki_dir = dir.join("pki");
+    let node_ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let apiserver_cfg = ApiserverConfig::default_for_pki(&pki_dir, node_ip);
+    let apiserver = Arc::new(ApiserverService::new(apiserver_cfg.clone(), storage));
+    (engine, apiserver, apiserver_cfg)
+}
+
+#[tokio::test]
+async fn test_portainer_wiring_and_object_preservation_across_runs() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (engine, apiserver, _pki, _apicfg) = setup_cluster_infra(temp.path());
+    let client = Arc::new(apiserver.admin_client());
+
+    let portainer_cfg = PortainerAgentConfig::new(
+        "edge-cluster-99",
+        "edge-key-cluster-99",
+        Architecture::Arm64,
+    )
+    .with_readiness_timeout(Duration::ZERO);
+
+    let portainer_svc = PortainerService::new(portainer_cfg.clone(), client.clone());
+
+    let timeout = Duration::from_secs(5);
+    let datastore_reg =
+        DatastoreAdapter::registration_for_engine(COMPONENT_DATASTORE, engine, timeout);
+    let apiserver_reg = ApiserverAdapter::registration(
+        COMPONENT_APISERVER,
+        (*apiserver).clone(),
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+
+    let runtime1 = RuntimeBuilder::new(config.clone())
+        .with_apiserver(apiserver.clone())
+        .with_client((*client).clone())
+        .register_component(datastore_reg)
+        .register_component(apiserver_reg)
+        .register_portainer(portainer_svc, vec![COMPONENT_APISERVER.to_string()])
+        .build()
+        .expect("build runtime1");
+
+    let probe1 = LogProbe::default();
+    let (stop1, stop_rx1) = stop_channel();
+    let run1 =
+        tokio::spawn(runtime1.run_with_sink(stop_rx1, probe1.clone(), FlushPolicy::EachFrame));
+
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if client
+                .get_configmap("portainer", "portainer-agent-edge")
+                .await
+                .is_ok()
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .expect("portainer configmap is reconciled");
+
+    assert_all_portainer_resources_exist(&client).await;
+    mutate_portainer_configmap(&client).await;
+
+    stop1.stop();
+    let (report1, _, _) = run1.await.unwrap();
+    assert_eq!(report1.cause, StopCause::Requested);
+
+    // Drop all handles referencing runtime 1's datastore to release .lock
+    drop(client);
+    drop(apiserver);
+
+    // Re-open datastore and apiserver from same path to simulate restart
+    let (engine2, apiserver2, _) = reopen_cluster_infra(temp.path());
+    let client2 = Arc::new(apiserver2.admin_client());
+    let portainer_svc2 = PortainerService::new(portainer_cfg, client2.clone());
+
+    let datastore_reg2 =
+        DatastoreAdapter::registration_for_engine(COMPONENT_DATASTORE, engine2, timeout);
+    let apiserver_reg2 = ApiserverAdapter::registration(
+        COMPONENT_APISERVER,
+        (*apiserver2).clone(),
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+
+    let runtime2 = RuntimeBuilder::new(config)
+        .with_apiserver(apiserver2)
+        .with_client((*client2).clone())
+        .register_component(datastore_reg2)
+        .register_component(apiserver_reg2)
+        .register_portainer(portainer_svc2, vec![COMPONENT_APISERVER.to_string()])
+        .build()
+        .expect("build runtime2");
+
+    let probe2 = LogProbe::default();
+    let (stop2, stop_rx2) = stop_channel();
+    let run2 =
+        tokio::spawn(runtime2.run_with_sink(stop_rx2, probe2.clone(), FlushPolicy::EachFrame));
+
+    tokio::time::sleep(Duration::from_millis(200)).await;
+
+    // Verify user change was preserved across restart
+    let cm_after_restart = client2
+        .get_configmap("portainer", "portainer-agent-edge")
+        .await
+        .unwrap();
+    assert_eq!(
+        cm_after_restart["data"]["USER_CUSTOM_SETTING"], "persisted-value-12345",
+        "User modified configmap fields must be preserved across restarts"
+    );
+
+    stop2.stop();
+    let (report2, _, _) = run2.await.unwrap();
+    assert_eq!(report2.cause, StopCause::Requested);
+}
+
+#[tokio::test]
+async fn test_node_runtime_from_config_with_portainer_enabled() {
+    let temp = TempDir::new().unwrap();
+    let yaml = format!(
+        r#"
+path: "{}"
+network:
+  node_ip: "127.0.0.1"
+kubernetes:
+  node_name: "test-node"
+logging:
+  debug: false
+portainer:
+  edgeID: "test-edge-id"
+  edgeKey: "test-edge-key"
+  async: false
+"#,
+        temp.path().display()
+    );
+    let config = resolve_layers(
+        Some(decode(&yaml).expect("decode")),
+        &BTreeMap::new(),
+        &ExplicitFlags::default(),
+        EnvironmentMode::Include,
+        &HostContext {
+            cpu_count: 4,
+            architecture: "arm64".into(),
+            detected_container_mode: false,
+        },
+    )
+    .expect("resolve")
+    .validated;
+
+    assert_eq!(config.config().portainer.edge_id, "test-edge-id");
+    assert_eq!(config.config().portainer.edge_key, "test-edge-key");
+
+    let runtime = NodeRuntime::from_config(config).expect("assemble from config");
+    assert!(runtime.client().is_some());
+    assert!(runtime.apiserver().is_some());
+
+    let client = runtime.client().unwrap().clone();
+    let probe = LogProbe::default();
+    let (stop_handle, stop_receiver) = stop_channel();
+
+    let run_handle =
+        tokio::spawn(runtime.run_with_sink(stop_receiver, probe.clone(), FlushPolicy::EachFrame));
+
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if client
+                .get_configmap("portainer", "portainer-agent-edge")
+                .await
+                .is_ok()
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .expect("portainer configmap is created via from_config");
+
+    let cm = client
+        .get_configmap("portainer", "portainer-agent-edge")
+        .await
+        .unwrap();
+    assert_eq!(cm["data"]["EDGE_ID"], "test-edge-id");
+
+    stop_handle.stop();
+    let (report, _, _) = run_handle.await.expect("join runtime task");
+    assert_eq!(report.cause, StopCause::Requested);
+}
+
+#[tokio::test]
+async fn test_portainer_optional_failure_degrades_supervisor_gracefully() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (engine, apiserver, _pki, _apicfg) = setup_cluster_infra(temp.path());
+    let client = Arc::new(apiserver.admin_client());
+
+    // Config that fails readiness: readiness_timeout = 50ms
+    let portainer_cfg =
+        PortainerAgentConfig::new("edge-fail-id", "edge-fail-key", Architecture::Arm64)
+            .with_readiness_timeout(Duration::from_millis(50));
+
+    let portainer_svc = PortainerService::new(portainer_cfg, client.clone());
+
+    let timeout = Duration::from_secs(5);
+    let datastore_reg =
+        DatastoreAdapter::registration_for_engine(COMPONENT_DATASTORE, engine, timeout);
+    let apiserver_reg = ApiserverAdapter::registration(
+        COMPONENT_APISERVER,
+        (*apiserver).clone(),
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+
+    let runtime = RuntimeBuilder::new(config)
+        .with_apiserver(apiserver)
+        .with_client((*client).clone())
+        .register_component(datastore_reg)
+        .register_component(apiserver_reg)
+        .register_portainer(portainer_svc, vec![COMPONENT_APISERVER.to_string()])
+        .build()
+        .expect("build runtime");
+
+    let probe = LogProbe::default();
+    let (stop_handle, stop_receiver) = stop_channel();
+    let run_handle =
+        tokio::spawn(runtime.run_with_sink(stop_receiver, probe.clone(), FlushPolicy::EachFrame));
+
+    // Wait until degradation is recorded in the sink
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let text = probe.text();
+            if text.contains("\"event\":\"component_failure\"")
+                && text.contains("\"event\":\"supervisor_degraded\"")
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(15)).await;
+        }
+    })
+    .await
+    .expect("portainer degradation logged to sink");
+
+    let text_before_stop = probe.text();
+    assert!(
+        text_before_stop.contains("\"detail_code\":\"portainer_readiness_timeout\""),
+        "Missing diagnostic code in logs: {text_before_stop}"
+    );
+
+    // Verify that apiserver remains fully operational and healthy!
+    let ns_list = client
+        .list_namespaces()
+        .await
+        .expect("apiserver is alive and responding");
+    let namespaces = ns_list["items"].as_array().expect("items array");
+    assert!(!namespaces.is_empty());
+
+    stop_handle.stop();
+    let (report, _, _) = run_handle.await.expect("join runtime");
+    assert_eq!(report.cause, StopCause::Requested);
+
+    let portainer_failure = report
+        .failures
+        .iter()
+        .find(|f| f.component == COMPONENT_PORTAINER);
+    assert!(portainer_failure.is_some());
+    assert_eq!(
+        portainer_failure.unwrap().kind,
+        FailureKind::Adapter("portainer_readiness_timeout")
+    );
 }
 
 #[tokio::test]

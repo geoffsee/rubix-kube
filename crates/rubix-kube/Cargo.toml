@@ -26,6 +26,7 @@ rubix-controller = { version = "=0.1.0", path = "../rubix-controller" }
 rubix-datastore = { version = "=0.1.0", path = "../rubix-datastore" }
 rubix-dns = { version = "=0.1.0", path = "../rubix-dns" }
 rubix-pki = { version = "=0.1.0", path = "../rubix-pki" }
+rubix-portainer = { version = "=0.1.0", path = "../rubix-portainer" }
 rubix-proxy = { version = "=0.1.0", path = "../rubix-proxy" }
 rubix-storage = { version = "=0.1.0", path = "../rubix-storage" }
 

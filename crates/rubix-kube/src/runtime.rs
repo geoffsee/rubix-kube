@@ -26,6 +26,9 @@ use rubix_dns::config::CoreDnsConfig;
 use rubix_dns::service::CoreDnsService;
 use rubix_dns::supervisor::CoreDnsAdapter;
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
+use rubix_portainer::config::PortainerAgentConfig;
+use rubix_portainer::service::PortainerService;
+use rubix_portainer::supervisor::PortainerAdapter;
 use rubix_storage::config::LocalPathConfig;
 use rubix_storage::service::LocalPathService;
 use rubix_storage::supervisor::LocalPathAdapter;
@@ -249,6 +252,15 @@ impl RuntimeBuilder {
         self
     }
 
+    /// Registers the optional Portainer Edge Agent component under supervision.
+    #[must_use]
+    pub fn register_portainer(self, service: PortainerService, prerequisites: Vec<String>) -> Self {
+        let timeout = self.policy.startup_timeout();
+        let reg =
+            PortainerAdapter::registration(COMPONENT_PORTAINER, service, prerequisites, timeout);
+        self.register_component(reg)
+    }
+
     /// Builds the supervised node runtime.
     pub fn build(self) -> Result<NodeRuntime, RuntimeError> {
         let (supervisor, observer) = Supervisor::new(self.registrations)?.with_observer();
@@ -364,7 +376,7 @@ impl NodeRuntime {
 
         if builder.config().config().storage.local_path.enabled {
             let storage_config = LocalPathConfig::new().with_enabled(true);
-            let storage_service = LocalPathService::new(storage_config, Arc::new(client));
+            let storage_service = LocalPathService::new(storage_config, Arc::new(client.clone()));
             let storage_reg = LocalPathAdapter::registration(
                 COMPONENT_LOCAL_PATH,
                 storage_service,
@@ -374,32 +386,25 @@ impl NodeRuntime {
             builder = builder.register_component(storage_reg);
         }
 
-        if builder.config().config().metrics.enabled {
-            let metrics_cfg = &builder.config().config().metrics;
-            let registry = Arc::new(MetricsRegistry::new());
-            registry.register(BuildInfoCollector::default());
-            registry.register(UptimeCollector::new());
-            registry.register(DatastoreCollector::with_wal(
-                datastore_cfg.snapshot_path(),
-                datastore_cfg.wal_path(),
-            ));
-            registry.register(CertificateCollector::new(
-                pki_dir.clone(),
-                builder.config().config().d2k.enabled,
-            ));
-            // Component health series require lifecycle updates; do not publish static zeros.
+        builder = register_operational_metrics(builder, &datastore_cfg, &pki_dir, timeout);
 
-            let metrics_adapter =
-                MetricsAdapter::new(metrics_cfg.bind_address.clone(), registry.clone());
-            let metrics_reg = MetricsAdapter::registration(
-                COMPONENT_METRICS,
-                metrics_adapter,
-                vec![COMPONENT_DATASTORE.to_string()],
+        let arch = match std::env::consts::ARCH {
+            "aarch64" => rubix_platform::Architecture::Arm64,
+            "arm" => rubix_platform::Architecture::ArmV7,
+            "riscv64" => rubix_platform::Architecture::Riscv64,
+            _ => rubix_platform::Architecture::Amd64,
+        };
+        let portainer_cfg =
+            PortainerAgentConfig::from_rubix_config(&builder.config().config().portainer, arch);
+        if portainer_cfg.is_enabled() {
+            let portainer_service = PortainerService::new(portainer_cfg, Arc::new(client));
+            let portainer_reg = PortainerAdapter::registration(
+                COMPONENT_PORTAINER,
+                portainer_service,
+                vec![COMPONENT_APISERVER.to_string()],
                 timeout,
             );
-            builder = builder
-                .with_metrics_registry(registry)
-                .register_component(metrics_reg);
+            builder = builder.register_component(portainer_reg);
         }
 
         builder.build()
@@ -525,9 +530,63 @@ impl NodeRuntime {
             .run_with_sink(stop_receiver, io::stderr(), FlushPolicy::EachFrame)
             .await;
 
-        match report.cause {
-            StopCause::Fatal(_) => Ok(1),
-            _ => Ok(0),
-        }
+        Ok(runtime_exit_code(&report.cause))
+    }
+}
+
+fn register_operational_metrics(
+    builder: RuntimeBuilder,
+    datastore_cfg: &DatastoreConfig,
+    pki_dir: &std::path::Path,
+    timeout: std::time::Duration,
+) -> RuntimeBuilder {
+    if !builder.config().config().metrics.enabled {
+        return builder;
+    }
+    let metrics_cfg = &builder.config().config().metrics;
+    let registry = Arc::new(MetricsRegistry::new());
+    registry.register(BuildInfoCollector::default());
+    registry.register(UptimeCollector::new());
+    registry.register(DatastoreCollector::with_wal(
+        datastore_cfg.snapshot_path(),
+        datastore_cfg.wal_path(),
+    ));
+    registry.register(CertificateCollector::new(
+        pki_dir.to_path_buf(),
+        builder.config().config().d2k.enabled,
+    ));
+    // Component health series require lifecycle updates; do not publish static zeros.
+    let metrics_adapter = MetricsAdapter::new(metrics_cfg.bind_address.clone(), registry.clone());
+    let metrics_reg = MetricsAdapter::registration(
+        COMPONENT_METRICS,
+        metrics_adapter,
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+    builder
+        .with_metrics_registry(registry)
+        .register_component(metrics_reg)
+}
+
+fn runtime_exit_code(cause: &StopCause) -> u8 {
+    u8::from(!matches!(cause, StopCause::Requested))
+}
+
+#[cfg(test)]
+mod exit_code_tests {
+    use super::*;
+
+    #[test]
+    fn only_requested_shutdown_is_successful() {
+        assert_eq!(runtime_exit_code(&StopCause::Requested), 0);
+        assert_eq!(runtime_exit_code(&StopCause::ControlClosed), 1);
+        assert_eq!(runtime_exit_code(&StopCause::Finished), 1);
+        assert_eq!(
+            runtime_exit_code(&StopCause::Fatal(rubix_supervisor::ComponentFailure {
+                component: "test-core".into(),
+                kind: rubix_supervisor::FailureKind::UnexpectedExit,
+            })),
+            1
+        );
     }
 }
