@@ -418,6 +418,9 @@ pub fn parse_command(
                 "purge" if topic == HelpTopic::Uninstall => {
                     uninstall_opts.purge = value.map_or(Ok(true), boolean)?;
                 },
+                "force" if topic == HelpTopic::Uninstall => {
+                    uninstall_opts.force = value.map_or(Ok(true), boolean)?;
+                },
                 // Upgrade flags
                 "version" if topic == HelpTopic::Upgrade => {
                     upgrade_opts.version = get_string_val(value, &mut i, args)?;
@@ -438,6 +441,9 @@ pub fn parse_command(
                 // Reset flags
                 "path" if topic == HelpTopic::Reset => {
                     reset_opts.path = PathBuf::from(get_string_val(value, &mut i, args)?);
+                },
+                "force" if topic == HelpTopic::Reset => {
+                    reset_opts.force = value.map_or(Ok(true), boolean)?;
                 },
                 // Config flags
                 "file" if topic == HelpTopic::Config => {
