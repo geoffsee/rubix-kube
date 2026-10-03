@@ -325,6 +325,26 @@ fn save_upgrade_receipt(
     fs::File::open(data)?.sync_all()
 }
 
+/// Acquire the persistent per-installation lock shared by upgrade and cleanup.
+pub(crate) fn lock_installation(data: &Path) -> io::Result<fs::File> {
+    reject_symlink_state(data, "")?;
+    fs::create_dir_all(data)?;
+    let mut options = fs::OpenOptions::new();
+    options.read(true).write(true).create(true).truncate(false);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let lock = options.open(data.join(".upgrade.lock"))?;
+    lock.try_lock().map_err(|e| {
+        io::Error::other(format!(
+            "another upgrade or cleanup owns this installation: {e}"
+        ))
+    })?;
+    Ok(lock)
+}
+
 /// Runs a transition; failures after the service is stopped restore and restart the old unit.
 pub fn run_upgrade(
     backend: &mut dyn TransitionBackend,
@@ -334,17 +354,7 @@ pub fn run_upgrade(
     stamp: u64,
     stderr: &mut dyn Write,
 ) -> io::Result<UpgradeOutcome> {
-    fs::create_dir_all(data_path)?;
-    let mut options = fs::OpenOptions::new();
-    options.read(true).write(true).create(true).truncate(false);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
-    let lock = options.open(data_path.join(".upgrade.lock"))?;
-    lock.try_lock()
-        .map_err(|e| io::Error::other(format!("another upgrade owns this installation: {e}")))?;
+    let _lock = lock_installation(data_path)?;
     let pending = data_path.join(".upgrade-pending");
     let committing = data_path.join(".upgrade-committing");
     let completed = data_path.join(".upgrade-completed");

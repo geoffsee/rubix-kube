@@ -175,6 +175,7 @@ impl fmt::Debug for InstallOptions {
 pub struct UninstallOptions {
     pub path: PathBuf,
     pub purge: bool,
+    pub force: bool,
 }
 
 impl Default for UninstallOptions {
@@ -182,6 +183,7 @@ impl Default for UninstallOptions {
         Self {
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             purge: false,
+            force: false,
         }
     }
 }
@@ -225,12 +227,14 @@ impl Default for UpgradeOptions {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResetOptions {
     pub path: PathBuf,
+    pub force: bool,
 }
 
 impl Default for ResetOptions {
     fn default() -> Self {
         Self {
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
+            force: false,
         }
     }
 }
@@ -322,13 +326,15 @@ pub trait CommandHandler {
 
     fn execute_uninstall(
         &mut self,
-        _options: UninstallOptions,
+        options: UninstallOptions,
         _inputs: &mut dyn CheckInputs,
         _stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'uninstall' is not yet implemented")?;
-        Ok(1)
+        let kind = crate::cleanup::CleanupKind::Uninstall {
+            purge: options.purge,
+        };
+        crate::cleanup::execute_cleanup(kind, &options.path, options.force, stderr)
     }
 
     fn execute_upgrade(
@@ -343,13 +349,17 @@ pub trait CommandHandler {
 
     fn execute_reset(
         &mut self,
-        _options: ResetOptions,
+        options: ResetOptions,
         _inputs: &mut dyn CheckInputs,
         _stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'reset' is not yet implemented")?;
-        Ok(1)
+        crate::cleanup::execute_cleanup(
+            crate::cleanup::CleanupKind::Reset,
+            &options.path,
+            options.force,
+            stderr,
+        )
     }
 
     fn execute_config(
