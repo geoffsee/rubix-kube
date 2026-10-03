@@ -56,7 +56,7 @@ fn run() -> io::Result<u8> {
         &mut io::stdout().lock(),
         &mut io::stderr().lock(),
     )?;
-    let StartupAction::Start(config) = action else {
+    let StartupAction::Start { config, .. } = action else {
         let StartupAction::Exit(code) = action else {
             return Ok(1);
         };
