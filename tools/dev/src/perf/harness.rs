@@ -908,10 +908,31 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
     println!("[gate-ci] Committed platform thresholds: validated immutable contract multipliers");
 
     // 3. Baselines Load & Structural Validation
-    let load = |path: &str| -> Result<PerformanceReport> {
+    let load = |path: &str, architecture: Architecture| -> Result<PerformanceReport> {
         let report = serde_json::from_value(verified[path].clone())?;
         super::validation::validate_report(&report)?;
+        if report.architecture != architecture {
+            return Err(format!("{path}: expected {} architecture", architecture.as_str()).into());
+        }
         let growth = &report.sustained_growth;
+        if growth.duration_hours < 24 {
+            return Err(format!("{path}: sustained growth duration must be >= 24h").into());
+        }
+        if growth.oom_kill_count > 0 || growth.crash_count > 0 || growth.unexplained_failures > 0 {
+            return Err(format!("{path}: sustained growth observed failures").into());
+        }
+        let shutdown = &report.shutdown;
+        if shutdown.surviving_owned_processes > 0 || shutdown.unrelated_processes_killed > 0 {
+            return Err(format!("{path}: shutdown unclean").into());
+        }
+        if shutdown.graceful_duration_seconds.max
+            > contract_thresholds.shutdown_graceful_deadline_seconds
+            || shutdown.escalation_duration_seconds.max
+                > contract_thresholds.shutdown_escalation_deadline_seconds
+        {
+            return Err(format!("{path}: shutdown exceeds per-run deadline").into());
+        }
+
         if growth.initial_settled_idle_median_bytes == 0 {
             return Err(format!("{path}: initial sustained growth memory must be positive").into());
         }
@@ -927,10 +948,10 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
         }
         Ok(report)
     };
-    let amd64_ref = load("fixtures/amd64-reference-go.json")?;
-    let amd64_cand = load("fixtures/amd64-candidate-rust.json")?;
-    let arm64_ref = load("fixtures/arm64-reference-go.json")?;
-    let arm64_cand = load("fixtures/arm64-candidate-rust.json")?;
+    let amd64_ref = load("fixtures/amd64-reference-go.json", Architecture::Amd64)?;
+    let amd64_cand = load("fixtures/amd64-candidate-rust.json", Architecture::Amd64)?;
+    let arm64_ref = load("fixtures/arm64-reference-go.json", Architecture::Arm64)?;
+    let arm64_cand = load("fixtures/arm64-candidate-rust.json", Architecture::Arm64)?;
 
     for report in [&amd64_ref, &amd64_cand, &arm64_ref, &arm64_cand] {
         verify_retained_process_coverage(report)?;
@@ -975,50 +996,6 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
             return Err(format!(
                 "{arch_name} Pod Density failed: candidate {:.1} < threshold {:.1}",
                 density_gate.candidate_value, density_gate.target_threshold
-            )
-            .into());
-        }
-
-        let growth = &c.sustained_growth;
-        if growth.duration_hours < 24 {
-            return Err(format!(
-                "{arch_name} sustained growth duration must be >= 24h, got {}h",
-                growth.duration_hours
-            )
-            .into());
-        }
-        if growth.oom_kill_count > 0 || growth.crash_count > 0 || growth.unexplained_failures > 0 {
-            return Err(format!(
-                "{arch_name} sustained growth observed failures: {} OOMs, {} crashes, {} failures",
-                growth.oom_kill_count, growth.crash_count, growth.unexplained_failures
-            )
-            .into());
-        }
-        let shutdown = &c.shutdown;
-        if shutdown.surviving_owned_processes > 0 || shutdown.unrelated_processes_killed > 0 {
-            return Err(format!(
-                "{arch_name} shutdown unclean: {} surviving processes, {} unrelated killed",
-                shutdown.surviving_owned_processes, shutdown.unrelated_processes_killed
-            )
-            .into());
-        }
-        if shutdown.graceful_duration_seconds.p95
-            > contract_thresholds.shutdown_graceful_deadline_seconds
-        {
-            return Err(format!(
-                "{arch_name} graceful shutdown p95 {:.2}s exceeds deadline {:.1}s",
-                shutdown.graceful_duration_seconds.p95,
-                contract_thresholds.shutdown_graceful_deadline_seconds
-            )
-            .into());
-        }
-        if shutdown.escalation_duration_seconds.p95
-            > contract_thresholds.shutdown_escalation_deadline_seconds
-        {
-            return Err(format!(
-                "{arch_name} escalation shutdown p95 {:.2}s exceeds deadline {:.1}s",
-                shutdown.escalation_duration_seconds.p95,
-                contract_thresholds.shutdown_escalation_deadline_seconds
             )
             .into());
         }
