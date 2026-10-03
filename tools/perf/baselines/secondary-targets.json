@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "targets": {
+    "armv7": {
+      "architecture": "armv7",
+      "status": "secondary-supported-with-limits",
+      "address_space_bits": 32,
+      "maximum_pod_density": 45,
+      "d2k_supported": false,
+      "portainer_supported": true,
+      "crun_source_build_required": true,
+      "cold_boot_latency_overhead_multiplier": "1.35x",
+      "primary_gate_exceptions": [
+        "Pod density capped at 45 replicas due to 32-bit user address space and kernel task memory limit",
+        "D2K translator disabled due to 32-bit Go/Rust memory mapping constraints",
+        "Boot-to-API and first-pod latency allow 1.35x multiplier over amd64 reference"
+      ],
+      "hardware_and_toolchain_constraints": [
+        "Requires hard-float ABI (armv7hl / armhf)",
+        "crun runtime must be compiled from source for ARMv7 target",
+        "Maximum 3 GiB accessible user virtual memory per process"
+      ]
+    },
+    "riscv64": {
+      "architecture": "riscv64",
+      "status": "secondary-experimental-with-limits",
+      "address_space_bits": 64,
+      "maximum_pod_density": 30,
+      "d2k_supported": false,
+      "portainer_supported": false,
+      "crun_source_build_required": false,
+      "cold_boot_latency_overhead_multiplier": "2.50x",
+      "primary_gate_exceptions": [
+        "Portainer agent and UI unavailable on riscv64",
+        "D2K translator disabled",
+        "Emulation/TCG or early silicon imposes 2.50x cold-cache startup latency gap",
+        "Pod density capped at 30 replicas under 4 GiB memory limit"
+      ],
+      "hardware_and_toolchain_constraints": [
+        "Requires rv64gc ISA baseline with Linux cgroups v2",
+        "Official container images for Portainer and auxiliary components lack riscv64 manifests",
+        "Toolchain/codegen optimizations are nascent compared to mature x86_64/aarch64 backends"
+      ]
+    }
+  }
+}

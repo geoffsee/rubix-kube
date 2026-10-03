@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "generator": "rubix-perf v0.1.0",
+  "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "files": {
+    "inputs.json": "f3b1977ddcf8255f81b8a0e088578536bdd5e4537475bffda1b67ee3267bf876",
+    "baselines/amd64-candidate-rust.json": "bbd2bea882cd120a4426c3dea83b45fc4d9de8d41ae1b5991c8d7ff25f13fbfe",
+    "baselines/amd64-reference-go.json": "f303dfdd3b24dc7cbf210421b1745601653e92e39582e5015a30f90f66757848",
+    "baselines/arm64-candidate-rust.json": "18ba18e8f91146cd18718caa326e90c37e3784421b3d671562beddea3cafdadf",
+    "baselines/arm64-reference-go.json": "8116ffa1055ba5d76b1f75e114556b2bd41b9cba834110982f86f0d04a3d76a0",
+    "baselines/paired-comparison.json": "a78ed69f12782b48f0b694515ea2ea9f4609b6d9c481f8b0c694faf5da51d4e0",
+    "baselines/secondary-targets.json": "c33436da705b874686d4ef0fc83d9396aea353e60d8e2959b15e2c88cd55959b"
+  }
+}
