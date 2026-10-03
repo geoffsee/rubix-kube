@@ -573,6 +573,28 @@ fn release_metadata_rejects_incomplete_or_contradictory_descriptors() {
         |m| m.node_archives[0].libc = "unknown".into(),
         |m| m.node_archives[0].variant = "hardened".into(),
         |m| m.node_archives[0].size_bytes = 0,
+        |m| m.node_archives[0].filename = format!("../../x/{}", m.node_archives[0].filename),
+        |m| m.node_archives[0].filename = format!("dir\\{}", m.node_archives[0].filename),
+        |m| {
+            let artifact = m
+                .node_archives
+                .iter_mut()
+                .find(|a| a.architecture == "arm")
+                .unwrap();
+            artifact.filename = artifact.filename.replace("-arm", "-armv7");
+        },
+        |m| {
+            m.management_binaries[0].filename =
+                format!("dir/{}", m.management_binaries[0].filename);
+        },
+        |m| {
+            m.management_binaries[0].filename =
+                format!("dir\\{}", m.management_binaries[0].filename);
+        },
+        |m| m.node_archives[0].sha256 = "A".repeat(64),
+        |m| m.management_binaries[0].sha256 = "A".repeat(64),
+        |m| m.oci_images[0].index_digest = format!("sha256:{}", "A".repeat(64)),
+        |m| m.oci_images[0].platforms[0].digest = format!("sha256:{}", "A".repeat(64)),
         |m| m.node_archives[0].bundled_assets.clear(),
         |m| m.node_archives[0].bundled_assets.push("image-d2k".into()),
         |m| m.management_binaries[0].size_bytes = 0,
