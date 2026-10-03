@@ -520,7 +520,26 @@ pub fn execute_kubeconfig(
 /// Executes `rubixctl kubeconfig` with explicit environment for identity resolution.
 pub fn execute_kubeconfig_with_env(
     options: &KubeconfigOptions,
+    inputs: &mut dyn CheckInputs,
+    environment: &BTreeMap<String, String>,
+    stdout: &mut dyn Write,
+    stderr: &mut dyn Write,
+) -> io::Result<u8> {
+    execute_kubeconfig_with_engine(
+        options,
+        inputs,
+        &mut crate::endpoints::DockerPortInspector,
+        environment,
+        stdout,
+        stderr,
+    )
+}
+
+/// Executes kubeconfig commands with an injected container port inspector.
+pub fn execute_kubeconfig_with_engine(
+    options: &KubeconfigOptions,
     _inputs: &mut dyn CheckInputs,
+    engine: &mut dyn crate::endpoints::EnginePortInspector,
     environment: &BTreeMap<String, String>,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
@@ -533,6 +552,11 @@ pub fn execute_kubeconfig_with_env(
         environment.clone()
     };
 
+    if matches!(options.subcommand.as_deref(), Some("route" | "remove")) {
+        return crate::endpoints::execute_endpoint_command(
+            options, engine, &env_map, stdout, stderr,
+        );
+    }
     let user = resolve_invoking_user(&env_map);
     let admin_kubeconfig_path = match locate_admin_kubeconfig(&options.path) {
         Ok(path) => path,
