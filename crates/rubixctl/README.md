@@ -180,7 +180,10 @@ such by a future installer.
 **directory**. All exported files are private (0600) in a private directory (0700).
 Symlinked directory components are rejected and leaf symlinks are atomically
 replaced without modifying their targets. Existing directories must belong to
-that user. Container exports use the managed `kubesolo[-<instance>]` identity and
+that user. For privileged export to a different user's identity, precreate the
+output directory as that user; missing directories fail closed instead of
+chowning entries in a directory that the user can rename concurrently.
+Container exports use the managed `kubesolo[-<instance>]` identity and
 require a valid, unambiguous loopback-reachable published port. Docker context
 configuration runs with the invoking user's identity and Docker configuration,
 not root's configuration under sudo. Exported credentials may remain after a

@@ -232,16 +232,17 @@ fn publish_credentials(
         match openat(&parent, name, flags, Mode::empty()) {
             Ok(child) => parent = child,
             Err(rustix::io::Errno::NOENT) => {
-                mkdirat(&parent, name, Mode::RWXU)?;
-                let child = openat(&parent, name, flags, Mode::empty())?;
-                if rubix_supervisor::rustix::process::geteuid().is_root() {
-                    fchown(
-                        &child,
-                        user.uid.map(rustix::fs::Uid::from_raw),
-                        user.gid.map(rustix::fs::Gid::from_raw),
-                    )?;
+                if !may_create_directory(
+                    rubix_supervisor::rustix::process::geteuid().as_raw(),
+                    user.uid,
+                ) {
+                    return Err(io::Error::new(
+                        io::ErrorKind::PermissionDenied,
+                        "create the certificate directory as the invoking user before privileged export",
+                    ));
                 }
-                parent = child;
+                mkdirat(&parent, name, Mode::RWXU)?;
+                parent = openat(&parent, name, flags, Mode::empty())?;
             },
             Err(error) => return Err(error.into()),
         }
@@ -282,6 +283,11 @@ fn publish_credentials(
     fs::File::from(parent).sync_all()
 }
 
+#[cfg(unix)]
+fn may_create_directory(effective_uid: u32, invoking_uid: Option<u32>) -> bool {
+    invoking_uid == Some(effective_uid)
+}
+
 #[cfg(not(unix))]
 fn publish_credentials(_: &Path, _: &[(&str, Vec<u8>)], _: &InvokingUser) -> io::Result<()> {
     Err(io::Error::new(
@@ -294,6 +300,14 @@ fn publish_credentials(_: &Path, _: &[(&str, Vec<u8>)], _: &InvokingUser) -> io:
 mod tests {
     use super::*;
     use std::os::unix::fs::{PermissionsExt, symlink};
+
+    #[test]
+    fn privileged_export_never_creates_or_chowns_another_users_directory() {
+        assert!(!may_create_directory(0, Some(1000)));
+        assert!(!may_create_directory(0, None));
+        assert!(may_create_directory(1000, Some(1000)));
+        assert!(may_create_directory(0, Some(0)));
+    }
 
     #[derive(Default)]
     struct MockDocker {
