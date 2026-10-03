@@ -418,6 +418,9 @@ pub fn parse_command(
                 "purge" if topic == HelpTopic::Uninstall => {
                     uninstall_opts.purge = value.map_or(Ok(true), boolean)?;
                 },
+                "keep-config" if topic == HelpTopic::Uninstall => {
+                    uninstall_opts.keep_config = value.map_or(Ok(true), boolean)?;
+                },
                 "force" if topic == HelpTopic::Uninstall => {
                     uninstall_opts.force = value.map_or(Ok(true), boolean)?;
                 },
@@ -467,6 +470,9 @@ pub fn parse_command(
                 "output" if topic == HelpTopic::D2k => {
                     d2k_opts.output = Some(PathBuf::from(get_string_val(value, &mut i, args)?));
                 },
+                "name" if topic == HelpTopic::D2k => {
+                    d2k_opts.name = Some(get_string_val(value, &mut i, args)?);
+                },
                 _ => return Err(ParseError::UnknownFlag),
             }
         } else {
@@ -483,6 +489,9 @@ pub fn parse_command(
                 },
                 "o" if topic == HelpTopic::D2k => {
                     d2k_opts.output = Some(PathBuf::from(get_string_val(value, &mut i, args)?));
+                },
+                "name" if topic == HelpTopic::D2k => {
+                    d2k_opts.name = Some(get_string_val(value, &mut i, args)?);
                 },
                 _ if !letters.is_empty() && letters.bytes().all(|b| b == b'h') => {
                     help = value.map_or(Ok(true), boolean)?;

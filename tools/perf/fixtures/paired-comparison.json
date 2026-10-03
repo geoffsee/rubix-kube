@@ -1,0 +1,269 @@
+{
+  "all_passed": false,
+  "amd64": {
+    "all_passed": false,
+    "architecture": "amd64",
+    "candidate_id": "amd64-candidate-rust",
+    "reference_id": "amd64-reference-go",
+    "results": [
+      {
+        "candidate_value": 10.42,
+        "details": "Candidate p95 (10.420s) vs Reference p95 (14.050s); limit: 15.455s",
+        "higher_is_better": false,
+        "name": "Boot-to-API Latency (p95)",
+        "passed": true,
+        "reference_value": 14.05,
+        "target_threshold": 15.455000000000002,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 15.65,
+        "details": "Candidate p95 (15.650s) vs Reference p95 (19.820s); limit: 21.802s",
+        "higher_is_better": false,
+        "name": "Node Ready Latency (p95)",
+        "passed": true,
+        "reference_value": 19.82,
+        "target_threshold": 21.802000000000003,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 18.85,
+        "details": "Candidate p95 (18.850s) vs Reference p95 (23.850s); limit: 26.235s",
+        "higher_is_better": false,
+        "name": "First Pod Latency (Preloaded, p95)",
+        "passed": true,
+        "reference_value": 23.85,
+        "target_threshold": 26.235000000000003,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 29.15,
+        "details": "Candidate p95 (29.150s) vs Reference p95 (35.750s); limit: 39.325s",
+        "higher_is_better": false,
+        "name": "First Pod Latency (Cold Image, p95)",
+        "passed": true,
+        "reference_value": 35.75,
+        "target_threshold": 39.325,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 471859200.0,
+        "details": "Candidate median (471859200 bytes) vs Reference (566231040 bytes); limit: 622854144 bytes",
+        "higher_is_better": false,
+        "name": "Idle Footprint (Summed PSS, Median)",
+        "passed": true,
+        "reference_value": 566231040.0,
+        "target_threshold": 622854144.0,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 519045120.0,
+        "details": "Candidate cgroup median (519045120 bytes) vs Reference (618659840 bytes); limit: 680525824 bytes",
+        "higher_is_better": false,
+        "name": "Idle Footprint (Cgroup Memory, Median)",
+        "passed": true,
+        "reference_value": 618659840.0,
+        "target_threshold": 680525824.0,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 155189248.0,
+        "details": "Candidate archive (155189248 bytes) vs Reference (173015040 bytes); limit: 190316544 bytes",
+        "higher_is_better": false,
+        "name": "Distribution Size (Compressed Archive)",
+        "passed": true,
+        "reference_value": 173015040.0,
+        "target_threshold": 190316544.00000003,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 256901120.0,
+        "details": "Candidate executables (256901120 bytes) vs Reference (281018368 bytes); limit: 309120205 bytes",
+        "higher_is_better": false,
+        "name": "Distribution Size (Extracted Executables)",
+        "passed": true,
+        "reference_value": 281018368.0,
+        "target_threshold": 309120204.8,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 193986560.0,
+        "details": "Candidate images (193986560 bytes) vs Reference (193986560 bytes); limit: 213385216 bytes",
+        "higher_is_better": false,
+        "name": "Distribution Size (Default Image Payload)",
+        "passed": true,
+        "reference_value": 193986560.0,
+        "target_threshold": 213385216.00000003,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 110.0,
+        "details": "Candidate density (110.0 pods) vs Reference (110.0 pods); minimum: 99.0 pods",
+        "higher_is_better": true,
+        "name": "Pod Density Capacity (Median Replicas)",
+        "passed": true,
+        "reference_value": 110.0,
+        "target_threshold": 99.0,
+        "threshold_multiplier": 0.9
+      },
+      {
+        "candidate_value": 479199232.0,
+        "details": "Initial 471859200 bytes -> Final 479199232 bytes (1.016x), 24h, 0 OOMs, 0 crashes, 0 unexplained failures",
+        "higher_is_better": false,
+        "name": "Sustained Growth (24h Soak)",
+        "passed": true,
+        "reference_value": 471859200.0,
+        "target_threshold": 519045120.00000006,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 5.4,
+        "details": "Graceful p95: 5.40s <= 30s, Surviving owned processes: 0",
+        "higher_is_better": false,
+        "name": "Shutdown & Process Cleanup",
+        "passed": true,
+        "reference_value": 30.0,
+        "target_threshold": 30.0,
+        "threshold_multiplier": 1.0
+      }
+    ],
+    "validation_errors": [
+      "Not qualified: reference SyntheticFixture, candidate SyntheticFixture; verified live-capture provenance/import is not implemented"
+    ]
+  },
+  "arm64": {
+    "all_passed": false,
+    "architecture": "arm64",
+    "candidate_id": "arm64-candidate-rust",
+    "reference_id": "arm64-reference-go",
+    "results": [
+      {
+        "candidate_value": 10.12,
+        "details": "Candidate p95 (10.120s) vs Reference p95 (13.620s); limit: 14.982s",
+        "higher_is_better": false,
+        "name": "Boot-to-API Latency (p95)",
+        "passed": true,
+        "reference_value": 13.62,
+        "target_threshold": 14.982000000000001,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 15.05,
+        "details": "Candidate p95 (15.050s) vs Reference p95 (19.150s); limit: 21.065s",
+        "higher_is_better": false,
+        "name": "Node Ready Latency (p95)",
+        "passed": true,
+        "reference_value": 19.15,
+        "target_threshold": 21.065,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 18.25,
+        "details": "Candidate p95 (18.250s) vs Reference p95 (23.100s); limit: 25.410s",
+        "higher_is_better": false,
+        "name": "First Pod Latency (Preloaded, p95)",
+        "passed": true,
+        "reference_value": 23.1,
+        "target_threshold": 25.410000000000004,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 28.25,
+        "details": "Candidate p95 (28.250s) vs Reference p95 (34.450s); limit: 37.895s",
+        "higher_is_better": false,
+        "name": "First Pod Latency (Cold Image, p95)",
+        "passed": true,
+        "reference_value": 34.45,
+        "target_threshold": 37.895,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 471859200.0,
+        "details": "Candidate median (471859200 bytes) vs Reference (566231040 bytes); limit: 622854144 bytes",
+        "higher_is_better": false,
+        "name": "Idle Footprint (Summed PSS, Median)",
+        "passed": true,
+        "reference_value": 566231040.0,
+        "target_threshold": 622854144.0,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 519045120.0,
+        "details": "Candidate cgroup median (519045120 bytes) vs Reference (618659840 bytes); limit: 680525824 bytes",
+        "higher_is_better": false,
+        "name": "Idle Footprint (Cgroup Memory, Median)",
+        "passed": true,
+        "reference_value": 618659840.0,
+        "target_threshold": 680525824.0,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 155189248.0,
+        "details": "Candidate archive (155189248 bytes) vs Reference (173015040 bytes); limit: 190316544 bytes",
+        "higher_is_better": false,
+        "name": "Distribution Size (Compressed Archive)",
+        "passed": true,
+        "reference_value": 173015040.0,
+        "target_threshold": 190316544.00000003,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 256901120.0,
+        "details": "Candidate executables (256901120 bytes) vs Reference (281018368 bytes); limit: 309120205 bytes",
+        "higher_is_better": false,
+        "name": "Distribution Size (Extracted Executables)",
+        "passed": true,
+        "reference_value": 281018368.0,
+        "target_threshold": 309120204.8,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 193986560.0,
+        "details": "Candidate images (193986560 bytes) vs Reference (193986560 bytes); limit: 213385216 bytes",
+        "higher_is_better": false,
+        "name": "Distribution Size (Default Image Payload)",
+        "passed": true,
+        "reference_value": 193986560.0,
+        "target_threshold": 213385216.00000003,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 110.0,
+        "details": "Candidate density (110.0 pods) vs Reference (110.0 pods); minimum: 99.0 pods",
+        "higher_is_better": true,
+        "name": "Pod Density Capacity (Median Replicas)",
+        "passed": true,
+        "reference_value": 110.0,
+        "target_threshold": 99.0,
+        "threshold_multiplier": 0.9
+      },
+      {
+        "candidate_value": 479199232.0,
+        "details": "Initial 471859200 bytes -> Final 479199232 bytes (1.016x), 24h, 0 OOMs, 0 crashes, 0 unexplained failures",
+        "higher_is_better": false,
+        "name": "Sustained Growth (24h Soak)",
+        "passed": true,
+        "reference_value": 471859200.0,
+        "target_threshold": 519045120.00000006,
+        "threshold_multiplier": 1.1
+      },
+      {
+        "candidate_value": 5.4,
+        "details": "Graceful p95: 5.40s <= 30s, Surviving owned processes: 0",
+        "higher_is_better": false,
+        "name": "Shutdown & Process Cleanup",
+        "passed": true,
+        "reference_value": 30.0,
+        "target_threshold": 30.0,
+        "threshold_multiplier": 1.0
+      }
+    ],
+    "validation_errors": [
+      "Not qualified: reference SyntheticFixture, candidate SyntheticFixture; verified live-capture provenance/import is not implemented"
+    ]
+  },
+  "evidence_kind": "synthetic-fixture",
+  "schema_version": 1,
+  "timestamp": "2026-10-03T14:30:00Z",
+  "title": "Synthetic Go Reference vs Rust Candidate Arithmetic Example"
+}

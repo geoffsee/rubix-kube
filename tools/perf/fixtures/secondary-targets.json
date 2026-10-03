@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "targets": {
+    "armv7": {
+      "architecture": "armv7",
+      "status": "not-qualified",
+      "address_space_bits": 32,
+      "maximum_pod_density": 0,
+      "d2k_supported": false,
+      "portainer_supported": true,
+      "crun_source_build_required": true,
+      "cold_boot_latency_overhead_multiplier": "unmeasured",
+      "primary_gate_exceptions": [
+        "Pod density is unmeasured; no accepted density exception",
+        "D2K translator disabled by platform contract",
+        "Startup latency is unmeasured; no accepted latency exception"
+      ],
+      "hardware_and_toolchain_constraints": [
+        "Requires hard-float ABI (armv7hl / armhf)",
+        "crun runtime must be compiled from source for ARMv7 target",
+        "Maximum 3 GiB accessible user virtual memory per process"
+      ]
+    },
+    "riscv64": {
+      "architecture": "riscv64",
+      "status": "not-qualified",
+      "address_space_bits": 64,
+      "maximum_pod_density": 0,
+      "d2k_supported": false,
+      "portainer_supported": false,
+      "crun_source_build_required": false,
+      "cold_boot_latency_overhead_multiplier": "unmeasured",
+      "primary_gate_exceptions": [
+        "Portainer agent and UI unavailable on riscv64",
+        "D2K translator disabled",
+        "Startup latency is unmeasured; no accepted latency exception",
+        "Pod density is unmeasured; no accepted density exception"
+      ],
+      "hardware_and_toolchain_constraints": [
+        "Requires rv64gc ISA baseline with Linux cgroups v2",
+        "Official container images for Portainer and auxiliary components lack riscv64 manifests",
+        "Toolchain/codegen optimizations are nascent compared to mature x86_64/aarch64 backends"
+      ]
+    }
+  }
+}

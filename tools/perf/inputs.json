@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic-fixture",
+  "purpose": "fictional input/digest examples, not verified source or workload provenance",
+  "upstream_reference": {
+    "repository": "https://github.com/portainer/kubesolo",
+    "commit": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+    "source_archive_sha256": "9d5f3ce1f3fbda971fb1e2fb6da18ae3880caeec677f0e5d928a3bbe7bb76aec"
+  },
+  "components": {
+    "kubernetes": "v1.35.7",
+    "containerd": "v2.2.5",
+    "kine": "v0.16.3",
+    "crun": "1.26",
+    "cni_plugins": "v1.9.0",
+    "coredns": "1.14.4",
+    "pause": "3.10",
+    "local_path_provisioner": "v0.0.31",
+    "busybox_probe": "1.37.0",
+    "portainer_agent": "2.33.6",
+    "d2k": "v0.1.3"
+  },
+  "workload_parameters": {
+    "probe_image": "docker.io/library/busybox:1.37.0",
+    "probe_digest": "sha256:a5d4330f7bb1749544fb4f62a5f0859baceddd6a401d4fb8865e9b44f0b29803",
+    "probe_resource_cpu": "10m",
+    "probe_resource_memory": "16Mi",
+    "density_node_memory_limit_bytes": 4294967296,
+    "settle_duration_seconds": 600,
+    "sample_interval_seconds": 1,
+    "sample_duration_seconds": 900,
+    "boot_sample_count": 20,
+    "idle_run_count": 5,
+    "density_run_count": 5,
+    "shutdown_run_count": 20,
+    "soak_duration_hours": 24
+  },
+  "contract_thresholds": {
+    "boot_to_api_p95_multiplier": 1.10,
+    "node_ready_p95_multiplier": 1.10,
+    "first_pod_preloaded_p95_multiplier": 1.10,
+    "first_pod_cold_p95_multiplier": 1.10,
+    "idle_pss_median_multiplier": 1.10,
+    "idle_cgroup_median_multiplier": 1.10,
+    "compressed_archive_multiplier": 1.10,
+    "extracted_executables_multiplier": 1.10,
+    "image_payload_multiplier": 1.10,
+    "pod_density_median_multiplier": 0.90,
+    "sustained_growth_median_multiplier": 1.10,
+    "shutdown_graceful_deadline_seconds": 30.0,
+    "shutdown_escalation_deadline_seconds": 35.0
+  }
+}
