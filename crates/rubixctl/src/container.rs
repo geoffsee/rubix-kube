@@ -115,6 +115,8 @@ pub struct ContainerInspect {
     pub id: String,
     pub name: String,
     pub running: bool,
+    /// Effective D2K configuration observed on this instance, independent of workload ports.
+    pub d2k_enabled: bool,
     pub exit_code: i32,
     /// Host port mapping discovered from running container inspection.
     /// Maps e.g. "6443/tcp" to the allocated host port (such as 32768 or 6443).
@@ -579,4 +581,38 @@ pub fn install_container(
             }
         },
     }
+}
+/// Host endpoints published by a running instance, as reported by engine inspection.
+///
+/// API and D2K bindings use loopback; the host port is whatever the
+/// engine actually allocated, which differs from the request when ephemeral.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PublishedEndpoints {
+    pub apiserver: std::net::SocketAddr,
+    pub d2k: Option<std::net::SocketAddr>,
+}
+
+/// Discovers the published API (and optional d2k) endpoints from an inspected container.
+///
+/// Returns `None` when the container does not publish the API server port, so callers
+/// never fabricate an address that the engine did not allocate.
+#[must_use]
+pub fn published_endpoints(inspect: &ContainerInspect) -> Option<PublishedEndpoints> {
+    if !inspect.running {
+        return None;
+    }
+    let loopback = std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
+    let api = *inspect
+        .allocated_ports
+        .get("6443/tcp")
+        .filter(|port| **port != 0)?;
+    Some(PublishedEndpoints {
+        apiserver: std::net::SocketAddr::new(loopback, api),
+        d2k: inspect
+            .allocated_ports
+            .get("2376/tcp")
+            .filter(|_| inspect.d2k_enabled)
+            .filter(|port| **port != 0)
+            .map(|p| std::net::SocketAddr::new(loopback, *p)),
+    })
 }
