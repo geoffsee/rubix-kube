@@ -11,9 +11,9 @@ use std::time::SystemTime;
 #[cfg(unix)]
 use rubix_supervisor::rustix;
 #[cfg(unix)]
-use std::os::unix::fs::OpenOptionsExt;
-#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
+#[cfg(unix)]
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 
 /// Resolved invoking user identity.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -262,7 +262,38 @@ pub fn create_premerge_backup(dest: &Path, now: SystemTime) -> io::Result<Option
 
 /// Atomic write with 0600 mode, ensures parent dir exists with 0700 mode,
 /// and applies chown to invoking user if running with root privileges.
+fn validate_destination_parent(path: &Path, user: &InvokingUser) -> io::Result<()> {
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    match fs::symlink_metadata(parent) {
+        Ok(metadata) => {
+            if !metadata.is_dir() || metadata.file_type().is_symlink() {
+                return Err(io::Error::new(
+                    io::ErrorKind::PermissionDenied,
+                    "kubeconfig parent must be a directory, not a symlink",
+                ));
+            }
+            #[cfg(unix)]
+            if let Some(uid) = user.uid
+                && metadata.uid() != uid
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::PermissionDenied,
+                    "kubeconfig parent is not owned by the invoking user",
+                ));
+            }
+            Ok(())
+        },
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+/// Publishes only into an invoking-user-owned directory without following a parent symlink.
 pub fn atomic_write_secure(path: &Path, data: &[u8], user: &InvokingUser) -> io::Result<()> {
+    validate_destination_parent(path, user)?;
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -293,6 +324,7 @@ pub fn atomic_write_secure(path: &Path, data: &[u8], user: &InvokingUser) -> io:
         }
     }
 
+    validate_destination_parent(path, user)?;
     let mut temp = tempfile::Builder::new().tempfile_in(parent)?;
 
     #[cfg(unix)]
@@ -527,6 +559,7 @@ pub fn execute_kubeconfig_with_env(
         },
         Some("fetch" | "merge") => {
             let dest_path = resolve_destination(&user, options.output.as_deref());
+            validate_destination_parent(&dest_path, &user)?;
 
             // Pre-merge backup if destination exists
             if let Some(backup_path) = create_premerge_backup(&dest_path, SystemTime::now())? {
