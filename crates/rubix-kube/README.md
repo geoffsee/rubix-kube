@@ -2,8 +2,8 @@
 
 `cargo run -p rubix-kube -- --version`, `--help`, and `--print-config` execute the
 startup-only adapter. A normal invocation resolves and validates configuration,
-then exits 1 with `runtime startup is not implemented`. It does not create state,
-start services, open cluster listeners, or prepare the host.
+then launches the supervised node runtime, emitting structured JSONL lifecycle
+diagnostics and executing dependency-aware component supervision.
 
 The adapter preserves the captured KubeSolo ordering: command grammar and
 primitive flag parsing, version/help exit, deprecated `--full` warning, optional
@@ -51,7 +51,7 @@ cargo test -p rubix-kube --locked
 cargo clippy -p rubix-kube --all-targets --all-features --locked -- -D warnings
 ```
 
-Runtime startup, live CRI connection, host installation, and cluster lifecycle
+Live CRI connection, host installation, and multi-node cluster lifecycle
 remain separate implementation and qualification work.
 
 `tests/evidence/linux-arm64.json` records a fresh disposable comparison against

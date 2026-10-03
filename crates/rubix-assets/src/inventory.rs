@@ -17,6 +17,37 @@ pub enum Scope {
     LegacyExternalDeps,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OptionalFeature {
+    LocalPathStorage,
+    PortainerAgent,
+    D2k,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FeatureSupport {
+    SupportedTarget,
+    UnsupportedTarget,
+}
+/// Target architecture policy for optional features.
+pub fn feature_support(architecture: Architecture, feature: OptionalFeature) -> FeatureSupport {
+    match feature {
+        OptionalFeature::LocalPathStorage => FeatureSupport::SupportedTarget,
+        OptionalFeature::PortainerAgent => {
+            if architecture == Architecture::Riscv64 {
+                FeatureSupport::UnsupportedTarget
+            } else {
+                FeatureSupport::SupportedTarget
+            }
+        },
+        OptionalFeature::D2k => {
+            if matches!(architecture, Architecture::Amd64 | Architecture::Arm64) {
+                FeatureSupport::SupportedTarget
+            } else {
+                FeatureSupport::UnsupportedTarget
+            }
+        },
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InventoryRequest {
     pub target: NodeTarget,
     pub variant: Variant,
@@ -228,12 +259,13 @@ impl Manifest {
                 .ok_or(InventoryError::WrongDelivery(record.id))?;
             let unavailable = match record.id {
                 AssetId::ImagePortainerAgent => {
-                    request.target.architecture == Architecture::Riscv64
+                    feature_support(request.target.architecture, OptionalFeature::PortainerAgent)
+                        == FeatureSupport::UnsupportedTarget
                 },
-                AssetId::ImageD2k => !matches!(
-                    request.target.architecture,
-                    Architecture::Amd64 | Architecture::Arm64
-                ),
+                AssetId::ImageD2k => {
+                    feature_support(request.target.architecture, OptionalFeature::D2k)
+                        == FeatureSupport::UnsupportedTarget
+                },
                 _ => false,
             };
             let bundled = entry.kind == Kind::Executable
@@ -339,6 +371,27 @@ fn parse_digest(value: &str) -> Option<[u8; 32]> {
 impl DeclaredInventory {
     pub fn assets(&self) -> impl ExactSizeIterator<Item = (AssetId, &Delivery)> {
         self.records.iter().map(|(id, delivery)| (*id, delivery))
+    }
+    /// Target policy only; this does not mean the feature is enabled or its payload is pinned.
+    pub fn optional_feature_support(
+        &self,
+    ) -> impl ExactSizeIterator<Item = (OptionalFeature, FeatureSupport)> {
+        let architecture = self.request.target.architecture;
+        [
+            (
+                OptionalFeature::LocalPathStorage,
+                feature_support(architecture, OptionalFeature::LocalPathStorage),
+            ),
+            (
+                OptionalFeature::PortainerAgent,
+                feature_support(architecture, OptionalFeature::PortainerAgent),
+            ),
+            (
+                OptionalFeature::D2k,
+                feature_support(architecture, OptionalFeature::D2k),
+            ),
+        ]
+        .into_iter()
     }
     pub fn request(&self) -> InventoryRequest {
         self.request

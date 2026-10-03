@@ -20,6 +20,7 @@ toml = { version = "=0.9.6", default-features = false, features = ["std", "serde
 rustix = { version = "=1.1.5", features = ["fs", "process", "thread"] }
 zip = { version = "=8.6.0", default-features = false, features = ["deflate-flate2"] }
 tokio = { version = "=1.53.1", features = ["rt-multi-thread", "signal", "time"] }
+rubix-assets = { version = "=0.1.0", path = "../../crates/rubix-assets" }
 
 [lints]
 workspace = true
