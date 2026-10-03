@@ -162,7 +162,7 @@ fn handle_binary(filename: &str) -> ExitCode {
     }
 }
 
-fn handle_verify_manifest(filename: &str) -> ExitCode {
+fn handle_verify_manifest(filename: &str, expected_version: &str) -> ExitCode {
     let data = match std::fs::read(filename) {
         Ok(bytes) => bytes,
         Err(e) => {
@@ -181,7 +181,7 @@ fn handle_verify_manifest(filename: &str) -> ExitCode {
         &manifest,
         "rubix-kube",
         "rubixctl",
-        &manifest.version,
+        expected_version,
     ) {
         Ok(()) => {
             println!(
@@ -232,10 +232,17 @@ fn main() -> ExitCode {
         },
         [cmd, filename] if cmd == "archive" => handle_archive(filename),
         [cmd, filename] if cmd == "binary" => handle_binary(filename),
-        [cmd, filename] if cmd == "verify-manifest" => handle_verify_manifest(filename),
+        [cmd, filename] if cmd == "verify-manifest" => {
+            handle_verify_manifest(filename, env!("CARGO_PKG_VERSION"))
+        },
+        [cmd, filename, flag, expected_version]
+            if cmd == "verify-manifest" && flag == "--expected-version" =>
+        {
+            handle_verify_manifest(filename, expected_version)
+        },
         _ => {
             eprintln!(
-                "Usage: rubix-matrix [validate | list | archive <filename> | binary <filename> | verify-manifest <json-file>]"
+                "Usage: rubix-matrix [validate | list | archive <filename> | binary <filename> | verify-manifest <json-file> [--expected-version <version>]]"
             );
             ExitCode::FAILURE
         },
