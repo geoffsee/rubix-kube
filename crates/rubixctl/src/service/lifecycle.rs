@@ -7,6 +7,10 @@ use std::path::PathBuf;
 /// Explicit errors for unsupported targets or execution modes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UnsupportedTargetError {
+    /// Service name is unsafe for generated paths or definitions.
+    InvalidServiceName,
+    /// An environment key is not a portable shell identifier.
+    InvalidEnvironmentKey,
     /// Service run mode requested, but no init backend was detected or specified.
     MissingInitBackend,
     /// Unknown or unsupported init system name.
@@ -27,6 +31,8 @@ pub enum UnsupportedTargetError {
 impl fmt::Display for UnsupportedTargetError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidServiceName => f.write_str("invalid service name"),
+            Self::InvalidEnvironmentKey => f.write_str("invalid environment key"),
             Self::UnknownRunMode(mode) => write!(
                 f,
                 "unsupported run mode '{mode}'; supported modes: service, daemon, foreground, container"
