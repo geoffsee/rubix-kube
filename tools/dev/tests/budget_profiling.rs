@@ -370,3 +370,20 @@ fn report_conclusions_use_actual_inputs_without_verified_attribution() {
         .sum();
     assert!((binary_share - 100.0).abs() < 0.001);
 }
+
+#[test]
+fn profile_uses_authoritative_shutdown_outcome_beyond_p95() {
+    let (reference, mut candidate) = fixture_pair(Architecture::Amd64);
+    let mut samples = vec![1.0; 19];
+    samples.push(36.0);
+    candidate.shutdown.graceful_duration_seconds = VarianceSummary::from_samples(samples).unwrap();
+    let profile = BudgetProfileReport::analyze(&reference, &candidate).unwrap();
+    let gate = profile
+        .metrics
+        .iter()
+        .find(|m| m.name.contains("Shutdown"))
+        .unwrap();
+    assert!((gate.candidate_value - 1.0).abs() < f64::EPSILON);
+    assert!(!gate.within_budget);
+    assert!(!profile.all_budgets_satisfied);
+}

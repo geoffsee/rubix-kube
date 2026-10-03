@@ -62,7 +62,7 @@ pub struct ComponentBinaryProfile {
     pub fraction_percent: f64,
 }
 
-/// Detailed justification for a scoped optimization with before/after measurements and parity invariants.
+/// Input comparison for an optimization hypothesis; parity requires independent receipts.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ScopedOptimization {
     pub title: String,
@@ -107,258 +107,53 @@ impl BudgetProfileReport {
         super::validation::validate_pair(reference, candidate)?;
         verify_optimization_parity(candidate)?;
 
-        let mut metrics = Vec::new();
-
-        // Helper to register metric comparison
-        let mut add_metric = |name: &str,
-                              domain: BudgetDomain,
-                              ref_val: f64,
-                              cand_val: f64,
-                              multiplier: f64,
-                              higher_is_better: bool,
-                              unit: &str,
-                              details: String| {
-            let target_threshold = multiplier * ref_val;
-            let delta = cand_val - ref_val;
-            let ratio = if ref_val > 0.0 {
-                cand_val / ref_val
-            } else {
-                1.0
-            };
-            let is_regression = if name == "Sustained Growth (24h Soak)" {
-                cand_val > target_threshold
-            } else if higher_is_better {
-                cand_val < ref_val
-            } else {
-                cand_val > ref_val
-            };
-            let within_budget = if higher_is_better {
-                cand_val >= target_threshold
-            } else {
-                cand_val <= target_threshold
-            };
-            metrics.push(BudgetMetricComparison {
-                name: name.to_string(),
-                domain,
-                reference_value: ref_val,
-                candidate_value: cand_val,
-                threshold_multiplier: multiplier,
-                target_threshold,
-                delta,
-                ratio,
-                higher_is_better,
-                is_regression,
-                within_budget,
-                unit: unit.to_string(),
-                details,
-            });
-        };
-
-        // 1. Startup Latencies
-        let ref_boot = reference.startup_latencies.boot_to_api_seconds.p95;
-        let cand_boot = candidate.startup_latencies.boot_to_api_seconds.p95;
-        add_metric(
-            "Boot-to-API Latency (p95)",
-            BudgetDomain::Startup,
-            ref_boot,
-            cand_boot,
-            1.10,
-            false,
-            "s",
-            format!(
-                "Candidate p95 {cand_boot:.3}s vs Reference {ref_boot:.3}s (limit {:.3}s)",
-                1.10 * ref_boot
-            ),
-        );
-
-        let ref_node = reference.startup_latencies.node_ready_seconds.p95;
-        let cand_node = candidate.startup_latencies.node_ready_seconds.p95;
-        add_metric(
-            "Node Ready Latency (p95)",
-            BudgetDomain::Startup,
-            ref_node,
-            cand_node,
-            1.10,
-            false,
-            "s",
-            format!(
-                "Candidate p95 {cand_node:.3}s vs Reference {ref_node:.3}s (limit {:.3}s)",
-                1.10 * ref_node
-            ),
-        );
-
-        let ref_pre = reference.startup_latencies.first_pod_preloaded_seconds.p95;
-        let cand_pre = candidate.startup_latencies.first_pod_preloaded_seconds.p95;
-        add_metric(
-            "First Pod Latency (Preloaded, p95)",
-            BudgetDomain::Startup,
-            ref_pre,
-            cand_pre,
-            1.10,
-            false,
-            "s",
-            format!(
-                "Candidate p95 {cand_pre:.3}s vs Reference {ref_pre:.3}s (limit {:.3}s)",
-                1.10 * ref_pre
-            ),
-        );
-
-        let ref_cold = reference.startup_latencies.first_pod_cold_seconds.p95;
-        let cand_cold = candidate.startup_latencies.first_pod_cold_seconds.p95;
-        add_metric(
-            "First Pod Latency (Cold Image, p95)",
-            BudgetDomain::Startup,
-            ref_cold,
-            cand_cold,
-            1.10,
-            false,
-            "s",
-            format!(
-                "Candidate p95 {cand_cold:.3}s vs Reference {ref_cold:.3}s (limit {:.3}s)",
-                1.10 * ref_cold
-            ),
-        );
-
-        // 2. Idle Memory Footprint
-        let ref_pss = reference.idle_footprint.summed_pss_bytes.p50;
-        let cand_pss = candidate.idle_footprint.summed_pss_bytes.p50;
-        add_metric(
-            "Idle Footprint (Summed PSS, Median)",
-            BudgetDomain::IdleMemory,
-            ref_pss,
-            cand_pss,
-            1.10,
-            false,
-            "bytes",
-            format!(
-                "Candidate median {:.0} B vs Reference {:.0} B (limit {:.0} B)",
-                cand_pss,
-                ref_pss,
-                1.10 * ref_pss
-            ),
-        );
-
-        let ref_cg = reference.idle_footprint.cgroup_memory_bytes.p50;
-        let cand_cg = candidate.idle_footprint.cgroup_memory_bytes.p50;
-        add_metric(
-            "Idle Footprint (Cgroup Memory, Median)",
-            BudgetDomain::IdleMemory,
-            ref_cg,
-            cand_cg,
-            1.10,
-            false,
-            "bytes",
-            format!(
-                "Candidate cgroup {:.0} B vs Reference {:.0} B (limit {:.0} B)",
-                cand_cg,
-                ref_cg,
-                1.10 * ref_cg
-            ),
-        );
-
-        // 3. Binary Distribution Size
-        let ref_arch = reference.artifact_footprint.compressed_archive_bytes as f64;
-        let cand_arch = candidate.artifact_footprint.compressed_archive_bytes as f64;
-        add_metric(
-            "Distribution Size (Compressed Archive)",
-            BudgetDomain::BinaryDistribution,
-            ref_arch,
-            cand_arch,
-            1.10,
-            false,
-            "bytes",
-            format!(
-                "Candidate archive {:.0} B vs Reference {:.0} B (limit {:.0} B)",
-                cand_arch,
-                ref_arch,
-                1.10 * ref_arch
-            ),
-        );
-
-        let ref_exec = reference.artifact_footprint.extracted_executable_bytes as f64;
-        let cand_exec = candidate.artifact_footprint.extracted_executable_bytes as f64;
-        add_metric(
-            "Distribution Size (Extracted Executables)",
-            BudgetDomain::BinaryDistribution,
-            ref_exec,
-            cand_exec,
-            1.10,
-            false,
-            "bytes",
-            format!(
-                "Candidate executables {:.0} B vs Reference {:.0} B (limit {:.0} B)",
-                cand_exec,
-                ref_exec,
-                1.10 * ref_exec
-            ),
-        );
-
-        let ref_img = reference.artifact_footprint.default_image_payload_bytes as f64;
-        let cand_img = candidate.artifact_footprint.default_image_payload_bytes as f64;
-        add_metric(
-            "Distribution Size (Default Image Payload)",
-            BudgetDomain::BinaryDistribution,
-            ref_img,
-            cand_img,
-            1.10,
-            false,
-            "bytes",
-            format!(
-                "Candidate images {:.0} B vs Reference {:.0} B (limit {:.0} B)",
-                cand_img,
-                ref_img,
-                1.10 * ref_img
-            ),
-        );
-
-        // 4. Resilience and Density
-        let ref_density = reference.pod_density.max_ready_replicas.p50;
-        let cand_density = candidate.pod_density.max_ready_replicas.p50;
-        add_metric(
-            "Pod Density Capacity (Median Replicas)",
-            BudgetDomain::ResilienceAndDensity,
-            ref_density,
-            cand_density,
-            0.90,
-            true,
-            "pods",
-            format!(
-                "Candidate density {:.1} pods vs Reference {:.1} pods (minimum {:.1} pods)",
-                cand_density,
-                ref_density,
-                0.90 * ref_density
-            ),
-        );
-
-        let init_mem = candidate.sustained_growth.initial_settled_idle_median_bytes as f64;
-        let final_mem = candidate.sustained_growth.final_settled_idle_median_bytes as f64;
-        add_metric(
-            "Sustained Growth (24h Soak)",
-            BudgetDomain::ResilienceAndDensity,
-            init_mem,
-            final_mem,
-            1.10,
-            false,
-            "bytes",
-            format!(
-                "Initial {:.0} B -> Final {:.0} B ({:.3}x derived growth, 24h soak)",
-                init_mem,
-                final_mem,
-                final_mem / init_mem.max(1.0)
-            ),
-        );
-
-        let cand_shutdown = candidate.shutdown.graceful_duration_seconds.p95;
-        add_metric(
-            "Shutdown Graceful Duration (p95)",
-            BudgetDomain::ResilienceAndDensity,
-            30.0,
-            cand_shutdown,
-            1.0,
-            false,
-            "s",
-            format!("Candidate graceful p95 {cand_shutdown:.2}s vs 30.0s deadline"),
-        );
+        let evaluation = super::contract::GateEvaluationReport::evaluate(reference, candidate);
+        let metrics: Vec<_> = evaluation
+            .results
+            .into_iter()
+            .map(|gate| {
+                // Presentation adds grouping and units; thresholds and outcomes have one owner.
+                let (domain, unit) = if gate.name.contains("Latency") {
+                    (BudgetDomain::Startup, "s")
+                } else if gate.name.starts_with("Idle Footprint") {
+                    (BudgetDomain::IdleMemory, "bytes")
+                } else if gate.name.starts_with("Distribution Size") {
+                    (BudgetDomain::BinaryDistribution, "bytes")
+                } else if gate.name.starts_with("Pod Density") {
+                    (BudgetDomain::ResilienceAndDensity, "pods")
+                } else if gate.name.starts_with("Sustained Growth") {
+                    (BudgetDomain::ResilienceAndDensity, "bytes")
+                } else {
+                    (BudgetDomain::ResilienceAndDensity, "s")
+                };
+                let is_regression = if gate.name.starts_with("Sustained Growth") {
+                    !gate.passed
+                } else if gate.higher_is_better {
+                    gate.candidate_value < gate.reference_value
+                } else {
+                    gate.candidate_value > gate.reference_value
+                };
+                BudgetMetricComparison {
+                    name: gate.name,
+                    domain,
+                    reference_value: gate.reference_value,
+                    candidate_value: gate.candidate_value,
+                    threshold_multiplier: gate.threshold_multiplier,
+                    target_threshold: gate.target_threshold,
+                    delta: gate.candidate_value - gate.reference_value,
+                    ratio: if gate.reference_value > 0.0 {
+                        gate.candidate_value / gate.reference_value
+                    } else {
+                        1.0
+                    },
+                    higher_is_better: gate.higher_is_better,
+                    is_regression,
+                    within_budget: gate.passed,
+                    unit: unit.into(),
+                    details: gate.details,
+                }
+            })
+            .collect();
 
         let total_regressions_detected = metrics.iter().filter(|m| m.is_regression).count();
         let all_budgets_satisfied = metrics.iter().all(|m| m.within_budget);
