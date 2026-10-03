@@ -62,3 +62,12 @@ Ownership: Unassigned
 Stack: migration/state-transitions
 Evidence: Isolated state-preservation fixtures classify historical versions, exercise configuration conversion, verify client signatures and required signing keys, reconcile unique workload identities, and compare PV files, directories, symlinks, ownership and permissions. Native snapshot conversion is an experiment on in-memory records; it neither adopts a production Kine database nor checkpoints its WAL. No live Linux cutover or downtime measurement was performed.
 Next step: Rehearse consistent Kine SQLite backup, adoption and rollback with the retained executables and dedicated loopback mTLS, preserving identities and PV access at exact revisions before qualifying C13/E30.
+
+Work item: E29.03 (https://github.com/geoffsee/rubix-kube/issues/123); Parent criteria Gate C14
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: perf/ci-regression-gates
+Evidence: Implemented CI regression gating and rebaseline policy enforcement in `rubix-perf gate-ci`, validating all 12 contract thresholds across amd64 and arm64, higher-is-better pod density directionality, 24-hour sustained memory growth bounds (<= 1.10 ratio with 0 OOMs, crashes, or failures) covering all 8 canonical retained process roles, strict rejection of unmeasured sub-200MB claims and invalid PSS/RSS/latency samples, provenance integrity verification, secondary target gap checks, and contract multiplier immutability.
+Next step: None; timestamp: 2026-10-03T18:45:00Z
+

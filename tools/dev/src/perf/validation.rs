@@ -122,7 +122,40 @@ pub fn validate_report(report: &PerformanceReport) -> Result<()> {
     {
         return Err("missing pinned workload identity/resource limits".into());
     }
+    if report.startup_latencies.boot_to_api_seconds.min < 0.0
+        || report.startup_latencies.node_ready_seconds.min < 0.0
+        || report.startup_latencies.first_pod_preloaded_seconds.min < 0.0
+        || report.startup_latencies.first_pod_cold_seconds.min < 0.0
+    {
+        return Err("startup latency must be nonnegative".into());
+    }
     super::harness::verify_retained_process_coverage(report)?;
+    let mut total_retained_pss = 0u64;
+    for p in &report.idle_footprint.retained_processes {
+        if p.pss_bytes == 0 || p.rss_bytes == 0 {
+            return Err(format!(
+                "retained process '{}' must record strictly positive PSS and RSS memory",
+                p.process_name
+            )
+            .into());
+        }
+        if p.pss_bytes > p.rss_bytes {
+            return Err(format!(
+                "retained process '{}' PSS cannot exceed RSS",
+                p.process_name
+            )
+            .into());
+        }
+        total_retained_pss = total_retained_pss.saturating_add(p.pss_bytes);
+    }
+    if report.idle_footprint.summed_pss_bytes.p50 < 200_000_000.0
+        && total_retained_pss >= 200_000_000
+    {
+        return Err(
+            "unmeasured footprint claim: idle PSS cannot claim sub-200-MB without backing retained process measurements"
+                .into(),
+        );
+    }
     let artifact = &report.artifact_footprint;
     if artifact.compressed_archive_bytes == 0
         || artifact.extracted_executable_bytes == 0

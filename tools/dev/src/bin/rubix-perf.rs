@@ -11,6 +11,8 @@ fn print_usage() {
     eprintln!(
         "Usage: rubix-perf <command> [options]\n\n\
         Commands:\n  \
+        gate-ci [dir]                                        Enforce committed platform thresholds and rebaseline policy in CI\n  \
+        check-rebaseline-policy [dir]                        Verify rebaseline policy rules and threshold bounds\n  \
         check-baselines <dir>                                Validate committed baseline directory\n  \
         generate-fixtures <dir>                             Generate synthetic arithmetic fixtures (never qualification)\n  \
         evaluate-gates --reference <ref> --candidate <cand>  Evaluate candidate gates against reference\n  \
@@ -234,6 +236,38 @@ fn generate_fixtures_cmd(dir: &Path) -> Result<(), Box<dyn std::error::Error + S
     Ok(())
 }
 
+fn parse_named_paths(args: &[String]) -> (Option<PathBuf>, Option<PathBuf>, Option<PathBuf>) {
+    let mut ref_path = None;
+    let mut cand_path = None;
+    let mut sec_path = None;
+    let mut idx = 1;
+    while idx < args.len() {
+        match args[idx].as_str() {
+            "--reference" => {
+                idx += 1;
+                if idx < args.len() {
+                    ref_path = Some(PathBuf::from(&args[idx]));
+                }
+            },
+            "--candidate" => {
+                idx += 1;
+                if idx < args.len() {
+                    cand_path = Some(PathBuf::from(&args[idx]));
+                }
+            },
+            "--secondary" => {
+                idx += 1;
+                if idx < args.len() {
+                    sec_path = Some(PathBuf::from(&args[idx]));
+                }
+            },
+            _ => {},
+        }
+        idx += 1;
+    }
+    (ref_path, cand_path, sec_path)
+}
+
 fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
@@ -242,6 +276,14 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     match args[0].as_str() {
+        "gate-ci" | "check-rebaseline-policy" => {
+            let path = if args.len() >= 2 {
+                Path::new(&args[1])
+            } else {
+                Path::new("tools/perf")
+            };
+            rubix_dev::perf::run_ci_regression_gates(path).map_err(|e| format!("{e}").into())
+        },
         "check-baselines" => {
             if args.len() < 2 {
                 print_usage();
@@ -250,27 +292,7 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             check_baselines(Path::new(&args[1]))
         },
         "evaluate-gates" => {
-            let mut ref_path = None;
-            let mut cand_path = None;
-            let mut idx = 1;
-            while idx < args.len() {
-                match args[idx].as_str() {
-                    "--reference" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            ref_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    "--candidate" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            cand_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    _ => {},
-                }
-                idx += 1;
-            }
+            let (ref_path, cand_path, _) = parse_named_paths(&args);
             if let (Some(r), Some(c)) = (ref_path, cand_path) {
                 evaluate_gates_cmd(&r, &c)
             } else {
@@ -279,34 +301,7 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             }
         },
         "report" => {
-            let mut ref_path = None;
-            let mut cand_path = None;
-            let mut sec_path = None;
-            let mut idx = 1;
-            while idx < args.len() {
-                match args[idx].as_str() {
-                    "--reference" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            ref_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    "--candidate" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            cand_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    "--secondary" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            sec_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    _ => {},
-                }
-                idx += 1;
-            }
+            let (ref_path, cand_path, sec_path) = parse_named_paths(&args);
             if let (Some(r), Some(c)) = (ref_path, cand_path) {
                 report_cmd(&r, &c, sec_path.as_deref())
             } else {
