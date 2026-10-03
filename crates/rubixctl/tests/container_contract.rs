@@ -94,7 +94,7 @@ impl ContainerEngineClient for MockContainerEngine {
         if self.fail_post_start_inspect && self.started_containers.contains(&name.to_string()) {
             return Err(io::Error::other("mock fail post start inspect"));
         }
-        if let Some((_, running, ports)) = self.containers.get(name) {
+        if let Some((config, running, ports)) = self.containers.get(name) {
             let mut allocated_ports = ports.clone();
             if let Some(port) = &self.omit_inspected_port {
                 allocated_ports.remove(port);
@@ -103,6 +103,7 @@ impl ContainerEngineClient for MockContainerEngine {
                 id: format!("id-{name}"),
                 name: name.to_string(),
                 running: *running,
+                d2k_enabled: config.env.iter().any(|value| value == "KUBESOLO_D2K=true"),
                 exit_code: 0,
                 allocated_ports,
             }))
@@ -611,6 +612,7 @@ fn published_endpoints_require_a_nonzero_inspected_api_port() {
         id: "id".into(),
         name: "dev".into(),
         running: true,
+        d2k_enabled: false,
         exit_code: 0,
         allocated_ports: HashMap::new(),
     };
@@ -637,5 +639,41 @@ fn missing_inspected_api_or_enabled_d2k_binding_fails_installation() {
         let error = install_container(&mut engine, &regression_params()).unwrap_err();
         assert!(error.to_string().contains("missing allocated"));
         assert_eq!(engine.removed_containers.len(), 1);
+    }
+}
+
+#[test]
+fn stopped_instances_do_not_report_retained_allocations() {
+    let mut engine = MockContainerEngine::default();
+    let result = install_container(&mut engine, &regression_params()).unwrap();
+    let running = engine
+        .inspect_container(&result.container_name)
+        .unwrap()
+        .unwrap();
+    assert!(rubixctl::container::published_endpoints(&running).is_some());
+    engine.stop_container(&result.container_name, 30).unwrap();
+    let stopped = engine
+        .inspect_container(&result.container_name)
+        .unwrap()
+        .unwrap();
+    assert!(!stopped.allocated_ports.is_empty());
+    assert!(rubixctl::container::published_endpoints(&stopped).is_none());
+}
+
+#[test]
+fn d2k_endpoint_requires_effective_enablement_not_a_workload_binding() {
+    for d2k_enabled in [false, true] {
+        let mut engine = MockContainerEngine::default();
+        let mut params = regression_params();
+        params.d2k = d2k_enabled;
+        params.container_ports = (!d2k_enabled).then(|| "8237:2376".into());
+        let result = install_container(&mut engine, &params).unwrap();
+        let inspect = engine
+            .inspect_container(&result.container_name)
+            .unwrap()
+            .unwrap();
+        assert!(inspect.allocated_ports.contains_key("2376/tcp"));
+        let endpoints = rubixctl::container::published_endpoints(&inspect).unwrap();
+        assert_eq!(endpoints.d2k.is_some(), d2k_enabled);
     }
 }
