@@ -5,6 +5,7 @@ pub mod completion;
 pub mod config;
 pub mod container;
 pub mod container_fixtures;
+pub mod container_lifecycle;
 pub mod container_ports;
 pub mod contract;
 pub mod download;
