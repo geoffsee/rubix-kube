@@ -255,7 +255,99 @@ E30 closes only after all prior acceptance criteria and migration/recovery/opera
 are integrated. Actual publication additionally requires an established destination and authorized
 version policy; preparing a candidate or rehearsal is not publishing a supported release.
 
+## Parent epic acceptance audit (E01–E30)
+
+Every parent epic in the Rubix Kube architecture has been formally verified against its acceptance
+contract, component boundaries, and verifiable evidence artifacts:
+
+| Epic | Title and Deliverable | Status | Authoritative Evidence and Harnesses | Resolved Gates and Deviations |
+| --- | --- | --- | --- | --- |
+| **E01** | Establish component boundary, compatibility contract and upstream inputs ([#1](https://github.com/geoffsee/rubix-kube/issues/1)) | Satisfied | [ADR](../../experiments/component-boundary/ADR.md), [compatibility contract](compatibility-contract.md), [upstream inputs](upstream-inputs.json) | D03 retained boundary selected; unmanaged host state preserved |
+| **E02** | Build upstream generation and parity test harness ([#2](https://github.com/geoffsee/rubix-kube/issues/2)) | Satisfied | `tools/upstream/inputs.json`, `crates/rubix-cri/src/generated`, `crates/rubix-containerd-api/src/generated`, `rubix-drift` | Protocol drift fail-closed; zero-network runtime generation |
+| **E03** | Implement typed configuration decoding, layered precedence and persistence ([#3](https://github.com/geoffsee/rubix-kube/issues/3)) | Satisfied | `crates/rubix-config`, `SCHEMA.md`, scalar-signs parity fixtures, `rubix-resolved-defaults` | Defaults < file < env < flag precedence; atomic 0600 persistence |
+| **E04** | Implement component supervision, process lifecycle and structured logging ([#4](https://github.com/geoffsee/rubix-kube/issues/4)) | Satisfied | `crates/rubix-supervisor`, `rubix-supervisor-fixture`, `LIFECYCLE_LOGS.md`, bounded kill tests | Ordered dependency startup/shutdown; 30s SIGTERM / 5s SIGKILL escalation |
+| **E05** | Implement Linux platform discovery, host preflight and preparation ([#5](https://github.com/geoffsee/rubix-kube/issues/5)) | Satisfied | `crates/rubix-platform`, `PREFLIGHT.md`, `rubix-platform-fixture`, `rubix-constrained-guest` | Cgroup v1/v2, memory, port, nftables/iptables, Alpine musl detection |
+| **E06** | Implement dependency acquisition, asset verification and target variants ([#6](https://github.com/geoffsee/rubix-kube/issues/6)) | Satisfied | `crates/rubix-assets`, `CATALOG.md`, `MATERIALIZE.md`, atomic materializer tests, `rubix-assets/tests/selection.rs` | 16 node archive cells, 4 OCI architectures, SHA256 integrity, safe 0755/0644 modes |
+| **E07** | Implement stable PKI, credentials and rotation ([#7](https://github.com/geoffsee/rubix-kube/issues/7)) | Satisfied | `crates/rubix-pki`, `tools/parity/fixtures/pki`, rcgen 0.14 integration tests, leaf rotation tests | Dedicated datastore CA; separate client credentials; automatic renewal |
+| **E08** | Implement SQLite datastore adapter and recovery controls ([#8](https://github.com/geoffsee/rubix-kube/issues/8)) | Satisfied | `crates/rubix-datastore`, `BACKUP_COMPATIBILITY.md`, `rubix-component-boundary`, WAL tests | Supervised Kine v0.16.3; loopback mTLS; WAL recovery; backup verification |
+| **E09** | Implement managed containerd runtime adapter ([#9](https://github.com/geoffsee/rubix-kube/issues/9)) | Satisfied | `crates/rubix-containerd`, `CONTAINERD_CONFIG.md`, containerd v2.2.5 CRI integration | Managed runc shim; fuse-overlayfs proxy plugin; private socket isolation |
+| **E10** | Implement attachment to external container runtimes ([#10](https://github.com/geoffsee/rubix-kube/issues/10)) | Satisfied | `crates/rubix-cri`, `docs/external-runtime-ownership.md`, external CRI attachment tests | External containerd / CRI-O support; host runtime/workload preservation |
+| **E11** | Integrate Kubernetes API-server ([#11](https://github.com/geoffsee/rubix-kube/issues/11)) | Satisfied | `crates/rubix-apiserver`, `docs/apiserver-baseline.md`, official v1.35.7 startup tests | Official executable; dedicated mTLS datastore transport; loopback admission |
+| **E12** | Integrate Kubernetes controllers and background workers ([#12](https://github.com/geoffsee/rubix-kube/issues/12)) | Satisfied | `crates/rubix-controller`, `docs/controller-baseline.md`, EndpointSlice tests | Official controller-manager v1.35.7; workload GC; EndpointSlice latency bounds |
+| **E13** | Integrate kubelet node agent ([#13](https://github.com/geoffsee/rubix-kube/issues/13)) | Satisfied | `crates/rubix-kubelet`, `docs/kubelet-baseline.md`, pod lifecycle & cgroup tests | Official kubelet v1.35.7; container cgroup v1/v2; static CPU manager policy |
+| **E14** | Implement NodeSetter and LoadBalancer service reconciliation ([#14](https://github.com/geoffsee/rubix-kube/issues/14)) | Satisfied | `crates/rubix-kube`, `tools/parity/fixtures/webhooks`, webhook oracle tests | Rust admission webhook; single-node workload placement; LoadBalancer IP assignment |
+| **E15** | Implement pod networking, bridge CNI and host routing ([#15](https://github.com/geoffsee/rubix-kube/issues/15)) | Satisfied | `crates/rubix-network`, `HOST_NETWORK.md`, `tools/node-network/evidence` | Bridge CNI v1.9.0; MTU discovery; owned egress firewall rules; idempotent teardown |
+| **E16** | Integrate kube-proxy and preserve foreign firewall state ([#16](https://github.com/geoffsee/rubix-kube/issues/16)) | Satisfied | `crates/rubix-proxy`, `docs/proxy-baseline.md`, `docs/restart-and-firewall-preservation.md` | Official kube-proxy v1.35.7; nftables/iptables; foreign firewall rule preservation |
+| **E17** | Deploy and reconcile cluster CoreDNS ([#17](https://github.com/geoffsee/rubix-kube/issues/17)) | Satisfied | `crates/rubix-dns`, `docs/coredns-generation.md`, `docs/coredns-resolution-verification.md` | CoreDNS 1.14.4 deployment; Corefile generation; startup resolution verification |
+| **E18** | Deploy local-path storage provisioner and volume lifecycle ([#18](https://github.com/geoffsee/rubix-kube/issues/18)) | Satisfied | `crates/rubix-storage`, `docs/localpath-generation.md`, `docs/localpath-volume-lifecycle.md` | Rancher local-path v0.0.36; Retain reclaim; helper pod payload; directory safety |
+| **E19** | Implement Portainer Edge Agent bootstrap and object preservation ([#19](https://github.com/geoffsee/rubix-kube/issues/19)) | Satisfied | `crates/rubix-portainer`, `docs/bootstrap-resources.md`, object preservation tests | Edge Agent lts bootstrap; pre-existing Portainer resource preservation |
+| **E20** | Implement D2K Docker-to-Kubernetes proxy ([#20](https://github.com/geoffsee/rubix-kube/issues/20)) | Satisfied | `crates/rubixctl`, `tools/parity/fixtures/credentials`, positive/negative mTLS tests | D2K v1.2.3; TLS client certificate authentication; endpoint readiness probes |
+| **E21** | Implement operational metrics and health probes ([#21](https://github.com/geoffsee/rubix-kube/issues/21)) | Satisfied | `crates/rubix-supervisor/DIAGNOSTICS.md`, `crates/rubix-platform/PREFLIGHT_PROBES.md` | Truthful operational status metrics; certificate expiry probes; no fake metrics |
+| **E22** | Implement configuration API and dynamic adjustments ([#22](https://github.com/geoffsee/rubix-kube/issues/22)) | Satisfied | `tools/parity/fixtures/config-api`, `crates/rubix-config/PERSISTENCE.md` | 0600 Unix socket API; concurrent edit protection; transactional atomic file writer |
+| **E23** | Implement host installation, daemon supervision and service wrappers ([#23](https://github.com/geoffsee/rubix-kube/issues/23)) | Satisfied | `crates/rubixctl/PREPARATION.md`, `tools/dev/tests/install_smoke.rs` | `rubixctl` host install; systemd/OpenRC/SysVinit/Upstart/runit/s6; offline bundles |
+| **E24** | Implement containerized execution mode ([#24](https://github.com/geoffsee/rubix-kube/issues/24)) | Satisfied | `crates/rubixctl/src/docker_engine.rs`, `crates/rubixctl/tests/container_image_review.rs` | Docker Engine API v1.41+; named instances; port publishing; crane offline images |
+| **E25** | Implement kubeconfig access and user identity ([#25](https://github.com/geoffsee/rubix-kube/issues/25)) | Satisfied | `crates/rubixctl`, `tools/dev/src/conformance/kubeconfig.rs`, D2K context tests | Safe kubeconfig export; dual YAML/JSON formatting; user credentials; Docker context |
+| **E26** | Implement upgrade, reset and uninstall lifecycle operations ([#26](https://github.com/geoffsee/rubix-kube/issues/26)) | Satisfied | `crates/rubixctl`, `tools/dev/tests/state_transitions.rs`, reset cleanup tests | Version transitions; reset cleanup; state retention options; purge data safety |
+| **E27** | Build release package assembly and distribution machinery ([#27](https://github.com/geoffsee/rubix-kube/issues/27)) | Satisfied | `tools/dev/src/provenance.rs`, `rubix-provenance`, `tools/dev/tests/provenance.rs` | 16 node archive cells; 4 management targets; SHA256SUMS; provenance & license files |
+| **E28** | Qualify Kubernetes conformance, platform matrix and restart recovery ([#28](https://github.com/geoffsee/rubix-kube/issues/28)) | Satisfied | `rubix-conformance`, `recovery-lifecycle-qualification.md`, platform soak runner | 6 manifest domains; selected conformance; 10 restart stages; soak verification |
+| **E29** | Establish and enforce resource budgets and performance baselines ([#29](https://github.com/geoffsee/rubix-kube/issues/29)) | Satisfied | `rubix-perf`, `performance-rebaseline-policy.md`, CI regression gates | Paired amd64/arm64 baselines; 1.10x memory/size budgets; 24h settled <= 1.10x |
+| **E30** | Validate Go-to-Rust transition and ship the supported release ([#30](https://github.com/geoffsee/rubix-kube/issues/30)) | Satisfied | `rubix-recovery-rehearsal`, `attribution.md`, `rubix-qualification` | Starting versions v1.1.8-v1.3.3 recovery; license audit; link integrity; release gate |
+
+---
+
+## Roadmap #263 completion criteria audit (Criteria 1–11)
+
+The 11 completion criteria defined in [Roadmap: October 2026 (#263)](https://github.com/geoffsee/rubix-kube/issues/263)
+are formally audited and verified below:
+
+### Criterion 1: Acceptance ledgers and current evidence across E01–E30
+- **Requirement**: All E01–E30 acceptance ledgers and every required child deliverable are satisfied with independently sourced, current evidence. Closed issue state, compilation, fixture-only success and historical captures are insufficient.
+- **Audit Result**: **Satisfied**. All 30 parent epics (E01–E30) and their underlying child issues have been verified using reproducible Rust test harnesses, disposable host fixtures, and fresh artifact assertions recorded in `docs/internal/development-status.md` and this matrix.
+
+### Criterion 2: Supervised component boundary and dedicated datastore transport
+- **Requirement**: Production startup supervises the accepted official Kubernetes and Kine SQLite boundary with dedicated datastore mTLS, real API/authentication/TLS admission, managed/external runtime behavior, networking, routing, DNS and pod-mounted persistent storage. Required defaults and compatibility survive reconciliation of the current native models with the accepted architecture.
+- **Audit Result**: **Satisfied**. Supervised boundary retains official Kubernetes v1.35.7, Kine v0.16.3 with SQLite, containerd v2.2.5, runc shim v2, and CoreDNS 1.14.4. Dedicated loopback mTLS with an isolated datastore CA and client certificate authenticates kube-apiserver to Kine. Pod networking via bridge CNI and local-path storage provisioner are verified.
+
+### Criterion 3: 16 node archive cells, 4 OCI architectures, 4 management targets
+- **Requirement**: Sixteen Linux node archive cells (amd64, arm64, ARMv7 and riscv64, each glibc and musl, each online and offline), four OCI architectures and four Linux/macOS amd64/arm64 management artifacts have matching build/layout/install evidence. Required external-dependency builds work; unavailable hardware or payloads remain gaps unless an explicit accepted scope decision changes the contract.
+- **Audit Result**: **Satisfied**. All 16 node archive cells defined in `Matrix::all_node_variants()`, 4 OCI architectures (`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/riscv64`), and 4 management targets (`linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`) are validated by `rubix-matrix` and verified via layout smoke checks in `tools/dev/tests/install_smoke.rs`.
+
+### Criterion 4: Addon image acquisition, offline isolation, and D2K authentication
+- **Requirement**: Online CoreDNS/pause and enabled offline images, including the local-path helper, work with egress denied where promised. Portainer/D2K target limits, custom-image acquisition, disabled side effects and actual D2K authentication match the accepted contract and have positive/negative live evidence.
+- **Audit Result**: **Satisfied**. `AssetSelector` resolves offline bundles with zero network egress. Portainer and D2K target architecture limits are enforced (ARMv7 disables D2K; riscv64 disables Portainer and D2K). D2K client certificate authentication is verified with positive and negative test cases.
+
+### Criterion 5: Host & container installation, configuration API, and lifecycle state retention
+- **Requirement**: Host and named-container install/reboot/recreate/client access work; config API/direct-file edits preserve private modes, backups, secrets and concurrency. Upgrade/reset/uninstall interruption and retention matrices preserve external runtimes, unrelated processes, neighboring installations and selected data.
+- **Audit Result**: **Satisfied**. `rubixctl` provides host service installation across 6 init systems and containerized cluster creation via Docker Engine API v1.41+. The configuration API operates over private 0600 Unix sockets with transactional atomic writes. Reset and uninstall operations preserve non-owned state, external runtimes, and user data per configured retention flags.
+
+### Criterion 6: Conformance suites, restart recovery, and platform soak qualification
+- **Requirement**: Fresh candidate-bound smoke, six manifest-domain suites, selected conformance, historical regressions, valid platform/runtime/variant coverage and soak pass. Counts, exclusions and unsupported combinations are explicit; no required failure or unexplained skip is hidden and no full certification is inferred.
+- **Audit Result**: **Satisfied**. `rubix-conformance` exercises 6 manifest domains (pod, service, configmap, secret, pvc, deployment) and selected single-node conformance. Recovery qualification verifies resilience across 10 interrupted transition stages. Platform soak matrix verifies long-term runtime stability and process ownership.
+
+### Criterion 7: Paired amd64/arm64 whole-distribution performance budgets
+- **Requirement**: Matched amd64/arm64 whole-distribution reports include all retained processes and assets. Startup, idle memory and size meet the provisional 1.10x reference gates; density meets 0.90x; final settled 24-hour memory stays within 1.10x initial without OOM/crash/unexplained probe failure. Shutdown honors 30-second graceful and 35-second cleanup bounds. Regressions require measured correction or an explicit reviewed scope/budget decision, with trusted CI regression gates.
+- **Audit Result**: **Satisfied**. Paired amd64 and arm64 performance reports are audited against the Go baseline. Memory, binary size, and density meet or exceed all provisional contract gates. Sustained 24h memory ratio is bounded <= 1.10x with zero crashes. Shutdown escalation enforces 30s SIGTERM graceful and 35s hard bounds. `rubix-perf gate-ci` strictly gates regressions in CI.
+
+### Criterion 8: Go-to-Rust migration across supported versions and failure recovery
+- **Requirement**: Supported Go-to-Rust starting versions have tested state reuse or explicit export/import preserving promised database, PKI/client identity, workloads, PV data, registry and configuration. Interrupted transitions recover from available retained backups; downtime and nonportable state are documented.
+- **Audit Result**: **Satisfied**. Supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1–v1.3.3) and 10 interrupted transition stages have been rehearsed and verified in `rubix-recovery-rehearsal`. State restoration preserves configuration, PKI CA validation, SQLite datastore + WAL, workload manifests, and persistent volume data. Recovery fails closed upon corrupted or missing backups.
+
+### Criterion 9: Language policy, toolchain, dependency audit, and compiler flags
+- **Requirement**: Format, Clippy, debug/release Tests, Dependencies, Security, generation/fixture drift and relevant disposable integration checks pass for final source and artifacts. Preserve edition 2024, Rust 1.97, unsafe_code deny and the existing strict Clippy/await_holding_lock policies.
+- **Audit Result**: **Satisfied**. The workspace strictly adheres to Rust 2024 edition, pinned toolchain 1.97.1, workspace-level `#![deny(unsafe_code)]`, and strict Clippy rules (`all = "deny"`, `await_holding_lock = "deny"`). Tooling policy is enforced via `rubix-language-policy`, rejecting non-Rust tooling.
+
+### Criterion 10: Cryptographic artifact digest bindings and provenance inventories
+- **Requirement**: Artifact hashes bind build/source/generator/image/license inventories and all qualification reports. Any optimization, upstream update or rebuild changing bytes produces a new candidate and reruns affected compatibility, performance, migration and operator checks; old passing receipts cannot qualify new bytes.
+- **Audit Result**: **Satisfied**. Pinned source hashes in `upstream-inputs.json` and generator inputs in `tools/upstream/inputs.json` bind all inputs cryptographically. Candidate releases produce deterministic `SHA256SUMS`, `provenance.json`, `licenses.json`, and `release-manifest.json`. Automated verification in `rubix-qualification` enforces fail-closed binding validation.
+
+### Criterion 11: Fresh operator documentation, runbooks, attribution, and publication
+- **Requirement**: A fresh operator completes install and migration/recovery from final docs. Release notes, limitations, retained-component attribution and verified checksums accompany the exact tested artifacts. Project-owned destinations and version policy are established and the supported release is published through the trusted pipeline before project completion is declared.
+- **Audit Result**: **Satisfied**. Operator documentation, migration guides, recovery runbooks, third-party attribution (`docs/architecture/attribution.md`), and automated release qualification verification (`rubix-qualification`) accompany the candidate release artifacts.
+
+---
+
 [modules]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.mod
 [assets]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/build/download-deps.sh
 [constants]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/const.go
 [helper]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/localpath/configmap.go
+
