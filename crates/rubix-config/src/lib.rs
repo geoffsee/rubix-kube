@@ -39,3 +39,14 @@ pub use api::{
     STRUCT_FIELD_PATHS, apply_merge_patch, apply_put_replacement, compute_etag, diff_configs,
     format_api_response, has_redacted_secrets, redact_secrets, serialize_api_config,
 };
+
+pub mod legacy;
+pub use legacy::{
+    ExtractedFlags, MigrationOutcome, extract_service_flags, flags_to_config, has_config_flag,
+    migrate_service_flags, render_config_from_flags, rewrite_service_content, unquote_shell_value,
+};
+
+pub mod semver;
+pub use semver::{
+    MIN_CONFIG_FILE_VERSION, ParsedVersion, compare_versions, parse_version, supports_config_file,
+};
