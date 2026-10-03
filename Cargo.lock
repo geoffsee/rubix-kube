@@ -1104,6 +1104,7 @@ dependencies = [
  "saphyr-parser",
  "serde",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -1232,6 +1233,11 @@ dependencies = [
 name = "rubix-kube"
 version = "0.1.0"
 dependencies = [
+ "bytes",
+ "http",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
  "rubix-apiserver",
  "rubix-config",
  "rubix-controller",

@@ -33,3 +33,9 @@ pub use persistence::{
 
 mod describe;
 pub use describe::{SettingDescriptor, describe_settings};
+
+pub mod api;
+pub use api::{
+    STRUCT_FIELD_PATHS, apply_merge_patch, apply_put_replacement, compute_etag, diff_configs,
+    format_api_response, has_redacted_secrets, redact_secrets, serialize_api_config,
+};

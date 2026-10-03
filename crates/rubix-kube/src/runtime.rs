@@ -48,6 +48,7 @@ pub const COMPONENT_LOCAL_PATH: &str = "local-path-provisioner";
 pub const COMPONENT_PORTAINER: &str = "portainer-agent";
 pub const COMPONENT_PROXY: &str = "kube-proxy";
 pub const COMPONENT_KUBELET: &str = "kubelet";
+pub const COMPONENT_CONFIG_API: &str = "configapi";
 
 /// Errors encountered while constructing or initializing the node runtime.
 #[derive(Debug)]
@@ -230,6 +231,16 @@ impl RuntimeBuilder {
         self
     }
 
+    /// Registers the local configuration HTTP API server.
+    #[must_use]
+    pub fn register_config_api(self, server: crate::config_api::ConfigApiServer) -> Self {
+        self.register_optional(
+            COMPONENT_CONFIG_API,
+            vec![],
+            crate::config_api::ConfigApiAdapter::new(server),
+        )
+    }
+
     /// Builds the supervised node runtime.
     pub fn build(self) -> Result<NodeRuntime, RuntimeError> {
         let (supervisor, observer) = Supervisor::new(self.registrations)?.with_observer();
@@ -351,6 +362,21 @@ impl NodeRuntime {
                 timeout,
             );
             builder = builder.register_component(storage_reg);
+        }
+
+        if builder.config().config().api.enabled {
+            let socket_path = if builder.config().config().api.socket_path.is_empty() {
+                state_dir.join("config.sock")
+            } else {
+                PathBuf::from(&builder.config().config().api.socket_path)
+            };
+            let config_path = std::env::var("KUBESOLO_CONFIG")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .map_or_else(|| PathBuf::from("/etc/kubesolo/config.yaml"), PathBuf::from);
+            let host = rubix_config::HostContext::detect();
+            let server = crate::config_api::ConfigApiServer::new(socket_path, config_path, host);
+            builder = builder.register_config_api(server);
         }
 
         builder.build()

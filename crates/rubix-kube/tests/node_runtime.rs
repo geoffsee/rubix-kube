@@ -11,16 +11,18 @@ use rubix_apiserver::storage::KubernetesStorage;
 use rubix_apiserver::supervisor::ApiserverAdapter;
 use rubix_config::{
     EnvironmentMode, ExplicitFlags, HostContext, ValidatedConfig, decode, resolve_layers,
+    write_document,
 };
 use rubix_datastore::config::DatastoreConfig;
 use rubix_datastore::engine::DatastoreEngine;
 use rubix_datastore::supervisor::DatastoreAdapter;
+use rubix_kube::config_api::ConfigApiServer;
 use rubix_kube::lifecycle_logs::LogLevel;
 use rubix_kube::lifecycle_sink::FlushPolicy;
 use rubix_kube::runtime::{
-    COMPONENT_APISERVER, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS, COMPONENT_DATASTORE,
-    COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER, COMPONENT_PROXY, NodeRuntime,
-    RuntimeBuilder,
+    COMPONENT_APISERVER, COMPONENT_CONFIG_API, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS,
+    COMPONENT_DATASTORE, COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER,
+    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder,
 };
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_supervisor::{
@@ -505,4 +507,68 @@ async fn test_c02_runtime_contract_downstream_wiring_interface() {
 
     assert!(runtime.client().is_some());
     assert!(runtime.apiserver().is_some());
+}
+
+#[tokio::test]
+async fn test_config_api_registration_and_supervised_lifecycle() {
+    assert_eq!(COMPONENT_CONFIG_API, "configapi");
+
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let socket_path = temp.path().join("config.sock");
+    let config_file = temp.path().join("config.yaml");
+    write_document(&config_file, config.config()).unwrap();
+
+    let server = ConfigApiServer::new(socket_path.clone(), config_file, HostContext::default());
+
+    let (stop_handle, stop_receiver) = stop_channel();
+    let runtime = RuntimeBuilder::new(config)
+        .register_config_api(server)
+        .build()
+        .expect("build runtime with config api");
+
+    let run_handle = tokio::spawn(async move {
+        runtime
+            .run_with_sink(stop_receiver, io::sink(), FlushPolicy::EachFrame)
+            .await
+    });
+
+    let mut ready = false;
+    for _ in 0..50 {
+        if check_healthz(&socket_path).await {
+            ready = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert!(
+        ready,
+        "config API server should become ready and serve /healthz"
+    );
+
+    // Clean shutdown
+    stop_handle.stop();
+    let (sup_report, _, _) = run_handle.await.expect("run task");
+    assert_eq!(sup_report.cause, StopCause::Requested);
+    assert!(
+        !socket_path.exists(),
+        "socket must be removed on supervisor shutdown"
+    );
+}
+
+async fn check_healthz(socket_path: &Path) -> bool {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    if !socket_path.exists() {
+        return false;
+    }
+    let Ok(mut stream) = tokio::net::UnixStream::connect(socket_path).await else {
+        return false;
+    };
+    let req = b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n";
+    if stream.write_all(req).await.is_err() {
+        return false;
+    }
+    let mut resp = Vec::new();
+    stream.read_to_end(&mut resp).await.is_ok() && resp.ends_with(b"ok\n")
 }

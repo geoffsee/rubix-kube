@@ -10,6 +10,47 @@ pub struct HostContext {
     pub architecture: String,
     pub detected_container_mode: bool,
 }
+
+impl Default for HostContext {
+    fn default() -> Self {
+        Self::detect()
+    }
+}
+
+impl HostContext {
+    #[must_use]
+    pub fn new(
+        cpu_count: usize,
+        architecture: impl Into<String>,
+        detected_container_mode: bool,
+    ) -> Self {
+        Self {
+            cpu_count,
+            architecture: architecture.into(),
+            detected_container_mode,
+        }
+    }
+
+    #[must_use]
+    pub fn detect() -> Self {
+        let architecture = match std::env::consts::ARCH {
+            "aarch64" => "arm64",
+            "x86_64" => "amd64",
+            other => other,
+        };
+        let cpu_count = std::thread::available_parallelism().map_or(2, std::num::NonZero::get);
+        let detected_container_mode = std::path::Path::new("/.dockerenv").metadata().is_ok()
+            || std::path::Path::new("/run/.containerenv")
+                .metadata()
+                .is_ok()
+            || std::env::var_os("container").is_some_and(|value| !value.is_empty());
+        Self {
+            cpu_count,
+            architecture: architecture.to_string(),
+            detected_container_mode,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ValidationWarning {
     pub field: &'static str,
