@@ -203,7 +203,8 @@ or `UnsupportedTarget`) for each asset across:
 `ReleasePackager` structures, verifies, and validates release packaging across the complete matrix:
 - **Node Archives (16 cells)**: Generates and validates metadata (`NodeArchiveArtifact`) across all 16
   cells (cell IDs 1..=16: 4 architectures × 2 libcs × 2 variants). Validates standard archive naming
-  format, size, SHA-256 digest, and bundled asset manifest.
+  format and cell target metadata, with lowercase SHA-256 digest syntax validation. Descriptor checks
+  do not inspect archive contents, recorded sizes, or the `bundled_assets` list.
 - **Layout & Installation Smoke Checks**: `ReleasePackager::smoke_check_node_archive_layout` tests that
   each cell archive unpacks into an `AssetLayout` via `Materializer`, sets expected executable permissions
   (`0o755`) and payload permissions (`0o644`), and verifies idempotency upon repeated extraction.
@@ -211,9 +212,19 @@ or `UnsupportedTarget`) for each asset across:
   across Linux/macOS (`linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`), strictly rejecting
   Windows executables (`.exe` or `windows`) per E01.
 - **OCI Container Image Manifest Indices**: Binds multi-arch image index descriptors (`OciImageIndexArtifact`)
-  across the 4 OCI architectures (`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/riscv64`) with verified
-  SHA-256 digests. Strictly partitions and validates unsupported target platforms (Portainer agent on
+  across the 4 OCI architectures (`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/riscv64`) with
+  format-validated SHA-256 digest strings, supported index media types and consistent unique platform
+  descriptors. These metadata checks do not hash registry content. Strictly partitions unsupported platforms (Portainer agent on
   `linux/riscv64`, D2K on `linux/arm/v7` and `linux/riscv64`).
 - **Verifiable Release Package Manifest**: `ReleasePackageManifest` provides an exhaustive release ledger
   binding all 16 node archive cells, 4 management binaries, container image index manifests, and explicit
-  exclusion declarations for tamper-evident release distribution.
+  exclusion declarations. Publication tooling separately hashes actual files and, when supplied with
+  per-archive inventories, checks file sizes and materializes each node archive for layout verification.
+
+The publish workflow consumes a prepared `release-candidate` artifact from a successful CI run for
+the checked-out default-branch revision. It requires `dist/` containing all 16 canonical node archives
+and four management binaries, plus `inventories/<archive-filename>.manifest.json` for every archive.
+It fails before publication when the candidate or inventory is absent or invalid. Native CI binaries
+alone are not a complete candidate. Current CI uploads only `pr-binaries`, so publication remains
+blocked until a trusted producer supplies the complete `release-candidate`. Real candidate assembly, signing, and live release qualification
+remain outstanding; this workflow does not claim to implement cryptographic signing.

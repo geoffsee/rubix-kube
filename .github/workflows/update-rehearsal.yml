@@ -1,49 +1,43 @@
-name: Update rehearsal
+name: Pinned upstream rehearsal
 
 on:
   schedule:
     - cron: '47 7 * * 1'
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Target Kubernetes version for update rehearsal"
-        required: false
-        type: string
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   rehearsal:
-    name: Upstream update rehearsal
+    name: Verify pinned upstream inputs and compatibility fixtures
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: $/.github/actions/setup-rust
+      - uses: ./.github/actions/setup-rust
         with:
           cache-key: update-rehearsal
-      - name: Rehearse upstream inputs update
+      - name: Rehearse pinned upstream inputs
         run: |
           cargo run --locked -p rubix-dev --bin rubix-upstream -- fetch
           cargo run --locked -p rubix-dev --bin rubix-upstream -- verify
-          # Extract current drift baseline
           cargo run --locked -p rubix-dev --bin rubix-drift -- extract --cache-dir target/upstream --inventory target/rehearsal.json.gz
-      - name: Generate update report
+      - name: Generate pinned-input comparison report
         run: |
           cargo run --locked -p rubix-dev --bin rubix-drift -- report \
             --before tools/drift/inventory.json.gz \
             --after target/rehearsal.json.gz \
             --format markdown > update-report.md
-      - name: Publish update report
-        run: cat update-report.md >> $GITHUB_STEP_SUMMARY
-      - name: Run independent parity checks
+      - name: Publish comparison report
+        run: cat update-report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Check independent pinned compatibility fixtures and API observations
         run: |
-          cargo run --locked -p rubix-dev --bin rubix-parity -- check
+          cargo test --locked -p rubix-config --test compatibility --test layers
           cargo test --locked -p rubix-upstream-codegen --test api_json

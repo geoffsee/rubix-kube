@@ -44,7 +44,6 @@ Outcome: Completed
 Readiness: Done
 Ownership: Unassigned
 Stack: packages/release-artifacts
-Evidence: Packaged and verified release artifacts across all 16 node archive matrix cells (4 architectures x 2 libcs x 2 variants) with layout/installation smoke checks, 4 cross-target management CLI binaries (Linux/Darwin amd64/arm64) with strict Windows rejection, OCI multi-arch image index descriptors across 4 architectures with policy-governed unsupported target partitioning (Portainer on riscv64, D2K on armv7/riscv64), and complete verifiable release package manifest ledger in rubix-assets and rubix-matrix CLI.
-Next step: None; timestamp: 2026-10-03T07:17:00Z
-
+Evidence: Implemented release descriptor and layout verification tooling in rubix-assets and rubix-matrix, exercised with synthetic fixtures across 16 node cells, four management targets and OCI platform policies. No real complete release candidate was assembled or qualified.
+Next step: Assemble and qualify real candidates after E27.01 builds and E06.01 asset digests are available; timestamp: 2026-10-03T07:17:00Z
 

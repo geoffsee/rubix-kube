@@ -375,7 +375,13 @@ pub fn generate_manifest(
                 node_archives.push(NodeArchiveArtifact {
                     cell: parsed.variant.cell,
                     filename: filename.clone(),
-                    architecture: format!("{:?}", parsed.variant.architecture).to_ascii_lowercase(),
+                    architecture: match parsed.variant.architecture {
+                        rubix_assets::Architecture::Amd64 => "amd64",
+                        rubix_assets::Architecture::Arm64 => "arm64",
+                        rubix_assets::Architecture::ArmV7 => "arm",
+                        rubix_assets::Architecture::Riscv64 => "riscv64",
+                    }
+                    .to_string(),
                     libc: format!("{:?}", parsed.variant.libc).to_ascii_lowercase(),
                     variant: format!("{:?}", parsed.variant.variant).to_ascii_lowercase(),
                     size_bytes,
@@ -429,6 +435,23 @@ pub fn verify_publication(
         management_prefix,
         &manifest.version,
     )?;
+    for binary in &manifest.management_binaries {
+        match checksums.entries().get(&binary.filename) {
+            Some(digest) if *digest == binary.sha256 => {},
+            _ => {
+                return Err(format!(
+                    "manifest digest for {} disagrees with the checksum manifest",
+                    binary.filename
+                )
+                .into());
+            },
+        }
+        if fs::metadata(dist_dir.join(&binary.filename))?.len() != binary.size_bytes {
+            return Err(
+                format!("manifest size for {} disagrees with file", binary.filename).into(),
+            );
+        }
+    }
     for archive in &manifest.node_archives {
         match checksums.entries().get(&archive.filename) {
             Some(digest) if *digest == archive.sha256 => {},
@@ -441,6 +464,11 @@ pub fn verify_publication(
             },
         }
         let bytes = fs::read(dist_dir.join(&archive.filename))?;
+        if bytes.len() as u64 != archive.size_bytes {
+            return Err(
+                format!("manifest size for {} disagrees with file", archive.filename).into(),
+            );
+        }
         let root = tempfile::tempdir()?;
         ReleasePackager::smoke_check_node_archive_layout(
             inventory_for(archive)?,

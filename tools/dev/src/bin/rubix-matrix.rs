@@ -179,7 +179,7 @@ fn handle_verify_manifest(filename: &str) -> ExitCode {
     };
     match ReleasePackager::verify_release_manifest(
         &manifest,
-        &manifest.product_name,
+        "rubix-kube",
         "rubixctl",
         &manifest.version,
     ) {

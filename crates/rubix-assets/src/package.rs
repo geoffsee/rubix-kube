@@ -4,9 +4,10 @@
 //! management binary cross-target verification, and OCI multi-arch manifest index binding.
 
 use crate::{
-    ArtifactNaming, ArtifactNamingError, AssetId, AssetLayout, DeclaredInventory, ManagementArch,
-    ManagementOs, ManagementTarget, MaterializationError, MaterializationLimits,
-    MaterializationOutcome, Materializer, Matrix, MatrixError, NodeVariant, catalog,
+    Architecture, ArtifactNaming, ArtifactNamingError, AssetId, AssetLayout, DeclaredInventory,
+    Libc, ManagementArch, ManagementOs, ManagementTarget, MaterializationError,
+    MaterializationLimits, MaterializationOutcome, Materializer, Matrix, MatrixError, NodeVariant,
+    Variant, catalog,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -85,6 +86,7 @@ pub enum PackageError {
         observed: usize,
     },
     MissingManagementTarget(String),
+    DuplicateManagementTarget(String),
     WindowsTargetIncluded(String),
     DigestMismatch {
         target: String,
@@ -130,6 +132,9 @@ impl fmt::Display for PackageError {
             ),
             Self::MissingManagementTarget(target) => {
                 write!(f, "missing management target: {target}")
+            },
+            Self::DuplicateManagementTarget(target) => {
+                write!(f, "duplicate management target: {target}")
             },
             Self::WindowsTargetIncluded(name) => write!(
                 f,
@@ -218,6 +223,17 @@ impl From<serde_json::Error> for PackageError {
 #[derive(Debug)]
 pub struct ReleasePackager;
 
+fn is_sha256_hex(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+}
+
+fn is_oci_digest(value: &str) -> bool {
+    value.strip_prefix("sha256:").is_some_and(is_sha256_hex)
+}
+
 impl ReleasePackager {
     /// Format a byte slice into lowercase hexadecimal string.
     pub fn hex_digest(bytes: &[u8]) -> String {
@@ -242,7 +258,7 @@ impl ReleasePackager {
         expected_version: &str,
     ) -> Result<NodeVariant, PackageError> {
         let variant = Matrix::from_cell(artifact.cell)?;
-        let parsed = ArtifactNaming::parse_node_archive(&artifact.filename)?;
+        let parsed = ArtifactNaming::canonical_node_archive(&artifact.filename)?;
 
         if parsed.prefix != expected_prefix {
             return Err(ArtifactNamingError::PrefixMismatch {
@@ -266,8 +282,27 @@ impl ReleasePackager {
             .into());
         }
 
-        // Verify SHA-256 hex string validity
-        if artifact.sha256.len() != 64 || !artifact.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        let architecture = match variant.architecture {
+            Architecture::Amd64 => "amd64",
+            Architecture::Arm64 => "arm64",
+            Architecture::ArmV7 => "arm",
+            Architecture::Riscv64 => "riscv64",
+        };
+        let libc = match variant.libc {
+            Libc::Glibc => "glibc",
+            Libc::Musl => "musl",
+        };
+        let kind = match variant.variant {
+            Variant::Online => "online",
+            Variant::Offline => "offline",
+        };
+        if artifact.architecture != architecture
+            || artifact.libc != libc
+            || artifact.variant != kind
+        {
+            return Err(ArtifactNamingError::TargetMismatch.into());
+        }
+        if !is_sha256_hex(&artifact.sha256) {
             return Err(PackageError::DigestMismatch {
                 target: artifact.filename.clone(),
                 expected: "64 hex chars".to_string(),
@@ -391,7 +426,7 @@ impl ReleasePackager {
             return Err(ArtifactNamingError::TargetMismatch.into());
         }
 
-        if artifact.sha256.len() != 64 || !artifact.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        if !is_sha256_hex(&artifact.sha256) {
             return Err(PackageError::DigestMismatch {
                 target: artifact.filename.clone(),
                 expected: "64 hex chars".to_string(),
@@ -410,6 +445,19 @@ impl ReleasePackager {
     /// - Unsupported platforms are strictly partitioned (e.g. Portainer unsupported on `linux/riscv64`, D2K unsupported on `linux/arm/v7` and `linux/riscv64`).
     /// - All supported platforms have valid SHA-256 digests.
     pub fn verify_oci_image_index(artifact: &OciImageIndexArtifact) -> Result<(), PackageError> {
+        const INDEX_TYPES: [&str; 2] = [
+            "application/vnd.oci.image.index.v1+json",
+            "application/vnd.docker.distribution.manifest.list.v2+json",
+        ];
+        if !INDEX_TYPES.contains(&artifact.index_media_type.as_str())
+            || !is_oci_digest(&artifact.index_digest)
+        {
+            return Err(PackageError::DigestMismatch {
+                target: artifact.asset_id.clone(),
+                expected: "supported index media type and sha256:<64 lowercase hex>".to_string(),
+                observed: format!("{} {}", artifact.index_media_type, artifact.index_digest),
+            });
+        }
         let valid_oci_platforms = Matrix::all_oci_platforms();
 
         // Check asset identity in catalog
@@ -436,11 +484,23 @@ impl ReleasePackager {
             _ => &[],
         };
 
+        let mut seen = std::collections::BTreeSet::new();
         for p in &artifact.platforms {
             if !valid_oci_platforms.contains(&p.platform.as_str()) {
                 return Err(PackageError::InvalidOciPlatform {
                     image: artifact.asset_id.clone(),
                     platform: p.platform.clone(),
+                });
+            }
+
+            let expected_architecture = p.platform.split('/').nth(1).unwrap_or_default();
+            if !seen.insert(p.platform.as_str())
+                || p.os != "linux"
+                || p.architecture != expected_architecture
+            {
+                return Err(PackageError::InvalidOciPlatform {
+                    image: artifact.asset_id.clone(),
+                    platform: format!("duplicate or inconsistent descriptor for {}", p.platform),
                 });
             }
 
@@ -452,7 +512,7 @@ impl ReleasePackager {
                 });
             }
 
-            if p.digest.len() != 71 || !p.digest.starts_with("sha256:") {
+            if !is_oci_digest(&p.digest) {
                 return Err(PackageError::DigestMismatch {
                     target: format!("{} ({})", artifact.asset_id, p.platform),
                     expected: "sha256:<64 hex>".to_string(),
@@ -493,6 +553,13 @@ impl ReleasePackager {
         expected_management_prefix: &str,
         expected_version: &str,
     ) -> Result<(), PackageError> {
+        if manifest.product_name != expected_node_prefix {
+            return Err(ArtifactNamingError::PrefixMismatch {
+                expected: expected_node_prefix.to_string(),
+                actual: manifest.product_name.clone(),
+            }
+            .into());
+        }
         // 1. Verify 16 cells are exhaustive and uniquely present (1..=16)
         if manifest.node_archives.len() != 16 {
             return Err(PackageError::InvalidCellCount {
@@ -532,7 +599,10 @@ impl ReleasePackager {
             let target = Self::verify_management_artifact(binary, expected_management_prefix)?;
             let key = (target.os, target.architecture);
             if target_set.insert(key, binary.filename.clone()).is_some() {
-                return Err(PackageError::DuplicateCell(0));
+                return Err(PackageError::DuplicateManagementTarget(format!(
+                    "{}-{}",
+                    target.os, target.architecture
+                )));
             }
         }
 
