@@ -95,14 +95,18 @@ fn run() -> io::Result<u8> {
         &mut stderr,
     )? {
         StartupAction::Exit(code) => Ok(code),
-        StartupAction::Start(config) => {
+        StartupAction::Start {
+            config,
+            config_path,
+            host,
+        } => {
             drop(stdout);
             drop(stderr);
             let runtime = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?;
             runtime.block_on(async move {
-                match rubix_kube::NodeRuntime::from_config(*config) {
+                match rubix_kube::NodeRuntime::from_config_with_context(*config, config_path, host) {
                     Ok(node) => node.run_to_completion().await,
                     Err(error) => {
                         // Assembly failed before a supervisor existed. Keep the

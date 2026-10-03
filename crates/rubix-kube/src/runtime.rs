@@ -51,6 +51,7 @@ pub const COMPONENT_LOCAL_PATH: &str = "local-path-provisioner";
 pub const COMPONENT_PORTAINER: &str = "portainer-agent";
 pub const COMPONENT_PROXY: &str = "kube-proxy";
 pub const COMPONENT_KUBELET: &str = "kubelet";
+pub const COMPONENT_CONFIG_API: &str = "configapi";
 
 /// Errors encountered while constructing or initializing the node runtime.
 #[derive(Debug)]
@@ -233,6 +234,16 @@ impl RuntimeBuilder {
         self
     }
 
+    /// Registers the local configuration HTTP API server.
+    #[must_use]
+    pub fn register_config_api(self, server: crate::config_api::ConfigApiServer) -> Self {
+        self.register_optional(
+            COMPONENT_CONFIG_API,
+            vec![],
+            crate::config_api::ConfigApiAdapter::new(server),
+        )
+    }
+
     /// Registers the optional Portainer Edge Agent component under supervision.
     #[must_use]
     pub fn register_portainer(self, service: PortainerService, prerequisites: Vec<String>) -> Self {
@@ -278,6 +289,20 @@ impl NodeRuntime {
 
     /// Assembles the default production node runtime from validated configuration.
     pub fn from_config(config: ValidatedConfig) -> Result<Self, RuntimeError> {
+        Self::from_config_with_context(
+            config,
+            PathBuf::from("/etc/kubesolo/config.yaml"),
+            rubix_config::HostContext::detect(),
+        )
+    }
+
+    /// Assembles runtime services with the file and host context selected at startup.
+    /// This keeps stored configuration and API validation bound to that invocation.
+    pub fn from_config_with_context(
+        config: ValidatedConfig,
+        config_path: PathBuf,
+        host: rubix_config::HostContext,
+    ) -> Result<Self, RuntimeError> {
         let state_dir = PathBuf::from(&config.config().path);
         std::fs::create_dir_all(&state_dir)?;
 
@@ -365,6 +390,16 @@ impl NodeRuntime {
             builder = builder.register_component(storage_reg);
         }
 
+        if builder.config().config().api.enabled {
+            let socket_path = if builder.config().config().api.socket_path.is_empty() {
+                state_dir.join("config.sock")
+            } else {
+                PathBuf::from(&builder.config().config().api.socket_path)
+            };
+            let server = crate::config_api::ConfigApiServer::new(socket_path, config_path, host);
+            builder = builder.register_config_api(server);
+        }
+
         let arch = match std::env::consts::ARCH {
             "aarch64" => rubix_platform::Architecture::Arm64,
             "arm" => rubix_platform::Architecture::ArmV7,
@@ -375,13 +410,8 @@ impl NodeRuntime {
             PortainerAgentConfig::from_rubix_config(&builder.config().config().portainer, arch);
         if portainer_cfg.is_enabled() {
             let portainer_service = PortainerService::new(portainer_cfg, Arc::new(client));
-            let portainer_reg = PortainerAdapter::registration(
-                COMPONENT_PORTAINER,
-                portainer_service,
-                vec![COMPONENT_APISERVER.to_string()],
-                timeout,
-            );
-            builder = builder.register_component(portainer_reg);
+            builder = builder
+                .register_portainer(portainer_service, vec![COMPONENT_APISERVER.to_string()]);
         }
 
         builder.build()
