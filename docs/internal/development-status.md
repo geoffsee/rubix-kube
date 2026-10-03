@@ -39,4 +39,12 @@ Stack: runtime/selection
 Evidence: Implemented `AssetSelector` and `SelectedDelivery` in `rubix-assets` resolving asset delivery across online/offline variants, external-dependency scopes (zero embedded payloads, `HostSupplied` executables), local storage toggle (skipping provisioner and helper images), target architecture feature constraints, and airgapped/egress-denied validation ensuring custom Portainer images remain explicit registry pulls and offline fixtures bundle supported images without network egress.
 Next step: None; timestamp: 2026-10-02T20:20:00Z
 
+Work item: E27.02 (https://github.com/geoffsee/rubix-kube/issues/115); Parent criteria 1, 2, 3
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: packages/release-artifacts
+Evidence: Packaged and verified release artifacts across all 16 node archive matrix cells (4 architectures x 2 libcs x 2 variants) with layout/installation smoke checks, 4 cross-target management CLI binaries (Linux/Darwin amd64/arm64) with strict Windows rejection, OCI multi-arch image index descriptors across 4 architectures with policy-governed unsupported target partitioning (Portainer on riscv64, D2K on armv7/riscv64), and complete verifiable release package manifest ledger in rubix-assets and rubix-matrix CLI.
+Next step: None; timestamp: 2026-10-03T07:17:00Z
+
 

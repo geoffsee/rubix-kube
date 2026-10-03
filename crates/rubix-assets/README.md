@@ -197,3 +197,23 @@ or `UnsupportedTarget`) for each asset across:
   `SelectionError::EgressDeniedRegistryRequired`.
 - **Target Policy Enforcement**: Unsupported architecture combinations (e.g. Portainer on `riscv64`,
   D2K on `armv7`/`riscv64`) are enforced per target policy via `SelectionError::UnsupportedTargetFeature`.
+
+## Release artifact packaging (E27.02/#115)
+
+`ReleasePackager` structures, verifies, and validates release packaging across the complete matrix:
+- **Node Archives (16 cells)**: Generates and validates metadata (`NodeArchiveArtifact`) across all 16
+  cells (cell IDs 1..=16: 4 architectures × 2 libcs × 2 variants). Validates standard archive naming
+  format, size, SHA-256 digest, and bundled asset manifest.
+- **Layout & Installation Smoke Checks**: `ReleasePackager::smoke_check_node_archive_layout` tests that
+  each cell archive unpacks into an `AssetLayout` via `Materializer`, sets expected executable permissions
+  (`0o755`) and payload permissions (`0o644`), and verifies idempotency upon repeated extraction.
+- **Cross-Target Management Binaries (4 targets)**: Validates management CLI artifacts (`ManagementArtifact`)
+  across Linux/macOS (`linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`), strictly rejecting
+  Windows executables (`.exe` or `windows`) per E01.
+- **OCI Container Image Manifest Indices**: Binds multi-arch image index descriptors (`OciImageIndexArtifact`)
+  across the 4 OCI architectures (`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/riscv64`) with verified
+  SHA-256 digests. Strictly partitions and validates unsupported target platforms (Portainer agent on
+  `linux/riscv64`, D2K on `linux/arm/v7` and `linux/riscv64`).
+- **Verifiable Release Package Manifest**: `ReleasePackageManifest` provides an exhaustive release ledger
+  binding all 16 node archive cells, 4 management binaries, container image index manifests, and explicit
+  exclusion declarations for tamper-evident release distribution.
