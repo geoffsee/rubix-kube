@@ -806,7 +806,6 @@ fn test_default_command_handler_unimplemented_stubs() {
         "uninstall",
         "upgrade",
         "reset",
-        "config",
         "kubeconfig",
         "d2k",
     ];

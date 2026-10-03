@@ -228,7 +228,11 @@ pub fn parse_command(
     let mut uninstall_opts = UninstallOptions::default();
     let mut upgrade_opts = UpgradeOptions::default();
     let mut reset_opts = ResetOptions::default();
-    let mut config_opts = ConfigOptions::default();
+    let mut config_opts = ConfigOptions {
+        file: environment.get("KUBESOLO_CONFIG").map(PathBuf::from),
+        environment: environment.clone(),
+        ..ConfigOptions::default()
+    };
     let mut kubeconfig_opts = KubeconfigOptions::default();
     let mut d2k_opts = D2kOptions::default();
 

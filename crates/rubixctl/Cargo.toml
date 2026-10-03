@@ -9,10 +9,11 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-tempfile = "=3.27.0"
+rubix-config = { version = "=0.1.0", path = "../rubix-config" }
 rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
-
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
+serde_json = "=1.0.151"
+tempfile = "=3.27.0"
 tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "signal"] }
 
 [dev-dependencies]

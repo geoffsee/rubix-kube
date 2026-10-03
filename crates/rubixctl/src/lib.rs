@@ -2,6 +2,7 @@
 pub mod artifact;
 pub mod check_workflow;
 pub mod completion;
+pub mod config;
 pub mod contract;
 pub mod download;
 mod parse;
@@ -14,6 +15,7 @@ pub use artifact::{
     resolve_target,
 };
 pub use completion::{Shell, generate_completion, parse_shell};
+pub use config::{execute_config, resolve_config_path, resolve_socket_path};
 pub use contract::{
     CheckOptions, CommandHandler, CompletionOptions, ConfigOptions, D2kOptions,
     DefaultCommandHandler, DownloadOptions, InstallOptions, KubeconfigOptions, ResetOptions,
