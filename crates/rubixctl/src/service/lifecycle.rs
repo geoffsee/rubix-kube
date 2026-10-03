@@ -428,6 +428,7 @@ fn plan_runit_action(
         |(_, target)| target.clone(),
     );
     let service_dir = def.directories[0].0.to_string_lossy().into_owned();
+    let service_link_path = service_link.to_string_lossy().into_owned();
     let mut cleanup_paths = vec![service_link];
     cleanup_paths.extend(def.files.iter().map(|file| file.path.clone()));
     cleanup_paths.extend(def.directories.iter().rev().map(|(dir, _)| dir.clone()));
@@ -438,7 +439,7 @@ fn plan_runit_action(
             backend,
             run_mode: config.run_mode,
             definition: Some(def),
-            commands: vec![CommandStep::new("sv", &["restart", name])],
+            commands: vec![CommandStep::new("sv", &["restart", &service_dir])],
             cleanup_paths: Vec::new(),
         }),
         LifecycleAction::Uninstall => Ok(LifecyclePlan {
@@ -448,6 +449,7 @@ fn plan_runit_action(
             definition: None,
             commands: vec![
                 CommandStep::new("sv", &["-w", "7", "down", &service_dir]),
+                CommandStep::new("rm", &["-f", "--", &service_link_path]),
                 CommandStep::new("sv", &["-w", "7", "exit", &service_dir]),
             ],
             cleanup_paths,
@@ -457,7 +459,7 @@ fn plan_runit_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new("sv", &["start", name])],
+            commands: vec![CommandStep::new("sv", &["start", &service_dir])],
             cleanup_paths: Vec::new(),
         }),
         LifecycleAction::Stop => Ok(LifecyclePlan {
@@ -465,7 +467,7 @@ fn plan_runit_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new("sv", &["stop", name])],
+            commands: vec![CommandStep::new("sv", &["stop", &service_dir])],
             cleanup_paths: Vec::new(),
         }),
         LifecycleAction::Restart => Ok(LifecyclePlan {
@@ -473,7 +475,7 @@ fn plan_runit_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new("sv", &["restart", name])],
+            commands: vec![CommandStep::new("sv", &["restart", &service_dir])],
             cleanup_paths: Vec::new(),
         }),
         LifecycleAction::Status => Ok(LifecyclePlan {
@@ -481,7 +483,7 @@ fn plan_runit_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new("sv", &["status", name])],
+            commands: vec![CommandStep::new("sv", &["status", &service_dir])],
             cleanup_paths: Vec::new(),
         }),
     }
@@ -503,6 +505,10 @@ fn plan_s6_action(
         |(dir, _)| dir.clone(),
     );
     let service_dir_str = service_dir.to_string_lossy().into_owned();
+    let scan_dir = scan_link
+        .parent()
+        .expect("generated scan link has a parent");
+    let scan_dir_str = scan_dir.to_string_lossy().into_owned();
     let mut cleanup_paths = vec![scan_link];
     cleanup_paths.extend(def.files.iter().map(|file| file.path.clone()));
     cleanup_paths.extend(def.directories.iter().rev().map(|(dir, _)| dir.clone()));
@@ -521,10 +527,20 @@ fn plan_s6_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new(
-                "s6-svc",
-                &["-wD", "-T", "7000", "-d", &service_dir_str],
-            )],
+            commands: vec![
+                CommandStep::new("s6-svc", &["-wD", "-T", "7000", "-d", &service_dir_str]),
+                CommandStep::new("s6-svunlink", &["-t", "7000", &scan_dir_str, name]),
+                // svunlink reports success even on timeout: confirm supervisor absence.
+                CommandStep::new(
+                    "sh",
+                    &[
+                        "-c",
+                        "s6-svok \"$1\"; status=$?; [ \"$status\" -eq 1 ]",
+                        "rubix-supervisor-exit-check",
+                        &service_dir_str,
+                    ],
+                ),
+            ],
             cleanup_paths,
         }),
         LifecycleAction::Start => Ok(LifecyclePlan {

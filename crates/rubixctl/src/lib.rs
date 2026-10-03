@@ -11,6 +11,7 @@ pub mod container_lifecycle;
 pub mod container_ports;
 pub mod contract;
 pub mod download;
+pub mod endpoints;
 pub mod install;
 pub mod kubeconfig;
 pub mod migrate;
@@ -121,7 +122,7 @@ pub fn help(topic: HelpTopic) -> &'static str {
             "Manage Rubix configuration.\n\nUsage:\n  rubixctl config [command]\n\nCommands:\n  edit        Edit configuration in default editor\n  get         Get configuration value\n  path        Print active configuration file path\n  set         Set configuration value\n\nFlags:\n  -f, --file string   Configuration file path\n  -h, --help          Help for config\n"
         },
         HelpTopic::Kubeconfig => {
-            "Manage kubeconfig context and cluster access.\n\nUsage:\n  rubixctl kubeconfig [command]\n\nCommands:\n  fetch       Fetch cluster kubeconfig\n  merge       Merge cluster credentials into active kubeconfig\n  view        View raw cluster kubeconfig\n\nFlags:\n  -h, --help          Help for kubeconfig\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
+            "Manage kubeconfig context and cluster access.\n\nUsage:\n  rubixctl kubeconfig [command]\n\nCommands:\n  fetch       Fetch cluster kubeconfig\n  merge       Merge cluster credentials into active kubeconfig\n  remove      Remove an instance context (requires --name)\n  route       Route an instance context to its published port (requires --name)\n  view        View raw cluster kubeconfig\n\nFlags:\n  -h, --help          Help for kubeconfig\n      --name string   Instance name for route/remove\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
         },
         HelpTopic::D2k => {
             "Manage Docker-to-Kubernetes (d2k) API translator.\n\nUsage:\n  rubixctl d2k [command]\n\nCommands:\n  fetch       Fetch client certificates and context for Docker CLI\n  install     Configure local Docker context\n\nFlags:\n  -h, --help          Help for d2k\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"

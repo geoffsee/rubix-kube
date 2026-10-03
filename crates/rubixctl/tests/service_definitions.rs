@@ -594,7 +594,10 @@ fn test_lifecycle_plan_command_specifics() {
     };
     let runit_plan = plan_lifecycle_action(LifecycleAction::Install, &runit_cfg).unwrap();
     assert_eq!(runit_plan.commands[0].program, "sv");
-    assert_eq!(runit_plan.commands[0].args, vec!["restart", "testsvc"]);
+    assert_eq!(
+        runit_plan.commands[0].args,
+        vec!["restart", "/etc/runit/sv/testsvc"]
+    );
 
     // s6
     let s6_cfg = ServiceConfig {
@@ -802,7 +805,41 @@ fn supervised_directory_uninstall_stops_before_removing_every_owned_artifact() {
         if backend == InitBackend::Runit {
             let target = def.directories[0].0.to_string_lossy().into_owned();
             assert_eq!(plan.commands[0].args, ["-w", "7", "down", &target]);
-            assert_eq!(plan.commands[1].args, ["-w", "7", "exit", &target]);
+            assert_eq!(plan.commands[1].program, "rm");
+            assert_eq!(
+                plan.commands[1].args[2],
+                def.symlinks[0].1.to_string_lossy()
+            );
+            assert_eq!(plan.commands[2].args, ["-w", "7", "exit", &target]);
+        } else {
+            assert_eq!(plan.commands[1].program, "s6-svunlink");
+            assert_eq!(plan.commands[1].args[0..2], ["-t", "7000"]);
+            assert_eq!(plan.commands[2].program, "sh");
+            assert!(plan.commands[2].args[1].contains("-eq 1"));
         }
+    }
+}
+
+#[test]
+fn s6_supervisor_exit_probe_rejects_a_live_supervisor_and_probe_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let probe = dir.path().join("s6-svok");
+    std::fs::write(&probe, "#!/bin/sh\nexit \"$RUBIX_PROBE_CODE\"\n").unwrap();
+    std::fs::set_permissions(&probe, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let config = ServiceConfig {
+        backend: Some(InitBackend::S6),
+        ..ServiceConfig::default()
+    };
+    let plan = plan_lifecycle_action(LifecycleAction::Uninstall, &config).unwrap();
+    let check = &plan.commands[2];
+    assert_eq!(check.program, "sh");
+    for (code, absent) in [(0, false), (1, true), (111, false)] {
+        let status = std::process::Command::new("/bin/sh")
+            .args(&check.args)
+            .env("PATH", dir.path())
+            .env("RUBIX_PROBE_CODE", code.to_string())
+            .status()
+            .unwrap();
+        assert_eq!(status.success(), absent, "probe exit {code}");
     }
 }
