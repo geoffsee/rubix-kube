@@ -165,6 +165,7 @@ impl AssessmentInputs for Fake {
                     Observation::Unknown(ProbeFailure::PermissionDenied)
                 }
             }),
+            proc_sys_read_only: Observation::Present(false),
             ip_tables_names: Observation::Absent,
             default_cni_plugins: [Observation::Absent; 4],
             cni_config_names: Observation::Present(vec![]),
