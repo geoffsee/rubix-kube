@@ -396,7 +396,11 @@ impl ArtifactNaming {
         }
         let stem = &base[..base.len() - 7];
 
-        if stem.contains("windows") || stem.contains("win32") || stem.contains("win64") {
+        if !stem.contains("-linux-")
+            && ["-windows-", "-win32-", "-win64-"]
+                .iter()
+                .any(|os| stem.contains(os))
+        {
             return Err(ArtifactNamingError::WindowsExcluded(base.to_string()));
         }
 
