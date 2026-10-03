@@ -389,6 +389,13 @@ fn read_only_destination_reports_precise_failure() {
     // Make the test dir read-only
     fs::set_permissions(test_dir.path(), fs::Permissions::from_mode(0o555)).unwrap();
 
+    // Privileged environments may bypass mode bits; characterize enforcement first.
+    let probe = test_dir.path().join("permission-probe");
+    if fs::write(&probe, b"probe").is_ok() {
+        fs::remove_file(probe).unwrap();
+        return;
+    }
+
     let materializer = Materializer::new(inventory, test_dir.path());
     let res = materializer.materialize_from_archive(Cursor::new(&archive_data));
 
@@ -610,6 +617,153 @@ fn concurrent_materializers_preserve_complete_owned_assets() {
             second.join().unwrap().unwrap().assets
         );
     });
+    assert!(!fs::read_dir(root.path()).unwrap().any(|entry| {
+        entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".staging-")
+    }));
+}
+
+#[test]
+fn archive_stages_members_before_reading_the_next_header() {
+    use std::io::Read;
+    struct ObserveStaging<'a> {
+        source: Cursor<Vec<u8>>,
+        root: &'a Path,
+        first_end: u64,
+        observed: bool,
+    }
+    impl Read for ObserveStaging<'_> {
+        fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+            assert!(
+                buffer.len() <= 8192,
+                "archive reads must use bounded buffers"
+            );
+            if !self.observed && self.source.position() >= self.first_end {
+                self.observed = fs::read_dir(self.root)?
+                    .filter_map(Result::ok)
+                    .flat_map(|dir| fs::read_dir(dir.path()).into_iter().flatten())
+                    .filter_map(Result::ok)
+                    .any(|file| file.file_name().to_string_lossy().starts_with("staged-"));
+                assert!(
+                    self.observed,
+                    "first payload must stage before the next header is read"
+                );
+            }
+            self.source.read(buffer)
+        }
+    }
+    let (inventory, archive) =
+        build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+    let size = u64::from_str_radix(std::str::from_utf8(&archive[124..135]).unwrap(), 8).unwrap();
+    let root = TestDir::new("rubix-stream-member");
+    let mut reader = ObserveStaging {
+        source: Cursor::new(archive),
+        root: root.path(),
+        first_end: 512 + size.div_ceil(512) * 512,
+        observed: false,
+    };
+    Materializer::new(inventory, root.path())
+        .materialize_from_archive(&mut reader)
+        .unwrap();
+    assert!(reader.observed);
+}
+
+#[test]
+fn duplicate_selected_members_are_rejected_before_commit() {
+    let (inventory, archive) =
+        build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+    let size = usize::from_str_radix(std::str::from_utf8(&archive[124..135]).unwrap(), 8).unwrap();
+    let first_end = 512 + size.div_ceil(512) * 512;
+    let duplicate = archive[..first_end]
+        .iter()
+        .chain(archive.iter())
+        .copied()
+        .collect::<Vec<_>>();
+    let root = TestDir::new("rubix-duplicate-member");
+    assert!(matches!(
+        Materializer::new(inventory, root.path()).materialize_from_archive(Cursor::new(duplicate)),
+        Err(MaterializationError::CorruptArchive(_))
+    ));
+    assert!(!root.path().join("bin").exists());
+}
+
+#[test]
+fn nonregular_members_obey_count_and_byte_budgets_and_reject_truncation() {
+    for scenario in ["count", "size", "truncated"] {
+        let (inventory, _) =
+            build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+        let mut header = entry("ignored-dir", b"")[..512].to_vec();
+        header[156] = b'5';
+        let size = if scenario == "size" {
+            4 * 1024 * 1024 * 1024u64
+        } else if scenario == "truncated" {
+            100
+        } else {
+            0
+        };
+        header[124..136].copy_from_slice(format!("{size:011o}\0").as_bytes());
+        vectors::checksum(&mut header);
+        let archive = if scenario == "count" {
+            [header.clone(), header].concat()
+        } else {
+            header
+        };
+        let root = TestDir::new("rubix-nonregular-budget");
+        let materializer = Materializer::new(inventory, root.path()).with_limits(
+            rubix_assets::MaterializationLimits {
+                max_total_bytes: 1024,
+                max_archive_members: 1,
+                ..Default::default()
+            },
+        );
+        let result = materializer.materialize_from_archive(Cursor::new(archive));
+        if scenario == "size" {
+            assert!(matches!(
+                result,
+                Err(MaterializationError::BudgetExceeded { .. })
+            ));
+        } else {
+            assert!(matches!(
+                result,
+                Err(MaterializationError::CorruptArchive(_))
+            ));
+        }
+        assert!(!root.path().join("bin").exists());
+    }
+}
+
+#[test]
+fn compressed_single_asset_enforces_decoded_budget_without_committing() {
+    let mut manifest: Value = serde_json::from_str(ONLINE_ARM64_JSON).unwrap();
+    let content = vec![b'x'; 128 * 1024];
+    let encoded = zstd::encode_all(content.as_slice(), 0).unwrap();
+    let row = manifest["assets"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|row| row["id"] == "crun")
+        .unwrap();
+    row["delivery"]["encoded_bytes"] = json!(encoded.len());
+    row["delivery"]["sha256"] = json!(hex(&encoded));
+    let inventory = Manifest::decode(&serde_json::to_vec(&manifest).unwrap(), Limits::default())
+        .unwrap()
+        .validate_inventory(arm64_request(Variant::Online), Limits::default())
+        .unwrap();
+    let root = TestDir::new("rubix-decoded-budget");
+    let materializer = Materializer::new(inventory, root.path()).with_limits(
+        rubix_assets::MaterializationLimits {
+            max_asset_bytes: 1024,
+            ..Default::default()
+        },
+    );
+    assert!(matches!(
+        materializer.materialize_single_asset(AssetId::Crun, Cursor::new(encoded)),
+        Err(MaterializationError::BudgetExceeded { .. })
+    ));
+    assert!(!root.path().join("bin").exists());
     assert!(!fs::read_dir(root.path()).unwrap().any(|entry| {
         entry
             .unwrap()

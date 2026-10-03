@@ -57,6 +57,12 @@ assets into configured writable host roots.
    A built-in streaming POSIX USTAR reader (`TarReader`) supports both uncompressed `.tar`
    and gzip-compressed `.tar.gz` distribution archives without introducing external
    runtime dependencies, enforcing member count and byte limits.
+   Members are staged immediately rather than accumulating the bundle in memory.
+   Encoded zstd executables spool to private descriptor-relative files before decoding;
+   gzip images retain their encoding and verify decoding with a bounded sink. Copying,
+   hashing and disk reverification use fixed-size buffers. Byte limits bound disk and
+   decoded output, not an allowed in-memory allocation. Every tar member type counts
+   against member and declared-byte limits, including skipped nonregular entries.
    Tar requires both zero EOF blocks. A gzip distribution is exactly one RFC1952
    member, whose CRC32 and ISIZE trailer must validate before commit; concatenated
    members and encoded trailing bytes are rejected. Zero tar record padding is allowed.
