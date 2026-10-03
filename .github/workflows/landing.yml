@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-rust
+      - uses: $/.github/actions/setup-rust
         with:
           cache-key: test-release
       - name: Test all targets and doctests
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-rust
+      - uses: $/.github/actions/setup-rust
         with:
           cache-key: dist
       - name: Build ship binaries
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-rust
+      - uses: $/.github/actions/setup-rust
         with:
           cache-key: upstream
       - name: Restore prepared upstream inputs
