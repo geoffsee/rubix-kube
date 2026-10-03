@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::io;
 
 /// Scans raw environ bytes (typically from `/proc/$PPID/environ`) and recovers
 /// Portainer Edge variables stripped by sudo `env_reset`.
@@ -36,29 +35,6 @@ pub fn recover_sudo_env_from_bytes(
             environment
                 .entry(key.to_string())
                 .or_insert_with(|| val.to_string());
-        }
-    }
-}
-
-/// Helper that detects parent PID from `/proc/self/status` and reads parent environ bytes.
-pub fn recover_sudo_environment(
-    environment: &mut BTreeMap<String, String>,
-    reader: impl Fn(u32) -> io::Result<Vec<u8>>,
-) {
-    if !environment.contains_key("SUDO_USER")
-        || environment.contains_key("KUBESOLO_PORTAINER_EDGE_KEY")
-    {
-        return;
-    }
-    if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
-        for line in status.lines() {
-            if let Some(rest) = line.strip_prefix("PPid:")
-                && let Ok(ppid) = rest.trim().parse::<u32>()
-                && let Ok(bytes) = reader(ppid)
-            {
-                recover_sudo_env_from_bytes(environment, &bytes);
-                return;
-            }
         }
     }
 }

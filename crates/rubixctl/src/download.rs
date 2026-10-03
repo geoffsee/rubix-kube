@@ -59,24 +59,70 @@ pub fn stage_installer(
     Ok(())
 }
 
-/// Curl receives a bounded protocol policy and an explicit end of options.
-pub fn curl_download_command(url: &str, dest: &Path, proxy: Option<&str>) -> std::process::Command {
+/// Curl bounds connection and stalled-transfer time; private settings arrive on stdin.
+pub fn curl_download_command(
+    _url: &str,
+    dest: &Path,
+    _proxy: Option<&str>,
+) -> std::process::Command {
     let mut command = std::process::Command::new("curl");
     command
         .args([
             "-fSL",
+            "--connect-timeout",
+            "30",
+            "--speed-limit",
+            "1",
+            "--speed-time",
+            "120",
             "--proto",
             "=https,http",
             "--proto-redir",
-            "=https,http",
+            "=https",
             "-o",
         ])
         .arg(dest);
-    if let Some(proxy) = proxy {
-        command.arg("--proxy").arg(proxy);
-    }
-    command.arg("--").arg(url);
     command
+        .args(["--config", "-"])
+        .stdin(std::process::Stdio::piped());
+    command
+}
+
+/// Protected curl configuration passed through stdin, never process arguments.
+pub fn curl_download_config(url: &str, proxy: Option<&str>) -> String {
+    fn quote(value: &str) -> String {
+        value
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace('\n', "\\n")
+            .replace('\r', "\\r")
+    }
+    let mut config = format!("url = \"{}\"\n", quote(url));
+    if let Some(proxy) = proxy {
+        use std::fmt::Write as _;
+        let _ = writeln!(config, "proxy = \"{}\"", quote(proxy));
+    }
+    config
+}
+
+/// Runs curl with URL and proxy material on a private pipe.
+pub fn run_curl_download(
+    url: &str,
+    dest: &Path,
+    proxy: Option<&str>,
+) -> io::Result<std::process::ExitStatus> {
+    let mut child = curl_download_command(url, dest, proxy).spawn()?;
+    let result = child
+        .stdin
+        .take()
+        .ok_or_else(|| io::Error::other("missing curl stdin"))?
+        .write_all(curl_download_config(url, proxy).as_bytes());
+    if let Err(error) = result {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(error);
+    }
+    child.wait()
 }
 
 /// Executes the artifact download workflow: resolves target architecture and libc,

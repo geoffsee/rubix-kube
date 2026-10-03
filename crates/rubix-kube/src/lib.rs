@@ -196,11 +196,12 @@ pub mod host_container;
 pub mod host_preparation;
 
 pub mod config_api;
+pub mod metrics;
 pub use config_api::{COMPONENT_CONFIG_API, ConfigApiAdapter, ConfigApiServer, clear_stale_socket};
 
 pub mod runtime;
 pub use runtime::{
     COMPONENT_APISERVER, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS, COMPONENT_DATASTORE,
-    COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER, COMPONENT_PROXY, NodeRuntime,
-    RuntimeBuilder, RuntimeError,
+    COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_METRICS, COMPONENT_PORTAINER,
+    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder, RuntimeError,
 };

@@ -137,6 +137,39 @@ pub fn validate_certificate_pem(bytes: &[u8]) -> Result<(), PkiError> {
     Ok(())
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CertificateValidity {
+    pub not_before_seconds: i64,
+    pub not_after_seconds: i64,
+}
+
+impl CertificateValidity {
+    #[must_use]
+    pub fn is_valid_at(&self, timestamp_seconds: i64) -> bool {
+        timestamp_seconds >= self.not_before_seconds && timestamp_seconds <= self.not_after_seconds
+    }
+}
+
+pub fn inspect_certificate_pem(bytes: &[u8]) -> Result<CertificateValidity, PkiError> {
+    let pem_entries = pem::parse_many(bytes).map_err(|_| PkiError::InvalidCert)?;
+    for entry in pem_entries {
+        if entry.tag() == "CERTIFICATE" {
+            let (_, cert) = x509_parser::parse_x509_certificate(entry.contents())
+                .map_err(|_| PkiError::InvalidCert)?;
+            return Ok(CertificateValidity {
+                not_before_seconds: cert.validity().not_before.timestamp(),
+                not_after_seconds: cert.validity().not_after.timestamp(),
+            });
+        }
+    }
+    Err(PkiError::InvalidCert)
+}
+
+pub fn inspect_certificate_file(path: &Path) -> Result<CertificateValidity, PkiError> {
+    let bytes = fs::read(path)?;
+    inspect_certificate_pem(&bytes)
+}
+
 pub fn validate_private_key_pem(bytes: &[u8]) -> Result<(), PkiError> {
     let text = std::str::from_utf8(bytes).map_err(|_| PkiError::InvalidKey)?;
     let begin_count = text
