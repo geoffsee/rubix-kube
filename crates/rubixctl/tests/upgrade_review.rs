@@ -65,14 +65,16 @@ fn backups_capture_real_layout_are_private_and_never_reuse_a_timestamp() {
 #[cfg(unix)]
 #[test]
 fn backup_refuses_symlinked_datastore_roots_and_ancestors() {
-    for relative in ["kine", "kine/db"] {
+    for relative in ["kine", "kine/db", "backups"] {
         let dir = data();
         let foreign = tempfile::tempdir().unwrap();
         let linked = dir.path().join(relative);
-        fs::remove_dir_all(&linked).unwrap();
+        if linked.exists() {
+            fs::remove_dir_all(&linked).unwrap();
+        }
         std::os::unix::fs::symlink(foreign.path(), linked).unwrap();
         assert!(backup_state(dir.path(), None, "v1.2.0", 1).is_err());
-        assert!(!dir.path().join("backups").exists());
+        assert!(fs::read_dir(foreign.path()).unwrap().next().is_none());
     }
 }
 
