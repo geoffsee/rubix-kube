@@ -52,6 +52,7 @@ impl MaterializationLimits {
 #[derive(Debug)]
 pub enum MaterializationError {
     InvalidLimits,
+    SelectorMismatch,
     BudgetExceeded {
         limit: u64,
         requested: u64,
@@ -98,6 +99,10 @@ impl fmt::Display for MaterializationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidLimits => write!(f, "invalid materialization limits"),
+            Self::SelectorMismatch => write!(
+                f,
+                "selector target, variant or scope does not match the declared inventory"
+            ),
             Self::BudgetExceeded { limit, requested } => write!(
                 f,
                 "materialization budget exceeded: requested {requested}, limit {limit}"
@@ -328,6 +333,8 @@ impl Materializer {
     }
 
     #[must_use]
+    /// Attach selection policy. Every entry point rejects a target, variant or scope
+    /// mismatch before opening payloads or creating the writable root.
     pub fn with_selector(mut self, selector: crate::AssetSelector) -> Self {
         self.selector = Some(selector);
         self
@@ -353,11 +360,24 @@ impl Materializer {
         self.limits
     }
 
+    fn validate_selector(&self) -> Result<(), MaterializationError> {
+        let request = self.inventory.request();
+        if let Some(selector) = &self.selector
+            && (selector.target() != request.target
+                || selector.variant() != request.variant
+                || selector.scope() != request.scope)
+        {
+            return Err(MaterializationError::SelectorMismatch);
+        }
+        Ok(())
+    }
+
     /// Materialize all bundled assets by streaming them from an archive reader (tar or tar.gz).
     pub fn materialize_from_archive<R: Read>(
         &self,
         reader: R,
     ) -> Result<MaterializationOutcome, MaterializationError> {
+        self.validate_selector()?;
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
         }
@@ -366,46 +386,29 @@ impl Materializer {
         let temp_dir = &guard.path;
 
         let mut entries = TarReader::new(reader, self.limits)?;
-        let mut payloads: BTreeMap<String, Vec<u8>> = BTreeMap::new();
-        let mut total_bytes = 0u64;
-
-        while let Some(mut member) = entries.next_entry()? {
-            if payloads.len() >= self.limits.max_archive_members {
-                return Err(MaterializationError::CorruptArchive(
-                    "archive member count exceeded limit".to_string(),
-                ));
-            }
-            total_bytes = total_bytes.checked_add(member.size).ok_or(
-                MaterializationError::BudgetExceeded {
-                    limit: self.limits.max_total_bytes,
-                    requested: u64::MAX,
-                },
-            )?;
-            if total_bytes > self.limits.max_total_bytes {
-                return Err(MaterializationError::BudgetExceeded {
-                    limit: self.limits.max_total_bytes,
-                    requested: total_bytes,
-                });
-            }
-
-            let mut data = Vec::new();
-            member
-                .read_to_end(&mut data)
-                .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
-            payloads.insert(member.name, data);
-        }
-
+        let mut remaining: BTreeMap<_, _> = self
+            .inventory
+            .bundled_assets()
+            .filter(|(id, _, _, _)| {
+                self.selector
+                    .as_ref()
+                    .is_none_or(|selector| selector.is_bundled(*id))
+            })
+            .map(|(id, path, encoding, _)| (path.to_string(), (id, encoding)))
+            .collect();
+        let expected = remaining.clone();
         let mut materialized = Vec::new();
-        for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
-            if let Some(ref selector) = self.selector
-                && !selector.is_bundled(id)
-            {
+        while let Some(mut member) = entries.next_entry()? {
+            let Some((id, encoding)) = remaining.remove(&member.name) else {
+                if expected.contains_key(&member.name) {
+                    return Err(MaterializationError::CorruptArchive(
+                        "duplicate selected asset member".to_string(),
+                    ));
+                }
+                io::copy(&mut member, &mut io::sink())
+                    .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
                 continue;
-            }
-
-            let data = payloads
-                .get(rel_path)
-                .ok_or(MaterializationError::MissingAssetPayload(id))?;
+            };
 
             let entry = catalog()
                 .iter()
@@ -420,13 +423,16 @@ impl Materializer {
                 id,
                 entry.kind,
                 encoding,
-                data.as_slice(),
+                &mut member,
                 &guard.file,
                 &staged_dest,
                 &final_dest,
                 self.limits,
             )?;
             materialized.push((staged_dest, final_dest, asset));
+        }
+        if let Some((id, _)) = remaining.into_values().next() {
+            return Err(MaterializationError::MissingAssetPayload(id));
         }
 
         let outcomes = guard.commit(&self.root, materialized)?;
@@ -463,6 +469,7 @@ impl Materializer {
     where
         F: FnMut(AssetId, &str) -> Result<Box<dyn Read>, MaterializationError>,
     {
+        self.validate_selector()?;
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
         }
@@ -515,6 +522,7 @@ impl Materializer {
         id: AssetId,
         mut reader: R,
     ) -> Result<MaterializedAsset, MaterializationError> {
+        self.validate_selector()?;
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
         }
@@ -563,6 +571,38 @@ impl Materializer {
     }
 }
 
+/// Copy through fixed-size buffers; the byte limit is independent of memory use.
+fn copy_and_hash<R: Read, W: Write>(
+    reader: &mut R,
+    writer: &mut W,
+    limit: u64,
+    path: &Path,
+) -> Result<(u64, [u8; 32]), MaterializationError> {
+    let mut count = 0u64;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 8192];
+    loop {
+        let read = reader
+            .read(&mut buffer)
+            .map_err(|e| map_io_error(path, e))?;
+        if read == 0 {
+            break;
+        }
+        count = count.saturating_add(read as u64);
+        if count > limit {
+            return Err(MaterializationError::BudgetExceeded {
+                limit,
+                requested: count,
+            });
+        }
+        hasher.update(&buffer[..read]);
+        writer
+            .write_all(&buffer[..read])
+            .map_err(|e| map_io_error(path, e))?;
+    }
+    Ok((count, hasher.finalize().into()))
+}
+
 /// Internal helper to extract/decompress a single blob into `staged_path`.
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn materialize_blob_to_path<R: Read>(
@@ -570,7 +610,7 @@ fn materialize_blob_to_path<R: Read>(
     id: AssetId,
     kind: Kind,
     encoding: Encoding,
-    mut reader: R,
+    reader: R,
     staging: &File,
     staged_path: &Path,
     final_dest: &Path,
@@ -581,257 +621,110 @@ fn materialize_blob_to_path<R: Read>(
         .iter()
         .find(|b| b.id == id)
         .ok_or(MaterializationError::MissingAssetPayload(id))?;
-
     let expected_mode = match kind {
         Kind::Executable => EXECUTABLE_PERMISSIONS,
         Kind::Image => PAYLOAD_PERMISSIONS,
     };
-
-    // Always verify the supplied bytes, even on repeat calls. Existing destinations are
-    // read only during commit, through no-follow descriptors, and never chmodded in place.
     let mut out_file = create_staged_file(staging, staged_path)?;
-
-    let (written_bytes, written_hash) =
-        match encoding {
-            Encoding::Identity => {
-                let mut hasher = Sha256::new();
-                let mut count = 0u64;
-                let mut buffer = [0u8; 8192];
-
-                while count < blob.bytes + 1 {
-                    let to_read =
-                        usize::try_from((blob.bytes + 1 - count).min(8192)).unwrap_or(8192);
-                    let read = reader
-                        .read(&mut buffer[..to_read])
-                        .map_err(|e| map_io_error(staged_path, e))?;
-                    if read == 0 {
-                        break;
-                    }
-                    count = count.checked_add(read as u64).ok_or(
-                        MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: u64::MAX,
-                        },
-                    )?;
-                    if count > limits.max_asset_bytes {
-                        return Err(MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: count,
-                        });
-                    }
-                    hasher.update(&buffer[..read]);
-                    out_file
-                        .write_all(&buffer[..read])
-                        .map_err(|e| map_io_error(staged_path, e))?;
-                }
-
-                if count != blob.bytes {
-                    return Err(MaterializationError::SizeMismatch {
-                        asset: id,
-                        expected: blob.bytes,
-                        observed: count,
-                    });
-                }
-
-                let hash: [u8; 32] = hasher.finalize().into();
-                if hash != blob.digest {
-                    return Err(MaterializationError::DigestMismatch {
-                        asset: id,
-                        expected: blob.digest,
-                        observed: hash,
-                    });
-                }
-
-                (count, hash)
-            },
-            Encoding::Zstd => {
-                // Read encoded bytes into memory to verify encoded hash and length
-                let mut encoded_data = Vec::new();
-                let mut count = 0u64;
-                let mut buffer = [0u8; 8192];
-                let mut hasher = Sha256::new();
-
-                while count < blob.bytes + 1 {
-                    let to_read =
-                        usize::try_from((blob.bytes + 1 - count).min(8192)).unwrap_or(8192);
-                    let read = reader
-                        .read(&mut buffer[..to_read])
-                        .map_err(|e| map_io_error(staged_path, e))?;
-                    if read == 0 {
-                        break;
-                    }
-                    count = count.checked_add(read as u64).ok_or(
-                        MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: u64::MAX,
-                        },
-                    )?;
-                    if count > limits.max_asset_bytes {
-                        return Err(MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: count,
-                        });
-                    }
-                    hasher.update(&buffer[..read]);
-                    encoded_data.extend_from_slice(&buffer[..read]);
-                }
-
-                if count != blob.bytes {
-                    return Err(MaterializationError::SizeMismatch {
-                        asset: id,
-                        expected: blob.bytes,
-                        observed: count,
-                    });
-                }
-
-                let hash: [u8; 32] = hasher.finalize().into();
-                if hash != blob.digest {
-                    return Err(MaterializationError::DigestMismatch {
-                        asset: id,
-                        expected: blob.digest,
-                        observed: hash,
-                    });
-                }
-
-                // Decompress zstd stream to output
-                let mut decoder = zstd::stream::read::Decoder::new(encoded_data.as_slice())
-                    .map_err(|e| MaterializationError::DecompressionFailed {
-                        asset: id,
-                        encoding,
-                        message: e.to_string(),
-                    })?;
-
-                let mut out_hasher = Sha256::new();
-                let mut decoded_count = 0u64;
-                loop {
-                    let read = decoder.read(&mut buffer).map_err(|e| {
-                        MaterializationError::DecompressionFailed {
-                            asset: id,
-                            encoding,
-                            message: e.to_string(),
-                        }
-                    })?;
-                    if read == 0 {
-                        break;
-                    }
-                    decoded_count = decoded_count.checked_add(read as u64).ok_or(
-                        MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: u64::MAX,
-                        },
-                    )?;
-                    if decoded_count > limits.max_asset_bytes {
-                        return Err(MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: decoded_count,
-                        });
-                    }
-                    out_hasher.update(&buffer[..read]);
-                    out_file
-                        .write_all(&buffer[..read])
-                        .map_err(|e| map_io_error(staged_path, e))?;
-                }
-
-                let out_hash: [u8; 32] = out_hasher.finalize().into();
-                (decoded_count, out_hash)
-            },
-            Encoding::Gzip => {
-                // Read encoded bytes into memory and verify encoded hash and length
-                let mut encoded_data = Vec::new();
-                let mut count = 0u64;
-                let mut buffer = [0u8; 8192];
-                let mut hasher = Sha256::new();
-
-                while count < blob.bytes + 1 {
-                    let to_read =
-                        usize::try_from((blob.bytes + 1 - count).min(8192)).unwrap_or(8192);
-                    let read = reader
-                        .read(&mut buffer[..to_read])
-                        .map_err(|e| map_io_error(staged_path, e))?;
-                    if read == 0 {
-                        break;
-                    }
-                    count = count.checked_add(read as u64).ok_or(
-                        MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: u64::MAX,
-                        },
-                    )?;
-                    if count > limits.max_asset_bytes {
-                        return Err(MaterializationError::BudgetExceeded {
-                            limit: limits.max_asset_bytes,
-                            requested: count,
-                        });
-                    }
-                    hasher.update(&buffer[..read]);
-                    encoded_data.extend_from_slice(&buffer[..read]);
-                }
-
-                if count != blob.bytes {
-                    return Err(MaterializationError::SizeMismatch {
-                        asset: id,
-                        expected: blob.bytes,
-                        observed: count,
-                    });
-                }
-
-                let hash: [u8; 32] = hasher.finalize().into();
-                if hash != blob.digest {
-                    return Err(MaterializationError::DigestMismatch {
-                        asset: id,
-                        expected: blob.digest,
-                        observed: hash,
-                    });
-                }
-
-                // Verify gzip stream integrity
-                let mut gz_decoder = flate2::read::GzDecoder::new(encoded_data.as_slice());
-                let mut sink = [0u8; 8192];
-                loop {
-                    match gz_decoder.read(&mut sink) {
-                        Ok(0) => break,
-                        Ok(_) => {},
-                        Err(e) => {
-                            return Err(MaterializationError::DecompressionFailed {
-                                asset: id,
-                                encoding,
-                                message: e.to_string(),
-                            });
-                        },
-                    }
-                }
-
-                // Image payloads are retained on disk as .tar.gz archives
-                out_file
-                    .write_all(&encoded_data)
-                    .map_err(|e| map_io_error(staged_path, e))?;
-
-                (count, hash)
-            },
-        };
-
+    // Compressed executables spool their verified encoding to private disk, not RAM.
+    // Gzip image archives retain their encoded bytes in the final staged file.
+    let mut encoded_file = if encoding == Encoding::Zstd {
+        Some(create_staged_file(
+            staging,
+            &staged_path.with_file_name(format!("encoded-{}", id_tag(id))),
+        )?)
+    } else {
+        None
+    };
+    let encoded_dest = encoded_file.as_mut().unwrap_or(&mut out_file);
+    let (encoded_count, encoded_hash) = copy_and_hash(
+        &mut reader.take(blob.bytes.saturating_add(1)),
+        encoded_dest,
+        limits.max_asset_bytes,
+        staged_path,
+    )?;
+    if encoded_count != blob.bytes {
+        return Err(MaterializationError::SizeMismatch {
+            asset: id,
+            expected: blob.bytes,
+            observed: encoded_count,
+        });
+    }
+    if encoded_hash != blob.digest {
+        return Err(MaterializationError::DigestMismatch {
+            asset: id,
+            expected: blob.digest,
+            observed: encoded_hash,
+        });
+    }
+    let decompression_error = |error: io::Error| MaterializationError::DecompressionFailed {
+        asset: id,
+        encoding,
+        message: error.to_string(),
+    };
+    let (written_bytes, written_hash) = match encoding {
+        Encoding::Identity => (encoded_count, encoded_hash),
+        Encoding::Zstd => {
+            let mut encoded = encoded_file.ok_or(MaterializationError::MissingAssetPayload(id))?;
+            encoded.rewind().map_err(|e| map_io_error(staged_path, e))?;
+            let mut decoder =
+                zstd::stream::read::Decoder::new(encoded).map_err(decompression_error)?;
+            copy_and_hash(
+                &mut decoder,
+                &mut out_file,
+                limits.max_asset_bytes,
+                staged_path,
+            )?
+        },
+        Encoding::Gzip => {
+            out_file
+                .rewind()
+                .map_err(|e| map_io_error(staged_path, e))?;
+            let mut decoder = flate2::bufread::GzDecoder::new(io::BufReader::new(&mut out_file));
+            // Drain with a bounded output budget to verify the trailer without allocating.
+            copy_and_hash(
+                &mut decoder,
+                &mut io::sink(),
+                limits.max_asset_bytes,
+                staged_path,
+            )?;
+            let mut probe = [0];
+            if decoder
+                .get_mut()
+                .read(&mut probe)
+                .map_err(decompression_error)?
+                != 0
+            {
+                return Err(MaterializationError::DecompressionFailed {
+                    asset: id,
+                    encoding,
+                    message: "data after gzip member".to_string(),
+                });
+            }
+            (encoded_count, encoded_hash)
+        },
+    };
     out_file.flush().map_err(|e| map_io_error(staged_path, e))?;
     out_file
         .sync_all()
         .map_err(|e| map_io_error(staged_path, e))?;
     set_file_mode(&out_file, expected_mode).map_err(|e| map_io_error(staged_path, e))?;
-
-    // Reverification: read the file actually written to disk to prove disk integrity
     out_file
         .rewind()
         .map_err(|e| map_io_error(staged_path, e))?;
-    let mut on_disk_bytes = Vec::new();
-    out_file
-        .read_to_end(&mut on_disk_bytes)
-        .map_err(|e| map_io_error(staged_path, e))?;
-    if on_disk_bytes.len() as u64 != written_bytes {
+    let (on_disk_len, on_disk_hash) = copy_and_hash(
+        &mut out_file,
+        &mut io::sink(),
+        limits.max_asset_bytes,
+        staged_path,
+    )?;
+    if on_disk_len != written_bytes {
         return Err(MaterializationError::SizeMismatch {
             asset: id,
             expected: written_bytes,
-            observed: on_disk_bytes.len() as u64,
+            observed: on_disk_len,
         });
     }
-    let on_disk_hash: [u8; 32] = Sha256::digest(&on_disk_bytes).into();
     if on_disk_hash != written_hash {
         return Err(MaterializationError::DigestMismatch {
             asset: id,
@@ -839,7 +732,6 @@ fn materialize_blob_to_path<R: Read>(
             observed: on_disk_hash,
         });
     }
-
     Ok(MaterializedAsset {
         id,
         path: final_dest.to_path_buf(),
@@ -1034,7 +926,7 @@ impl Drop for StagingGuard {
             use rustix::fs::{AtFlags, unlinkat};
             // Never walk the staging pathname: it may have been replaced by a symlink.
             for entry in catalog() {
-                for prefix in ["staged", "backup"] {
+                for prefix in ["staged", "backup", "encoded"] {
                     let name = format!("{prefix}-{}", id_tag(entry.id));
                     let _ = unlinkat(&self.file, name.as_str(), AtFlags::empty());
                 }
@@ -1239,13 +1131,13 @@ struct TarReader<R> {
     reader: ArchiveReader<R>,
     limits: MaterializationLimits,
     entries_count: usize,
+    total_bytes: u64,
     finished: bool,
 }
 
 struct TarEntryReader<'a, R> {
     reader: &'a mut R,
     pub name: String,
-    pub size: u64,
     remaining: u64,
     padding: usize,
 }
@@ -1268,6 +1160,7 @@ impl<R: Read> TarReader<R> {
             reader: archive_reader,
             limits,
             entries_count: 0,
+            total_bytes: 0,
             finished: false,
         })
     }
@@ -1337,6 +1230,20 @@ impl<R: Read> TarReader<R> {
 
             let name = parse_tar_name(&block)?;
 
+            self.entries_count = self.entries_count.saturating_add(1);
+            if self.entries_count > self.limits.max_archive_members {
+                return Err(MaterializationError::CorruptArchive(
+                    "archive member count limit exceeded".to_string(),
+                ));
+            }
+            self.total_bytes = self.total_bytes.saturating_add(size);
+            if self.total_bytes > self.limits.max_total_bytes {
+                return Err(MaterializationError::BudgetExceeded {
+                    limit: self.limits.max_total_bytes,
+                    requested: self.total_bytes,
+                });
+            }
+
             // Only regular files (typeflag '0' or '\0')
             if typeflag != b'0' && typeflag != 0 {
                 // Skip non-file entries (e.g. directories)
@@ -1344,23 +1251,20 @@ impl<R: Read> TarReader<R> {
                 let skip = size.checked_add(padding as u64).ok_or(
                     MaterializationError::CorruptArchive("size overflow".to_string()),
                 )?;
-                io::copy(&mut (&mut self.reader).take(skip), &mut io::sink())
+                let skipped = io::copy(&mut (&mut self.reader).take(skip), &mut io::sink())
                     .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+                if skipped != skip {
+                    return Err(MaterializationError::CorruptArchive(
+                        "truncated non-file tar member".to_string(),
+                    ));
+                }
                 continue;
-            }
-
-            self.entries_count += 1;
-            if self.entries_count > self.limits.max_archive_members {
-                return Err(MaterializationError::CorruptArchive(
-                    "archive member count limit exceeded".to_string(),
-                ));
             }
 
             let padding = ((512 - (size % 512)) % 512) as usize;
             return Ok(Some(TarEntryReader {
                 reader: &mut self.reader,
                 name,
-                size,
                 remaining: size,
                 padding,
             }));
@@ -1370,7 +1274,6 @@ impl<R: Read> TarReader<R> {
     /// Tar EOF is provisional until the bounded outer stream has ended cleanly.
     fn finish(&mut self) -> Result<(), MaterializationError> {
         let mut trailing = [0; 8192];
-        let mut trailing_bytes = 0u64;
         loop {
             let read = self
                 .reader
@@ -1379,11 +1282,11 @@ impl<R: Read> TarReader<R> {
             if read == 0 {
                 break;
             }
-            trailing_bytes = trailing_bytes.saturating_add(read as u64);
-            if trailing_bytes > self.limits.max_total_bytes {
+            self.total_bytes = self.total_bytes.saturating_add(read as u64);
+            if self.total_bytes > self.limits.max_total_bytes {
                 return Err(MaterializationError::BudgetExceeded {
                     limit: self.limits.max_total_bytes,
-                    requested: trailing_bytes,
+                    requested: self.total_bytes,
                 });
             }
             if trailing[..read].iter().any(|&byte| byte != 0) {

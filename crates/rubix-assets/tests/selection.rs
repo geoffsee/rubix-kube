@@ -576,3 +576,48 @@ fn directory_and_provider_selection_skip_excluded_payloads() {
         .unwrap();
     assert!(single.path.is_file());
 }
+
+#[test]
+fn mismatched_selector_is_rejected_by_every_materialization_entry_before_io() {
+    struct MustNotRead;
+    impl std::io::Read for MustNotRead {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            panic!("mismatch must fail before payload reads");
+        }
+    }
+    let arm64 = NodeTarget {
+        architecture: Architecture::Arm64,
+        libc: Libc::Glibc,
+    };
+    let amd64 = NodeTarget {
+        architecture: Architecture::Amd64,
+        libc: Libc::Glibc,
+    };
+    for selector in [
+        AssetSelector::new(arm64, Variant::Online, Scope::SupervisedBundle),
+        AssetSelector::new(amd64, Variant::Offline, Scope::SupervisedBundle),
+        AssetSelector::new(arm64, Variant::Offline, Scope::LegacyExternalDeps),
+    ] {
+        let (inventory, _) = build_offline_archive();
+        let dir = TestDir::new("rubix-selector-mismatch");
+        let destination = dir.path().join("uncreated");
+        let materializer = Materializer::new(inventory, &destination).with_selector(selector);
+        assert!(matches!(
+            materializer.materialize_from_archive(MustNotRead),
+            Err(rubix_assets::MaterializationError::SelectorMismatch)
+        ));
+        assert!(matches!(
+            materializer.materialize_from_dir(&dir.path().join("no-source")),
+            Err(rubix_assets::MaterializationError::SelectorMismatch)
+        ));
+        assert!(matches!(
+            materializer.materialize_from_payloads(|_, _| panic!("provider must not be called")),
+            Err(rubix_assets::MaterializationError::SelectorMismatch)
+        ));
+        assert!(matches!(
+            materializer.materialize_single_asset(AssetId::KubeApiserver, MustNotRead),
+            Err(rubix_assets::MaterializationError::SelectorMismatch)
+        ));
+        assert!(!destination.exists());
+    }
+}
