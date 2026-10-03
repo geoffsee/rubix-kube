@@ -10,5 +10,8 @@ pub mod process;
 #[cfg(unix)]
 pub mod signals;
 
+#[cfg(unix)]
+pub use rustix;
+
 mod diagnostics;
 pub use diagnostics::{ComponentDiagnostic, LifecycleObserver, LifecycleSnapshot, ObserverClosed};

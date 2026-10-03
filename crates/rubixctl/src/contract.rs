@@ -175,6 +175,7 @@ impl fmt::Debug for InstallOptions {
 pub struct UninstallOptions {
     pub path: PathBuf,
     pub purge: bool,
+    pub force: bool,
 }
 
 impl Default for UninstallOptions {
@@ -182,6 +183,7 @@ impl Default for UninstallOptions {
         Self {
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             purge: false,
+            force: false,
         }
     }
 }
@@ -225,12 +227,14 @@ impl Default for UpgradeOptions {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResetOptions {
     pub path: PathBuf,
+    pub force: bool,
 }
 
 impl Default for ResetOptions {
     fn default() -> Self {
         Self {
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
+            force: false,
         }
     }
 }
@@ -241,6 +245,7 @@ pub struct ConfigOptions {
     pub key: Option<String>,
     pub value: Option<String>,
     pub file: Option<PathBuf>,
+    pub environment: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -248,6 +253,7 @@ pub struct KubeconfigOptions {
     pub subcommand: Option<String>,
     pub path: PathBuf,
     pub output: Option<PathBuf>,
+    pub name: Option<String>,
 }
 
 impl Default for KubeconfigOptions {
@@ -256,6 +262,7 @@ impl Default for KubeconfigOptions {
             subcommand: None,
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             output: None,
+            name: None,
         }
     }
 }
@@ -310,68 +317,70 @@ pub trait CommandHandler {
 
     fn execute_install(
         &mut self,
-        _options: InstallOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: InstallOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'install' is not yet implemented")?;
-        Ok(1)
+        crate::execute_install(&options, inputs, stdout, stderr)
     }
 
     fn execute_uninstall(
         &mut self,
-        _options: UninstallOptions,
+        options: UninstallOptions,
         _inputs: &mut dyn CheckInputs,
         _stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'uninstall' is not yet implemented")?;
-        Ok(1)
+        let kind = crate::cleanup::CleanupKind::Uninstall {
+            purge: options.purge,
+        };
+        crate::cleanup::execute_cleanup(kind, &options.path, options.force, stderr)
     }
 
     fn execute_upgrade(
         &mut self,
-        _options: UpgradeOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: UpgradeOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'upgrade' is not yet implemented")?;
-        Ok(1)
+        crate::upgrade::execute_upgrade(&options, inputs, stdout, stderr)
     }
 
     fn execute_reset(
         &mut self,
-        _options: ResetOptions,
+        options: ResetOptions,
         _inputs: &mut dyn CheckInputs,
         _stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'reset' is not yet implemented")?;
-        Ok(1)
+        crate::cleanup::execute_cleanup(
+            crate::cleanup::CleanupKind::Reset,
+            &options.path,
+            options.force,
+            stderr,
+        )
     }
 
     fn execute_config(
         &mut self,
-        _options: ConfigOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: ConfigOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'config' is not yet implemented")?;
-        Ok(1)
+        crate::execute_config(&options, inputs, stdout, stderr)
     }
 
     fn execute_kubeconfig(
         &mut self,
-        _options: KubeconfigOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: KubeconfigOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'kubeconfig' is not yet implemented")?;
-        Ok(1)
+        crate::execute_kubeconfig(&options, inputs, stdout, stderr)
     }
 
     fn execute_d2k(

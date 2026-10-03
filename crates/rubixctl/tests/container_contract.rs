@@ -26,6 +26,7 @@ struct MockContainerEngine {
     fail_create_container: bool,
     fail_start_container: bool,
     fail_post_start_inspect: bool,
+    omit_inspected_port: Option<String>,
 
     // Audit logs of operations
     created_networks: Vec<String>,
@@ -39,8 +40,8 @@ struct MockContainerEngine {
 }
 
 impl ContainerEngineClient for MockContainerEngine {
-    fn inspect_network(&mut self, name: &str) -> io::Result<Option<()>> {
-        Ok(self.networks.get(name).map(|_| ()))
+    fn inspect_network(&mut self, name: &str) -> io::Result<Option<CreateNetworkRequest>> {
+        Ok(self.networks.get(name).cloned())
     }
 
     fn create_network(&mut self, req: &CreateNetworkRequest) -> io::Result<()> {
@@ -88,21 +89,23 @@ impl ContainerEngineClient for MockContainerEngine {
         self.images.insert(image.to_string(), true);
         Ok(())
     }
-    fn load_image(&mut self, _bytes: &[u8]) -> io::Result<()> {
-        Ok(())
-    }
 
     fn inspect_container(&mut self, name: &str) -> io::Result<Option<ContainerInspect>> {
         if self.fail_post_start_inspect && self.started_containers.contains(&name.to_string()) {
             return Err(io::Error::other("mock fail post start inspect"));
         }
-        if let Some((_, running, ports)) = self.containers.get(name) {
+        if let Some((config, running, ports)) = self.containers.get(name) {
+            let mut allocated_ports = ports.clone();
+            if let Some(port) = &self.omit_inspected_port {
+                allocated_ports.remove(port);
+            }
             Ok(Some(ContainerInspect {
                 id: format!("id-{name}"),
                 name: name.to_string(),
                 running: *running,
+                d2k_enabled: config.env.iter().any(|value| value == "KUBESOLO_D2K=true"),
                 exit_code: 0,
-                allocated_ports: ports.clone(),
+                allocated_ports,
             }))
         } else {
             Ok(None)
@@ -112,6 +115,12 @@ impl ContainerEngineClient for MockContainerEngine {
     fn create_container(&mut self, name: &str, config: &ContainerConfig) -> io::Result<String> {
         if self.fail_create_container {
             return Err(io::Error::other("mock fail create container"));
+        }
+        if self.containers.contains_key(name) {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "container name reserved",
+            ));
         }
         let mut allocated = HashMap::new();
         // Allocate ports matching bindings
@@ -171,7 +180,7 @@ fn test_port_parsing_comprehensive() {
     assert_eq!(
         parse_container_ports("80").unwrap(),
         vec![PortMapping {
-            host_ip: String::new(),
+            host_ip: "127.0.0.1".into(),
             host_port: 80,
             container_port: 80,
             protocol: "tcp".into(),
@@ -182,7 +191,7 @@ fn test_port_parsing_comprehensive() {
     assert_eq!(
         parse_container_ports("53/UDP").unwrap(),
         vec![PortMapping {
-            host_ip: String::new(),
+            host_ip: "127.0.0.1".into(),
             host_port: 53,
             container_port: 53,
             protocol: "udp".into(),
@@ -415,8 +424,8 @@ fn test_engine_request_fixtures_matching_api() {
     let vol_req = CreateVolumeRequest::new("kubesolo-data");
     let vol_json = serialize_volume_create_request(&vol_req);
     assert_eq!(
-        vol_json,
-        "{\"Name\":\"kubesolo-data\",\"Driver\":\"local\"}"
+        serde_json::from_str::<serde_json::Value>(&vol_json).unwrap(),
+        serde_json::json!({"Name":"kubesolo-data", "Driver":"local", "Labels":{}})
     );
 
     // Container create serialization
@@ -448,7 +457,9 @@ fn test_engine_request_fixtures_matching_api() {
     assert!(
         container_json.contains("\"2376/tcp\":[{\"HostIp\":\"127.0.0.1\",\"HostPort\":\"2376\"}]")
     );
-    assert!(container_json.contains("\"80/tcp\":[{\"HostIp\":\"\",\"HostPort\":\"8080\"}]"));
+    assert!(
+        container_json.contains("\"80/tcp\":[{\"HostIp\":\"127.0.0.1\",\"HostPort\":\"8080\"}]")
+    );
     assert!(container_json.contains("\"KUBESOLO_CONTAINER_MODE=true\""));
     assert!(container_json.contains("\"KUBESOLO_NAME=test\""));
     assert!(container_json.contains("\"CUSTOM_VAR=val\""));
@@ -479,42 +490,190 @@ fn test_cpu_manager_policy_rejected_in_container_mode() {
     assert!(err_str.contains("cpu-manager-policy \"static\" is not supported in container mode"));
 }
 
-#[test]
-fn test_api_and_d2k_bind_loopback_and_publish_discovered_ports() {
-    let cfg =
-        rubixctl::container::build_port_configuration(None, true, Some(2400), None).expect("ports");
-    for bindings in cfg.port_bindings.values() {
-        assert!(bindings.iter().all(|b| b.host_ip == "127.0.0.1"));
+fn regression_params() -> ContainerInstallParams {
+    ContainerInstallParams {
+        instance_name: "review".into(),
+        image: "node:old".into(),
+        mtu: Some(1500),
+        d2k: true,
+        container_ports: None,
+        extra_env: vec![],
+        apiserver_host_port: Some(6443),
+        d2k_host_port: Some(2376),
     }
-    assert_eq!(cfg.port_bindings["6443/tcp"][0].host_port, "");
-    assert_eq!(cfg.port_bindings["2376/tcp"][0].host_port, "2400");
-
-    let mut ports = HashMap::new();
-    ports.insert("6443/tcp".to_string(), 32768);
-    ports.insert("2376/tcp".to_string(), 2400);
-    let inspect = ContainerInspect {
-        id: "x".into(),
-        name: "x".into(),
-        running: true,
-        exit_code: 0,
-        allocated_ports: ports,
-    };
-    let eps = rubixctl::container::published_endpoints(&inspect).expect("endpoints");
-    assert_eq!(eps.apiserver.to_string(), "127.0.0.1:32768");
-    assert_eq!(
-        eps.d2k.map(|a| a.to_string()).as_deref(),
-        Some("127.0.0.1:2400")
-    );
 }
 
 #[test]
-fn test_no_endpoint_without_published_api_port() {
-    let inspect = ContainerInspect {
-        id: "x".into(),
-        name: "x".into(),
+fn reinstall_pull_failure_preserves_instance_and_later_failure_reports_removal() {
+    let mut engine = MockContainerEngine::default();
+    let mut params = regression_params();
+    install_container(&mut engine, &params).unwrap();
+    let cname = container_name(&params.instance_name);
+    params.image = "node:replacement".into();
+    engine.fail_pull_image = true;
+    assert!(install_container(&mut engine, &params).is_err());
+    assert!(engine.containers[&cname].1);
+    assert!(engine.removed_containers.is_empty());
+    engine.fail_pull_image = false;
+    engine.fail_create_container = true;
+    let error = install_container(&mut engine, &params).unwrap_err();
+    assert!(error.to_string().contains("previous container was removed"));
+    assert!(engine.removed_volumes.is_empty());
+}
+
+#[test]
+fn reinstall_replaces_running_or_stopped_instance_and_reconciles_mtu() {
+    for running in [false, true] {
+        let mut engine = MockContainerEngine::default();
+        let mut params = regression_params();
+        install_container(&mut engine, &params).unwrap();
+        let cname = container_name(&params.instance_name);
+        engine.containers.get_mut(&cname).unwrap().1 = running;
+        params.image = "node:new".into();
+        params.mtu = Some(1400);
+        params.extra_env = vec![
+            ("KUBESOLO_D2K".into(), "false".into()),
+            ("SPECIAL".into(), "a\"b\\c\n".into()),
+        ];
+        let result = install_container(&mut engine, &params).unwrap();
+        let config = &engine.containers[&cname].0;
+        assert_eq!(config.image, "node:new");
+        assert!(config.env.contains(&"KUBESOLO_D2K=true".into()));
+        assert!(!config.env.contains(&"KUBESOLO_D2K=false".into()));
+        assert_eq!(engine.created_containers.len(), 2);
+        assert!(engine.removed_containers.contains(&cname));
+        assert_eq!(
+            engine.networks[&result.network_name].options["com.docker.network.driver.mtu"],
+            "1400"
+        );
+        assert_eq!(engine.created_volumes.len(), 1);
+        assert!(engine.removed_volumes.is_empty());
+        let payload: serde_json::Value =
+            serde_json::from_str(&serialize_container_create_request(config)).unwrap();
+        assert_eq!(payload["Env"], serde_json::json!(config.env));
+        assert_eq!(payload["HostConfig"]["Privileged"], true);
+    }
+}
+
+#[test]
+fn reserved_port_conflicts_fail_before_engine_mutation() {
+    for (api, d2k, mapping) in [
+        (6443, 2376, Some("127.0.0.1:6443:80")),
+        (6443, 6443, None),
+        (6443, 2376, Some("8443:6443")),
+        (6443, 2376, Some("8443:2376")),
+    ] {
+        let mut engine = MockContainerEngine::default();
+        let mut params = regression_params();
+        params.apiserver_host_port = Some(api);
+        params.d2k_host_port = Some(d2k);
+        params.container_ports = mapping.map(String::from);
+        assert!(install_container(&mut engine, &params).is_err());
+        assert!(engine.created_networks.is_empty());
+        assert!(engine.created_volumes.is_empty());
+        assert!(engine.created_containers.is_empty());
+    }
+}
+
+#[test]
+fn engine_json_roundtrips_special_strings_and_labels() {
+    let special = "a\"b\\c\n";
+    let mut network = CreateNetworkRequest::new(special, None);
+    network.options.insert(special.into(), special.into());
+    let value: serde_json::Value =
+        serde_json::from_str(&serialize_network_create_request(&network)).unwrap();
+    assert_eq!(value["Name"], special);
+    assert_eq!(value["Options"][special], special);
+    let mut volume = CreateVolumeRequest::new(special);
+    volume.labels.insert(special.into(), special.into());
+    let value: serde_json::Value =
+        serde_json::from_str(&serialize_volume_create_request(&volume)).unwrap();
+    assert_eq!(value["Labels"][special], special);
+}
+
+#[test]
+fn omitted_workload_addresses_are_loopback_and_explicit_addresses_survive() {
+    let bindings = rubixctl::container::build_port_configuration(
+        None,
+        false,
+        None,
+        Some("8080:80,81,0.0.0.0:8082:82"),
+    )
+    .unwrap()
+    .port_bindings;
+    assert_eq!(bindings["80/tcp"][0].host_ip, "127.0.0.1");
+    assert_eq!(bindings["81/tcp"][0].host_ip, "127.0.0.1");
+    assert_eq!(bindings["82/tcp"][0].host_ip, "0.0.0.0");
+}
+
+#[test]
+fn published_endpoints_require_a_nonzero_inspected_api_port() {
+    let mut inspect = ContainerInspect {
+        id: "id".into(),
+        name: "dev".into(),
         running: true,
+        d2k_enabled: false,
         exit_code: 0,
         allocated_ports: HashMap::new(),
     };
     assert!(rubixctl::container::published_endpoints(&inspect).is_none());
+    inspect.allocated_ports.insert("6443/tcp".into(), 0);
+    assert!(rubixctl::container::published_endpoints(&inspect).is_none());
+    inspect.allocated_ports.insert("6443/tcp".into(), 49153);
+    assert_eq!(
+        rubixctl::container::published_endpoints(&inspect)
+            .unwrap()
+            .apiserver
+            .port(),
+        49153
+    );
+}
+
+#[test]
+fn missing_inspected_api_or_enabled_d2k_binding_fails_installation() {
+    for port in ["6443/tcp", "2376/tcp"] {
+        let mut engine = MockContainerEngine {
+            omit_inspected_port: Some(port.into()),
+            ..Default::default()
+        };
+        let error = install_container(&mut engine, &regression_params()).unwrap_err();
+        assert!(error.to_string().contains("missing allocated"));
+        assert_eq!(engine.removed_containers.len(), 1);
+    }
+}
+
+#[test]
+fn stopped_instances_do_not_report_retained_allocations() {
+    let mut engine = MockContainerEngine::default();
+    let result = install_container(&mut engine, &regression_params()).unwrap();
+    let running = engine
+        .inspect_container(&result.container_name)
+        .unwrap()
+        .unwrap();
+    assert!(rubixctl::container::published_endpoints(&running).is_some());
+    engine.stop_container(&result.container_name, 30).unwrap();
+    let stopped = engine
+        .inspect_container(&result.container_name)
+        .unwrap()
+        .unwrap();
+    assert!(!stopped.allocated_ports.is_empty());
+    assert!(rubixctl::container::published_endpoints(&stopped).is_none());
+}
+
+#[test]
+fn d2k_endpoint_requires_effective_enablement_not_a_workload_binding() {
+    for d2k_enabled in [false, true] {
+        let mut engine = MockContainerEngine::default();
+        let mut params = regression_params();
+        params.d2k = d2k_enabled;
+        params.container_ports = (!d2k_enabled).then(|| "8237:2376".into());
+        let result = install_container(&mut engine, &params).unwrap();
+        let inspect = engine
+            .inspect_container(&result.container_name)
+            .unwrap()
+            .unwrap();
+        assert!(inspect.allocated_ports.contains_key("2376/tcp"));
+        let endpoints = rubixctl::container::published_endpoints(&inspect).unwrap();
+        assert_eq!(endpoints.d2k.is_some(), d2k_enabled);
+    }
 }

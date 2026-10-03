@@ -115,6 +115,8 @@ pub struct ContainerInspect {
     pub id: String,
     pub name: String,
     pub running: bool,
+    /// Effective D2K configuration observed on this instance, independent of workload ports.
+    pub d2k_enabled: bool,
     pub exit_code: i32,
     /// Host port mapping discovered from running container inspection.
     /// Maps e.g. "6443/tcp" to the allocated host port (such as 32768 or 6443).
@@ -127,7 +129,7 @@ pub struct ContainerInspect {
 /// verification of Linux/macOS engine requests, and WSL2 workflow qualification.
 pub trait ContainerEngineClient {
     /// Inspects whether a network exists.
-    fn inspect_network(&mut self, name: &str) -> io::Result<Option<()>>;
+    fn inspect_network(&mut self, name: &str) -> io::Result<Option<CreateNetworkRequest>>;
     /// Creates a network.
     fn create_network(&mut self, req: &CreateNetworkRequest) -> io::Result<()>;
     /// Removes a network.
@@ -144,8 +146,13 @@ pub trait ContainerEngineClient {
     fn inspect_image(&mut self, image: &str) -> io::Result<Option<()>>;
     /// Pulls an image if missing.
     fn pull_image(&mut self, image: &str) -> io::Result<()>;
-    /// Loads an image from a tarball.
-    fn load_image(&mut self, bytes: &[u8]) -> io::Result<()>;
+    /// Import an already verified compressed Docker image archive.
+    fn load_image(&mut self, _bytes: &[u8]) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "image import is not implemented by this Engine adapter",
+        ))
+    }
 
     /// Inspects container state.
     fn inspect_container(&mut self, name: &str) -> io::Result<Option<ContainerInspect>>;
@@ -269,6 +276,19 @@ pub fn build_port_configuration(
 ) -> Result<ContainerPortConfig, ContainerLifecycleError> {
     let mut exposed_ports = Vec::new();
     let mut port_bindings: BTreeMap<String, Vec<HostPortBinding>> = BTreeMap::new();
+    if apiserver_host_port == Some(0) || (d2k && d2k_host_port == Some(0)) {
+        return Err(ContainerLifecycleError::PortValidation(
+            crate::container_ports::PortParseError::InvalidPortNumber("0".into()),
+        ));
+    }
+    if d2k
+        && let Some(port) = apiserver_host_port
+        && Some(port) == d2k_host_port
+    {
+        return Err(ContainerLifecycleError::PortValidation(
+            crate::container_ports::PortParseError::DuplicateHostPort(port, "tcp".into()),
+        ));
+    }
 
     // 1. Kubernetes API Server: 6443/tcp
     let api_key = "6443/tcp".to_string();
@@ -302,6 +322,26 @@ pub fn build_port_configuration(
             parse_container_ports(specs).map_err(ContainerLifecycleError::PortValidation)?;
 
         for mapping in parsed_mappings {
+            if mapping.protocol == "tcp" {
+                if mapping.container_port == 6443 || (d2k && mapping.container_port == 2376) {
+                    return Err(ContainerLifecycleError::PortValidation(
+                        crate::container_ports::PortParseError::DuplicateContainerPort(
+                            mapping.container_port,
+                            mapping.protocol,
+                        ),
+                    ));
+                }
+                if Some(mapping.host_port) == apiserver_host_port
+                    || (d2k && Some(mapping.host_port) == d2k_host_port)
+                {
+                    return Err(ContainerLifecycleError::PortValidation(
+                        crate::container_ports::PortParseError::DuplicateHostPort(
+                            mapping.host_port,
+                            mapping.protocol,
+                        ),
+                    ));
+                }
+            }
             let key = mapping.container_port_key();
             if !exposed_ports.contains(&key) {
                 exposed_ports.push(key.clone());
@@ -327,9 +367,9 @@ pub fn build_port_configuration(
 /// Steps:
 /// 1. Validate CPU manager policy (must be "none")
 /// 2. Validate container ports and prepare port bindings
-/// 3. Verify/create network `<cname>-net`
-/// 4. Verify/create volume `<cname>-data`
-/// 5. Pull image if needed
+/// 3. Pull image if needed, before replacing an existing instance
+/// 4. Verify/create network `<cname>-net`
+/// 5. Verify/create volume `<cname>-data`
 /// 6. Create container with:
 ///    - `Privileged`: true
 ///    - `CgroupnsMode`: "host"
@@ -345,6 +385,29 @@ pub fn build_port_configuration(
 pub fn install_container(
     engine: &mut dyn ContainerEngineClient,
     params: &ContainerInstallParams,
+) -> Result<ContainerInstallResult, ContainerLifecycleError> {
+    install_container_inner(engine, params, None)
+}
+
+/// Install using the exact bytes and tag validated by the offline image decoder.
+pub fn install_container_with_bundled_image(
+    engine: &mut dyn ContainerEngineClient,
+    params: &ContainerInstallParams,
+    image: &crate::container_image::VerifiedContainerImage<'_>,
+) -> Result<ContainerInstallResult, ContainerLifecycleError> {
+    if params.image != image.reference() {
+        return Err(ContainerLifecycleError::Engine(
+            "installation image disagrees with verified bundle tag".into(),
+        ));
+    }
+    install_container_inner(engine, params, Some(image))
+}
+
+#[allow(clippy::too_many_lines)]
+fn install_container_inner(
+    engine: &mut dyn ContainerEngineClient,
+    params: &ContainerInstallParams,
+    bundled: Option<&crate::container_image::VerifiedContainerImage<'_>>,
 ) -> Result<ContainerInstallResult, ContainerLifecycleError> {
     // 0. Validate CPU manager policy (only "none" supported in container mode)
     if let Some((_, v)) = params
@@ -372,13 +435,62 @@ pub fn install_container(
     )?;
 
     let mut created = CreatedResources::default();
+    let mut removed_existing = false;
 
     let install_action = || -> Result<ContainerInstallResult, ContainerLifecycleError> {
-        // 1. Ensure Network
-        let network_exists = engine
-            .inspect_network(&nname)
-            .map_err(|e| ContainerLifecycleError::Engine(format!("network inspect failed: {e}")))?
+        if let Some(image) = bundled {
+            engine.load_image(image.bytes()).map_err(|e| {
+                ContainerLifecycleError::Engine(format!("verified image import failed: {e}"))
+            })?;
+        }
+        let image_exists = engine
+            .inspect_image(&params.image)
+            .map_err(|e| ContainerLifecycleError::Engine(format!("image inspect failed: {e}")))?
             .is_some();
+        if !image_exists {
+            if bundled.is_some() {
+                return Err(ContainerLifecycleError::Engine(
+                    "verified image tag is unavailable after import; registry fallback is disabled"
+                        .into(),
+                ));
+            }
+            engine
+                .pull_image(&params.image)
+                .map_err(|e| ContainerLifecycleError::Engine(format!("image pull failed: {e}")))?;
+        }
+        // Reinstall only the selected instance; retain its persistent data volume.
+        if let Some(existing) = engine.inspect_container(&cname).map_err(|e| {
+            ContainerLifecycleError::Engine(format!("container inspect failed: {e}"))
+        })? {
+            if existing.running {
+                engine.stop_container(&cname, 10).map_err(|e| {
+                    ContainerLifecycleError::Engine(format!("container stop failed: {e}"))
+                })?;
+            }
+            engine.remove_container(&cname, false).map_err(|e| {
+                ContainerLifecycleError::Engine(format!("container removal failed: {e}"))
+            })?;
+            removed_existing = true;
+        }
+        // 1. Ensure Network
+        let network = engine
+            .inspect_network(&nname)
+            .map_err(|e| ContainerLifecycleError::Engine(format!("network inspect failed: {e}")))?;
+        let requested_network = CreateNetworkRequest::new(&nname, params.mtu);
+        let network_exists = if let Some(existing) = network {
+            if existing.driver != requested_network.driver
+                || existing.options != requested_network.options
+            {
+                engine.remove_network(&nname).map_err(|e| {
+                    ContainerLifecycleError::Engine(format!("network reconcile failed: {e}"))
+                })?;
+                false
+            } else {
+                true
+            }
+        } else {
+            false
+        };
 
         let created_new_network = if network_exists {
             false
@@ -408,49 +520,21 @@ pub fn install_container(
             true
         };
 
-        // 3. Ensure Image
-        let image_exists = engine
-            .inspect_image(&params.image)
-            .map_err(|e| ContainerLifecycleError::Engine(format!("image inspect failed: {e}")))?
-            .is_some();
-
-        if !image_exists {
-            engine
-                .pull_image(&params.image)
-                .map_err(|e| ContainerLifecycleError::Engine(format!("image pull failed: {e}")))?;
-        }
-
-        // 4. Check existing container
-        if let Some(existing) = engine.inspect_container(&cname).map_err(|e| {
-            ContainerLifecycleError::Engine(format!("container inspect failed: {e}"))
-        })? && existing.running
-        {
-            let apiserver_port = existing
-                .allocated_ports
-                .get("6443/tcp")
-                .copied()
-                .unwrap_or(6443);
-            let d2k_port = existing.allocated_ports.get("2376/tcp").copied();
-            return Ok(ContainerInstallResult {
-                container_name: cname,
-                container_id: existing.id,
-                network_name: nname,
-                volume_name: vname,
-                apiserver_port,
-                d2k_port,
-                created_new_network,
-                created_new_volume,
-            });
-        }
-
         // 5. Build ContainerConfig
         let mut env_vars = vec![
             "KUBESOLO_CONTAINER_MODE=true".to_string(),
             format!("KUBESOLO_NAME={}", params.instance_name),
         ];
         for (k, v) in &params.extra_env {
-            env_vars.push(format!("{k}={v}"));
+            if !matches!(
+                k.as_str(),
+                "KUBESOLO_D2K" | "KUBESOLO_CONTAINER_MODE" | "KUBESOLO_NAME"
+            ) {
+                env_vars.push(format!("{k}={v}"));
+            }
         }
+
+        env_vars.push(format!("KUBESOLO_D2K={}", params.d2k));
 
         let container_cfg = ContainerConfig {
             image: params.image.clone(),
@@ -492,7 +576,8 @@ pub fn install_container(
             .allocated_ports
             .get("6443/tcp")
             .copied()
-            .unwrap_or_else(|| params.apiserver_host_port.unwrap_or(6443));
+            .filter(|port| *port != 0)
+            .ok_or_else(|| ContainerLifecycleError::Engine("missing allocated API port".into()))?;
 
         let d2k_port = if params.d2k {
             Some(
@@ -500,7 +585,10 @@ pub fn install_container(
                     .allocated_ports
                     .get("2376/tcp")
                     .copied()
-                    .unwrap_or_else(|| params.d2k_host_port.unwrap_or(2376)),
+                    .filter(|port| *port != 0)
+                    .ok_or_else(|| {
+                        ContainerLifecycleError::Engine("missing allocated D2K port".into())
+                    })?,
             )
         } else {
             None
@@ -525,14 +613,19 @@ pub fn install_container(
             if !rollback_warnings.is_empty() {
                 eprintln!("warnings during cleanup: {}", rollback_warnings.join(", "));
             }
-            Err(err)
+            if removed_existing {
+                Err(ContainerLifecycleError::Engine(format!(
+                    "{err}; previous container was removed; existing data volume retained"
+                )))
+            } else {
+                Err(err)
+            }
         },
     }
 }
-
 /// Host endpoints published by a running instance, as reported by engine inspection.
 ///
-/// API and workload bindings are always loopback-only; the host port is whatever the
+/// API and D2K bindings use loopback; the host port is whatever the
 /// engine actually allocated, which differs from the request when ephemeral.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PublishedEndpoints {
@@ -546,13 +639,21 @@ pub struct PublishedEndpoints {
 /// never fabricate an address that the engine did not allocate.
 #[must_use]
 pub fn published_endpoints(inspect: &ContainerInspect) -> Option<PublishedEndpoints> {
+    if !inspect.running {
+        return None;
+    }
     let loopback = std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
-    let api = *inspect.allocated_ports.get("6443/tcp")?;
+    let api = *inspect
+        .allocated_ports
+        .get("6443/tcp")
+        .filter(|port| **port != 0)?;
     Some(PublishedEndpoints {
         apiserver: std::net::SocketAddr::new(loopback, api),
         d2k: inspect
             .allocated_ports
             .get("2376/tcp")
+            .filter(|_| inspect.d2k_enabled)
+            .filter(|port| **port != 0)
             .map(|p| std::net::SocketAddr::new(loopback, *p)),
     })
 }

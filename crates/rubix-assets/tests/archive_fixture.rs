@@ -48,9 +48,7 @@ fn inspect_pinned_crane_serialization() {
                 row["delivery"]["encoded_bytes"] = json!(bytes.len());
                 row["delivery"]["sha256"] = json!(vectors::hex(&bytes));
             }
-            if (row["id"] == "image-d2k" || row["id"] == "image-kubesolo")
-                && arch == Architecture::ArmV7
-            {
+            if row["id"] == "image-d2k" && arch == Architecture::ArmV7 {
                 row["delivery"] = json!({"kind":"unavailable"});
             }
         }
