@@ -1,6 +1,7 @@
 use rubix_assets::{
-    ArtifactNaming, ArtifactNamingError, FeatureSupport, ManagementArch, ManagementOs,
-    ManagementTarget, Matrix, MatrixError, OptionalFeature, Variant,
+    ArtifactNaming, ArtifactNamingError, AssetId, DeclaredInventory, Delivery, FeatureSupport,
+    InventoryRequest, Limits, ManagementArch, ManagementOs, ManagementTarget, Manifest, Matrix,
+    MatrixError, OptionalFeature, Scope, Variant,
 };
 use rubix_platform::{Architecture, Libc, NodeTarget};
 
@@ -238,7 +239,7 @@ fn node_archive_naming_and_roundtrip_all_16_cells() {
 
                 // Clean-checkout validation
                 let validated_name =
-                    ArtifactNaming::validate_clean_checkout_inputs(prefix, version, *variant)
+                    ArtifactNaming::validate_clean_checkout_inputs(prefix, version, *variant, &[])
                         .expect("validate clean checkout inputs");
                 assert_eq!(validated_name, filename);
             }
@@ -259,6 +260,10 @@ fn node_archive_arm_and_armv7_aliases() {
     assert_eq!(parsed_armv7.variant.architecture, Architecture::ArmV7);
     assert_eq!(parsed_armv7.variant.libc, Libc::Musl);
     assert_eq!(parsed_armv7.variant.variant, Variant::Offline);
+    assert!(matches!(
+        ArtifactNaming::canonical_node_archive(armv7_archive),
+        Err(ArtifactNamingError::NonCanonical { .. })
+    ));
 }
 
 #[test]
@@ -300,22 +305,119 @@ fn node_archive_negative_and_mismatch_cases() {
 
     // Clean-checkout validation errors
     let cell1 = Matrix::from_cell(1).unwrap();
-    let err_empty_prefix = ArtifactNaming::validate_clean_checkout_inputs("", "1.0.0", cell1);
+    let err_empty_prefix = ArtifactNaming::validate_clean_checkout_inputs("", "1.0.0", cell1, &[]);
     assert!(matches!(
         err_empty_prefix,
         Err(ArtifactNamingError::InvalidFormat(_))
     ));
 
-    let err_empty_version = ArtifactNaming::validate_clean_checkout_inputs("rubix-kube", "", cell1);
+    let err_empty_version =
+        ArtifactNaming::validate_clean_checkout_inputs("rubix-kube", "", cell1, &[]);
     assert!(matches!(
         err_empty_version,
         Err(ArtifactNamingError::EmptyVersion)
     ));
 
     let err_invalid_ver =
-        ArtifactNaming::validate_clean_checkout_inputs("rubix-kube", "1/0/0", cell1);
+        ArtifactNaming::validate_clean_checkout_inputs("rubix-kube", "1/0/0", cell1, &[]);
     assert!(matches!(
         err_invalid_ver,
         Err(ArtifactNamingError::InvalidVersion(_))
     ));
+
+    assert!(
+        ArtifactNaming::parse_node_archive("rubix-kube-0.1.0-linux-amd64-offline-musl.tar.gz")
+            .is_err()
+    );
+    assert!(
+        ArtifactNaming::parse_node_archive("rubix-kube-0.1.0-linux-amd64-musl-musl.tar.gz")
+            .is_err()
+    );
+}
+
+#[test]
+fn optional_images_and_packaged_digests_are_enforced() {
+    let riscv_offline =
+        Matrix::find_node_variant(Architecture::Riscv64, Libc::Glibc, Variant::Offline)
+            .expect("riscv64 offline cell");
+    assert!(matches!(
+        ArtifactNaming::validate_clean_checkout_inputs(
+            "rubix-kube",
+            "0.1.0",
+            riscv_offline,
+            &[OptionalFeature::D2k],
+        ),
+        Err(ArtifactNamingError::OptionalImageRejected { .. })
+    ));
+
+    let arm64_online = Matrix::find_node_variant(Architecture::Arm64, Libc::Glibc, Variant::Online)
+        .expect("arm64 online cell");
+    assert!(matches!(
+        ArtifactNaming::validate_clean_checkout_inputs(
+            "rubix-kube",
+            "0.1.0",
+            arm64_online,
+            &[OptionalFeature::D2k],
+        ),
+        Err(ArtifactNamingError::OptionalImageRejected { .. })
+    ));
+
+    let arm64_offline =
+        Matrix::find_node_variant(Architecture::Arm64, Libc::Glibc, Variant::Offline)
+            .expect("arm64 offline cell");
+    ArtifactNaming::validate_clean_checkout_inputs(
+        "rubix-kube",
+        "0.1.0",
+        arm64_offline,
+        &[
+            OptionalFeature::LocalPathStorage,
+            OptionalFeature::PortainerAgent,
+            OptionalFeature::D2k,
+        ],
+    )
+    .expect("supported offline images");
+
+    let inventory = Manifest::decode(
+        include_bytes!("fixtures/offline-arm64.json"),
+        Limits::default(),
+    )
+    .expect("decode fixture")
+    .validate_inventory(
+        InventoryRequest {
+            target: NodeTarget {
+                architecture: Architecture::Arm64,
+                libc: Libc::Glibc,
+            },
+            variant: Variant::Offline,
+            scope: Scope::SupervisedBundle,
+        },
+        Limits::default(),
+    )
+    .expect("validate fixture");
+    let owned = packaged_digests(&inventory);
+    let pairs: Vec<(AssetId, &str)> = owned
+        .iter()
+        .map(|(id, digest)| (*id, digest.as_str()))
+        .collect();
+    ArtifactNaming::validate_packaged_digests(&inventory, &pairs).expect("fixture digests");
+    let mut altered = owned.clone();
+    altered[0].1 = "0".repeat(64);
+    let altered_pairs: Vec<(AssetId, &str)> = altered
+        .iter()
+        .map(|(id, digest)| (*id, digest.as_str()))
+        .collect();
+    assert!(matches!(
+        ArtifactNaming::validate_packaged_digests(&inventory, &altered_pairs),
+        Err(ArtifactNamingError::DigestMismatch { .. })
+    ));
+}
+
+fn packaged_digests(inventory: &DeclaredInventory) -> Vec<(AssetId, String)> {
+    inventory
+        .assets()
+        .filter_map(|(id, delivery)| match delivery {
+            Delivery::Bundled { sha256, .. } => Some((id, sha256.clone())),
+            _ => None,
+        })
+        .collect()
 }
