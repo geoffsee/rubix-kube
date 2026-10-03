@@ -4,6 +4,7 @@ use rubixctl::{
     generate_service_definition, plan_lifecycle_action, render_custom_definition, shell_quote,
 };
 use std::collections::BTreeMap;
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 #[test]
@@ -82,7 +83,11 @@ fn test_systemd_default_definition() {
     assert!(content.contains("[Service]"));
     assert!(content.contains("KillMode=process"));
     assert!(content.contains("LimitNOFILE=1048576"));
-    assert!(content.contains("ExecStart=/usr/local/bin/kubesolo '--debug' '--run-mode' 'service'"));
+    assert!(
+        content.contains(
+            "ExecStart=\"/usr/local/bin/kubesolo\" \"--debug\" \"--run-mode\" \"service\""
+        )
+    );
     assert!(content.contains("Environment=\"HTTP_PROXY=http://10.0.0.1:8080\"\n"));
     assert!(content.contains("Environment=\"KUBESOLO_EXTRA=percent%%and\\\"quote\"\n"));
     assert!(content.contains("[Install]\nWantedBy=multi-user.target"));
@@ -207,7 +212,7 @@ fn test_upstart_default_definition() {
     assert!(conf.content.contains("env FOO=\"bar\""));
     assert!(
         conf.content
-            .contains("exec /usr/local/bin/kubesolo '--local-storage'")
+            .contains("exec '/usr/local/bin/kubesolo' '--local-storage'")
     );
 }
 
@@ -238,7 +243,7 @@ fn test_runit_default_definition() {
     assert_eq!(run_file.mode, 0o755);
     assert!(run_file.content.starts_with("#!/bin/sh\nexec 2>&1\n"));
     assert!(run_file.content.contains("export MY_VAR=\"val\""));
-    assert!(run_file.content.contains("exec /usr/local/bin/kubesolo"));
+    assert!(run_file.content.contains("exec '/usr/local/bin/kubesolo'"));
 
     assert_eq!(def.symlinks.len(), 1);
     assert_eq!(
@@ -276,7 +281,7 @@ fn test_s6_default_definition() {
     assert_eq!(run.mode, 0o755);
     assert!(
         run.content
-            .contains("exec /usr/local/bin/kubesolo '--debug'")
+            .contains("exec '/usr/local/bin/kubesolo' '--debug'")
     );
 
     let finish = &def.files[1];
@@ -550,4 +555,119 @@ fn test_lifecycle_plan_command_specifics() {
     let s6_plan = plan_lifecycle_action(LifecycleAction::Install, &s6_cfg).unwrap();
     assert_eq!(s6_plan.commands[0].program, "s6-svc");
     assert_eq!(s6_plan.commands[0].args, vec!["-u", "/etc/s6/sv/testsvc"]);
+}
+
+#[test]
+fn lifecycle_rejects_unimplemented_process_control_and_reports_bad_mode() {
+    let mut config = ServiceConfig::default();
+    for mode in [RunMode::Daemon, RunMode::Foreground] {
+        config.run_mode = mode;
+        for action in [
+            LifecycleAction::Install,
+            LifecycleAction::Uninstall,
+            LifecycleAction::Start,
+            LifecycleAction::Stop,
+            LifecycleAction::Restart,
+            LifecycleAction::Status,
+        ] {
+            assert_eq!(
+                plan_lifecycle_action(action, &config).unwrap_err(),
+                UnsupportedTargetError::UnsupportedAction { mode, action }
+            );
+        }
+    }
+    assert!(
+        "bogus"
+            .parse::<RunMode>()
+            .unwrap_err()
+            .to_string()
+            .contains("run mode")
+    );
+}
+
+#[test]
+fn assignments_do_not_execute_argument_substitutions() {
+    let mut config = ServiceConfig {
+        args: vec![r#"$(printf EXECUTED) `printf EXECUTED` $HOME "quote""#.into()],
+        ..ServiceConfig::default()
+    };
+    for backend in [InitBackend::OpenRc, InitBackend::SysVinit] {
+        config.backend = Some(backend);
+        let def = generate_service_definition(&config).unwrap();
+        let assignments = def.files[0]
+            .content
+            .lines()
+            .filter(|line| line.starts_with("command_args=") || line.starts_with("DAEMON_ARGS="))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let variable = if backend == InitBackend::OpenRc {
+            "command_args"
+        } else {
+            "DAEMON_ARGS"
+        };
+        let script = format!("{assignments}\nprintf '%s' \"${variable}\"");
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(script)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert_eq!(
+            String::from_utf8(output.stdout).unwrap().trim(),
+            shell_quote(&config.args[0])
+        );
+    }
+}
+
+#[test]
+fn systemd_quotes_literals_and_shell_backends_execute_spaced_binary() {
+    let mut config = ServiceConfig {
+        backend: Some(InitBackend::Systemd),
+        binary_path: PathBuf::from("/custom install/node"),
+        args: vec![r#"%n ${UNSET} ' " \"#.into()],
+        ..ServiceConfig::default()
+    };
+    let def = generate_service_definition(&config).unwrap();
+    assert!(
+        def.files[0]
+            .content
+            .contains(r#"ExecStart="/custom install/node" "%%n $${UNSET} ' \" \\""#)
+    );
+    let dir = tempfile::tempdir().unwrap();
+    let binary = dir.path().join("node with spaces");
+    std::fs::write(&binary, "#!/bin/sh\nprintf '%s' \"$1\"\n").unwrap();
+    std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o755)).unwrap();
+    config.binary_path = binary;
+    config.args = vec!["literal argument".into()];
+    for backend in [InitBackend::Runit, InitBackend::S6] {
+        config.backend = Some(backend);
+        let def = generate_service_definition(&config).unwrap();
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(&def.files[0].content)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert_eq!(output.stdout, b"literal argument");
+    }
+}
+
+#[test]
+fn sysv_status_preserves_stopped_exit_code() {
+    let mut config = ServiceConfig {
+        backend: Some(InitBackend::SysVinit),
+        binary_path: PathBuf::from("/bin/sh"),
+        ..ServiceConfig::default()
+    };
+    let dir = tempfile::tempdir().unwrap();
+    config.custom_paths.pid_file_path = Some(dir.path().join("absent.pid"));
+    let def = generate_service_definition(&config).unwrap();
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(&def.files[0].content)
+        .arg("test")
+        .arg("status")
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(3));
 }

@@ -89,3 +89,8 @@ cargo clippy -p rubixctl --all-targets --locked -- -D warnings
 
 Real host-check executable qualification runs only in disposable Linux containers;
 ordinary tests use injected effects or invoke only help/version.
+
+Service definitions and lifecycle plans cover the six Linux init backends.
+Daemon and foreground definitions describe paths only; lifecycle operations in
+those two modes return explicit unsupported-action errors pending a process
+executor. These plans do not establish live init-system or reboot qualification.
