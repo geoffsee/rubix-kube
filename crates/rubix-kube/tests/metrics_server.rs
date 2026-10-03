@@ -398,3 +398,288 @@ async fn test_node_runtime_metrics_bind_failure_is_observable_and_nonfatal() {
     // Free blocker
     drop(blocker);
 }
+
+async fn read_keep_alive_response(stream: &mut TcpStream) {
+    let mut response = Vec::new();
+    loop {
+        response.push(stream.read_u8().await.expect("response byte"));
+        if response.ends_with(b"\r\n\r\n") {
+            break;
+        }
+    }
+    assert!(response.starts_with(b"HTTP/1.1 200"));
+    let mut body = [0; 3];
+    stream.read_exact(&mut body).await.expect("health body");
+    assert_eq!(&body, b"ok\n");
+}
+
+#[tokio::test]
+async fn metrics_shutdown_and_cancellation_close_existing_connections() {
+    // Explicit stop, loss of the owner's channel, cancellation, and an initial
+    // stopped channel all settle the listener and accepted connections.
+    for mode in 0..4 {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let (tx, rx) = watch::channel(mode == 3);
+        let server = tokio::spawn(MetricsServer::run_with_listener(
+            listener,
+            Arc::new(MetricsRegistry::new()),
+            rx,
+        ));
+        if mode == 3 {
+            tokio::time::timeout(Duration::from_secs(1), server)
+                .await
+                .unwrap()
+                .unwrap()
+                .unwrap();
+            assert!(TcpStream::connect(addr).await.is_err());
+            continue;
+        }
+        let mut keep_alive = TcpStream::connect(addr).await.unwrap();
+        keep_alive
+            .write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .await
+            .unwrap();
+        read_keep_alive_response(&mut keep_alive).await;
+        // An incomplete header must not delay bounded shutdown either.
+        let mut partial = TcpStream::connect(addr).await.unwrap();
+        partial
+            .write_all(b"GET /metrics HTTP/1.1\r\nHost:")
+            .await
+            .unwrap();
+        match mode {
+            0 => {
+                tx.send(true).unwrap();
+            },
+            1 => drop(tx),
+            2 => server.abort(),
+            _ => unreachable!(),
+        }
+        let result = tokio::time::timeout(Duration::from_secs(6), server)
+            .await
+            .unwrap();
+        if mode == 2 {
+            assert!(result.unwrap_err().is_cancelled());
+        } else {
+            result.unwrap().unwrap();
+        }
+        for stream in [&mut keep_alive, &mut partial] {
+            let mut buf = Vec::new();
+            let result = tokio::time::timeout(Duration::from_secs(1), stream.read_to_end(&mut buf))
+                .await
+                .expect("existing socket must close");
+            assert!(result.is_ok() || result.unwrap_err().kind() == io::ErrorKind::ConnectionReset);
+            assert!(
+                buf.is_empty(),
+                "stopped server must not send a new response"
+            );
+        }
+        assert!(TcpStream::connect(addr).await.is_err());
+    }
+}
+
+#[tokio::test]
+async fn metrics_accept_negotiates_quality_versions_and_wildcards() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (tx, rx) = watch::channel(false);
+    let server = tokio::spawn(MetricsServer::run_with_listener(
+        listener,
+        Arc::new(MetricsRegistry::new()),
+        rx,
+    ));
+    let cases = [
+        (
+            "application/openmetrics-text;version=1.0.0;q=0,text/plain;version=0.0.4;q=1",
+            200,
+            false,
+        ),
+        (
+            "application/openmetrics-text;version=1.0.0;q=0.2,text/plain;q=0.8",
+            200,
+            false,
+        ),
+        (
+            "text/plain;q=0.1,application/openmetrics-text;version=1.0.0;q=0.9",
+            200,
+            true,
+        ),
+        (
+            "application/openmetrics-text;version=9.0.0,text/plain;version=0.0.4;q=0.1",
+            200,
+            false,
+        ),
+        ("application/openmetrics-text;version=9.0.0", 406, false),
+        (
+            "application/openmetrics-text;q=0,text/plain;q=0",
+            406,
+            false,
+        ),
+        ("*/*", 200, false),
+        ("application/*", 200, true),
+        ("application/openmetrics-text;q=0,*/*;q=0.5", 200, false),
+        ("text/plain;q=0,*/*;q=0.5", 200, true),
+        (
+            "APPLICATION/OPENMETRICS-TEXT;version=\"1.0.0\";charset=UTF-8",
+            200,
+            true,
+        ),
+        (
+            "application/openmetrics-text;q=1.001,text/plain",
+            200,
+            false,
+        ),
+        (
+            "application/openmetrics-text;q=0.9999,text/plain",
+            200,
+            false,
+        ),
+        ("application/json", 406, false),
+    ];
+    for (accept, expected_status, openmetrics) in cases {
+        let (status, headers, body) = http_get(addr, "/metrics", &[("Accept", accept)]).await;
+        assert_eq!(status, expected_status, "Accept: {accept}");
+        if status == 200 {
+            assert_eq!(
+                headers.contains("application/openmetrics-text"),
+                openmetrics,
+                "Accept: {accept}"
+            );
+            assert_eq!(body.ends_with("# EOF\n"), openmetrics, "Accept: {accept}");
+        }
+    }
+    let (status, headers, _) = http_get(
+        addr,
+        "/metrics",
+        &[
+            ("Accept", "application/openmetrics-text;q=0.1"),
+            ("Accept", "text/plain;version=0.0.4;q=0.9"),
+        ],
+    )
+    .await;
+    assert_eq!(status, 200);
+    assert!(headers.contains("text/plain; version=0.0.4"));
+    tx.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn incomplete_metrics_headers_expire() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (tx, rx) = watch::channel(false);
+    let server = tokio::spawn(MetricsServer::run_with_listener(
+        listener,
+        Arc::new(MetricsRegistry::new()),
+        rx,
+    ));
+    let mut stream = TcpStream::connect(addr).await.unwrap();
+    stream
+        .write_all(b"GET /healthz HTTP/1.1\r\nHost:")
+        .await
+        .unwrap();
+    let mut buf = Vec::new();
+    let result = tokio::time::timeout(Duration::from_secs(7), stream.read_to_end(&mut buf))
+        .await
+        .expect("partial request must expire");
+    assert!(result.is_ok() || result.unwrap_err().kind() == io::ErrorKind::ConnectionReset);
+    assert!(buf.is_empty());
+    tx.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn header_deadline_is_not_extended_by_slow_trickle() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (tx, rx) = watch::channel(false);
+    let server = tokio::spawn(MetricsServer::run_with_listener(
+        listener,
+        Arc::new(MetricsRegistry::new()),
+        rx,
+    ));
+    let mut stream = TcpStream::connect(addr).await.unwrap();
+    stream
+        .write_all(b"GET /healthz HTTP/1.1\r\nHost:")
+        .await
+        .unwrap();
+    // Further bytes before each idle interval must not replenish the total
+    // five-second request-header budget.
+    for _ in 0..2 {
+        tokio::time::sleep(Duration::from_secs(2)).await;
+        stream.write_all(b"x").await.unwrap();
+    }
+    let mut buf = Vec::new();
+    let result = tokio::time::timeout(Duration::from_secs(3), stream.read_to_end(&mut buf))
+        .await
+        .expect("total header deadline must close trickling peer");
+    assert!(result.is_ok() || result.unwrap_err().kind() == io::ErrorKind::ConnectionReset);
+    tx.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn incomplete_metrics_request_bodies_do_not_retain_connections() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (tx, rx) = watch::channel(false);
+    let server = tokio::spawn(MetricsServer::run_with_listener(
+        listener,
+        Arc::new(MetricsRegistry::new()),
+        rx,
+    ));
+    let mut stream = TcpStream::connect(addr).await.unwrap();
+    stream
+        .write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nContent-Length: 1000\r\n\r\nx")
+        .await
+        .unwrap();
+    // GET handlers do not consume bodies. Hyper closes rather than indefinitely
+    // draining an unread, incomplete body, so body trickle cannot retain a task.
+    let mut buf = Vec::new();
+    let result = tokio::time::timeout(Duration::from_secs(2), stream.read_to_end(&mut buf))
+        .await
+        .expect("incomplete body must not retain socket");
+    assert!(result.is_ok() || result.unwrap_err().kind() == io::ErrorKind::ConnectionReset);
+    tx.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn saturated_metrics_connections_resume_after_owned_tasks_finish() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (tx, rx) = watch::channel(false);
+    let server = tokio::spawn(MetricsServer::run_with_listener(
+        listener,
+        Arc::new(MetricsRegistry::new()),
+        rx,
+    ));
+    let mut stalled = Vec::new();
+    for _ in 0..64 {
+        let mut stream = TcpStream::connect(addr).await.unwrap();
+        stream
+            .write_all(b"GET /healthz HTTP/1.1\r\nHost:")
+            .await
+            .unwrap();
+        stalled.push(stream);
+    }
+    let mut next = TcpStream::connect(addr).await.unwrap();
+    next.write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .await
+        .unwrap();
+    let mut response = Vec::new();
+    assert!(
+        tokio::time::timeout(Duration::from_millis(100), next.read_to_end(&mut response))
+            .await
+            .is_err(),
+        "excess connection must wait for a bounded slot"
+    );
+    drop(stalled);
+    tokio::time::timeout(Duration::from_secs(2), next.read_to_end(&mut response))
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(response.starts_with(b"HTTP/1.1 200"));
+    tx.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}

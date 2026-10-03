@@ -85,3 +85,26 @@ Run those commands separately for the pinned Go and new Rust artifacts, using
 fresh output directories. The suite arguments contain only print/version/help
 and deliberate failure paths; do not substitute a normal Go startup invocation
 on the host.
+
+## Optional metrics HTTP lifecycle
+
+The runtime's metrics adapter binds only when `metrics.enabled` is true, at
+`127.0.0.1:9105` by default. Bind failures use optional-component degradation.
+The listener and accepted connections belong to the adapter: stop closes the
+listener, drains active responses for at most five seconds, then cancels and
+joins remaining connections. Dropping the adapter/server also cancels its owned
+connection tasks. At most 64 connection tasks run concurrently; excess clients
+wait in the socket backlog until a slot becomes available.
+
+Request headers have a total five-second deadline, including trickling headers.
+Read inactivity is bounded to 30 seconds and response writes to ten seconds
+through the flush. These GET endpoints do not consume request bodies; incomplete
+unread bodies close their connections rather than being drained indefinitely.
+
+`/metrics` supports Prometheus text `version=0.0.4` and OpenMetrics
+`version=1.0.0`. Without `Accept`, it uses Prometheus text. Negotiation considers
+all `Accept` fields, supported media parameters, specificity and quality values;
+an explicit `q=0` exclusion overrides a less specific wildcard. A request with
+no acceptable supported format receives HTTP 406. The listener serves plain HTTP;
+certificate expiry series describe certificate files and do not establish TLS
+protection or live Linux cluster qualification.

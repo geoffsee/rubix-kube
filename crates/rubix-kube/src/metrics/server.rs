@@ -3,17 +3,27 @@
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use bytes::Bytes;
 use http::{Method, Request, Response, StatusCode, header};
 use http_body_util::Full;
 use hyper::body::Incoming;
 use hyper::service::service_fn;
-use hyper_util::rt::TokioIo;
+use hyper_util::rt::{TokioIo, TokioTimer};
 use tokio::net::TcpListener;
 use tokio::sync::watch;
+use tokio::task::JoinSet;
 
+use super::negotiation::{Exposition, negotiate};
 use super::registry::MetricsRegistry;
+use super::timed_io::TimedIo;
+
+const HEADER_TIMEOUT: Duration = Duration::from_secs(5);
+const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
+// Metrics is a small operational endpoint. Bound task/socket retention even
+// when peers arrive faster than the read/idle deadlines can expire them.
+const MAX_CONNECTIONS: usize = 64;
 
 /// Operational metrics and health HTTP server.
 #[derive(Debug)]
@@ -44,9 +54,21 @@ impl MetricsServer {
         registry: Arc<MetricsRegistry>,
         mut shutdown_rx: watch::Receiver<bool>,
     ) -> std::io::Result<()> {
+        // JoinSet aborts owned connection tasks if this server future is dropped.
+        let mut connections = JoinSet::new();
         loop {
+            if *shutdown_rx.borrow() {
+                break;
+            }
             tokio::select! {
-                res = listener.accept() => {
+                biased;
+                result = shutdown_rx.changed() => {
+                    if result.is_err() || *shutdown_rx.borrow() {
+                        break;
+                    }
+                }
+                _ = connections.join_next(), if !connections.is_empty() => {},
+                res = listener.accept(), if connections.len() < MAX_CONNECTIONS => {
                     let (stream, _) = match res {
                         Ok(conn) => conn,
                         Err(e) => {
@@ -56,10 +78,11 @@ impl MetricsServer {
                         }
                     };
 
-                    let io = TokioIo::new(stream);
+                    let io = TokioIo::new(TimedIo::new(stream));
                     let reg = registry.clone();
+                    let mut connection_shutdown = shutdown_rx.clone();
 
-                    tokio::spawn(async move {
+                    connections.spawn(async move {
                         let service = service_fn(move |req: Request<Incoming>| {
                             let reg = reg.clone();
                             async move {
@@ -67,17 +90,37 @@ impl MetricsServer {
                             }
                         });
 
-                        let _ = hyper::server::conn::http1::Builder::new()
-                            .serve_connection(io, service)
-                            .await;
+                        let mut builder = hyper::server::conn::http1::Builder::new();
+                        builder.timer(TokioTimer::new()).header_read_timeout(HEADER_TIMEOUT);
+                        let connection = builder.serve_connection(io, service);
+                        tokio::pin!(connection);
+                        tokio::select! {
+                            _ = &mut connection => {},
+                            () = async {
+                                while !*connection_shutdown.borrow() {
+                                    if connection_shutdown.changed().await.is_err() {
+                                        break;
+                                    }
+                                }
+                            } => {
+                                connection.as_mut().graceful_shutdown();
+                                let _ = connection.await;
+                            }
+                        }
                     });
                 }
-                _ = shutdown_rx.changed() => {
-                    if *shutdown_rx.borrow() {
-                        break;
-                    }
-                }
             }
+        }
+        drop(listener);
+        // Active responses may drain, but idle/slow peers cannot delay stop indefinitely.
+        if tokio::time::timeout(SHUTDOWN_TIMEOUT, async {
+            while connections.join_next().await.is_some() {}
+        })
+        .await
+        .is_err()
+        {
+            connections.abort_all();
+            while connections.join_next().await.is_some() {}
         }
         Ok(())
     }
@@ -98,33 +141,23 @@ fn handle_request(req: &Request<Incoming>, registry: &MetricsRegistry) -> Respon
 
     match path {
         "/metrics" => {
-            let accept = req
-                .headers()
-                .get(header::ACCEPT)
-                .and_then(|v| v.to_str().ok())
-                .unwrap_or("");
-
-            if accept.contains("application/openmetrics-text") {
-                let body = registry.render_openmetrics();
-                Response::builder()
-                    .status(StatusCode::OK)
-                    .header(
-                        header::CONTENT_TYPE,
-                        "application/openmetrics-text; version=1.0.0; charset=utf-8",
-                    )
-                    .body(Full::new(Bytes::from(body)))
-                    .unwrap_or_else(|_| Response::new(Full::new(Bytes::new())))
-            } else {
-                let body = registry.render_prometheus();
-                Response::builder()
-                    .status(StatusCode::OK)
-                    .header(
-                        header::CONTENT_TYPE,
-                        "text/plain; version=0.0.4; charset=utf-8",
-                    )
-                    .body(Full::new(Bytes::from(body)))
-                    .unwrap_or_else(|_| Response::new(Full::new(Bytes::new())))
-            }
+            let Some(format) = negotiate(req.headers()) else {
+                return Response::builder()
+                    .status(StatusCode::NOT_ACCEPTABLE)
+                    .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
+                    .body(Full::new(Bytes::from("no acceptable metrics format\n")))
+                    .unwrap_or_else(|_| Response::new(Full::new(Bytes::new())));
+            };
+            let body = match format {
+                Exposition::Prometheus => registry.render_prometheus(),
+                Exposition::OpenMetrics => registry.render_openmetrics(),
+            };
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, format.content_type())
+                .header(header::VARY, "Accept")
+                .body(Full::new(Bytes::from(body)))
+                .unwrap_or_else(|_| Response::new(Full::new(Bytes::new())))
         },
         "/healthz" | "/livez" | "/readyz" => Response::builder()
             .status(StatusCode::OK)

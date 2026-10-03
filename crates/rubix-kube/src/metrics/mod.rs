@@ -5,8 +5,10 @@
 
 pub mod adapter;
 pub mod collectors;
+mod negotiation;
 pub mod registry;
 pub mod server;
+mod timed_io;
 pub mod types;
 
 pub use adapter::{COMPONENT_METRICS, DEFAULT_METRICS_TIMEOUT, MetricsAdapter};
