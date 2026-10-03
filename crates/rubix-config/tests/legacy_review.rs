@@ -1,4 +1,32 @@
-use rubix_config::legacy::{extract_service_flags, flags_to_config, rewrite_service_content};
+use rubix_config::legacy::{
+    extract_service_flags, flags_to_config, has_config_flag, rewrite_service_content,
+};
+
+#[test]
+fn unrelated_config_flags_do_not_mark_node_arguments_as_migrated() {
+    let service = "# use --config=/etc/example\nDescription=--config=example\nExecStartPre=/usr/bin/helper --config=/etc/helper.conf\nExecStart=/usr/local/bin/kubesolo --debug\n";
+    assert!(!has_config_flag(service));
+    assert!(has_config_flag(&rewrite_service_content(
+        service,
+        "/etc/kubesolo/config.yaml"
+    )));
+}
+
+#[test]
+fn manager_dependent_expansions_are_rejected_before_conversion() {
+    for service in [
+        "ExecStart=/usr/local/bin/kubesolo --path=/var/lib/%H",
+        "command_args=\"--path=$DATA_DIR\"",
+        "ExecStart=/usr/local/bin/kubesolo --portainer-edge-key=${EDGE_KEY}",
+        "exec kubesolo --path=`pwd`",
+        "exec kubesolo --path=/var/lib/escaped\\ path",
+    ] {
+        assert!(
+            flags_to_config(&extract_service_flags(service), None).is_err(),
+            "service expansion must not be frozen: {service}"
+        );
+    }
+}
 
 #[test]
 fn extraction_preserves_separate_and_explicit_empty_values() {
