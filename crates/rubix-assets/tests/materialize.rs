@@ -435,3 +435,186 @@ fn custom_root_fixture_stays_strictly_within_configured_root() {
 fn materializer_layout_with_traversal() -> rubix_assets::AssetLayout {
     rubix_assets::AssetLayout::canonical().with_path(AssetId::KubeApiserver, "../../../etc/passwd")
 }
+
+#[test]
+#[cfg(unix)]
+fn existing_directory_and_file_symlinks_cannot_redirect_materialization() {
+    for directory in [true, false] {
+        let (inventory, archive) =
+            build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+        let root = TestDir::new("rubix-no-follow-root");
+        let outside = TestDir::new("rubix-no-follow-outside");
+        let protected = outside.path().join("kube-apiserver");
+        fs::write(&protected, b"unmanaged bytes").unwrap();
+        if directory {
+            std::os::unix::fs::symlink(outside.path(), root.path().join("bin")).unwrap();
+        } else {
+            fs::create_dir(root.path().join("bin")).unwrap();
+            std::os::unix::fs::symlink(&protected, root.path().join("bin/kube-apiserver")).unwrap();
+        }
+        let materializer = Materializer::new(inventory, root.path());
+        assert!(
+            materializer
+                .materialize_from_archive(Cursor::new(archive))
+                .is_err()
+        );
+        assert_eq!(fs::read(protected).unwrap(), b"unmanaged bytes");
+        assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 1);
+    }
+}
+
+#[test]
+fn obstruction_preserves_prior_installation_and_leaves_no_new_executable() {
+    for prior_installation in [false, true] {
+        let (inventory, archive) =
+            build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+        let root = TestDir::new("rubix-preflight-failure");
+        fs::create_dir_all(root.path().join("bin/kube-controller-manager")).unwrap();
+        let executable = root.path().join("bin/kube-apiserver");
+        if prior_installation {
+            fs::write(&executable, b"previous installation").unwrap();
+        }
+        let materializer = Materializer::new(inventory, root.path());
+        assert!(
+            materializer
+                .materialize_from_archive(Cursor::new(archive))
+                .is_err()
+        );
+        if prior_installation {
+            assert_eq!(fs::read(executable).unwrap(), b"previous installation");
+        } else {
+            assert!(!executable.exists());
+        }
+        assert!(!fs::read_dir(root.path()).unwrap().any(|entry| {
+            entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .starts_with(".staging-")
+        }));
+    }
+}
+
+#[test]
+fn corrupt_and_truncated_outer_gzip_trailers_fail_before_commit() {
+    for corruption in ["crc", "size", "truncated", "concatenated", "trailing"] {
+        let (inventory, archive) =
+            build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+        let mut archive = gzip(&archive);
+        let length = archive.len();
+        match corruption {
+            "crc" => archive[length - 8] ^= 0x80,
+            "size" => archive[length - 4] ^= 0x80,
+            "concatenated" => archive.extend(gzip(b"second member")),
+            "trailing" => archive.extend(b"junk"),
+            _ => archive.truncate(length - 4),
+        }
+        let root = TestDir::new("rubix-outer-gzip-integrity");
+        assert!(
+            Materializer::new(inventory, root.path())
+                .materialize_from_archive(Cursor::new(archive))
+                .is_err()
+        );
+        assert!(!root.path().join("bin/kube-apiserver").exists());
+    }
+}
+
+#[test]
+fn valid_outer_gzip_supports_short_reader_reads() {
+    struct ShortReads<T>(T);
+    impl<T: std::io::Read> std::io::Read for ShortReads<T> {
+        fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
+            let size = output.len().min(1);
+            self.0.read(&mut output[..size])
+        }
+    }
+    let (inventory, archive) =
+        build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+    let root = TestDir::new("rubix-short-gzip-reads");
+    Materializer::new(inventory, root.path())
+        .materialize_from_archive(ShortReads(Cursor::new(gzip(&archive))))
+        .unwrap();
+    assert!(root.path().join("bin/kube-apiserver").is_file());
+}
+
+#[test]
+#[cfg(unix)]
+fn repeat_materialization_clears_all_special_permission_bits() {
+    use std::os::unix::fs::PermissionsExt;
+    let (inventory, archive) =
+        build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+    let root = TestDir::new("rubix-exact-modes");
+    let materializer = Materializer::new(inventory, root.path());
+    let first = materializer
+        .materialize_from_archive(Cursor::new(&archive))
+        .unwrap();
+    for asset in &first.assets {
+        fs::set_permissions(&asset.path, fs::Permissions::from_mode(asset.mode | 0o7000)).unwrap();
+    }
+    let repeated = materializer
+        .materialize_from_archive(Cursor::new(&archive))
+        .unwrap();
+    for asset in &repeated.assets {
+        assert_eq!(
+            fs::metadata(&asset.path).unwrap().permissions().mode() & 0o7777,
+            asset.mode
+        );
+    }
+}
+
+#[test]
+#[cfg(unix)]
+fn ancestor_replaced_during_payload_read_cannot_redirect_commit() {
+    let (inventory, _) = build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+    let payloads = inventory
+        .bundled_assets()
+        .map(|(id, _, encoding, _)| (id, create_synthetic_payload(id, encoding).1))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let root = TestDir::new("rubix-ancestor-race");
+    let outside = TestDir::new("rubix-ancestor-race-outside");
+    fs::create_dir(root.path().join("bin")).unwrap();
+    fs::write(
+        root.path().join("bin/kube-apiserver"),
+        b"previous installation",
+    )
+    .unwrap();
+    let materializer = Materializer::new(inventory, root.path());
+    let mut replaced = false;
+    let result = materializer.materialize_from_payloads(|id, _| {
+        if !replaced {
+            fs::rename(root.path().join("bin"), root.path().join("original-bin")).unwrap();
+            std::os::unix::fs::symlink(outside.path(), root.path().join("bin")).unwrap();
+            replaced = true;
+        }
+        Ok(Box::new(Cursor::new(payloads[&id].clone())))
+    });
+    assert!(result.is_err());
+    assert_eq!(fs::read_dir(outside.path()).unwrap().count(), 0);
+    assert_eq!(
+        fs::read(root.path().join("original-bin/kube-apiserver")).unwrap(),
+        b"previous installation"
+    );
+}
+
+#[test]
+fn concurrent_materializers_preserve_complete_owned_assets() {
+    let (inventory, archive) =
+        build_synthetic_manifest_and_archive(ONLINE_ARM64_JSON, Variant::Online);
+    let root = TestDir::new("rubix-concurrent-materialization");
+    let materializer = Materializer::new(inventory, root.path());
+    std::thread::scope(|scope| {
+        let first = scope.spawn(|| materializer.materialize_from_archive(Cursor::new(&archive)));
+        let second = scope.spawn(|| materializer.materialize_from_archive(Cursor::new(&archive)));
+        assert_eq!(
+            first.join().unwrap().unwrap().assets,
+            second.join().unwrap().unwrap().assets
+        );
+    });
+    assert!(!fs::read_dir(root.path()).unwrap().any(|entry| {
+        entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".staging-")
+    }));
+}

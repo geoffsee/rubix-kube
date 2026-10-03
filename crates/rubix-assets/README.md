@@ -165,12 +165,12 @@ into configured writable host roots.
 
 - **Path Safety**: Enforces containment within the configured writable root. Directory
   traversal (`..`), empty path segments, Windows drive colons, and leading slashes are rejected.
-- **Staging and Atomicity**: Staged extraction into `<root>/.staging-<pid>-<nanos>` on the same
-  filesystem with RAII cleanup ensures a failed extraction leaves zero partial or usable-looking
-  files at destination.
+- **Staging and Transactions**: Private descriptor-relative staging, destination preflight,
+  a per-root lock and retained originals allow synchronous commit errors to roll back new
+  files and restore the previous installation. Rollback failures retain recovery backups
+  and are explicit errors. Individual renames are atomic; this is not a crash-recovery protocol.
 - **On-disk Reverification**: All written bytes are re-read and hashed from disk prior to final
   atomic commit via `fs::rename`.
 - **Unix Modes**: Enforces executable mode `0o755` (`rwxr-xr-x`) on binaries and payload mode
   `0o644` (`rw-r--r--`) on image archives.
 - **Idempotency**: Repeated materialization preserves file content and permissions.
-

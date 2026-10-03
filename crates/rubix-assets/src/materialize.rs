@@ -8,7 +8,7 @@ use std::{
     collections::BTreeMap,
     fmt,
     fs::{self, File},
-    io::{self, Read, Write},
+    io::{self, Read, Seek, Write},
     path::{Path, PathBuf},
 };
 
@@ -85,6 +85,11 @@ pub enum MaterializationError {
     },
     Inventory(InventoryError),
     Verification(VerificationError),
+    UnsupportedPlatform,
+    RollbackFailed {
+        path: PathBuf,
+        source: io::Error,
+    },
 }
 
 impl fmt::Display for MaterializationError {
@@ -138,6 +143,12 @@ impl fmt::Display for MaterializationError {
             },
             Self::Inventory(err) => write!(f, "inventory error: {err}"),
             Self::Verification(err) => write!(f, "verification error: {err}"),
+            Self::UnsupportedPlatform => write!(f, "safe asset materialization requires Unix"),
+            Self::RollbackFailed { path, source } => write!(
+                f,
+                "asset rollback failed; recovery files retained at '{}': {source}",
+                path.display()
+            ),
         }
     }
 }
@@ -145,7 +156,9 @@ impl fmt::Display for MaterializationError {
 impl std::error::Error for MaterializationError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::ReadOnlyDestination { source, .. } | Self::Io { source, .. } => Some(source),
+            Self::ReadOnlyDestination { source, .. }
+            | Self::Io { source, .. }
+            | Self::RollbackFailed { source, .. } => Some(source),
             Self::Inventory(err) => Some(err),
             Self::Verification(err) => Some(err),
             _ => None,
@@ -331,8 +344,8 @@ impl Materializer {
             return Err(MaterializationError::InvalidLimits);
         }
 
-        let temp_dir = create_staging_dir(&self.root)?;
-        let guard = StagingGuard::new(&temp_dir);
+        let guard = StagingGuard::create(&self.root)?;
+        let temp_dir = &guard.path;
 
         let mut entries = TarReader::new(reader, self.limits)?;
         let mut payloads: BTreeMap<String, Vec<u8>> = BTreeMap::new();
@@ -384,6 +397,7 @@ impl Materializer {
                 entry.kind,
                 encoding,
                 data.as_slice(),
+                &guard.file,
                 &staged_dest,
                 &final_dest,
                 self.limits,
@@ -391,20 +405,7 @@ impl Materializer {
             materialized.push((staged_dest, final_dest, asset));
         }
 
-        // Commit all staged files to their final destinations
-        let mut outcomes = Vec::new();
-        for (staged, final_path, asset) in materialized {
-            if staged.exists() {
-                if let Some(parent) = final_path.parent() {
-                    fs::create_dir_all(parent).map_err(|e| map_io_error(parent, e))?;
-                }
-                fs::rename(&staged, &final_path).map_err(|e| map_io_error(&final_path, e))?;
-            }
-            outcomes.push(asset);
-        }
-
-        guard.disarm();
-        let _ = fs::remove_dir_all(&temp_dir);
+        let outcomes = guard.commit(&self.root, materialized)?;
 
         Ok(MaterializationOutcome {
             root: self.root.clone(),
@@ -442,8 +443,8 @@ impl Materializer {
             return Err(MaterializationError::InvalidLimits);
         }
 
-        let temp_dir = create_staging_dir(&self.root)?;
-        let guard = StagingGuard::new(&temp_dir);
+        let guard = StagingGuard::create(&self.root)?;
+        let temp_dir = &guard.path;
 
         let mut staged_assets = Vec::new();
         for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
@@ -462,6 +463,7 @@ impl Materializer {
                 entry.kind,
                 encoding,
                 &mut reader,
+                &guard.file,
                 &staged_dest,
                 &final_dest,
                 self.limits,
@@ -469,20 +471,7 @@ impl Materializer {
             staged_assets.push((staged_dest, final_dest, asset));
         }
 
-        // Atomically commit all verified staged assets to final destinations
-        let mut outcomes = Vec::new();
-        for (staged, final_path, asset) in staged_assets {
-            if staged.exists() {
-                if let Some(parent) = final_path.parent() {
-                    fs::create_dir_all(parent).map_err(|e| map_io_error(parent, e))?;
-                }
-                fs::rename(&staged, &final_path).map_err(|e| map_io_error(&final_path, e))?;
-            }
-            outcomes.push(asset);
-        }
-
-        guard.disarm();
-        let _ = fs::remove_dir_all(&temp_dir);
+        let outcomes = guard.commit(&self.root, staged_assets)?;
 
         Ok(MaterializationOutcome {
             root: self.root.clone(),
@@ -513,8 +502,8 @@ impl Materializer {
             .ok_or(MaterializationError::MissingAssetPayload(id))?;
 
         let final_dest = self.layout.resolve_destination(&self.root, id)?;
-        let temp_dir = create_staging_dir(&self.root)?;
-        let guard = StagingGuard::new(&temp_dir);
+        let guard = StagingGuard::create(&self.root)?;
+        let temp_dir = &guard.path;
 
         let staged_dest = temp_dir.join(format!("staged-{}", id_tag(id)));
         let asset = materialize_blob_to_path(
@@ -523,22 +512,16 @@ impl Materializer {
             entry.kind,
             blob.encoding,
             &mut reader,
+            &guard.file,
             &staged_dest,
             &final_dest,
             self.limits,
         )?;
 
-        if staged_dest.exists() {
-            if let Some(parent) = final_dest.parent() {
-                fs::create_dir_all(parent).map_err(|e| map_io_error(parent, e))?;
-            }
-            fs::rename(&staged_dest, &final_dest).map_err(|e| map_io_error(&final_dest, e))?;
-        }
-
-        guard.disarm();
-        let _ = fs::remove_dir_all(&temp_dir);
-
-        Ok(asset)
+        guard
+            .commit(&self.root, vec![(staged_dest, final_dest, asset)])?
+            .pop()
+            .ok_or(MaterializationError::MissingAssetPayload(id))
     }
 }
 
@@ -550,6 +533,7 @@ fn materialize_blob_to_path<R: Read>(
     kind: Kind,
     encoding: Encoding,
     mut reader: R,
+    staging: &File,
     staged_path: &Path,
     final_dest: &Path,
     limits: MaterializationLimits,
@@ -565,34 +549,9 @@ fn materialize_blob_to_path<R: Read>(
         Kind::Image => PAYLOAD_PERMISSIONS,
     };
 
-    // If destination already exists, check if existing content & permissions match
-    if final_dest.is_file()
-        && let Ok(existing_bytes) = fs::read(final_dest)
-    {
-        let existing_hash: [u8; 32] = Sha256::digest(&existing_bytes).into();
-        let mode_agrees = check_file_mode(final_dest, expected_mode);
-
-        if (encoding == Encoding::Identity || encoding == Encoding::Gzip)
-            && existing_bytes.len() as u64 == blob.bytes
-            && existing_hash == blob.digest
-        {
-            if !mode_agrees {
-                set_file_mode(final_dest, expected_mode)
-                    .map_err(|e| map_io_error(final_dest, e))?;
-            }
-            return Ok(MaterializedAsset {
-                id,
-                path: final_dest.to_path_buf(),
-                kind,
-                mode: expected_mode,
-                bytes_written: blob.bytes,
-                sha256: blob.digest,
-            });
-        }
-    }
-
-    // Create staged output file
-    let mut out_file = File::create(staged_path).map_err(|e| map_io_error(staged_path, e))?;
+    // Always verify the supplied bytes, even on repeat calls. Existing destinations are
+    // read only during commit, through no-follow descriptors, and never chmodded in place.
+    let mut out_file = create_staged_file(staging, staged_path)?;
 
     let (written_bytes, written_hash) =
         match encoding {
@@ -629,7 +588,6 @@ fn materialize_blob_to_path<R: Read>(
                 }
 
                 if count != blob.bytes {
-                    let _ = fs::remove_file(staged_path);
                     return Err(MaterializationError::SizeMismatch {
                         asset: id,
                         expected: blob.bytes,
@@ -639,7 +597,6 @@ fn materialize_blob_to_path<R: Read>(
 
                 let hash: [u8; 32] = hasher.finalize().into();
                 if hash != blob.digest {
-                    let _ = fs::remove_file(staged_path);
                     return Err(MaterializationError::DigestMismatch {
                         asset: id,
                         expected: blob.digest,
@@ -682,7 +639,6 @@ fn materialize_blob_to_path<R: Read>(
                 }
 
                 if count != blob.bytes {
-                    let _ = fs::remove_file(staged_path);
                     return Err(MaterializationError::SizeMismatch {
                         asset: id,
                         expected: blob.bytes,
@@ -692,7 +648,6 @@ fn materialize_blob_to_path<R: Read>(
 
                 let hash: [u8; 32] = hasher.finalize().into();
                 if hash != blob.digest {
-                    let _ = fs::remove_file(staged_path);
                     return Err(MaterializationError::DigestMismatch {
                         asset: id,
                         expected: blob.digest,
@@ -712,7 +667,6 @@ fn materialize_blob_to_path<R: Read>(
                 let mut decoded_count = 0u64;
                 loop {
                     let read = decoder.read(&mut buffer).map_err(|e| {
-                        let _ = fs::remove_file(staged_path);
                         MaterializationError::DecompressionFailed {
                             asset: id,
                             encoding,
@@ -729,7 +683,6 @@ fn materialize_blob_to_path<R: Read>(
                         },
                     )?;
                     if decoded_count > limits.max_asset_bytes {
-                        let _ = fs::remove_file(staged_path);
                         return Err(MaterializationError::BudgetExceeded {
                             limit: limits.max_asset_bytes,
                             requested: decoded_count,
@@ -777,7 +730,6 @@ fn materialize_blob_to_path<R: Read>(
                 }
 
                 if count != blob.bytes {
-                    let _ = fs::remove_file(staged_path);
                     return Err(MaterializationError::SizeMismatch {
                         asset: id,
                         expected: blob.bytes,
@@ -787,7 +739,6 @@ fn materialize_blob_to_path<R: Read>(
 
                 let hash: [u8; 32] = hasher.finalize().into();
                 if hash != blob.digest {
-                    let _ = fs::remove_file(staged_path);
                     return Err(MaterializationError::DigestMismatch {
                         asset: id,
                         expected: blob.digest,
@@ -803,7 +754,6 @@ fn materialize_blob_to_path<R: Read>(
                         Ok(0) => break,
                         Ok(_) => {},
                         Err(e) => {
-                            let _ = fs::remove_file(staged_path);
                             return Err(MaterializationError::DecompressionFailed {
                                 asset: id,
                                 encoding,
@@ -826,15 +776,17 @@ fn materialize_blob_to_path<R: Read>(
     out_file
         .sync_all()
         .map_err(|e| map_io_error(staged_path, e))?;
-    drop(out_file);
-
-    // Set executable or payload permissions on staged output
-    set_file_mode(staged_path, expected_mode).map_err(|e| map_io_error(staged_path, e))?;
+    set_file_mode(&out_file, expected_mode).map_err(|e| map_io_error(staged_path, e))?;
 
     // Reverification: read the file actually written to disk to prove disk integrity
-    let on_disk_bytes = fs::read(staged_path).map_err(|e| map_io_error(staged_path, e))?;
+    out_file
+        .rewind()
+        .map_err(|e| map_io_error(staged_path, e))?;
+    let mut on_disk_bytes = Vec::new();
+    out_file
+        .read_to_end(&mut on_disk_bytes)
+        .map_err(|e| map_io_error(staged_path, e))?;
     if on_disk_bytes.len() as u64 != written_bytes {
-        let _ = fs::remove_file(staged_path);
         return Err(MaterializationError::SizeMismatch {
             asset: id,
             expected: written_bytes,
@@ -843,7 +795,6 @@ fn materialize_blob_to_path<R: Read>(
     }
     let on_disk_hash: [u8; 32] = Sha256::digest(&on_disk_bytes).into();
     if on_disk_hash != written_hash {
-        let _ = fs::remove_file(staged_path);
         return Err(MaterializationError::DigestMismatch {
             asset: id,
             expected: written_hash,
@@ -885,44 +836,298 @@ fn validate_and_join_path(root: &Path, rel: &str) -> Result<PathBuf, Materializa
     Ok(joined)
 }
 
-/// Create a private staging directory within `root`.
-fn create_staging_dir(root: &Path) -> Result<PathBuf, MaterializationError> {
-    fs::create_dir_all(root).map_err(|e| map_io_error(root, e))?;
-
-    let unique_id = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_nanos());
-    let staging_path = root.join(format!(".staging-{}-{unique_id}", std::process::id()));
-
-    fs::create_dir(&staging_path).map_err(|e| map_io_error(&staging_path, e))?;
-    Ok(staging_path)
-}
-
-/// RAII cleanup guard for staging directory.
+/// Pins owned directories and serializes materializers of the same root.
 struct StagingGuard {
     path: PathBuf,
-    disarmed: bool,
+    name: String,
+    root_dir: File,
+    file: File,
+    _lock: File,
+    retain: bool,
 }
 
 impl StagingGuard {
-    fn new(path: &Path) -> Self {
-        Self {
-            path: path.to_path_buf(),
-            disarmed: false,
+    #[cfg(unix)]
+    fn create(root: &Path) -> Result<Self, MaterializationError> {
+        use rustix::fs::{CWD, FlockOperation, Mode, OFlags, flock, mkdirat, openat};
+        fs::create_dir_all(root).map_err(|e| map_io_error(root, e))?;
+        let root_dir = File::from(
+            openat(
+                CWD,
+                root,
+                OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|e| map_io_error(root, e.into()))?,
+        );
+        let lock_path = root.join(".materialization.lock");
+        let lock = open_materialization_lock(&root_dir, &lock_path)?;
+        if !lock
+            .metadata()
+            .map_err(|e| map_io_error(&lock_path, e))?
+            .is_file()
+        {
+            return Err(MaterializationError::PathEscapesRoot(lock_path));
         }
+        flock(&lock, FlockOperation::LockExclusive)
+            .map_err(|e| map_io_error(&lock_path, e.into()))?;
+        let unique_id = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_nanos());
+        let name = format!(".staging-{}-{unique_id}", std::process::id());
+        let path = root.join(&name);
+        mkdirat(
+            &root_dir,
+            name.as_str(),
+            Mode::RUSR | Mode::WUSR | Mode::XUSR,
+        )
+        .map_err(|e| map_io_error(&path, e.into()))?;
+        let opened = openat(
+            &root_dir,
+            name.as_str(),
+            OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+            Mode::empty(),
+        );
+        let file = match opened {
+            Ok(fd) => File::from(fd),
+            Err(source) => {
+                let _ =
+                    rustix::fs::unlinkat(&root_dir, name.as_str(), rustix::fs::AtFlags::REMOVEDIR);
+                return Err(map_io_error(&path, source.into()));
+            },
+        };
+        Ok(Self {
+            path,
+            name,
+            root_dir,
+            file,
+            _lock: lock,
+            retain: false,
+        })
     }
 
-    fn disarm(mut self) {
-        self.disarmed = true;
+    #[cfg(not(unix))]
+    fn create(_root: &Path) -> Result<Self, MaterializationError> {
+        Err(MaterializationError::UnsupportedPlatform)
+    }
+
+    /// Preflight every destination, then retain originals until the whole batch succeeds.
+    #[cfg(unix)]
+    fn commit(
+        mut self,
+        root: &Path,
+        staged: Vec<(PathBuf, PathBuf, MaterializedAsset)>,
+    ) -> Result<Vec<MaterializedAsset>, MaterializationError> {
+        use rustix::fs::{AtFlags, FileType, statat};
+        let mut targets = Vec::new();
+        let mut paths = std::collections::BTreeSet::new();
+        for (source, destination, asset) in staged {
+            if !paths.insert(destination.clone()) {
+                return Err(MaterializationError::InvalidRelativePath(
+                    destination.display().to_string(),
+                ));
+            }
+            let (parent, name) = destination_parent(&self.root_dir, root, &destination)?;
+            let had_existing = match statat(&parent, &name, AtFlags::SYMLINK_NOFOLLOW) {
+                Ok(stat) if FileType::from_raw_mode(stat.st_mode) == FileType::RegularFile => true,
+                Ok(_) => return Err(MaterializationError::PathEscapesRoot(destination)),
+                Err(rustix::io::Errno::NOENT) => false,
+                Err(e) => return Err(map_io_error(&destination, e.into())),
+            };
+            let source = source
+                .file_name()
+                .ok_or_else(|| {
+                    MaterializationError::InvalidRelativePath(source.display().to_string())
+                })?
+                .to_owned();
+            let backup = format!("backup-{}", id_tag(asset.id));
+            targets.push(CommitTarget {
+                parent,
+                name,
+                source,
+                backup,
+                had_existing,
+                backed_up: false,
+                installed: false,
+                asset,
+            });
+        }
+        for index in 0..targets.len() {
+            if let Err(error) = targets[index].install(&self.file) {
+                self.rollback(&targets[..=index])?;
+                return Err(error);
+            }
+        }
+        Ok(targets.into_iter().map(|target| target.asset).collect())
+    }
+
+    #[cfg(unix)]
+    fn rollback(&mut self, targets: &[CommitTarget]) -> Result<(), MaterializationError> {
+        let mut rollback_error = None;
+        for target in targets.iter().rev() {
+            if let Err(source) = target.rollback(&self.file) {
+                rollback_error = Some(source);
+            }
+        }
+        if let Some(source) = rollback_error {
+            self.retain = true;
+            return Err(MaterializationError::RollbackFailed {
+                path: self.path.clone(),
+                source: source.into(),
+            });
+        }
+        Ok(())
+    }
+
+    #[cfg(not(unix))]
+    fn commit(
+        self,
+        _root: &Path,
+        _staged: Vec<(PathBuf, PathBuf, MaterializedAsset)>,
+    ) -> Result<Vec<MaterializedAsset>, MaterializationError> {
+        Err(MaterializationError::UnsupportedPlatform)
     }
 }
 
 impl Drop for StagingGuard {
     fn drop(&mut self) {
-        if !self.disarmed && self.path.exists() {
-            let _ = fs::remove_dir_all(&self.path);
+        #[cfg(unix)]
+        if !self.retain {
+            use rustix::fs::{AtFlags, unlinkat};
+            // Never walk the staging pathname: it may have been replaced by a symlink.
+            for entry in catalog() {
+                for prefix in ["staged", "backup"] {
+                    let name = format!("{prefix}-{}", id_tag(entry.id));
+                    let _ = unlinkat(&self.file, name.as_str(), AtFlags::empty());
+                }
+            }
+            let _ = unlinkat(&self.root_dir, self.name.as_str(), AtFlags::REMOVEDIR);
         }
     }
+}
+
+#[cfg(unix)]
+struct CommitTarget {
+    parent: File,
+    name: std::ffi::OsString,
+    source: std::ffi::OsString,
+    backup: String,
+    had_existing: bool,
+    backed_up: bool,
+    installed: bool,
+    asset: MaterializedAsset,
+}
+
+#[cfg(unix)]
+impl CommitTarget {
+    fn install(&mut self, staging: &File) -> Result<(), MaterializationError> {
+        use rustix::fs::renameat;
+        if self.had_existing {
+            renameat(&self.parent, &self.name, staging, self.backup.as_str())
+                .map_err(|e| map_io_error(&self.asset.path, e.into()))?;
+            self.backed_up = true;
+        }
+        renameat(staging, &self.source, &self.parent, &self.name)
+            .map_err(|e| map_io_error(&self.asset.path, e.into()))?;
+        self.installed = true;
+        Ok(())
+    }
+
+    fn rollback(&self, staging: &File) -> rustix::io::Result<()> {
+        use rustix::fs::{AtFlags, renameat, unlinkat};
+        if self.backed_up {
+            renameat(staging, self.backup.as_str(), &self.parent, &self.name)
+        } else if self.installed {
+            unlinkat(&self.parent, &self.name, AtFlags::empty())
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[cfg(unix)]
+fn open_materialization_lock(root: &File, path: &Path) -> Result<File, MaterializationError> {
+    use rustix::fs::{Mode, OFlags, openat};
+    let flags = OFlags::RDWR | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC;
+    // Separate exclusive creation from opening an existing lock. In particular,
+    // concurrent O_CREAT|O_NOFOLLOW calls can report ENOENT on Darwin.
+    match openat(
+        root,
+        ".materialization.lock",
+        flags | OFlags::CREATE | OFlags::EXCL,
+        Mode::RUSR | Mode::WUSR,
+    ) {
+        Ok(fd) => Ok(File::from(fd)),
+        Err(rustix::io::Errno::EXIST) => {
+            openat(root, ".materialization.lock", flags, Mode::empty())
+                .map(File::from)
+                .map_err(|e| map_io_error(path, e.into()))
+        },
+        Err(e) => Err(map_io_error(path, e.into())),
+    }
+}
+
+#[cfg(unix)]
+fn destination_parent(
+    root_dir: &File,
+    root: &Path,
+    destination: &Path,
+) -> Result<(File, std::ffi::OsString), MaterializationError> {
+    use rustix::fs::{Mode, OFlags, mkdirat, openat};
+    let relative = destination
+        .strip_prefix(root)
+        .map_err(|_| MaterializationError::PathEscapesRoot(destination.to_owned()))?;
+    let mut parent = root_dir.try_clone().map_err(|e| map_io_error(root, e))?;
+    let components = relative.components().collect::<Vec<_>>();
+    let mut observed = root.to_owned();
+    for (index, component) in components.iter().enumerate() {
+        let std::path::Component::Normal(name) = component else {
+            return Err(MaterializationError::PathEscapesRoot(
+                destination.to_owned(),
+            ));
+        };
+        observed.push(name);
+        if index + 1 == components.len() {
+            return Ok((parent, name.to_os_string()));
+        }
+        match mkdirat(&parent, *name, Mode::from_raw_mode(0o755)) {
+            Ok(()) | Err(rustix::io::Errno::EXIST) => {},
+            Err(e) => return Err(map_io_error(&observed, e.into())),
+        }
+        parent = File::from(
+            openat(
+                &parent,
+                *name,
+                OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|e| map_io_error(&observed, e.into()))?,
+        );
+    }
+    Err(MaterializationError::PathEscapesRoot(
+        destination.to_owned(),
+    ))
+}
+
+#[cfg(unix)]
+fn create_staged_file(staging: &File, path: &Path) -> Result<File, MaterializationError> {
+    use rustix::fs::{Mode, OFlags, openat};
+    let name = path
+        .file_name()
+        .ok_or_else(|| MaterializationError::PathEscapesRoot(path.to_owned()))?;
+    openat(
+        staging,
+        name,
+        OFlags::RDWR | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+        Mode::RUSR | Mode::WUSR,
+    )
+    .map(File::from)
+    .map_err(|e| map_io_error(path, e.into()))
+}
+
+#[cfg(not(unix))]
+fn create_staged_file(_staging: &File, _path: &Path) -> Result<File, MaterializationError> {
+    Err(MaterializationError::UnsupportedPlatform)
 }
 
 fn id_tag(id: AssetId) -> &'static str {
@@ -964,29 +1169,14 @@ fn map_io_error(path: &Path, source: io::Error) -> MaterializationError {
 }
 
 #[cfg(unix)]
-fn set_file_mode(path: &Path, mode: u32) -> io::Result<()> {
+fn set_file_mode(file: &File, mode: u32) -> io::Result<()> {
     use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(path, fs::Permissions::from_mode(mode))
+    file.set_permissions(fs::Permissions::from_mode(mode))
 }
 
 #[cfg(not(unix))]
-fn set_file_mode(_path: &Path, _mode: u32) -> io::Result<()> {
+fn set_file_mode(_file: &File, _mode: u32) -> io::Result<()> {
     Ok(())
-}
-
-#[cfg(unix)]
-fn check_file_mode(path: &Path, expected: u32) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-    if let Ok(meta) = fs::metadata(path) {
-        (meta.permissions().mode() & 0o777) == expected
-    } else {
-        false
-    }
-}
-
-#[cfg(not(unix))]
-fn check_file_mode(_path: &Path, _expected: u32) -> bool {
-    true
 }
 
 // ---------------------------------------------------------------------------
@@ -995,7 +1185,7 @@ fn check_file_mode(_path: &Path, _expected: u32) -> bool {
 
 enum ArchiveReader<R> {
     Plain(io::Chain<io::Cursor<Vec<u8>>, R>),
-    Gzip(flate2::read::GzDecoder<io::Chain<io::Cursor<Vec<u8>>, R>>),
+    Gzip(flate2::bufread::GzDecoder<io::BufReader<io::Chain<io::Cursor<Vec<u8>>, R>>>),
 }
 
 impl<R: Read> Read for ArchiveReader<R> {
@@ -1026,13 +1216,12 @@ impl<R: Read> TarReader<R> {
     fn new(mut reader: R, limits: MaterializationLimits) -> Result<Self, MaterializationError> {
         // Detect gzip header (0x1f, 0x8b)
         let mut header = [0u8; 2];
-        let n = reader
-            .read(&mut header)
+        let n = read_exact_or_eof(&mut reader, &mut header)
             .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
 
         let chained = io::Cursor::new(header[..n].to_vec()).chain(reader);
         let archive_reader = if n == 2 && header[0] == 0x1f && header[1] == 0x8b {
-            ArchiveReader::Gzip(flate2::read::GzDecoder::new(chained))
+            ArchiveReader::Gzip(flate2::bufread::GzDecoder::new(io::BufReader::new(chained)))
         } else {
             ArchiveReader::Plain(chained)
         };
@@ -1057,8 +1246,9 @@ impl<R: Read> TarReader<R> {
             let n = read_exact_or_eof(&mut self.reader, &mut block)
                 .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
             if n == 0 {
-                self.finished = true;
-                return Ok(None);
+                return Err(MaterializationError::CorruptArchive(
+                    "missing tar EOF blocks".to_string(),
+                ));
             }
             if n < 512 {
                 return Err(MaterializationError::CorruptArchive(
@@ -1069,7 +1259,15 @@ impl<R: Read> TarReader<R> {
             // Two consecutive zero blocks signal end of archive
             if block.iter().all(|&b| b == 0) {
                 // Read next block to check for second zero block
-                let _ = self.reader.read_exact(&mut block);
+                self.reader
+                    .read_exact(&mut block)
+                    .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+                if block.iter().any(|&byte| byte != 0) {
+                    return Err(MaterializationError::CorruptArchive(
+                        "missing second tar EOF block".to_string(),
+                    ));
+                }
+                self.finish()?;
                 self.finished = true;
                 return Ok(None);
             }
@@ -1129,6 +1327,48 @@ impl<R: Read> TarReader<R> {
                 padding,
             }));
         }
+    }
+
+    /// Tar EOF is provisional until the bounded outer stream has ended cleanly.
+    fn finish(&mut self) -> Result<(), MaterializationError> {
+        let mut trailing = [0; 8192];
+        let mut trailing_bytes = 0u64;
+        loop {
+            let read = self
+                .reader
+                .read(&mut trailing)
+                .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+            if read == 0 {
+                break;
+            }
+            trailing_bytes = trailing_bytes.saturating_add(read as u64);
+            if trailing_bytes > self.limits.max_total_bytes {
+                return Err(MaterializationError::BudgetExceeded {
+                    limit: self.limits.max_total_bytes,
+                    requested: trailing_bytes,
+                });
+            }
+            if trailing[..read].iter().any(|&byte| byte != 0) {
+                return Err(MaterializationError::CorruptArchive(
+                    "nonzero data after tar EOF".to_string(),
+                ));
+            }
+        }
+        if let ArchiveReader::Gzip(decoder) = &mut self.reader {
+            // One RFC1952 member: buffered decoding preserves bytes after its trailer.
+            let mut probe = [0];
+            if decoder
+                .get_mut()
+                .read(&mut probe)
+                .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?
+                != 0
+            {
+                return Err(MaterializationError::CorruptArchive(
+                    "data after outer gzip member".to_string(),
+                ));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -1220,4 +1460,119 @@ fn parse_tar_name(block: &[u8; 512]) -> Result<String, MaterializationError> {
 fn extract_null_terminated(bytes: &[u8]) -> Result<String, std::str::Utf8Error> {
     let len = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
     std::str::from_utf8(&bytes[..len]).map(str::to_string)
+}
+
+#[cfg(all(test, unix))]
+mod transaction_tests {
+    use super::*;
+
+    #[test]
+    fn rollback_failure_retains_recovery_backup() {
+        let root = std::env::temp_dir().join(format!(
+            "rubix-retained-backup-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(root.join("bin/kube-apiserver")).unwrap();
+        let mut guard = StagingGuard::create(&root).unwrap();
+        let backup = guard.path.join("backup-kube-apiserver");
+        create_staged_file(&guard.file, &backup)
+            .unwrap()
+            .write_all(b"original")
+            .unwrap();
+        let target = CommitTarget {
+            parent: File::open(root.join("bin")).unwrap(),
+            name: "kube-apiserver".into(),
+            source: "staged-kube-apiserver".into(),
+            backup: "backup-kube-apiserver".into(),
+            had_existing: true,
+            backed_up: true,
+            installed: false,
+            asset: MaterializedAsset {
+                id: AssetId::KubeApiserver,
+                path: root.join("bin/kube-apiserver"),
+                kind: Kind::Executable,
+                mode: EXECUTABLE_PERMISSIONS,
+                bytes_written: 8,
+                sha256: [0; 32],
+            },
+        };
+        assert!(matches!(
+            guard.rollback(&[target]),
+            Err(MaterializationError::RollbackFailed { .. })
+        ));
+        drop(guard);
+        assert_eq!(fs::read(backup).unwrap(), b"original");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn late_commit_error_rolls_back_new_and_replaced_files() {
+        for replace_first in [false, true] {
+            let root = std::env::temp_dir().join(format!(
+                "rubix-rollback-{}-{}-{}",
+                std::process::id(),
+                replace_first,
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            fs::create_dir_all(root.join("bin")).unwrap();
+            let first = root.join("bin/kube-apiserver");
+            let second = root.join("bin/kube-controller-manager");
+            if replace_first {
+                fs::write(&first, b"original-first").unwrap();
+            }
+            fs::write(&second, b"original-second").unwrap();
+            let guard = StagingGuard::create(&root).unwrap();
+            let staged_first = guard.path.join("staged-kube-apiserver");
+            create_staged_file(&guard.file, &staged_first)
+                .unwrap()
+                .write_all(b"new-first")
+                .unwrap();
+            // The second verified staging file disappears before its rename. The real
+            // filesystem error occurs after the first destination has been committed.
+            let staged_second = guard.path.join("staged-kube-controller-manager");
+            let assets = [
+                (staged_first, first.clone(), AssetId::KubeApiserver),
+                (
+                    staged_second,
+                    second.clone(),
+                    AssetId::KubeControllerManager,
+                ),
+            ]
+            .into_iter()
+            .map(|(staged, path, id)| {
+                let asset = MaterializedAsset {
+                    id,
+                    path: path.clone(),
+                    kind: Kind::Executable,
+                    mode: EXECUTABLE_PERMISSIONS,
+                    bytes_written: 9,
+                    sha256: [0; 32],
+                };
+                (staged, path, asset)
+            })
+            .collect();
+            assert!(guard.commit(&root, assets).is_err());
+            if replace_first {
+                assert_eq!(fs::read(&first).unwrap(), b"original-first");
+            } else {
+                assert!(!first.exists());
+            }
+            assert_eq!(fs::read(second).unwrap(), b"original-second");
+            assert!(!fs::read_dir(&root).unwrap().any(|entry| {
+                entry
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".staging-")
+            }));
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
 }
