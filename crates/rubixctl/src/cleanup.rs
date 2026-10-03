@@ -37,7 +37,7 @@ pub const RETAINED_STATE: [&str; 4] = PURGE_STATE;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CleanupKind {
     Reset,
-    Uninstall { purge: bool },
+    Uninstall { purge: bool, keep_config: bool },
 }
 
 /// Exact removal/retention decision for the entries present on disk.
@@ -68,7 +68,7 @@ pub fn validate_data_path(path: &Path) -> Result<(), String> {
 
 /// Computes the plan from the owned entries that exist under `data`.
 pub fn plan_cleanup(kind: CleanupKind, data: &Path) -> CleanupPlan {
-    let purge = matches!(kind, CleanupKind::Uninstall { purge: true });
+    let purge = matches!(kind, CleanupKind::Uninstall { purge: true, .. });
     let mut plan = CleanupPlan::default();
     let exists = |p: &Path| p.symlink_metadata().is_ok();
     for name in RUNTIME_STATE {
@@ -151,8 +151,8 @@ fn announce(
     }
     let what = match kind {
         CleanupKind::Reset => "reset cluster state",
-        CleanupKind::Uninstall { purge: true } => "uninstall and PURGE all Rubix data",
-        CleanupKind::Uninstall { purge: false } => "uninstall Rubix",
+        CleanupKind::Uninstall { purge: true, .. } => "uninstall and PURGE all Rubix data",
+        CleanupKind::Uninstall { purge: false, .. } => "uninstall Rubix",
     };
     confirm(&format!("  Really {what}?"), input, stderr)
 }
@@ -198,7 +198,29 @@ pub fn run_host_cleanup(
     }
     if matches!(kind, CleanupKind::Uninstall { .. }) {
         report.removed.extend(host.remove_service_artifacts()?);
-        if matches!(kind, CleanupKind::Uninstall { purge: true }) {
+        if let CleanupKind::Uninstall {
+            keep_config: false, ..
+        } = kind
+        {
+            let config_path = PathBuf::from("/etc/kubesolo/config.yaml");
+            if config_path.is_file() {
+                remove_entry(&config_path)?;
+                report.removed.push(config_path);
+            }
+            let config_bak = PathBuf::from("/etc/kubesolo/config.yaml.bak");
+            if config_bak.is_file() {
+                remove_entry(&config_bak)?;
+                report.removed.push(config_bak);
+            }
+            let config_dir = PathBuf::from("/etc/kubesolo");
+            if config_dir.is_dir()
+                && fs::read_dir(&config_dir).is_ok_and(|entries| entries.count() == 0)
+            {
+                let _ = fs::remove_dir(&config_dir);
+                report.removed.push(config_dir);
+            }
+        }
+        if matches!(kind, CleanupKind::Uninstall { purge: true, .. }) {
             // Only removes the directory when nothing foreign remains in it.
             let _ = fs::remove_dir(data);
         }
@@ -251,7 +273,7 @@ pub fn run_container_cleanup(
             run(runner, &["start", &name])?;
             writeln!(stderr, "  [ok] Cluster state reset; container restarted")?;
         },
-        CleanupKind::Uninstall { purge } => {
+        CleanupKind::Uninstall { purge, .. } => {
             let _ = run(runner, &["rm", &name]);
             for p in &plan.remove {
                 remove_entry(p)?;
@@ -497,7 +519,10 @@ mod tests {
         };
         let r = run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall { purge: false },
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -519,7 +544,10 @@ mod tests {
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -544,7 +572,10 @@ mod tests {
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -658,7 +689,10 @@ mod tests {
             &mut r,
             "docker",
             &spec,
-            CleanupKind::Uninstall { purge: false },
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -705,5 +739,27 @@ mod tests {
         fn retain_or_empty(&self) -> Vec<PathBuf> {
             self.retained.clone()
         }
+    }
+
+    #[test]
+    fn uninstall_keeps_config_when_requested() {
+        let d = tree();
+        let mut h = FakeHost::default();
+        let r = run_host_cleanup(
+            &mut h,
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: true,
+            },
+            d.path(),
+            true,
+            &mut io::empty().lock_empty(),
+            &mut Vec::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            names(d.path(), &r.retain_or_empty()),
+            ["backups", "container.spec", "pki", "storage"]
+        );
     }
 }
