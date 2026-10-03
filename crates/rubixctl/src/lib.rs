@@ -4,6 +4,7 @@ pub mod check_workflow;
 pub mod completion;
 pub mod contract;
 pub mod download;
+pub mod install;
 mod parse;
 pub mod preparation;
 pub mod service;
@@ -21,6 +22,7 @@ pub use contract::{
     UninstallOptions, UpgradeOptions,
 };
 pub use download::execute_download;
+pub use install::execute_install;
 pub use parse::{Command, HelpTopic, ParseError, parse_command};
 pub use service::{
     CustomServicePaths, InitBackend, LifecycleAction, LifecyclePlan, RunMode, ServiceConfig,
