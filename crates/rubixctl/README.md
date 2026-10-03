@@ -132,6 +132,13 @@ disposable managed runtime root/state. It retains runtime executables, image
 archives, registry configuration, PKI and `local-path-storage` volume data.
 Ordinary uninstall retains installation data; `--purge` explicitly removes the
 selected instance's owned state, including upgrade receipts and recovery backups.
+Uninstall removes the selected `config.yaml` and `config.yaml.bak` unless
+`--keep-config` is set, including when combined with `--purge`. Host commands select
+`/etc/kubesolo`; container commands select only an explicit configuration bind
+recorded in `container.spec`, preserving unrelated host configuration. Named volumes
+and noncanonical configuration bindings require explicit operator cleanup and fail
+before lifecycle effects. Other files in the configuration directory are retained.
+Library cleanup without an explicit configuration directory performs no configuration I/O.
 Reset and ordinary uninstall retain those recovery records. The upgrade lock
 file remains in place so concurrent operations cannot acquire a different inode.
 An active pending or committing upgrade receipt blocks reset and ordinary

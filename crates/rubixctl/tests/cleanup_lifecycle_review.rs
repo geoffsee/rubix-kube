@@ -112,7 +112,10 @@ fn shared_upgrade_lock_refuses_host_and_container_cleanup_before_effects() {
             &mut runner,
             "docker",
             &spec,
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false
+            },
             &data,
             true,
             &mut io::empty(),
@@ -130,8 +133,14 @@ fn active_recovery_receipts_block_reset_and_uninstall_but_explicit_purge_can_dis
     for receipt in [".upgrade-pending", ".upgrade-committing"] {
         for kind in [
             CleanupKind::Reset,
-            CleanupKind::Uninstall { purge: false },
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
         ] {
             for container in [false, true] {
                 let (root, config, _) = fixture(InitBackend::Systemd);
@@ -166,7 +175,12 @@ fn active_recovery_receipts_block_reset_and_uninstall_but_explicit_purge_can_dis
                         &mut Vec::new(),
                     )
                 };
-                if kind == (CleanupKind::Uninstall { purge: true }) {
+                if kind
+                    == (CleanupKind::Uninstall {
+                        purge: true,
+                        keep_config: false,
+                    })
+                {
                     result.unwrap();
                     assert!(!data.join(receipt).exists());
                     assert!(data.join(".upgrade.lock").exists());
@@ -215,7 +229,13 @@ fn expected_commands(config: &ServiceConfig, action: LifecycleAction) -> Vec<Str
 #[test]
 fn all_detected_backends_unregister_before_artifact_deletion_and_reset_only_restarts() {
     for backend in BACKENDS {
-        for kind in [CleanupKind::Reset, CleanupKind::Uninstall { purge: false }] {
+        for kind in [
+            CleanupKind::Reset,
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
+        ] {
             let (root, config, artifacts) = fixture(backend);
             let data = root.path().join("data");
             let mut expected = if kind == CleanupKind::Reset {
@@ -274,7 +294,10 @@ fn lifecycle_failures_abort_before_state_and_artifact_removal() {
             let mut host = ServiceHost::new(&mut runner, config).unwrap();
             let result = run_host_cleanup(
                 &mut host,
-                CleanupKind::Uninstall { purge: true },
+                CleanupKind::Uninstall {
+                    purge: true,
+                    keep_config: false,
+                },
                 &data,
                 true,
                 &mut io::empty(),
@@ -325,7 +348,10 @@ fn cache_reload_failure_after_definition_removal_is_reported() {
         let mut host = ServiceHost::new(&mut runner, config).unwrap();
         let result = run_host_cleanup(
             &mut host,
-            CleanupKind::Uninstall { purge: false },
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
             &data,
             true,
             &mut io::empty(),
@@ -358,7 +384,10 @@ fn openrc_cleanup_preserves_an_unused_custom_environment_file() {
     let mut host = ServiceHost::new(&mut runner, config).unwrap();
     run_host_cleanup(
         &mut host,
-        CleanupKind::Uninstall { purge: false },
+        CleanupKind::Uninstall {
+            purge: false,
+            keep_config: false,
+        },
         &data,
         true,
         &mut io::empty(),

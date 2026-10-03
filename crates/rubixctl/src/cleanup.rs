@@ -53,7 +53,7 @@ pub const RETAINED_STATE: [&str; 8] = PURGE_STATE;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CleanupKind {
     Reset,
-    Uninstall { purge: bool },
+    Uninstall { purge: bool, keep_config: bool },
 }
 
 /// Exact removal/retention decision for the entries present on disk.
@@ -84,7 +84,7 @@ pub fn validate_data_path(path: &Path) -> Result<(), String> {
 
 /// Computes the plan from the owned entries that exist under `data`.
 pub fn plan_cleanup(kind: CleanupKind, data: &Path) -> CleanupPlan {
-    let purge = matches!(kind, CleanupKind::Uninstall { purge: true });
+    let purge = matches!(kind, CleanupKind::Uninstall { purge: true, .. });
     let mut plan = CleanupPlan::default();
     let exists = |p: &Path| p.symlink_metadata().is_ok();
     for name in RUNTIME_STATE {
@@ -93,7 +93,7 @@ pub fn plan_cleanup(kind: CleanupKind, data: &Path) -> CleanupPlan {
         }
         let p = data.join(name);
         if exists(&p) {
-            if kind == (CleanupKind::Uninstall { purge: false }) {
+            if matches!(kind, CleanupKind::Uninstall { purge: false, .. }) {
                 plan.retain.push(p);
             } else {
                 plan.remove.push(p);
@@ -130,7 +130,7 @@ pub trait CleanupHost {
 
 fn lock_cleanup(kind: CleanupKind, data: &Path) -> io::Result<fs::File> {
     let lock = crate::upgrade::lock_installation(data)?;
-    if kind != (CleanupKind::Uninstall { purge: true }) {
+    if !matches!(kind, CleanupKind::Uninstall { purge: true, .. }) {
         for name in [".upgrade-pending", ".upgrade-committing"] {
             let receipt = data.join(name);
             match receipt.symlink_metadata() {
@@ -198,8 +198,8 @@ fn announce(
     }
     let what = match kind {
         CleanupKind::Reset => "reset cluster state",
-        CleanupKind::Uninstall { purge: true } => "uninstall and PURGE all Rubix data",
-        CleanupKind::Uninstall { purge: false } => "uninstall Rubix",
+        CleanupKind::Uninstall { purge: true, .. } => "uninstall and PURGE all Rubix data",
+        CleanupKind::Uninstall { purge: false, .. } => "uninstall Rubix",
     };
     confirm(&format!("  Really {what}?"), input, stderr)
 }
@@ -214,10 +214,26 @@ pub fn run_host_cleanup(
     input: &mut dyn BufRead,
     stderr: &mut dyn Write,
 ) -> io::Result<CleanupReport> {
+    run_host_cleanup_with_configuration(host, kind, data, None, force, input, stderr)
+}
+
+/// Host cleanup with an explicitly selected configuration directory.
+/// Library callers without a selected directory perform no configuration I/O.
+#[allow(clippy::too_many_arguments)]
+pub fn run_host_cleanup_with_configuration(
+    host: &mut dyn CleanupHost,
+    kind: CleanupKind,
+    data: &Path,
+    configuration: Option<&Path>,
+    force: bool,
+    input: &mut dyn BufRead,
+    stderr: &mut dyn Write,
+) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     let _lock = lock_cleanup(kind, data)?;
-    let plan = plan_cleanup(kind, data);
+    let mut plan = plan_cleanup(kind, data);
     validate_removal_ancestors(data, &plan)?;
+    add_configuration_plan(kind, configuration, &mut plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -258,7 +274,7 @@ pub fn run_host_cleanup(
     }
     if matches!(kind, CleanupKind::Uninstall { .. }) {
         report.removed.extend(host.remove_service_artifacts()?);
-        if matches!(kind, CleanupKind::Uninstall { purge: true }) {
+        if matches!(kind, CleanupKind::Uninstall { purge: true, .. }) {
             // Only removes the directory when nothing foreign remains in it.
             let _ = fs::remove_dir(data);
         }
@@ -281,10 +297,29 @@ pub fn run_container_cleanup(
     input: &mut dyn BufRead,
     stderr: &mut dyn Write,
 ) -> io::Result<CleanupReport> {
+    run_container_cleanup_with_configuration(
+        runner, engine, spec, kind, data, None, force, input, stderr,
+    )
+}
+
+/// Container cleanup using the same explicit configuration retention policy as host cleanup.
+#[allow(clippy::too_many_arguments)]
+pub fn run_container_cleanup_with_configuration(
+    runner: &mut dyn Runner,
+    engine: &str,
+    spec: &ContainerSpec,
+    kind: CleanupKind,
+    data: &Path,
+    configuration: Option<&Path>,
+    force: bool,
+    input: &mut dyn BufRead,
+    stderr: &mut dyn Write,
+) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     let _lock = lock_cleanup(kind, data)?;
-    let plan = plan_cleanup(kind, data);
+    let mut plan = plan_cleanup(kind, data);
     validate_removal_ancestors(data, &plan)?;
+    add_configuration_plan(kind, configuration, &mut plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -328,7 +363,7 @@ pub fn run_container_cleanup(
             run(runner, &["start", &name])?;
             writeln!(stderr, "  [ok] Cluster state reset; container restarted")?;
         },
-        CleanupKind::Uninstall { purge } => {
+        CleanupKind::Uninstall { purge, .. } => {
             if present {
                 run(runner, &["rm", &name])?;
             }
@@ -351,6 +386,45 @@ fn validate_removal_ancestors(data: &Path, plan: &CleanupPlan) -> io::Result<()>
         // Unlink a selected symlink itself, but never traverse a symlinked parent.
         if let Some(parent) = relative.parent() {
             crate::upgrade::reject_symlink_state(data, &parent.to_string_lossy())?;
+        }
+    }
+    Ok(())
+}
+
+fn add_configuration_plan(
+    kind: CleanupKind,
+    directory: Option<&Path>,
+    plan: &mut CleanupPlan,
+) -> io::Result<()> {
+    let (CleanupKind::Uninstall { keep_config, .. }, Some(directory)) = (kind, directory) else {
+        return Ok(());
+    };
+    validate_data_path(directory)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
+    // Configuration is outside the data root; validate its own parent chain before effects.
+    let mut parent = PathBuf::new();
+    for component in directory.components() {
+        parent.push(component);
+        crate::upgrade::reject_symlink_state(&parent, "")?;
+    }
+    for name in ["config.yaml", "config.yaml.bak"] {
+        let path = directory.join(name);
+        match path.symlink_metadata() {
+            Ok(meta) if meta.is_dir() => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "configuration is a directory",
+                ));
+            },
+            Ok(_) => {
+                if keep_config {
+                    plan.retain.push(path);
+                } else {
+                    plan.remove.push(path);
+                }
+            },
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {},
+            Err(error) => return Err(error),
         }
     }
     Ok(())
@@ -540,6 +614,37 @@ fn detected_service_config() -> io::Result<crate::service::ServiceConfig> {
     })
 }
 
+fn container_configuration_directory(spec: &ContainerSpec) -> io::Result<Option<PathBuf>> {
+    let mut selected = None;
+    for mount in &spec.mounts {
+        let mut fields = mount.split(':');
+        let source = Path::new(fields.next().unwrap_or(""));
+        let target = fields.next().unwrap_or("");
+        let directory = match target {
+            "/etc/kubesolo" => source.to_path_buf(),
+            "/etc/kubesolo/config.yaml"
+                if source.file_name().is_some_and(|name| name == "config.yaml") =>
+            {
+                source.parent().unwrap_or(Path::new(".")).to_path_buf()
+            },
+            "/etc/kubesolo/config.yaml" => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "noncanonical configuration bind source; explicit cleanup is required",
+                ));
+            },
+            _ => continue,
+        };
+        if !directory.is_absolute() || selected.replace(directory).is_some() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "ambiguous configuration binding; explicit cleanup is required",
+            ));
+        }
+    }
+    Ok(selected)
+}
+
 /// Shared command entry for reset/uninstall.
 pub fn execute_cleanup(
     kind: CleanupKind,
@@ -557,22 +662,38 @@ pub fn execute_cleanup(
             .map_err(|e| e.to_string())
             .and_then(|t| ContainerSpec::parse(&t))
         {
-            Ok(spec) => run_container_cleanup(
-                &mut runner,
-                "docker",
-                &spec,
-                kind,
-                data,
-                force,
-                &mut input,
-                stderr,
-            ),
+            Ok(spec) => (if kind == CleanupKind::Reset {
+                Ok(None)
+            } else {
+                container_configuration_directory(&spec)
+            })
+            .and_then(|configuration| {
+                run_container_cleanup_with_configuration(
+                    &mut runner,
+                    "docker",
+                    &spec,
+                    kind,
+                    data,
+                    configuration.as_deref(),
+                    force,
+                    &mut input,
+                    stderr,
+                )
+            }),
             Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
         }
     } else {
         detected_service_config().and_then(|config| {
             let mut host = ServiceHost::new(&mut runner, config)?;
-            run_host_cleanup(&mut host, kind, data, force, &mut input, stderr)
+            run_host_cleanup_with_configuration(
+                &mut host,
+                kind,
+                data,
+                Some(Path::new("/etc/kubesolo")),
+                force,
+                &mut input,
+                stderr,
+            )
         })
     };
     match result {
@@ -588,6 +709,26 @@ pub fn execute_cleanup(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn container_configuration_selection_requires_an_explicit_owned_binding() {
+        let mut spec = ContainerSpec::default();
+        assert_eq!(container_configuration_directory(&spec).unwrap(), None);
+        spec.mounts = vec!["/srv/instance/config:/etc/kubesolo:ro".into()];
+        assert_eq!(
+            container_configuration_directory(&spec).unwrap(),
+            Some(PathBuf::from("/srv/instance/config"))
+        );
+        spec.mounts = vec!["/srv/instance/config.yaml:/etc/kubesolo/config.yaml:ro".into()];
+        assert_eq!(
+            container_configuration_directory(&spec).unwrap(),
+            Some(PathBuf::from("/srv/instance"))
+        );
+        spec.mounts = vec!["foreign-volume:/etc/kubesolo".into()];
+        assert!(container_configuration_directory(&spec).is_err());
+        spec.mounts = vec!["/srv/foreign.yaml:/etc/kubesolo/config.yaml".into()];
+        assert!(container_configuration_directory(&spec).is_err());
+    }
 
     #[derive(Debug, Default)]
     struct FakeHost {
@@ -716,7 +857,10 @@ mod tests {
         };
         let r = run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall { purge: false },
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -749,7 +893,10 @@ mod tests {
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -781,7 +928,10 @@ mod tests {
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -898,7 +1048,10 @@ mod tests {
             &mut r,
             "docker",
             &spec,
-            CleanupKind::Uninstall { purge: false },
+            CleanupKind::Uninstall {
+                purge: false,
+                keep_config: false,
+            },
             d.path(),
             true,
             &mut io::empty().lock_empty(),

@@ -217,7 +217,7 @@ adds the selected component boundary and measured limitations without claiming a
 | D08 diagnostics | Rust replacement diagnostics; product metrics retain honest probe meaning | E21 |
 | D09 current defaults | No resurrected low-memory overrides, omitted controllers or non-no-op `--full` | E03/E11/E12/E13/E16/E29 |
 | D10 stored config | Desired document only, restart required, runtime overrides not persisted | E22 |
-| D11 migration | Rehearsed state reuse or explicit export/import/recovery; no automatic datastore interchangeability | E08/E26/E30 |
+| D11 migration | Rehearsed state reuse or explicit export/import/recovery; no automatic datastore interchangeability; see [state transitions](state-transitions.md) | E08/E26/E30 |
 | Official Kubernetes versus K3s | Selected official executables; required fork adaptations/defaults assessed separately against baseline, with changes explicitly documented | E02/E11/E12/E13/E16; E28 integrated parity |
 | Official containerd versus embedded fork/plugins | Runtime API/native image operations plus shim/plugin equivalence; external CRI is a separate mode | E02/E06/E09/E10 |
 | Datastore confidentiality/integrity boundary | Select loopback mTLS with a dedicated datastore CA and API-server client identity; reject absent/untrusted clients. Never reuse the general Kubernetes client CA. The isolated spike's plaintext loopback is not production protection | E07/E08/E11 |
