@@ -40,3 +40,11 @@ Evidence: Implemented `AssetSelector` and `SelectedDelivery` in `rubix-assets` r
 Next step: None; timestamp: 2026-10-02T20:20:00Z
 
 
+
+Work item: E28.02 (https://github.com/geoffsee/rubix-kube/issues/119); Parent criteria 3
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: qual/recovery-lifecycle
+Evidence: Comprehensive qualification test suite in `crates/rubix-kube/tests/recovery_lifecycle.rs` and versioned report in `docs/architecture/recovery-lifecycle-qualification.md`. Exercises crash/reboot state preservation, ungraceful daemon kills with bounded escalation, node-IP changes with PKI SAN rotation and dual YAML/JSON kubeconfig format support, optional service failure degradation without core API disruption, and lifecycle interruption with verified before/after ownership invariants. All 10 historical regressions mapped and passing.
+Next step: None; timestamp: 2026-10-03T16:00:00Z
