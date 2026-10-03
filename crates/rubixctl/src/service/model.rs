@@ -135,7 +135,7 @@ pub struct CustomServicePaths {
     pub pid_file_path: Option<PathBuf>,
     /// Explicit log file path (default `/var/log/kubesolo.log`).
     pub log_file_path: Option<PathBuf>,
-    /// Explicit environment file path (if applicable).
+    /// Explicit environment file path (if applicable). `OpenRC` uses its canonical conf.d path.
     pub env_file_path: Option<PathBuf>,
 }
 

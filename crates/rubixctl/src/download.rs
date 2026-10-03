@@ -78,7 +78,7 @@ pub fn curl_download_command(
             "--proto",
             "=https,http",
             "--proto-redir",
-            "=https,http",
+            "=https",
             "-o",
         ])
         .arg(dest);

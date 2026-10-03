@@ -9,7 +9,7 @@ use std::fmt;
 /// Validated container port mapping.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PortMapping {
-    /// Host IP to bind to, or empty for all interfaces (`0.0.0.0`).
+    /// Host IP to bind to; omitted addresses default to loopback.
     pub host_ip: String,
     /// Host port number.
     pub host_port: u16,
@@ -154,7 +154,7 @@ fn parse_single_spec(spec: &str) -> Result<Vec<PortMapping>, PortParseError> {
             let mut result = Vec::with_capacity((end - start + 1) as usize);
             for p in start..=end {
                 result.push(PortMapping {
-                    host_ip: String::new(),
+                    host_ip: "127.0.0.1".into(),
                     host_port: p,
                     container_port: p,
                     protocol: protocol.clone(),
@@ -173,7 +173,7 @@ fn parse_single_spec(spec: &str) -> Result<Vec<PortMapping>, PortParseError> {
             let mut result = Vec::with_capacity(count);
             for offset in 0..=h_end - h_start {
                 result.push(PortMapping {
-                    host_ip: String::new(),
+                    host_ip: "127.0.0.1".into(),
                     host_port: h_start + offset,
                     container_port: c_start + offset,
                     protocol: protocol.clone(),
@@ -256,7 +256,7 @@ mod tests {
         assert_eq!(
             res,
             vec![PortMapping {
-                host_ip: String::new(),
+                host_ip: "127.0.0.1".into(),
                 host_port: 9001,
                 container_port: 9001,
                 protocol: "tcp".into(),
@@ -271,19 +271,19 @@ mod tests {
             res,
             vec![
                 PortMapping {
-                    host_ip: String::new(),
+                    host_ip: "127.0.0.1".into(),
                     host_port: 9000,
                     container_port: 9000,
                     protocol: "tcp".into(),
                 },
                 PortMapping {
-                    host_ip: String::new(),
+                    host_ip: "127.0.0.1".into(),
                     host_port: 9001,
                     container_port: 9001,
                     protocol: "tcp".into(),
                 },
                 PortMapping {
-                    host_ip: String::new(),
+                    host_ip: "127.0.0.1".into(),
                     host_port: 9002,
                     container_port: 9002,
                     protocol: "tcp".into(),
@@ -298,7 +298,7 @@ mod tests {
         assert_eq!(
             res,
             vec![PortMapping {
-                host_ip: String::new(),
+                host_ip: "127.0.0.1".into(),
                 host_port: 8080,
                 container_port: 80,
                 protocol: "tcp".into(),
@@ -326,7 +326,7 @@ mod tests {
         assert_eq!(
             res,
             vec![PortMapping {
-                host_ip: String::new(),
+                host_ip: "127.0.0.1".into(),
                 host_port: 53,
                 container_port: 53,
                 protocol: "udp".into(),

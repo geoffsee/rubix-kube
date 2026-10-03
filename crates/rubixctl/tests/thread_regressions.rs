@@ -165,7 +165,7 @@ fn custom_url_cannot_inject_curl_options_or_change_protocol_policy() {
     );
     assert!(
         args.windows(2)
-            .any(|pair| pair == ["--proto-redir", "=https,http"])
+            .any(|pair| pair == ["--proto-redir", "=https"])
     );
 }
 

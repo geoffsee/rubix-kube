@@ -1390,10 +1390,13 @@ dependencies = [
 name = "rubixctl"
 version = "0.1.0"
 dependencies = [
+ "rubix-assets",
  "rubix-config",
  "rubix-platform",
  "rubix-supervisor",
+ "rustix",
  "serde_json",
+ "sha2",
  "shlex",
  "tempfile",
  "tokio",

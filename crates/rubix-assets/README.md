@@ -214,3 +214,17 @@ management checks validate descriptors, not executable machine headers.
 E27.02 remains incomplete: release assembly, real target binaries, node archives
 and images, digest-to-byte verification, and disposable installation evidence
 for every required matrix cell are still needed.
+
+The publish workflow consumes a prepared `release-candidate` artifact from a successful default-branch
+CI push at the checked-out revision. Its `dist/` must contain the complete validated
+`release-manifest.json`, all 16 canonical node archives and four management binaries. The prepared
+manifest must declare the exact per-cell bundled asset sets and the node plus six dependency OCI
+indices; the tooling does not invent these descriptors from filenames. The accompanying
+`inventories/<archive-filename>.manifest.json` files drive dependency materialization checks before
+publication metadata is written. The CLI also checks actual artifact digests/sizes and rejects
+unexpected files. Without inventory arguments it checks prepared metadata and files only.
+
+Current CI uploads only native `pr-binaries`; publication stays blocked until a trusted producer
+supplies a complete candidate and inventories. Publication requires a fresh version tag. Real
+candidate assembly, cryptographic signing, registry-content verification and disposable installation
+qualification remain outstanding. No release is qualified by synthetic fixtures or a workflow file.

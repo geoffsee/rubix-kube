@@ -1,21 +1,26 @@
 //! Read-only management command boundary, independent from node startup parsing.
 pub mod artifact;
+pub mod bundle;
 pub mod check_workflow;
+pub mod cleanup;
 pub mod completion;
 pub mod config;
 pub mod container;
 pub mod container_fixtures;
+pub mod container_lifecycle;
 pub mod container_ports;
 pub mod contract;
 pub mod d2k;
 pub mod download;
 pub mod endpoints;
+pub mod install;
 pub mod kubeconfig;
 pub mod migrate;
 mod parse;
 pub mod preparation;
 pub mod service;
 pub mod sudo_env;
+pub mod upgrade;
 
 pub use artifact::{
     ArtifactSelectionError, DEFAULT_DATA_PATH, DEFAULT_INSTALL_PATH, DEFAULT_RELEASE_BASE_URL,
@@ -30,6 +35,7 @@ pub use contract::{
     UninstallOptions, UpgradeOptions,
 };
 pub use download::execute_download;
+pub use install::execute_install;
 pub use kubeconfig::execute_kubeconfig;
 pub use migrate::{
     ServiceMigrationResult, migrate_legacy_service, rewrite_service_content, service_file_path,
@@ -102,25 +108,25 @@ pub fn help(topic: HelpTopic) -> &'static str {
             "Download the binary bundle for offline installation.\n\nUsage:\n  rubixctl download [flags]\n\nFlags:\n      --arch string        Target architecture for the bundle (default: current host)\n                           Valid values: amd64, arm64, arm, riscv64, amd64-musl, arm64-musl, arm-musl, riscv64-musl\n      --bin-url string     Custom URL for binary download\n      --custom-url string  Custom URL for binary download\n      --glibc              Use glibc-based binary (default)\n  -h, --help               Help for download\n      --musl               Use musl-based binary\n      --offline            Download offline bundle with all images embedded\n      --path string        Directory to download files into (default: \".\")\n      --proxy string       HTTP/HTTPS proxy URL\n      --temp-dir string    Temporary directory for download/extraction\n      --version string     Version to download (default: \"v1.1.8\")\n"
         },
         HelpTopic::Install => {
-            "Install Rubix and configure the system service.\n\nUsage:\n  rubixctl install [flags]\n\nFlags:\n      --container-ports string  User port mappings (default: all host interfaces)\n      --bin-url string     Custom URL for binary download\n      --custom-url string  Custom URL for binary download\n      --temp-dir string    Temporary directory for download/extraction\n      --apiserver-extra-sans string   Comma-separated extra Subject Alternative Names for the API server certificate\n      --cpu-manager-policy string     CPU manager policy: none or static (default: \"none\")\n      --cpu-manager-policy-options string Comma-separated key=value options for the static policy\n      --d2k                           Enable the d2k Docker-to-Kubernetes API translator\n      --d2k-namespace string          Namespace d2k is deployed into (default: \"d2k\")\n      --debug                         Enable debug logging\n  -h, --help                          Help for install\n      --image string                  Container image to use in container mode\n      --install-prereqs               Automatically install missing OS prerequisites\n      --local-storage                 Enable the local-path storage provisioner\n      --mtu string                    Override auto-detected network MTU\n      --name string                   Instance name (default: \"rubix\")\n      --node-ip string                Override auto-detected node IP\n      --offline-install string        Path to a local tarball or binary to install instead of downloading\n      --path string                   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --portainer-edge-async          Enable async mode for the Portainer edge agent\n      --portainer-edge-id string      Portainer edge agent ID\n      --portainer-edge-image string   Portainer edge agent image\n      --portainer-edge-key string     Portainer edge agent key\n      --pprof-server                  Enable the pprof HTTP profiling server\n      --proxy string                  HTTP/HTTPS proxy URL\n      --reserved-cpus string          CPUs reserved for the host\n      --run-mode string               How to run Rubix: service (default), daemon, foreground, or container\n      --system-reserved string        Resources withheld from node allocatable\n      --version string                Version to install (default: \"v1.1.8\")\n"
+            "Install Rubix and configure the system service.\n\nUsage:\n  rubixctl install [flags]\n\nFlags:\n      --container-ports string  User port mappings (default: loopback)\n      --bin-url string     Custom URL for binary download\n      --custom-url string  Custom URL for binary download\n      --temp-dir string    Temporary directory for download/extraction\n      --apiserver-extra-sans string   Comma-separated extra Subject Alternative Names for the API server certificate\n      --cpu-manager-policy string     CPU manager policy: none or static (default: \"none\")\n      --cpu-manager-policy-options string Comma-separated key=value options for the static policy\n      --d2k                           Enable the d2k Docker-to-Kubernetes API translator\n      --d2k-namespace string          Namespace d2k is deployed into (default: \"d2k\")\n      --debug                         Enable debug logging\n  -h, --help                          Help for install\n      --image string                  Container image to use in container mode\n      --install-prereqs               Automatically install missing OS prerequisites\n      --local-storage                 Enable the local-path storage provisioner\n      --mtu string                    Override auto-detected network MTU\n      --name string                   Instance name (default: \"rubix\")\n      --node-ip string                Override auto-detected node IP\n      --offline-install string        Path to a local tarball or binary to install instead of downloading\n      --path string                   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --portainer-edge-async          Enable async mode for the Portainer edge agent\n      --portainer-edge-id string      Portainer edge agent ID\n      --portainer-edge-image string   Portainer edge agent image\n      --portainer-edge-key string     Portainer edge agent key\n      --pprof-server                  Enable the pprof HTTP profiling server\n      --proxy string                  HTTP/HTTPS proxy URL\n      --reserved-cpus string          CPUs reserved for the host\n      --run-mode string               How to run Rubix: service (default), daemon, foreground, or container\n      --system-reserved string        Resources withheld from node allocatable\n      --version string                Version to install (default: \"v1.1.8\")\n"
         },
         HelpTopic::Uninstall => {
-            "Uninstall Rubix and remove associated system resources.\n\nUsage:\n  rubixctl uninstall [flags]\n\nFlags:\n  -h, --help          Help for uninstall\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --purge         Remove all configuration and data\n"
+            "Uninstall Rubix and remove associated system resources.\n\nUsage:\n  rubixctl uninstall [flags]\n\nFlags:\n  -h, --help          Help for uninstall\n      --force         Skip the confirmation prompt\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --purge         Remove all configuration and data\n"
         },
         HelpTopic::Upgrade => {
             "Upgrade Rubix to a different version.\n\nUsage:\n  rubixctl upgrade [flags]\n\nFlags:\n  -h, --help                   Help for upgrade\n      --offline-install string Path to a local tarball or binary to install instead of downloading\n      --path string            Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --proxy string           HTTP/HTTPS proxy URL\n      --version string         Version to upgrade to\n"
         },
         HelpTopic::Reset => {
-            "Reset cluster data and restart services.\n\nUsage:\n  rubixctl reset [flags]\n\nFlags:\n  -h, --help          Help for reset\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
+            "Reset cluster data and restart services.\n\nUsage:\n  rubixctl reset [flags]\n\nFlags:\n  -h, --help          Help for reset\n      --force         Skip the confirmation prompt\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
         },
         HelpTopic::Config => {
             "Manage Rubix configuration.\n\nUsage:\n  rubixctl config [command]\n\nCommands:\n  edit        Edit configuration in default editor\n  get         Get configuration value\n  path        Print active configuration file path\n  set         Set configuration value\n\nFlags:\n  -f, --file string   Configuration file path\n  -h, --help          Help for config\n"
         },
         HelpTopic::Kubeconfig => {
-            "Manage kubeconfig context and cluster access.\n\nUsage:\n  rubixctl kubeconfig [command]\n\nCommands:\n  fetch       Fetch cluster kubeconfig\n  merge       Merge cluster credentials into active kubeconfig\n  remove      Remove an instance context (requires --name)\n  route       Route an instance context to its published port (requires --name)\n  view        View raw cluster kubeconfig\n\nFlags:\n  -h, --help          Help for kubeconfig\n      --name string   Instance name for route/remove\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n" 
+            "Manage kubeconfig context and cluster access.\n\nUsage:\n  rubixctl kubeconfig [command]\n\nCommands:\n  fetch       Fetch cluster kubeconfig\n  merge       Merge cluster credentials into active kubeconfig\n  remove      Remove an instance context (requires --name)\n  route       Route an instance context to its published port (requires --name)\n  view        View raw cluster kubeconfig\n\nFlags:\n  -h, --help          Help for kubeconfig\n      --name string   Instance name for route/remove\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
         },
         HelpTopic::D2k => {
-            "Manage Docker-to-Kubernetes (d2k) API translator.\n\nUsage:\n  rubixctl d2k [command]\n\nCommands:\n  fetch       Fetch client certificates and context for Docker CLI\n  install     Configure local Docker context\n\nFlags:\n  -h, --help          Help for d2k\n  -o, --output string Output file path\n      --name string   Instance name (default: \"rubix\")\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
+            "Manage Docker-to-Kubernetes (d2k) API translator.\n\nUsage:\n  rubixctl d2k [command]\n\nCommands:\n  fetch       Fetch client certificates and context for Docker CLI\n  install     Configure local Docker context\n\nFlags:\n  -h, --help          Help for d2k\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
         },
     }
 }

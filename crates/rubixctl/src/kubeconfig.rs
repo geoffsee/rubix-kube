@@ -528,7 +528,7 @@ pub fn execute_kubeconfig_with_env(
     execute_kubeconfig_with_engine(
         options,
         inputs,
-        &mut crate::endpoints::UnavailableEngine,
+        &mut crate::endpoints::DockerPortInspector,
         environment,
         stdout,
         stderr,
