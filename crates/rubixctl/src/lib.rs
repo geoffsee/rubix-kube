@@ -126,7 +126,7 @@ pub fn help(topic: HelpTopic) -> &'static str {
             "Manage kubeconfig context and cluster access.\n\nUsage:\n  rubixctl kubeconfig [command]\n\nCommands:\n  fetch       Fetch cluster kubeconfig\n  merge       Merge cluster credentials into active kubeconfig\n  remove      Remove an instance context (requires --name)\n  route       Route an instance context to its published port (requires --name)\n  view        View raw cluster kubeconfig\n\nFlags:\n  -h, --help          Help for kubeconfig\n      --name string   Instance name for route/remove\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
         },
         HelpTopic::D2k => {
-            "Manage Docker-to-Kubernetes (d2k) API translator.\n\nUsage:\n  rubixctl d2k [command]\n\nCommands:\n  fetch       Fetch client certificates and context for Docker CLI\n  install     Configure local Docker context\n\nFlags:\n  -h, --help          Help for d2k\n  -o, --output string Output file path\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
+            "Manage Docker-to-Kubernetes (d2k) API translator.\n\nUsage:\n  rubixctl d2k [command]\n\nCommands:\n  fetch       Fetch client certificates and context for Docker CLI\n  install     Configure local Docker context\n\nFlags:\n  -h, --help          Help for d2k\n  -o, --output string Certificate output directory\n      --name string   Instance name (default: \"rubix\")\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"
         },
     }
 }

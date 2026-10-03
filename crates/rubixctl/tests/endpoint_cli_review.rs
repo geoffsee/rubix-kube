@@ -126,3 +126,47 @@ fn production_cli_inspects_named_container_and_preserves_config_on_engine_failur
     assert!(String::from_utf8_lossy(&failure.stderr).contains("port inspection failed"));
     assert_eq!(std::fs::read_to_string(&path).unwrap(), changed);
 }
+
+#[test]
+fn unknown_endpoint_subcommand_fails_before_read_or_inspection() {
+    let mut output = Vec::new();
+    let mut errors = Vec::new();
+    let options = rubixctl::contract::KubeconfigOptions {
+        subcommand: Some("rmove".into()),
+        name: Some("dev".into()),
+        ..Default::default()
+    };
+    let code = rubixctl::endpoints::execute_endpoint_command(
+        &options,
+        &mut rubixctl::endpoints::UnavailableEngine,
+        &std::collections::BTreeMap::new(),
+        &mut output,
+        &mut errors,
+    )
+    .unwrap();
+    assert_eq!(code, 1);
+    assert!(output.is_empty());
+    assert!(String::from_utf8(errors).unwrap().contains("unknown"));
+}
+
+#[test]
+fn published_endpoint_requires_consistent_loopback_reachable_bindings() {
+    for text in [
+        "garbage:1234",
+        "0.0.0.0:0",
+        "0.0.0.0:1\n[::]:2",
+        "192.0.2.1:1234",
+        "0.0.0.0:1234\ngarbage",
+    ] {
+        assert!(
+            rubixctl::endpoints::resolve_published_endpoint(text).is_err(),
+            "{text}"
+        );
+    }
+    assert_eq!(
+        rubixctl::endpoints::resolve_published_endpoint("0.0.0.0:1234\n[::]:1234")
+            .unwrap()
+            .port,
+        1234
+    );
+}

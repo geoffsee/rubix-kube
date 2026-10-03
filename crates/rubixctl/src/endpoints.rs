@@ -55,12 +55,21 @@ impl std::error::Error for EndpointError {}
 /// Parses `docker port <container> <port>/tcp` output (for example
 /// `0.0.0.0:49153` and `[::]:49153`) into a loopback endpoint.
 pub fn resolve_published_endpoint(port_output: &str) -> Result<PublishedEndpoint, EndpointError> {
-    port_output
-        .lines()
-        .filter_map(|line| line.trim().rsplit_once(':'))
-        .filter_map(|(_, port)| port.trim().parse::<u16>().ok())
-        .find(|port| *port != 0)
-        .map(|port| PublishedEndpoint { port })
+    let mut port = None;
+    for line in port_output.lines().filter(|line| !line.trim().is_empty()) {
+        let address: std::net::SocketAddr = line
+            .trim()
+            .parse()
+            .map_err(|_| EndpointError::NoPublishedPort)?;
+        if address.port() == 0
+            || !(address.ip().is_unspecified() || address.ip().is_loopback())
+            || port.is_some_and(|p| p != address.port())
+        {
+            return Err(EndpointError::NoPublishedPort);
+        }
+        port = Some(address.port());
+    }
+    port.map(|port| PublishedEndpoint { port })
         .ok_or(EndpointError::NoPublishedPort)
 }
 

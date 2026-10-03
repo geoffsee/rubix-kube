@@ -395,7 +395,7 @@ pub trait CommandHandler {
         crate::d2k::execute_d2k(
             &options,
             inputs,
-            &mut crate::endpoints::UnavailableEngine,
+            &mut crate::endpoints::DockerPortInspector,
             &std::collections::BTreeMap::new(),
             stdout,
             stderr,
