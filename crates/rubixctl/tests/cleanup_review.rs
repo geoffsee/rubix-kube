@@ -286,3 +286,30 @@ fn symlinked_parent_is_refused_before_service_stop_or_foreign_deletion() {
         "private"
     );
 }
+
+#[test]
+fn upgrade_receipts_are_retained_with_recovery_backups_until_explicit_purge() {
+    let dir = tempfile::tempdir().unwrap();
+    let receipts = [
+        ".upgrade-pending",
+        ".upgrade-committing",
+        ".upgrade-completed",
+    ];
+    for receipt in receipts {
+        fs::write(dir.path().join(receipt), "backup=backups/retained").unwrap();
+    }
+    fs::write(dir.path().join(".upgrade.lock"), "").unwrap();
+    for kind in [CleanupKind::Reset, CleanupKind::Uninstall { purge: false }] {
+        let plan = rubixctl::cleanup::plan_cleanup(kind, dir.path());
+        for receipt in receipts {
+            assert!(plan.retain.contains(&dir.path().join(receipt)));
+            assert!(!plan.remove.contains(&dir.path().join(receipt)));
+        }
+    }
+    let plan = rubixctl::cleanup::plan_cleanup(CleanupKind::Uninstall { purge: true }, dir.path());
+    for receipt in receipts {
+        assert!(plan.remove.contains(&dir.path().join(receipt)));
+    }
+    // Keeping the lock inode avoids allowing a second upgrade to obtain a new lock.
+    assert!(!plan.remove.contains(&dir.path().join(".upgrade.lock")));
+}

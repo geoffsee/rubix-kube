@@ -37,15 +37,18 @@ pub const RUNTIME_STATE: [&str; 5] = [
     "network",
 ];
 /// Entries additionally removed by `uninstall --purge`.
-pub const PURGE_STATE: [&str; 5] = [
+pub const PURGE_STATE: [&str; 8] = [
     "pki",
     "local-path-storage",
     "backups",
     CONTAINER_SPEC_FILE,
     "containerd",
+    ".upgrade-pending",
+    ".upgrade-committing",
+    ".upgrade-completed",
 ];
 /// Entries retained unless purging, listed for reporting.
-pub const RETAINED_STATE: [&str; 5] = PURGE_STATE;
+pub const RETAINED_STATE: [&str; 8] = PURGE_STATE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CleanupKind {

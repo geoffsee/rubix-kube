@@ -129,7 +129,10 @@ Reset deletes the established `kine/db` cluster datastore, kubelet state and
 disposable managed runtime root/state. It retains runtime executables, image
 archives, registry configuration, PKI and `local-path-storage` volume data.
 Ordinary uninstall retains installation data; `--purge` explicitly removes the
-selected instance's owned state. Cleanup unmounts only mount points under paths
+selected instance's owned state, including upgrade receipts and recovery backups.
+Reset and ordinary uninstall retain those recovery records. The upgrade lock
+file remains in place so concurrent operations cannot acquire a different inode.
+Cleanup unmounts only mount points under paths
 selected for removal, preserving the data-root mount and retained or neighboring
 mounts. Symlinked parent directories are rejected before service operations;
 selected symlink entries themselves are unlinked without following them.
