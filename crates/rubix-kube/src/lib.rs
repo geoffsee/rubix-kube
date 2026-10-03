@@ -3,7 +3,7 @@ mod parse;
 
 use std::collections::BTreeMap;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use rubix_config::{
     ConfigError, DecodedConfig, EnvironmentMode, ErrorKind, HostContext, ResolutionWarning,
@@ -18,13 +18,17 @@ pub trait StartupInputs {
 }
 pub enum StartupAction {
     Exit(u8),
-    Start(Box<ValidatedConfig>),
+    Start {
+        config: Box<ValidatedConfig>,
+        config_path: PathBuf,
+        host: HostContext,
+    },
 }
 impl std::fmt::Debug for StartupAction {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Exit(code) => formatter.debug_tuple("Exit").field(code).finish(),
-            Self::Start(_) => formatter.write_str("Start(<resolved configuration>)"),
+            Self::Start { .. } => formatter.write_str("Start(<resolved configuration>)"),
         }
     }
 }
@@ -171,7 +175,11 @@ pub fn execute(
         stdout.write_all(text.as_bytes())?;
         return Ok(StartupAction::Exit(0));
     }
-    Ok(StartupAction::Start(Box::new(resolved.validated)))
+    Ok(StartupAction::Start {
+        config: Box::new(resolved.validated),
+        config_path: PathBuf::from(parsed.config),
+        host,
+    })
 }
 
 pub mod lifecycle_logs;
@@ -187,7 +195,9 @@ pub mod host_network;
 pub mod host_container;
 pub mod host_preparation;
 
+pub mod config_api;
 pub mod metrics;
+pub use config_api::{COMPONENT_CONFIG_API, ConfigApiAdapter, ConfigApiServer, clear_stale_socket};
 
 pub mod runtime;
 pub use runtime::{

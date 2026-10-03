@@ -14,12 +14,12 @@ rubix-network = { version = "=0.1.0", path = "../rubix-network" }
 serde_json = "=1.0.151"
 rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
-tokio = { version = "=1.53.1", features = ["rt", "rt-multi-thread", "sync", "time", "macros", "signal"] }
 bytes = "=1.12.1"
 http = "=1.5.0"
 http-body-util = "=0.1.5"
 hyper = { version = "=1.11.1", features = ["http1", "server"] }
 hyper-util = { version = "=0.1.21", features = ["tokio", "server", "http1"] }
+tokio = { version = "=1.53.1", features = ["rt", "rt-multi-thread", "sync", "time", "macros", "signal", "net", "io-util", "fs"] }
 
 rubix-apiserver = { version = "=0.1.0", path = "../rubix-apiserver" }
 rubix-controller = { version = "=0.1.0", path = "../rubix-controller" }
@@ -36,4 +36,3 @@ rustix = { version = "=1.1.5", features = ["fs", "mount"] }
 [dev-dependencies]
 tempfile = "=3.27.0"
 tokio = { version = "=1.53.1", features = ["test-util"] }
-

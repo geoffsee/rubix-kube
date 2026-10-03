@@ -198,8 +198,34 @@ fn startup_action_debug_does_not_disclose_resolved_values() {
         &mut Vec::new(),
     )
     .expect("resolution");
-    assert!(matches!(action, StartupAction::Start(_)));
+    assert!(matches!(action, StartupAction::Start { .. }));
     assert_eq!(format!("{action:?}"), "Start(<resolved configuration>)");
+}
+
+#[test]
+fn runtime_receives_selected_config_file_and_original_host_snapshot() {
+    let environment = BTreeMap::from([("KUBESOLO_CONFIG".into(), "/ignored.yaml".into())]);
+    let mut inputs = Inputs::default();
+    let action = rubix_kube::execute(
+        &["--config=/selected.yaml".into()],
+        &environment,
+        "test",
+        &mut inputs,
+        &mut Vec::new(),
+        &mut Vec::new(),
+    )
+    .expect("resolution");
+    let StartupAction::Start {
+        config_path, host, ..
+    } = action
+    else {
+        panic!("expected runtime startup");
+    };
+    assert_eq!(config_path, Path::new("/selected.yaml"));
+    assert_eq!(host.cpu_count, 4);
+    assert_eq!(host.architecture, "arm64");
+    assert!(host.detected_container_mode);
+    assert_eq!(inputs.probes, 1);
 }
 
 #[test]
