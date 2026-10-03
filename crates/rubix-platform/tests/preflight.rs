@@ -429,4 +429,22 @@ fn finding_and_report_distinguish_fatal_errors_from_recoverable_limitations() {
     );
     assert!(networking_finding.is_recoverable());
     assert!(!networking_finding.is_fatal());
+
+    let mut unknown = evidence();
+    unknown.hostname = Observation::Unknown(ProbeFailure::PermissionDenied);
+    let unknown_report = evaluate_preflight(&unknown, &inputs());
+    let hostname = unknown_report
+        .findings
+        .iter()
+        .find(|finding| finding.check == CheckId::Hostname)
+        .unwrap();
+    assert_eq!(hostname.severity(), Some(ErrorSeverity::Uncertain));
+    assert!(hostname.is_uncertain());
+    assert!(!hostname.is_fatal());
+    assert!(unknown_report.has_uncertain_observations());
+    assert!(
+        !unknown_report
+            .fatal_findings()
+            .any(|finding| finding.check == CheckId::Hostname)
+    );
 }

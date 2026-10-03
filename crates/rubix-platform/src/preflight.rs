@@ -111,6 +111,8 @@ pub enum Remediation {
 pub enum ErrorSeverity {
     Fatal,
     Recoverable,
+    /// The check could not be observed. This is not a confirmed incompatible host.
+    Uncertain,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Finding {
@@ -133,7 +135,7 @@ impl Finding {
                 },
                 _ => Some(ErrorSeverity::Fatal),
             },
-            CheckStatus::Unknown => Some(ErrorSeverity::Fatal),
+            CheckStatus::Unknown => Some(ErrorSeverity::Uncertain),
         }
     }
 
@@ -143,6 +145,10 @@ impl Finding {
 
     pub fn is_recoverable(&self) -> bool {
         self.severity() == Some(ErrorSeverity::Recoverable)
+    }
+
+    pub fn is_uncertain(&self) -> bool {
+        self.severity() == Some(ErrorSeverity::Uncertain)
     }
 
     fn new(check: CheckId, status: CheckStatus, reason: Reason) -> Self {
@@ -201,12 +207,20 @@ impl PreflightReport {
         self.findings.iter().filter(|f| f.is_recoverable())
     }
 
+    pub fn uncertain_findings(&self) -> impl Iterator<Item = &Finding> {
+        self.findings.iter().filter(|f| f.is_uncertain())
+    }
+
     pub fn has_fatal_errors(&self) -> bool {
         self.findings.iter().any(Finding::is_fatal)
     }
 
     pub fn has_recoverable_limitations(&self) -> bool {
         self.findings.iter().any(Finding::is_recoverable)
+    }
+
+    pub fn has_uncertain_observations(&self) -> bool {
+        self.findings.iter().any(Finding::is_uncertain)
     }
 }
 fn landmark(e: &HostEvidence, path: &str) -> Observation<bool> {
