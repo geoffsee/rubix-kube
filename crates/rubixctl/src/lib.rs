@@ -2,6 +2,9 @@
 pub mod artifact;
 pub mod check_workflow;
 pub mod completion;
+pub mod container;
+pub mod container_fixtures;
+pub mod container_ports;
 pub mod contract;
 pub mod download;
 mod parse;
