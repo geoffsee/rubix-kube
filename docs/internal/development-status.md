@@ -62,3 +62,11 @@ Ownership: Unassigned
 Stack: migration/state-transitions
 Evidence: Isolated state-preservation fixtures classify historical versions, exercise configuration conversion, verify client signatures and required signing keys, reconcile unique workload identities, and compare PV files, directories, symlinks, ownership and permissions. Native snapshot conversion is an experiment on in-memory records; it neither adopts a production Kine database nor checkpoints its WAL. No live Linux cutover or downtime measurement was performed.
 Next step: Rehearse consistent Kine SQLite backup, adoption and rollback with the retained executables and dedicated loopback mTLS, preserving identities and PV access at exact revisions before qualifying C13/E30.
+
+Work item: E30.02 (https://github.com/geoffsee/rubix-kube/issues/125); Parent criteria 2, 3
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: migration/recovery-rehearsal
+Evidence: Implemented disposable installation failure rehearsals and operator recovery across all supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1–v1.3.3) and 10 interrupted transition stages in rubixctl and rubix-dev. Validates restored state across 5 core domains: Configuration (restoring flags or 0600 YAML), PKI (rcgen CA signature verification), Datastore (Kine SQLite + WAL rollback), Workloads (manifest preservation), and Storage (PV directory and permission assertions). Dual-format client access verified across YAML and JSON kubeconfigs with cryptographic CA authentication. Fail-closed recovery refuses corrupted, empty, or symlinked backups without mutating disk state or deleting receipts. Version-specific operator procedures and limitations documented.
+Next step: None; timestamp: 2026-10-03T18:50:00Z
