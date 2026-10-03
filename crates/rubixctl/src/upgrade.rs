@@ -280,6 +280,33 @@ fn finish_commit_receipt(data: &Path, committing: &Path, completed: &Path) -> io
     remove_receipt(data, completed)
 }
 
+fn rollback_receipt_error(
+    error: &io::Error,
+    cause: &io::Error,
+    from: &str,
+    receipt: &Path,
+    backup: &Path,
+) -> io::Error {
+    io::Error::new(
+        error.kind(),
+        format!(
+            "upgrade failed ({cause}); rolled back to {from}, but cleaning receipt {} failed: {error}; backup kept at {}. Rollback is complete; inspect receipt cleanup before retrying.",
+            receipt.display(),
+            backup.display()
+        ),
+    )
+}
+
+fn report_upgraded(target: &str, stderr: &mut dyn Write) {
+    let _ = writeln!(stderr, "  [ok] Upgraded to {target}");
+    if supports_config_file(target) {
+        let _ = writeln!(
+            stderr,
+            "  Restart required for configuration changes to take effect."
+        );
+    }
+}
+
 fn save_upgrade_receipt(
     data: &Path,
     pending: &Path,
@@ -383,13 +410,7 @@ pub fn run_upgrade(
                     "  [warn] Upgrade committed; receipt cleanup failed: {error}. Inspect upgrade receipts; any retained receipt requires cleanup, not rollback."
                 );
             }
-            let _ = writeln!(stderr, "  [ok] Upgraded to {target}");
-            if supports_config_file(target) {
-                let _ = writeln!(
-                    stderr,
-                    "  Restart required for configuration changes to take effect."
-                );
-            }
+            report_upgraded(target, stderr);
             Ok(UpgradeOutcome::Upgraded { backup })
         },
         Err(cause) => {
@@ -406,7 +427,8 @@ pub fn run_upgrade(
                     ))
                 })?;
             for receipt in [&pending, &committing] {
-                remove_receipt(data_path, receipt)?;
+                remove_receipt(data_path, receipt)
+                    .map_err(|e| rollback_receipt_error(&e, &cause, &from, receipt, &backup))?;
             }
             writeln!(stderr, "  [ok] Rolled back to {from}")?;
             Ok(UpgradeOutcome::RolledBack {

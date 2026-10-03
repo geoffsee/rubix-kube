@@ -395,7 +395,16 @@ fn receipt_failures_keep_recovery_evidence_and_never_report_a_committed_upgrade_
         let outcome = run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 1, &mut stderr);
         match failure {
             ReceiptFailure::BeforeCommit => {
-                assert!(outcome.is_err());
+                let error = outcome.unwrap_err();
+                let diagnostic = error.to_string();
+                assert!(diagnostic.contains("upgrade failed ("));
+                assert!(diagnostic.contains("rolled back to v1.2.0"));
+                assert!(
+                    diagnostic.contains(&dir.path().join(".upgrade-pending").display().to_string())
+                );
+                assert!(diagnostic.contains("backup kept at"));
+                assert!(diagnostic.contains(&dir.path().join("backups").display().to_string()));
+                assert!(diagnostic.contains("Rollback is complete"));
                 assert!(backend.restored);
                 assert!(!backend.committed);
                 assert!(dir.path().join(".upgrade-pending").exists());
