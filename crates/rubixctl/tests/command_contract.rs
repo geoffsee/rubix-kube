@@ -804,7 +804,6 @@ fn test_default_command_handler_unimplemented_stubs() {
     let unimplemented_cmds = [
         "install",
         "uninstall",
-        "upgrade",
         "reset",
         "config",
         "kubeconfig",
