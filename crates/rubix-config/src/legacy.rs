@@ -68,13 +68,23 @@ pub fn service_config_path(content: &str) -> Result<std::path::PathBuf, String> 
             _ => trimmed.to_string(),
         };
         for capture in re.captures_iter(&arguments) {
+            let matched = capture.get(0).unwrap();
+            if arguments[matched.end()..]
+                .chars()
+                .next()
+                .is_some_and(|c| !c.is_whitespace())
+            {
+                return Err(
+                    "concatenated --config argument cannot establish a literal path".into(),
+                );
+            }
             let value = capture
                 .get(1)
                 .or_else(|| capture.get(2))
                 .or_else(|| capture.get(3))
                 .ok_or("missing --config argument")?;
             if capture.get(3).is_some() && !value.as_str().starts_with(['\'', '"']) {
-                let remainder = arguments[capture.get(0).unwrap().end()..].trim();
+                let remainder = arguments[matched.end()..].trim();
                 if !remainder.is_empty() && !remainder.starts_with("--") {
                     return Err("ambiguous unquoted --config argument".into());
                 }

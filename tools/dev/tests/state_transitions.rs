@@ -129,8 +129,16 @@ fn quoted_service_configuration_paths_are_resolved_without_truncation() {
         assert_eq!(result.node_ip, "10.0.0.9");
     }
     for command in [
-        "ExecStart=/usr/bin/kubesolo '--config=/unterminated path",
-        "command_args=\"--config=$CONFIG\"",
+        "ExecStart=/usr/bin/kubesolo '--config=/unterminated path".into(),
+        "command_args=\"--config=$CONFIG\"".into(),
+        format!(
+            "ExecStart=/usr/bin/kubesolo '--config={}'X",
+            actual.display()
+        ),
+        format!(
+            "ExecStart=/usr/bin/kubesolo --config='{}'X",
+            actual.display()
+        ),
     ] {
         fs::write(&service, format!("{command}\n")).unwrap();
         assert!(
