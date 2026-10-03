@@ -475,3 +475,43 @@ fn test_cpu_manager_policy_rejected_in_container_mode() {
     let err_str = result.unwrap_err().to_string();
     assert!(err_str.contains("cpu-manager-policy \"static\" is not supported in container mode"));
 }
+
+#[test]
+fn test_api_and_d2k_bind_loopback_and_publish_discovered_ports() {
+    let cfg =
+        rubixctl::container::build_port_configuration(None, true, Some(2400), None).expect("ports");
+    for bindings in cfg.port_bindings.values() {
+        assert!(bindings.iter().all(|b| b.host_ip == "127.0.0.1"));
+    }
+    assert_eq!(cfg.port_bindings["6443/tcp"][0].host_port, "");
+    assert_eq!(cfg.port_bindings["2376/tcp"][0].host_port, "2400");
+
+    let mut ports = HashMap::new();
+    ports.insert("6443/tcp".to_string(), 32768);
+    ports.insert("2376/tcp".to_string(), 2400);
+    let inspect = ContainerInspect {
+        id: "x".into(),
+        name: "x".into(),
+        running: true,
+        exit_code: 0,
+        allocated_ports: ports,
+    };
+    let eps = rubixctl::container::published_endpoints(&inspect).expect("endpoints");
+    assert_eq!(eps.apiserver.to_string(), "127.0.0.1:32768");
+    assert_eq!(
+        eps.d2k.map(|a| a.to_string()).as_deref(),
+        Some("127.0.0.1:2400")
+    );
+}
+
+#[test]
+fn test_no_endpoint_without_published_api_port() {
+    let inspect = ContainerInspect {
+        id: "x".into(),
+        name: "x".into(),
+        running: true,
+        exit_code: 0,
+        allocated_ports: HashMap::new(),
+    };
+    assert!(rubixctl::container::published_endpoints(&inspect).is_none());
+}

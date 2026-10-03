@@ -527,3 +527,30 @@ pub fn install_container(
         },
     }
 }
+
+/// Host endpoints published by a running instance, as reported by engine inspection.
+///
+/// API and workload bindings are always loopback-only; the host port is whatever the
+/// engine actually allocated, which differs from the request when ephemeral.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PublishedEndpoints {
+    pub apiserver: std::net::SocketAddr,
+    pub d2k: Option<std::net::SocketAddr>,
+}
+
+/// Discovers the published API (and optional d2k) endpoints from an inspected container.
+///
+/// Returns `None` when the container does not publish the API server port, so callers
+/// never fabricate an address that the engine did not allocate.
+#[must_use]
+pub fn published_endpoints(inspect: &ContainerInspect) -> Option<PublishedEndpoints> {
+    let loopback = std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
+    let api = *inspect.allocated_ports.get("6443/tcp")?;
+    Some(PublishedEndpoints {
+        apiserver: std::net::SocketAddr::new(loopback, api),
+        d2k: inspect
+            .allocated_ports
+            .get("2376/tcp")
+            .map(|p| std::net::SocketAddr::new(loopback, *p)),
+    })
+}
