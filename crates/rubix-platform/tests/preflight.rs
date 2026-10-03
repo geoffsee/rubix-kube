@@ -392,3 +392,59 @@ fn every_required_controller_and_optional_port_has_distinct_evidence() {
         Some(ProbeFailure::PermissionDenied)
     );
 }
+
+#[test]
+fn finding_and_report_distinguish_fatal_errors_from_recoverable_limitations() {
+    let mut e = evidence();
+    e.privileges = Observation::Present(Privileges {
+        real_uid: 1000,
+        effective_uid: 0,
+    });
+    let report = evaluate_preflight(&e, &inputs());
+    assert!(report.has_fatal_errors());
+    assert!(!report.has_recoverable_limitations());
+    let fatal_checks: Vec<_> = report.fatal_findings().map(|f| f.check).collect();
+    assert_eq!(fatal_checks, vec![CheckId::Root]);
+    assert_eq!(report.findings[0].severity(), Some(ErrorSeverity::Fatal));
+    assert!(report.findings[0].is_fatal());
+    assert!(!report.findings[0].is_recoverable());
+
+    let mut e_alpine = evidence();
+    present(&mut e_alpine, "/etc/alpine-release");
+    let report_alpine = evaluate_preflight(&e_alpine, &inputs());
+    assert!(report_alpine.has_recoverable_limitations());
+    let recoverable_checks: Vec<_> = report_alpine
+        .recoverable_findings()
+        .map(|f| f.check)
+        .collect();
+    assert!(recoverable_checks.contains(&CheckId::AlpineNetworking));
+    let networking_finding = report_alpine
+        .findings
+        .iter()
+        .find(|f| f.check == CheckId::AlpineNetworking)
+        .unwrap();
+    assert_eq!(
+        networking_finding.severity(),
+        Some(ErrorSeverity::Recoverable)
+    );
+    assert!(networking_finding.is_recoverable());
+    assert!(!networking_finding.is_fatal());
+
+    let mut unknown = evidence();
+    unknown.hostname = Observation::Unknown(ProbeFailure::PermissionDenied);
+    let unknown_report = evaluate_preflight(&unknown, &inputs());
+    let hostname = unknown_report
+        .findings
+        .iter()
+        .find(|finding| finding.check == CheckId::Hostname)
+        .unwrap();
+    assert_eq!(hostname.severity(), Some(ErrorSeverity::Uncertain));
+    assert!(hostname.is_uncertain());
+    assert!(!hostname.is_fatal());
+    assert!(unknown_report.has_uncertain_observations());
+    assert!(
+        !unknown_report
+            .fatal_findings()
+            .any(|finding| finding.check == CheckId::Hostname)
+    );
+}

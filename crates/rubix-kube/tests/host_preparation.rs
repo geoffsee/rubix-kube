@@ -1,4 +1,5 @@
 //! Combined sequencing with injected facts and effects only; no host mutations.
+use rubix_kube::host_container::ContainerError;
 use rubix_kube::host_network::*;
 use rubix_kube::host_preflight::*;
 use rubix_platform::constrained::*;
@@ -100,6 +101,8 @@ struct Fake {
     stop_acknowledged: bool,
     ipv4_unknown: bool,
     container_calls: std::sync::Arc<std::sync::Mutex<Vec<&'static str>>>,
+    settled_modules: usize,
+    init_error: Option<ContainerError>,
 }
 impl Default for Fake {
     fn default() -> Self {
@@ -124,6 +127,8 @@ impl Default for Fake {
             stop_acknowledged: false,
             ipv4_unknown: false,
             container_calls: std::sync::Arc::default(),
+            settled_modules: 0,
+            init_error: None,
         }
     }
 }
@@ -233,10 +238,13 @@ impl NetworkPreparationInputs for Fake {
 }
 use rubix_kube::host_container::*;
 use rubix_kube::host_preparation::*;
-struct Session(std::sync::Arc<std::sync::Mutex<Vec<&'static str>>>);
+struct Session {
+    calls: std::sync::Arc<std::sync::Mutex<Vec<&'static str>>>,
+    init_error: Option<ContainerError>,
+}
 impl Session {
     fn record(&self, call: &'static str) {
-        self.0.lock().unwrap().push(call);
+        self.calls.lock().unwrap().push(call);
     }
     fn mutation(&self, call: &'static str) -> Mutation {
         self.record(call);
@@ -249,12 +257,16 @@ impl Session {
 impl ContainerPreparationInputs for Fake {
     type Session = Session;
     fn container_session(&mut self) -> Result<Session, ContainerError> {
+        let added = self.modules.len() - self.settled_modules;
         assert_eq!(
-            self.modules.len(),
-            12,
+            added, 12,
             "all settled network module attempts precede container effects"
         );
-        let session = Session(self.container_calls.clone());
+        self.settled_modules = self.modules.len();
+        let session = Session {
+            calls: self.container_calls.clone(),
+            init_error: self.init_error,
+        };
         session.record("anchor");
         Ok(session)
     }
@@ -268,7 +280,11 @@ impl ContainerSession for Session {
         Ok(CgroupLayout::V2)
     }
     fn ensure_init(&mut self) -> Mutation {
-        self.mutation("init")
+        self.record("init");
+        Mutation {
+            attempted: true,
+            result: self.init_error.map_or(Ok(()), Err),
+        }
     }
     fn migrate_current_process(&mut self) -> Mutation {
         self.mutation("migrate")
@@ -374,4 +390,41 @@ async fn initially_cancelled_combined_operation_never_performs_effects() {
     assert!(fake.modules.is_empty());
     assert!(fake.container_calls.lock().unwrap().is_empty());
     assert!(!report.shared_effects_possible);
+}
+
+#[tokio::test]
+async fn repeatable_host_preparation_and_clean_failure_without_partial_service() {
+    let mut fake = Fake {
+        init_error: Some(ContainerError::Io),
+        ..Fake::default()
+    };
+    let failed =
+        prepare_node_host_with(&config(false, true), std::future::pending(), &mut fake).await;
+    assert_eq!(failed.status, HostPreparationStatus::ContainerFailed);
+    assert_eq!(
+        failed.container.status,
+        ContainerStatus::Fatal {
+            stage: ContainerStage::Init,
+            error: ContainerError::Io,
+        }
+    );
+    let failed_calls = fake.container_calls.lock().unwrap().clone();
+    assert!(failed_calls.contains(&"init"));
+    assert!(
+        !failed_calls
+            .iter()
+            .any(|call| { matches!(*call, "migrate" | "delegate") })
+    );
+    let modules_after_failure = fake.modules.len();
+    assert_eq!(modules_after_failure, 12);
+
+    fake.init_error = None;
+    let repeated =
+        prepare_node_host_with(&config(false, true), std::future::pending(), &mut fake).await;
+    assert_eq!(repeated.status, HostPreparationStatus::Completed);
+    assert_eq!(repeated.container.status, ContainerStatus::Completed);
+    assert_eq!(fake.modules.len(), modules_after_failure + 12);
+    let calls = fake.container_calls.lock().unwrap().clone();
+    assert!(calls.contains(&"migrate"));
+    assert!(calls.contains(&"delegate"));
 }
