@@ -118,6 +118,11 @@ fn build_bundle(root: &Path, elf: &[u8], tamper: impl FnOnce(&Path)) -> std::pat
     let src = root.join("src");
     fs::create_dir_all(&src).unwrap();
     fs::write(src.join("rubix-kube"), elf).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(src.join("rubix-kube"), fs::Permissions::from_mode(0o755)).unwrap();
+    }
     fs::write(src.join("data.txt"), b"hello world").unwrap();
     fs::write(
         src.join("bundle.manifest"),
@@ -174,6 +179,36 @@ fn test_offline_install_success() {
     assert!(dest.join("data.txt").exists());
     assert!(dest.join("rubix-kube").exists());
     assert!(!downloaded, "egress denied validation");
+}
+
+#[test]
+fn musl_cli_uses_observed_glibc_host_for_bundle_selection() {
+    let temp = TempDir::new().unwrap();
+    let archive = build_bundle(temp.path(), &ARM64_ELF_HEADER, |_| {});
+    let mut evidence = arm64_glibc_evidence();
+    evidence.executable.environment = "musl".to_string();
+    evidence.musl_linkers = Observation::Present(vec![]);
+    let mut inputs = MockInputs {
+        evidence,
+        download_called: false,
+    };
+    let mut stderr = Vec::new();
+    let dest = temp.path().join("dest");
+    let code = DefaultCommandHandler
+        .execute_install(
+            InstallOptions {
+                offline_install: Some(archive),
+                path: dest.clone(),
+                ..InstallOptions::default()
+            },
+            &mut inputs,
+            &mut Vec::new(),
+            &mut stderr,
+        )
+        .unwrap();
+    assert_eq!(code, 0, "{}", String::from_utf8(stderr).unwrap());
+    assert!(dest.join("rubix-kube").exists());
+    assert!(!inputs.download_called);
 }
 
 #[test]

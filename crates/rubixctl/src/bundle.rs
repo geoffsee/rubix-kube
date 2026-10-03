@@ -83,6 +83,13 @@ pub fn build_offline_bundle(spec: &BundleSpec) -> Result<PathBuf, String> {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
         fs::copy(&input.source, &dest).map_err(|e| format!("{}: {e}", input.source.display()))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = if input.executable { 0o755 } else { 0o644 };
+            fs::set_permissions(&dest, fs::Permissions::from_mode(mode))
+                .map_err(|e| format!("{}: {e}", dest.display()))?;
+        }
         entries.push(BundleEntry {
             sha256: sha256_hex(&dest).map_err(|e| e.to_string())?,
             path: rel,

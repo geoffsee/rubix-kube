@@ -252,6 +252,21 @@ pub fn verify_staged_bundle(
         }
         if entry.executable {
             check_elf(&full, arch)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mode = fs::metadata(&full)
+                    .map_err(|e| e.to_string())?
+                    .permissions()
+                    .mode()
+                    & 0o7777;
+                if mode != 0o755 {
+                    return Err(format!(
+                        "invalid executable permissions for {}: expected 755, observed {mode:o}",
+                        entry.path.display()
+                    ));
+                }
+            }
         }
     }
     let mut stack = vec![staged.to_path_buf()];
@@ -274,21 +289,49 @@ pub fn verify_staged_bundle(
     Ok(manifest)
 }
 
+#[cfg(unix)]
 fn publish(staged: &Path, target: &Path, manifest: &BundleManifest) -> io::Result<()> {
+    use rustix::fs::{Mode, OFlags, mkdirat, open, openat, renameat};
+    let directory_flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     fs::create_dir_all(target)?;
+    let root = fs::File::from(open(target, directory_flags, Mode::empty())?);
+    let source = fs::File::open(staged)?;
     let rels = manifest
         .entries
         .iter()
         .map(|e| e.path.clone())
         .chain(std::iter::once(PathBuf::from(BUNDLE_MANIFEST)));
+    // Open every destination parent before publishing any file. Directory handles
+    // pin the verified parents, so later pathname/symlink substitution cannot
+    // redirect rename into an unrelated directory.
+    let mut destinations = Vec::new();
     for rel in rels {
-        let dest = target.join(&rel);
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent)?;
+        let mut parent = root.try_clone()?;
+        let mut components = rel.components().peekable();
+        while let Some(component) = components.next() {
+            let Component::Normal(name) = component else {
+                return Err(io::Error::other("unsafe destination path"));
+            };
+            if components.peek().is_none() {
+                destinations.push((rel.clone(), parent, name.to_os_string()));
+                break;
+            }
+            match mkdirat(&parent, name, Mode::from_raw_mode(0o755)) {
+                Ok(()) | Err(rustix::io::Errno::EXIST) => {},
+                Err(error) => return Err(error.into()),
+            }
+            parent = fs::File::from(openat(&parent, name, directory_flags, Mode::empty())?);
         }
-        fs::rename(staged.join(&rel), dest)?;
+    }
+    for (rel, parent, name) in destinations {
+        renameat(&source, &rel, &parent, &name)?;
     }
     Ok(())
+}
+
+#[cfg(not(unix))]
+fn publish(_staged: &Path, _target: &Path, _manifest: &BundleManifest) -> io::Result<()> {
+    Err(io::Error::other("offline host installation requires Unix"))
 }
 
 #[allow(clippy::too_many_lines)] // linear fail-fast workflow with per-step diagnostics
@@ -319,12 +362,6 @@ pub fn execute_install(
         },
     };
 
-    let host_libc = match evidence.executable.environment.as_str() {
-        "gnu" => Some(Libc::Glibc),
-        "musl" => Some(Libc::Musl),
-        _ => None,
-    };
-
     let Some(offline_path) = &options.offline_install else {
         writeln!(
             stderr,
@@ -346,7 +383,7 @@ pub fn execute_install(
     };
 
     if parsed.variant.architecture != host_target.architecture
-        || Some(parsed.variant.libc) != host_libc
+        || parsed.variant.libc != host_target.libc
     {
         writeln!(
             stderr,
