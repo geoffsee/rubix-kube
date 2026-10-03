@@ -212,8 +212,8 @@ verify release signatures or independently trusted artifact digests. A staged
 bundle is not authenticated release qualification and must not be treated as
 such by a future installer.
 
-`rubixctl d2k fetch|install --name <instance>` exports the flat node PKI files
-`pki/ca.crt`, `pki/d2k-client.crt` and `pki/d2k-client.key`. The default output is
+`rubixctl d2k fetch|install --name <instance>` exports the Docker client credential files
+`ca.pem`, `cert.pem` and `key.pem`. The default output is
 `~/.docker/d2k/<instance>` for the invoking user; `--output` selects a certificate
 **directory**. All exported files are private (0600) in a private directory (0700).
 Symlinked directory components are rejected and leaf symlinks are atomically
