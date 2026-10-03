@@ -48,6 +48,7 @@ pub const COMPONENT_LOCAL_PATH: &str = "local-path-provisioner";
 pub const COMPONENT_PORTAINER: &str = "portainer-agent";
 pub const COMPONENT_PROXY: &str = "kube-proxy";
 pub const COMPONENT_KUBELET: &str = "kubelet";
+pub const COMPONENT_METRICS: &str = "metrics";
 
 /// Errors encountered while constructing or initializing the node runtime.
 #[derive(Debug)]
@@ -119,6 +120,11 @@ impl From<io::Error> for RuntimeError {
     }
 }
 
+use crate::metrics::{
+    BuildInfoCollector, CertificateCollector, ComponentHealthCollector, DatastoreCollector,
+    MetricsAdapter, MetricsRegistry, UptimeCollector,
+};
+
 /// Builder for extensible node runtime assembly satisfying the C02 runtime contract.
 #[derive(Debug)]
 pub struct RuntimeBuilder {
@@ -127,6 +133,7 @@ pub struct RuntimeBuilder {
     log_level: LogLevel,
     apiserver: Option<Arc<ApiserverService>>,
     client: Option<KubernetesApiClient>,
+    metrics_registry: Option<Arc<MetricsRegistry>>,
     registrations: Vec<Registration>,
 }
 
@@ -142,6 +149,7 @@ impl RuntimeBuilder {
             log_level,
             apiserver: None,
             client: None,
+            metrics_registry: None,
             registrations: Vec::new(),
         }
     }
@@ -182,6 +190,17 @@ impl RuntimeBuilder {
     #[must_use]
     pub fn with_client(mut self, client: KubernetesApiClient) -> Self {
         self.client = Some(client);
+        self
+    }
+
+    #[must_use]
+    pub fn metrics_registry(&self) -> Option<&Arc<MetricsRegistry>> {
+        self.metrics_registry.as_ref()
+    }
+
+    #[must_use]
+    pub fn with_metrics_registry(mut self, registry: Arc<MetricsRegistry>) -> Self {
+        self.metrics_registry = Some(registry);
         self
     }
 
@@ -239,6 +258,7 @@ impl RuntimeBuilder {
             log_level: self.log_level,
             apiserver: self.apiserver,
             client: self.client,
+            metrics_registry: self.metrics_registry,
             supervisor,
             observer,
         })
@@ -253,6 +273,7 @@ pub struct NodeRuntime {
     log_level: LogLevel,
     apiserver: Option<Arc<ApiserverService>>,
     client: Option<KubernetesApiClient>,
+    metrics_registry: Option<Arc<MetricsRegistry>>,
     supervisor: Supervisor,
     observer: LifecycleObserver,
 }
@@ -291,7 +312,7 @@ impl NodeRuntime {
 
         let datastore_dir = state_dir.join("datastore");
         std::fs::create_dir_all(&datastore_dir)?;
-        let mut datastore_cfg = DatastoreConfig::new(datastore_dir);
+        let mut datastore_cfg = DatastoreConfig::new(datastore_dir.clone());
         if config.config().storage.db_wal_repair {
             datastore_cfg = datastore_cfg.with_wal_repair(true);
         }
@@ -353,12 +374,52 @@ impl NodeRuntime {
             builder = builder.register_component(storage_reg);
         }
 
+        if builder.config().config().metrics.enabled {
+            let metrics_cfg = &builder.config().config().metrics;
+            let registry = Arc::new(MetricsRegistry::new());
+            registry.register(BuildInfoCollector::default());
+            registry.register(UptimeCollector::new());
+            registry.register(DatastoreCollector::new(datastore_dir.join("kine.db")));
+            registry.register(CertificateCollector::new(
+                pki_dir.clone(),
+                builder.config().config().d2k.enabled,
+            ));
+            registry.register(ComponentHealthCollector::default());
+
+            let metrics_adapter =
+                MetricsAdapter::new(metrics_cfg.bind_address.clone(), registry.clone());
+            let metrics_reg = MetricsAdapter::registration(
+                COMPONENT_METRICS,
+                metrics_adapter,
+                vec![COMPONENT_DATASTORE.to_string()],
+                timeout,
+            );
+            builder = builder
+                .with_metrics_registry(registry)
+                .register_component(metrics_reg);
+        }
+
         builder.build()
     }
 
     #[must_use]
     pub fn config(&self) -> &ValidatedConfig {
         &self.config
+    }
+
+    #[must_use]
+    pub fn is_metrics_enabled(&self) -> bool {
+        self.config.config().metrics.enabled
+    }
+
+    #[must_use]
+    pub fn metrics_bind_address(&self) -> &str {
+        &self.config.config().metrics.bind_address
+    }
+
+    #[must_use]
+    pub fn metrics_registry(&self) -> Option<&Arc<MetricsRegistry>> {
+        self.metrics_registry.as_ref()
     }
 
     #[must_use]
