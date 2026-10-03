@@ -71,7 +71,8 @@ fn create_synthetic_payload(
         | AssetId::ImageLocalPath
         | AssetId::ImageLocalPathHelper
         | AssetId::ImagePortainerAgent
-        | AssetId::ImageD2k => {
+        | AssetId::ImageD2k
+        | AssetId::ImageKubesolo => {
             // Valid minimal tar.gz image payload
             let tar_data = entry("layer.tar", b"synthetic image layer");
             gzip(&tar_data)
@@ -123,6 +124,7 @@ fn build_synthetic_manifest_and_archive(
                 "image-local-path-helper" => AssetId::ImageLocalPathHelper,
                 "image-portainer-agent" => AssetId::ImagePortainerAgent,
                 "image-d2k" => AssetId::ImageD2k,
+                "image-kubesolo" => AssetId::ImageKubesolo,
                 other => panic!("unknown asset {other}"),
             };
 

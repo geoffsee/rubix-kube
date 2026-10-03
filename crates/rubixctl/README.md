@@ -1,8 +1,37 @@
 # Management checks and explicit prerequisites
 
-`rubixctl` is a separate management executable. Its current commands are `check`,
-`version` and help. The existing `rubix-kube` startup parser, startup YAML and its
-90-case qualification remain separate. This crate does not start Kubernetes or provide a general installer. Explicit
+Container-mode installation dispatches through the Docker CLI and the existing owned
+network/volume/container request boundary. A Linux Engine is required on Linux,
+macOS or WSL2; its architecture is queried instead of inferred from the management host.
+This implements image import and container creation, not live node readiness qualification.
+
+An offline container bundle must include a hash-listed `asset-inventory.json` with
+the complete supervised offline asset inventory, and the declared `image-kubesolo`
+gzip payload at its inventory path. Private archive staging, link/traversal rejection
+and bundle hash checks run before import. The decoder then verifies the exact image
+bytes, config platform and layer DiffIDs before passing those same bytes to Docker.
+No pull fallback is allowed after import; container creation uses `--pull=never`.
+Exactly one archive tag is required before import; additional tags that Docker would
+restore are rejected. A missing imported tag or import failure stops before owned
+resource creation. Docker image load/pull commands have ten-minute execution deadlines;
+other commands have one-minute deadlines plus a one-second child cleanup budget. An
+owner thread kills and reaps the CLI child; delayed kernel cleanup returns an explicit
+unconfirmed error to the caller while the owner retains the child and capture files.
+Separate private stdout/stderr capture is monitored every ten milliseconds and requests
+termination above eight MiB per stream, with bounded final reads. Files can overshoot
+that threshold between polls; this is not a strict filesystem quota. This owns the CLI
+child, not arbitrary descendants or remote Engine operations: killing the client does
+not prove an already-accepted daemon mutation was cancelled.
+
+An explicit `--image` override retains registry-pull behavior and takes precedence
+over the offline bundle. Default online selection uses the requested version.
+Tests use synthetic image archives and Engine fixtures; live Docker, retained-node
+startup and egress-denied workload qualification remain unexecuted.
+
+`rubixctl` is a separate management executable with checks and explicit lifecycle
+commands. The existing `rubix-kube` startup parser, startup YAML and its
+90-case qualification remain separate. Container creation does not establish a running
+Kubernetes node. Explicit
 opt-in can install missing Alpine networking packages and enable its cgroups
 service; ordinary checks never prepare a host or stop conflicting processes.
 
@@ -183,8 +212,8 @@ verify release signatures or independently trusted artifact digests. A staged
 bundle is not authenticated release qualification and must not be treated as
 such by a future installer.
 
-`rubixctl d2k fetch|install --name <instance>` exports the flat node PKI files
-`pki/ca.crt`, `pki/d2k-client.crt` and `pki/d2k-client.key`. The default output is
+`rubixctl d2k fetch|install --name <instance>` exports the Docker client credential files
+`ca.pem`, `cert.pem` and `key.pem`. The default output is
 `~/.docker/d2k/<instance>` for the invoking user; `--output` selects a certificate
 **directory**. All exported files are private (0600) in a private directory (0700).
 Symlinked directory components are rejected and leaf symlinks are atomically

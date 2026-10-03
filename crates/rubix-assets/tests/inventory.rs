@@ -98,6 +98,7 @@ fn assert_image_contract(
             AssetId::ImageD2k,
             matches!(architecture, Architecture::Amd64 | Architecture::Arm64),
         );
+        assert_delivery(inventory, AssetId::ImageKubesolo, true);
     }
 }
 #[test]
@@ -122,6 +123,7 @@ fn all_sixteen_target_variant_cells_have_exact_declared_roles() {
         "image-local-path-helper",
         "image-portainer-agent",
         "image-d2k",
+        "image-kubesolo",
     ];
     let mut cells = 0;
     for (architecture, name, unavailable) in [
@@ -155,13 +157,13 @@ fn all_sixteen_target_variant_cells_have_exact_declared_roles() {
                     Limits::default(),
                 )
                 .expect("complete cell");
-                assert_eq!(inventory.assets().len(), 19);
+                assert_eq!(inventory.assets().len(), 20);
                 assert_eq!(
                     inventory.bundled_assets().len(),
                     if variant == Variant::Online {
                         15
                     } else {
-                        19 - unavailable
+                        20 - unavailable
                     }
                 );
                 assert_eq!(
@@ -236,7 +238,7 @@ fn structural_linux_arm64_glibc_manifests_validate_both_variants() {
             Limits::default(),
         )
         .expect("valid online arm64 glibc inventory");
-    assert_eq!(online.assets().len(), 19);
+    assert_eq!(online.assets().len(), 20);
     assert_eq!(online.bundled_assets().len(), 15);
     assert_image_contract(&online, Architecture::Arm64, Variant::Online);
     assert_optional_support(&online, Architecture::Arm64);
@@ -249,8 +251,8 @@ fn structural_linux_arm64_glibc_manifests_validate_both_variants() {
             Limits::default(),
         )
         .expect("valid offline arm64 glibc inventory");
-    assert_eq!(offline.assets().len(), 19);
-    assert_eq!(offline.bundled_assets().len(), 19);
+    assert_eq!(offline.assets().len(), 20);
+    assert_eq!(offline.bundled_assets().len(), 20);
     assert_image_contract(&offline, Architecture::Arm64, Variant::Offline);
     assert_optional_support(&offline, Architecture::Arm64);
     assert_structural_placeholders(online_bytes, &online);
@@ -328,7 +330,9 @@ fn structural_digest(id: AssetId) -> &'static str {
         AssetId::ImagePortainerAgent => {
             "3d92978a213132043410654949cd06ade2b05cbbefe61ac57b6c667f94ee1bda"
         },
-        AssetId::ImageD2k => "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743",
+        AssetId::ImageD2k | AssetId::ImageKubesolo => {
+            "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
+        },
         AssetId::KubeApiserver
         | AssetId::KubeControllerManager
         | AssetId::Kubelet

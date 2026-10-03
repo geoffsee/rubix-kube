@@ -181,6 +181,12 @@
       "delivery": {
         "kind": "registry-required"
       }
+    },
+    {
+      "id": "image-kubesolo",
+      "delivery": {
+        "kind": "registry-required"
+      }
     }
   ]
 }

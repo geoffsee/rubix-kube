@@ -55,7 +55,8 @@ fn create_synthetic_payload(id: AssetId, encoding: Encoding) -> (Vec<u8>, Vec<u8
         | AssetId::ImageLocalPath
         | AssetId::ImageLocalPathHelper
         | AssetId::ImagePortainerAgent
-        | AssetId::ImageD2k => {
+        | AssetId::ImageD2k
+        | AssetId::ImageKubesolo => {
             let tar_data = entry("layer.tar", b"synthetic image layer");
             gzip(&tar_data)
         },
@@ -118,7 +119,8 @@ fn resolve_asset_delivery(variant: NodeVariant, id: AssetId) -> (bool, bool, Enc
         | AssetId::ImageLocalPath
         | AssetId::ImageLocalPathHelper
         | AssetId::ImagePortainerAgent
-        | AssetId::ImageD2k => Encoding::Gzip,
+        | AssetId::ImageD2k
+        | AssetId::ImageKubesolo => Encoding::Gzip,
         _ => Encoding::Identity,
     };
 
@@ -146,6 +148,7 @@ fn parse_catalog_asset_id(id_str: &str) -> AssetId {
         "image-local-path-helper" => AssetId::ImageLocalPathHelper,
         "image-portainer-agent" => AssetId::ImagePortainerAgent,
         "image-d2k" => AssetId::ImageD2k,
+        "image-kubesolo" => AssetId::ImageKubesolo,
         other => panic!("unknown asset {other}"),
     }
 }

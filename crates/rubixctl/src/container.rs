@@ -146,6 +146,13 @@ pub trait ContainerEngineClient {
     fn inspect_image(&mut self, image: &str) -> io::Result<Option<()>>;
     /// Pulls an image if missing.
     fn pull_image(&mut self, image: &str) -> io::Result<()>;
+    /// Import an already verified compressed Docker image archive.
+    fn load_image(&mut self, _bytes: &[u8]) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "image import is not implemented by this Engine adapter",
+        ))
+    }
 
     /// Inspects container state.
     fn inspect_container(&mut self, name: &str) -> io::Result<Option<ContainerInspect>>;
@@ -379,6 +386,29 @@ pub fn install_container(
     engine: &mut dyn ContainerEngineClient,
     params: &ContainerInstallParams,
 ) -> Result<ContainerInstallResult, ContainerLifecycleError> {
+    install_container_inner(engine, params, None)
+}
+
+/// Install using the exact bytes and tag validated by the offline image decoder.
+pub fn install_container_with_bundled_image(
+    engine: &mut dyn ContainerEngineClient,
+    params: &ContainerInstallParams,
+    image: &crate::container_image::VerifiedContainerImage<'_>,
+) -> Result<ContainerInstallResult, ContainerLifecycleError> {
+    if params.image != image.reference() {
+        return Err(ContainerLifecycleError::Engine(
+            "installation image disagrees with verified bundle tag".into(),
+        ));
+    }
+    install_container_inner(engine, params, Some(image))
+}
+
+#[allow(clippy::too_many_lines)]
+fn install_container_inner(
+    engine: &mut dyn ContainerEngineClient,
+    params: &ContainerInstallParams,
+    bundled: Option<&crate::container_image::VerifiedContainerImage<'_>>,
+) -> Result<ContainerInstallResult, ContainerLifecycleError> {
     // 0. Validate CPU manager policy (only "none" supported in container mode)
     if let Some((_, v)) = params
         .extra_env
@@ -408,11 +438,22 @@ pub fn install_container(
     let mut removed_existing = false;
 
     let install_action = || -> Result<ContainerInstallResult, ContainerLifecycleError> {
+        if let Some(image) = bundled {
+            engine.load_image(image.bytes()).map_err(|e| {
+                ContainerLifecycleError::Engine(format!("verified image import failed: {e}"))
+            })?;
+        }
         let image_exists = engine
             .inspect_image(&params.image)
             .map_err(|e| ContainerLifecycleError::Engine(format!("image inspect failed: {e}")))?
             .is_some();
         if !image_exists {
+            if bundled.is_some() {
+                return Err(ContainerLifecycleError::Engine(
+                    "verified image tag is unavailable after import; registry fallback is disabled"
+                        .into(),
+                ));
+            }
             engine
                 .pull_image(&params.image)
                 .map_err(|e| ContainerLifecycleError::Engine(format!("image pull failed: {e}")))?;

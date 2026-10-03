@@ -23,6 +23,7 @@ pub enum AssetId {
     ImageLocalPathHelper,
     ImagePortainerAgent,
     ImageD2k,
+    ImageKubesolo,
 }
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -44,7 +45,7 @@ pub struct CatalogEntry {
     pub reference: &'static str,
     pub encoding: Encoding,
 }
-const ENTRIES: [CatalogEntry; 19] = [
+const ENTRIES: [CatalogEntry; 20] = [
     entry(
         AssetId::KubeApiserver,
         "kubernetes/v1.35.7/kube-apiserver",
@@ -113,6 +114,7 @@ const ENTRIES: [CatalogEntry; 19] = [
         "docker.io/portainer/agent:lts",
     ),
     image(AssetId::ImageD2k, "docker.io/portainer/d2k:1.2.3"),
+    image(AssetId::ImageKubesolo, "ghcr.io/portainer/kubesolo:latest"),
 ];
 const fn entry(id: AssetId, reference: &'static str, encoding: Encoding) -> CatalogEntry {
     CatalogEntry {

@@ -331,9 +331,9 @@ impl ReleasePackager {
                                 | rubix_platform::Architecture::Arm64
                         )
                 },
-                AssetId::ImageLocalPath | AssetId::ImageLocalPathHelper => {
-                    variant.variant == crate::Variant::Offline
-                },
+                AssetId::ImageLocalPath
+                | AssetId::ImageLocalPathHelper
+                | AssetId::ImageKubesolo => variant.variant == crate::Variant::Offline,
                 _ => true,
             })
             .map(|entry| entry.id)

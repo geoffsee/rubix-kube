@@ -25,6 +25,7 @@ fn asset_name(id: AssetId) -> &'static str {
         AssetId::ImageLocalPathHelper => "image-local-path-helper",
         AssetId::ImagePortainerAgent => "image-portainer-agent",
         AssetId::ImageD2k => "image-d2k",
+        AssetId::ImageKubesolo => "image-kubesolo",
     }
 }
 
@@ -61,6 +62,7 @@ pub(crate) fn candidate(dir: &Path, version: &str) -> ReleasePackageManifest {
                 AssetId::ImageLocalPath | AssetId::ImageLocalPathHelper => {
                     variant.variant == Variant::Offline
                 },
+                AssetId::ImageKubesolo => variant.variant == Variant::Offline,
                 _ => true,
             })
             .map(|entry| asset_name(entry.id).to_string())

@@ -341,6 +341,157 @@ fn publish(_staged: &Path, _target: &Path, _manifest: &BundleManifest) -> io::Re
     Err(io::Error::other("offline host installation requires Unix"))
 }
 
+/// Import a platform-checked image from private staging without publishing service files.
+#[allow(clippy::too_many_lines)]
+fn execute_container_install(
+    options: &InstallOptions,
+) -> io::Result<crate::container::ContainerInstallResult> {
+    use crate::container::ContainerInstallParams;
+    use crate::container_image::install_selected_container;
+    use crate::docker_engine::DockerEngine;
+    use rubix_assets::{
+        DecodeLimits, Delivery, InventoryRequest, Limits, Manifest, Scope, Variant,
+    };
+    fn invalid(message: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> io::Error {
+        io::Error::new(io::ErrorKind::InvalidData, message)
+    }
+    let mut extra_env = vec![
+        (
+            "KUBESOLO_CPU_MANAGER_POLICY".into(),
+            options.cpu_manager_policy.clone(),
+        ),
+        (
+            "KUBESOLO_D2K_NAMESPACE".into(),
+            options.d2k_namespace.clone(),
+        ),
+        ("KUBESOLO_DEBUG".into(), options.debug.to_string()),
+        (
+            "KUBESOLO_LOCAL_STORAGE".into(),
+            options.local_storage.to_string(),
+        ),
+        (
+            "KUBESOLO_PPROF_SERVER".into(),
+            options.pprof_server.to_string(),
+        ),
+        (
+            "KUBESOLO_PORTAINER_EDGE_ASYNC".into(),
+            options.portainer_edge_async.to_string(),
+        ),
+    ];
+    for (key, value) in [
+        (
+            "KUBESOLO_APISERVER_EXTRA_SANS",
+            &options.apiserver_extra_sans,
+        ),
+        ("KUBESOLO_NODE_IP", &options.node_ip),
+        ("KUBESOLO_MTU", &options.mtu),
+        ("KUBESOLO_PORTAINER_EDGE_ID", &options.portainer_edge_id),
+        ("KUBESOLO_PORTAINER_EDGE_KEY", &options.portainer_edge_key),
+        (
+            "KUBESOLO_PORTAINER_EDGE_IMAGE",
+            &options.portainer_edge_image,
+        ),
+        (
+            "KUBESOLO_CPU_MANAGER_POLICY_OPTIONS",
+            &options.cpu_manager_policy_options,
+        ),
+        ("KUBESOLO_RESERVED_CPUS", &options.reserved_cpus),
+        ("KUBESOLO_SYSTEM_RESERVED", &options.system_reserved),
+    ] {
+        if let Some(value) = value {
+            extra_env.push((key.into(), value.clone()));
+        }
+    }
+    let params = ContainerInstallParams {
+        instance_name: options.name.clone(),
+        image: String::new(),
+        mtu: options
+            .mtu
+            .as_ref()
+            .map(|s| s.parse::<u32>().map_err(invalid))
+            .transpose()?,
+        d2k: options.d2k,
+        container_ports: options.container_ports.clone(),
+        extra_env,
+        apiserver_host_port: None,
+        d2k_host_port: None,
+    };
+    let mut engine = DockerEngine;
+    let engine_arch = DockerEngine::architecture()?;
+    let Some(path) = options.offline_install.as_ref() else {
+        return install_selected_container(&mut engine, options, params, None).map_err(invalid);
+    };
+    // Explicit custom images retain their documented registry-pull behavior.
+    if options
+        .container_image
+        .as_ref()
+        .is_some_and(|s| !s.is_empty())
+    {
+        return install_selected_container(&mut engine, options, params, None).map_err(invalid);
+    }
+    let parsed =
+        ArtifactNaming::parse_node_archive(&path.file_name().unwrap_or_default().to_string_lossy())
+            .map_err(invalid)?;
+    if parsed.variant.variant != Variant::Offline || parsed.variant.architecture != engine_arch {
+        return Err(invalid(
+            "offline bundle must match the Linux Docker Engine architecture",
+        ));
+    }
+    let (_snapshot, archive) = copy_archive(path)?;
+    audit_archive(&archive).map_err(invalid)?;
+    let staged = tempfile::tempdir()?;
+    let status = Command::new("tar")
+        .arg("-xzf")
+        .arg(&archive)
+        .arg("-C")
+        .arg(staged.path())
+        .status()?;
+    if !status.success() {
+        return Err(invalid("offline container bundle extraction failed"));
+    }
+    verify_staged_bundle(
+        staged.path(),
+        parsed.variant.architecture,
+        parsed.variant.libc,
+    )
+    .map_err(invalid)?;
+    let limits = Limits::default();
+    let inventory_path = staged.path().join("asset-inventory.json");
+    if fs::metadata(&inventory_path)?.len() > limits.manifest_bytes as u64 {
+        return Err(invalid("asset inventory exceeds the manifest limit"));
+    }
+    let inventory = Manifest::decode(&fs::read(inventory_path)?, limits)
+        .map_err(invalid)?
+        .validate_inventory(
+            InventoryRequest {
+                target: parsed.variant.node_target(),
+                variant: Variant::Offline,
+                scope: Scope::SupervisedBundle,
+            },
+            limits,
+        )
+        .map_err(invalid)?;
+    let image_path = inventory
+        .assets()
+        .find_map(|(id, delivery)| match delivery {
+            Delivery::Bundled { path, .. } if id == rubix_assets::AssetId::ImageKubesolo => {
+                Some(path.clone())
+            },
+            _ => None,
+        })
+        .ok_or_else(|| invalid("offline inventory does not declare a bundled node image"))?;
+    let image_path = staged.path().join(image_path);
+    if fs::metadata(&image_path)?.len() > limits.encoded_asset_bytes {
+        return Err(invalid("node image exceeds the encoded asset limit"));
+    }
+    let bytes = fs::read(image_path)?;
+    let mut session = inventory
+        .decoding_session(DecodeLimits::default())
+        .map_err(invalid)?;
+    install_selected_container(&mut engine, options, params, Some((&mut session, &bytes)))
+        .map_err(invalid)
+}
+
 #[allow(clippy::too_many_lines)] // linear fail-fast workflow with per-step diagnostics
 pub fn execute_install(
     options: &InstallOptions,
@@ -348,6 +499,26 @@ pub fn execute_install(
     _stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
+    if options.run_mode == "container" {
+        return match execute_container_install(options) {
+            Ok(result) => {
+                writeln!(
+                    stderr,
+                    "Started container {} with API port {}; live node readiness is not qualified",
+                    result.container_name, result.apiserver_port
+                )?;
+                Ok(0)
+            },
+            Err(err) => {
+                writeln!(stderr, "error: container installation failed: {err}")?;
+                Ok(1)
+            },
+        };
+    }
+    if options.run_mode != "service" {
+        writeln!(stderr, "error: unsupported run mode '{}'", options.run_mode)?;
+        return Ok(1);
+    }
     writeln!(stderr, "\n  rubixctl  install\n\n  > Resolving host target")?;
 
     let evidence = match inputs.discover() {
