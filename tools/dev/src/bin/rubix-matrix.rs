@@ -1,5 +1,8 @@
 //! Validate and inspect the supported variant matrix and clean-checkout artifact naming.
-use rubix_assets::{Architecture, ArtifactNaming, Libc, Matrix, OptionalFeature, Variant};
+use rubix_assets::{
+    Architecture, ArtifactNaming, Libc, Matrix, OptionalFeature, ReleasePackageManifest,
+    ReleasePackager, Variant,
+};
 use std::process::ExitCode;
 
 fn validate_all() -> Result<(), String> {
@@ -108,6 +111,94 @@ fn print_cells() {
     }
 }
 
+fn handle_archive(filename: &str) -> ExitCode {
+    match ArtifactNaming::canonical_node_archive(filename) {
+        Ok(parsed) => {
+            println!("Parsed node archive:");
+            println!("  Prefix:       {}", parsed.prefix);
+            println!("  Version:      {}", parsed.version);
+            println!("  Cell:         {}", parsed.variant.cell);
+            println!("  OCI Platform: {}", parsed.variant.oci_platform());
+            println!(
+                "  Portainer:    {:?}",
+                parsed
+                    .variant
+                    .optional_feature_support(OptionalFeature::PortainerAgent)
+            );
+            println!(
+                "  D2K:          {:?}",
+                parsed
+                    .variant
+                    .optional_feature_support(OptionalFeature::D2k)
+            );
+            println!(
+                "  LocalPath:    {:?}",
+                parsed
+                    .variant
+                    .optional_feature_support(OptionalFeature::LocalPathStorage)
+            );
+            ExitCode::SUCCESS
+        },
+        Err(e) => {
+            eprintln!("invalid archive filename: {e}");
+            ExitCode::FAILURE
+        },
+    }
+}
+
+fn handle_binary(filename: &str) -> ExitCode {
+    match ArtifactNaming::parse_management_binary(filename) {
+        Ok(parsed) => {
+            println!("Parsed management binary:");
+            println!("  Prefix:       {}", parsed.prefix);
+            println!("  OS:           {}", parsed.target.os);
+            println!("  Architecture: {}", parsed.target.architecture);
+            ExitCode::SUCCESS
+        },
+        Err(e) => {
+            eprintln!("invalid binary filename: {e}");
+            ExitCode::FAILURE
+        },
+    }
+}
+
+fn handle_verify_manifest(filename: &str) -> ExitCode {
+    let data = match std::fs::read(filename) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            eprintln!("failed to read release manifest '{filename}': {e}");
+            return ExitCode::FAILURE;
+        },
+    };
+    let manifest: ReleasePackageManifest = match serde_json::from_slice(&data) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("failed to parse release manifest '{filename}': {e}");
+            return ExitCode::FAILURE;
+        },
+    };
+    match ReleasePackager::verify_release_manifest(
+        &manifest,
+        "rubix-kube",
+        "rubixctl",
+        &manifest.version,
+    ) {
+        Ok(()) => {
+            println!(
+                "release metadata '{}' (version {}) verified: 16 node archive descriptors, 4 management descriptors, {} OCI image descriptors; artifact bytes and installation are not qualified",
+                manifest.product_name,
+                manifest.version,
+                manifest.oci_images.len()
+            );
+            ExitCode::SUCCESS
+        },
+        Err(e) => {
+            eprintln!("release manifest verification failed: {e}");
+            ExitCode::FAILURE
+        },
+    }
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.as_slice() {
@@ -139,58 +230,12 @@ fn main() -> ExitCode {
             print_cells();
             ExitCode::SUCCESS
         },
-        [cmd, filename] if cmd == "archive" => {
-            match ArtifactNaming::canonical_node_archive(filename) {
-                Ok(parsed) => {
-                    println!("Parsed node archive:");
-                    println!("  Prefix:       {}", parsed.prefix);
-                    println!("  Version:      {}", parsed.version);
-                    println!("  Cell:         {}", parsed.variant.cell);
-                    println!("  OCI Platform: {}", parsed.variant.oci_platform());
-                    println!(
-                        "  Portainer:    {:?}",
-                        parsed
-                            .variant
-                            .optional_feature_support(OptionalFeature::PortainerAgent)
-                    );
-                    println!(
-                        "  D2K:          {:?}",
-                        parsed
-                            .variant
-                            .optional_feature_support(OptionalFeature::D2k)
-                    );
-                    println!(
-                        "  LocalPath:    {:?}",
-                        parsed
-                            .variant
-                            .optional_feature_support(OptionalFeature::LocalPathStorage)
-                    );
-                    ExitCode::SUCCESS
-                },
-                Err(e) => {
-                    eprintln!("invalid archive filename: {e}");
-                    ExitCode::FAILURE
-                },
-            }
-        },
-        [cmd, filename] if cmd == "binary" => {
-            match ArtifactNaming::parse_management_binary(filename) {
-                Ok(parsed) => {
-                    println!("Parsed management binary:");
-                    println!("  Prefix:       {}", parsed.prefix);
-                    println!("  OS:           {}", parsed.target.os);
-                    println!("  Architecture: {}", parsed.target.architecture);
-                    ExitCode::SUCCESS
-                },
-                Err(e) => {
-                    eprintln!("invalid binary filename: {e}");
-                    ExitCode::FAILURE
-                },
-            }
-        },
+        [cmd, filename] if cmd == "archive" => handle_archive(filename),
+        [cmd, filename] if cmd == "binary" => handle_binary(filename),
+        [cmd, filename] if cmd == "verify-manifest" => handle_verify_manifest(filename),
         _ => {
             eprintln!(
-                "Usage: rubix-matrix [validate | list | archive <filename> | binary <filename>]"
+                "Usage: rubix-matrix [validate | list | archive <filename> | binary <filename> | verify-manifest <json-file>]"
             );
             ExitCode::FAILURE
         },
