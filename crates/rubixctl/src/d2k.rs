@@ -132,7 +132,7 @@ fn execute(
         || !name.as_bytes()[0].is_ascii_alphanumeric()
         || !name
             .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_' || b == b'.')
     {
         writeln!(
             stderr,
@@ -364,7 +364,7 @@ mod tests {
     }
     impl EnginePortInspector for MockEngine {
         fn inspect_port(&mut self, instance: &str, port: u16) -> io::Result<String> {
-            assert!(instance == "dev" || instance == "rubix");
+            assert!(instance == "dev" || instance == "rubix" || instance == "dev.cluster");
             assert_eq!(port, 2376);
             Ok(self.output.into())
         }
@@ -392,7 +392,11 @@ mod tests {
     }
     #[test]
     fn container_names_flat_paths_port_and_output_are_preserved() {
-        for (instance, container) in [("dev", "kubesolo-dev"), ("rubix", "kubesolo")] {
+        for (instance, container) in [
+            ("dev", "kubesolo-dev"),
+            ("rubix", "kubesolo"),
+            ("dev.cluster", "kubesolo-dev.cluster"),
+        ] {
             let (_temporary, mut options, environment) = fixture();
             options.name = Some(instance.into());
             let mut docker = MockDocker::default();
