@@ -17,6 +17,7 @@ pub mod language_policy;
 pub mod process;
 pub mod resolved_capture;
 pub mod resolved_report;
+pub mod state_transition;
 #[cfg(not(test))]
 pub mod upstream;
 
@@ -115,5 +116,7 @@ pub mod preflight_probes;
 
 pub mod api_json;
 pub mod component_boundary;
+pub mod conformance;
+pub mod perf;
 pub mod platform_management;
 pub mod provenance;

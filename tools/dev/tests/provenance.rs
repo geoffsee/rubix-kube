@@ -127,10 +127,11 @@ fn manifest_generation_uses_real_digests_and_ignores_foreign_versions() {
     )
     .unwrap();
     let manifest = generate_manifest(dir.path(), "0.1.0", "rubix-kube", "rubixctl").unwrap();
-    assert!(manifest.node_archives.len() <= 1);
-    for archive in &manifest.node_archives {
-        assert_eq!(archive.sha256.len(), 64);
-    }
+    assert_eq!(manifest.node_archives.len(), 1);
+    assert_eq!(
+        manifest.node_archives[0].sha256,
+        rubix_assets::ReleasePackager::sha256_hex(b"node")
+    );
     // Incomplete candidates fail full matrix verification instead of passing silently.
     assert!(
         rubix_assets::ReleasePackager::verify_release_manifest(

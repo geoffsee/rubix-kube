@@ -801,7 +801,7 @@ fn test_default_command_handler_unimplemented_stubs() {
         String::from_utf8_lossy(&test_stderr).contains("command 'install' is not yet implemented")
     );
 
-    let unimplemented_cmds = ["install", "d2k"];
+    let unimplemented_cmds = ["install"];
 
     for cmd in unimplemented_cmds {
         let mut stdout = Vec::new();

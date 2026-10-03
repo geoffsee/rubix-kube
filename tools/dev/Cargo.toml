@@ -19,8 +19,19 @@ tar = { version = "=0.4.46", default-features = false }
 toml = { version = "=0.9.6", default-features = false, features = ["std", "serde", "parse"] }
 rustix = { version = "=1.1.5", features = ["fs", "process", "thread"] }
 zip = { version = "=8.6.0", default-features = false, features = ["deflate-flate2"] }
-tokio = { version = "=1.53.1", features = ["rt-multi-thread", "signal", "time"] }
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "signal", "time", "macros", "net", "io-util", "sync"] }
 rubix-assets = { version = "=0.1.0", path = "../../crates/rubix-assets" }
+rubix-platform = { version = "=0.1.0", path = "../../crates/rubix-platform" }
+rubix-apiserver = { version = "=0.1.0", path = "../../crates/rubix-apiserver" }
+rubix-config = { version = "=0.1.0", path = "../../crates/rubix-config" }
+rubix-controller = { version = "=0.1.0", path = "../../crates/rubix-controller" }
+rubix-datastore = { version = "=0.1.0", path = "../../crates/rubix-datastore" }
+rubix-dns = { version = "=0.1.0", path = "../../crates/rubix-dns" }
+rubix-pki = { version = "=0.1.0", path = "../../crates/rubix-pki" }
+rubix-storage = { version = "=0.1.0", path = "../../crates/rubix-storage" }
+rubixctl = { version = "=0.1.0", path = "../../crates/rubixctl" }
+x509-parser = "0.18.1"
+rcgen = { version = "0.14.10", default-features = false, features = ["aws_lc_rs", "pem", "x509-parser"] }
 
 [lints]
 workspace = true

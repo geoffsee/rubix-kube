@@ -175,6 +175,7 @@ impl fmt::Debug for InstallOptions {
 pub struct UninstallOptions {
     pub path: PathBuf,
     pub purge: bool,
+    pub keep_config: bool,
     pub force: bool,
 }
 
@@ -183,6 +184,7 @@ impl Default for UninstallOptions {
         Self {
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             purge: false,
+            keep_config: false,
             force: false,
         }
     }
@@ -272,6 +274,7 @@ pub struct D2kOptions {
     pub subcommand: Option<String>,
     pub path: PathBuf,
     pub output: Option<PathBuf>,
+    pub name: Option<String>,
 }
 
 impl Default for D2kOptions {
@@ -280,6 +283,7 @@ impl Default for D2kOptions {
             subcommand: None,
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             output: None,
+            name: None,
         }
     }
 }
@@ -334,6 +338,7 @@ pub trait CommandHandler {
     ) -> io::Result<u8> {
         let kind = crate::cleanup::CleanupKind::Uninstall {
             purge: options.purge,
+            keep_config: options.keep_config,
         };
         crate::cleanup::execute_cleanup(kind, &options.path, options.force, stderr)
     }
@@ -385,13 +390,19 @@ pub trait CommandHandler {
 
     fn execute_d2k(
         &mut self,
-        _options: D2kOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: D2kOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'd2k' is not yet implemented")?;
-        Ok(1)
+        crate::d2k::execute_d2k(
+            &options,
+            inputs,
+            &mut crate::endpoints::DockerPortInspector,
+            &std::collections::BTreeMap::new(),
+            stdout,
+            stderr,
+        )
     }
 }
 
