@@ -145,13 +145,21 @@ fn test_config_validate_direct_file() {
     fs::write(&invalid_file, b"network:\n  mtu: not_a_number\n").unwrap();
 
     let mut inputs = DummyInputs;
-    let (_socket_dir, env) = isolated_environment();
+    let (socket_dir, env) = isolated_environment();
+    let missing = socket_dir.path().join("missing.yaml");
+    let missing = missing.to_str().unwrap();
 
     // Valid file
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
     let code = execute(
-        &args(&["config", "validate", valid_file.to_str().unwrap()]),
+        &args(&[
+            "config",
+            "-f",
+            missing,
+            "validate",
+            valid_file.to_str().unwrap(),
+        ]),
         &env,
         "v0.1.0",
         &mut inputs,
@@ -169,7 +177,13 @@ fn test_config_validate_direct_file() {
     stdout.clear();
     stderr.clear();
     let code = execute(
-        &args(&["config", "validate", invalid_file.to_str().unwrap()]),
+        &args(&[
+            "config",
+            "-f",
+            missing,
+            "validate",
+            invalid_file.to_str().unwrap(),
+        ]),
         &env,
         "v0.1.0",
         &mut inputs,
@@ -184,7 +198,13 @@ fn test_config_validate_direct_file() {
     stdout.clear();
     stderr.clear();
     let code = execute(
-        &args(&["config", "validate", "/nonexistent/config.yaml"]),
+        &args(&[
+            "config",
+            "-f",
+            missing,
+            "validate",
+            "/nonexistent/config.yaml",
+        ]),
         &env,
         "v0.1.0",
         &mut inputs,
