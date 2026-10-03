@@ -9,6 +9,7 @@ pub mod contract;
 pub mod download;
 mod parse;
 pub mod preparation;
+pub mod service;
 pub mod sudo_env;
 
 pub use artifact::{
@@ -24,6 +25,12 @@ pub use contract::{
 };
 pub use download::execute_download;
 pub use parse::{Command, HelpTopic, ParseError, parse_command};
+pub use service::{
+    CustomServicePaths, InitBackend, LifecycleAction, LifecyclePlan, RunMode, ServiceConfig,
+    ServiceDefinition, ServiceFile, UnsupportedTargetError, escape_openrc_double_quote,
+    escape_systemd_env, generate_service_definition, plan_lifecycle_action,
+    render_custom_definition, shell_quote,
+};
 pub use sudo_env::recover_sudo_env_from_bytes;
 
 use rubix_platform::preflight::{
