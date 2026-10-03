@@ -1,12 +1,12 @@
 use rubixctl::{Shell, generate_completion};
-use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 #[test]
 fn powershell_completes_commands_and_shell_arguments() {
     let executable = std::env::var_os("RUBIX_REVIEW_PWSH").unwrap_or_else(|| "pwsh".into());
     let mut script = Vec::new();
     generate_completion(Shell::PowerShell, &mut script).unwrap();
+    let script = String::from_utf8(script).unwrap();
     let binary_dir = std::path::Path::new(env!("CARGO_BIN_EXE_rubixctl"))
         .parent()
         .unwrap();
@@ -24,32 +24,26 @@ fn powershell_completes_commands_and_shell_arguments() {
         ("rubixctl completion p", vec!["powershell"]),
         ("rubixctl completion zs", vec!["zsh"]),
     ] {
-        let mut child = match Command::new(&executable)
-            .args(["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "-"])
+        // Passing the complete script avoids stdin's interactive line-reader,
+        // which emits terminal mode escapes on Linux even with redirected output.
+        let invocation = format!(
+            "{script}\n[System.Management.Automation.CommandCompletion]::CompleteInput('{input}', {}, $null).CompletionMatches | ForEach-Object {{ $_.CompletionText }}",
+            input.len(),
+        );
+        let output = match Command::new(&executable)
+            .args(["-NoLogo", "-NoProfile", "-NonInteractive", "-Command"])
+            .arg(invocation)
             .env("PATH", &search_path)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
+            .env("TERM", "xterm-256color")
+            .output()
         {
-            Ok(child) => child,
+            Ok(output) => output,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 eprintln!("PowerShell is unavailable; native completion smoke test skipped");
                 return;
             },
             Err(error) => panic!("cannot run PowerShell: {error}"),
         };
-        let mut stdin = child.stdin.take().unwrap();
-        stdin.write_all(&script).unwrap();
-        writeln!(stdin).unwrap();
-        writeln!(
-            stdin,
-            "[System.Management.Automation.CommandCompletion]::CompleteInput('{input}', {}, $null).CompletionMatches | ForEach-Object {{ $_.CompletionText }}",
-            input.len(),
-        )
-        .unwrap();
-        drop(stdin);
-        let output = child.wait_with_output().unwrap();
         assert!(
             output.status.success(),
             "{}",
