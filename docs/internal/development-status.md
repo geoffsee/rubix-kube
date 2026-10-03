@@ -95,3 +95,10 @@ Stack: perf/ci-regression-gates
 Evidence: Implemented synthetic fixture integrity and contract arithmetic gating (not live performance qualification), with rebaseline policy enforcement in `rubix-perf gate-ci`, validating all 12 contract thresholds across amd64 and arm64, higher-is-better pod density directionality, 24-hour sustained memory growth bounds (<= 1.10 ratio with 0 OOMs, crashes, or failures) covering all 8 canonical retained process roles, strict rejection of unmeasured sub-200MB claims and invalid PSS/RSS/latency samples, provenance integrity verification, secondary target gap checks, and contract multiplier immutability.
 Next step: Add verified matched live Linux captures before qualifying performance; timestamp: 2026-10-03T18:45:00Z
 
+Work item: E30.03 (https://github.com/geoffsee/rubix-kube/issues/126)
+Outcome: Completed
+Readiness: Operator documentation and runbooks finalized
+Ownership: Operator Runbooks & Handoff Engineer
+Stack: release/operator-runbooks
+Evidence: Delivered comprehensive operator documentation and runbooks under `docs/operator/`: fresh installs (universal, minimal, named container lifecycle), offline air-gap deployment (16 target archive cells, verified bundle manifests, image archives), external container runtime integration (CRI socket endpoints, cgroup driver matching, ownership boundaries), networking and storage (CNI plugins, bridge conflist, pod egress rules, LocalPath storage provisioner), operational metrics and CPU management (HTTP routes, Prometheus/OpenMetrics negotiation, CPU manager static/none policies, checkpoint invalidation), and state migration and recovery runbooks (step-by-step Go-to-Rust migration, config conversion, Kine SQLite snapshot/restore, dedicated mTLS PKI preservation, fail-closed recovery, explicit downtime bounds, platform limitations).
+Next step: None; timestamp: 2026-10-03T23:45:00Z
