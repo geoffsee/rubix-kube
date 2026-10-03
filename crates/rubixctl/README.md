@@ -99,8 +99,8 @@ Service definitions and lifecycle plans cover the six Linux init backends.
 Daemon and foreground definitions describe paths only; lifecycle operations in
 those two modes return explicit unsupported-action errors pending a process
 executor. These plans do not establish live init-system or reboot qualification.
-Container port mappings without a host IP (`8080:80` or `80`) publish on all
-host interfaces. Specify `127.0.0.1:8080:80` for local access. User mappings may
+Container port mappings without a host IP (`8080:80` or `80`) default to
+`127.0.0.1`. Explicit host addresses are preserved. User mappings may
 not add a binding for the built-in API server or enabled D2K port. Reinstalling
 recreates only the selected container, retaining its volume and reconciling its
 instance bridge MTU; a bridge still in use causes an explicit Engine error.
@@ -150,3 +150,24 @@ container is tolerated for uninstall only after the Engine confirms its absence;
 reset of a missing container fails without deleting state. Cleanup regressions
 use temporary directories and injected host/Engine effects. Live Linux mount,
 service and Docker qualification remains outstanding.
+
+When running under sudo, preserve the allowlisted Edge settings explicitly:
+
+```sh
+sudo --preserve-env=KUBESOLO_PORTAINER_EDGE_ID,KUBESOLO_PORTAINER_EDGE_KEY,KUBESOLO_PORTAINER_EDGE_ASYNC,KUBESOLO_PORTAINER_EDGE_IMAGE rubixctl <command>
+```
+
+The sudo policy must permit preserving those variables. If it does not, an
+administrator can add these exact names to `env_keep` in sudoers. Parent-process
+`/proc` environment reads are not a supported source: sudo parents can be
+non-dumpable, and Linux can deny access even to a privileged child. Existing
+values passed to the command remain authoritative; never include key values in
+command arguments or diagnostics.
+
+Downloads permit an explicitly selected HTTP custom URL for compatibility with
+local mirrors; operators choosing it trust that network and mirror. Redirects
+must use HTTPS, so a secure download cannot silently downgrade to HTTP. TLS
+protects transport to the chosen endpoint, but this download slice does not
+verify release signatures or independently trusted artifact digests. A staged
+bundle is not authenticated release qualification and must not be treated as
+such by a future installer.
