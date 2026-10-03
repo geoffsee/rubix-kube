@@ -22,7 +22,7 @@ pub const BACKUP_DIR: &str = "backups";
 /// Container spec file recorded at install time under the data path.
 pub const CONTAINER_SPEC_FILE: &str = "container.spec";
 /// State directories (relative to the data path) captured before an upgrade.
-pub const BACKED_UP_STATE_DIRS: [&str; 2] = ["pki", "db"];
+pub const BACKED_UP_STATE_DIRS: [&str; 3] = ["pki", "db", "kine"];
 /// Default service unit name.
 pub const SERVICE_NAME: &str = "kubesolo";
 

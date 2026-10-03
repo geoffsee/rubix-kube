@@ -17,6 +17,7 @@ pub mod language_policy;
 pub mod process;
 pub mod resolved_capture;
 pub mod resolved_report;
+pub mod state_transition;
 #[cfg(not(test))]
 pub mod upstream;
 

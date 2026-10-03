@@ -40,3 +40,10 @@ Evidence: Implemented `AssetSelector` and `SelectedDelivery` in `rubix-assets` r
 Next step: None; timestamp: 2026-10-02T20:20:00Z
 
 
+Work item: E30.01 (https://github.com/geoffsee/rubix-kube/issues/124)
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: migration/state-transitions
+Evidence: Implemented Go-to-Rust state transition validation suite (`tools/dev/src/state_transition/`, `rubix-state-transition` CLI, and integration tests in `tools/dev/tests/state_transitions.rs`). Verified supported starting versions (`v1.1.8`, `v1.2.0`, `v1.3.0`, `v1.3.1-v1.3.3`) and preflight rejection of unsupported `< v1.1.8`/empty/malformed versions. Validated configuration translation from legacy systemd flags to 0600 `/etc/kubesolo/config.yaml` with `.bak` backup and preservation of existing configs. Proved non-interchangeability of raw SQLite with fatal header rejection and verified explicit export/import into `RUBXSNP1` datastore snapshots. Asserted cryptographic trust preservation across PKI with YAML and JSON kubeconfigs, static pod manifest byte identity, workload UID/resourceVersion preservation, and recursive SHA-256 byte validation of PV storage. Documented complete transition procedures, 5-10m downtime window, nonportable state, and required backups in `docs/architecture/state-transitions.md`.
+Next step: None; timestamp: 2026-10-03T15:25:00Z
