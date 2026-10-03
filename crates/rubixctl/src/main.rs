@@ -16,6 +16,62 @@ impl rubixctl::CheckInputs for Host {
     fn ports(&mut self, pprof: bool) -> Result<[Observation<PortAvailability>; 4], PlatformError> {
         probe_ports(pprof)
     }
+    fn download_file(
+        &mut self,
+        url: &str,
+        dest: &std::path::Path,
+        proxy: Option<&str>,
+    ) -> io::Result<()> {
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let mut cmd = std::process::Command::new("curl");
+        cmd.arg("-fSL").arg("-o").arg(dest);
+        if let Some(p) = proxy {
+            cmd.arg("--proxy").arg(p);
+        }
+        cmd.arg(url);
+        let status = cmd.status()?;
+        if !status.success() {
+            return Err(io::Error::other(format!(
+                "curl failed with status: {status}"
+            )));
+        }
+        Ok(())
+    }
+    fn copy_self(&mut self, dest: &std::path::Path) -> io::Result<()> {
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let current_exe = std::env::current_exe()?;
+        std::fs::copy(&current_exe, dest)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(metadata) = std::fs::metadata(dest) {
+                let mut perms = metadata.permissions();
+                perms.set_mode(0o755);
+                let _ = std::fs::set_permissions(dest, perms);
+            }
+        }
+        Ok(())
+    }
+    fn read_parent_environ(&mut self) -> io::Result<Vec<u8>> {
+        let status = std::fs::read_to_string("/proc/self/status")?;
+        for line in status.lines() {
+            if let Some(rest) = line.strip_prefix("PPid:") {
+                let ppid: u32 = rest
+                    .trim()
+                    .parse()
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+                return std::fs::read(format!("/proc/{ppid}/environ"));
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "PPid not found in /proc/self/status",
+        ))
+    }
 }
 fn main() -> std::process::ExitCode {
     let Ok(args): Result<Vec<String>, _> = std::env::args_os()
@@ -26,11 +82,14 @@ fn main() -> std::process::ExitCode {
         let _ = writeln!(io::stderr(), "error: command arguments must be UTF-8");
         return std::process::ExitCode::FAILURE;
     };
-    let environment: BTreeMap<String, String> =
-        ["KUBESOLO_INSTALL_PREREQS", "KUBESOLO_PPROF_SERVER"]
-            .into_iter()
-            .filter_map(|key| std::env::var(key).ok().map(|value| (key.into(), value)))
-            .collect();
+    let mut environment: BTreeMap<String, String> = std::env::vars().collect();
+    if environment.contains_key("SUDO_USER")
+        && !environment.contains_key("KUBESOLO_PORTAINER_EDGE_KEY")
+    {
+        rubixctl::recover_sudo_environment(&mut environment, |ppid| {
+            std::fs::read(format!("/proc/{ppid}/environ"))
+        });
+    }
     let parsed = rubixctl::parse_command(&args, &environment);
     if let Ok(rubixctl::Command::Check(options)) = parsed
         && options.install_prerequisites
