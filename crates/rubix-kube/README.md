@@ -92,6 +92,13 @@ Datastore size measures the managed snapshot and WAL files. Component health
 series are not registered until they are connected to supervisor lifecycle state;
 the endpoint does not publish static zero values as current component health.
 
+Runtime endpoint tests retry at most three fresh ports only after the supervisor
+reports `metrics_bind_failed` and the failed runtime is joined. Existing in-process
+fixtures record forced cleanup for local-path, DNS, API-server and datastore services,
+and deadline abortion for local-path and DNS. Retry checks retain those diagnostics
+and reject other failures, including metrics cleanup failures. These fixtures do
+not qualify live-cluster shutdown behavior.
+
 The runtime's metrics adapter binds only when `metrics.enabled` is true, at
 `127.0.0.1:9105` by default. Bind failures use optional-component degradation.
 The listener and accepted connections belong to the adapter: stop closes the

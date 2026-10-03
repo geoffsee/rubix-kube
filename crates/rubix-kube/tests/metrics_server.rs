@@ -21,6 +21,9 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::watch;
 
+#[path = "support/metrics_startup.rs"]
+mod metrics_startup;
+
 #[derive(Clone, Default)]
 struct LogProbe(Arc<Mutex<Vec<u8>>>);
 
@@ -288,12 +291,27 @@ async fn disabled_metrics_does_not_touch_an_existing_listener() {
 
 #[tokio::test]
 async fn test_node_runtime_metrics_serving_scrape_and_certificates_without_tls() {
+    for _ in 0..3 {
+        if metrics_serving_attempt(false).await {
+            return;
+        }
+    }
+    panic!("metrics failed to bind three fresh ephemeral addresses");
+}
+
+#[tokio::test]
+async fn reclaimed_metrics_port_is_retried_after_the_failed_runtime_is_joined() {
+    assert!(!metrics_serving_attempt(true).await);
+    assert!(metrics_serving_attempt(false).await);
+}
+
+async fn metrics_serving_attempt(reclaim_before_bind: bool) -> bool {
     let temp = TempDir::new().unwrap();
 
     // Find an unused local port
     let dummy = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = dummy.local_addr().unwrap();
-    drop(dummy);
+    let _reclaimed = reclaim_before_bind.then_some(dummy);
 
     let config = test_config_metrics(temp.path(), true, &addr.to_string());
     assert!(config.config().metrics.enabled);
@@ -301,12 +319,20 @@ async fn test_node_runtime_metrics_serving_scrape_and_certificates_without_tls()
     let runtime = NodeRuntime::from_config(config).expect("assemble runtime");
     assert!(runtime.is_metrics_enabled());
     assert!(runtime.metrics_registry().is_some());
+    let mut observer = runtime.observer();
 
     let client = runtime.client().expect("client present").clone();
     let (stop_handle, stop_receiver) = stop_channel();
     let probe = LogProbe::default();
     let run_handle =
         tokio::spawn(runtime.run_with_sink(stop_receiver, probe, FlushPolicy::EachFrame));
+
+    if !metrics_startup::metrics_bound(&mut observer).await {
+        stop_handle.stop();
+        let (report, _, _) = run_handle.await.expect("failed bind attempt joins");
+        metrics_startup::assert_retryable_bind_failure(&report);
+        return false;
+    }
 
     // Wait until apiserver is ready and serving
     tokio::time::timeout(Duration::from_secs(5), async {
@@ -392,6 +418,7 @@ async fn test_node_runtime_metrics_serving_scrape_and_certificates_without_tls()
     // Verify endpoint is closed
     tokio::time::sleep(Duration::from_millis(50)).await;
     assert!(TcpStream::connect(addr).await.is_err());
+    true
 }
 
 #[tokio::test]

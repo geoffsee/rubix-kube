@@ -11,101 +11,123 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use tokio::sync::watch;
 
+#[path = "support/metrics_startup.rs"]
+mod metrics_startup;
+
 #[tokio::test]
 async fn runtime_metrics_and_config_api_preserve_selected_context_and_degrade_independently() {
-    for collision in [false, true] {
-        let tmp = tempfile::tempdir().unwrap();
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let metrics_addr = listener.local_addr().unwrap();
-        let _blocker = collision.then_some(listener);
-        let socket_path = tmp.path().join("config.sock");
-        let config_path = tmp.path().join("selected.yaml");
-        let host = HostContext {
-            cpu_count: 1,
-            architecture: "riscv64".into(),
-            detected_container_mode: false,
-        };
-        let mut config = Config {
-            path: tmp.path().join("state").display().to_string(),
-            ..Config::default()
-        };
-        config.network.node_ip = "127.0.0.1".into();
-        config.kubernetes.node_name = "runtime-node".into();
-        config.storage.local_path.enabled = false;
-        config.metrics.enabled = true;
-        config.metrics.bind_address = metrics_addr.to_string();
-        config.api.enabled = true;
-        config.api.socket_path = socket_path.display().to_string();
-        let mut stored = config.clone();
-        stored.kubernetes.node_name = "selected-file-node".into();
-        write_document(&config_path, &stored).unwrap();
-        let runtime = rubix_kube::runtime::NodeRuntime::from_config_with_context(
-            config.validate(&host).unwrap(),
-            config_path,
-            host,
-        )
-        .unwrap();
-        assert!(runtime.metrics_registry().is_some());
-        let mut observer = runtime.observer();
-        let (stop, receiver) = rubix_supervisor::stop_channel();
-        let task = tokio::spawn(runtime.run_with_sink(
-            receiver,
-            std::io::sink(),
-            rubix_kube::lifecycle_sink::FlushPolicy::EachFrame,
-        ));
-        tokio::time::timeout(std::time::Duration::from_secs(5), async {
-            while UnixStream::connect(&socket_path).await.is_err() {
-                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-            }
-            let (status, _, _, body) =
-                request_json(&socket_path, "GET", "/api/v1/config", "", &[]).await;
-            assert_eq!(status, 200);
-            assert_eq!(
-                body["config"]["kubernetes"]["nodeName"],
-                "selected-file-node"
-            );
-            let (status, _, _, _) = request_json(
-                &socket_path,
-                "POST",
-                "/api/v1/config:validate",
-                r#"{"kubernetes":{"kubelet":{"systemReserved":{"cpu":"1000m"}}}}"#,
-                &[],
-            )
-            .await;
-            assert_eq!(
-                status, 422,
-                "validation must retain the supplied one-CPU host"
-            );
-            if collision {
-                wait_for_degraded(&mut observer).await;
-            } else {
-                assert_metrics_health(metrics_addr).await;
-            }
-        })
-        .await
-        .expect("both optional endpoints start without losing selected context");
+    for _ in 0..3 {
+        if combined_runtime_attempt(false).await {
+            assert!(combined_runtime_attempt(true).await);
+            return;
+        }
+    }
+    panic!("metrics failed to bind three fresh ephemeral addresses");
+}
+
+async fn combined_runtime_attempt(collision: bool) -> bool {
+    let tmp = tempfile::tempdir().unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let metrics_addr = listener.local_addr().unwrap();
+    let _blocker = collision.then_some(listener);
+    let socket_path = tmp.path().join("config.sock");
+    let config_path = tmp.path().join("selected.yaml");
+    let host = HostContext {
+        cpu_count: 1,
+        architecture: "riscv64".into(),
+        detected_container_mode: false,
+    };
+    let mut config = Config {
+        path: tmp.path().join("state").display().to_string(),
+        ..Config::default()
+    };
+    config.network.node_ip = "127.0.0.1".into();
+    config.kubernetes.node_name = "runtime-node".into();
+    config.storage.local_path.enabled = false;
+    config.metrics.enabled = true;
+    config.metrics.bind_address = metrics_addr.to_string();
+    config.api.enabled = true;
+    config.api.socket_path = socket_path.display().to_string();
+    let mut stored = config.clone();
+    stored.kubernetes.node_name = "selected-file-node".into();
+    write_document(&config_path, &stored).unwrap();
+    let runtime = rubix_kube::runtime::NodeRuntime::from_config_with_context(
+        config.validate(&host).unwrap(),
+        config_path,
+        host,
+    )
+    .unwrap();
+    assert!(runtime.metrics_registry().is_some());
+    let mut observer = runtime.observer();
+    let (stop, receiver) = rubix_supervisor::stop_channel();
+    let task = tokio::spawn(runtime.run_with_sink(
+        receiver,
+        std::io::sink(),
+        rubix_kube::lifecycle_sink::FlushPolicy::EachFrame,
+    ));
+    let bound = metrics_startup::metrics_bound(&mut observer).await;
+    if collision {
+        assert!(
+            !bound,
+            "retained collision listener must make metrics bind fail"
+        );
+    } else if !bound {
         stop.stop();
         let (report, _, _) = task.await.unwrap();
-        assert_eq!(report.cause, rubix_supervisor::StopCause::Requested);
-        assert!(
-            report
-                .outcomes
-                .iter()
-                .any(|outcome| outcome.component == "configapi")
+        metrics_startup::assert_retryable_bind_failure(&report);
+        assert!(!socket_path.exists());
+        return false;
+    }
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while UnixStream::connect(&socket_path).await.is_err() {
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        let (status, _, _, body) =
+            request_json(&socket_path, "GET", "/api/v1/config", "", &[]).await;
+        assert_eq!(status, 200);
+        assert_eq!(
+            body["config"]["kubernetes"]["nodeName"],
+            "selected-file-node"
+        );
+        let (status, _, _, _) = request_json(
+            &socket_path,
+            "POST",
+            "/api/v1/config:validate",
+            r#"{"kubernetes":{"kubelet":{"systemReserved":{"cpu":"1000m"}}}}"#,
+            &[],
+        )
+        .await;
+        assert_eq!(
+            status, 422,
+            "validation must retain the supplied one-CPU host"
         );
         if collision {
-            assert!(
-                report
-                    .failures
-                    .iter()
-                    .any(|failure| failure.component == "metrics"
-                        && failure.kind
-                            == rubix_supervisor::FailureKind::Adapter("metrics_bind_failed"))
-            );
+            wait_for_degraded(&mut observer).await;
         } else {
-            assert!(report.failures.is_empty());
+            assert_metrics_health(metrics_addr).await;
         }
-        assert!(!socket_path.exists());
+    })
+    .await
+    .expect("both optional endpoints start without losing selected context");
+    stop.stop();
+    let (report, _, _) = task.await.unwrap();
+    assert_combined_report(&report, collision);
+    assert!(!socket_path.exists());
+    true
+}
+
+fn assert_combined_report(report: &rubix_supervisor::SupervisorReport, collision: bool) {
+    assert_eq!(report.cause, rubix_supervisor::StopCause::Requested);
+    assert!(
+        report
+            .outcomes
+            .iter()
+            .any(|outcome| outcome.component == "configapi")
+    );
+    if collision {
+        metrics_startup::assert_retryable_bind_failure(report);
+    } else {
+        assert!(report.failures.is_empty());
     }
 }
 
