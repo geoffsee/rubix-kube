@@ -113,7 +113,7 @@ Systemd unit changes are reloaded before start. Container upgrades persist their
 new version record and check that the replacement is running before discarding
 the previous container; this check does not establish Kubernetes readiness.
 
-An exclusive file lock serializes upgrades for a data path. Before replacement,
+An exclusive file lock serializes upgrades and cleanup for a data path. Before replacement,
 `.upgrade-pending` records the source version, target and backup directory. Before
 commit removes the previous container, a durable `.upgrade-committing` receipt
 protects recovery while pending-receipt cleanup is checked. Interruption retains
@@ -132,10 +132,18 @@ Ordinary uninstall retains installation data; `--purge` explicitly removes the
 selected instance's owned state, including upgrade receipts and recovery backups.
 Reset and ordinary uninstall retain those recovery records. The upgrade lock
 file remains in place so concurrent operations cannot acquire a different inode.
+An active pending or committing upgrade receipt blocks reset and ordinary
+uninstall; explicit purge discards the selected instance's recovery state.
 Cleanup unmounts only mount points under paths
 selected for removal, preserving the data-root mount and retained or neighboring
 mounts. Symlinked parent directories are rejected before service operations;
 selected symlink entries themselves are unlinked without following them.
+
+Host cleanup uses the detected systemd, OpenRC, SysV, Upstart, runit or s6 lifecycle
+plan. Uninstall unregisters startup before deleting state or service artifacts;
+systemd and Upstart caches are also refreshed after definition removal. s6 stop
+waits up to 30 seconds for the service and finish script to exit before state
+deletion. Unsupported init detection and lifecycle command errors abort cleanup.
 
 Container stop or removal failures abort before data deletion. An already absent
 container is tolerated for uninstall only after the Engine confirms its absence;

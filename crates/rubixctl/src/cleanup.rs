@@ -122,6 +122,30 @@ pub trait CleanupHost {
     fn unmount(&mut self, mount: &Path) -> io::Result<()>;
     /// Removes the service definition and binary; returns removed paths.
     fn remove_service_artifacts(&mut self) -> io::Result<Vec<PathBuf>>;
+    /// Remove startup registration before deleting state or executable artifacts.
+    fn unregister_service(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+fn lock_cleanup(kind: CleanupKind, data: &Path) -> io::Result<fs::File> {
+    let lock = crate::upgrade::lock_installation(data)?;
+    if kind != (CleanupKind::Uninstall { purge: true }) {
+        for name in [".upgrade-pending", ".upgrade-committing"] {
+            let receipt = data.join(name);
+            match receipt.symlink_metadata() {
+                Ok(_) => {
+                    return Err(io::Error::other(format!(
+                        "an interrupted upgrade requires recovery using {}; cleanup refused (explicit purge discards recovery state)",
+                        receipt.display()
+                    )));
+                },
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error),
+            }
+        }
+    }
+    Ok(lock)
 }
 
 /// Reads an explicit confirmation; non-interactive EOF is a refusal.
@@ -191,6 +215,7 @@ pub fn run_host_cleanup(
     stderr: &mut dyn Write,
 ) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let _lock = lock_cleanup(kind, data)?;
     let plan = plan_cleanup(kind, data);
     validate_removal_ancestors(data, &plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
@@ -224,6 +249,9 @@ pub fn run_host_cleanup(
         retained: plan.retain.clone(),
         ..CleanupReport::default()
     };
+    if matches!(kind, CleanupKind::Uninstall { .. }) {
+        host.unregister_service()?;
+    }
     for p in &plan.remove {
         remove_entry(p)?;
         report.removed.push(p.clone());
@@ -254,6 +282,7 @@ pub fn run_container_cleanup(
     stderr: &mut dyn Write,
 ) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let _lock = lock_cleanup(kind, data)?;
     let plan = plan_cleanup(kind, data);
     validate_removal_ancestors(data, &plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
@@ -394,6 +423,129 @@ impl<R: Runner> CleanupHost for SystemHost<'_, R> {
     }
 }
 
+/// Detected-init host cleanup using the existing service lifecycle plans.
+#[derive(Debug)]
+pub struct ServiceHost<'a, R: Runner> {
+    host: SystemHost<'a, R>,
+    config: crate::service::ServiceConfig,
+}
+
+impl<'a, R: Runner> ServiceHost<'a, R> {
+    pub fn new(runner: &'a mut R, config: crate::service::ServiceConfig) -> io::Result<Self> {
+        use crate::service::{InitBackend, LifecycleAction, plan_lifecycle_action};
+        let plan =
+            plan_lifecycle_action(LifecycleAction::Uninstall, &config).map_err(io::Error::other)?;
+        let mut artifacts = plan.cleanup_paths;
+        if config.backend == Some(InitBackend::OpenRc) {
+            let conf = config
+                .custom_paths
+                .env_file_path
+                .clone()
+                .unwrap_or_else(|| {
+                    let relative = format!("etc/conf.d/{}", config.name);
+                    config.custom_paths.root_prefix.as_ref().map_or_else(
+                        || Path::new("/").join(&relative),
+                        |root| root.join(&relative),
+                    )
+                });
+            if !artifacts.contains(&conf) {
+                artifacts.push(conf);
+            }
+        }
+        artifacts.push(config.binary_path.clone());
+        Ok(Self {
+            host: SystemHost {
+                runner,
+                systemd: config.backend == Some(InitBackend::Systemd),
+                service: config.name.clone(),
+                artifacts,
+            },
+            config,
+        })
+    }
+
+    fn action(&mut self, action: crate::service::LifecycleAction) -> io::Result<()> {
+        let plan = crate::service::plan_lifecycle_action(action, &self.config)
+            .map_err(io::Error::other)?;
+        for mut step in plan.commands {
+            if action == crate::service::LifecycleAction::Stop
+                && self.config.backend == Some(crate::service::InitBackend::S6)
+            {
+                // s6-svc -d only requests shutdown; wait for run/finish to exit.
+                // https://skarnet.org/software/s6/s6-svc.html
+                step.args
+                    .splice(0..0, ["-wD".into(), "-T".into(), "30000".into()]);
+            }
+            self.host.runner.run(&step.program, &step.args)?;
+        }
+        Ok(())
+    }
+}
+
+impl<R: Runner> CleanupHost for ServiceHost<'_, R> {
+    fn stop_service(&mut self) -> io::Result<()> {
+        self.action(crate::service::LifecycleAction::Stop)
+    }
+    fn start_service(&mut self) -> io::Result<()> {
+        self.action(crate::service::LifecycleAction::Start)
+    }
+    fn mounts_under(&mut self, root: &Path) -> io::Result<Vec<PathBuf>> {
+        self.host.mounts_under(root)
+    }
+    fn unmount(&mut self, mount: &Path) -> io::Result<()> {
+        self.host.unmount(mount)
+    }
+    fn unregister_service(&mut self) -> io::Result<()> {
+        let plan = crate::service::plan_lifecycle_action(
+            crate::service::LifecycleAction::Uninstall,
+            &self.config,
+        )
+        .map_err(io::Error::other)?;
+        // Stop already succeeded before mount checks. Retain all later registration operations.
+        for step in plan.commands.into_iter().skip(1) {
+            self.host.runner.run(&step.program, &step.args)?;
+        }
+        Ok(())
+    }
+    fn remove_service_artifacts(&mut self) -> io::Result<Vec<PathBuf>> {
+        use crate::service::InitBackend;
+        let removed = self.host.remove_service_artifacts()?;
+        // Refresh caches after removing definitions, as well as before removal.
+        match self.config.backend {
+            Some(InitBackend::Systemd) => {
+                self.host
+                    .runner
+                    .run("systemctl", &["daemon-reload".into()])?;
+            },
+            Some(InitBackend::Upstart) => {
+                self.host
+                    .runner
+                    .run("initctl", &["reload-configuration".into()])?;
+            },
+            _ => {},
+        }
+        Ok(removed)
+    }
+}
+
+fn detected_service_config() -> io::Result<crate::service::ServiceConfig> {
+    let evidence = rubix_platform::discover(&rubix_platform::DiscoveryRequest::default())
+        .map_err(io::Error::other)?;
+    let init = match rubix_platform::classify(&evidence).init {
+        rubix_platform::Observation::Present(init) => init,
+        observation => {
+            return Err(io::Error::other(format!(
+                "init detection failed: {observation:?}"
+            )));
+        },
+    };
+    Ok(crate::service::ServiceConfig {
+        backend: Some(crate::service::InitBackend::try_from(init).map_err(io::Error::other)?),
+        binary_path: PathBuf::from(crate::DEFAULT_INSTALL_PATH),
+        ..crate::service::ServiceConfig::default()
+    })
+}
+
 /// Shared command entry for reset/uninstall.
 pub fn execute_cleanup(
     kind: CleanupKind,
@@ -424,16 +576,10 @@ pub fn execute_cleanup(
             Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
         }
     } else {
-        let mut host = SystemHost {
-            runner: &mut runner,
-            systemd: Path::new("/run/systemd/system").is_dir(),
-            service: crate::upgrade::SERVICE_NAME.to_string(),
-            artifacts: vec![
-                PathBuf::from("/etc/systemd/system/kubesolo.service"),
-                PathBuf::from(crate::DEFAULT_INSTALL_PATH),
-            ],
-        };
-        run_host_cleanup(&mut host, kind, data, force, &mut input, stderr)
+        detected_service_config().and_then(|config| {
+            let mut host = ServiceHost::new(&mut runner, config)?;
+            run_host_cleanup(&mut host, kind, data, force, &mut input, stderr)
+        })
     };
     match result {
         Ok(r) if r.declined => Ok(1),
