@@ -175,3 +175,25 @@ into configured writable host roots.
 - **Unix Modes**: Enforces executable mode `0o755` (`rwxr-xr-x`) on binaries and payload mode
   `0o644` (`rw-r--r--`) on image archives.
 - **Idempotency**: Repeated materialization preserves file content and permissions.
+
+## Asset selection across variants and scopes (E06.03/#50)
+
+`AssetSelector` resolves delivery modes (`Bundled`, `RegistryPull`, `HostSupplied`, `Disabled`,
+or `UnsupportedTarget`) for each asset across:
+- **Online vs Offline Variants**: Offline variants bundle all supported optional container images
+  (local-path provisioner, local-path helper, default Portainer agent, D2K). Online variants select
+  `RegistryPull` for optional images to maintain minimal distribution bundle footprint.
+- **External Dependency Builds**: Under `Scope::LegacyExternalDeps`, all 13 supervised executable
+  roles are resolved as `HostSupplied` with zero bundled binary payloads, matching the pinned Go
+  build tag's absence of embedded executables.
+- **Local Storage Toggle**: Disabling local storage (`with_local_storage(false)`) skips extraction
+  and deployment of both the local-path provisioner and its helper image.
+  Selection applies to archive, directory, provider and single-asset materialization.
+  The single-asset API returns `MaterializationError::NotSelected` for a nonbundled
+  selection before reading payload bytes or creating the destination/staging directory.
+- **Portainer Custom Images & Egress Validation**: Custom Portainer agent image overrides remain
+  explicit registry pulls (runtime import delegated to E09). When network egress is denied
+  (`with_egress_denied(true)`), any active asset requiring a registry pull is rejected with
+  `SelectionError::EgressDeniedRegistryRequired`.
+- **Target Policy Enforcement**: Unsupported architecture combinations (e.g. Portainer on `riscv64`,
+  D2K on `armv7`/`riscv64`) are enforced per target policy via `SelectionError::UnsupportedTargetFeature`.

@@ -52,6 +52,7 @@ impl MaterializationLimits {
 #[derive(Debug)]
 pub enum MaterializationError {
     InvalidLimits,
+    SelectorMismatch,
     BudgetExceeded {
         limit: u64,
         requested: u64,
@@ -64,6 +65,8 @@ pub enum MaterializationError {
     },
     CorruptArchive(String),
     MissingAssetPayload(AssetId),
+    /// The attached selector does not permit bundled materialization of this asset.
+    NotSelected(AssetId),
     SizeMismatch {
         asset: AssetId,
         expected: u64,
@@ -96,6 +99,10 @@ impl fmt::Display for MaterializationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidLimits => write!(f, "invalid materialization limits"),
+            Self::SelectorMismatch => write!(
+                f,
+                "selector target, variant or scope does not match the declared inventory"
+            ),
             Self::BudgetExceeded { limit, requested } => write!(
                 f,
                 "materialization budget exceeded: requested {requested}, limit {limit}"
@@ -119,6 +126,10 @@ impl fmt::Display for MaterializationError {
             Self::MissingAssetPayload(id) => {
                 write!(f, "missing payload for bundled asset {id:?}")
             },
+            Self::NotSelected(id) => write!(
+                f,
+                "asset {id:?} is not selected for bundled materialization"
+            ),
             Self::SizeMismatch {
                 asset,
                 expected,
@@ -294,6 +305,7 @@ pub struct Materializer {
     root: PathBuf,
     layout: AssetLayout,
     limits: MaterializationLimits,
+    selector: Option<crate::AssetSelector>,
 }
 
 impl Materializer {
@@ -304,6 +316,7 @@ impl Materializer {
             root: root.into(),
             layout: AssetLayout::canonical(),
             limits: MaterializationLimits::default(),
+            selector: None,
         }
     }
 
@@ -317,6 +330,18 @@ impl Materializer {
     pub fn with_limits(mut self, limits: MaterializationLimits) -> Self {
         self.limits = limits;
         self
+    }
+
+    #[must_use]
+    /// Attach selection policy. Every entry point rejects a target, variant or scope
+    /// mismatch before opening payloads or creating the writable root.
+    pub fn with_selector(mut self, selector: crate::AssetSelector) -> Self {
+        self.selector = Some(selector);
+        self
+    }
+
+    pub fn selector(&self) -> Option<&crate::AssetSelector> {
+        self.selector.as_ref()
     }
 
     pub fn inventory(&self) -> &DeclaredInventory {
@@ -335,11 +360,24 @@ impl Materializer {
         self.limits
     }
 
+    fn validate_selector(&self) -> Result<(), MaterializationError> {
+        let request = self.inventory.request();
+        if let Some(selector) = &self.selector
+            && (selector.target() != request.target
+                || selector.variant() != request.variant
+                || selector.scope() != request.scope)
+        {
+            return Err(MaterializationError::SelectorMismatch);
+        }
+        Ok(())
+    }
+
     /// Materialize all bundled assets by streaming them from an archive reader (tar or tar.gz).
     pub fn materialize_from_archive<R: Read>(
         &self,
         reader: R,
     ) -> Result<MaterializationOutcome, MaterializationError> {
+        self.validate_selector()?;
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
         }
@@ -351,6 +389,11 @@ impl Materializer {
         let mut remaining: BTreeMap<_, _> = self
             .inventory
             .bundled_assets()
+            .filter(|(id, _, _, _)| {
+                self.selector
+                    .as_ref()
+                    .is_none_or(|selector| selector.is_bundled(*id))
+            })
             .map(|(id, path, encoding, _)| (path.to_string(), (id, encoding)))
             .collect();
         let expected = remaining.clone();
@@ -426,6 +469,7 @@ impl Materializer {
     where
         F: FnMut(AssetId, &str) -> Result<Box<dyn Read>, MaterializationError>,
     {
+        self.validate_selector()?;
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
         }
@@ -435,6 +479,12 @@ impl Materializer {
 
         let mut staged_assets = Vec::new();
         for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
+            if let Some(ref selector) = self.selector
+                && !selector.is_bundled(id)
+            {
+                continue;
+            }
+
             let mut reader = get_payload(id, rel_path)?;
             let entry = catalog()
                 .iter()
@@ -472,8 +522,17 @@ impl Materializer {
         id: AssetId,
         mut reader: R,
     ) -> Result<MaterializedAsset, MaterializationError> {
+        self.validate_selector()?;
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
+        }
+
+        if self
+            .selector
+            .as_ref()
+            .is_some_and(|selector| !selector.is_bundled(id))
+        {
+            return Err(MaterializationError::NotSelected(id));
         }
 
         let blob = self
