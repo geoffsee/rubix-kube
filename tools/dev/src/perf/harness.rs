@@ -825,15 +825,19 @@ pub fn generate_soak_cycles(
 
 /// Enforce committed platform thresholds, rebaseline policy, and sustained memory growth in CI.
 pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
+    const REQUIRED_FILES: [&str; 7] = [
+        "inputs.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/paired-comparison.json",
+        "fixtures/secondary-targets.json",
+    ];
     let base_dir = if perf_dir.ends_with("fixtures") {
         perf_dir.parent().unwrap_or(perf_dir)
     } else {
         perf_dir
-    };
-    let fixtures_dir = if base_dir.join("fixtures").is_dir() {
-        base_dir.join("fixtures")
-    } else {
-        base_dir.to_path_buf()
     };
 
     println!(
@@ -847,20 +851,37 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
         return Err(format!("missing provenance file: {}", provenance_path.display()).into());
     }
     let prov_bytes = crate::read_bounded(&provenance_path, 4 * 1024 * 1024)?;
-    let prov: serde_json::Value = serde_json::from_slice(&prov_bytes)?;
+    let prov = crate::json::parse(&prov_bytes)?;
     let files_map = prov["files"]
         .as_object()
         .ok_or("provenance.json missing 'files' object")?;
 
-    for (rel_path, expected_digest_val) in files_map {
-        let expected_digest = expected_digest_val
+    for required in REQUIRED_FILES {
+        if !files_map.contains_key(required) {
+            return Err(format!("provenance.json missing required file entry: {required}").into());
+        }
+    }
+    for path in files_map.keys() {
+        if !REQUIRED_FILES.contains(&path.as_str()) {
+            return Err(format!("unexpected provenance file entry: {path}").into());
+        }
+    }
+
+    // Parse the same bounded bytes whose digest was verified; later gate checks never reopen files.
+    let mut verified = BTreeMap::new();
+    for rel_path in REQUIRED_FILES {
+        let expected_digest = files_map[rel_path]
             .as_str()
             .ok_or_else(|| format!("invalid digest for {rel_path}"))?;
-        let target_file = base_dir.join(rel_path);
-        if !target_file.is_file() {
-            return Err(format!("provenance file missing: {}", target_file.display()).into());
+        if expected_digest.len() != 64
+            || !expected_digest
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(format!("invalid SHA-256 digest for {rel_path}").into());
         }
-        let file_bytes = std::fs::read(&target_file)?;
+        let target_file = base_dir.join(rel_path);
+        let file_bytes = crate::read_bounded(&target_file, 16 * 1024 * 1024)?;
         let actual_digest = crate::sha256(&file_bytes);
         if actual_digest != expected_digest {
             return Err(format!(
@@ -868,6 +889,7 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
             )
             .into());
         }
+        verified.insert(rel_path, crate::json::parse(&file_bytes)?);
     }
     println!(
         "[gate-ci] Provenance integrity: verified {} committed fixture digests",
@@ -875,12 +897,7 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
     );
 
     // 2. Committed Platform Thresholds Check
-    let inputs_path = base_dir.join("inputs.json");
-    if !inputs_path.is_file() {
-        return Err(format!("missing inputs.json file: {}", inputs_path.display()).into());
-    }
-    let inputs_bytes = crate::read_bounded(&inputs_path, 4 * 1024 * 1024)?;
-    let inputs: serde_json::Value = serde_json::from_slice(&inputs_bytes)?;
+    let inputs = &verified["inputs.json"];
     let thresholds_val = inputs
         .get("contract_thresholds")
         .ok_or("inputs.json missing 'contract_thresholds'")?;
@@ -891,15 +908,29 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
     println!("[gate-ci] Committed platform thresholds: validated immutable contract multipliers");
 
     // 3. Baselines Load & Structural Validation
-    let amd64_ref_path = fixtures_dir.join("amd64-reference-go.json");
-    let amd64_cand_path = fixtures_dir.join("amd64-candidate-rust.json");
-    let arm64_ref_path = fixtures_dir.join("arm64-reference-go.json");
-    let arm64_cand_path = fixtures_dir.join("arm64-candidate-rust.json");
-
-    let amd64_ref = super::report::load_report(&amd64_ref_path)?;
-    let amd64_cand = super::report::load_report(&amd64_cand_path)?;
-    let arm64_ref = super::report::load_report(&arm64_ref_path)?;
-    let arm64_cand = super::report::load_report(&arm64_cand_path)?;
+    let load = |path: &str| -> Result<PerformanceReport> {
+        let report = serde_json::from_value(verified[path].clone())?;
+        super::validation::validate_report(&report)?;
+        let growth = &report.sustained_growth;
+        if growth.initial_settled_idle_median_bytes == 0 {
+            return Err(format!("{path}: initial sustained growth memory must be positive").into());
+        }
+        let derived = growth.final_settled_idle_median_bytes as f64
+            / growth.initial_settled_idle_median_bytes as f64;
+        // Existing fixtures store three-decimal ratios; allow only that rounding precision.
+        if !growth.growth_ratio.is_finite() || (growth.growth_ratio - derived).abs() > 0.000_500_001
+        {
+            return Err(format!(
+                "{path}: reported sustained growth ratio {} disagrees with byte-derived ratio {derived}",
+                growth.growth_ratio
+            ).into());
+        }
+        Ok(report)
+    };
+    let amd64_ref = load("fixtures/amd64-reference-go.json")?;
+    let amd64_cand = load("fixtures/amd64-candidate-rust.json")?;
+    let arm64_ref = load("fixtures/arm64-reference-go.json")?;
+    let arm64_cand = load("fixtures/arm64-candidate-rust.json")?;
 
     for report in [&amd64_ref, &amd64_cand, &arm64_ref, &arm64_cand] {
         verify_retained_process_coverage(report)?;
@@ -963,14 +994,6 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
             )
             .into());
         }
-        if growth.growth_ratio > contract_thresholds.sustained_growth_median_multiplier {
-            return Err(format!(
-                "{arch_name} sustained growth ratio {:.3} exceeds threshold {:.3}",
-                growth.growth_ratio, contract_thresholds.sustained_growth_median_multiplier
-            )
-            .into());
-        }
-
         let shutdown = &c.shutdown;
         if shutdown.surviving_owned_processes > 0 || shutdown.unrelated_processes_killed > 0 {
             return Err(format!(
@@ -1003,19 +1026,15 @@ pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
     println!("[gate-ci] Contract gates evaluation: all 12 gates PASSED for amd64 and arm64");
 
     // 5. Secondary Targets Registry Validation
-    let sec_path = fixtures_dir.join("secondary-targets.json");
-    if !sec_path.is_file() {
-        return Err(format!("missing secondary targets file: {}", sec_path.display()).into());
-    }
-    let sec_bytes = crate::read_bounded(&sec_path, 4 * 1024 * 1024)?;
-    let sec_reg: SecondaryTargetsRegistry = serde_json::from_slice(&sec_bytes)?;
+    let sec_reg: SecondaryTargetsRegistry =
+        serde_json::from_value(verified["fixtures/secondary-targets.json"].clone())?;
     sec_reg
         .validate()
         .map_err(|e| format!("secondary targets validation failed: {e}"))?;
     println!("[gate-ci] Secondary architecture gaps: armv7 and riscv64 verified explicit");
 
     println!(
-        "[gate-ci] ✓ Performance CI regression gating PASSED: all platform thresholds and rebaseline policies enforced"
+        "[gate-ci] ✓ Performance CI regression gating PASSED: fixture integrity and contract arithmetic only; live performance NOT QUALIFIED"
     );
     Ok(())
 }

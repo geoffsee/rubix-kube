@@ -821,3 +821,136 @@ fn ci_gate_enforces_committed_thresholds_and_rebaseline_policy() {
         "missing arm64 architecture must fail CI gate"
     );
 }
+
+fn copy_ci_fixture_tree() -> tempfile::TempDir {
+    let directory = tempfile::tempdir().unwrap();
+    for file in [
+        "provenance.json",
+        "inputs.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/paired-comparison.json",
+        "fixtures/secondary-targets.json",
+    ] {
+        let destination = directory.path().join(file);
+        std::fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        std::fs::copy(root().join("tools/perf").join(file), destination).unwrap();
+    }
+    directory
+}
+
+#[test]
+fn ci_provenance_requires_exact_unique_complete_inventory() {
+    let source: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root().join("tools/perf/provenance.json")).unwrap())
+            .unwrap();
+    for removed in source["files"].as_object().unwrap().keys() {
+        let directory = copy_ci_fixture_tree();
+        let mut provenance = source.clone();
+        provenance["files"].as_object_mut().unwrap().remove(removed);
+        std::fs::write(
+            directory.path().join("provenance.json"),
+            serde_json::to_vec(&provenance).unwrap(),
+        )
+        .unwrap();
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("missing required file entry"), "{error}");
+        assert!(error.contains(removed), "{error}");
+    }
+    for unexpected in [
+        "",
+        "/tmp/input.json",
+        "../inputs.json",
+        "./inputs.json",
+        "fixtures\\candidate.json",
+        "extra.json",
+    ] {
+        let directory = copy_ci_fixture_tree();
+        let mut provenance = source.clone();
+        provenance["files"][unexpected] = serde_json::json!("0".repeat(64));
+        std::fs::write(
+            directory.path().join("provenance.json"),
+            serde_json::to_vec(&provenance).unwrap(),
+        )
+        .unwrap();
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("unexpected provenance file entry"),
+            "{error}"
+        );
+    }
+    let directory = copy_ci_fixture_tree();
+    let mut empty = source.clone();
+    empty["files"] = serde_json::json!({});
+    std::fs::write(
+        directory.path().join("provenance.json"),
+        serde_json::to_vec(&empty).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string()
+            .contains("missing required file entry")
+    );
+    let duplicate = serde_json::to_string(&source).unwrap().replacen(
+        "\"files\":{",
+        &format!("\"files\":{{\"inputs.json\":\"{}\",", "0".repeat(64)),
+        1,
+    );
+    std::fs::write(directory.path().join("provenance.json"), duplicate).unwrap();
+    assert!(
+        rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate JSON key")
+    );
+}
+
+#[test]
+fn ci_gate_rejects_inconsistent_growth_after_valid_rehash() {
+    for candidate_path in [
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+    ] {
+        let directory = copy_ci_fixture_tree();
+        let mut candidate: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.path().join(candidate_path)).unwrap())
+                .unwrap();
+        candidate["sustained_growth"]["growth_ratio"] = serde_json::json!(1.001);
+        let bytes = serde_json::to_vec(&candidate).unwrap();
+        std::fs::write(directory.path().join(candidate_path), &bytes).unwrap();
+        let provenance_path = directory.path().join("provenance.json");
+        let mut provenance: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&provenance_path).unwrap()).unwrap();
+        provenance["files"][candidate_path] = serde_json::json!(rubix_dev::sha256(&bytes));
+        std::fs::write(&provenance_path, serde_json::to_vec(&provenance).unwrap()).unwrap();
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("reported sustained growth ratio"), "{error}");
+    }
+}
+
+#[test]
+fn rebaseline_policy_cli_accepts_directory_alias_and_preserves_unqualified_label() {
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("check-rebaseline-policy")
+        .arg(root().join("tools/perf"))
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("live performance NOT QUALIFIED"));
+}

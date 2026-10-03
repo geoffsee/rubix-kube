@@ -72,7 +72,7 @@ and rebaseline rules via `gate-ci`:
 
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-perf -- gate-ci tools/perf
-cargo run --locked -p rubix-dev --bin rubix-perf -- check-rebaseline-policy tools/perf/inputs.json
+cargo run --locked -p rubix-dev --bin rubix-perf -- check-rebaseline-policy tools/perf
 ```
 
 See [Performance Gating and Rebaseline Policy](../../docs/architecture/performance-rebaseline-policy.md)
