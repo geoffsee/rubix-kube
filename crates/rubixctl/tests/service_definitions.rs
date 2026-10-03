@@ -8,6 +8,57 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 #[test]
+fn generated_backends_reject_unsafe_names_and_environment_keys() {
+    for backend in [
+        InitBackend::Systemd,
+        InitBackend::OpenRc,
+        InitBackend::SysVinit,
+        InitBackend::Upstart,
+        InitBackend::Runit,
+        InitBackend::S6,
+    ] {
+        for name in [
+            "",
+            ".",
+            "..",
+            "../node",
+            "node/name",
+            "node\nexec id",
+            "$(id)",
+            "node'",
+        ] {
+            let config = ServiceConfig {
+                name: name.into(),
+                backend: Some(backend),
+                ..ServiceConfig::default()
+            };
+            assert_eq!(
+                generate_service_definition(&config).unwrap_err(),
+                UnsupportedTargetError::InvalidServiceName
+            );
+        }
+        for key in ["", "1A", "A=1;id", "A\nexec id", "A-B", "$(id)"] {
+            let mut config = ServiceConfig {
+                backend: Some(backend),
+                ..ServiceConfig::default()
+            };
+            config.environment.insert(key.into(), "value".into());
+            assert_eq!(
+                generate_service_definition(&config).unwrap_err(),
+                UnsupportedTargetError::InvalidEnvironmentKey
+            );
+        }
+        let mut config = ServiceConfig {
+            name: "node-1.test_name".into(),
+            backend: Some(backend),
+            ..ServiceConfig::default()
+        };
+        config.environment.insert("_VALID_1".into(), "value".into());
+        assert!(generate_service_definition(&config).is_ok());
+    }
+}
+
+#[test]
 fn test_shell_quoting_and_sanitization() {
     assert_eq!(shell_quote(""), "''");
     assert_eq!(shell_quote("simple"), "'simple'");
