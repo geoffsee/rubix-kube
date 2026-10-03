@@ -110,10 +110,11 @@ fn test_config_schema_fallback() {
     let mut inputs = DummyInputs;
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
-    let (_socket_dir, env) = isolated_environment();
+    let (socket_dir, env) = isolated_environment();
+    let missing = socket_dir.path().join("missing.yaml");
 
     let code = execute(
-        &args(&["config", "schema"]),
+        &args(&["config", "-f", missing.to_str().unwrap(), "schema"]),
         &env,
         "v0.1.0",
         &mut inputs,

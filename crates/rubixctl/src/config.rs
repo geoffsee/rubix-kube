@@ -99,6 +99,9 @@ fn socket_request(
         },
         Err(err) => return Err(err),
     };
+    let timeout = Some(std::time::Duration::from_secs(30));
+    stream.set_read_timeout(timeout)?;
+    stream.set_write_timeout(timeout)?;
 
     let mut request =
         format!("{method} {uri} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n");
