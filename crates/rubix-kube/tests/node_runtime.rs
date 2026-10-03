@@ -27,8 +27,8 @@ use rubix_platform::Architecture;
 use rubix_portainer::config::PortainerAgentConfig;
 use rubix_portainer::service::PortainerService;
 use rubix_supervisor::{
-    Adapter, AdapterContext, AdapterError, AdapterFuture, ComponentKind, ComponentSpec,
-    FailureKind, FailurePolicy, Registration, StopCause, stop_channel,
+    Adapter, AdapterContext, AdapterError, AdapterFuture, CleanupKind, ComponentKind,
+    ComponentSpec, FailureKind, FailurePolicy, Registration, StopCause, StopPhase, stop_channel,
 };
 use tempfile::TempDir;
 
@@ -850,4 +850,61 @@ async fn test_portainer_optional_failure_degrades_supervisor_gracefully() {
         portainer_failure.unwrap().kind,
         FailureKind::Adapter("portainer_readiness_timeout")
     );
+}
+
+#[tokio::test]
+async fn test_shutdown_error_preserves_original_cause() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), true, false);
+    let secret = "shutdown-secret-must-not-leak-445566".to_string();
+    let secret_log = secret.clone();
+    let (stop_handle, stop_receiver) = stop_channel();
+    let probe = LogProbe::default();
+    let runtime = RuntimeBuilder::new(config)
+        .register_core(
+            "core",
+            vec![],
+            ClosureAdapter(move |mut ctx: AdapterContext| async move {
+                assert!(!secret.is_empty());
+                ctx.ready();
+                loop {
+                    match ctx.changed().await {
+                        StopPhase::Running => {},
+                        StopPhase::Graceful | StopPhase::Force => {
+                            return Err(AdapterError {
+                                code: "shutdown_flush_failed",
+                            });
+                        },
+                    }
+                }
+            }),
+        )
+        .build()
+        .expect("build runtime");
+
+    let running =
+        tokio::spawn(runtime.run_with_sink(stop_receiver, probe.clone(), FlushPolicy::EachFrame));
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if probe.text().contains("\"state\":\"ready\"") {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("component ready");
+    stop_handle.stop();
+    let (report, _, _) = running.await.expect("runtime finished");
+    let logs = probe.text();
+    assert_eq!(report.cause, StopCause::Requested);
+    assert!(report.cleanup_failures.iter().any(|failure| {
+        failure.component == "core" && failure.kind == CleanupKind::Adapter("shutdown_flush_failed")
+    }));
+    assert!(logs.contains("\"event\":\"component_cleanup\""));
+    assert!(logs.contains("\"code\":\"adapter\""));
+    assert!(logs.contains("\"detail_code\":\"shutdown_flush_failed\""));
+    assert!(logs.contains("\"event\":\"supervisor_stop\""));
+    assert!(logs.contains("\"code\":\"requested\""));
+    assert!(!logs.contains(secret_log.as_str()));
 }

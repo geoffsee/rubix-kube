@@ -123,18 +123,22 @@ identical glibc/musl node rows.
 
 The following values are copied from R3, not freshly resolved or invented:
 
-| Raw artifact | Architecture | SHA-256 |
-|---|---|---|
-|kube-apiserver v1.35.7|arm64|`4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1`|
-|kube-apiserver v1.35.7|amd64|`0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8`|
-|Kine v0.16.3|arm64|`ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8`|
-|Kine v0.16.3|amd64|`1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976`|
+| Raw artifact | Architecture | Size (bytes) | SHA-256 |
+|---|---|---|---|
+|kube-apiserver v1.35.7|arm64|79,888,568|`4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1`|
+|kube-apiserver v1.35.7|amd64|-|`0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8`|
+|kube-controller-manager v1.35.7|arm64|67,043,512|`9125fca53876e58137305cf177bc2c67eab38adc7f2f70cfe1444d124c39d012`|
+|kubelet v1.35.7|arm64|54,264,100|`0dc3f53fc51f6a6c26c437ec9eded016106ef931db2dd9b3905c656796bed438`|
+|kube-proxy v1.35.7|arm64|40,632,504|`216b76b4ab7f642a1e305f6402a0a466af7cea1287bf89fefb9269396ba04dc2`|
+|Kine v0.16.3|arm64|44,465,296|`ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8`|
+|Kine v0.16.3|amd64|-|`1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976`|
 
-The experiment exercised arm64 only. These are raw executable hashes, not compressed
-blob hashes, ABI certifications, signatures, an offline release closure, or proof
-of all four Kubernetes component behaviors. Sizes/ABI/build/license closure still
-need explicit records. No production image digest is present in the reviewed
-runtime catalog inputs.
+`tests/fixtures/online-arm64.json` and `tests/fixtures/offline-arm64.json` are structural
+manifests. The Kubernetes arm64 rows above match `dl.k8s.io` v1.35.7 hashes and sizes.
+Every other bundled digest is the SHA-256 of the asset id with `encoded_bytes` 64, so it
+cannot be read as an upstream pin. Containerd, crun, CNI, the fuse snapshotter, and image
+archives still need encoded-byte pins before these manifests are an accepted payload cell.
+ABI verification and packaging assembly belong to E27.
 
 Reusable source authority already recorded:
 

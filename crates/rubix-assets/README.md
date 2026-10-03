@@ -17,6 +17,22 @@ not authenticated content, provenance or release readiness. Its immutable iterat
 expose sorted role/delivery records and bundled metadata to E27 without duplicating
 the component list.
 
+`optional_feature_support()` separately reports target-policy support for local-path
+storage, the default Portainer agent and D2K. `SupportedTarget` is not an enabled
+feature or proof of a pinned payload; E27 must combine it with the declared role
+delivery and the selected runtime configuration. The offline contract bundles every
+supported optional image (including the local-path helper) while marking only
+target-restricted Portainer/D2K roles unavailable. CoreDNS and pause remain bundled
+in both variants.
+
+Release consumers must decode and validate the complete manifest for the requested
+target/variant before performing installation side effects. Wrong-target, missing-role,
+malformed and truncated manifest inputs are rejected by this same API. Validation does
+not authenticate otherwise well-formed manifest bytes, authorize installation, or
+replace verification of the exact bytes later materialized. Linux ARM64/glibc fixtures
+are structural manifests: Kubernetes arm64 pins match published releases, and the
+remaining bundled digests are placeholders rather than an accepted production cell.
+
 `DeclaredInventory::verification_session()` creates an aggregate encoded-read
 budget. `verify_encoded_blob(id, reader)` checks exact encoded length and SHA-256,
 returning `EncodedBlobMatch`. It reads no more than declared length+1 and uses an
@@ -121,3 +137,24 @@ stored-layer descriptors, and Linux platform to a caller-declared raw manifest
 pin. The opaque result proves byte agreement with that declaration. Registry/index
 selection, publisher authentication, production pin approval, ABI compatibility,
 inner-tar safety, and installation eligibility remain outside the proof.
+
+## Variant matrix and artifact naming (E27.01/#114)
+
+`Matrix` defines the exhaustive 16 node variant cells (4 architectures: amd64, arm64,
+ARMv7 hard-float, riscv64 × 2 libcs: glibc, musl × 2 variants: online, offline) and
+the 4 supported management CLI targets (Linux amd64/arm64, Darwin amd64/arm64).
+Per E01 and the compatibility contract, native Windows binaries are explicitly excluded,
+with WSL2 supported via Linux userspace.
+
+`NodeVariant` models cell index (1..=16), architecture, libc, variant, OCI container image
+platform string (`linux/amd64`, `linux/arm64`, `linux/arm/v7`, `linux/riscv64`), optional
+image restrictions (Portainer supported on amd64/arm64/armv7, unsupported on riscv64;
+D2K supported on amd64/arm64, disabled on armv7 and riscv64; local-path supported on all),
+and whether optional images are bundled (false for online, supported for offline).
+
+`ArtifactNaming` provides reproducible parsing and clean-checkout input validation for:
+- Node archives: `<prefix>-<version>-linux-<arch>[-musl][-offline].tar.gz`
+- Management binaries: `<prefix>-<os>-<arch>`
+
+Validation requires version format, target, libc, variant, and asset naming consistency
+before release assembly or installation.
