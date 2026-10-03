@@ -570,3 +570,181 @@ fn success_output_failure_does_not_turn_an_irreversible_commit_into_failure() {
     assert!(!dir.path().join(".upgrade-committing").exists());
     assert!(!dir.path().join(".upgrade-completed").exists());
 }
+
+#[test]
+fn interrupted_upgrade_recovery_restores_pre_upgrade_state_from_pending_receipt() {
+    use rubixctl::upgrade::{
+        ReceiptKind, RecoveryOutcome, find_active_receipt, parse_receipt_file,
+        recover_interrupted_upgrade,
+    };
+
+    let dir = data();
+    let binary = dir.path().join("kubesolo");
+    let staged = dir.path().join("staged");
+    let service = dir.path().join("node.service");
+    let config = dir.path().join("config.yaml");
+
+    let original_service = "Description=kubesolo\nExecStart=/usr/local/bin/kubesolo --debug\n";
+    fs::write(&binary, "old-binary").unwrap();
+    fs::write(&staged, "new-binary").unwrap();
+    fs::write(&service, original_service).unwrap();
+
+    // Create a valid backup
+    let backup_dir = dir.path().join("backups/pre-upgrade-v1.2.0-1-valid");
+    fs::create_dir_all(backup_dir.join("pki")).unwrap();
+    fs::create_dir_all(backup_dir.join("kine/db")).unwrap();
+    fs::write(backup_dir.join("pki/ca.key"), "old-key").unwrap();
+    fs::write(backup_dir.join("kine/db/state.db"), "old-db").unwrap();
+    fs::write(backup_dir.join("kubesolo.bin"), "old-binary").unwrap();
+    fs::write(backup_dir.join("service.unit"), original_service).unwrap();
+
+    // Simulate an interruption after replacement and dirty mutation:
+    fs::write(&binary, "new-corrupted-binary").unwrap();
+    fs::write(
+        &service,
+        "Description=kubesolo\nExecStart=/usr/local/bin/kubesolo --config=/etc/kubesolo/config.yaml\n",
+    )
+    .unwrap();
+    fs::write(&config, "network:\n  nodeIP: 10.0.0.1\n").unwrap();
+    fs::write(dir.path().join("pki/ca.key"), "dirty-key").unwrap();
+    fs::write(dir.path().join("kine/db/state.db"), "dirty-db").unwrap();
+
+    // Create .upgrade-pending receipt
+    let pending_receipt = dir.path().join(".upgrade-pending");
+    fs::write(
+        &pending_receipt,
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            backup_dir.display()
+        ),
+    )
+    .unwrap();
+
+    let active = find_active_receipt(dir.path()).unwrap().unwrap();
+    assert_eq!(active.kind, ReceiptKind::Pending);
+    assert_eq!(active.from, "v1.2.0");
+    assert_eq!(active.target, "v1.3.0");
+    assert_eq!(active.backup, backup_dir);
+
+    let parsed = parse_receipt_file(&pending_receipt, ReceiptKind::Pending).unwrap();
+    assert_eq!(parsed.from, "v1.2.0");
+
+    let mut runner = Recorded::default();
+    let mut backend = HostBackend {
+        binary: binary.clone(),
+        staged,
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: Some(service.clone()),
+        legacy_config: Some(config.clone()),
+    };
+
+    let outcome =
+        recover_interrupted_upgrade(&mut backend, dir.path(), Some(&config), &mut Vec::new())
+            .unwrap();
+
+    assert_eq!(
+        outcome,
+        RecoveryOutcome::RolledBack {
+            from: "v1.2.0".into(),
+            backup: backup_dir.clone(),
+        }
+    );
+
+    // Verify all state restored cleanly
+    assert_eq!(fs::read_to_string(&binary).unwrap(), "old-binary");
+    assert_eq!(fs::read_to_string(&service).unwrap(), original_service);
+    assert_eq!(
+        fs::read_to_string(dir.path().join("pki/ca.key")).unwrap(),
+        "old-key"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("kine/db/state.db")).unwrap(),
+        "old-db"
+    );
+    assert!(!config.exists(), "migration-created config was cleaned up");
+    assert!(!pending_receipt.exists(), "pending receipt was cleaned up");
+
+    // Re-running recovery reports already clean
+    let clean =
+        recover_interrupted_upgrade(&mut backend, dir.path(), Some(&config), &mut Vec::new())
+            .unwrap();
+    assert_eq!(clean, RecoveryOutcome::AlreadyClean);
+}
+
+#[test]
+fn interrupted_upgrade_recovery_refuses_corrupted_or_missing_backup_without_mutation() {
+    use rubixctl::upgrade::{
+        BackupIntegrityError, recover_interrupted_upgrade, validate_backup_integrity,
+    };
+
+    let dir = data();
+    let binary = dir.path().join("kubesolo");
+    let staged = dir.path().join("staged");
+    let service = dir.path().join("node.service");
+
+    fs::write(&binary, "current-binary").unwrap();
+    fs::write(&staged, "new-binary").unwrap();
+    fs::write(&service, "service-content").unwrap();
+
+    // 1. Missing backup directory
+    let non_existent_backup = dir.path().join("backups/missing");
+    let pending_receipt = dir.path().join(".upgrade-pending");
+    fs::write(
+        &pending_receipt,
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            non_existent_backup.display()
+        ),
+    )
+    .unwrap();
+
+    let mut runner = Recorded::default();
+    let mut backend = HostBackend {
+        binary: binary.clone(),
+        staged: staged.clone(),
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: Some(service.clone()),
+        legacy_config: None,
+    };
+
+    let err =
+        recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new()).unwrap_err();
+    assert!(
+        err.to_string().contains("recovery refused: backup at"),
+        "error must explain backup refusal: {err}"
+    );
+    // Crucial: pending receipt and files were NOT destroyed!
+    assert!(pending_receipt.exists());
+    assert_eq!(fs::read_to_string(&binary).unwrap(), "current-binary");
+
+    // 2. Corrupted backup (missing kine/db state directory)
+    let corrupt_backup = dir.path().join("backups/corrupt");
+    fs::create_dir_all(corrupt_backup.join("pki")).unwrap();
+    fs::write(corrupt_backup.join("pki/ca.crt"), "ca").unwrap();
+    // Missing kine/db directory
+    assert!(matches!(
+        validate_backup_integrity(&corrupt_backup),
+        Err(BackupIntegrityError::MissingStateDirectory { .. })
+    ));
+
+    fs::write(
+        &pending_receipt,
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            corrupt_backup.display()
+        ),
+    )
+    .unwrap();
+
+    let err2 =
+        recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new()).unwrap_err();
+    assert!(
+        err2.to_string()
+            .contains("missing required state directory")
+    );
+    assert!(pending_receipt.exists());
+}

@@ -75,3 +75,84 @@ cargo test --locked -p rubix-dev --test state_transitions
 The command checks static catalogs and synthetic kubeconfig samples and explicitly
 prints that production migration is unqualified. It consumes no production node
 or database capture. Passing tests on macOS do not qualify Linux migration.
+
+## Operator Recovery & Migration Failure Rehearsal (Gate C14 / E30.02)
+
+**Issue:** #125 (`[E30.02] Rehearse migration failure and operator recovery`)
+**Gate:** C14 qualification through disposable installation rehearsal and automated recovery execution.
+
+### Transition Stages & Lifecycle Boundaries
+
+Upgrade and migration workflows transition through 10 discrete stages, classified by disk mutation and rollback requirements:
+
+| Stage | Classification | Active Receipt | Recovery Action |
+| --- | --- | --- | --- |
+| `Validation` | Pre-mutation | None | No-op / restart old service |
+| `Preparation` | Pre-mutation | None | Clean staging paths |
+| `Quiesce` | Pre-mutation | None | Restart old service |
+| `Snapshot` | Pre-mutation | None | Remove partial snapshot, restart old service |
+| `ReceiptPending` | Pre-mutation | `.upgrade-pending` | Clean receipt, restart old service |
+| `ArtifactReplacement` | Mutating | `.upgrade-pending` | Full rollback from backup |
+| `ConfigMigration` | Mutating | `.upgrade-pending` | Full rollback from backup |
+| `ServiceStart` | Mutating | `.upgrade-pending` | Full rollback from backup (reverses dirty datastore/pki writes) |
+| `ReceiptCommitting` | Committing | `.upgrade-committing` | Verify health and finalize commit |
+| `Commit` | Post-commit | `.upgrade-completed` | Idempotent receipt removal |
+| `PostCommitCleanup` | Post-commit | `.upgrade-completed` | Idempotent receipt removal |
+
+### Recovery Procedure & Fail-Closed Integrity Validation
+
+When an upgrade fails or is interrupted mid-flight, the operator triggers recovery via `rubixctl upgrade --recover` or automated supervisor recovery:
+
+1. **Quiesce Failed Service:** Stop active/crashed services to prevent concurrent mutations.
+2. **Receipt Inspection:** Read `.upgrade-pending` or `.upgrade-committing` in the state directory to discover `from`, `target`, and `backup` paths.
+3. **Fail-Closed Backup Integrity Validation:** Before modifying any host state:
+   - Verify backup directory exists and is a directory (not an unsafe symlink).
+   - Verify non-empty `pki` and `kine/db` state directories exist within the backup.
+   - If backup is missing, corrupt, or empty, recovery **aborts immediately without mutation** (`BackupIntegrityError`), retaining active receipts and error diagnostics for operator triage.
+4. **State Restoration (Rollback for Pending Upgrades):**
+   - Restore binary executable and host service units.
+   - Restore Kine SQLite database (`state.db`) and WAL files, reversing partial migrations or corrupt writes.
+   - Restore PKI private keys (`ca.key`, `service-account.key`) and certificates (`ca.crt`).
+   - Restore configuration according to version-specific limitations.
+   - Clean up `.upgrade-pending` upon successful restoration.
+5. **State Finalization (Commit for Committing Upgrades):**
+   - Verify health of target services.
+   - Clean up `.upgrade-committing` upon successful commit.
+
+### State Invariants Restored Across 5 Core Domains
+
+Recovery restores promised state across all 5 architectural domains without reliance on overwritten or missing backups:
+1. **Configuration:** Restores exact pre-upgrade configuration files and permissions (`0600`).
+2. **PKI & Identities:** Validates cryptographic CA signatures (`rcgen 0.14`), preserving cluster CA roots, service account signing keys, and client credentials.
+3. **Datastore:** Restores Kine SQLite database and WAL state, discarding uncommitted schema changes or corrupted partial migrations.
+4. **Workloads:** Retains static manifests and pod definitions bit-for-bit.
+5. **Storage:** Preserves persistent volume directory trees, regular files, permissions, and symlink integrity without corruption.
+
+### Dual-Format Client Access Accommodation
+
+Kubeconfig access is validated across both historical and modern formats:
+- **YAML Format:** Standard Kubernetes kubeconfig with client certificate/key authentication.
+- **JSON Format:** Strict JSON representation parsed and validated against cryptographic CA roots.
+Both formats confirm client access survives interrupted transitions and recovery.
+
+### Version-Specific Known Limitations
+
+| Starting Version | Configuration Behavior | Rollback & Recovery Specifics |
+| --- | --- | --- |
+| `v1.1.8` | Environment flags in systemd drop-in (`flags.conf`); no `kubesolo.yaml` | Rollback deletes migration-created `/etc/kubesolo/kubesolo.yaml` and restores systemd unit flags. |
+| `v1.2.0` | Environment flags in systemd drop-in (`flags.conf`); no `kubesolo.yaml` | Rollback deletes migration-created `/etc/kubesolo/kubesolo.yaml` and restores systemd unit flags. |
+| `v1.3.0` | First version introducing standalone `/etc/kubesolo/kubesolo.yaml` | Rollback restores original YAML configuration file with strict `0600` permissions. |
+| `v1.3.1` | YAML configuration file with updated component defaults | Rollback restores original YAML configuration, preserving custom configuration fields. |
+| `v1.3.2` | YAML configuration file with updated component defaults | Rollback restores original YAML configuration, preserving custom configuration fields. |
+| `v1.3.3` | YAML configuration file with updated component defaults | Rollback restores original YAML configuration, preserving custom configuration fields. |
+
+### Running Failure Rehearsal & Verification
+
+```sh
+# Execute automated failure rehearsal matrix across all versions and stages
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal
+
+# Run end-to-end integration tests
+cargo test --locked -p rubix-dev --test recovery_rehearsal
+cargo test --locked -p rubixctl --test upgrade_review
+```

@@ -71,3 +71,10 @@ Stack: perf/budget-regressions
 Evidence: Profiling compares candidate measurements to E01 budgets across startup (10.42s boot-to-API vs 14.05s ref p95), idle memory (450.0 MiB PSS vs 540.0 MiB ref, with kube-apiserver consuming 208.0 MiB), and distribution size (148.0 MiB archive vs 165.0 MiB ref). Synthetic fixture differences illustrate daemon memory and binary comparisons; no optimization implementation, causal attribution, protocol parity or live reduction is qualified. Explicit budget decisions document refusal of unmeasured sub-200MB and under-60s claims. Verified live-capture importer remains unimplemented, failing closed.
 Next step: Ingest verified paired Linux hardware captures for amd64 and arm64 to qualify E29; timestamp: 2026-10-03T23:00:00Z
 
+Work item: E30.02 (https://github.com/geoffsee/rubix-kube/issues/125); Parent criteria 2, 3
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: migration/recovery-rehearsal
+Evidence: Implemented disposable installation failure rehearsals and operator recovery across all supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1–v1.3.3) and 10 interrupted transition stages in rubixctl and rubix-dev. Validates restored state across 5 core domains: Configuration (restoring flags or 0600 YAML), PKI (rcgen CA signature verification), Datastore (Kine SQLite + WAL rollback), Workloads (manifest preservation), and Storage (PV directory and permission assertions). Dual-format client access verified across YAML and JSON kubeconfigs with cryptographic CA authentication. Fail-closed recovery refuses corrupted, empty, or symlinked backups without mutating disk state or deleting receipts. Version-specific operator procedures and limitations documented.
+Next step: None; timestamp: 2026-10-03T18:50:00Z

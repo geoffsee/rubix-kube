@@ -449,6 +449,304 @@ pub fn run_upgrade(
     }
 }
 
+/// Stage kind for an upgrade receipt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReceiptKind {
+    Pending,
+    Committing,
+    Completed,
+}
+
+/// Information recorded in an upgrade receipt file.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpgradeReceipt {
+    pub kind: ReceiptKind,
+    pub path: PathBuf,
+    pub from: String,
+    pub target: String,
+    pub backup: PathBuf,
+}
+
+impl std::fmt::Display for UpgradeReceipt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?} receipt at {} (from={} target={} backup={})",
+            self.kind,
+            self.path.display(),
+            self.from,
+            self.target,
+            self.backup.display()
+        )
+    }
+}
+
+/// Parses an upgrade receipt file (`.upgrade-pending`, `.upgrade-committing`, or `.upgrade-completed`).
+pub fn parse_receipt_file(path: &Path, kind: ReceiptKind) -> io::Result<UpgradeReceipt> {
+    let content = fs::read_to_string(path)?;
+    let mut from = None;
+    let mut target = None;
+    let mut backup = None;
+    for line in content.lines() {
+        let line = line.trim();
+        if let Some((k, v)) = line.split_once('=') {
+            match k {
+                "from" => from = Some(v.to_string()),
+                "target" => target = Some(v.to_string()),
+                "backup" => backup = Some(PathBuf::from(v)),
+                _ => {},
+            }
+        }
+    }
+    let from = from.unwrap_or_default();
+    let target = target.unwrap_or_default();
+    let backup = backup.unwrap_or_default();
+    Ok(UpgradeReceipt {
+        kind,
+        path: path.to_path_buf(),
+        from,
+        target,
+        backup,
+    })
+}
+
+/// Locates and parses any active upgrade receipt under `data_path`.
+pub fn find_active_receipt(data_path: &Path) -> io::Result<Option<UpgradeReceipt>> {
+    let pending = data_path.join(".upgrade-pending");
+    let committing = data_path.join(".upgrade-committing");
+    let completed = data_path.join(".upgrade-completed");
+
+    if pending.exists() {
+        return parse_receipt_file(&pending, ReceiptKind::Pending).map(Some);
+    }
+    if committing.exists() {
+        return parse_receipt_file(&committing, ReceiptKind::Committing).map(Some);
+    }
+    if completed.exists() {
+        return parse_receipt_file(&completed, ReceiptKind::Completed).map(Some);
+    }
+    Ok(None)
+}
+
+/// Failure cause when validating pre-upgrade backup integrity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BackupIntegrityError {
+    NotFound(PathBuf),
+    NotADirectory(PathBuf),
+    InsecurePermissions { path: PathBuf, mode: u32 },
+    SymlinkRejected(PathBuf),
+    MissingStateDirectory { backup: PathBuf, dir: &'static str },
+    EmptyStateDirectory { backup: PathBuf, dir: &'static str },
+    Io(String),
+}
+
+impl std::fmt::Display for BackupIntegrityError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotFound(p) => write!(f, "backup directory not found: {}", p.display()),
+            Self::NotADirectory(p) => write!(f, "backup path is not a directory: {}", p.display()),
+            Self::InsecurePermissions { path, mode } => {
+                write!(
+                    f,
+                    "backup directory {} has insecure permissions 0o{:o}, expected 0o700",
+                    path.display(),
+                    mode
+                )
+            },
+            Self::SymlinkRejected(p) => {
+                write!(f, "backup path contains unsafe symlink: {}", p.display())
+            },
+            Self::MissingStateDirectory { backup, dir } => {
+                write!(
+                    f,
+                    "backup at {} missing required state directory '{}'",
+                    backup.display(),
+                    dir
+                )
+            },
+            Self::EmptyStateDirectory { backup, dir } => {
+                write!(
+                    f,
+                    "backup at {} contains empty state directory '{}'",
+                    backup.display(),
+                    dir
+                )
+            },
+            Self::Io(e) => write!(f, "I/O error validating backup: {e}"),
+        }
+    }
+}
+
+impl std::error::Error for BackupIntegrityError {}
+
+/// Verifies that a pre-upgrade backup directory is valid, accessible, and contains required state.
+///
+/// Ensures:
+/// 1. Path exists, is a directory, and is not a symlink.
+/// 2. Required directories `pki` and `kine/db` exist and are non-empty.
+/// 3. No symlinks are present within backed-up state.
+pub fn validate_backup_integrity(backup: &Path) -> Result<(), BackupIntegrityError> {
+    let meta = match backup.symlink_metadata() {
+        Ok(m) => m,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            return Err(BackupIntegrityError::NotFound(backup.to_path_buf()));
+        },
+        Err(e) => return Err(BackupIntegrityError::Io(e.to_string())),
+    };
+    if meta.file_type().is_symlink() {
+        return Err(BackupIntegrityError::SymlinkRejected(backup.to_path_buf()));
+    }
+    if !meta.is_dir() {
+        return Err(BackupIntegrityError::NotADirectory(backup.to_path_buf()));
+    }
+
+    for dir in BACKED_UP_STATE_DIRS {
+        let state_dir = backup.join(dir);
+        let smeta = match state_dir.symlink_metadata() {
+            Ok(m) => m,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                return Err(BackupIntegrityError::MissingStateDirectory {
+                    backup: backup.to_path_buf(),
+                    dir,
+                });
+            },
+            Err(e) => return Err(BackupIntegrityError::Io(e.to_string())),
+        };
+        if smeta.file_type().is_symlink() {
+            return Err(BackupIntegrityError::SymlinkRejected(state_dir));
+        }
+        if !smeta.is_dir() {
+            return Err(BackupIntegrityError::MissingStateDirectory {
+                backup: backup.to_path_buf(),
+                dir,
+            });
+        }
+        let mut entries =
+            fs::read_dir(&state_dir).map_err(|e| BackupIntegrityError::Io(e.to_string()))?;
+        if entries.next().is_none() {
+            return Err(BackupIntegrityError::EmptyStateDirectory {
+                backup: backup.to_path_buf(),
+                dir,
+            });
+        }
+    }
+    Ok(())
+}
+
+/// Outcome of executing operator recovery on an interrupted upgrade.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RecoveryOutcome {
+    RolledBack { from: String, backup: PathBuf },
+    Committed { target: String },
+    AlreadyClean,
+}
+
+/// Executes operator recovery from an interrupted upgrade using retained receipts and backups.
+///
+/// Refuses to proceed if the backup is missing, incomplete, or corrupted, ensuring existing state
+/// and diagnostics are retained untouched rather than destroyed.
+pub fn recover_interrupted_upgrade(
+    backend: &mut dyn TransitionBackend,
+    data_path: &Path,
+    config: Option<&Path>,
+    stderr: &mut dyn Write,
+) -> io::Result<RecoveryOutcome> {
+    let _lock = lock_installation(data_path)?;
+    let active = find_active_receipt(data_path)?;
+    let Some(receipt) = active else {
+        writeln!(
+            stderr,
+            "  [ok] No active upgrade receipt; installation is clean"
+        )?;
+        return Ok(RecoveryOutcome::AlreadyClean);
+    };
+
+    match receipt.kind {
+        ReceiptKind::Completed => {
+            writeln!(stderr, "  > Finalizing post-commit receipt cleanup...")?;
+            remove_receipt(data_path, &receipt.path)?;
+            writeln!(stderr, "  [ok] Cleaned completed receipt")?;
+            Ok(RecoveryOutcome::Committed {
+                target: receipt.target,
+            })
+        },
+        ReceiptKind::Committing => {
+            writeln!(
+                stderr,
+                "  [warn] Upgrade was interrupted during commit phase ({receipt})"
+            )?;
+            let completed = data_path.join(".upgrade-completed");
+            match backend.start() {
+                Ok(()) => {
+                    writeln!(
+                        stderr,
+                        "  > Target installation is running; finalizing commit..."
+                    )?;
+                    let _ = backend.commit();
+                    finish_commit_receipt(data_path, &receipt.path, &completed)?;
+                    writeln!(stderr, "  [ok] Upgrade committed to {}", receipt.target)?;
+                    Ok(RecoveryOutcome::Committed {
+                        target: receipt.target,
+                    })
+                },
+                Err(cause) => {
+                    writeln!(
+                        stderr,
+                        "  [fail] Target failed to start: {cause}; checking rollback..."
+                    )?;
+                    validate_backup_integrity(&receipt.backup).map_err(|e| {
+                        io::Error::other(format!(
+                            "cannot roll back interrupted commit: backup validation failed ({e}); retaining receipt and state for operator inspection"
+                        ))
+                    })?;
+                    backend.restore(&receipt.backup)?;
+                    restore_state(data_path, config, &receipt.backup)?;
+                    backend.start()?;
+                    remove_receipt(data_path, &receipt.path)?;
+                    writeln!(stderr, "  [ok] Rolled back to {}", receipt.from)?;
+                    Ok(RecoveryOutcome::RolledBack {
+                        from: receipt.from,
+                        backup: receipt.backup,
+                    })
+                },
+            }
+        },
+        ReceiptKind::Pending => {
+            writeln!(
+                stderr,
+                "  > Recovering interrupted upgrade (from {} to {})...",
+                receipt.from, receipt.target
+            )?;
+            validate_backup_integrity(&receipt.backup).map_err(|e| {
+                io::Error::other(format!(
+                    "recovery refused: backup at {} is invalid or unavailable ({e}); retaining receipt and data untouched for operator inspection",
+                    receipt.backup.display()
+                ))
+            })?;
+
+            // Stop current backend if running
+            let _ = backend.stop();
+
+            // Execute rollback to pre-upgrade backup
+            backend.restore(&receipt.backup)?;
+            restore_state(data_path, config, &receipt.backup)?;
+            backend.start()?;
+
+            // Remove pending receipt
+            remove_receipt(data_path, &receipt.path)?;
+            writeln!(
+                stderr,
+                "  [ok] Rolled back to pre-upgrade state ({})",
+                receipt.from
+            )?;
+            Ok(RecoveryOutcome::RolledBack {
+                from: receipt.from,
+                backup: receipt.backup,
+            })
+        },
+    }
+}
+
 /// Host-mode backend: one binary and one service unit.
 #[derive(Debug)]
 pub struct HostBackend<'a, R: Runner> {
