@@ -53,6 +53,10 @@ pub fn classify_transition(from: &str, to: &str) -> Result<Transition, String> {
 /// Executes external programs; abstracted so lifecycle ordering is testable.
 pub trait Runner: std::fmt::Debug {
     fn run(&mut self, program: &str, args: &[String]) -> io::Result<String>;
+    /// Observe a process exit code without interpreting diagnostic text.
+    fn status_code(&mut self, program: &str, args: &[String]) -> io::Result<Option<i32>> {
+        self.run(program, args).map(|_| Some(0))
+    }
 }
 
 /// Runs real processes.
@@ -60,6 +64,13 @@ pub trait Runner: std::fmt::Debug {
 pub struct ProcessRunner;
 
 impl Runner for ProcessRunner {
+    fn status_code(&mut self, program: &str, args: &[String]) -> io::Result<Option<i32>> {
+        Ok(std::process::Command::new(program)
+            .args(args)
+            .output()?
+            .status
+            .code())
+    }
     fn run(&mut self, program: &str, args: &[String]) -> io::Result<String> {
         let out = std::process::Command::new(program).args(args).output()?;
         if out.status.success() {
@@ -247,6 +258,46 @@ fn restart_after_failure(backend: &mut dyn TransitionBackend, cause: io::Error) 
     }
 }
 
+fn remove_receipt(data: &Path, receipt: &Path) -> io::Result<()> {
+    match fs::remove_file(receipt) {
+        Ok(()) => fs::File::open(data)?.sync_all(),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+fn stage_commit_receipt(data: &Path, pending: &Path, committing: &Path) -> io::Result<()> {
+    // Keep a durable, recognized receipt while checking pending cleanup.
+    // Removing the only receipt here would leave an interruption gap.
+    fs::hard_link(pending, committing)?;
+    fs::File::open(data)?.sync_all()?;
+    remove_receipt(data, pending)
+}
+
+fn finish_commit_receipt(data: &Path, committing: &Path, completed: &Path) -> io::Result<()> {
+    fs::rename(committing, completed)?;
+    fs::File::open(data)?.sync_all()?;
+    remove_receipt(data, completed)
+}
+
+fn save_upgrade_receipt(
+    data: &Path,
+    pending: &Path,
+    from: &str,
+    target: &str,
+    backup: &Path,
+) -> io::Result<()> {
+    let record = format!(
+        "from={from}\ntarget={target}\nbackup={}\n",
+        backup.display()
+    );
+    let mut marker = tempfile::NamedTempFile::new_in(data)?;
+    marker.write_all(record.as_bytes())?;
+    marker.as_file().sync_all()?;
+    marker.persist_noclobber(pending).map_err(|e| e.error)?;
+    fs::File::open(data)?.sync_all()
+}
+
 /// Runs a transition; failures after the service is stopped restore and restart the old unit.
 pub fn run_upgrade(
     backend: &mut dyn TransitionBackend,
@@ -268,12 +319,16 @@ pub fn run_upgrade(
     lock.try_lock()
         .map_err(|e| io::Error::other(format!("another upgrade owns this installation: {e}")))?;
     let pending = data_path.join(".upgrade-pending");
-    if pending.exists() {
+    let committing = data_path.join(".upgrade-committing");
+    let completed = data_path.join(".upgrade-completed");
+    if let Some(receipt) = [&pending, &committing].into_iter().find(|p| p.exists()) {
         return Err(io::Error::other(format!(
             "an interrupted upgrade requires recovery using {}",
-            pending.display()
+            receipt.display()
         )));
     }
+    // Only this phase proves the old artifact has already been committed away.
+    remove_receipt(data_path, &completed)?;
     let from = backend.current_version()?;
     match classify_transition(&from, target).map_err(io::Error::other)? {
         Transition::Same => {
@@ -304,18 +359,7 @@ pub fn run_upgrade(
         Ok(dir) => dir,
         Err(cause) => return Err(restart_after_failure(backend, cause)),
     };
-    let record = format!(
-        "from={from}\ntarget={target}\nbackup={}\n",
-        backup.display()
-    );
-    let save_receipt = (|| {
-        let mut marker = tempfile::NamedTempFile::new_in(data_path)?;
-        marker.write_all(record.as_bytes())?;
-        marker.as_file().sync_all()?;
-        marker.persist_noclobber(&pending).map_err(|e| e.error)?;
-        fs::File::open(data_path)?.sync_all()
-    })();
-    if let Err(e) = save_receipt {
+    if let Err(e) = save_upgrade_receipt(data_path, &pending, &from, target, &backup) {
         return Err(restart_after_failure(backend, e));
     }
     // From this point interruptions leave a durable recovery receipt and preserve the backup.
@@ -326,16 +370,25 @@ pub fn run_upgrade(
             Ok(())
         })
         .and_then(|()| backend.start())
+        .and_then(|()| stage_commit_receipt(data_path, &pending, &committing))
         .and_then(|()| backend.commit());
     match attempt {
         Ok(()) => {
-            fs::remove_file(&pending)?;
-            writeln!(stderr, "  [ok] Upgraded to {target}")?;
+            // The commit may have destroyed the old container. Receipt I/O errors
+            // now describe cleanup, never a failed transition requiring rollback.
+            let cleanup = finish_commit_receipt(data_path, &committing, &completed);
+            if let Err(error) = cleanup {
+                let _ = writeln!(
+                    stderr,
+                    "  [warn] Upgrade committed; receipt cleanup failed: {error}. Inspect upgrade receipts; any retained receipt requires cleanup, not rollback."
+                );
+            }
+            let _ = writeln!(stderr, "  [ok] Upgraded to {target}");
             if supports_config_file(target) {
-                writeln!(
+                let _ = writeln!(
                     stderr,
                     "  Restart required for configuration changes to take effect."
-                )?;
+                );
             }
             Ok(UpgradeOutcome::Upgraded { backup })
         },
@@ -352,7 +405,9 @@ pub fn run_upgrade(
                         backup.display()
                     ))
                 })?;
-            fs::remove_file(&pending)?;
+            for receipt in [&pending, &committing] {
+                remove_receipt(data_path, receipt)?;
+            }
             writeln!(stderr, "  [ok] Rolled back to {from}")?;
             Ok(UpgradeOutcome::RolledBack {
                 backup,
@@ -428,7 +483,19 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
     }
 
     fn restore(&mut self, dir: &Path) -> io::Result<()> {
-        self.stop()?;
+        if let Err(error) = self.stop() {
+            // LSB init-script status 3 means the service is stopped. Other
+            // statuses, signals and probe failures do not prove quiescence.
+            let inactive = !self.systemd
+                && matches!(
+                    self.runner
+                        .status_code("service", &[self.service.clone(), "status".into()]),
+                    Ok(Some(3))
+                );
+            if !inactive {
+                return Err(error);
+            }
+        }
         atomic_copy_with_mode(&dir.join("kubesolo.bin"), &self.binary, true)?;
         if let (Some(unit), true) = (&self.service_file, dir.join("service.unit").is_file()) {
             atomic_copy(&dir.join("service.unit"), unit)?;

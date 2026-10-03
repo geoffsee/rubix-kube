@@ -114,8 +114,13 @@ new version record and check that the replacement is running before discarding
 the previous container; this check does not establish Kubernetes readiness.
 
 An exclusive file lock serializes upgrades for a data path. Before replacement,
-`.upgrade-pending` records the source version, target and backup directory. An
-interruption retains that receipt and backup; subsequent upgrade attempts refuse
-to mutate the installation until the interrupted operation is recovered. These
+`.upgrade-pending` records the source version, target and backup directory. Before
+commit removes the previous container, a durable `.upgrade-committing` receipt
+protects recovery while pending-receipt cleanup is checked. Interruption retains
+an active receipt and backup; subsequent upgrades refuse mutation until recovery.
+After commit, `.upgrade-completed` marks receipt cleanup as safe to retry on the
+next invocation. Post-commit cleanup or output failures do not report a failed
+transaction or attempt rollback against a discarded old container. A cleanup
+warning requires inspecting the retained receipt, not undoing the commit. These
 file and fake-runner checks do not qualify live Linux, Docker, datastore recovery
 or all supported init systems.

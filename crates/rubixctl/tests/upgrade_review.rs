@@ -304,3 +304,260 @@ fn live_lock_and_interrupted_receipt_refuse_new_mutations() {
     assert!(run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 1, &mut Vec::new()).is_err());
     assert!(backend.calls.is_empty());
 }
+
+#[derive(Clone, Copy)]
+enum ReceiptFailure {
+    BeforeCommit,
+    CommitAndRollback,
+    CompletionRename,
+    CompletedCleanup,
+}
+
+struct ReceiptBackend {
+    data: PathBuf,
+    failure: ReceiptFailure,
+    committed: bool,
+    restored: bool,
+}
+impl TransitionBackend for ReceiptBackend {
+    fn current_version(&mut self) -> io::Result<String> {
+        Ok(if self.committed { "v1.3.0" } else { "v1.2.0" }.into())
+    }
+    fn prepare(&mut self, _: &str) -> io::Result<()> {
+        Ok(())
+    }
+    fn snapshot(&mut self, _: &Path) -> io::Result<()> {
+        Ok(())
+    }
+    fn stop(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+    fn replace(&mut self, _: &str) -> io::Result<()> {
+        Ok(())
+    }
+    fn start(&mut self) -> io::Result<()> {
+        if !self.restored && matches!(self.failure, ReceiptFailure::BeforeCommit) {
+            // An invalid receipt cannot be safely staged or removed as a file.
+            fs::remove_file(self.data.join(".upgrade-pending"))?;
+            fs::create_dir(self.data.join(".upgrade-pending"))?;
+        }
+        Ok(())
+    }
+    fn restore(&mut self, _: &Path) -> io::Result<()> {
+        assert!(
+            !self.committed,
+            "irreversible commit must never be rolled back"
+        );
+        if matches!(self.failure, ReceiptFailure::CommitAndRollback) {
+            return Err(io::Error::other("rollback unavailable"));
+        }
+        self.restored = true;
+        Ok(())
+    }
+    fn commit(&mut self) -> io::Result<()> {
+        assert!(!self.data.join(".upgrade-pending").exists());
+        assert!(self.data.join(".upgrade-committing").is_file());
+        if matches!(self.failure, ReceiptFailure::CommitAndRollback) {
+            return Err(io::Error::other("commit unavailable"));
+        }
+        self.committed = true;
+        match self.failure {
+            ReceiptFailure::CompletionRename => {
+                fs::create_dir(self.data.join(".upgrade-completed"))?;
+                fs::write(self.data.join(".upgrade-completed/obstruction"), "x")?;
+            },
+            ReceiptFailure::CompletedCleanup => {
+                fs::remove_file(self.data.join(".upgrade-committing"))?;
+                fs::create_dir(self.data.join(".upgrade-committing"))?;
+            },
+            _ => {},
+        }
+        Ok(())
+    }
+}
+
+#[test]
+fn receipt_failures_keep_recovery_evidence_and_never_report_a_committed_upgrade_as_failed() {
+    for failure in [
+        ReceiptFailure::BeforeCommit,
+        ReceiptFailure::CommitAndRollback,
+        ReceiptFailure::CompletionRename,
+        ReceiptFailure::CompletedCleanup,
+    ] {
+        let dir = data();
+        let mut backend = ReceiptBackend {
+            data: dir.path().into(),
+            failure,
+            committed: false,
+            restored: false,
+        };
+        let mut stderr = Vec::new();
+        let outcome = run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 1, &mut stderr);
+        match failure {
+            ReceiptFailure::BeforeCommit => {
+                assert!(outcome.is_err());
+                assert!(backend.restored);
+                assert!(!backend.committed);
+                assert!(dir.path().join(".upgrade-pending").exists());
+            },
+            ReceiptFailure::CommitAndRollback => {
+                assert!(outcome.unwrap_err().to_string().contains("rollback failed"));
+                assert!(dir.path().join(".upgrade-committing").is_file());
+                assert!(
+                    run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 2, &mut Vec::new())
+                        .unwrap_err()
+                        .to_string()
+                        .contains("interrupted upgrade")
+                );
+            },
+            ReceiptFailure::CompletionRename | ReceiptFailure::CompletedCleanup => {
+                assert!(matches!(outcome.unwrap(), UpgradeOutcome::Upgraded { .. }));
+                assert!(backend.committed);
+                assert!(!backend.restored);
+                assert!(
+                    String::from_utf8(stderr)
+                        .unwrap()
+                        .contains("Upgrade committed; receipt cleanup failed")
+                );
+                assert!(
+                    run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 2, &mut Vec::new())
+                        .is_err()
+                );
+            },
+        }
+    }
+}
+
+#[derive(Debug)]
+struct InactiveRunner {
+    status: Option<i32>,
+    probe_error: bool,
+}
+impl Runner for InactiveRunner {
+    fn run(&mut self, _: &str, _: &[String]) -> io::Result<String> {
+        Err(io::Error::other("stop denied"))
+    }
+    fn status_code(&mut self, program: &str, args: &[String]) -> io::Result<Option<i32>> {
+        assert_eq!(program, "service");
+        assert_eq!(args, ["kubesolo", "status"]);
+        if self.probe_error {
+            Err(io::Error::other("cannot query service"))
+        } else {
+            Ok(self.status)
+        }
+    }
+}
+
+#[test]
+fn non_systemd_restore_accepts_only_explicit_inactive_status() {
+    for (status, probe_error) in [
+        (Some(3), false),
+        (Some(0), false),
+        (Some(4), false),
+        (None, false),
+        (Some(3), true),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let binary = dir.path().join("node");
+        fs::write(&binary, "new").unwrap();
+        fs::write(dir.path().join("kubesolo.bin"), "old").unwrap();
+        let mut runner = InactiveRunner {
+            status,
+            probe_error,
+        };
+        let mut backend = HostBackend {
+            binary: binary.clone(),
+            staged: binary.clone(),
+            service: "kubesolo".into(),
+            runner: &mut runner,
+            systemd: false,
+            service_file: None,
+            legacy_config: None,
+        };
+        let outcome = backend.restore(dir.path());
+        if status == Some(3) && !probe_error {
+            outcome.unwrap();
+            assert_eq!(fs::read_to_string(&binary).unwrap(), "old");
+        } else {
+            assert_eq!(outcome.unwrap_err().to_string(), "stop denied");
+            assert_eq!(fs::read_to_string(&binary).unwrap(), "new");
+        }
+    }
+}
+
+#[test]
+fn a_durable_completed_receipt_is_cleaned_without_ambiguous_recovery() {
+    let dir = data();
+    fs::write(
+        dir.path().join(".upgrade-completed"),
+        "from=v1.2.0\ntarget=v1.3.0\n",
+    )
+    .unwrap();
+    let mut backend = ReceiptBackend {
+        data: dir.path().into(),
+        failure: ReceiptFailure::CommitAndRollback,
+        committed: true,
+        restored: false,
+    };
+    assert_eq!(
+        run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 1, &mut Vec::new()).unwrap(),
+        UpgradeOutcome::Unchanged
+    );
+    assert!(!dir.path().join(".upgrade-completed").exists());
+    assert!(!backend.restored);
+}
+
+struct RejectSuccessOutput;
+impl io::Write for RejectSuccessOutput {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        if String::from_utf8_lossy(bytes).contains("Upgraded to") {
+            Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "output closed after commit",
+            ))
+        } else {
+            Ok(bytes.len())
+        }
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+#[test]
+fn success_output_failure_does_not_turn_an_irreversible_commit_into_failure() {
+    let dir = data();
+    let mut runner = Recorded {
+        running: true,
+        ..Recorded::default()
+    };
+    let spec = ContainerSpec::parse("name=rubix\nimage=example/node:v1.2.0\n").unwrap();
+    let mut backend = ContainerBackend::new("docker", spec, &mut runner);
+    assert!(matches!(
+        run_upgrade(
+            &mut backend,
+            dir.path(),
+            None,
+            "v1.3.0",
+            1,
+            &mut RejectSuccessOutput
+        )
+        .unwrap(),
+        UpgradeOutcome::Upgraded { .. }
+    ));
+    assert!(
+        runner
+            .calls
+            .iter()
+            .any(|call| call == "docker rm rubix-pre-upgrade")
+    );
+    assert!(
+        !runner
+            .calls
+            .iter()
+            .any(|call| call.starts_with("docker rm -f"))
+    );
+    assert!(!dir.path().join(".upgrade-pending").exists());
+    assert!(!dir.path().join(".upgrade-committing").exists());
+    assert!(!dir.path().join(".upgrade-completed").exists());
+}
