@@ -13,7 +13,9 @@ use std::path::{Path, PathBuf};
 
 use rubix_config::HostContext;
 use rubix_config::decode;
-use rubix_config::legacy::{extract_service_flags, flags_to_config};
+use rubix_config::legacy::{
+    extract_service_flags, flags_to_config, has_config_flag, service_config_path,
+};
 use rubixctl::migrate::{ServiceMigrationResult, migrate_legacy_service};
 use serde::{Deserialize, Serialize};
 
@@ -41,9 +43,12 @@ pub fn validate_config_transition(
 ) -> io::Result<ConfigTransitionAssertion> {
     let mut stderr_buf = Vec::new();
 
+    let service_config = existing_service_configuration(service_path)?;
+    let destination = service_config.as_deref().unwrap_or(dest_config_path);
+
     let migration_result = migrate_legacy_service(
         service_path,
-        Some(dest_config_path),
+        Some(destination),
         "latest",
         host,
         &mut stderr_buf,
@@ -91,10 +96,17 @@ pub fn validate_config_transition(
                 permissions_valid_0600: perms_ok,
             })
         },
-        ServiceMigrationResult::DestinationConfigExists { config_path: _ }
-        | ServiceMigrationResult::AlreadyMigrated { .. } => {
-            let config_path = dest_config_path;
-            let bytes = fs::read(config_path)?;
+        result @ (ServiceMigrationResult::DestinationConfigExists { .. }
+        | ServiceMigrationResult::AlreadyMigrated { .. }) => {
+            let config_path = match result {
+                ServiceMigrationResult::DestinationConfigExists { config_path } => config_path,
+                ServiceMigrationResult::AlreadyMigrated { service_path } => {
+                    service_config_path(&fs::read_to_string(service_path)?)
+                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+                },
+                _ => unreachable!(),
+            };
+            let bytes = fs::read(&config_path)?;
             let text = std::str::from_utf8(&bytes).map_err(|e| {
                 io::Error::new(
                     io::ErrorKind::InvalidData,
@@ -111,7 +123,7 @@ pub fn validate_config_transition(
             #[cfg(unix)]
             let perms_ok = {
                 use std::os::unix::fs::PermissionsExt;
-                let meta = fs::metadata(config_path)?;
+                let meta = fs::metadata(&config_path)?;
                 (meta.permissions().mode() & 0o777) == 0o600
             };
             #[cfg(not(unix))]
@@ -120,7 +132,7 @@ pub fn validate_config_transition(
             Ok(ConfigTransitionAssertion {
                 starting_version: version,
                 service_migrated: false,
-                config_path: config_path.to_path_buf(),
+                config_path,
                 backup_path: None,
                 node_ip: decoded.config.network.node_ip,
                 disable_ipv6: decoded.config.network.disable_ipv6,
@@ -131,6 +143,17 @@ pub fn validate_config_transition(
         other => Err(io::Error::other(format!(
             "unexpected service migration result for {version}: {other:?}"
         ))),
+    }
+}
+
+fn existing_service_configuration(service_path: &Path) -> io::Result<Option<PathBuf>> {
+    match fs::read_to_string(service_path) {
+        Ok(content) if has_config_flag(&content) => service_config_path(&content)
+            .map(Some)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)),
+        Ok(_) => Ok(None),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(error),
     }
 }
 

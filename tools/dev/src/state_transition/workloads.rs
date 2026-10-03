@@ -165,38 +165,36 @@ pub fn assert_workload_identities_preserved(
     Ok(())
 }
 
-/// Asserts static pod manifests in manifests directory are preserved before and after transition.
+/// Compare complete regular-file manifest inventories; missing roots and links fail closed.
 pub fn assert_static_manifests_preserved(dir_before: &Path, dir_after: &Path) -> io::Result<()> {
-    if !dir_before.exists() {
-        return Ok(());
+    let before = manifest_inventory(dir_before)?;
+    let after = manifest_inventory(dir_after)?;
+    if before != after {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "static manifest inventory or content changed",
+        ));
     }
+    Ok(())
+}
 
-    for entry in fs::read_dir(dir_before)? {
+fn manifest_inventory(root: &Path) -> io::Result<BTreeMap<std::ffi::OsString, Vec<u8>>> {
+    if !fs::symlink_metadata(root)?.file_type().is_dir() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "manifest root must be a directory",
+        ));
+    }
+    let mut inventory = BTreeMap::new();
+    for entry in fs::read_dir(root)? {
         let entry = entry?;
-        let name = entry.file_name();
-        let target = dir_after.join(&name);
-        if !target.is_file() {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!(
-                    "static manifest {} missing after transition",
-                    name.to_string_lossy()
-                ),
-            ));
-        }
-
-        let bytes_before = fs::read(entry.path())?;
-        let bytes_after = fs::read(&target)?;
-        if bytes_before != bytes_after {
+        if !entry.file_type()?.is_file() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!(
-                    "static manifest {} content mismatch",
-                    name.to_string_lossy()
-                ),
+                "static manifest entries must be regular files",
             ));
         }
+        inventory.insert(entry.file_name(), fs::read(entry.path())?);
     }
-
-    Ok(())
+    Ok(inventory)
 }
