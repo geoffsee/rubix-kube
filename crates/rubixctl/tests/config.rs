@@ -714,6 +714,52 @@ fn api_get_failures_preserve_file_and_do_not_open_editor() {
 }
 
 #[test]
+fn malformed_successful_api_document_is_not_echoed_in_diagnostics() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("config.yaml");
+    let socket = dir.path().join("api.sock");
+    let mut cfg = Config::default();
+    cfg.api.enabled = true;
+    write_document(&file, &cfg).unwrap();
+    let listener = UnixListener::bind(&socket).unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut request = [0; 4096];
+        assert!(stream.read(&mut request).unwrap() > 0);
+        let body = r#"{"config":{"portainer":{"edgeKey":"private-review-marker"},"network":{"mtu":"invalid"}}}"#;
+        write!(
+            stream,
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+        .unwrap();
+    });
+    let env = BTreeMap::from([(
+        "KUBESOLO_API_SOCKET_PATH".into(),
+        socket.to_str().unwrap().into(),
+    )]);
+    let mut stdout = Vec::new();
+    let mut stderr = Vec::new();
+    assert_eq!(
+        execute(
+            &args(&["config", "-f", file.to_str().unwrap(), "get"]),
+            &env,
+            "test",
+            &mut DummyInputs,
+            &mut stdout,
+            &mut stderr
+        )
+        .unwrap(),
+        1
+    );
+    let diagnostic = String::from_utf8(stderr).unwrap();
+    assert!(diagnostic.contains("invalid configuration document"));
+    assert!(!diagnostic.contains("private-review-marker"));
+    assert!(stdout.is_empty());
+    server.join().unwrap();
+}
+
+#[test]
 fn disabled_api_and_missing_config_do_not_select_host_socket() {
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("config.yaml");

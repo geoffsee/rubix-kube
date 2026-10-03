@@ -832,11 +832,17 @@ fn read_config_for_display(
     stderr: &mut dyn Write,
 ) -> io::Result<Option<Config>> {
     if let Some(resp) = socket_request(socket_path, "GET", "/api/v1/config", "", &[])? {
-        if resp.status == 200
-            && let Ok(val) = serde_json::from_str::<Value>(&resp.body)
-            && let Ok(cfg) = serde_json::from_value::<Config>(val["config"].clone())
-        {
-            return Ok(Some(cfg));
+        if resp.status == 200 {
+            if let Ok(val) = serde_json::from_str::<Value>(&resp.body)
+                && let Ok(cfg) = serde_json::from_value::<Config>(val["config"].clone())
+            {
+                return Ok(Some(cfg));
+            }
+            writeln!(
+                stderr,
+                "error: config API returned an invalid configuration document"
+            )?;
+            return Ok(None);
         }
         let msg = extract_error_message(&resp.body);
         writeln!(stderr, "error: {msg}")?;
