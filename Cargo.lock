@@ -1234,12 +1234,20 @@ dependencies = [
 name = "rubix-kube"
 version = "0.1.0"
 dependencies = [
+ "rubix-apiserver",
  "rubix-config",
+ "rubix-controller",
+ "rubix-datastore",
+ "rubix-dns",
  "rubix-network",
+ "rubix-pki",
  "rubix-platform",
+ "rubix-proxy",
+ "rubix-storage",
  "rubix-supervisor",
  "rustix",
  "serde_json",
+ "tempfile",
  "tokio",
 ]
 
