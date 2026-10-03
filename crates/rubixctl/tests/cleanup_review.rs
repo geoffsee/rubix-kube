@@ -154,13 +154,26 @@ fn daemon_stop_and_removal_failures_never_delete_container_state() {
     for (kind, fail, names) in [
         (CleanupKind::Reset, "stop", Some("rubix\n")),
         (
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             "stop",
             Some("rubix\n"),
         ),
-        (CleanupKind::Uninstall { purge: true }, "stop", None),
         (
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
+            "stop",
+            None,
+        ),
+        (
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             "rm",
             Some("rubix\n"),
         ),
@@ -220,7 +233,10 @@ fn verified_absence_is_idempotent_for_uninstall_and_refused_for_reset() {
             &mut engine,
             "docker",
             &spec(),
-            CleanupKind::Uninstall { purge: true },
+            CleanupKind::Uninstall {
+                purge: true,
+                keep_config: false,
+            },
             dir.path(),
             true,
             &mut io::Cursor::new(Vec::<u8>::new()),
@@ -240,7 +256,10 @@ fn ordinary_uninstall_retains_datastore_volumes_and_runtime_inputs() {
     let mut host = Host::default();
     let result = run_host_cleanup(
         &mut host,
-        CleanupKind::Uninstall { purge: false },
+        CleanupKind::Uninstall {
+            purge: false,
+            keep_config: false,
+        },
         dir.path(),
         true,
         &mut io::Cursor::new(Vec::<u8>::new()),
@@ -299,14 +318,26 @@ fn upgrade_receipts_are_retained_with_recovery_backups_until_explicit_purge() {
         fs::write(dir.path().join(receipt), "backup=backups/retained").unwrap();
     }
     fs::write(dir.path().join(".upgrade.lock"), "").unwrap();
-    for kind in [CleanupKind::Reset, CleanupKind::Uninstall { purge: false }] {
+    for kind in [
+        CleanupKind::Reset,
+        CleanupKind::Uninstall {
+            purge: false,
+            keep_config: false,
+        },
+    ] {
         let plan = rubixctl::cleanup::plan_cleanup(kind, dir.path());
         for receipt in receipts {
             assert!(plan.retain.contains(&dir.path().join(receipt)));
             assert!(!plan.remove.contains(&dir.path().join(receipt)));
         }
     }
-    let plan = rubixctl::cleanup::plan_cleanup(CleanupKind::Uninstall { purge: true }, dir.path());
+    let plan = rubixctl::cleanup::plan_cleanup(
+        CleanupKind::Uninstall {
+            purge: true,
+            keep_config: false,
+        },
+        dir.path(),
+    );
     for receipt in receipts {
         assert!(plan.remove.contains(&dir.path().join(receipt)));
     }
