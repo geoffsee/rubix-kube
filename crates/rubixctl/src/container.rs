@@ -358,9 +358,9 @@ pub fn build_port_configuration(
 /// Steps:
 /// 1. Validate CPU manager policy (must be "none")
 /// 2. Validate container ports and prepare port bindings
-/// 3. Verify/create network `<cname>-net`
-/// 4. Verify/create volume `<cname>-data`
-/// 5. Pull image if needed
+/// 3. Pull image if needed, before replacing an existing instance
+/// 4. Verify/create network `<cname>-net`
+/// 5. Verify/create volume `<cname>-data`
 /// 6. Create container with:
 ///    - `Privileged`: true
 ///    - `CgroupnsMode`: "host"
@@ -403,8 +403,18 @@ pub fn install_container(
     )?;
 
     let mut created = CreatedResources::default();
+    let mut removed_existing = false;
 
     let install_action = || -> Result<ContainerInstallResult, ContainerLifecycleError> {
+        let image_exists = engine
+            .inspect_image(&params.image)
+            .map_err(|e| ContainerLifecycleError::Engine(format!("image inspect failed: {e}")))?
+            .is_some();
+        if !image_exists {
+            engine
+                .pull_image(&params.image)
+                .map_err(|e| ContainerLifecycleError::Engine(format!("image pull failed: {e}")))?;
+        }
         // Reinstall only the selected instance; retain its persistent data volume.
         if let Some(existing) = engine.inspect_container(&cname).map_err(|e| {
             ContainerLifecycleError::Engine(format!("container inspect failed: {e}"))
@@ -417,6 +427,7 @@ pub fn install_container(
             engine.remove_container(&cname, false).map_err(|e| {
                 ContainerLifecycleError::Engine(format!("container removal failed: {e}"))
             })?;
+            removed_existing = true;
         }
         // 1. Ensure Network
         let network = engine
@@ -465,18 +476,6 @@ pub fn install_container(
             created.volume = Some(vname.clone());
             true
         };
-
-        // 3. Ensure Image
-        let image_exists = engine
-            .inspect_image(&params.image)
-            .map_err(|e| ContainerLifecycleError::Engine(format!("image inspect failed: {e}")))?
-            .is_some();
-
-        if !image_exists {
-            engine
-                .pull_image(&params.image)
-                .map_err(|e| ContainerLifecycleError::Engine(format!("image pull failed: {e}")))?;
-        }
 
         // 5. Build ContainerConfig
         let mut env_vars = vec![
@@ -571,7 +570,13 @@ pub fn install_container(
             if !rollback_warnings.is_empty() {
                 eprintln!("warnings during cleanup: {}", rollback_warnings.join(", "));
             }
-            Err(err)
+            if removed_existing {
+                Err(ContainerLifecycleError::Engine(format!(
+                    "{err}; previous container was removed; existing data volume retained"
+                )))
+            } else {
+                Err(err)
+            }
         },
     }
 }

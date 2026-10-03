@@ -670,4 +670,16 @@ fn sysv_status_preserves_stopped_exit_code() {
         .output()
         .unwrap();
     assert_eq!(output.status.code(), Some(3));
+    config.binary_path = dir.path().join("absent-node");
+    let def = generate_service_definition(&config).unwrap();
+    for (action, expected) in [("status", 3), ("start", 1), ("restart", 1)] {
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(&def.files[0].content)
+            .arg("test")
+            .arg(action)
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(expected));
+    }
 }
