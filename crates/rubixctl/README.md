@@ -105,6 +105,27 @@ not add a binding for the built-in API server or enabled D2K port. Reinstalling
 recreates only the selected container, retaining its volume and reconciling its
 instance bridge MTU; a bridge still in use causes an explicit Engine error.
 
+Upgrade stages the artifact before stopping the selected deployment, then copies
+the quiesced `pki` and `kine/db` directories into a unique private backup. After
+failed replacement, migration, start or commit, the upgrade attempts to restore
+deployment artifacts, the configuration's previous presence and contents, and
+captured PKI/datastore state. If rollback fails, it returns an error and retains
+the receipt and backup for manual recovery.
+Systemd unit changes are reloaded before start. Container upgrades persist their
+new version record and check that the replacement is running before discarding
+the previous container; this check does not establish Kubernetes readiness.
+
+An exclusive file lock serializes upgrades for a data path. Before replacement,
+`.upgrade-pending` records the source version, target and backup directory. Before
+commit removes the previous container, a durable `.upgrade-committing` receipt
+protects recovery while pending-receipt cleanup is checked. Interruption retains
+an active receipt and backup; subsequent upgrades refuse mutation until recovery.
+After commit, `.upgrade-completed` marks receipt cleanup as safe to retry on the
+next invocation. Post-commit cleanup or output failures do not report a failed
+transaction or attempt rollback against a discarded old container. A cleanup
+warning requires inspecting the retained receipt, not undoing the commit. These
+file and fake-runner checks do not qualify live Linux, Docker, datastore recovery
+or all supported init systems.
 When running under sudo, preserve the allowlisted Edge settings explicitly:
 
 ```sh

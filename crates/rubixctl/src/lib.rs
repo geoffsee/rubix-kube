@@ -15,6 +15,7 @@ mod parse;
 pub mod preparation;
 pub mod service;
 pub mod sudo_env;
+pub mod upgrade;
 
 pub use artifact::{
     ArtifactSelectionError, DEFAULT_DATA_PATH, DEFAULT_INSTALL_PATH, DEFAULT_RELEASE_BASE_URL,

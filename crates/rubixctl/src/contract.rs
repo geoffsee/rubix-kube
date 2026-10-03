@@ -333,13 +333,12 @@ pub trait CommandHandler {
 
     fn execute_upgrade(
         &mut self,
-        _options: UpgradeOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: UpgradeOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'upgrade' is not yet implemented")?;
-        Ok(1)
+        crate::upgrade::execute_upgrade(&options, inputs, stdout, stderr)
     }
 
     fn execute_reset(
