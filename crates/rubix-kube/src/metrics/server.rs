@@ -74,6 +74,7 @@ impl MetricsServer {
                         Err(e) => {
                             // Transient accept errors do not stop the server
                             eprintln!("metrics server accept error: {e}");
+                            accept_error_backoff(&mut shutdown_rx).await;
                             continue;
                         }
                     };
@@ -123,6 +124,16 @@ impl MetricsServer {
             while connections.join_next().await.is_some() {}
         }
         Ok(())
+    }
+}
+
+async fn accept_error_backoff(shutdown: &mut watch::Receiver<bool>) {
+    if *shutdown.borrow() {
+        return;
+    }
+    tokio::select! {
+        _ = shutdown.changed() => {},
+        () = tokio::time::sleep(Duration::from_millis(100)) => {},
     }
 }
 
@@ -183,5 +194,27 @@ fn handle_request(req: &Request<Incoming>, registry: &MetricsRegistry) -> Respon
             .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
             .body(Full::new(Bytes::from("404 not found\n")))
             .unwrap_or_else(|_| Response::new(Full::new(Bytes::new()))),
+    }
+}
+
+#[cfg(test)]
+mod accept_retry_tests {
+    use super::*;
+
+    #[tokio::test(start_paused = true)]
+    async fn repeated_accept_failures_are_rate_limited_and_shutdown_interrupts_delay() {
+        let (tx, mut rx) = watch::channel(false);
+        let start = tokio::time::Instant::now();
+        for _ in 0..3 {
+            accept_error_backoff(&mut rx).await;
+        }
+        assert_eq!(start.elapsed(), Duration::from_millis(300));
+        let stop = async {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+            tx.send(true).unwrap();
+        };
+        let start = tokio::time::Instant::now();
+        tokio::join!(accept_error_backoff(&mut rx), stop);
+        assert_eq!(start.elapsed(), Duration::from_millis(10));
     }
 }

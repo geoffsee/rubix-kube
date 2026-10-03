@@ -121,8 +121,8 @@ impl From<io::Error> for RuntimeError {
 }
 
 use crate::metrics::{
-    BuildInfoCollector, CertificateCollector, ComponentHealthCollector, DatastoreCollector,
-    MetricsAdapter, MetricsRegistry, UptimeCollector,
+    BuildInfoCollector, CertificateCollector, DatastoreCollector, MetricsAdapter, MetricsRegistry,
+    UptimeCollector,
 };
 
 /// Builder for extensible node runtime assembly satisfying the C02 runtime contract.
@@ -379,12 +379,15 @@ impl NodeRuntime {
             let registry = Arc::new(MetricsRegistry::new());
             registry.register(BuildInfoCollector::default());
             registry.register(UptimeCollector::new());
-            registry.register(DatastoreCollector::new(datastore_dir.join("kine.db")));
+            registry.register(DatastoreCollector::with_wal(
+                datastore_cfg.snapshot_path(),
+                datastore_cfg.wal_path(),
+            ));
             registry.register(CertificateCollector::new(
                 pki_dir.clone(),
                 builder.config().config().d2k.enabled,
             ));
-            registry.register(ComponentHealthCollector::default());
+            // Component health series require lifecycle updates; do not publish static zeros.
 
             let metrics_adapter =
                 MetricsAdapter::new(metrics_cfg.bind_address.clone(), registry.clone());

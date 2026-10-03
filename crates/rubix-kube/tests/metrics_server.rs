@@ -300,6 +300,20 @@ async fn test_node_runtime_metrics_serving_scrape_and_certificates_without_tls()
 
     // 2. Parse scrape response
     let scrape = parse_scrape(&body).expect("parse Prometheus scrape");
+    assert!(
+        !body.contains("kubesolo_component_up"),
+        "unwired lifecycle state must not masquerade as health"
+    );
+    let datastore_size: f64 = body
+        .lines()
+        .find_map(|line| line.strip_prefix("kubesolo_kine_db_size_bytes "))
+        .expect("datastore size series")
+        .parse()
+        .unwrap();
+    assert!(
+        datastore_size > 0.0,
+        "scrape must measure actual managed datastore files"
+    );
 
     // Assert build info is present
     let build_sample = scrape

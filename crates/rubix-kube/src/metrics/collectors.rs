@@ -108,17 +108,25 @@ impl Collector for UptimeCollector {
     }
 }
 
-/// Collector exposing `SQLite` datastore size in bytes.
+/// Collector exposing the managed datastore snapshot and WAL size in bytes.
 #[derive(Clone, Debug)]
 pub struct DatastoreCollector {
-    db_path: PathBuf,
+    paths: Vec<PathBuf>,
 }
 
 impl DatastoreCollector {
     #[must_use]
     pub fn new(db_path: impl Into<PathBuf>) -> Self {
         Self {
-            db_path: db_path.into(),
+            paths: vec![db_path.into()],
+        }
+    }
+
+    #[must_use]
+    /// Measures both persisted files written by the managed datastore engine.
+    pub fn with_wal(snapshot: PathBuf, wal: PathBuf) -> Self {
+        Self {
+            paths: vec![snapshot, wal],
         }
     }
 }
@@ -126,14 +134,36 @@ impl DatastoreCollector {
 impl Collector for DatastoreCollector {
     #[allow(clippy::cast_precision_loss)]
     fn collect(&self) -> Vec<MetricFamily> {
-        let size = std::fs::metadata(&self.db_path).map_or(0.0, |m| m.len() as f64);
+        let size = self
+            .paths
+            .iter()
+            .map(|path| std::fs::metadata(path).map_or(0.0, |m| m.len() as f64))
+            .sum();
 
         vec![MetricFamily::new(
             "kubesolo_kine_db_size_bytes",
-            "Size in bytes of the kine SQLite database file. 0 if the file cannot be stat'd.",
+            "Size in bytes of the managed datastore snapshot and WAL. Unreadable files contribute 0.",
             MetricType::Gauge,
             vec![Sample::without_labels(size)],
         )]
+    }
+}
+
+#[cfg(test)]
+mod datastore_tests {
+    use super::*;
+
+    #[test]
+    fn managed_snapshot_and_wal_are_summed_and_missing_files_contribute_zero() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = rubix_datastore::DatastoreConfig::new(dir.path());
+        std::fs::create_dir_all(config.wal_path().parent().unwrap()).unwrap();
+        std::fs::write(config.snapshot_path(), [0; 7]).unwrap();
+        std::fs::write(config.wal_path(), [0; 11]).unwrap();
+        let collector = DatastoreCollector::with_wal(config.snapshot_path(), config.wal_path());
+        assert!((collector.collect()[0].samples[0].value - 18.0).abs() < f64::EPSILON);
+        std::fs::remove_file(config.snapshot_path()).unwrap();
+        assert!((collector.collect()[0].samples[0].value - 11.0).abs() < f64::EPSILON);
     }
 }
 

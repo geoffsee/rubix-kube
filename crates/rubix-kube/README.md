@@ -88,6 +88,10 @@ on the host.
 
 ## Optional metrics HTTP lifecycle
 
+Datastore size measures the managed snapshot and WAL files. Component health
+series are not registered until they are connected to supervisor lifecycle state;
+the endpoint does not publish static zero values as current component health.
+
 The runtime's metrics adapter binds only when `metrics.enabled` is true, at
 `127.0.0.1:9105` by default. Bind failures use optional-component degradation.
 The listener and accepted connections belong to the adapter: stop closes the
