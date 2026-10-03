@@ -924,26 +924,23 @@ impl KubernetesApiClient {
 
     // --- Secret CRUD ---
 
-    pub async fn create_secret(
+    pub async fn create_secret_object(
         &self,
         namespace: &str,
-        name: &str,
-        data: BTreeMap<String, String>,
-        secret_type: Option<&str>,
+        mut doc: Value,
     ) -> Result<Value, ApiserverError> {
-        self.check_auth_detailed("create", "", "secrets", Some(namespace), Some(name))?;
+        let name = doc
+            .get("metadata")
+            .and_then(|m| m.get("name"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::InvalidInput {
+                field: "metadata.name".to_string(),
+                reason: "Secret missing metadata.name".to_string(),
+            })?
+            .to_string();
+
+        self.check_auth_detailed("create", "", "secrets", Some(namespace), Some(&name))?;
         let key = format!("{}/secrets/{namespace}/{name}", self.storage.prefix());
-        let mut doc = json!({
-            "apiVersion": "v1",
-            "kind": "Secret",
-            "metadata": {
-                "name": name,
-                "namespace": namespace,
-                "creationTimestamp": "2026-09-30T00:00:00Z"
-            },
-            "type": secret_type.unwrap_or("Opaque"),
-            "data": data
-        });
 
         let mut adm_req = AdmissionRequest {
             uid: format!("adm-{}", self.storage.current_revision().await + 1),
@@ -957,7 +954,7 @@ impl KubernetesApiClient {
                 version: "v1".to_string(),
                 resource: "secrets".to_string(),
             },
-            name: Some(name.to_string()),
+            name: Some(name),
             namespace: Some(namespace.to_string()),
             operation: "CREATE".to_string(),
             user_info: self.current_user_info(),
@@ -981,6 +978,27 @@ impl KubernetesApiClient {
             );
         }
         Ok(result)
+    }
+
+    pub async fn create_secret(
+        &self,
+        namespace: &str,
+        name: &str,
+        data: BTreeMap<String, String>,
+        secret_type: Option<&str>,
+    ) -> Result<Value, ApiserverError> {
+        let doc = json!({
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+                "creationTimestamp": "2026-09-30T00:00:00Z"
+            },
+            "type": secret_type.unwrap_or("Opaque"),
+            "data": data
+        });
+        self.create_secret_object(namespace, doc).await
     }
 
     pub async fn get_secret(&self, namespace: &str, name: &str) -> Result<Value, ApiserverError> {

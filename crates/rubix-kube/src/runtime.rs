@@ -26,6 +26,9 @@ use rubix_dns::config::CoreDnsConfig;
 use rubix_dns::service::CoreDnsService;
 use rubix_dns::supervisor::CoreDnsAdapter;
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
+use rubix_portainer::config::PortainerAgentConfig;
+use rubix_portainer::service::PortainerService;
+use rubix_portainer::supervisor::PortainerAdapter;
 use rubix_storage::config::LocalPathConfig;
 use rubix_storage::service::LocalPathService;
 use rubix_storage::supervisor::LocalPathAdapter;
@@ -230,6 +233,15 @@ impl RuntimeBuilder {
         self
     }
 
+    /// Registers the optional Portainer Edge Agent component under supervision.
+    #[must_use]
+    pub fn register_portainer(self, service: PortainerService, prerequisites: Vec<String>) -> Self {
+        let timeout = self.policy.startup_timeout();
+        let reg =
+            PortainerAdapter::registration(COMPONENT_PORTAINER, service, prerequisites, timeout);
+        self.register_component(reg)
+    }
+
     /// Builds the supervised node runtime.
     pub fn build(self) -> Result<NodeRuntime, RuntimeError> {
         let (supervisor, observer) = Supervisor::new(self.registrations)?.with_observer();
@@ -343,7 +355,7 @@ impl NodeRuntime {
 
         if builder.config().config().storage.local_path.enabled {
             let storage_config = LocalPathConfig::new().with_enabled(true);
-            let storage_service = LocalPathService::new(storage_config, Arc::new(client));
+            let storage_service = LocalPathService::new(storage_config, Arc::new(client.clone()));
             let storage_reg = LocalPathAdapter::registration(
                 COMPONENT_LOCAL_PATH,
                 storage_service,
@@ -351,6 +363,25 @@ impl NodeRuntime {
                 timeout,
             );
             builder = builder.register_component(storage_reg);
+        }
+
+        let arch = match std::env::consts::ARCH {
+            "aarch64" => rubix_platform::Architecture::Arm64,
+            "arm" => rubix_platform::Architecture::ArmV7,
+            "riscv64" => rubix_platform::Architecture::Riscv64,
+            _ => rubix_platform::Architecture::Amd64,
+        };
+        let portainer_cfg =
+            PortainerAgentConfig::from_rubix_config(&builder.config().config().portainer, arch);
+        if portainer_cfg.is_enabled() {
+            let portainer_service = PortainerService::new(portainer_cfg, Arc::new(client));
+            let portainer_reg = PortainerAdapter::registration(
+                COMPONENT_PORTAINER,
+                portainer_service,
+                vec![COMPONENT_APISERVER.to_string()],
+                timeout,
+            );
+            builder = builder.register_component(portainer_reg);
         }
 
         builder.build()
