@@ -1090,6 +1090,7 @@ dependencies = [
  "flate2",
  "object",
  "rubix-platform",
+ "rustix",
  "serde",
  "serde_json",
  "sha2",

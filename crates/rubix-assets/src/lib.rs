@@ -42,3 +42,9 @@ pub use matrix::{
     ManagementTargetError, Matrix, MatrixError, NodeVariant, ParsedManagementBinary,
     ParsedNodeArchive,
 };
+
+mod materialize;
+pub use materialize::{
+    AssetLayout, EXECUTABLE_PERMISSIONS, MaterializationError, MaterializationLimits,
+    MaterializationOutcome, MaterializedAsset, Materializer, PAYLOAD_PERMISSIONS,
+};

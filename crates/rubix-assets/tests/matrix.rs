@@ -421,3 +421,12 @@ fn packaged_digests(inventory: &DeclaredInventory) -> Vec<(AssetId, String)> {
         })
         .collect()
 }
+
+#[test]
+fn linux_artifact_prefixes_may_contain_windows_substrings() {
+    for prefix in ["darwin64tools", "windows-tools", "win32-helper"] {
+        let name = format!("{prefix}-1.0-linux-amd64.tar.gz");
+        let parsed = ArtifactNaming::parse_node_archive(&name).expect("linux OS token");
+        assert_eq!(parsed.prefix, prefix);
+    }
+}
