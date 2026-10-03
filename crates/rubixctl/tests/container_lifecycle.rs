@@ -19,12 +19,20 @@ struct Engine {
     images: HashSet<String>,
     containers: HashMap<String, (ContainerConfig, bool, HashMap<String, u16>)>,
     fail_remove_volume: Option<String>,
+    fail_inspect_network: bool,
+    fail_inspect_volume: bool,
     next_port: u16,
 }
 
 impl ContainerEngineClient for Engine {
-    fn inspect_network(&mut self, n: &str) -> io::Result<Option<()>> {
-        Ok(self.networks.contains(n).then_some(()))
+    fn inspect_network(&mut self, n: &str) -> io::Result<Option<CreateNetworkRequest>> {
+        if self.fail_inspect_network {
+            return Err(io::Error::other("network inspection denied"));
+        }
+        Ok(self
+            .networks
+            .contains(n)
+            .then(|| CreateNetworkRequest::new(n, Some(1400))))
     }
     fn create_network(&mut self, r: &CreateNetworkRequest) -> io::Result<()> {
         self.networks.insert(r.name.clone());
@@ -35,6 +43,9 @@ impl ContainerEngineClient for Engine {
         Ok(())
     }
     fn inspect_volume(&mut self, n: &str) -> io::Result<Option<()>> {
+        if self.fail_inspect_volume {
+            return Err(io::Error::other("volume inspection denied"));
+        }
         Ok(self.volumes.contains(n).then_some(()))
     }
     fn create_volume(&mut self, r: &CreateVolumeRequest) -> io::Result<()> {
@@ -179,4 +190,23 @@ fn purge_targets_only_selected_instance_and_reports_partial_failure() {
     );
     assert!(e.volumes.contains(&volume_name("b")));
     assert!(e.networks.contains(&network_name("b")));
+}
+
+#[test]
+fn purge_reports_inspection_errors_and_continues_with_other_resources() {
+    for (network, volume) in [(true, false), (false, true), (true, true)] {
+        let mut engine = Engine::default();
+        install_container(&mut engine, &params("dev")).unwrap();
+        engine.fail_inspect_network = network;
+        engine.fail_inspect_volume = volume;
+        let report = remove_instance(&mut engine, "dev", true);
+        assert!(!report.is_complete());
+        assert_eq!(
+            report.failures.len(),
+            usize::from(network) + usize::from(volume)
+        );
+        assert_eq!(engine.networks.contains(&network_name("dev")), network);
+        assert_eq!(engine.volumes.contains(&volume_name("dev")), volume);
+        assert!(!engine.containers.contains_key(&container_name("dev")));
+    }
 }

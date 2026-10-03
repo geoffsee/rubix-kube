@@ -183,18 +183,26 @@ pub fn remove_instance(
     }
     if purge {
         let nname = network_name(instance);
-        if matches!(engine.inspect_network(&nname), Ok(Some(()))) {
-            match engine.remove_network(&nname) {
+        match engine.inspect_network(&nname) {
+            Ok(Some(_)) => match engine.remove_network(&nname) {
                 Ok(()) => report.removed.push(format!("network {nname}")),
                 Err(e) => report.failures.push(format!("network {nname}: {e}")),
-            }
+            },
+            Ok(None) => {},
+            Err(e) => report
+                .failures
+                .push(format!("network {nname} inspection: {e}")),
         }
         let vname = volume_name(instance);
-        if matches!(engine.inspect_volume(&vname), Ok(Some(()))) {
-            match engine.remove_volume(&vname) {
+        match engine.inspect_volume(&vname) {
+            Ok(Some(())) => match engine.remove_volume(&vname) {
                 Ok(()) => report.removed.push(format!("volume {vname}")),
                 Err(e) => report.failures.push(format!("volume {vname}: {e}")),
-            }
+            },
+            Ok(None) => {},
+            Err(e) => report
+                .failures
+                .push(format!("volume {vname} inspection: {e}")),
         }
     }
     report
