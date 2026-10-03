@@ -45,191 +45,66 @@ pub struct ParsedKubeconfig {
     pub client_key_bytes: Vec<u8>,
 }
 
-/// Parses a kubeconfig from bytes, accommodating both YAML and JSON encodings.
+/// Parses YAML or JSON kubeconfig and resolves the current context's exact credentials.
 pub fn parse_kubeconfig(bytes: &[u8]) -> Result<ParsedKubeconfig, String> {
-    let text =
-        std::str::from_utf8(bytes).map_err(|e| format!("invalid UTF-8 in kubeconfig: {e}"))?;
-    let trimmed = text.trim();
-
-    // Check if it's JSON
-    if trimmed.starts_with('{') {
-        parse_kubeconfig_json(bytes)
-    } else {
-        parse_kubeconfig_yaml(trimmed)
-    }
-}
-
-/// Parse kubeconfig JSON format.
-fn parse_kubeconfig_json(bytes: &[u8]) -> Result<ParsedKubeconfig, String> {
-    #[derive(Deserialize)]
-    struct RawConfig {
-        clusters: Vec<ClusterEntry>,
-        users: Vec<UserEntry>,
-        #[serde(rename = "current-context")]
-        current_context: String,
-    }
-    #[derive(Deserialize)]
-    struct ClusterEntry {
-        name: String,
-        cluster: ClusterDetail,
-    }
-    #[derive(Deserialize)]
-    struct ClusterDetail {
-        server: String,
-        #[serde(rename = "certificate-authority-data")]
-        ca_data: String,
-    }
-    #[derive(Deserialize)]
-    struct UserEntry {
-        name: String,
-        user: UserDetail,
-    }
-    #[derive(Deserialize)]
-    struct UserDetail {
-        #[serde(rename = "client-certificate-data")]
-        cert_data: String,
-        #[serde(rename = "client-key-data")]
-        key_data: String,
-    }
-
-    let raw: RawConfig = serde_json::from_slice(bytes)
-        .map_err(|e| format!("failed to parse kubeconfig as JSON: {e}"))?;
-
-    let cluster = raw
-        .clusters
-        .first()
-        .ok_or_else(|| "kubeconfig has no clusters".to_string())?;
-    let user = raw
-        .users
-        .first()
-        .ok_or_else(|| "kubeconfig has no users".to_string())?;
-
-    let ca_bytes = BASE64_STANDARD
-        .decode(cluster.cluster.ca_data.trim())
-        .map_err(|e| format!("invalid base64 in certificate-authority-data: {e}"))?;
-    let cert_bytes = BASE64_STANDARD
-        .decode(user.user.cert_data.trim())
-        .map_err(|e| format!("invalid base64 in client-certificate-data: {e}"))?;
-    let key_bytes = BASE64_STANDARD
-        .decode(user.user.key_data.trim())
-        .map_err(|e| format!("invalid base64 in client-key-data: {e}"))?;
-
+    let text = std::str::from_utf8(bytes).map_err(|e| format!("invalid UTF-8: {e}"))?;
+    let raw = rubixctl::kubeconfig::parse_kubeconfig_content(text).map_err(|e| e.to_string())?;
+    let current = required_string(&raw, "current-context")?;
+    let context = named_entry(&raw, "contexts", current)?;
+    let context = &context["context"];
+    let cluster_name = required_string(context, "cluster")?;
+    let user_name = required_string(context, "user")?;
+    let cluster = &named_entry(&raw, "clusters", cluster_name)?["cluster"];
+    let user = &named_entry(&raw, "users", user_name)?["user"];
     Ok(ParsedKubeconfig {
-        format: KubeconfigFormat::Json,
-        server: cluster.cluster.server.clone(),
-        cluster_name: cluster.name.clone(),
-        user_name: user.name.clone(),
-        current_context: raw.current_context,
-        ca_cert_bytes: ca_bytes,
-        client_cert_bytes: cert_bytes,
-        client_key_bytes: key_bytes,
+        format: if text.trim_start().starts_with('{') {
+            KubeconfigFormat::Json
+        } else {
+            KubeconfigFormat::Yaml
+        },
+        server: required_string(cluster, "server")?.into(),
+        cluster_name: cluster_name.into(),
+        user_name: user_name.into(),
+        current_context: current.into(),
+        ca_cert_bytes: decode_field(cluster, "certificate-authority-data")?,
+        client_cert_bytes: decode_field(user, "client-certificate-data")?,
+        client_key_bytes: decode_field(user, "client-key-data")?,
     })
 }
 
-/// Parse kubeconfig YAML format.
-fn parse_kubeconfig_yaml(text: &str) -> Result<ParsedKubeconfig, String> {
-    let mut server = String::new();
-    let mut cluster_name = String::new();
-    let mut user_name = String::new();
-    let mut current_context = String::new();
-    let mut ca_data_b64 = String::new();
-    let mut cert_data_b64 = String::new();
-    let mut key_data_b64 = String::new();
+fn required_string<'a>(value: &'a serde_json::Value, key: &str) -> Result<&'a str, String> {
+    value[key]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| format!("missing or invalid {key}"))
+}
 
-    let mut in_cluster = false;
-    let mut in_user = false;
-
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("current-context:") {
-            current_context = trimmed
-                .strip_prefix("current-context:")
-                .unwrap_or("")
-                .trim()
-                .trim_matches('"')
-                .to_string();
-        } else if trimmed.starts_with("- cluster:") || trimmed == "cluster:" {
-            in_cluster = true;
-            in_user = false;
-        } else if trimmed.starts_with("- user:") || trimmed == "user:" {
-            in_user = true;
-            in_cluster = false;
-        } else if trimmed.starts_with("server:") && in_cluster {
-            server = trimmed
-                .strip_prefix("server:")
-                .unwrap_or("")
-                .trim()
-                .trim_matches('"')
-                .to_string();
-        } else if trimmed.starts_with("certificate-authority-data:") {
-            ca_data_b64 = trimmed
-                .strip_prefix("certificate-authority-data:")
-                .unwrap_or("")
-                .trim()
-                .trim_matches('"')
-                .to_string();
-        } else if trimmed.starts_with("client-certificate-data:") {
-            cert_data_b64 = trimmed
-                .strip_prefix("client-certificate-data:")
-                .unwrap_or("")
-                .trim()
-                .trim_matches('"')
-                .to_string();
-        } else if trimmed.starts_with("client-key-data:") {
-            key_data_b64 = trimmed
-                .strip_prefix("client-key-data:")
-                .unwrap_or("")
-                .trim()
-                .trim_matches('"')
-                .to_string();
-        } else if trimmed.starts_with("name:") {
-            let n = trimmed
-                .strip_prefix("name:")
-                .unwrap_or("")
-                .trim()
-                .trim_matches('"')
-                .to_string();
-            if in_cluster && cluster_name.is_empty() {
-                cluster_name = n;
-            } else if in_user && user_name.is_empty() {
-                user_name = n;
-            }
+fn named_entry<'a>(
+    raw: &'a serde_json::Value,
+    list: &str,
+    name: &str,
+) -> Result<&'a serde_json::Value, String> {
+    let entries = raw[list]
+        .as_array()
+        .ok_or_else(|| format!("missing {list}"))?;
+    let mut names = std::collections::BTreeSet::new();
+    let mut selected = None;
+    for entry in entries {
+        let entry_name = required_string(entry, "name")?;
+        if !names.insert(entry_name) {
+            return Err(format!("duplicate {list} name: {entry_name}"));
+        }
+        if entry_name == name {
+            selected = Some(entry);
         }
     }
+    selected.ok_or_else(|| format!("missing {list} reference: {name}"))
+}
 
-    if server.is_empty() {
-        return Err("missing server in kubeconfig".to_string());
-    }
-    if ca_data_b64.is_empty() {
-        return Err("missing certificate-authority-data in kubeconfig".to_string());
-    }
-    if cert_data_b64.is_empty() {
-        return Err("missing client-certificate-data in kubeconfig".to_string());
-    }
-    if key_data_b64.is_empty() {
-        return Err("missing client-key-data in kubeconfig".to_string());
-    }
-
-    let ca_bytes = BASE64_STANDARD
-        .decode(&ca_data_b64)
-        .map_err(|e| format!("invalid base64 in certificate-authority-data: {e}"))?;
-    let cert_bytes = BASE64_STANDARD
-        .decode(&cert_data_b64)
-        .map_err(|e| format!("invalid base64 in client-certificate-data: {e}"))?;
-    let key_bytes = BASE64_STANDARD
-        .decode(&key_data_b64)
-        .map_err(|e| format!("invalid base64 in client-key-data: {e}"))?;
-
-    Ok(ParsedKubeconfig {
-        format: KubeconfigFormat::Yaml,
-        server,
-        cluster_name,
-        user_name,
-        current_context,
-        ca_cert_bytes: ca_bytes,
-        client_cert_bytes: cert_bytes,
-        client_key_bytes: key_bytes,
-    })
+fn decode_field(value: &serde_json::Value, key: &str) -> Result<Vec<u8>, String> {
+    BASE64_STANDARD
+        .decode(required_string(value, key)?)
+        .map_err(|e| format!("invalid base64 in {key}: {e}"))
 }
 
 /// Result of PKI transition assertion.

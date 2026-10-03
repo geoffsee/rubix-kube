@@ -254,3 +254,36 @@ fn generated_fixtures_and_relabelled_captures_cannot_qualify() {
         .unwrap();
     assert!(!output.status.success());
 }
+
+#[test]
+fn secondary_contract_rejects_tampered_platform_claims() {
+    use rubix_dev::perf::SecondaryTargetsRegistry;
+
+    let expected = SecondaryTargetsRegistry::default_contract();
+    expected.validate().unwrap();
+    for architecture in ["armv7", "riscv64"] {
+        for field in [
+            "architecture",
+            "status",
+            "address_space_bits",
+            "maximum_pod_density",
+            "d2k_supported",
+            "portainer_supported",
+            "crun_source_build_required",
+            "cold_boot_latency_overhead_multiplier",
+        ] {
+            let mut encoded = serde_json::to_value(&expected).unwrap();
+            let value = &mut encoded["targets"][architecture][field];
+            *value = match value {
+                serde_json::Value::Bool(original) => serde_json::json!(!*original),
+                serde_json::Value::Number(_) => serde_json::json!(123),
+                _ => serde_json::json!("qualified"),
+            };
+            let altered: SecondaryTargetsRegistry = serde_json::from_value(encoded).unwrap();
+            assert!(
+                altered.validate().is_err(),
+                "accepted {architecture}.{field}"
+            );
+        }
+    }
+}

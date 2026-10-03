@@ -94,10 +94,26 @@ impl SecondaryTargetsRegistry {
             ));
         }
 
+        let expected = Self::default_contract();
         for arch in ["armv7", "riscv64"] {
             let gap = self.targets.get(arch).ok_or_else(|| {
                 format!("Missing required secondary architecture gap record for '{arch}'")
             })?;
+            let required = &expected.targets[arch];
+            if gap.architecture != required.architecture
+                || gap.status != required.status
+                || gap.address_space_bits != required.address_space_bits
+                || gap.maximum_pod_density != required.maximum_pod_density
+                || gap.d2k_supported != required.d2k_supported
+                || gap.portainer_supported != required.portainer_supported
+                || gap.crun_source_build_required != required.crun_source_build_required
+                || gap.cold_boot_latency_overhead_multiplier
+                    != required.cold_boot_latency_overhead_multiplier
+            {
+                return Err(format!(
+                    "Architecture '{arch}' does not match the required secondary-target contract"
+                ));
+            }
 
             if gap.primary_gate_exceptions.is_empty() {
                 return Err(format!(
@@ -108,12 +124,6 @@ impl SecondaryTargetsRegistry {
                 return Err(format!(
                     "Architecture '{arch}' must explicitly record hardware/toolchain constraints"
                 ));
-            }
-            if arch == "armv7" && gap.d2k_supported {
-                return Err("armv7 must reflect disabled D2K translator".to_string());
-            }
-            if arch == "riscv64" && gap.portainer_supported {
-                return Err("riscv64 must reflect unavailable Portainer image".to_string());
             }
         }
 
