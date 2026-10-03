@@ -78,3 +78,11 @@ Ownership: Unassigned
 Stack: migration/recovery-rehearsal
 Evidence: Synthetic filesystem fixtures cover historical starting versions and 11 lifecycle stages. Pre-receipt stages drive real run_upgrade failure handling with mocked services; later stages reconstruct interrupted disk states. Regressions compare original configuration, identity and opaque datastore bytes, complete manifests and PV inventories, and retained evidence on backup refusal. Fresh container backends exercise rollback and failed-commit retry against a stateful engine double. Snapshot checksums detect changed backups but do not establish original SQLite health or live application readiness. No production Kine transition, abrupt real-container interruption or live Linux migration was performed.
 Next step: Rehearse real interrupted Kine-backed transitions with retained executables, exact inputs and mTLS, measuring readiness and verifying backup source health before qualifying C14.
+Work item: E29.03 (https://github.com/geoffsee/rubix-kube/issues/123); Parent criteria Gate C14
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: perf/ci-regression-gates
+Evidence: Implemented CI regression gating and rebaseline policy enforcement in `rubix-perf gate-ci`, validating all 12 contract thresholds across amd64 and arm64, higher-is-better pod density directionality, 24-hour sustained memory growth bounds (<= 1.10 ratio with 0 OOMs, crashes, or failures) covering all 8 canonical retained process roles, strict rejection of unmeasured sub-200MB claims and invalid PSS/RSS/latency samples, provenance integrity verification, secondary target gap checks, and contract multiplier immutability.
+Next step: Add verified matched live Linux captures before qualifying performance; timestamp: 2026-10-03T18:45:00Z
+

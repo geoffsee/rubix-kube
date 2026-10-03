@@ -21,10 +21,12 @@ pub use budget::{
     ComponentBinaryProfile, ProcessMemoryProfile, ScopedOptimization,
     generate_budget_markdown_report, verify_optimization_parity,
 };
-pub use contract::{GateEvaluationReport, GateResult};
+pub use contract::{ContractThresholds, GateEvaluationReport, GateResult};
 pub use harness::{
-    REQUIRED_RETAINED_PROCESSES, RunOrder, measure_artifact_footprint, parse_pss_bytes,
-    parse_vm_rss_bytes, sum_process_memory, synthesize_summary, verify_retained_process_coverage,
+    REQUIRED_RETAINED_PROCESSES, RunOrder, SustainedCycleAnalysis, WorkloadIdleCycle,
+    analyze_workload_idle_cycles, generate_soak_cycles, measure_artifact_footprint,
+    parse_pss_bytes, parse_vm_rss_bytes, run_ci_regression_gates, sum_process_memory,
+    synthesize_summary, verify_retained_process_coverage,
 };
 pub use metrics::{
     Architecture, ArtifactFootprint, ComponentVersions, HardwareInfo, IdleFootprint,

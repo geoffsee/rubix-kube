@@ -63,3 +63,18 @@ missing qualification and the platform's disabled D2K / unavailable Portainer
 cases. They authorize no pod-density ceilings or relaxed latency multipliers.
 Existing contracts and the authoritative upstream-input inventory own platform
 support and payload availability.
+
+## CI regression gating and rebaseline policy
+
+CI enforces committed performance contracts, process accounting coverage,
+higher-is-better pod density directionality, sustained memory growth limits,
+and rebaseline rules via `gate-ci`:
+
+```sh
+cargo run --locked -p rubix-dev --bin rubix-perf -- gate-ci tools/perf
+cargo run --locked -p rubix-dev --bin rubix-perf -- check-rebaseline-policy tools/perf/inputs.json
+```
+
+See [Performance Gating and Rebaseline Policy](../../docs/architecture/performance-rebaseline-policy.md)
+for complete details on the 12 contract thresholds, soak duration, and baseline update rules.
+

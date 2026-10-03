@@ -44,6 +44,8 @@ jobs:
           cache-key: clippy
       - name: Enforce repository language policy
         run: cargo run --locked -p rubix-dev --bin rubix-language-policy
+      - name: Gate performance baselines and rebaseline policy
+        run: cargo run --locked -p rubix-dev --bin rubix-perf -- gate-ci tools/perf
       - run: cargo lint
 
   test:

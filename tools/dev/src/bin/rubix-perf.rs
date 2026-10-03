@@ -12,6 +12,8 @@ fn print_usage() {
     eprintln!(
         "Usage: rubix-perf <command> [options]\n\n\
         Commands:\n  \
+        gate-ci [dir]                                        Enforce committed platform thresholds and rebaseline policy in CI\n  \
+        check-rebaseline-policy [dir]                        Verify rebaseline policy rules and threshold bounds\n  \
         check-baselines <dir>                                Validate committed baseline directory\n  \
         generate-fixtures <dir>                             Generate synthetic arithmetic fixtures (never qualification)\n  \
         evaluate-gates --reference <ref> --candidate <cand>  Evaluate candidate gates against reference\n  \
@@ -294,6 +296,14 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     match args[0].as_str() {
+        "gate-ci" | "check-rebaseline-policy" => {
+            let path = if args.len() >= 2 {
+                Path::new(&args[1])
+            } else {
+                Path::new("tools/perf")
+            };
+            rubix_dev::perf::run_ci_regression_gates(path).map_err(|e| format!("{e}").into())
+        },
         "check-baselines" => {
             if args.len() < 2 {
                 print_usage();
