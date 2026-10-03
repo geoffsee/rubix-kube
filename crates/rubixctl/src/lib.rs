@@ -4,6 +4,7 @@ pub mod check_workflow;
 pub mod completion;
 pub mod contract;
 pub mod download;
+pub mod migrate;
 mod parse;
 pub mod preparation;
 pub mod sudo_env;
@@ -20,6 +21,9 @@ pub use contract::{
     UninstallOptions, UpgradeOptions,
 };
 pub use download::execute_download;
+pub use migrate::{
+    ServiceMigrationResult, migrate_legacy_service, rewrite_service_content, service_file_path,
+};
 pub use parse::{Command, HelpTopic, ParseError, parse_command};
 pub use sudo_env::{recover_sudo_env_from_bytes, recover_sudo_environment};
 
