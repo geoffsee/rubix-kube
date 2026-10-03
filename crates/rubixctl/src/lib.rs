@@ -1,5 +1,6 @@
 //! Read-only management command boundary, independent from node startup parsing.
 pub mod artifact;
+pub mod bundle;
 pub mod check_workflow;
 pub mod cleanup;
 pub mod completion;
@@ -11,6 +12,7 @@ pub mod container_ports;
 pub mod contract;
 pub mod download;
 pub mod endpoints;
+pub mod install;
 pub mod kubeconfig;
 pub mod migrate;
 mod parse;
@@ -32,6 +34,7 @@ pub use contract::{
     UninstallOptions, UpgradeOptions,
 };
 pub use download::execute_download;
+pub use install::execute_install;
 pub use kubeconfig::execute_kubeconfig;
 pub use migrate::{
     ServiceMigrationResult, migrate_legacy_service, rewrite_service_content, service_file_path,

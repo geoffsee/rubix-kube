@@ -317,13 +317,12 @@ pub trait CommandHandler {
 
     fn execute_install(
         &mut self,
-        _options: InstallOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: InstallOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'install' is not yet implemented")?;
-        Ok(1)
+        crate::execute_install(&options, inputs, stdout, stderr)
     }
 
     fn execute_uninstall(

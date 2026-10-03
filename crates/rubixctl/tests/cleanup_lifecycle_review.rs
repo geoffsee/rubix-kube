@@ -58,10 +58,19 @@ fn fixture(backend: InitBackend) -> (tempfile::TempDir, ServiceConfig, Vec<PathB
         artifacts.push(root.path().join("etc/conf.d/kubesolo"));
     }
     artifacts.push(config.binary_path.clone());
+    let definition = rubixctl::service::generate_service_definition(&config).unwrap();
     for artifact in &artifacts {
         assert!(artifact.starts_with(root.path()));
         fs::create_dir_all(artifact.parent().unwrap()).unwrap();
-        fs::write(artifact, "owned artifact").unwrap();
+        if definition
+            .directories
+            .iter()
+            .any(|(directory, _)| directory == artifact)
+        {
+            fs::create_dir_all(artifact).unwrap();
+        } else {
+            fs::write(artifact, "owned artifact").unwrap();
+        }
     }
     (root, config, artifacts)
 }
@@ -178,6 +187,19 @@ fn active_recovery_receipts_block_reset_and_uninstall_but_explicit_purge_can_dis
 }
 
 fn expected_commands(config: &ServiceConfig, action: LifecycleAction) -> Vec<String> {
+    if action == LifecycleAction::Uninstall {
+        // Cleanup explicitly stops first, then executes the remaining unregister steps.
+        let mut commands = expected_commands(config, LifecycleAction::Stop);
+        commands.extend(
+            plan_lifecycle_action(action, config)
+                .unwrap()
+                .commands
+                .into_iter()
+                .skip(1)
+                .map(|step| format!("{} {}", step.program, step.args.join(" "))),
+        );
+        return commands;
+    }
     let mut commands: Vec<String> = plan_lifecycle_action(action, config)
         .unwrap()
         .commands
@@ -319,4 +341,30 @@ fn cache_reload_failure_after_definition_removal_is_reported() {
         assert!(artifacts.iter().all(|path| !path.exists()));
         assert!(data.join("kine/db/state.db").exists());
     }
+}
+
+#[test]
+fn openrc_cleanup_preserves_an_unused_custom_environment_file() {
+    let (root, mut config, artifacts) = fixture(InitBackend::OpenRc);
+    let custom = root.path().join("unmanaged.env");
+    fs::write(&custom, "unrelated environment").unwrap();
+    config.custom_paths.env_file_path = Some(custom.clone());
+    let data = root.path().join("data");
+    let mut runner = Commands {
+        data: data.clone(),
+        calls: vec![],
+        fail_at: None,
+    };
+    let mut host = ServiceHost::new(&mut runner, config).unwrap();
+    run_host_cleanup(
+        &mut host,
+        CleanupKind::Uninstall { purge: false },
+        &data,
+        true,
+        &mut io::empty(),
+        &mut Vec::new(),
+    )
+    .unwrap();
+    assert!(artifacts.iter().all(|path| !path.exists()));
+    assert_eq!(fs::read_to_string(custom).unwrap(), "unrelated environment");
 }
