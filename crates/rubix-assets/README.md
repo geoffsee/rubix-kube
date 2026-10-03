@@ -157,3 +157,20 @@ and whether optional images are bundled (false for online, supported for offline
 
 Validation requires version format, target, libc, variant, and asset naming consistency
 before release assembly or installation.
+
+## Safe asset materialization (E06.02/#49)
+
+The additive [safe asset materializer](MATERIALIZE.md) extracts verified dependency assets
+into configured writable host roots.
+
+- **Path Safety**: Enforces containment within the configured writable root. Directory
+  traversal (`..`), empty path segments, Windows drive colons, and leading slashes are rejected.
+- **Staging and Atomicity**: Staged extraction into `<root>/.staging-<pid>-<nanos>` on the same
+  filesystem with RAII cleanup ensures a failed extraction leaves zero partial or usable-looking
+  files at destination.
+- **On-disk Reverification**: All written bytes are re-read and hashed from disk prior to final
+  atomic commit via `fs::rename`.
+- **Unix Modes**: Enforces executable mode `0o755` (`rwxr-xr-x`) on binaries and payload mode
+  `0o644` (`rw-r--r--`) on image archives.
+- **Idempotency**: Repeated materialization preserves file content and permissions.
+

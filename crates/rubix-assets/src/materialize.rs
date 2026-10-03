@@ -1,0 +1,1223 @@
+//! Safe materialization of verified dependency assets into configured writable roots.
+use crate::{
+    AssetId, DeclaredInventory, Delivery, Encoding, InventoryError, Kind, VerificationError,
+    catalog,
+};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::BTreeMap,
+    fmt,
+    fs::{self, File},
+    io::{self, Read, Write},
+    path::{Path, PathBuf},
+};
+
+/// Default Unix file mode for executable binaries: `rwxr-xr-x`.
+pub const EXECUTABLE_PERMISSIONS: u32 = 0o755;
+
+/// Default Unix file mode for image archives and data payloads: `rw-r--r--`.
+pub const PAYLOAD_PERMISSIONS: u32 = 0o644;
+
+/// Resource bounds for asset materialization.
+#[derive(Clone, Copy, Debug)]
+pub struct MaterializationLimits {
+    pub max_asset_bytes: u64,
+    pub max_total_bytes: u64,
+    pub max_archive_members: usize,
+    pub path_bytes: usize,
+}
+
+impl Default for MaterializationLimits {
+    fn default() -> Self {
+        Self {
+            max_asset_bytes: 8 * 1024 * 1024 * 1024,
+            max_total_bytes: 32 * 1024 * 1024 * 1024,
+            max_archive_members: 1024,
+            path_bytes: 4096,
+        }
+    }
+}
+
+impl MaterializationLimits {
+    pub fn valid(self) -> bool {
+        self.max_asset_bytes > 0
+            && self.max_asset_bytes < u64::MAX
+            && self.max_total_bytes > 0
+            && self.max_archive_members > 0
+            && self.path_bytes > 0
+    }
+}
+
+/// Errors occurring during asset materialization.
+#[derive(Debug)]
+pub enum MaterializationError {
+    InvalidLimits,
+    BudgetExceeded {
+        limit: u64,
+        requested: u64,
+    },
+    PathEscapesRoot(PathBuf),
+    InvalidRelativePath(String),
+    ReadOnlyDestination {
+        path: PathBuf,
+        source: io::Error,
+    },
+    CorruptArchive(String),
+    MissingAssetPayload(AssetId),
+    SizeMismatch {
+        asset: AssetId,
+        expected: u64,
+        observed: u64,
+    },
+    DigestMismatch {
+        asset: AssetId,
+        expected: [u8; 32],
+        observed: [u8; 32],
+    },
+    DecompressionFailed {
+        asset: AssetId,
+        encoding: Encoding,
+        message: String,
+    },
+    Io {
+        path: PathBuf,
+        source: io::Error,
+    },
+    Inventory(InventoryError),
+    Verification(VerificationError),
+}
+
+impl fmt::Display for MaterializationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidLimits => write!(f, "invalid materialization limits"),
+            Self::BudgetExceeded { limit, requested } => write!(
+                f,
+                "materialization budget exceeded: requested {requested}, limit {limit}"
+            ),
+            Self::PathEscapesRoot(path) => {
+                write!(
+                    f,
+                    "path escapes configured writable root: {}",
+                    path.display()
+                )
+            },
+            Self::InvalidRelativePath(path) => {
+                write!(f, "invalid relative asset path: {path}")
+            },
+            Self::ReadOnlyDestination { path, source } => write!(
+                f,
+                "destination path is read-only at '{}': {source}",
+                path.display()
+            ),
+            Self::CorruptArchive(msg) => write!(f, "corrupt asset archive: {msg}"),
+            Self::MissingAssetPayload(id) => {
+                write!(f, "missing payload for bundled asset {id:?}")
+            },
+            Self::SizeMismatch {
+                asset,
+                expected,
+                observed,
+            } => write!(
+                f,
+                "asset {asset:?} size mismatch: expected {expected}, observed {observed}"
+            ),
+            Self::DigestMismatch { asset, .. } => {
+                write!(f, "asset {asset:?} digest mismatch")
+            },
+            Self::DecompressionFailed {
+                asset,
+                encoding,
+                message,
+            } => write!(
+                f,
+                "asset {asset:?} decompression failed for {encoding:?}: {message}"
+            ),
+            Self::Io { path, source } => {
+                write!(f, "I/O error at '{}': {source}", path.display())
+            },
+            Self::Inventory(err) => write!(f, "inventory error: {err}"),
+            Self::Verification(err) => write!(f, "verification error: {err}"),
+        }
+    }
+}
+
+impl std::error::Error for MaterializationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::ReadOnlyDestination { source, .. } | Self::Io { source, .. } => Some(source),
+            Self::Inventory(err) => Some(err),
+            Self::Verification(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
+impl From<InventoryError> for MaterializationError {
+    fn from(err: InventoryError) -> Self {
+        Self::Inventory(err)
+    }
+}
+
+impl From<VerificationError> for MaterializationError {
+    fn from(err: VerificationError) -> Self {
+        Self::Verification(err)
+    }
+}
+
+/// Destination layout for placing assets inside a configured writable root.
+#[derive(Clone, Debug)]
+pub struct AssetLayout {
+    overrides: BTreeMap<AssetId, String>,
+}
+
+impl Default for AssetLayout {
+    fn default() -> Self {
+        Self::canonical()
+    }
+}
+
+impl AssetLayout {
+    /// Canonical KubeSolo-compatible placement within the writable root.
+    pub fn canonical() -> Self {
+        Self {
+            overrides: BTreeMap::new(),
+        }
+    }
+
+    /// Default relative path for an asset within the root.
+    pub fn default_relative_path(id: AssetId) -> &'static str {
+        match id {
+            AssetId::KubeApiserver => "bin/kube-apiserver",
+            AssetId::KubeControllerManager => "bin/kube-controller-manager",
+            AssetId::Kubelet => "bin/kubelet",
+            AssetId::KubeProxy => "bin/kube-proxy",
+            AssetId::Kine => "bin/kine",
+            AssetId::Containerd => "containerd/containerd",
+            AssetId::ContainerdShim => "containerd/containerd-shim-runc-v2",
+            AssetId::Crun => "containerd/crun",
+            AssetId::CniBridge => "containerd/cni/plugins/bridge",
+            AssetId::CniHostLocal => "containerd/cni/plugins/host-local",
+            AssetId::CniPortmap => "containerd/cni/plugins/portmap",
+            AssetId::CniLoopback => "containerd/cni/plugins/loopback",
+            AssetId::FuseOverlayfsSnapshotter => "bin/containerd-fuse-overlayfs-grpc",
+            AssetId::ImageCoredns => "containerd/images/coredns.tar.gz",
+            AssetId::ImagePause => "containerd/images/pause.tar.gz",
+            AssetId::ImageLocalPath => "containerd/images/local-path-provisioner.tar.gz",
+            AssetId::ImageLocalPathHelper => "containerd/images/local-path-helper.tar.gz",
+            AssetId::ImagePortainerAgent => "containerd/images/portainer-agent.tar.gz",
+            AssetId::ImageD2k => "containerd/images/d2k.tar.gz",
+        }
+    }
+
+    /// Construct a layout matching the paths declared in the manifest.
+    pub fn from_manifest(inventory: &DeclaredInventory) -> Self {
+        let mut overrides = BTreeMap::new();
+        for (id, delivery) in inventory.assets() {
+            if let Delivery::Bundled { path, .. } = delivery {
+                overrides.insert(id, path.clone());
+            }
+        }
+        Self { overrides }
+    }
+
+    /// Override the relative path for a specific asset.
+    #[must_use]
+    pub fn with_path(mut self, id: AssetId, relative: impl Into<String>) -> Self {
+        self.overrides.insert(id, relative.into());
+        self
+    }
+
+    /// Get relative path for an asset in this layout.
+    pub fn relative_path(&self, id: AssetId) -> &str {
+        self.overrides
+            .get(&id)
+            .map_or_else(|| Self::default_relative_path(id), String::as_str)
+    }
+
+    /// Resolve and validate the target destination path within `root`.
+    pub fn resolve_destination(
+        &self,
+        root: &Path,
+        id: AssetId,
+    ) -> Result<PathBuf, MaterializationError> {
+        let rel = self.relative_path(id);
+        validate_and_join_path(root, rel)
+    }
+}
+
+/// Metadata recorded for an extracted asset on disk.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MaterializedAsset {
+    pub id: AssetId,
+    pub path: PathBuf,
+    pub kind: Kind,
+    pub mode: u32,
+    pub bytes_written: u64,
+    pub sha256: [u8; 32],
+}
+
+/// Result of materializing a batch or complete inventory of assets.
+#[derive(Clone, Debug)]
+pub struct MaterializationOutcome {
+    pub root: PathBuf,
+    pub assets: Vec<MaterializedAsset>,
+}
+
+impl MaterializationOutcome {
+    pub fn get(&self, id: AssetId) -> Option<&MaterializedAsset> {
+        self.assets.iter().find(|a| a.id == id)
+    }
+
+    pub fn paths(&self) -> impl Iterator<Item = (AssetId, &Path)> {
+        self.assets.iter().map(|a| (a.id, a.path.as_path()))
+    }
+}
+
+/// Orchestrates safe, atomic, and idempotent extraction of dependency assets.
+#[derive(Debug)]
+pub struct Materializer {
+    inventory: DeclaredInventory,
+    root: PathBuf,
+    layout: AssetLayout,
+    limits: MaterializationLimits,
+}
+
+impl Materializer {
+    /// Construct a materializer for the given inventory and configured writable root.
+    pub fn new(inventory: DeclaredInventory, root: impl Into<PathBuf>) -> Self {
+        Self {
+            inventory,
+            root: root.into(),
+            layout: AssetLayout::canonical(),
+            limits: MaterializationLimits::default(),
+        }
+    }
+
+    #[must_use]
+    pub fn with_layout(mut self, layout: AssetLayout) -> Self {
+        self.layout = layout;
+        self
+    }
+
+    #[must_use]
+    pub fn with_limits(mut self, limits: MaterializationLimits) -> Self {
+        self.limits = limits;
+        self
+    }
+
+    pub fn inventory(&self) -> &DeclaredInventory {
+        &self.inventory
+    }
+
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
+    pub fn layout(&self) -> &AssetLayout {
+        &self.layout
+    }
+
+    pub fn limits(&self) -> MaterializationLimits {
+        self.limits
+    }
+
+    /// Materialize all bundled assets by streaming them from an archive reader (tar or tar.gz).
+    pub fn materialize_from_archive<R: Read>(
+        &self,
+        reader: R,
+    ) -> Result<MaterializationOutcome, MaterializationError> {
+        if !self.limits.valid() {
+            return Err(MaterializationError::InvalidLimits);
+        }
+
+        let temp_dir = create_staging_dir(&self.root)?;
+        let guard = StagingGuard::new(&temp_dir);
+
+        let mut entries = TarReader::new(reader, self.limits)?;
+        let mut payloads: BTreeMap<String, Vec<u8>> = BTreeMap::new();
+        let mut total_bytes = 0u64;
+
+        while let Some(mut member) = entries.next_entry()? {
+            if payloads.len() >= self.limits.max_archive_members {
+                return Err(MaterializationError::CorruptArchive(
+                    "archive member count exceeded limit".to_string(),
+                ));
+            }
+            total_bytes = total_bytes.checked_add(member.size).ok_or(
+                MaterializationError::BudgetExceeded {
+                    limit: self.limits.max_total_bytes,
+                    requested: u64::MAX,
+                },
+            )?;
+            if total_bytes > self.limits.max_total_bytes {
+                return Err(MaterializationError::BudgetExceeded {
+                    limit: self.limits.max_total_bytes,
+                    requested: total_bytes,
+                });
+            }
+
+            let mut data = Vec::new();
+            member
+                .read_to_end(&mut data)
+                .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+            payloads.insert(member.name, data);
+        }
+
+        let mut materialized = Vec::new();
+        for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
+            let data = payloads
+                .get(rel_path)
+                .ok_or(MaterializationError::MissingAssetPayload(id))?;
+
+            let entry = catalog()
+                .iter()
+                .find(|e| e.id == id)
+                .ok_or(MaterializationError::MissingAssetPayload(id))?;
+
+            let final_dest = self.layout.resolve_destination(&self.root, id)?;
+            let staged_dest = temp_dir.join(format!("staged-{}", id_tag(id)));
+
+            let asset = materialize_blob_to_path(
+                &self.inventory,
+                id,
+                entry.kind,
+                encoding,
+                data.as_slice(),
+                &staged_dest,
+                &final_dest,
+                self.limits,
+            )?;
+            materialized.push((staged_dest, final_dest, asset));
+        }
+
+        // Commit all staged files to their final destinations
+        let mut outcomes = Vec::new();
+        for (staged, final_path, asset) in materialized {
+            if staged.exists() {
+                if let Some(parent) = final_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| map_io_error(parent, e))?;
+                }
+                fs::rename(&staged, &final_path).map_err(|e| map_io_error(&final_path, e))?;
+            }
+            outcomes.push(asset);
+        }
+
+        guard.disarm();
+        let _ = fs::remove_dir_all(&temp_dir);
+
+        Ok(MaterializationOutcome {
+            root: self.root.clone(),
+            assets: outcomes,
+        })
+    }
+
+    /// Materialize all bundled assets from a directory on disk.
+    pub fn materialize_from_dir(
+        &self,
+        source_dir: &Path,
+    ) -> Result<MaterializationOutcome, MaterializationError> {
+        self.materialize_from_payloads(|id, rel_path| {
+            let file_path = source_dir.join(rel_path);
+            let file = File::open(&file_path).map_err(|e| {
+                if e.kind() == io::ErrorKind::NotFound {
+                    MaterializationError::MissingAssetPayload(id)
+                } else {
+                    map_io_error(&file_path, e)
+                }
+            })?;
+            Ok(Box::new(file))
+        })
+    }
+
+    /// Materialize bundled assets using a payload reader provider closure.
+    pub fn materialize_from_payloads<F>(
+        &self,
+        mut get_payload: F,
+    ) -> Result<MaterializationOutcome, MaterializationError>
+    where
+        F: FnMut(AssetId, &str) -> Result<Box<dyn Read>, MaterializationError>,
+    {
+        if !self.limits.valid() {
+            return Err(MaterializationError::InvalidLimits);
+        }
+
+        let temp_dir = create_staging_dir(&self.root)?;
+        let guard = StagingGuard::new(&temp_dir);
+
+        let mut staged_assets = Vec::new();
+        for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
+            let mut reader = get_payload(id, rel_path)?;
+            let entry = catalog()
+                .iter()
+                .find(|e| e.id == id)
+                .ok_or(MaterializationError::MissingAssetPayload(id))?;
+
+            let final_dest = self.layout.resolve_destination(&self.root, id)?;
+            let staged_dest = temp_dir.join(format!("staged-{}", id_tag(id)));
+
+            let asset = materialize_blob_to_path(
+                &self.inventory,
+                id,
+                entry.kind,
+                encoding,
+                &mut reader,
+                &staged_dest,
+                &final_dest,
+                self.limits,
+            )?;
+            staged_assets.push((staged_dest, final_dest, asset));
+        }
+
+        // Atomically commit all verified staged assets to final destinations
+        let mut outcomes = Vec::new();
+        for (staged, final_path, asset) in staged_assets {
+            if staged.exists() {
+                if let Some(parent) = final_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| map_io_error(parent, e))?;
+                }
+                fs::rename(&staged, &final_path).map_err(|e| map_io_error(&final_path, e))?;
+            }
+            outcomes.push(asset);
+        }
+
+        guard.disarm();
+        let _ = fs::remove_dir_all(&temp_dir);
+
+        Ok(MaterializationOutcome {
+            root: self.root.clone(),
+            assets: outcomes,
+        })
+    }
+
+    /// Materialize a single asset from a reader into its destination path.
+    pub fn materialize_single_asset<R: Read>(
+        &self,
+        id: AssetId,
+        mut reader: R,
+    ) -> Result<MaterializedAsset, MaterializationError> {
+        if !self.limits.valid() {
+            return Err(MaterializationError::InvalidLimits);
+        }
+
+        let blob = self
+            .inventory
+            .blobs
+            .iter()
+            .find(|b| b.id == id)
+            .ok_or(MaterializationError::MissingAssetPayload(id))?;
+
+        let entry = catalog()
+            .iter()
+            .find(|e| e.id == id)
+            .ok_or(MaterializationError::MissingAssetPayload(id))?;
+
+        let final_dest = self.layout.resolve_destination(&self.root, id)?;
+        let temp_dir = create_staging_dir(&self.root)?;
+        let guard = StagingGuard::new(&temp_dir);
+
+        let staged_dest = temp_dir.join(format!("staged-{}", id_tag(id)));
+        let asset = materialize_blob_to_path(
+            &self.inventory,
+            id,
+            entry.kind,
+            blob.encoding,
+            &mut reader,
+            &staged_dest,
+            &final_dest,
+            self.limits,
+        )?;
+
+        if staged_dest.exists() {
+            if let Some(parent) = final_dest.parent() {
+                fs::create_dir_all(parent).map_err(|e| map_io_error(parent, e))?;
+            }
+            fs::rename(&staged_dest, &final_dest).map_err(|e| map_io_error(&final_dest, e))?;
+        }
+
+        guard.disarm();
+        let _ = fs::remove_dir_all(&temp_dir);
+
+        Ok(asset)
+    }
+}
+
+/// Internal helper to extract/decompress a single blob into `staged_path`.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn materialize_blob_to_path<R: Read>(
+    inventory: &DeclaredInventory,
+    id: AssetId,
+    kind: Kind,
+    encoding: Encoding,
+    mut reader: R,
+    staged_path: &Path,
+    final_dest: &Path,
+    limits: MaterializationLimits,
+) -> Result<MaterializedAsset, MaterializationError> {
+    let blob = inventory
+        .blobs
+        .iter()
+        .find(|b| b.id == id)
+        .ok_or(MaterializationError::MissingAssetPayload(id))?;
+
+    let expected_mode = match kind {
+        Kind::Executable => EXECUTABLE_PERMISSIONS,
+        Kind::Image => PAYLOAD_PERMISSIONS,
+    };
+
+    // If destination already exists, check if existing content & permissions match
+    if final_dest.is_file()
+        && let Ok(existing_bytes) = fs::read(final_dest)
+    {
+        let existing_hash: [u8; 32] = Sha256::digest(&existing_bytes).into();
+        let mode_agrees = check_file_mode(final_dest, expected_mode);
+
+        if (encoding == Encoding::Identity || encoding == Encoding::Gzip)
+            && existing_bytes.len() as u64 == blob.bytes
+            && existing_hash == blob.digest
+        {
+            if !mode_agrees {
+                set_file_mode(final_dest, expected_mode)
+                    .map_err(|e| map_io_error(final_dest, e))?;
+            }
+            return Ok(MaterializedAsset {
+                id,
+                path: final_dest.to_path_buf(),
+                kind,
+                mode: expected_mode,
+                bytes_written: blob.bytes,
+                sha256: blob.digest,
+            });
+        }
+    }
+
+    // Create staged output file
+    let mut out_file = File::create(staged_path).map_err(|e| map_io_error(staged_path, e))?;
+
+    let (written_bytes, written_hash) =
+        match encoding {
+            Encoding::Identity => {
+                let mut hasher = Sha256::new();
+                let mut count = 0u64;
+                let mut buffer = [0u8; 8192];
+
+                while count < blob.bytes + 1 {
+                    let to_read =
+                        usize::try_from((blob.bytes + 1 - count).min(8192)).unwrap_or(8192);
+                    let read = reader
+                        .read(&mut buffer[..to_read])
+                        .map_err(|e| map_io_error(staged_path, e))?;
+                    if read == 0 {
+                        break;
+                    }
+                    count = count.checked_add(read as u64).ok_or(
+                        MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: u64::MAX,
+                        },
+                    )?;
+                    if count > limits.max_asset_bytes {
+                        return Err(MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: count,
+                        });
+                    }
+                    hasher.update(&buffer[..read]);
+                    out_file
+                        .write_all(&buffer[..read])
+                        .map_err(|e| map_io_error(staged_path, e))?;
+                }
+
+                if count != blob.bytes {
+                    let _ = fs::remove_file(staged_path);
+                    return Err(MaterializationError::SizeMismatch {
+                        asset: id,
+                        expected: blob.bytes,
+                        observed: count,
+                    });
+                }
+
+                let hash: [u8; 32] = hasher.finalize().into();
+                if hash != blob.digest {
+                    let _ = fs::remove_file(staged_path);
+                    return Err(MaterializationError::DigestMismatch {
+                        asset: id,
+                        expected: blob.digest,
+                        observed: hash,
+                    });
+                }
+
+                (count, hash)
+            },
+            Encoding::Zstd => {
+                // Read encoded bytes into memory to verify encoded hash and length
+                let mut encoded_data = Vec::new();
+                let mut count = 0u64;
+                let mut buffer = [0u8; 8192];
+                let mut hasher = Sha256::new();
+
+                while count < blob.bytes + 1 {
+                    let to_read =
+                        usize::try_from((blob.bytes + 1 - count).min(8192)).unwrap_or(8192);
+                    let read = reader
+                        .read(&mut buffer[..to_read])
+                        .map_err(|e| map_io_error(staged_path, e))?;
+                    if read == 0 {
+                        break;
+                    }
+                    count = count.checked_add(read as u64).ok_or(
+                        MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: u64::MAX,
+                        },
+                    )?;
+                    if count > limits.max_asset_bytes {
+                        return Err(MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: count,
+                        });
+                    }
+                    hasher.update(&buffer[..read]);
+                    encoded_data.extend_from_slice(&buffer[..read]);
+                }
+
+                if count != blob.bytes {
+                    let _ = fs::remove_file(staged_path);
+                    return Err(MaterializationError::SizeMismatch {
+                        asset: id,
+                        expected: blob.bytes,
+                        observed: count,
+                    });
+                }
+
+                let hash: [u8; 32] = hasher.finalize().into();
+                if hash != blob.digest {
+                    let _ = fs::remove_file(staged_path);
+                    return Err(MaterializationError::DigestMismatch {
+                        asset: id,
+                        expected: blob.digest,
+                        observed: hash,
+                    });
+                }
+
+                // Decompress zstd stream to output
+                let mut decoder = zstd::stream::read::Decoder::new(encoded_data.as_slice())
+                    .map_err(|e| MaterializationError::DecompressionFailed {
+                        asset: id,
+                        encoding,
+                        message: e.to_string(),
+                    })?;
+
+                let mut out_hasher = Sha256::new();
+                let mut decoded_count = 0u64;
+                loop {
+                    let read = decoder.read(&mut buffer).map_err(|e| {
+                        let _ = fs::remove_file(staged_path);
+                        MaterializationError::DecompressionFailed {
+                            asset: id,
+                            encoding,
+                            message: e.to_string(),
+                        }
+                    })?;
+                    if read == 0 {
+                        break;
+                    }
+                    decoded_count = decoded_count.checked_add(read as u64).ok_or(
+                        MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: u64::MAX,
+                        },
+                    )?;
+                    if decoded_count > limits.max_asset_bytes {
+                        let _ = fs::remove_file(staged_path);
+                        return Err(MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: decoded_count,
+                        });
+                    }
+                    out_hasher.update(&buffer[..read]);
+                    out_file
+                        .write_all(&buffer[..read])
+                        .map_err(|e| map_io_error(staged_path, e))?;
+                }
+
+                let out_hash: [u8; 32] = out_hasher.finalize().into();
+                (decoded_count, out_hash)
+            },
+            Encoding::Gzip => {
+                // Read encoded bytes into memory and verify encoded hash and length
+                let mut encoded_data = Vec::new();
+                let mut count = 0u64;
+                let mut buffer = [0u8; 8192];
+                let mut hasher = Sha256::new();
+
+                while count < blob.bytes + 1 {
+                    let to_read =
+                        usize::try_from((blob.bytes + 1 - count).min(8192)).unwrap_or(8192);
+                    let read = reader
+                        .read(&mut buffer[..to_read])
+                        .map_err(|e| map_io_error(staged_path, e))?;
+                    if read == 0 {
+                        break;
+                    }
+                    count = count.checked_add(read as u64).ok_or(
+                        MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: u64::MAX,
+                        },
+                    )?;
+                    if count > limits.max_asset_bytes {
+                        return Err(MaterializationError::BudgetExceeded {
+                            limit: limits.max_asset_bytes,
+                            requested: count,
+                        });
+                    }
+                    hasher.update(&buffer[..read]);
+                    encoded_data.extend_from_slice(&buffer[..read]);
+                }
+
+                if count != blob.bytes {
+                    let _ = fs::remove_file(staged_path);
+                    return Err(MaterializationError::SizeMismatch {
+                        asset: id,
+                        expected: blob.bytes,
+                        observed: count,
+                    });
+                }
+
+                let hash: [u8; 32] = hasher.finalize().into();
+                if hash != blob.digest {
+                    let _ = fs::remove_file(staged_path);
+                    return Err(MaterializationError::DigestMismatch {
+                        asset: id,
+                        expected: blob.digest,
+                        observed: hash,
+                    });
+                }
+
+                // Verify gzip stream integrity
+                let mut gz_decoder = flate2::read::GzDecoder::new(encoded_data.as_slice());
+                let mut sink = [0u8; 8192];
+                loop {
+                    match gz_decoder.read(&mut sink) {
+                        Ok(0) => break,
+                        Ok(_) => {},
+                        Err(e) => {
+                            let _ = fs::remove_file(staged_path);
+                            return Err(MaterializationError::DecompressionFailed {
+                                asset: id,
+                                encoding,
+                                message: e.to_string(),
+                            });
+                        },
+                    }
+                }
+
+                // Image payloads are retained on disk as .tar.gz archives
+                out_file
+                    .write_all(&encoded_data)
+                    .map_err(|e| map_io_error(staged_path, e))?;
+
+                (count, hash)
+            },
+        };
+
+    out_file.flush().map_err(|e| map_io_error(staged_path, e))?;
+    out_file
+        .sync_all()
+        .map_err(|e| map_io_error(staged_path, e))?;
+    drop(out_file);
+
+    // Set executable or payload permissions on staged output
+    set_file_mode(staged_path, expected_mode).map_err(|e| map_io_error(staged_path, e))?;
+
+    // Reverification: read the file actually written to disk to prove disk integrity
+    let on_disk_bytes = fs::read(staged_path).map_err(|e| map_io_error(staged_path, e))?;
+    if on_disk_bytes.len() as u64 != written_bytes {
+        let _ = fs::remove_file(staged_path);
+        return Err(MaterializationError::SizeMismatch {
+            asset: id,
+            expected: written_bytes,
+            observed: on_disk_bytes.len() as u64,
+        });
+    }
+    let on_disk_hash: [u8; 32] = Sha256::digest(&on_disk_bytes).into();
+    if on_disk_hash != written_hash {
+        let _ = fs::remove_file(staged_path);
+        return Err(MaterializationError::DigestMismatch {
+            asset: id,
+            expected: written_hash,
+            observed: on_disk_hash,
+        });
+    }
+
+    Ok(MaterializedAsset {
+        id,
+        path: final_dest.to_path_buf(),
+        kind,
+        mode: expected_mode,
+        bytes_written: written_bytes,
+        sha256: written_hash,
+    })
+}
+
+/// Validate path to prevent directory traversal outside `root`.
+fn validate_and_join_path(root: &Path, rel: &str) -> Result<PathBuf, MaterializationError> {
+    if rel.is_empty() || rel.contains('\\') || rel.contains(':') {
+        return Err(MaterializationError::InvalidRelativePath(rel.to_string()));
+    }
+    if rel.starts_with('/') {
+        return Err(MaterializationError::PathEscapesRoot(PathBuf::from(rel)));
+    }
+    for part in rel.split('/') {
+        if part == ".." {
+            return Err(MaterializationError::PathEscapesRoot(root.join(rel)));
+        }
+        if part.is_empty() || part == "." {
+            return Err(MaterializationError::InvalidRelativePath(rel.to_string()));
+        }
+    }
+    let joined = root.join(rel);
+    // Path must start with root
+    if !joined.starts_with(root) {
+        return Err(MaterializationError::PathEscapesRoot(joined));
+    }
+    Ok(joined)
+}
+
+/// Create a private staging directory within `root`.
+fn create_staging_dir(root: &Path) -> Result<PathBuf, MaterializationError> {
+    fs::create_dir_all(root).map_err(|e| map_io_error(root, e))?;
+
+    let unique_id = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let staging_path = root.join(format!(".staging-{}-{unique_id}", std::process::id()));
+
+    fs::create_dir(&staging_path).map_err(|e| map_io_error(&staging_path, e))?;
+    Ok(staging_path)
+}
+
+/// RAII cleanup guard for staging directory.
+struct StagingGuard {
+    path: PathBuf,
+    disarmed: bool,
+}
+
+impl StagingGuard {
+    fn new(path: &Path) -> Self {
+        Self {
+            path: path.to_path_buf(),
+            disarmed: false,
+        }
+    }
+
+    fn disarm(mut self) {
+        self.disarmed = true;
+    }
+}
+
+impl Drop for StagingGuard {
+    fn drop(&mut self) {
+        if !self.disarmed && self.path.exists() {
+            let _ = fs::remove_dir_all(&self.path);
+        }
+    }
+}
+
+fn id_tag(id: AssetId) -> &'static str {
+    match id {
+        AssetId::KubeApiserver => "kube-apiserver",
+        AssetId::KubeControllerManager => "kube-controller-manager",
+        AssetId::Kubelet => "kubelet",
+        AssetId::KubeProxy => "kube-proxy",
+        AssetId::Kine => "kine",
+        AssetId::Containerd => "containerd",
+        AssetId::ContainerdShim => "containerd-shim-runc-v2",
+        AssetId::Crun => "crun",
+        AssetId::CniBridge => "cni-bridge",
+        AssetId::CniHostLocal => "cni-host-local",
+        AssetId::CniPortmap => "cni-portmap",
+        AssetId::CniLoopback => "cni-loopback",
+        AssetId::FuseOverlayfsSnapshotter => "fuse-overlayfs-snapshotter",
+        AssetId::ImageCoredns => "image-coredns",
+        AssetId::ImagePause => "image-pause",
+        AssetId::ImageLocalPath => "image-local-path",
+        AssetId::ImageLocalPathHelper => "image-local-path-helper",
+        AssetId::ImagePortainerAgent => "image-portainer-agent",
+        AssetId::ImageD2k => "image-d2k",
+    }
+}
+
+fn map_io_error(path: &Path, source: io::Error) -> MaterializationError {
+    if source.kind() == io::ErrorKind::PermissionDenied {
+        MaterializationError::ReadOnlyDestination {
+            path: path.to_path_buf(),
+            source,
+        }
+    } else {
+        MaterializationError::Io {
+            path: path.to_path_buf(),
+            source,
+        }
+    }
+}
+
+#[cfg(unix)]
+fn set_file_mode(path: &Path, mode: u32) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    fs::set_permissions(path, fs::Permissions::from_mode(mode))
+}
+
+#[cfg(not(unix))]
+fn set_file_mode(_path: &Path, _mode: u32) -> io::Result<()> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn check_file_mode(path: &Path, expected: u32) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    if let Ok(meta) = fs::metadata(path) {
+        (meta.permissions().mode() & 0o777) == expected
+    } else {
+        false
+    }
+}
+
+#[cfg(not(unix))]
+fn check_file_mode(_path: &Path, _expected: u32) -> bool {
+    true
+}
+
+// ---------------------------------------------------------------------------
+// Streaming POSIX Tar Archive Reader
+// ---------------------------------------------------------------------------
+
+enum ArchiveReader<R> {
+    Plain(io::Chain<io::Cursor<Vec<u8>>, R>),
+    Gzip(flate2::read::GzDecoder<io::Chain<io::Cursor<Vec<u8>>, R>>),
+}
+
+impl<R: Read> Read for ArchiveReader<R> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        match self {
+            Self::Plain(r) => r.read(buf),
+            Self::Gzip(r) => r.read(buf),
+        }
+    }
+}
+
+struct TarReader<R> {
+    reader: ArchiveReader<R>,
+    limits: MaterializationLimits,
+    entries_count: usize,
+    finished: bool,
+}
+
+struct TarEntryReader<'a, R> {
+    reader: &'a mut R,
+    pub name: String,
+    pub size: u64,
+    remaining: u64,
+    padding: usize,
+}
+
+impl<R: Read> TarReader<R> {
+    fn new(mut reader: R, limits: MaterializationLimits) -> Result<Self, MaterializationError> {
+        // Detect gzip header (0x1f, 0x8b)
+        let mut header = [0u8; 2];
+        let n = reader
+            .read(&mut header)
+            .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+
+        let chained = io::Cursor::new(header[..n].to_vec()).chain(reader);
+        let archive_reader = if n == 2 && header[0] == 0x1f && header[1] == 0x8b {
+            ArchiveReader::Gzip(flate2::read::GzDecoder::new(chained))
+        } else {
+            ArchiveReader::Plain(chained)
+        };
+
+        Ok(TarReader {
+            reader: archive_reader,
+            limits,
+            entries_count: 0,
+            finished: false,
+        })
+    }
+
+    fn next_entry(
+        &mut self,
+    ) -> Result<Option<TarEntryReader<'_, ArchiveReader<R>>>, MaterializationError> {
+        if self.finished {
+            return Ok(None);
+        }
+
+        let mut block = [0u8; 512];
+        loop {
+            let n = read_exact_or_eof(&mut self.reader, &mut block)
+                .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+            if n == 0 {
+                self.finished = true;
+                return Ok(None);
+            }
+            if n < 512 {
+                return Err(MaterializationError::CorruptArchive(
+                    "truncated tar header".to_string(),
+                ));
+            }
+
+            // Two consecutive zero blocks signal end of archive
+            if block.iter().all(|&b| b == 0) {
+                // Read next block to check for second zero block
+                let _ = self.reader.read_exact(&mut block);
+                self.finished = true;
+                return Ok(None);
+            }
+
+            // Verify tar header checksum
+            let expected_checksum = parse_octal(&block[148..156]).ok_or_else(|| {
+                MaterializationError::CorruptArchive("invalid tar checksum field".to_string())
+            })?;
+
+            let mut unsigned_sum = 0u32;
+            for (idx, &byte) in block.iter().enumerate() {
+                if (148..156).contains(&idx) {
+                    unsigned_sum += 32; // treat checksum field as ASCII spaces
+                } else {
+                    unsigned_sum += u32::from(byte);
+                }
+            }
+
+            if u64::from(unsigned_sum) != expected_checksum {
+                return Err(MaterializationError::CorruptArchive(
+                    "tar header checksum mismatch".to_string(),
+                ));
+            }
+
+            let typeflag = block[156];
+            let size = parse_octal(&block[124..136]).ok_or_else(|| {
+                MaterializationError::CorruptArchive("invalid tar member size".to_string())
+            })?;
+
+            let name = parse_tar_name(&block)?;
+
+            // Only regular files (typeflag '0' or '\0')
+            if typeflag != b'0' && typeflag != 0 {
+                // Skip non-file entries (e.g. directories)
+                let padding = ((512 - (size % 512)) % 512) as usize;
+                let skip = size.checked_add(padding as u64).ok_or(
+                    MaterializationError::CorruptArchive("size overflow".to_string()),
+                )?;
+                io::copy(&mut (&mut self.reader).take(skip), &mut io::sink())
+                    .map_err(|e| MaterializationError::CorruptArchive(e.to_string()))?;
+                continue;
+            }
+
+            self.entries_count += 1;
+            if self.entries_count > self.limits.max_archive_members {
+                return Err(MaterializationError::CorruptArchive(
+                    "archive member count limit exceeded".to_string(),
+                ));
+            }
+
+            let padding = ((512 - (size % 512)) % 512) as usize;
+            return Ok(Some(TarEntryReader {
+                reader: &mut self.reader,
+                name,
+                size,
+                remaining: size,
+                padding,
+            }));
+        }
+    }
+}
+
+impl<R: Read> Read for TarEntryReader<'_, R> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        if self.remaining == 0 {
+            if self.padding > 0 {
+                let mut pad = [0u8; 512];
+                self.reader.read_exact(&mut pad[..self.padding])?;
+                self.padding = 0;
+            }
+            return Ok(0);
+        }
+
+        let max = buf
+            .len()
+            .min(usize::try_from(self.remaining).unwrap_or(usize::MAX));
+        let n = self.reader.read(&mut buf[..max])?;
+        if n == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "tar member truncated",
+            ));
+        }
+        self.remaining -= n as u64;
+
+        if self.remaining == 0 && self.padding > 0 {
+            let mut pad = [0u8; 512];
+            self.reader.read_exact(&mut pad[..self.padding])?;
+            self.padding = 0;
+        }
+
+        Ok(n)
+    }
+}
+
+fn read_exact_or_eof<R: Read>(reader: &mut R, mut buf: &mut [u8]) -> io::Result<usize> {
+    let mut total = 0;
+    while !buf.is_empty() {
+        match reader.read(buf) {
+            Ok(0) => break,
+            Ok(n) => {
+                total += n;
+                let tmp = buf;
+                buf = &mut tmp[n..];
+            },
+            Err(e) if e.kind() == io::ErrorKind::Interrupted => {},
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(total)
+}
+
+fn parse_octal(bytes: &[u8]) -> Option<u64> {
+    let text = std::str::from_utf8(bytes).ok()?.trim().trim_matches('\0');
+    if text.is_empty() {
+        return Some(0);
+    }
+    u64::from_str_radix(text, 8).ok()
+}
+
+fn parse_tar_name(block: &[u8; 512]) -> Result<String, MaterializationError> {
+    let name_bytes = &block[0..100];
+    let prefix_bytes = &block[345..500];
+
+    let name = extract_null_terminated(name_bytes)
+        .map_err(|_| MaterializationError::CorruptArchive("non-utf8 tar name".to_string()))?;
+    let prefix = extract_null_terminated(prefix_bytes)
+        .map_err(|_| MaterializationError::CorruptArchive("non-utf8 tar prefix".to_string()))?;
+
+    let full_name = if prefix.is_empty() {
+        name
+    } else {
+        format!("{prefix}/{name}")
+    };
+
+    if full_name.is_empty()
+        || full_name.starts_with('/')
+        || full_name.split('/').any(|p| p == ".." || p == ".")
+    {
+        return Err(MaterializationError::CorruptArchive(
+            "unsafe tar entry path".to_string(),
+        ));
+    }
+
+    Ok(full_name)
+}
+
+fn extract_null_terminated(bytes: &[u8]) -> Result<String, std::str::Utf8Error> {
+    let len = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
+    std::str::from_utf8(&bytes[..len]).map(str::to_string)
+}
