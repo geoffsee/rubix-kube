@@ -39,12 +39,18 @@ Stack: runtime/selection
 Evidence: Implemented `AssetSelector` and `SelectedDelivery` in `rubix-assets` resolving asset delivery across online/offline variants, external-dependency scopes (zero embedded payloads, `HostSupplied` executables), local storage toggle (skipping provisioner and helper images), target architecture feature constraints, and airgapped/egress-denied validation ensuring custom Portainer images remain explicit registry pulls and offline fixtures bundle supported images without network egress.
 Next step: None; timestamp: 2026-10-02T20:20:00Z
 
-
+Work item: E27.02 (https://github.com/geoffsee/rubix-kube/issues/115); Parent criteria 1, 2, 3
+Outcome: In progress
+Readiness: Not qualified
+Ownership: Unassigned
+Stack: packages/release-artifacts
+Evidence: Descriptor validation and synthetic dependency materialization cover the required matrix. No real node archives, target executables, images or installer executions were produced; these checks do not qualify a release.
+Next step: Assemble real artifacts, verify bytes and machine targets, and capture disposable installation evidence for every required cell; timestamp: 2026-10-03T07:17:00Z
 
 Work item: E28.02 (https://github.com/geoffsee/rubix-kube/issues/119); Parent criteria 3
-Outcome: Completed
-Readiness: Done
+Outcome: In progress
+Readiness: Fixture coverage; C13 not qualified
 Ownership: Unassigned
 Stack: qual/recovery-lifecycle
-Evidence: Comprehensive qualification test suite in `crates/rubix-kube/tests/recovery_lifecycle.rs` and versioned report in `docs/architecture/recovery-lifecycle-qualification.md`. Exercises crash/reboot state preservation, ungraceful daemon kills with bounded escalation, node-IP changes with PKI SAN rotation and dual YAML/JSON kubeconfig format support, optional service failure degradation without core API disruption, and lifecycle interruption with verified before/after ownership invariants. All 10 historical regressions mapped and passing.
-Next step: None; timestamp: 2026-10-03T16:00:00Z
+Evidence: Native/in-process recovery fixtures include an actually killed owned Rust runtime with exact acknowledged-object recovery, and a TERM-ignoring owned Rust child with observed bounded KILL and reaping. Mock adapters separately exercise failure policy. The historical regression test is an inventory check, not verification evidence. These tests do not qualify retained kube-apiserver/Kine, Linux reboot/power loss, real optional services, host mounts or production lifecycle interruption.
+Next step: Capture current-source disposable Linux evidence for the selected production boundary and every unresolved historical recovery gate; timestamp: 2026-10-03T19:30:00Z

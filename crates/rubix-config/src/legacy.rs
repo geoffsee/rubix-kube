@@ -8,7 +8,7 @@
 //! - If `--config` is already present, migration is a no-op (already migrated).
 //! - Resolves extracted flags with default configuration and renders clean `KubeSolo` YAML.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use regex::Regex;
@@ -37,7 +37,10 @@ pub fn unquote_shell_value(val: &str) -> String {
 /// Checks if a service content line or definition already contains `--config`.
 pub fn has_config_flag(content: &str) -> bool {
     let re = Regex::new(SERVICE_FLAG_REGEX).expect("valid regex");
-    for mat in re.find_iter(content) {
+    for mat in argument_lines(content)
+        .into_iter()
+        .flat_map(|(_, line)| re.find_iter(line))
+    {
         let flag_str = mat.as_str();
         let name_part = flag_str
             .strip_prefix("--")
@@ -82,151 +85,180 @@ fn lookup_flag(name: &str) -> Option<(&'static str, FlagKind)> {
 pub struct ExtractedFlags {
     /// Explicit flag mappings: flag name -> string value
     pub flags: BTreeMap<String, String>,
+    /// Nonboolean arguments with no unambiguous value; conversion must reject them.
+    pub missing_values: Vec<String>,
 }
 
-/// Extracts known `KubeSolo` flags from legacy service file content.
-///
-/// Follows upstream rules:
-/// 1. Finds all tokens matching `--[a-z0-9][a-z0-9-]*(?:=(?:"..."|'...'|...))?`.
-/// 2. Checks against known `KubeSolo` flags (and `--no-<bool-flag>` variants).
-/// 3. Ignores unknown/foreign flags (e.g. init script flags like `--start`, `--pidfile`).
-/// 4. Strips shell quotes from values.
-/// 5. Deduplicates: first occurrence wins.
-pub fn extract_service_flags(content: &str) -> ExtractedFlags {
-    let re = Regex::new(SERVICE_FLAG_REGEX).expect("valid regex");
-    let mut flags = BTreeMap::new();
-    let mut seen = BTreeSet::new();
+/// A recognized argument and its complete serialized token range.
+struct LegacyArgument {
+    range: std::ops::Range<usize>,
+    key: String,
+    value: String,
+    missing_value: bool,
+}
 
-    for mat in re.find_iter(content) {
-        let raw = mat.as_str();
-        let stripped = raw.strip_prefix("--").unwrap_or(raw);
-        let (key_part, val_part) = stripped
+fn legacy_arguments(line: &str) -> Vec<LegacyArgument> {
+    let re = Regex::new(r#"--[a-z0-9][a-z0-9-]*(?:=(?:"[^"]*"|'[^']*'|[^\s"']*))?"#)
+        .expect("valid regex");
+    let value_re = Regex::new(r#"^\s+("[^"]*"|'[^']*'|[^\s"'\\]+)"#).expect("valid regex");
+    let mut arguments = Vec::new();
+    let mut consumed = 0;
+    for mat in re.find_iter(line) {
+        if mat.start() < consumed {
+            continue;
+        }
+        let raw = mat.as_str().strip_prefix("--").unwrap();
+        let (name, explicit) = raw
             .split_once('=')
-            .map_or((stripped, None), |(k, v)| (k, Some(v)));
-
-        // Check if known or `--no-<known-bool>`
-        let (canonical, is_negated) = if let Some(known) = lookup_flag(key_part) {
-            (known.0, false)
-        } else if let Some(negated_key) = key_part.strip_prefix("no-")
-            && let Some((known_name, FlagKind::Bool)) = lookup_flag(negated_key)
+            .map_or((raw, None), |(k, v)| (k, Some(v)));
+        let (canonical, kind, negated) = if let Some((key, kind)) = lookup_flag(name) {
+            (key, kind, false)
+        } else if let Some(key) = name.strip_prefix("no-")
+            && let Some((key, FlagKind::Bool)) = lookup_flag(key)
         {
-            (known_name, true)
+            (key, FlagKind::Bool, true)
         } else {
-            // Foreign flag (e.g. --start, --pidfile, --exec, --background)
             continue;
         };
-
-        // First occurrence wins
-        if !seen.insert(canonical.to_string()) {
-            continue;
+        let mut range = mat.range();
+        let mut missing_value = false;
+        let value = if negated {
+            "false".into()
+        } else if let Some(value) = explicit {
+            unquote_shell_value(value)
+        } else if kind == FlagKind::Bool {
+            "true".into()
+        } else if let Some(capture) = value_re.captures(&line[mat.end()..])
+            && !capture[1].starts_with("--")
+        {
+            range.end += capture.get(0).unwrap().end();
+            unquote_shell_value(&capture[1])
+        } else {
+            missing_value = true;
+            String::new()
+        };
+        // Expansions and escapes depend on the service manager's runtime context.
+        if value.contains(['$', '%', '`', '\\']) {
+            missing_value = true;
         }
-
-        let value = if is_negated {
-            "false".to_string()
-        } else if let Some(val) = val_part {
-            unquote_shell_value(val)
-        } else {
-            // Boolean flag with no value defaults to "true"
-            "true".to_string()
-        };
-
-        flags.insert(canonical.to_string(), value);
+        // Include surrounding whole-token quotes, but leave an assignment's outer quotes intact.
+        if range.start > 0 && (range.start < 2 || line.as_bytes()[range.start - 2] != b'=') {
+            let quote = line.as_bytes()[range.start - 1];
+            if matches!(quote, b'\'' | b'"') {
+                if line.as_bytes().get(range.end) == Some(&quote) {
+                    range.start -= 1;
+                    range.end += 1;
+                } else {
+                    // Refuse partial tokens rather than persisting a truncated value.
+                    missing_value = true;
+                }
+            }
+        }
+        consumed = range.end;
+        arguments.push(LegacyArgument {
+            range,
+            key: canonical.into(),
+            value,
+            missing_value,
+        });
     }
-
-    ExtractedFlags { flags }
+    arguments
 }
 
-/// Replaces extracted flags in the service definition content with `--config=<config_path>`.
-pub fn rewrite_service_content(content: &str, config_path: &str) -> String {
-    let flag_re = Regex::new(SERVICE_FLAG_REGEX).expect("valid regex");
+// Select executable/argument fields rather than descriptions, comments or daemon metadata.
+fn argument_lines(content: &str) -> Vec<(usize, &str)> {
+    let mut offset = 0;
+    let mut continuing = false;
+    let mut result = Vec::new();
+    for line in content.split_inclusive('\n') {
+        let trimmed = line.trim();
+        let active = !trimmed.starts_with('#')
+            && (trimmed.starts_with("ExecStart=")
+                || trimmed.starts_with("command_args=")
+                || trimmed.starts_with("DAEMON_ARGS=")
+                || trimmed.starts_with("exec ")
+                || trimmed.starts_with("kubesolo ")
+                || trimmed.starts_with("rubix-kube ")
+                || trimmed.starts_with("start-stop-daemon ")
+                || continuing
+                || trimmed.starts_with("--")
+                || trimmed.starts_with("'--")
+                || trimmed.starts_with("\"--"));
+        if active {
+            result.push((offset, line));
+        }
+        continuing = active && trimmed.ends_with('\\');
+        offset += line.len();
+    }
+    result
+}
 
-    let is_kubesolo_flag = |flag_token: &str| -> bool {
-        let flag_name = flag_token
-            .strip_prefix("--")
-            .unwrap_or(flag_token)
-            .split_once('=')
-            .map_or(
-                flag_token.strip_prefix("--").unwrap_or(flag_token),
-                |(k, _)| k,
-            );
-        flag_name == "full"
-            || flag_name == "config"
-            || lookup_flag(flag_name).is_some()
-            || flag_name
-                .strip_prefix("no-")
-                .is_some_and(|n| matches!(lookup_flag(n), Some((_, FlagKind::Bool))))
-    };
-
-    let mut result_lines = Vec::new();
-    let mut config_inserted = false;
-
-    for line in content.lines() {
-        if line.contains("kubesolo") {
-            let mut rewritten = line.to_string();
-            let matches: Vec<_> = flag_re.find_iter(line).collect();
-            for mat in matches.into_iter().rev() {
-                if is_kubesolo_flag(mat.as_str()) {
-                    rewritten.replace_range(mat.range(), "");
-                }
+/// Extracts typed flags from execution/argument fields, preserving explicit empty values.
+pub fn extract_service_flags(content: &str) -> ExtractedFlags {
+    let mut flags = BTreeMap::new();
+    let mut missing_values = Vec::new();
+    for (_, line) in argument_lines(content) {
+        for argument in legacy_arguments(line) {
+            if argument.missing_value {
+                missing_values.push(argument.key.clone());
             }
-
-            let has_continuation = rewritten.trim_end().ends_with('\\');
-            let base = if has_continuation {
-                rewritten
-                    .trim_end()
-                    .strip_suffix('\\')
-                    .unwrap_or(&rewritten)
-                    .trim_end()
-            } else {
-                rewritten.trim_end()
-            };
-
-            let final_line = if !config_inserted {
-                config_inserted = true;
-                if has_continuation {
-                    format!("{base} --config={config_path} \\")
-                } else {
-                    format!("{base} --config={config_path}")
-                }
-            } else if has_continuation {
-                format!("{base} \\")
-            } else {
-                base.to_string()
-            };
-            result_lines.push(final_line);
-        } else if config_inserted && flag_re.is_match(line) {
-            let mut rewritten = line.to_string();
-            let matches: Vec<_> = flag_re.find_iter(line).collect();
-            let mut had_kubesolo_flag = false;
-            for mat in matches.into_iter().rev() {
-                if is_kubesolo_flag(mat.as_str()) {
-                    had_kubesolo_flag = true;
-                    rewritten.replace_range(mat.range(), "");
-                }
-            }
-            if had_kubesolo_flag {
-                let trimmed = rewritten.trim_end_matches(['\\', ' ']).trim();
-                if trimmed.is_empty() {
-                    continue;
-                }
-                if line.trim_end().ends_with('\\') {
-                    result_lines.push(format!("{trimmed} \\"));
-                } else {
-                    result_lines.push(trimmed.to_string());
-                }
-            } else {
-                result_lines.push(line.to_string());
-            }
-        } else {
-            result_lines.push(line.to_string());
+            flags.entry(argument.key).or_insert(argument.value);
         }
     }
-
-    let mut res = result_lines.join("\n");
-    if content.ends_with('\n') {
-        res.push('\n');
+    ExtractedFlags {
+        flags,
+        missing_values,
     }
-    res
+}
+
+/// Replaces complete legacy argument tokens at their original execution/argument position.
+pub fn rewrite_service_content(content: &str, config_path: &str) -> String {
+    let mut replacements = Vec::new();
+    let mut inserted = false;
+    for (offset, line) in argument_lines(content) {
+        let assignment = line.trim_start().starts_with("command_args=")
+            || line.trim_start().starts_with("DAEMON_ARGS=");
+        for argument in legacy_arguments(line) {
+            let replacement = if inserted {
+                String::new()
+            } else {
+                inserted = true;
+                let flag = format!("--config={config_path}");
+                if config_path
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || "/._-".contains(c))
+                {
+                    flag
+                } else if assignment {
+                    // Store a quoted argument inside the existing double-quoted shell assignment.
+                    format!("'{}'", flag.replace('\'', "'\\''"))
+                        .replace('\\', "\\\\")
+                        .replace('"', "\\\"")
+                        .replace('$', "\\$")
+                        .replace('`', "\\`")
+                } else if line.trim_start().starts_with("ExecStart=") {
+                    format!(
+                        "\"{}\"",
+                        flag.replace('\\', "\\\\")
+                            .replace('"', "\\\"")
+                            .replace('%', "%%")
+                            .replace('$', "$$")
+                    )
+                } else {
+                    format!("'{}'", flag.replace('\'', "'\\''"))
+                }
+            };
+            replacements.push((
+                offset + argument.range.start..offset + argument.range.end,
+                replacement,
+            ));
+        }
+    }
+    let mut result = content.to_string();
+    for (range, replacement) in replacements.into_iter().rev() {
+        result.replace_range(range, &replacement);
+    }
+    result
 }
 
 /// Converts extracted legacy service flags into a validated `Config` model.
@@ -236,11 +268,14 @@ pub fn flags_to_config(
     extracted: &ExtractedFlags,
     host: Option<&HostContext>,
 ) -> Result<Config, ConfigError> {
-    let default_host = HostContext {
-        cpu_count: 8,
-        architecture: std::env::consts::ARCH.into(),
-        detected_container_mode: false,
-    };
+    if let Some(key) = extracted.missing_values.first() {
+        return Err(ConfigError {
+            kind: crate::ErrorKind::Syntax,
+            path: format!("--{key}"),
+            message: "missing legacy flag value".into(),
+        });
+    }
+    let default_host = HostContext::detect();
     let host_ctx = host.unwrap_or(&default_host);
     let explicit = ExplicitFlags(extracted.flags.clone());
     let resolved = resolve_layers(
@@ -299,7 +334,7 @@ pub fn migrate_service_flags(
     }
 
     // 2. Check if destination config file already exists
-    if dest.exists() {
+    if std::fs::symlink_metadata(dest).is_ok() {
         return Ok(MigrationOutcome::DestinationConfigExists);
     }
 

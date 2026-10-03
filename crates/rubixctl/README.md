@@ -89,3 +89,94 @@ cargo clippy -p rubixctl --all-targets --locked -- -D warnings
 
 Real host-check executable qualification runs only in disposable Linux containers;
 ordinary tests use injected effects or invoke only help/version.
+
+Legacy service migration stages a private, exclusive backup and replacement
+before publishing configuration. A matching `.migration-pending` marker allows
+retry after interruption between config and service publication. Conflicting
+backups, markers and existing configs are preserved. This is file-level evidence;
+live init-system restart qualification remains outstanding.
+Service definitions and lifecycle plans cover the six Linux init backends.
+Daemon and foreground definitions describe paths only; lifecycle operations in
+those two modes return explicit unsupported-action errors pending a process
+executor. These plans do not establish live init-system or reboot qualification.
+Container port mappings without a host IP (`8080:80` or `80`) default to
+`127.0.0.1`. Explicit host addresses are preserved. User mappings may
+not add a binding for the built-in API server or enabled D2K port. Reinstalling
+recreates only the selected container, retaining its volume and reconciling its
+instance bridge MTU; a bridge still in use causes an explicit Engine error.
+
+Upgrade stages the artifact before stopping the selected deployment, then copies
+the quiesced `pki` and `kine/db` directories into a unique private backup. After
+failed replacement, migration, start or commit, the upgrade attempts to restore
+deployment artifacts, the configuration's previous presence and contents, and
+captured PKI/datastore state. If rollback fails, it returns an error and retains
+the receipt and backup for manual recovery.
+Systemd unit changes are reloaded before start. Container upgrades persist their
+new version record and check that the replacement is running before discarding
+the previous container; this check does not establish Kubernetes readiness.
+
+An exclusive file lock serializes upgrades and cleanup for a data path. Before replacement,
+`.upgrade-pending` records the source version, target and backup directory. Before
+commit removes the previous container, a durable `.upgrade-committing` receipt
+protects recovery while pending-receipt cleanup is checked. Interruption retains
+an active receipt and backup; subsequent upgrades refuse mutation until recovery.
+After commit, `.upgrade-completed` marks receipt cleanup as safe to retry on the
+next invocation. Post-commit cleanup or output failures do not report a failed
+transaction or attempt rollback against a discarded old container. A cleanup
+warning requires inspecting the retained receipt, not undoing the commit. These
+file and fake-runner checks do not qualify live Linux, Docker, datastore recovery
+or all supported init systems.
+
+Reset deletes the established `kine/db` cluster datastore, kubelet state and
+disposable managed runtime root/state. It retains runtime executables, image
+archives, registry configuration, PKI and `local-path-storage` volume data.
+Ordinary uninstall retains installation data; `--purge` explicitly removes the
+selected instance's owned state, including upgrade receipts and recovery backups.
+Uninstall removes the selected `config.yaml` and `config.yaml.bak` unless
+`--keep-config` is set, including when combined with `--purge`. Host commands select
+`/etc/kubesolo`; container commands select only an explicit configuration bind
+recorded in `container.spec`, preserving unrelated host configuration. Named volumes
+and noncanonical configuration bindings require explicit operator cleanup and fail
+before lifecycle effects. Other files in the configuration directory are retained.
+Library cleanup without an explicit configuration directory performs no configuration I/O.
+Reset and ordinary uninstall retain those recovery records. The upgrade lock
+file remains in place so concurrent operations cannot acquire a different inode.
+An active pending or committing upgrade receipt blocks reset and ordinary
+uninstall; explicit purge discards the selected instance's recovery state.
+Cleanup unmounts only mount points under paths
+selected for removal, preserving the data-root mount and retained or neighboring
+mounts. Symlinked parent directories are rejected before service operations;
+selected symlink entries themselves are unlinked without following them.
+
+Host cleanup uses the detected systemd, OpenRC, SysV, Upstart, runit or s6 lifecycle
+plan. Uninstall unregisters startup before deleting state or service artifacts;
+systemd and Upstart caches are also refreshed after definition removal. s6 stop
+waits up to 30 seconds for the service and finish script to exit before state
+deletion. Unsupported init detection and lifecycle command errors abort cleanup.
+
+Container stop or removal failures abort before data deletion. An already absent
+container is tolerated for uninstall only after the Engine confirms its absence;
+reset of a missing container fails without deleting state. Cleanup regressions
+use temporary directories and injected host/Engine effects. Live Linux mount,
+service and Docker qualification remains outstanding.
+
+When running under sudo, preserve the allowlisted Edge settings explicitly:
+
+```sh
+sudo --preserve-env=KUBESOLO_PORTAINER_EDGE_ID,KUBESOLO_PORTAINER_EDGE_KEY,KUBESOLO_PORTAINER_EDGE_ASYNC,KUBESOLO_PORTAINER_EDGE_IMAGE rubixctl <command>
+```
+
+The sudo policy must permit preserving those variables. If it does not, an
+administrator can add these exact names to `env_keep` in sudoers. Parent-process
+`/proc` environment reads are not a supported source: sudo parents can be
+non-dumpable, and Linux can deny access even to a privileged child. Existing
+values passed to the command remain authoritative; never include key values in
+command arguments or diagnostics.
+
+Downloads permit an explicitly selected HTTP custom URL for compatibility with
+local mirrors; operators choosing it trust that network and mirror. Redirects
+must use HTTPS, so a secure download cannot silently downgrade to HTTP. TLS
+protects transport to the chosen endpoint, but this download slice does not
+verify release signatures or independently trusted artifact digests. A staged
+bundle is not authenticated release qualification and must not be treated as
+such by a future installer.

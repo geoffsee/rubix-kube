@@ -247,6 +247,7 @@ pub struct ConfigOptions {
     pub key: Option<String>,
     pub value: Option<String>,
     pub file: Option<PathBuf>,
+    pub environment: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -254,6 +255,7 @@ pub struct KubeconfigOptions {
     pub subcommand: Option<String>,
     pub path: PathBuf,
     pub output: Option<PathBuf>,
+    pub name: Option<String>,
 }
 
 impl Default for KubeconfigOptions {
@@ -262,6 +264,7 @@ impl Default for KubeconfigOptions {
             subcommand: None,
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             output: None,
+            name: None,
         }
     }
 }
@@ -316,13 +319,12 @@ pub trait CommandHandler {
 
     fn execute_install(
         &mut self,
-        _options: InstallOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: InstallOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'install' is not yet implemented")?;
-        Ok(1)
+        crate::execute_install(&options, inputs, stdout, stderr)
     }
 
     fn execute_uninstall(
@@ -366,24 +368,22 @@ pub trait CommandHandler {
 
     fn execute_config(
         &mut self,
-        _options: ConfigOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: ConfigOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'config' is not yet implemented")?;
-        Ok(1)
+        crate::execute_config(&options, inputs, stdout, stderr)
     }
 
     fn execute_kubeconfig(
         &mut self,
-        _options: KubeconfigOptions,
-        _inputs: &mut dyn CheckInputs,
-        _stdout: &mut dyn Write,
+        options: KubeconfigOptions,
+        inputs: &mut dyn CheckInputs,
+        stdout: &mut dyn Write,
         stderr: &mut dyn Write,
     ) -> io::Result<u8> {
-        writeln!(stderr, "error: command 'kubeconfig' is not yet implemented")?;
-        Ok(1)
+        crate::execute_kubeconfig(&options, inputs, stdout, stderr)
     }
 
     fn execute_d2k(

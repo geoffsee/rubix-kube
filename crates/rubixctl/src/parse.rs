@@ -228,7 +228,10 @@ pub fn parse_command(
     let mut uninstall_opts = UninstallOptions::default();
     let mut upgrade_opts = UpgradeOptions::default();
     let mut reset_opts = ResetOptions::default();
-    let mut config_opts = ConfigOptions::default();
+    let mut config_opts = ConfigOptions {
+        environment: environment.clone(),
+        ..ConfigOptions::default()
+    };
     let mut kubeconfig_opts = KubeconfigOptions::default();
     let mut d2k_opts = D2kOptions::default();
 
@@ -452,6 +455,9 @@ pub fn parse_command(
                 // Kubeconfig flags
                 "path" if topic == HelpTopic::Kubeconfig => {
                     kubeconfig_opts.path = PathBuf::from(get_string_val(value, &mut i, args)?);
+                },
+                "name" if topic == HelpTopic::Kubeconfig => {
+                    kubeconfig_opts.name = Some(get_string_val(value, &mut i, args)?);
                 },
                 "output" if topic == HelpTopic::Kubeconfig => {
                     kubeconfig_opts.output =

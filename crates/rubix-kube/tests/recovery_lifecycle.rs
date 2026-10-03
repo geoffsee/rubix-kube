@@ -1,18 +1,21 @@
-//! Integration qualification suite for restart, state ownership, and failure recovery (Gate C13 / Issue #119 / E28.02).
+//! Disposable Rust fixture coverage for restart and failure recovery (Issue #119 / E28.02).
+//! These native datastore/in-process API tests do not qualify the retained Kine/API-server
+//! production boundary, Linux reboot recovery, or the full C13 release gate.
 //!
 //! Validates:
 //! 1. Crash/reboot state retention and before/after ownership invariants.
-//! 2. Ungraceful daemon kills with bounded escalation, diagnostics retention, and clean post-kill recovery.
+//! 2. Mock fatal failure policy and actual bounded termination of an owned Rust fixture process.
 //! 3. Node-IP change reconfiguration with PKI leaf SAN rotation and dual YAML/JSON kubeconfig format support.
 //! 4. Optional service failure isolation (`FailurePolicy::Degrade`) preserving core Kubernetes API availability.
 //! 5. Lifecycle interruption handling with lock safety, absence of orphans, and idempotent subsequent startup.
-//! 6. Required failure fail-closed semantics blocking release.
-//! 7. Historical regression matrix verification satisfying declared recovery bounds.
+//! 6. Native datastore fixture corruption fails closed unless repair is explicitly enabled.
+//! 7. Historical regression inventory completeness, without inferred verification outcomes.
 
 use std::collections::BTreeMap;
 use std::io::{self, Write};
 use std::net::IpAddr;
 use std::path::Path;
+use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -182,6 +185,53 @@ async fn wait_for_api_serving(client: &KubernetesApiClient, timeout: Duration) {
 
 struct MockAdapter<F>(F);
 
+struct CrashChild(Child);
+impl Drop for CrashChild {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
+async fn wait_for_file(path: &Path) {
+    tokio::time::timeout(Duration::from_secs(15), async {
+        while !path.is_file() {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("owned child readiness deadline");
+}
+
+#[tokio::test]
+#[ignore = "invoked only by the owned crash fixture"]
+async fn crash_runtime_child() {
+    let root = std::env::var_os("RUBIX_RECOVERY_FIXTURE_ROOT").expect("private fixture root");
+    let root = Path::new(&root);
+    let config = test_config(&root.join("rubix-state"), "127.0.0.1", false, false);
+    let runtime = NodeRuntime::from_config(config).expect("fixture runtime");
+    let client = runtime.client().expect("fixture client").clone();
+    let (_stop, receiver) = stop_channel();
+    let task = tokio::spawn(runtime.run(receiver));
+    wait_for_api_serving(&client, Duration::from_secs(5)).await;
+    client
+        .create_namespace("crash-recovery-ns")
+        .await
+        .expect("acknowledged mutation");
+    let object = client
+        .get_namespace("crash-recovery-ns")
+        .await
+        .expect("read acknowledged object");
+    std::fs::write(
+        root.join("acknowledged.json"),
+        serde_json::to_vec(&object).unwrap(),
+    )
+    .unwrap();
+    // The parent kills this process while the runtime and datastore lock remain live.
+    task.await.expect("fixture runtime stopped unexpectedly");
+    panic!("crash fixture must not shut down gracefully");
+}
+
 impl<F, Fut> Adapter for MockAdapter<F>
 where
     F: FnOnce(AdapterContext) -> Fut + Send + 'static,
@@ -204,27 +254,20 @@ async fn test_crash_reboot_preserves_datastore_pki_and_ownership() {
 
     let config = test_config(&state_dir, "127.0.0.1", false, false);
 
-    // Initial boot
-    let runtime1 = NodeRuntime::from_config(config.clone()).expect("assemble initial runtime");
-    let client1 = runtime1.client().expect("client").clone();
-    let probe1 = LogProbe::default();
-    let (stop1, recv1) = stop_channel();
-
-    let run_handle1 =
-        tokio::spawn(runtime1.run_with_sink(recv1, probe1.clone(), FlushPolicy::EachFrame));
-
-    wait_for_api_serving(&client1, Duration::from_secs(5)).await;
-
-    // Mutate state: create namespace and configmap
-    client1
-        .create_namespace("crash-recovery-ns")
-        .await
-        .expect("create test namespace");
-    let ns = client1
-        .get_namespace("crash-recovery-ns")
-        .await
-        .expect("get test ns");
-    assert_eq!(ns["metadata"]["name"], "crash-recovery-ns");
+    let mut child = CrashChild(
+        Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "crash_runtime_child", "--ignored"])
+            .env("RUBIX_RECOVERY_FIXTURE_ROOT", temp.path())
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn owned crash fixture"),
+    );
+    wait_for_file(&temp.path().join("acknowledged.json")).await;
+    let acknowledged: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(temp.path().join("acknowledged.json")).unwrap())
+            .unwrap();
 
     // Capture PKI fingerprints and ownership inventory before crash
     let pki_dir = state_dir.join("pki");
@@ -241,11 +284,9 @@ async fn test_crash_reboot_preserves_datastore_pki_and_ownership() {
         "datastore directory must exist before crash"
     );
 
-    // Simulate abrupt crash/reboot: stop the running instance and release client lock
-    stop1.stop();
-    let (report1, _, _) = run_handle1.await.expect("join run 1");
-    assert_eq!(report1.cause, StopCause::Requested);
-    drop(client1);
+    // SIGKILL on Unix prevents adapter checkpoint/shutdown and process-local Drop cleanup.
+    child.0.kill().expect("kill owned fixture");
+    assert!(!child.0.wait().expect("reap owned fixture").success());
 
     // ----------------- Reboot / Second Boot -----------------
     let runtime2 =
@@ -264,7 +305,10 @@ async fn test_crash_reboot_preserves_datastore_pki_and_ownership() {
         .get_namespace("crash-recovery-ns")
         .await
         .expect("recovered namespace must exist after reboot");
-    assert_eq!(recovered_ns["metadata"]["name"], "crash-recovery-ns");
+    assert_eq!(
+        recovered_ns, acknowledged,
+        "retain exact UID, resourceVersion and value"
+    );
 
     // Verify new mutations succeed after reboot
     client2
@@ -309,14 +353,14 @@ async fn test_crash_reboot_preserves_datastore_pki_and_ownership() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-async fn test_ungraceful_daemon_kill_escalation_and_diagnostic_retention() {
+async fn test_mock_core_failure_policy_and_diagnostic_retention() {
     let temp = TempDir::new().unwrap();
     let state_dir = temp.path().join("kill-test");
     std::fs::create_dir_all(&state_dir).unwrap();
 
     let config = test_config(&state_dir, "127.0.0.1", false, false);
 
-    // Build custom supervisor with an injectable fatal core component simulating ungraceful kill
+    // A completed mock error checks policy/diagnostics, not process kill escalation.
     let (kill_trigger_tx, kill_trigger_rx) = tokio::sync::oneshot::channel::<()>();
     let (started_tx, started_rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -350,7 +394,7 @@ async fn test_ungraceful_daemon_kill_escalation_and_diagnostic_retention() {
     // Inject ungraceful daemon kill
     let _ = kill_trigger_tx.send(());
 
-    // Supervisor must observe the fatal core failure, initiate escalation, and exit
+    // Supervisor must observe the fatal core failure and exit.
     let (report, _, _) = run_handle.await.expect("supervisor terminates");
 
     match report.cause {
@@ -380,6 +424,68 @@ async fn test_ungraceful_daemon_kill_escalation_and_diagnostic_retention() {
     let rec_report = rec_handle.await.expect("recovery completes");
     assert_eq!(rec_report.cause, StopCause::Requested);
     drop(client);
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+#[ignore = "invoked only by the owned escalation fixture"]
+async fn term_ignoring_child() {
+    let root = std::env::var_os("RUBIX_ESCALATION_FIXTURE_ROOT").expect("private fixture root");
+    let root = Path::new(&root);
+    let mut termination =
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).unwrap();
+    std::fs::write(root.join("ready"), "signal handler installed").unwrap();
+    while termination.recv().await.is_some() {
+        std::fs::write(root.join("term-observed"), "ignoring graceful termination").unwrap();
+    }
+    panic!("termination listener unexpectedly closed");
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn test_owned_term_ignoring_process_is_killed_and_reaped_within_shutdown_budget() {
+    use rubix_supervisor::process::{OwnedProcessAdapter, ProcessCommand};
+    use rubix_supervisor::{ComponentKind, ComponentSpec, FailurePolicy, Registration, Supervisor};
+    let root = TempDir::new().unwrap();
+    let ready = root.path().join("ready");
+    let command = ProcessCommand::new(std::env::current_exe().unwrap())
+        .arg("--exact")
+        .arg("term_ignoring_child")
+        .arg("--ignored")
+        .env("RUBIX_ESCALATION_FIXTURE_ROOT", root.path());
+    let probe = ready.clone();
+    let (adapter, cleanup) = OwnedProcessAdapter::new(command, async move {
+        wait_for_file(&probe).await;
+        Ok(())
+    });
+    let supervisor = Supervisor::new(vec![Registration::new(
+        ComponentSpec {
+            id: "owned-term-ignoring-fixture".into(),
+            prerequisites: vec![],
+            kind: ComponentKind::LongRunning,
+            failure_policy: FailurePolicy::Fatal,
+            startup_timeout: Duration::from_secs(15),
+        },
+        adapter,
+    )])
+    .unwrap();
+    let (stop, receiver) = stop_channel();
+    let task = tokio::spawn(supervisor.run(receiver));
+    wait_for_file(&ready).await;
+    let started = std::time::Instant::now();
+    stop.stop();
+    let report = tokio::time::timeout(Duration::from_secs(38), task)
+        .await
+        .expect("bounded supervisor shutdown")
+        .expect("supervisor join");
+    assert_eq!(report.cause, StopCause::Requested);
+    let snapshot = cleanup.wait(Duration::from_secs(3)).await;
+    assert!(snapshot.complete(), "{snapshot:?}");
+    assert!(snapshot.term_attempted && snapshot.kill_attempted && snapshot.leader_reaped);
+    assert_eq!(snapshot.exit.expect("observed child exit").signal, Some(9));
+    assert!(root.path().join("term-observed").is_file());
+    assert!(started.elapsed() >= rubix_supervisor::GRACE_PERIOD);
+    assert!(started.elapsed() < Duration::from_secs(41));
 }
 
 // ---------------------------------------------------------------------------
@@ -696,86 +802,76 @@ async fn test_required_datastore_corruption_fails_closed_and_blocks_release() {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
+// Bounds below are historical targets; inventory completeness does not measure them.
 struct HistoricalRegressionCase {
     id: &'static str,
     upstream_ref: &'static str,
     description: &'static str,
     declared_bound: &'static str,
-    verified: bool,
 }
 
 #[test]
-fn test_historical_regression_matrix_is_complete_and_verified() {
+fn test_historical_regression_inventory_has_complete_descriptions() {
     let cases = vec![
         HistoricalRegressionCase {
             id: "REG-01",
             upstream_ref: "upstream #98 (KS-16)",
             description: "CoreDNS false readiness prevented when replicas are 0",
             declared_bound: "readiness probe timeout <= 10s",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-02",
             upstream_ref: "arm64 component boundary r1",
             description: "API server advertise address & SAN mismatch prevention",
             declared_bound: "SAN reconciliation instantaneous during PKI reconcile",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-03",
             upstream_ref: "arm64 component boundary r2",
             description: "Datastore outage shutdown forced escalation without orphan processes",
             declared_bound: "escalation timeout <= 5s",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-04",
             upstream_ref: "arm64 component boundary r3",
             description: "Recovery after datastore crash and acknowledged update retention",
             declared_bound: "datastore recovery readiness <= 10s",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-05",
             upstream_ref: "upstream #178 (KS-75)",
             description: "LoadBalancer external-IP preserved across service updates and restarts",
             declared_bound: "admission update instantaneous",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-06",
             upstream_ref: "upstream #190 (3fd84ca)",
             description: "Host network compatibility on nftables-only and read-only /proc/sys hosts",
             declared_bound: "preflight probe <= 5s",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-07",
             upstream_ref: "rubix-datastore wal repair",
             description: "Datastore WAL torn write fails closed unless dbWalRepair is opted in",
             declared_bound: "immediate fail-closed rejection",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-08",
             upstream_ref: "rubixctl #112 / #113",
             description: "Scoped reset removes disposable runtime state while preserving PKI and volume data",
             declared_bound: "state cleanup <= 30s",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-09",
             upstream_ref: "rubix-pki / rubixctl #107",
             description: "Kubeconfig parsing and generation accommodates both YAML and JSON formats",
             declared_bound: "decode memory <= 8MiB",
-            verified: true,
         },
         HistoricalRegressionCase {
             id: "REG-10",
             upstream_ref: "rubix-supervisor #44",
             description: "Lifecycle interruption during startup releases locks and permits clean re-entry",
             declared_bound: "cancellation grace period <= 5s",
-            verified: true,
         },
     ];
 
@@ -785,7 +881,6 @@ fn test_historical_regression_matrix_is_complete_and_verified() {
         "exactly 10 historical regressions must be tracked"
     );
     for case in &cases {
-        assert!(case.verified, "Regression {} must be verified", case.id);
         assert!(
             !case.declared_bound.is_empty(),
             "Declared bound must be specified for {}",
