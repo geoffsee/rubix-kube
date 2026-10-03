@@ -281,6 +281,7 @@ pub struct Materializer {
     root: PathBuf,
     layout: AssetLayout,
     limits: MaterializationLimits,
+    selector: Option<crate::AssetSelector>,
 }
 
 impl Materializer {
@@ -291,6 +292,7 @@ impl Materializer {
             root: root.into(),
             layout: AssetLayout::canonical(),
             limits: MaterializationLimits::default(),
+            selector: None,
         }
     }
 
@@ -304,6 +306,16 @@ impl Materializer {
     pub fn with_limits(mut self, limits: MaterializationLimits) -> Self {
         self.limits = limits;
         self
+    }
+
+    #[must_use]
+    pub fn with_selector(mut self, selector: crate::AssetSelector) -> Self {
+        self.selector = Some(selector);
+        self
+    }
+
+    pub fn selector(&self) -> Option<&crate::AssetSelector> {
+        self.selector.as_ref()
     }
 
     pub fn inventory(&self) -> &DeclaredInventory {
@@ -366,6 +378,12 @@ impl Materializer {
 
         let mut materialized = Vec::new();
         for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
+            if let Some(ref selector) = self.selector
+                && !selector.is_bundled(id)
+            {
+                continue;
+            }
+
             let data = payloads
                 .get(rel_path)
                 .ok_or(MaterializationError::MissingAssetPayload(id))?;
@@ -447,6 +465,12 @@ impl Materializer {
 
         let mut staged_assets = Vec::new();
         for (id, rel_path, encoding, _expected_bytes) in self.inventory.bundled_assets() {
+            if let Some(ref selector) = self.selector
+                && !selector.is_bundled(id)
+            {
+                continue;
+            }
+
             let mut reader = get_payload(id, rel_path)?;
             let entry = catalog()
                 .iter()
