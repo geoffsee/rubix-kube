@@ -962,3 +962,148 @@ fn mismatched_bundle_installer_is_rejected_before_any_output() {
         assert!(!String::from_utf8_lossy(&stderr).contains("Bundle ready"));
     }
 }
+
+struct FakeEngine {
+    output: io::Result<String>,
+    calls: Vec<(String, u16)>,
+}
+
+impl rubixctl::endpoints::EnginePortInspector for FakeEngine {
+    fn inspect_port(&mut self, container: &str, port: u16) -> io::Result<String> {
+        self.calls.push((container.to_string(), port));
+        match &self.output {
+            Ok(s) => Ok(s.clone()),
+            Err(e) => Err(io::Error::new(e.kind(), e.to_string())),
+        }
+    }
+}
+
+const ENDPOINT_KUBECONFIG: &str = "apiVersion: v1\nkind: Config\ncurrent-context: dev\nclusters:\n- cluster:\n    server: https://10.0.0.1:6443\n  name: dev\n- cluster:\n    server: https://other:6443\n  name: other\ncontexts:\n- context:\n    cluster: dev\n    user: dev\n  name: dev\n- context:\n    cluster: other\n    user: other\n  name: other\nusers:\n- name: dev\n  user:\n    token: a\n- name: other\n  user:\n    token: b\n";
+
+fn endpoint_fixture() -> (tempfile::TempDir, PathBuf, BTreeMap<String, String>) {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config");
+    std::fs::write(&path, ENDPOINT_KUBECONFIG).unwrap();
+    let env = BTreeMap::from([("HOME".to_string(), dir.path().display().to_string())]);
+    (dir, path, env)
+}
+
+fn endpoint_opts(sub: &str, name: Option<&str>, path: &Path) -> KubeconfigOptions {
+    KubeconfigOptions {
+        subcommand: Some(sub.into()),
+        output: Some(path.to_path_buf()),
+        name: name.map(Into::into),
+        ..KubeconfigOptions::default()
+    }
+}
+
+#[test]
+fn kubeconfig_route_and_remove_flags_parse() {
+    let parsed = parse_command(
+        &args(&["kubeconfig", "route", "--name", "dev"]),
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    let Command::Kubeconfig(o) = parsed else {
+        panic!("not kubeconfig")
+    };
+    assert_eq!(o.subcommand.as_deref(), Some("route"));
+    assert_eq!(o.name.as_deref(), Some("dev"));
+}
+
+#[test]
+fn kubeconfig_route_uses_fake_engine_and_only_changes_selected_server() {
+    let (_dir, path, env) = endpoint_fixture();
+    let mut engine = FakeEngine {
+        output: Ok("0.0.0.0:49153\n[::]:49153\n".into()),
+        calls: vec![],
+    };
+    let (mut out, mut err) = (Vec::new(), Vec::new());
+    let code = rubixctl::kubeconfig::execute_kubeconfig_with_engine(
+        &endpoint_opts("route", Some("dev"), &path),
+        &mut TestInputs::default(),
+        &mut engine,
+        &env,
+        &mut out,
+        &mut err,
+    )
+    .unwrap();
+    assert_eq!(code, 0, "{}", String::from_utf8_lossy(&err));
+    assert_eq!(engine.calls, vec![("dev".to_string(), 6443)]);
+    let written = std::fs::read_to_string(&path).unwrap();
+    assert!(written.contains("https://127.0.0.1:49153"));
+    assert!(written.contains("https://other:6443"));
+    assert!(!written.contains("10.0.0.1"));
+}
+
+#[test]
+fn kubeconfig_route_reports_engine_and_port_failures_without_writing() {
+    for output in [
+        Err(io::Error::other("engine down")),
+        Ok("no ports".to_string()),
+    ] {
+        let (_dir, path, env) = endpoint_fixture();
+        let mut engine = FakeEngine {
+            output,
+            calls: vec![],
+        };
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        let code = rubixctl::kubeconfig::execute_kubeconfig_with_engine(
+            &endpoint_opts("route", Some("dev"), &path),
+            &mut TestInputs::default(),
+            &mut engine,
+            &env,
+            &mut out,
+            &mut err,
+        )
+        .unwrap();
+        assert_eq!(code, 1);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), ENDPOINT_KUBECONFIG);
+    }
+}
+
+#[test]
+fn kubeconfig_remove_is_selective_and_requires_name() {
+    let (_dir, path, env) = endpoint_fixture();
+    let mut engine = FakeEngine {
+        output: Ok(String::new()),
+        calls: vec![],
+    };
+    let (mut out, mut err) = (Vec::new(), Vec::new());
+    let code = rubixctl::kubeconfig::execute_kubeconfig_with_engine(
+        &endpoint_opts("remove", Some("dev"), &path),
+        &mut TestInputs::default(),
+        &mut engine,
+        &env,
+        &mut out,
+        &mut err,
+    )
+    .unwrap();
+    assert_eq!(code, 0);
+    assert!(engine.calls.is_empty());
+    let written = std::fs::read_to_string(&path).unwrap();
+    assert!(!written.contains("name: dev"));
+    assert!(written.contains("name: other"));
+    assert!(!written.contains("current-context: dev"));
+
+    let code = rubixctl::kubeconfig::execute_kubeconfig_with_engine(
+        &endpoint_opts("remove", None, &path),
+        &mut TestInputs::default(),
+        &mut engine,
+        &env,
+        &mut out,
+        &mut err,
+    )
+    .unwrap();
+    assert_eq!(code, 1);
+    let code = rubixctl::kubeconfig::execute_kubeconfig_with_engine(
+        &endpoint_opts("remove", Some("missing"), &path),
+        &mut TestInputs::default(),
+        &mut engine,
+        &env,
+        &mut out,
+        &mut err,
+    )
+    .unwrap();
+    assert_eq!(code, 1);
+}

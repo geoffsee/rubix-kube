@@ -444,6 +444,9 @@ pub fn parse_command(
                 "path" if topic == HelpTopic::Kubeconfig => {
                     kubeconfig_opts.path = PathBuf::from(get_string_val(value, &mut i, args)?);
                 },
+                "name" if topic == HelpTopic::Kubeconfig => {
+                    kubeconfig_opts.name = Some(get_string_val(value, &mut i, args)?);
+                },
                 "output" if topic == HelpTopic::Kubeconfig => {
                     kubeconfig_opts.output =
                         Some(PathBuf::from(get_string_val(value, &mut i, args)?));

@@ -248,6 +248,7 @@ pub struct KubeconfigOptions {
     pub subcommand: Option<String>,
     pub path: PathBuf,
     pub output: Option<PathBuf>,
+    pub name: Option<String>,
 }
 
 impl Default for KubeconfigOptions {
@@ -256,6 +257,7 @@ impl Default for KubeconfigOptions {
             subcommand: None,
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             output: None,
+            name: None,
         }
     }
 }

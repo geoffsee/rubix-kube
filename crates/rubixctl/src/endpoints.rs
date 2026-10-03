@@ -1,9 +1,19 @@
 //! Published container endpoint resolution and selective kubeconfig edits for
 //! named instances. Only the entries owned by the selected context are touched;
 //! certificate and credential data are never modified.
+use std::collections::BTreeMap;
 use std::fmt;
+use std::fs;
+use std::io::{self, Write};
+use std::time::SystemTime;
 
 use serde_json::Value;
+
+use crate::contract::KubeconfigOptions;
+use crate::kubeconfig::{
+    atomic_write_secure, create_premerge_backup, parse_kubeconfig_content, resolve_destination,
+    resolve_invoking_user, serialize_kubeconfig,
+};
 
 /// Host-reachable loopback endpoint a container published its API port on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -136,4 +146,92 @@ pub fn remove_instance(cfg: &mut Value, context: &str) -> bool {
         o.remove("current-context");
     }
     true
+}
+
+/// Narrow seam for container engine port inspection.
+///
+/// The real Docker/Podman integration lives in other pull requests (#296/#297)
+/// and is intentionally not depended on here. Implementations return the raw
+/// `docker port <container> <port>/tcp` output for [`resolve_published_endpoint`].
+pub trait EnginePortInspector {
+    fn inspect_port(&mut self, container: &str, container_port: u16) -> io::Result<String>;
+}
+
+/// Inspector used until a real engine integration is supplied.
+#[derive(Debug)]
+pub struct UnavailableEngine;
+
+impl EnginePortInspector for UnavailableEngine {
+    fn inspect_port(&mut self, _container: &str, _container_port: u16) -> io::Result<String> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "container engine port inspection is not available in this build",
+        ))
+    }
+}
+
+/// Kubernetes API port inside the container.
+pub const CONTAINER_API_PORT: u16 = 6443;
+
+/// Executes `rubixctl kubeconfig route|remove --name <instance>`.
+pub fn execute_endpoint_command(
+    options: &KubeconfigOptions,
+    engine: &mut dyn EnginePortInspector,
+    environment: &BTreeMap<String, String>,
+    stdout: &mut dyn Write,
+    stderr: &mut dyn Write,
+) -> io::Result<u8> {
+    let Some(name) = options.name.as_deref().filter(|n| !n.is_empty()) else {
+        writeln!(
+            stderr,
+            "error: --name is required for kubeconfig route/remove"
+        )?;
+        return Ok(1);
+    };
+    let user = resolve_invoking_user(environment);
+    let dest = resolve_destination(&user, options.output.as_deref());
+    let Ok(content) = fs::read_to_string(&dest) else {
+        writeln!(
+            stderr,
+            "error: failed to read kubeconfig {}",
+            dest.display()
+        )?;
+        return Ok(1);
+    };
+    let mut cfg = parse_kubeconfig_content(&content)?;
+    let remove = options.subcommand.as_deref() == Some("remove");
+    if remove {
+        if !remove_instance(&mut cfg, name) {
+            writeln!(stderr, "error: context '{name}' not found")?;
+            return Ok(1);
+        }
+        writeln!(stdout, "Removed context '{name}' from {}", dest.display())?;
+    } else {
+        let raw = match engine.inspect_port(name, CONTAINER_API_PORT) {
+            Ok(raw) => raw,
+            Err(err) => {
+                writeln!(stderr, "error: port inspection failed: {err}")?;
+                return Ok(1);
+            },
+        };
+        let endpoint = match resolve_published_endpoint(&raw) {
+            Ok(e) => e,
+            Err(err) => {
+                writeln!(stderr, "error: {err}")?;
+                return Ok(1);
+            },
+        };
+        if let Err(err) = route_context(&mut cfg, name, endpoint) {
+            writeln!(stderr, "error: {err}")?;
+            return Ok(1);
+        }
+        writeln!(
+            stdout,
+            "Routed context '{name}' to {}",
+            endpoint.server_url()
+        )?;
+    }
+    create_premerge_backup(&dest, SystemTime::now())?;
+    atomic_write_secure(&dest, serialize_kubeconfig(&cfg).as_bytes(), &user)?;
+    Ok(0)
 }
