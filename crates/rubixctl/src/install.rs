@@ -219,6 +219,13 @@ pub(crate) fn audit_archive(archive: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn copy_archive(source: &Path) -> io::Result<(tempfile::TempDir, PathBuf)> {
+    let staging = tempfile::TempDir::new()?;
+    let archive = staging.path().join("bundle.tar.gz");
+    fs::copy(source, &archive)?;
+    Ok((staging, archive))
+}
+
 /// Verifies a staged bundle: manifest metadata vs. target, digests, ELF identity,
 /// and the absence of unlisted files. Performs no mutation outside `staged`.
 pub fn verify_staged_bundle(
@@ -394,7 +401,14 @@ pub fn execute_install(
     writeln!(stderr, "  [ok] Bundle matches host architecture")?;
 
     // Everything below up to `publish` touches only a private staging directory.
-    if let Err(err) = audit_archive(offline_path) {
+    let (_archive_staging, checked_archive) = match copy_archive(offline_path) {
+        Ok(archive) => archive,
+        Err(err) => {
+            writeln!(stderr, "  [fail] archive staging: {err}")?;
+            return Ok(1);
+        },
+    };
+    if let Err(err) = audit_archive(&checked_archive) {
         writeln!(stderr, "  [fail] bundle validation: {err}")?;
         return Ok(1);
     }
@@ -413,7 +427,7 @@ pub fn execute_install(
     };
     match Command::new("tar")
         .arg("-xzf")
-        .arg(offline_path)
+        .arg(&checked_archive)
         .arg("-C")
         .arg(staging.path())
         .status()
@@ -456,4 +470,47 @@ pub fn execute_install(
         manifest.entries.len()
     )?;
     Ok(0)
+}
+
+#[cfg(test)]
+mod archive_snapshot_tests {
+    use super::*;
+
+    #[test]
+    fn replacing_the_input_cannot_change_the_archive_audited_and_extracted() {
+        let source = tempfile::tempdir().unwrap();
+        let payload = source.path().join("payload");
+        fs::write(&payload, b"checked payload").unwrap();
+        let archive = source.path().join("input.tar.gz");
+        assert!(
+            Command::new("tar")
+                .arg("-czf")
+                .arg(&archive)
+                .arg("-C")
+                .arg(source.path())
+                .arg("payload")
+                .status()
+                .unwrap()
+                .success()
+        );
+        let (_private_copy, checked) = copy_archive(&archive).unwrap();
+        audit_archive(&checked).unwrap();
+        fs::remove_file(&archive).unwrap();
+        fs::write(&archive, b"replacement is not the audited archive").unwrap();
+        let destination = tempfile::tempdir().unwrap();
+        assert!(
+            Command::new("tar")
+                .arg("-xzf")
+                .arg(&checked)
+                .arg("-C")
+                .arg(destination.path())
+                .status()
+                .unwrap()
+                .success()
+        );
+        assert_eq!(
+            fs::read(destination.path().join("payload")).unwrap(),
+            b"checked payload"
+        );
+    }
 }

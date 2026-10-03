@@ -11,6 +11,8 @@ pub enum UnsupportedTargetError {
     InvalidServiceName,
     /// An environment key is not a portable shell identifier.
     InvalidEnvironmentKey,
+    /// Binary path must be absolute and free of control characters.
+    InvalidBinaryPath,
     /// Service run mode requested, but no init backend was detected or specified.
     MissingInitBackend,
     /// Unknown or unsupported init system name.
@@ -33,6 +35,7 @@ impl fmt::Display for UnsupportedTargetError {
         match self {
             Self::InvalidServiceName => f.write_str("invalid service name"),
             Self::InvalidEnvironmentKey => f.write_str("invalid environment key"),
+            Self::InvalidBinaryPath => f.write_str("invalid service binary path"),
             Self::UnknownRunMode(mode) => write!(
                 f,
                 "unsupported run mode '{mode}'; supported modes: service, daemon, foreground, container"
@@ -233,10 +236,7 @@ fn plan_openrc_action(
             cleanup_paths: Vec::new(),
         }),
         LifecycleAction::Uninstall => {
-            let mut cleanup = vec![def.primary_file];
-            if let Some(conf_file) = def.files.get(1) {
-                cleanup.push(conf_file.path.clone());
-            }
+            let cleanup = def.files.iter().map(|file| file.path.clone()).collect();
             Ok(LifecyclePlan {
                 action,
                 backend,
@@ -427,6 +427,10 @@ fn plan_runit_action(
         || PathBuf::from(format!("/var/service/{name}")),
         |(_, target)| target.clone(),
     );
+    let service_dir = def.directories[0].0.to_string_lossy().into_owned();
+    let mut cleanup_paths = vec![service_link];
+    cleanup_paths.extend(def.files.iter().map(|file| file.path.clone()));
+    cleanup_paths.extend(def.directories.iter().rev().map(|(dir, _)| dir.clone()));
 
     match action {
         LifecycleAction::Install => Ok(LifecyclePlan {
@@ -442,8 +446,11 @@ fn plan_runit_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new("sv", &["stop", name])],
-            cleanup_paths: vec![service_link, def.primary_file],
+            commands: vec![
+                CommandStep::new("sv", &["-w", "7", "down", &service_dir]),
+                CommandStep::new("sv", &["-w", "7", "exit", &service_dir]),
+            ],
+            cleanup_paths,
         }),
         LifecycleAction::Start => Ok(LifecyclePlan {
             action,
@@ -496,6 +503,9 @@ fn plan_s6_action(
         |(dir, _)| dir.clone(),
     );
     let service_dir_str = service_dir.to_string_lossy().into_owned();
+    let mut cleanup_paths = vec![scan_link];
+    cleanup_paths.extend(def.files.iter().map(|file| file.path.clone()));
+    cleanup_paths.extend(def.directories.iter().rev().map(|(dir, _)| dir.clone()));
 
     match action {
         LifecycleAction::Install => Ok(LifecyclePlan {
@@ -511,8 +521,11 @@ fn plan_s6_action(
             backend,
             run_mode: config.run_mode,
             definition: None,
-            commands: vec![CommandStep::new("s6-svc", &["-d", &service_dir_str])],
-            cleanup_paths: vec![scan_link, def.primary_file],
+            commands: vec![CommandStep::new(
+                "s6-svc",
+                &["-wD", "-T", "7000", "-d", &service_dir_str],
+            )],
+            cleanup_paths,
         }),
         LifecycleAction::Start => Ok(LifecyclePlan {
             action,

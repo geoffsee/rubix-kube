@@ -734,3 +734,75 @@ fn sysv_status_preserves_stopped_exit_code() {
         assert_eq!(output.status.code(), Some(expected));
     }
 }
+
+#[test]
+fn service_binary_paths_reject_ambiguous_or_control_character_inputs() {
+    for path in ["relative/node", "/usr/bin/node\nextra", "/usr/bin/node\\"] {
+        let config = ServiceConfig {
+            binary_path: PathBuf::from(path),
+            ..ServiceConfig::default()
+        };
+        assert_eq!(
+            generate_service_definition(&config).unwrap_err(),
+            UnsupportedTargetError::InvalidBinaryPath
+        );
+    }
+}
+
+#[test]
+fn openrc_uses_the_canonical_conf_path_and_cleans_all_generated_files() {
+    let root = tempfile::tempdir().unwrap();
+    let config = ServiceConfig {
+        backend: Some(InitBackend::OpenRc),
+        environment: [("MODE".into(), "offline".into())].into(),
+        custom_paths: CustomServicePaths {
+            root_prefix: Some(root.path().into()),
+            env_file_path: Some(root.path().join("custom.env")),
+            ..CustomServicePaths::default()
+        },
+        ..ServiceConfig::default()
+    };
+    let def = generate_service_definition(&config).unwrap();
+    assert!(
+        def.files
+            .iter()
+            .any(|file| file.path == root.path().join("etc/conf.d/kubesolo"))
+    );
+    assert!(
+        !def.files
+            .iter()
+            .any(|file| file.path == root.path().join("custom.env"))
+    );
+    let plan = plan_lifecycle_action(LifecycleAction::Uninstall, &config).unwrap();
+    assert!(
+        def.files
+            .iter()
+            .all(|file| plan.cleanup_paths.contains(&file.path))
+    );
+}
+
+#[test]
+fn supervised_directory_uninstall_stops_before_removing_every_owned_artifact() {
+    for backend in [InitBackend::Runit, InitBackend::S6] {
+        let config = ServiceConfig {
+            backend: Some(backend),
+            ..ServiceConfig::default()
+        };
+        let def = generate_service_definition(&config).unwrap();
+        let plan = plan_lifecycle_action(LifecycleAction::Uninstall, &config).unwrap();
+        for file in &def.files {
+            assert!(plan.cleanup_paths.contains(&file.path));
+        }
+        for (directory, _) in &def.directories {
+            assert!(plan.cleanup_paths.contains(directory));
+        }
+        for (_, link) in &def.symlinks {
+            assert!(plan.cleanup_paths.contains(link));
+        }
+        if backend == InitBackend::Runit {
+            let target = def.directories[0].0.to_string_lossy().into_owned();
+            assert_eq!(plan.commands[0].args, ["-w", "7", "down", &target]);
+            assert_eq!(plan.commands[1].args, ["-w", "7", "exit", &target]);
+        }
+    }
+}

@@ -96,21 +96,13 @@ const ARM64_ELF_HEADER: [u8; 20] = [
 ];
 
 fn sha(bytes: &[u8]) -> String {
-    use std::io::Write as _;
-    let mut child = SysCommand::new("shasum")
-        .args(["-a", "256"])
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .unwrap();
-    child.stdin.take().unwrap().write_all(bytes).unwrap();
-    let out = child.wait_with_output().unwrap();
-    String::from_utf8(out.stdout)
-        .unwrap()
-        .split_whitespace()
-        .next()
-        .unwrap()
-        .to_string()
+    use sha2::{Digest, Sha256};
+    let mut hex = String::new();
+    for byte in Sha256::digest(bytes) {
+        use std::fmt::Write as _;
+        write!(hex, "{byte:02x}").unwrap();
+    }
+    hex
 }
 
 /// Builds a bundle; `tamper` mutates the staged tree after the manifest is written.
