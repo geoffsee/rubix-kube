@@ -4,12 +4,13 @@
 //!
 //! | Entry            | reset  | uninstall | uninstall `--purge` |
 //! | ---------------- | ------ | --------- | ------------------- |
-//! | `db`             | remove | remove    | remove              |
-//! | `kubelet`        | remove | remove    | remove              |
-//! | `containerd`     | remove | remove    | remove              |
-//! | `network`        | remove | remove    | remove              |
+//! | `kine/db`        | remove | keep      | remove              |
+//! | `kubelet`        | remove | keep      | remove              |
+//! | `containerd/root`, `containerd/state` | remove | keep | remove |
+//! | remaining `containerd` inputs | keep | keep | remove          |
+//! | `network`        | remove | keep      | remove              |
 //! | `pki`            | keep   | keep      | remove              |
-//! | `storage`        | keep   | keep      | remove              |
+//! | `local-path-storage` | keep | keep   | remove              |
 //! | `backups`        | keep   | keep      | remove              |
 //! | `container.spec` | keep   | keep      | remove              |
 //! | anything else    | keep   | keep      | keep                |
@@ -27,17 +28,32 @@ use std::path::{Path, PathBuf};
 
 use crate::upgrade::{CONTAINER_SPEC_FILE, ContainerSpec, Runner};
 
-/// Entries removed by every cleanup.
-pub const RUNTIME_STATE: [&str; 4] = ["db", "kubelet", "containerd", "network"];
+/// Disposable entries removed by reset and purge; ordinary uninstall retains data.
+pub const RUNTIME_STATE: [&str; 5] = [
+    "kine/db",
+    "kubelet",
+    "containerd/root",
+    "containerd/state",
+    "network",
+];
 /// Entries additionally removed by `uninstall --purge`.
-pub const PURGE_STATE: [&str; 4] = ["pki", "storage", "backups", CONTAINER_SPEC_FILE];
+pub const PURGE_STATE: [&str; 8] = [
+    "pki",
+    "local-path-storage",
+    "backups",
+    CONTAINER_SPEC_FILE,
+    "containerd",
+    ".upgrade-pending",
+    ".upgrade-committing",
+    ".upgrade-completed",
+];
 /// Entries retained unless purging, listed for reporting.
-pub const RETAINED_STATE: [&str; 4] = PURGE_STATE;
+pub const RETAINED_STATE: [&str; 8] = PURGE_STATE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CleanupKind {
     Reset,
-    Uninstall { purge: bool, keep_config: bool },
+    Uninstall { purge: bool },
 }
 
 /// Exact removal/retention decision for the entries present on disk.
@@ -68,13 +84,20 @@ pub fn validate_data_path(path: &Path) -> Result<(), String> {
 
 /// Computes the plan from the owned entries that exist under `data`.
 pub fn plan_cleanup(kind: CleanupKind, data: &Path) -> CleanupPlan {
-    let purge = matches!(kind, CleanupKind::Uninstall { purge: true, .. });
+    let purge = matches!(kind, CleanupKind::Uninstall { purge: true });
     let mut plan = CleanupPlan::default();
     let exists = |p: &Path| p.symlink_metadata().is_ok();
     for name in RUNTIME_STATE {
+        if purge && name.starts_with("containerd/") {
+            continue;
+        }
         let p = data.join(name);
         if exists(&p) {
-            plan.remove.push(p);
+            if kind == (CleanupKind::Uninstall { purge: false }) {
+                plan.retain.push(p);
+            } else {
+                plan.remove.push(p);
+            }
         }
     }
     for name in RETAINED_STATE {
@@ -99,6 +122,30 @@ pub trait CleanupHost {
     fn unmount(&mut self, mount: &Path) -> io::Result<()>;
     /// Removes the service definition and binary; returns removed paths.
     fn remove_service_artifacts(&mut self) -> io::Result<Vec<PathBuf>>;
+    /// Remove startup registration before deleting state or executable artifacts.
+    fn unregister_service(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+fn lock_cleanup(kind: CleanupKind, data: &Path) -> io::Result<fs::File> {
+    let lock = crate::upgrade::lock_installation(data)?;
+    if kind != (CleanupKind::Uninstall { purge: true }) {
+        for name in [".upgrade-pending", ".upgrade-committing"] {
+            let receipt = data.join(name);
+            match receipt.symlink_metadata() {
+                Ok(_) => {
+                    return Err(io::Error::other(format!(
+                        "an interrupted upgrade requires recovery using {}; cleanup refused (explicit purge discards recovery state)",
+                        receipt.display()
+                    )));
+                },
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error),
+            }
+        }
+    }
+    Ok(lock)
 }
 
 /// Reads an explicit confirmation; non-interactive EOF is a refusal.
@@ -151,13 +198,13 @@ fn announce(
     }
     let what = match kind {
         CleanupKind::Reset => "reset cluster state",
-        CleanupKind::Uninstall { purge: true, .. } => "uninstall and PURGE all Rubix data",
-        CleanupKind::Uninstall { purge: false, .. } => "uninstall Rubix",
+        CleanupKind::Uninstall { purge: true } => "uninstall and PURGE all Rubix data",
+        CleanupKind::Uninstall { purge: false } => "uninstall Rubix",
     };
     confirm(&format!("  Really {what}?"), input, stderr)
 }
 
-/// Host cleanup. Order: confirm, stop, unmount owned mounts, remove, then (reset) restart.
+/// Host cleanup. Order: confirm, stop, unmount selected mounts, remove, then (reset) restart.
 /// Removal is refused for any owned entry that still contains a mount point.
 pub fn run_host_cleanup(
     host: &mut dyn CleanupHost,
@@ -168,7 +215,9 @@ pub fn run_host_cleanup(
     stderr: &mut dyn Write,
 ) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let _lock = lock_cleanup(kind, data)?;
     let plan = plan_cleanup(kind, data);
+    validate_removal_ancestors(data, &plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -178,11 +227,19 @@ pub fn run_host_cleanup(
         });
     }
     host.stop_service()?;
-    for mount in host.mounts_under(data)? {
+    for mount in host
+        .mounts_under(data)?
+        .into_iter()
+        .filter(|mount| plan.remove.iter().any(|path| mount.starts_with(path)))
+    {
         host.unmount(&mount)?;
     }
     // Defence in depth: never delete through a surviving mount.
-    if let Some(left) = host.mounts_under(data)?.into_iter().next() {
+    if let Some(left) = host
+        .mounts_under(data)?
+        .into_iter()
+        .find(|mount| plan.remove.iter().any(|path| mount.starts_with(path)))
+    {
         return Err(io::Error::other(format!(
             "mount {} is still active; refusing to remove data",
             left.display()
@@ -192,35 +249,16 @@ pub fn run_host_cleanup(
         retained: plan.retain.clone(),
         ..CleanupReport::default()
     };
+    if matches!(kind, CleanupKind::Uninstall { .. }) {
+        host.unregister_service()?;
+    }
     for p in &plan.remove {
         remove_entry(p)?;
         report.removed.push(p.clone());
     }
     if matches!(kind, CleanupKind::Uninstall { .. }) {
         report.removed.extend(host.remove_service_artifacts()?);
-        if let CleanupKind::Uninstall {
-            keep_config: false, ..
-        } = kind
-        {
-            let config_path = PathBuf::from("/etc/kubesolo/config.yaml");
-            if config_path.is_file() {
-                remove_entry(&config_path)?;
-                report.removed.push(config_path);
-            }
-            let config_bak = PathBuf::from("/etc/kubesolo/config.yaml.bak");
-            if config_bak.is_file() {
-                remove_entry(&config_bak)?;
-                report.removed.push(config_bak);
-            }
-            let config_dir = PathBuf::from("/etc/kubesolo");
-            if config_dir.is_dir()
-                && fs::read_dir(&config_dir).is_ok_and(|entries| entries.count() == 0)
-            {
-                let _ = fs::remove_dir(&config_dir);
-                report.removed.push(config_dir);
-            }
-        }
-        if matches!(kind, CleanupKind::Uninstall { purge: true, .. }) {
+        if matches!(kind, CleanupKind::Uninstall { purge: true }) {
             // Only removes the directory when nothing foreign remains in it.
             let _ = fs::remove_dir(data);
         }
@@ -244,7 +282,9 @@ pub fn run_container_cleanup(
     stderr: &mut dyn Write,
 ) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let _lock = lock_cleanup(kind, data)?;
     let plan = plan_cleanup(kind, data);
+    validate_removal_ancestors(data, &plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -258,8 +298,23 @@ pub fn run_container_cleanup(
         let args: Vec<String> = args.iter().map(ToString::to_string).collect();
         runner.run(engine, &args)
     };
-    // `stop` of an already stopped/missing container is tolerated for idempotence.
-    let _ = run(runner, &["stop", &name]);
+    // Only verified absence is idempotent; an Engine or stop failure must not permit deletion.
+    let present = match run(runner, &["stop", &name]) {
+        Ok(_) => true,
+        Err(stop_error) => {
+            let names = run(runner, &["ps", "-a", "--format", "{{.Names}}"])?;
+            if names.lines().any(|n| n == name) {
+                return Err(stop_error);
+            }
+            false
+        },
+    };
+    if !present && kind == CleanupKind::Reset {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "cannot reset a missing container",
+        ));
+    }
     let mut report = CleanupReport {
         retained: plan.retain.clone(),
         ..CleanupReport::default()
@@ -273,8 +328,10 @@ pub fn run_container_cleanup(
             run(runner, &["start", &name])?;
             writeln!(stderr, "  [ok] Cluster state reset; container restarted")?;
         },
-        CleanupKind::Uninstall { purge, .. } => {
-            let _ = run(runner, &["rm", &name]);
+        CleanupKind::Uninstall { purge } => {
+            if present {
+                run(runner, &["rm", &name])?;
+            }
             for p in &plan.remove {
                 remove_entry(p)?;
                 report.removed.push(p.clone());
@@ -285,6 +342,18 @@ pub fn run_container_cleanup(
         },
     }
     Ok(report)
+}
+
+fn validate_removal_ancestors(data: &Path, plan: &CleanupPlan) -> io::Result<()> {
+    crate::upgrade::reject_symlink_state(data, "")?;
+    for path in &plan.remove {
+        let relative = path.strip_prefix(data).map_err(io::Error::other)?;
+        // Unlink a selected symlink itself, but never traverse a symlinked parent.
+        if let Some(parent) = relative.parent() {
+            crate::upgrade::reject_symlink_state(data, &parent.to_string_lossy())?;
+        }
+    }
+    Ok(())
 }
 
 /// Real host: `systemd` or `SysV` service control, `/proc/self/mounts`, `umount`.
@@ -354,6 +423,123 @@ impl<R: Runner> CleanupHost for SystemHost<'_, R> {
     }
 }
 
+/// Detected-init host cleanup using the existing service lifecycle plans.
+#[derive(Debug)]
+pub struct ServiceHost<'a, R: Runner> {
+    host: SystemHost<'a, R>,
+    config: crate::service::ServiceConfig,
+}
+
+impl<'a, R: Runner> ServiceHost<'a, R> {
+    pub fn new(runner: &'a mut R, config: crate::service::ServiceConfig) -> io::Result<Self> {
+        use crate::service::{InitBackend, LifecycleAction, plan_lifecycle_action};
+        let plan =
+            plan_lifecycle_action(LifecycleAction::Uninstall, &config).map_err(io::Error::other)?;
+        let mut artifacts = plan.cleanup_paths;
+        if config.backend == Some(InitBackend::OpenRc) {
+            let relative = format!("etc/conf.d/{}", config.name);
+            let conf = config.custom_paths.root_prefix.as_ref().map_or_else(
+                || Path::new("/").join(&relative),
+                |root| root.join(&relative),
+            );
+            if !artifacts.contains(&conf) {
+                artifacts.push(conf);
+            }
+        }
+        artifacts.push(config.binary_path.clone());
+        Ok(Self {
+            host: SystemHost {
+                runner,
+                systemd: config.backend == Some(InitBackend::Systemd),
+                service: config.name.clone(),
+                artifacts,
+            },
+            config,
+        })
+    }
+
+    fn action(&mut self, action: crate::service::LifecycleAction) -> io::Result<()> {
+        let plan = crate::service::plan_lifecycle_action(action, &self.config)
+            .map_err(io::Error::other)?;
+        for mut step in plan.commands {
+            if action == crate::service::LifecycleAction::Stop
+                && self.config.backend == Some(crate::service::InitBackend::S6)
+            {
+                // s6-svc -d only requests shutdown; wait for run/finish to exit.
+                // https://skarnet.org/software/s6/s6-svc.html
+                step.args
+                    .splice(0..0, ["-wD".into(), "-T".into(), "30000".into()]);
+            }
+            self.host.runner.run(&step.program, &step.args)?;
+        }
+        Ok(())
+    }
+}
+
+impl<R: Runner> CleanupHost for ServiceHost<'_, R> {
+    fn stop_service(&mut self) -> io::Result<()> {
+        self.action(crate::service::LifecycleAction::Stop)
+    }
+    fn start_service(&mut self) -> io::Result<()> {
+        self.action(crate::service::LifecycleAction::Start)
+    }
+    fn mounts_under(&mut self, root: &Path) -> io::Result<Vec<PathBuf>> {
+        self.host.mounts_under(root)
+    }
+    fn unmount(&mut self, mount: &Path) -> io::Result<()> {
+        self.host.unmount(mount)
+    }
+    fn unregister_service(&mut self) -> io::Result<()> {
+        let plan = crate::service::plan_lifecycle_action(
+            crate::service::LifecycleAction::Uninstall,
+            &self.config,
+        )
+        .map_err(io::Error::other)?;
+        // Stop already succeeded before mount checks. Retain all later registration operations.
+        for step in plan.commands.into_iter().skip(1) {
+            self.host.runner.run(&step.program, &step.args)?;
+        }
+        Ok(())
+    }
+    fn remove_service_artifacts(&mut self) -> io::Result<Vec<PathBuf>> {
+        use crate::service::InitBackend;
+        let removed = self.host.remove_service_artifacts()?;
+        // Refresh caches after removing definitions, as well as before removal.
+        match self.config.backend {
+            Some(InitBackend::Systemd) => {
+                self.host
+                    .runner
+                    .run("systemctl", &["daemon-reload".into()])?;
+            },
+            Some(InitBackend::Upstart) => {
+                self.host
+                    .runner
+                    .run("initctl", &["reload-configuration".into()])?;
+            },
+            _ => {},
+        }
+        Ok(removed)
+    }
+}
+
+fn detected_service_config() -> io::Result<crate::service::ServiceConfig> {
+    let evidence = rubix_platform::discover(&rubix_platform::DiscoveryRequest::default())
+        .map_err(io::Error::other)?;
+    let init = match rubix_platform::classify(&evidence).init {
+        rubix_platform::Observation::Present(init) => init,
+        observation => {
+            return Err(io::Error::other(format!(
+                "init detection failed: {observation:?}"
+            )));
+        },
+    };
+    Ok(crate::service::ServiceConfig {
+        backend: Some(crate::service::InitBackend::try_from(init).map_err(io::Error::other)?),
+        binary_path: PathBuf::from(crate::DEFAULT_INSTALL_PATH),
+        ..crate::service::ServiceConfig::default()
+    })
+}
+
 /// Shared command entry for reset/uninstall.
 pub fn execute_cleanup(
     kind: CleanupKind,
@@ -384,16 +570,10 @@ pub fn execute_cleanup(
             Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
         }
     } else {
-        let mut host = SystemHost {
-            runner: &mut runner,
-            systemd: Path::new("/run/systemd/system").is_dir(),
-            service: crate::upgrade::SERVICE_NAME.to_string(),
-            artifacts: vec![
-                PathBuf::from("/etc/systemd/system/kubesolo.service"),
-                PathBuf::from(crate::DEFAULT_INSTALL_PATH),
-            ],
-        };
-        run_host_cleanup(&mut host, kind, data, force, &mut input, stderr)
+        detected_service_config().and_then(|config| {
+            let mut host = ServiceHost::new(&mut runner, config)?;
+            run_host_cleanup(&mut host, kind, data, force, &mut input, stderr)
+        })
     };
     match result {
         Ok(r) if r.declined => Ok(1),
@@ -458,12 +638,15 @@ mod tests {
     fn tree() -> tempfile::TempDir {
         let d = tempfile::tempdir().unwrap();
         for n in [
-            "db",
+            "kine/db",
             "kubelet",
-            "containerd",
+            "containerd/root",
+            "containerd/state",
+            "containerd/images",
+            "containerd/registry",
             "network",
             "pki",
-            "storage",
+            "local-path-storage",
             "backups",
             "neighbor",
         ] {
@@ -502,9 +685,23 @@ mod tests {
         .unwrap();
         assert_eq!(
             names(d.path(), &r.removed),
-            ["containerd", "db", "kubelet", "network"]
+            [
+                "containerd/root",
+                "containerd/state",
+                "kine/db",
+                "kubelet",
+                "network"
+            ]
         );
-        for keep in ["pki", "storage", "backups", "neighbor", CONTAINER_SPEC_FILE] {
+        for keep in [
+            "pki",
+            "local-path-storage",
+            "backups",
+            "neighbor",
+            "containerd/images",
+            "containerd/registry",
+            CONTAINER_SPEC_FILE,
+        ] {
             assert!(exists(d.path(), keep), "{keep}");
         }
         assert_eq!(h.log, ["stop", "start"]);
@@ -519,10 +716,7 @@ mod tests {
         };
         let r = run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall {
-                purge: false,
-                keep_config: false,
-            },
+            CleanupKind::Uninstall { purge: false },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -531,10 +725,21 @@ mod tests {
         .unwrap();
         assert_eq!(
             names(d.path(), &r.retain_or_empty()),
-            ["backups", "container.spec", "pki", "storage"]
+            [
+                "backups",
+                "container.spec",
+                "containerd",
+                "containerd/root",
+                "containerd/state",
+                "kine/db",
+                "kubelet",
+                "local-path-storage",
+                "network",
+                "pki"
+            ]
         );
-        assert!(exists(d.path(), "pki") && exists(d.path(), "storage"));
-        assert!(!exists(d.path(), "db"));
+        assert!(exists(d.path(), "pki") && exists(d.path(), "local-path-storage"));
+        assert!(exists(d.path(), "kine/db"));
         assert!(h.log.contains(&"rm-service".to_string()) && !h.log.contains(&"start".to_string()));
     }
 
@@ -544,17 +749,21 @@ mod tests {
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall {
-                purge: true,
-                keep_config: false,
-            },
+            CleanupKind::Uninstall { purge: true },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
             &mut Vec::new(),
         )
         .unwrap();
-        for gone in ["db", "pki", "storage", "backups", CONTAINER_SPEC_FILE] {
+        for gone in [
+            "kine/db",
+            "pki",
+            "local-path-storage",
+            "backups",
+            "containerd",
+            CONTAINER_SPEC_FILE,
+        ] {
             assert!(!exists(d.path(), gone), "{gone}");
         }
         assert!(exists(d.path(), "neighbor"));
@@ -566,23 +775,20 @@ mod tests {
         let d = tree();
         let vol = tempfile::tempdir().unwrap();
         fs::write(vol.path().join("precious"), "data").unwrap();
-        fs::remove_dir_all(d.path().join("storage")).unwrap();
+        fs::remove_dir_all(d.path().join("local-path-storage")).unwrap();
         #[cfg(unix)]
-        std::os::unix::fs::symlink(vol.path(), d.path().join("storage")).unwrap();
+        std::os::unix::fs::symlink(vol.path(), d.path().join("local-path-storage")).unwrap();
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
-            CleanupKind::Uninstall {
-                purge: true,
-                keep_config: false,
-            },
+            CleanupKind::Uninstall { purge: true },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
             &mut Vec::new(),
         )
         .unwrap();
-        assert!(!exists(d.path(), "storage"));
+        assert!(!exists(d.path(), "local-path-storage"));
         assert!(vol.path().join("precious").is_file());
     }
 
@@ -602,7 +808,7 @@ mod tests {
             )
             .unwrap();
             assert!(r.declined && h.log.is_empty());
-            assert!(exists(d.path(), "db"));
+            assert!(exists(d.path(), "kine/db"));
         }
         let mut h = FakeHost::default();
         let mut input = io::Cursor::new(b"yes\n".to_vec());
@@ -615,7 +821,7 @@ mod tests {
             &mut Vec::new(),
         )
         .unwrap();
-        assert!(!r.declined && !exists(d.path(), "db"));
+        assert!(!r.declined && !exists(d.path(), "kine/db"));
     }
 
     #[test]
@@ -635,7 +841,7 @@ mod tests {
             &mut Vec::new(),
         );
         assert!(e.is_err());
-        assert!(exists(d.path(), "db") && exists(d.path(), "kubelet/f"));
+        assert!(exists(d.path(), "kine/db") && exists(d.path(), "kubelet/f"));
     }
 
     #[test]
@@ -689,10 +895,7 @@ mod tests {
             &mut r,
             "docker",
             &spec,
-            CleanupKind::Uninstall {
-                purge: false,
-                keep_config: false,
-            },
+            CleanupKind::Uninstall { purge: false },
             d.path(),
             true,
             &mut io::empty().lock_empty(),
@@ -700,7 +903,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(r.0, ["docker stop rubix", "docker rm rubix"]);
-        assert!(exists(d.path(), "pki") && !exists(d.path(), "db"));
+        assert!(exists(d.path(), "pki") && exists(d.path(), "kine/db"));
         assert!(vol.path().exists());
     }
 
@@ -739,27 +942,5 @@ mod tests {
         fn retain_or_empty(&self) -> Vec<PathBuf> {
             self.retained.clone()
         }
-    }
-
-    #[test]
-    fn uninstall_keeps_config_when_requested() {
-        let d = tree();
-        let mut h = FakeHost::default();
-        let r = run_host_cleanup(
-            &mut h,
-            CleanupKind::Uninstall {
-                purge: false,
-                keep_config: true,
-            },
-            d.path(),
-            true,
-            &mut io::empty().lock_empty(),
-            &mut Vec::new(),
-        )
-        .unwrap();
-        assert_eq!(
-            names(d.path(), &r.retain_or_empty()),
-            ["backups", "container.spec", "pki", "storage"]
-        );
     }
 }

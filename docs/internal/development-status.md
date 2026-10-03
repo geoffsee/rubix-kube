@@ -39,11 +39,18 @@ Stack: runtime/selection
 Evidence: Implemented `AssetSelector` and `SelectedDelivery` in `rubix-assets` resolving asset delivery across online/offline variants, external-dependency scopes (zero embedded payloads, `HostSupplied` executables), local storage toggle (skipping provisioner and helper images), target architecture feature constraints, and airgapped/egress-denied validation ensuring custom Portainer images remain explicit registry pulls and offline fixtures bundle supported images without network egress.
 Next step: None; timestamp: 2026-10-02T20:20:00Z
 
+Work item: E27.02 (https://github.com/geoffsee/rubix-kube/issues/115); Parent criteria 1, 2, 3
+Outcome: In progress
+Readiness: Not qualified
+Ownership: Unassigned
+Stack: packages/release-artifacts
+Evidence: Descriptor validation and synthetic dependency materialization cover the required matrix. No real node archives, target executables, images or installer executions were produced; these checks do not qualify a release.
+Next step: Assemble real artifacts, verify bytes and machine targets, and capture disposable installation evidence for every required cell; timestamp: 2026-10-03T07:17:00Z
 
 Work item: E30.01 (https://github.com/geoffsee/rubix-kube/issues/124)
-Outcome: Completed
-Readiness: Done
+Outcome: In progress
+Readiness: Not qualified
 Ownership: Unassigned
 Stack: migration/state-transitions
-Evidence: Implemented Go-to-Rust state transition validation suite (`tools/dev/src/state_transition/`, `rubix-state-transition` CLI, and integration tests in `tools/dev/tests/state_transitions.rs`). Verified supported starting versions (`v1.1.8`, `v1.2.0`, `v1.3.0`, `v1.3.1-v1.3.3`) and preflight rejection of unsupported `< v1.1.8`/empty/malformed versions. Validated configuration translation from legacy systemd flags to 0600 `/etc/kubesolo/config.yaml` with `.bak` backup and preservation of existing configs. Proved non-interchangeability of raw SQLite with fatal header rejection and verified explicit export/import into `RUBXSNP1` datastore snapshots. Asserted cryptographic trust preservation across PKI with YAML and JSON kubeconfigs, static pod manifest byte identity, workload UID/resourceVersion preservation, and recursive SHA-256 byte validation of PV storage. Documented complete transition procedures, 5-10m downtime window, nonportable state, and required backups in `docs/architecture/state-transitions.md`.
-Next step: None; timestamp: 2026-10-03T15:25:00Z
+Evidence: Isolated state-preservation fixtures classify historical versions, exercise configuration conversion, verify client signatures and required signing keys, reconcile unique workload identities, and compare PV files, directories, symlinks, ownership and permissions. Native snapshot conversion is an experiment on in-memory records; it neither adopts a production Kine database nor checkpoints its WAL. No live Linux cutover or downtime measurement was performed.
+Next step: Rehearse consistent Kine SQLite backup, adoption and rollback with the retained executables and dedicated loopback mTLS, preserving identities and PV access at exact revisions before qualifying C13/E30.
