@@ -22,6 +22,134 @@ use rubix_dev::state_transition::workloads::{
 use tempfile::tempdir;
 
 #[test]
+fn configuration_verification_reads_the_service_selected_path() {
+    let tmp = tempdir().unwrap();
+    let actual = tmp.path().join("actual.yaml");
+    let requested = tmp.path().join("requested.yaml");
+    let service = tmp.path().join("service");
+    fs::write(&actual, "apiVersion: kubesolo.io/v1alpha1\nkind: KubeSoloConfiguration\nnetwork:\n  nodeIP: 10.0.0.8\n").unwrap();
+    fs::write(&requested, "invalid unrelated config").unwrap();
+    for flag in [
+        format!("--config={}", actual.display()),
+        format!("--config '{}'", actual.display()),
+    ] {
+        fs::write(
+            &service,
+            format!("[Service]\nExecStart=/usr/bin/kubesolo {flag}\n"),
+        )
+        .unwrap();
+        let result = validate_config_transition(
+            SupportedStartingVersion::V1_3_0,
+            &service,
+            &requested,
+            None,
+        )
+        .unwrap();
+        assert_eq!(result.config_path, actual);
+        assert_eq!(result.node_ip, "10.0.0.8");
+        assert!(!result.service_migrated);
+    }
+    fs::remove_file(&actual).unwrap();
+    assert!(
+        validate_config_transition(SupportedStartingVersion::V1_3_0, &service, &requested, None)
+            .is_err()
+    );
+    fs::write(
+        &service,
+        "[Service]\nExecStart=/usr/bin/kubesolo --config=$CONFIG\n",
+    )
+    .unwrap();
+    assert!(
+        validate_config_transition(SupportedStartingVersion::V1_3_0, &service, &requested, None)
+            .is_err()
+    );
+    assert_eq!(
+        fs::read_to_string(&requested).unwrap(),
+        "invalid unrelated config"
+    );
+    for command in [
+        "--config=relative.yaml",
+        "--config=/first --config=/second",
+        "--config",
+    ] {
+        fs::write(
+            &service,
+            format!("[Service]\nExecStart=/usr/bin/kubesolo {command}\n"),
+        )
+        .unwrap();
+        assert!(
+            validate_config_transition(
+                SupportedStartingVersion::V1_3_0,
+                &service,
+                &requested,
+                None
+            )
+            .is_err()
+        );
+    }
+}
+
+#[test]
+fn kubeconfig_resolves_active_context_and_rejects_ambiguous_references() {
+    use rubix_dev::state_transition::parse_kubeconfig;
+    let mut config = serde_json::json!({
+        "current-context":"active",
+        "contexts":[{"name":"inactive", "context":{"cluster":"unused", "user":"unused"}},
+                    {"name":"active", "context":{"cluster":"selected", "user":"chosen"}}],
+        "clusters":[{"name":"unused", "cluster":{"server":"https://unused", "certificate-authority-data":"dW51c2Vk"}},
+                    {"name":"selected", "cluster":{"server":"https://selected", "certificate-authority-data":"Y2E="}}],
+        "users":[{"name":"unused", "user":{"client-certificate-data":"dW51c2Vk", "client-key-data":"dW51c2Vk"}},
+                 {"name":"chosen", "user":{"client-certificate-data":"Y2VydA==", "client-key-data":"a2V5"}}]
+    });
+    let parsed = parse_kubeconfig(&serde_json::to_vec(&config).unwrap()).unwrap();
+    assert_eq!(
+        (&*parsed.cluster_name, &*parsed.user_name, &*parsed.server),
+        ("selected", "chosen", "https://selected")
+    );
+    assert_eq!(parsed.ca_cert_bytes, b"ca");
+    let yaml = "current-context: 'active'\ncontexts:\n- name: active\n  context: {cluster: selected, user: chosen}\nclusters:\n- name: unused\n  cluster: {server: 'https://unused', certificate-authority-data: dW51c2Vk}\n- name: selected\n  cluster: {server: 'https://selected', certificate-authority-data: Y2E=}\nusers:\n- name: unused\n  user: {client-certificate-data: dW51c2Vk, client-key-data: dW51c2Vk}\n- name: chosen\n  user: {client-certificate-data: Y2VydA==, client-key-data: a2V5}\n";
+    let parsed_yaml = parse_kubeconfig(yaml.as_bytes()).unwrap();
+    assert_eq!(parsed_yaml.client_cert_bytes, parsed.client_cert_bytes);
+    assert_eq!(parsed_yaml.cluster_name, parsed.cluster_name);
+    config["current-context"] = "missing".into();
+    assert!(parse_kubeconfig(&serde_json::to_vec(&config).unwrap()).is_err());
+    config["current-context"] = "active".into();
+    config["contexts"][1]["context"]["user"] = "missing".into();
+    assert!(parse_kubeconfig(&serde_json::to_vec(&config).unwrap()).is_err());
+    config["contexts"][1]["context"]["user"] = "chosen".into();
+    let duplicate = config["users"][1].clone();
+    config["users"].as_array_mut().unwrap().push(duplicate);
+    assert!(parse_kubeconfig(&serde_json::to_vec(&config).unwrap()).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn static_manifest_inventory_rejects_missing_roots_additions_and_links() {
+    use std::os::unix::fs::symlink;
+    let tmp = tempdir().unwrap();
+    let before = tmp.path().join("before");
+    let after = tmp.path().join("after");
+    assert!(assert_static_manifests_preserved(&before, &after).is_err());
+    fs::create_dir(&before).unwrap();
+    assert!(assert_static_manifests_preserved(&before, &after).is_err());
+    fs::create_dir(&after).unwrap();
+    assert_static_manifests_preserved(&before, &after).unwrap();
+    fs::write(after.join("extra.yaml"), b"extra").unwrap();
+    assert!(assert_static_manifests_preserved(&before, &after).is_err());
+    fs::write(before.join("extra.yaml"), b"extra").unwrap();
+    assert_static_manifests_preserved(&before, &after).unwrap();
+    fs::remove_file(after.join("extra.yaml")).unwrap();
+    symlink(before.join("extra.yaml"), after.join("extra.yaml")).unwrap();
+    assert!(assert_static_manifests_preserved(&before, &after).is_err());
+    fs::remove_file(after.join("extra.yaml")).unwrap();
+    fs::write(after.join("extra.yaml"), b"changed").unwrap();
+    assert!(assert_static_manifests_preserved(&before, &after).is_err());
+    fs::remove_dir_all(&after).unwrap();
+    symlink(&before, &after).unwrap();
+    assert!(assert_static_manifests_preserved(&before, &after).is_err());
+}
+
+#[test]
 fn test_supported_starting_versions_selection_and_rejection() {
     // 1. All supported versions must classify correctly
     for ver in SupportedStartingVersion::ALL {
@@ -260,6 +388,7 @@ users:
         "apiVersion": "v1",
         "kind": "Config",
         "current-context": "admin@kubesolo",
+        "contexts": [{"name":"admin@kubesolo", "context":{"cluster":"kubesolo", "user":"admin"}}],
         "clusters": [{
             "name": "kubesolo",
             "cluster": {
@@ -553,7 +682,7 @@ fn missing_or_replaced_signing_keys_cannot_report_preservation() {
     }
     let config = tmp.path().join("kubeconfig");
     fs::write(&config, serde_json::to_vec(&serde_json::json!({
-        "current-context": "admin", "clusters": [{"name":"cluster", "cluster": {
+        "current-context": "admin", "contexts":[{"name":"admin", "context":{"cluster":"cluster", "user":"admin"}}], "clusters": [{"name":"cluster", "cluster": {
             "server":"https://127.0.0.1:6443", "certificate-authority-data": BASE64_STANDARD.encode(&ca)
         }}], "users":[{"name":"admin", "user": {
             "client-certificate-data":BASE64_STANDARD.encode(client),

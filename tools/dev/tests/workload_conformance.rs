@@ -10,6 +10,10 @@ use rubix_dev::conformance::{
 
 #[tokio::test]
 async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
+    let started = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let runner = QualificationRunner::new();
     let report = runner
         .run_fixture()
@@ -36,15 +40,37 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
         );
     }
 
+    let timestamp: u64 = report
+        .timestamp
+        .strip_prefix("unix:")
+        .unwrap()
+        .parse()
+        .unwrap();
+    let ended = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    assert!((started..=ended).contains(&timestamp));
+
     // Check specific domains
     let d1 = &report.manifest_domain_results[0];
     assert_eq!(d1.name, "Tier 1 — Workloads & Networking");
 
     let d2 = &report.manifest_domain_results[1];
     assert_eq!(d2.name, "Tier 2 — Storage Persistence");
+    assert!(
+        d2.details
+            .iter()
+            .any(|d| d.contains("no reader workload executed"))
+    );
 
     let d3 = &report.manifest_domain_results[2];
     assert_eq!(d3.name, "Tier 3 — Config & Identity");
+    assert!(
+        d3.details
+            .iter()
+            .any(|d| d.contains("no container consumed configuration"))
+    );
 
     let d4 = &report.manifest_domain_results[3];
     assert_eq!(d4.name, "Tier 4 — Controllers");
@@ -54,6 +80,8 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
 
     let d6 = &report.manifest_domain_results[5];
     assert_eq!(d6.name, "Tier 6 — LoadBalancer UPDATE path [KS-75]");
+    assert_eq!(d6.assertions_count, 10);
+    assert!(d6.details.iter().all(|detail| !detail.contains("dry-run")));
 
     // 3. Verify selected conformance results
     let conf = &report.conformance_summary;
@@ -104,6 +132,9 @@ async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
     assert!(md.contains("## 3. Selected Single-Node Conformance Summary"));
     assert!(md.contains(CERTIFICATION_DISCLAIMER));
     assert!(md.contains("YAML and JSON"));
+    assert!(md.contains("no CoreDNS server or pod query executed"));
+    assert!(!md.contains("Reader pod verified"));
+    assert!(!md.contains("Consumer pod verified"));
 
     // 6. Verify JSON serialization round-trip
     let json_str = serde_json::to_string_pretty(&report).expect("Serialize to JSON");

@@ -1,5 +1,6 @@
 use rubixctl::cleanup::{
-    CleanupHost, CleanupKind, run_container_cleanup, run_container_cleanup_with_configuration,
+    CleanupHost, CleanupKind, ConfigurationSelection, run_container_cleanup,
+    run_container_cleanup_with_configuration, run_container_cleanup_with_selection,
     run_host_cleanup, run_host_cleanup_with_configuration,
 };
 use rubixctl::upgrade::{ContainerSpec, Runner};
@@ -62,6 +63,45 @@ fn fixture() -> (tempfile::TempDir, PathBuf, PathBuf) {
     let data = fs::canonicalize(data).unwrap();
     let configuration = fs::canonicalize(configuration).unwrap();
     (root, data, configuration)
+}
+
+#[test]
+fn file_bind_cleanup_preserves_adjacent_backups_and_uses_exact_source() {
+    for purge in [false, true] {
+        for keep_config in [false, true] {
+            let (_root, data, configuration) = fixture();
+            let selected = configuration.join("custom.yaml");
+            fs::rename(configuration.join("config.yaml"), &selected).unwrap();
+            fs::write(configuration.join("custom.yaml.bak"), "foreign backup").unwrap();
+            let report = run_container_cleanup_with_selection(
+                &mut Engine::default(),
+                "docker",
+                &ContainerSpec::default(),
+                CleanupKind::Uninstall { purge, keep_config },
+                &data,
+                Some(&ConfigurationSelection::File(selected.clone())),
+                true,
+                &mut &b""[..],
+                &mut Vec::new(),
+            )
+            .unwrap();
+            assert_eq!(selected.exists(), keep_config);
+            assert_eq!(report.removed.contains(&selected), !keep_config);
+            assert_eq!(report.retained.contains(&selected), keep_config);
+            assert_eq!(
+                fs::read_to_string(configuration.join("config.yaml.bak")).unwrap(),
+                "previous config"
+            );
+            assert_eq!(
+                fs::read_to_string(configuration.join("custom.yaml.bak")).unwrap(),
+                "foreign backup"
+            );
+            assert_eq!(
+                fs::read_to_string(configuration.join("foreign")).unwrap(),
+                "neighbor"
+            );
+        }
+    }
 }
 #[test]
 fn host_and_container_share_explicit_configuration_retention() {
