@@ -210,6 +210,7 @@ async fn test_node_runtime_disabled_mode_opens_no_listener() {
     let runtime = NodeRuntime::from_config(config).expect("assemble runtime");
     assert!(!runtime.is_metrics_enabled());
     assert_eq!(runtime.metrics_bind_address(), "127.0.0.1:9105");
+    assert!(runtime.metrics_registry().is_none());
 
     let client = runtime.client().expect("client present").clone();
 
@@ -231,16 +232,58 @@ async fn test_node_runtime_disabled_mode_opens_no_listener() {
     .await
     .expect("apiserver becomes reachable");
 
-    // Verify 127.0.0.1:9105 has NO listener open
-    let conn = TcpStream::connect("127.0.0.1:9105").await;
-    assert!(
-        conn.is_err(),
-        "Disabled metrics mode must open no listener on 127.0.0.1:9105"
-    );
-
     stop_handle.stop();
     let (report, _, _) = run_handle.await.expect("runtime run");
     assert!(report.failures.is_empty());
+    assert!(
+        report
+            .outcomes
+            .iter()
+            .all(|outcome| outcome.component != "metrics")
+    );
+}
+
+#[tokio::test]
+async fn disabled_metrics_does_not_touch_an_existing_listener() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let temp = TempDir::new().unwrap();
+    let runtime =
+        NodeRuntime::from_config(test_config_metrics(temp.path(), false, &addr.to_string()))
+            .expect("assemble disabled metrics runtime");
+    assert!(runtime.metrics_registry().is_none());
+    let client = runtime.client().unwrap().clone();
+    let (stop_handle, stop_receiver) = stop_channel();
+    let run_handle = tokio::spawn(runtime.run_with_sink(
+        stop_receiver,
+        LogProbe::default(),
+        FlushPolicy::EachFrame,
+    ));
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while client.list_namespaces().await.is_err() {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        let mut peer = TcpStream::connect(addr).await.unwrap();
+        let (mut owned, _) = listener.accept().await.unwrap();
+        owned.write_all(b"owner").await.unwrap();
+        let mut response = [0; 5];
+        peer.read_exact(&mut response).await.unwrap();
+        assert_eq!(&response, b"owner");
+    })
+    .await
+    .expect("the original listener remains owned and usable");
+    stop_handle.stop();
+    let (report, _, _) = run_handle.await.unwrap();
+    assert!(
+        report.failures.is_empty(),
+        "disabled metrics must not attempt a colliding bind"
+    );
+    assert!(
+        report
+            .outcomes
+            .iter()
+            .all(|outcome| outcome.component != "metrics")
+    );
 }
 
 #[tokio::test]
