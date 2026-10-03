@@ -15,6 +15,16 @@ The crate remains private workspace code and adds no registry dependency.
 
 ## Interface and effects
 
+The command shell also supports completion and artifact download, with a
+`CommandHandler` seam for the remaining management commands. Download archive
+selection covers all 16 Linux architecture/libc/online/offline cells. Because the
+current bundle stages the running `rubixctl`, download execution requires a Linux
+executable matching the selected architecture. macOS and cross-architecture
+invocations fail before downloading or copying files; run the command with a
+matching Linux `rubixctl`. Selecting a node archive alone does not verify the
+included management executable, and this restriction remains until matching
+management release artifacts can be fetched and verified.
+
 `parse_command` accepts argument strings and an explicit environment map.
 `execute` injects `CheckInputs` and output writers; `execute_check` consumes parsed
 options. Help, version, parse errors and unsupported preparation require no host

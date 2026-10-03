@@ -16,6 +16,18 @@ pub fn execute_download(
         "\n  rubixctl  download\n\n  > Resolving target architecture"
     )?;
 
+    // Bundles include the running management executable. Check its platform
+    // even for an explicit archive target, before creating any bundle outputs.
+    let evidence = match inputs.discover() {
+        Ok(evidence) => evidence,
+        Err(err) => {
+            writeln!(
+                stderr,
+                "  [fail] architecture detection: {err}; obtain supported host observations before retrying"
+            )?;
+            return Ok(1);
+        },
+    };
     let target = if let Some(ref arch_str) = options.arch {
         match resolve_target(Some(arch_str), options.libc, None) {
             Ok(target) => target,
@@ -28,16 +40,6 @@ pub fn execute_download(
             },
         }
     } else {
-        let evidence = match inputs.discover() {
-            Ok(evidence) => evidence,
-            Err(err) => {
-                writeln!(
-                    stderr,
-                    "  [fail] architecture detection: {err}; obtain supported host observations before retrying"
-                )?;
-                return Ok(1);
-            },
-        };
         match resolve_target(None, options.libc, Some(&evidence)) {
             Ok(target) => target,
             Err(err) => {
@@ -49,6 +51,15 @@ pub fn execute_download(
             },
         }
     };
+
+    let executable_target = resolve_target(None, None, Some(&evidence));
+    if !matches!(executable_target, Ok(host) if host.architecture == target.architecture) {
+        writeln!(
+            stderr,
+            "  [fail] bundle installer does not match the selected Linux architecture; run download with a matching Linux rubixctl executable. No bundle files were created."
+        )?;
+        return Ok(1);
+    }
 
     let archive_name = artifact_archive_name(&options.version, target, options.offline);
     let download_url = artifact_download_url(

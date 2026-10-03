@@ -451,7 +451,10 @@ fn test_execute_completion_cli() {
 
 #[test]
 fn test_execute_download_success() {
-    let mut inputs = TestInputs::default();
+    let mut inputs = TestInputs {
+        arch: "aarch64".into(),
+        ..TestInputs::default()
+    };
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
 
@@ -900,4 +903,36 @@ fn test_flag_parsing_styles() {
     // Unknown command
     let err_cmd = parse_command(&args(&["not-a-command"]), &env).unwrap_err();
     assert_eq!(err_cmd, ParseError::UnknownCommand);
+}
+
+#[test]
+fn mismatched_bundle_installer_is_rejected_before_any_output() {
+    for (os, arch, target) in [
+        ("darwin", "aarch64", "amd64"),
+        ("darwin", "aarch64", "arm64"),
+        ("linux", "x86_64", "arm64"),
+        ("linux", "aarch64", "amd64"),
+        ("linux", "x86_64", "arm"),
+        ("linux", "x86_64", "riscv64"),
+    ] {
+        let mut inputs = TestInputs {
+            os: os.into(),
+            arch: arch.into(),
+            ..TestInputs::default()
+        };
+        let opts = DownloadOptions {
+            arch: Some(target.into()),
+            offline: true,
+            ..DownloadOptions::default()
+        };
+        let mut stderr = Vec::new();
+        assert_eq!(
+            execute_download(&opts, &mut inputs, &mut Vec::new(), &mut stderr).unwrap(),
+            1
+        );
+        assert!(inputs.download_url_called.is_none());
+        assert!(inputs.download_dest_called.is_none());
+        assert!(inputs.copy_self_dest_called.is_none());
+        assert!(!String::from_utf8_lossy(&stderr).contains("Bundle ready"));
+    }
 }
