@@ -448,3 +448,101 @@ fn finding_and_report_distinguish_fatal_errors_from_recoverable_limitations() {
             .any(|finding| finding.check == CheckId::Hostname)
     );
 }
+
+#[test]
+fn explicit_external_runtime_is_not_reported_as_managed_runtime_conflict() {
+    let mut e = evidence();
+    // With external runtime configured, no managed-runtime conflict is inferred.
+    let mut external_input = inputs();
+    external_input.runtime = RuntimeOwnership::External;
+    let report = evaluate_preflight(&e, &external_input);
+    assert_eq!(report.runtime, RuntimeOwnership::External);
+    assert_eq!(report.findings[2].status, CheckStatus::Pass);
+    assert!(report.ready());
+
+    // Actual Docker landmarks remain an independent baseline conflict.
+    present(&mut e, "/var/run/docker.sock");
+    let blocked_report = evaluate_preflight(&e, &external_input);
+    assert_eq!(blocked_report.first_blocker, Some(CheckId::DockerConflict));
+    let docker_finding = &blocked_report.findings[2];
+    assert_eq!(docker_finding.status, CheckStatus::Blocker);
+    assert_eq!(docker_finding.reason, Reason::DockerSocketPresent);
+    assert_eq!(
+        docker_finding.remediation,
+        Some(Remediation::ResolveDockerConflict)
+    );
+    assert_eq!(docker_finding.severity(), Some(ErrorSeverity::Fatal));
+}
+
+#[test]
+fn constrained_platforms_supported_fixtures_pass_and_unsupported_combinations_explain_remediation()
+{
+    // 1. Supported Alpine platform with tools and populated cgroups passes.
+    let mut e_alpine = evidence();
+    present(&mut e_alpine, "/etc/alpine-release");
+    present(&mut e_alpine, "/usr/sbin/nft");
+    present(&mut e_alpine, "/sbin/iptables");
+    let mut input = inputs();
+    input.runtime = RuntimeOwnership::External;
+    let report = evaluate_preflight(&e_alpine, &input);
+    assert!(report.ready());
+    assert_eq!(report.findings[4].status, CheckStatus::Pass);
+    assert_eq!(report.findings[5].status, CheckStatus::Pass);
+
+    // 2. Unsupported Alpine with missing tools explains remediation.
+    let mut e_no_tools = evidence();
+    present(&mut e_no_tools, "/etc/alpine-release");
+    let report_no_tools = evaluate_preflight(&e_no_tools, &input);
+    assert_eq!(
+        report_no_tools.first_blocker,
+        Some(CheckId::AlpineNetworking)
+    );
+    let net_finding = &report_no_tools.findings[4];
+    assert_eq!(net_finding.status, CheckStatus::Blocker);
+    assert_eq!(net_finding.reason, Reason::AlpineToolsMissing);
+    assert_eq!(
+        net_finding.remediation,
+        Some(Remediation::InstallAlpineNetworking)
+    );
+
+    // 3. Unsupported Alpine with unpopulated cgroups and OpenRC explains remediation.
+    let mut e_openrc = evidence();
+    present(&mut e_openrc, "/etc/alpine-release");
+    present(&mut e_openrc, "/usr/sbin/nft");
+    present(&mut e_openrc, "/sbin/iptables");
+    e_openrc.files.insert(
+        "/sys/fs/cgroup/cgroup.controllers".into(),
+        Observation::Present(String::new()),
+    );
+    let mut openrc_input = inputs();
+    openrc_input.alpine_rc_service = Observation::Present(true);
+    let report_openrc = evaluate_preflight(&e_openrc, &openrc_input);
+    assert_eq!(report_openrc.first_blocker, Some(CheckId::Cgroups));
+    let cgroup_finding = &report_openrc.findings[5];
+    assert_eq!(cgroup_finding.status, CheckStatus::Blocker);
+    assert_eq!(cgroup_finding.reason, Reason::AlpineCgroupsSetup);
+    assert_eq!(
+        cgroup_finding.remediation,
+        Some(Remediation::EnableAlpineCgroups)
+    );
+
+    // 4. Missing xt_comment explains remediation.
+    let mut e_no_comment = evidence();
+    e_no_comment
+        .files
+        .insert("/proc/modules".into(), Observation::Absent);
+    e_no_comment
+        .files
+        .insert("/proc/net/ip_tables_matches".into(), Observation::Absent);
+    let mut comment_input = inputs();
+    comment_input.xt_comment_on_disk = Observation::Present(false);
+    let report_comment = evaluate_preflight(&e_no_comment, &comment_input);
+    assert_eq!(report_comment.first_blocker, Some(CheckId::XtablesComment));
+    let comment_finding = &report_comment.findings[3];
+    assert_eq!(comment_finding.status, CheckStatus::Blocker);
+    assert_eq!(comment_finding.reason, Reason::CommentSupportMissing);
+    assert_eq!(
+        comment_finding.remediation,
+        Some(Remediation::ProvideCommentSupport)
+    );
+}

@@ -4,6 +4,7 @@ use rubix_platform::{Observation, PlatformError, ProbeFailure, ProbeLimits};
 fn facts() -> ConstrainedFacts {
     ConstrainedFacts {
         sysctls: std::array::from_fn(|_| Observation::Present("1\n".into())),
+        proc_sys_read_only: Observation::Present(false),
         ip_tables_names: Observation::Absent,
         default_cni_plugins: [Observation::Absent; 4],
         cni_config_names: Observation::Present(vec![]),
@@ -137,4 +138,44 @@ fn collector_never_claims_unsupported_platform_or_invalid_limits() {
             Err(PlatformError::UnsupportedHost)
         );
     }
+}
+
+#[test]
+fn read_only_proc_sys_blocks_required_writes_without_changing_correct_values() {
+    let mut correct = facts();
+    correct.proc_sys_read_only = Observation::Present(true);
+    assert_eq!(
+        evaluate_constrained(&correct, &inputs()).sysctls,
+        [SysctlState::AlreadyCorrect; 4]
+    );
+
+    let mut ipv4 = facts();
+    ipv4.proc_sys_read_only = Observation::Present(true);
+    ipv4.sysctls[0] = Observation::Present("0\n".into());
+    assert_eq!(
+        evaluate_constrained(&ipv4, &inputs()).sysctls[0],
+        SysctlState::ReadOnly
+    );
+
+    let mut writable = facts();
+    writable.proc_sys_read_only = Observation::Present(false);
+    writable.sysctls[0] = Observation::Present("0\n".into());
+    assert_eq!(
+        evaluate_constrained(&writable, &inputs()).sysctls[0],
+        SysctlState::NeedsPreparation
+    );
+
+    let mut absent_ipv6 = facts();
+    absent_ipv6.proc_sys_read_only = Observation::Present(true);
+    absent_ipv6.sysctls[1] = Observation::Absent;
+    absent_ipv6.sysctls[2] = Observation::Absent;
+    absent_ipv6.sysctls[3] = Observation::Absent;
+    assert_eq!(
+        &evaluate_constrained(&absent_ipv6, &inputs()).sysctls[1..],
+        &[
+            SysctlState::OptionalAbsent,
+            SysctlState::OptionalAbsent,
+            SysctlState::OptionalAbsent
+        ]
+    );
 }
