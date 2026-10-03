@@ -224,7 +224,7 @@ adds the selected component boundary and measured limitations without claiming a
 | Persistent datastore outage shutdown | Trial r2 required forced API kill after Kine died; preserve diagnostics and implement bounded escalation rather than call it graceful shutdown | E04/E08/E28 |
 | Offline helper image closure | Resolve busybox helper and all enabled transitive workload images, then provision PVC with egress denied | E06/E18/E28 |
 | Architecture-specific assets and external server versions | Resolve and hash all shipped payloads, record actual external CRI/engine versions and capability matrix | E06/E09/E10/E24/E27/E28 |
-| Distribution performance | Provisional contract gates require paired whole-distribution data; two-process startup RSS is not a release budget result | E21/E28/E29 |
+| Distribution performance | Provisional contract gates require paired whole-distribution data; two-process startup RSS is not a release budget result; see [budget profiling analysis](budget-profiling-analysis.md) | E21/E28/E29 |
 
 A gate blocks dependent integration or release until its owner supplies evidence. If resolving it
 requires changing an accepted product promise, record an explicit impact decision; do not silently

@@ -1,7 +1,8 @@
 //! Performance baseline inspection, gate verification, and reporting CLI.
 
 use rubix_dev::perf::{
-    GateEvaluationReport, SecondaryTargetsRegistry, generate_markdown_report, load_report,
+    BudgetProfileReport, GateEvaluationReport, SecondaryTargetsRegistry,
+    generate_budget_markdown_report, generate_markdown_report, load_report,
     verify_retained_process_coverage,
 };
 use std::path::{Path, PathBuf};
@@ -15,6 +16,7 @@ fn print_usage() {
         generate-fixtures <dir>                             Generate synthetic arithmetic fixtures (never qualification)\n  \
         evaluate-gates --reference <ref> --candidate <cand>  Evaluate candidate gates against reference\n  \
         report --reference <ref> --candidate <cand>          Generate comparative Markdown report\n  \
+        profile --reference <ref> --candidate <cand>         Profile regressions and optimizations against E01 budgets\n  \
         verify-secondary <file>                              Verify secondary architecture gaps\n"
     );
 }
@@ -138,6 +140,24 @@ fn report_cmd(
     }
 }
 
+fn profile_cmd(
+    ref_path: &Path,
+    cand_path: &Path,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let reference = load_report(ref_path)?;
+    let candidate = load_report(cand_path)?;
+    let profile = BudgetProfileReport::analyze(&reference, &candidate)?;
+    let eval = GateEvaluationReport::evaluate(&reference, &candidate);
+
+    let md = generate_budget_markdown_report(&profile);
+    println!("{md}");
+    if eval.all_passed {
+        Ok(())
+    } else {
+        Err("profile is not qualified performance evidence".into())
+    }
+}
+
 fn verify_secondary_cmd(path: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let bytes = rubix_dev::read_bounded(path, 4 * 1024 * 1024)
         .map_err(|e| format!("read secondary file failed: {e}"))?;
@@ -234,6 +254,38 @@ fn generate_fixtures_cmd(dir: &Path) -> Result<(), Box<dyn std::error::Error + S
     Ok(())
 }
 
+fn parse_pairwise_flags(args: &[String]) -> (Option<PathBuf>, Option<PathBuf>, Option<PathBuf>) {
+    let mut ref_path = None;
+    let mut cand_path = None;
+    let mut sec_path = None;
+    let mut idx = 1;
+    while idx < args.len() {
+        match args[idx].as_str() {
+            "--reference" => {
+                idx += 1;
+                if idx < args.len() {
+                    ref_path = Some(PathBuf::from(&args[idx]));
+                }
+            },
+            "--candidate" => {
+                idx += 1;
+                if idx < args.len() {
+                    cand_path = Some(PathBuf::from(&args[idx]));
+                }
+            },
+            "--secondary" => {
+                idx += 1;
+                if idx < args.len() {
+                    sec_path = Some(PathBuf::from(&args[idx]));
+                }
+            },
+            _ => {},
+        }
+        idx += 1;
+    }
+    (ref_path, cand_path, sec_path)
+}
+
 fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
@@ -250,27 +302,7 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             check_baselines(Path::new(&args[1]))
         },
         "evaluate-gates" => {
-            let mut ref_path = None;
-            let mut cand_path = None;
-            let mut idx = 1;
-            while idx < args.len() {
-                match args[idx].as_str() {
-                    "--reference" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            ref_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    "--candidate" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            cand_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    _ => {},
-                }
-                idx += 1;
-            }
+            let (ref_path, cand_path, _) = parse_pairwise_flags(&args);
             if let (Some(r), Some(c)) = (ref_path, cand_path) {
                 evaluate_gates_cmd(&r, &c)
             } else {
@@ -279,39 +311,21 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             }
         },
         "report" => {
-            let mut ref_path = None;
-            let mut cand_path = None;
-            let mut sec_path = None;
-            let mut idx = 1;
-            while idx < args.len() {
-                match args[idx].as_str() {
-                    "--reference" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            ref_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    "--candidate" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            cand_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    "--secondary" => {
-                        idx += 1;
-                        if idx < args.len() {
-                            sec_path = Some(PathBuf::from(&args[idx]));
-                        }
-                    },
-                    _ => {},
-                }
-                idx += 1;
-            }
+            let (ref_path, cand_path, sec_path) = parse_pairwise_flags(&args);
             if let (Some(r), Some(c)) = (ref_path, cand_path) {
                 report_cmd(&r, &c, sec_path.as_deref())
             } else {
                 print_usage();
                 Err("report requires --reference and --candidate".into())
+            }
+        },
+        "profile" => {
+            let (ref_path, cand_path, _) = parse_pairwise_flags(&args);
+            if let (Some(r), Some(c)) = (ref_path, cand_path) {
+                profile_cmd(&r, &c)
+            } else {
+                print_usage();
+                Err("profile requires --reference and --candidate".into())
             }
         },
         "verify-secondary" => {
