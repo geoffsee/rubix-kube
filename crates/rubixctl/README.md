@@ -106,9 +106,11 @@ recreates only the selected container, retaining its volume and reconciling its
 instance bridge MTU; a bridge still in use causes an explicit Engine error.
 
 Upgrade stages the artifact before stopping the selected deployment, then copies
-the quiesced `pki` and `kine/db` directories into a unique private backup. Failed
-replacement, migration, start or commit restores deployment artifacts, the
-configuration's previous presence and contents, and captured PKI/datastore state.
+the quiesced `pki` and `kine/db` directories into a unique private backup. After
+failed replacement, migration, start or commit, the upgrade attempts to restore
+deployment artifacts, the configuration's previous presence and contents, and
+captured PKI/datastore state. If rollback fails, it returns an error and retains
+the receipt and backup for manual recovery.
 Systemd unit changes are reloaded before start. Container upgrades persist their
 new version record and check that the replacement is running before discarding
 the previous container; this check does not establish Kubernetes readiness.
