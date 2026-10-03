@@ -39,6 +39,9 @@ pub const PORTAINER_AGENT_PORT_HTTP: i32 = 80;
 /// Default value for `EDGE_INSECURE_POLL`.
 pub const DEFAULT_EDGE_INSECURE_POLL: &str = "0";
 
+/// Default readiness polling timeout for Portainer Edge agent deployment.
+pub const DEFAULT_READINESS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Configuration settings for deploying the Portainer Edge agent.
 #[derive(Clone, PartialEq, Eq)]
 pub struct PortainerAgentConfig {
@@ -65,6 +68,9 @@ pub struct PortainerAgentConfig {
 
     /// Optional extra environment variables to inject into the `ConfigMap`.
     pub env_vars: BTreeMap<String, String>,
+
+    /// Readiness polling timeout for Portainer deployment.
+    pub readiness_timeout: std::time::Duration,
 }
 
 impl fmt::Debug for PortainerAgentConfig {
@@ -81,6 +87,7 @@ impl fmt::Debug for PortainerAgentConfig {
             .field("image", &self.image)
             .field("architecture", &self.architecture)
             .field("env_vars", &self.env_vars)
+            .field("readiness_timeout", &self.readiness_timeout)
             .finish()
     }
 }
@@ -102,6 +109,7 @@ impl PortainerAgentConfig {
             image: DEFAULT_PORTAINER_AGENT_IMAGE.to_string(),
             architecture,
             env_vars: BTreeMap::new(),
+            readiness_timeout: DEFAULT_READINESS_TIMEOUT,
         }
     }
 
@@ -121,6 +129,7 @@ impl PortainerAgentConfig {
             },
             architecture,
             env_vars: BTreeMap::new(),
+            readiness_timeout: DEFAULT_READINESS_TIMEOUT,
         }
     }
 
@@ -156,6 +165,13 @@ impl PortainerAgentConfig {
     #[must_use]
     pub fn with_env_vars(mut self, env_vars: BTreeMap<String, String>) -> Self {
         self.env_vars = env_vars;
+        self
+    }
+
+    /// Set readiness polling timeout.
+    #[must_use]
+    pub fn with_readiness_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.readiness_timeout = timeout;
         self
     }
 
