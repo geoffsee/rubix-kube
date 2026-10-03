@@ -4,6 +4,7 @@ pub mod check_workflow;
 pub mod completion;
 pub mod contract;
 pub mod download;
+pub mod endpoints;
 pub mod kubeconfig;
 mod parse;
 pub mod preparation;
