@@ -31,7 +31,7 @@ use std::path::{Path, PathBuf};
 pub use rubix_config::legacy::rewrite_service_content;
 use rubix_config::legacy::{extract_service_flags, flags_to_config, has_config_flag};
 use rubix_config::semver::supports_config_file;
-use rubix_config::{DEFAULT_CONFIG_PATH, HostContext, write_document};
+use rubix_config::{DEFAULT_CONFIG_PATH, HostContext};
 use rubix_platform::InitSystem;
 
 /// Returns the standard service file path for a given init system.
@@ -98,7 +98,14 @@ pub fn migrate_legacy_service(
     let dest_config = destination_config_path.unwrap_or_else(|| Path::new(DEFAULT_CONFIG_PATH));
 
     // 2. If destination config exists, skip migration to avoid overwriting valid configuration
-    if dest_config.exists() {
+    let mut pending_name = service_path.as_os_str().to_owned();
+    pending_name.push(".migration-pending");
+    let pending_path = PathBuf::from(pending_name);
+    if fs::symlink_metadata(dest_config).is_ok()
+        && !(fs::symlink_metadata(&pending_path).is_ok_and(|m| m.is_file())
+            && fs::symlink_metadata(dest_config).is_ok_and(|m| m.is_file())
+            && fs::read(&pending_path)? == fs::read(dest_config)?)
+    {
         return Ok(ServiceMigrationResult::DestinationConfigExists {
             config_path: dest_config.to_path_buf(),
         });
@@ -134,36 +141,8 @@ pub fn migrate_legacy_service(
         )
     })?;
 
-    // 6. Write config file atomically (mode 0600)
-    let outcome = write_document(dest_config, &config).map_err(|err| {
-        io::Error::other(format!("failed to write configuration document: {err}"))
-    })?;
-
-    // 7. Create service unit backup at <service-path>.bak
-    let mut backup_service_path = service_path.as_os_str().to_owned();
-    backup_service_path.push(".bak");
-    let service_backup_path = PathBuf::from(backup_service_path);
-
-    fs::copy(service_path, &service_backup_path)?;
-
-    // 8. Rewrite service file with --config atomically preserving permissions
-    let updated_service =
-        rewrite_service_content(&service_content, &dest_config.display().to_string());
-    let parent = service_path.parent().unwrap_or_else(|| Path::new("."));
-    let temp_path = parent.join(format!(".kubesolo.service.tmp-{}", std::process::id()));
-
-    fs::write(&temp_path, updated_service.as_bytes())?;
-
-    #[cfg(unix)]
-    if let Ok(orig_meta) = fs::metadata(service_path) {
-        let _ = fs::set_permissions(&temp_path, orig_meta.permissions());
-    }
-
-    if let Ok(f) = fs::File::open(&temp_path) {
-        let _ = f.sync_all();
-    }
-
-    fs::rename(&temp_path, service_path)?;
+    let service_backup_path =
+        persist_migration(service_path, dest_config, &service_content, &config)?;
 
     // 9. Operator notifications
     writeln!(
@@ -182,7 +161,7 @@ pub fn migrate_legacy_service(
         config_path: dest_config.to_path_buf(),
         service_path: service_path.to_path_buf(),
         service_backup_path,
-        config_backup_created: outcome.backup_created,
+        config_backup_created: false,
     })
 }
 
@@ -208,6 +187,95 @@ pub fn execute_legacy_migration(
         host,
         stderr,
     )
+}
+
+fn persist_migration(
+    service_path: &Path,
+    dest_config: &Path,
+    service_content: &str,
+    config: &rubix_config::Config,
+) -> io::Result<PathBuf> {
+    let updated_service =
+        rewrite_service_content(service_content, &dest_config.display().to_string());
+    if updated_service == service_content || !has_config_flag(&updated_service) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "could not identify service execution arguments",
+        ));
+    }
+    let parent = service_path.parent().unwrap_or_else(|| Path::new("."));
+    let service_meta = fs::symlink_metadata(service_path)?;
+    if !service_meta.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "service definition must be a regular file",
+        ));
+    }
+    let mut backup_service_path = service_path.as_os_str().to_owned();
+    backup_service_path.push(".bak");
+    let service_backup_path = PathBuf::from(backup_service_path);
+    preserve_or_create(&service_backup_path, service_content.as_bytes())?;
+    let mut staged_service = tempfile::NamedTempFile::new_in(parent)?;
+    staged_service.write_all(updated_service.as_bytes())?;
+    staged_service
+        .as_file()
+        .set_permissions(service_meta.permissions())?;
+    staged_service.as_file().sync_all()?;
+
+    let yaml = rubix_config::render_effective_yaml(config)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+    // A durable pending marker permits completion after interruption between the two renames.
+    let mut marker_name = service_path.as_os_str().to_owned();
+    marker_name.push(".migration-pending");
+    let marker_path = PathBuf::from(marker_name);
+    preserve_or_create(&marker_path, yaml.as_bytes())?;
+    fs::File::open(parent)?.sync_all()?;
+    let config_parent = dest_config.parent().unwrap_or_else(|| Path::new("."));
+    fs::create_dir_all(config_parent)?;
+    let mut staged_config = tempfile::NamedTempFile::new_in(config_parent)?;
+    staged_config.write_all(yaml.as_bytes())?;
+    staged_config.as_file().sync_all()?;
+    match staged_config.persist_noclobber(dest_config) {
+        Ok(_) => {},
+        Err(e) if e.error.kind() == io::ErrorKind::AlreadyExists => {
+            if !fs::symlink_metadata(dest_config)?.is_file()
+                || fs::read(dest_config)? != yaml.as_bytes()
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::AlreadyExists,
+                    "destination changed during migration; preserving it",
+                ));
+            }
+        },
+        Err(e) => return Err(e.error),
+    }
+    fs::File::open(config_parent)?.sync_all()?;
+    if let Err(e) = staged_service.persist(service_path) {
+        // Leave the marker and validated document so the same migration can resume safely.
+        return Err(e.error);
+    }
+    fs::File::open(parent)?.sync_all()?;
+    fs::remove_file(marker_path)?;
+    Ok(service_backup_path)
+}
+
+fn preserve_or_create(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(meta) if meta.is_file() && fs::read(path)? == bytes => Ok(()),
+        Ok(_) => Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "conflicting backup or migration marker; preserving it",
+        )),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            let mut staging =
+                tempfile::NamedTempFile::new_in(path.parent().unwrap_or_else(|| Path::new(".")))?;
+            staging.write_all(bytes)?;
+            staging.as_file().sync_all()?;
+            staging.persist_noclobber(path).map_err(|e| e.error)?;
+            Ok(())
+        },
+        Err(e) => Err(e),
+    }
 }
 
 #[cfg(test)]
