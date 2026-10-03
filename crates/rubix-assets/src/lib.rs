@@ -48,3 +48,6 @@ pub use materialize::{
     AssetLayout, EXECUTABLE_PERMISSIONS, MaterializationError, MaterializationLimits,
     MaterializationOutcome, MaterializedAsset, Materializer, PAYLOAD_PERMISSIONS,
 };
+
+mod selection;
+pub use selection::{AssetSelector, SelectedDelivery, SelectionError};
