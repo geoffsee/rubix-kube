@@ -15,6 +15,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
+pub use crate::upgrade_integrity::seal_backup;
 use rubix_config::semver::{compare_versions, parse_version, supports_config_file};
 
 /// Directory under the data path holding pre-upgrade backups.
@@ -87,6 +88,14 @@ impl Runner for ProcessRunner {
 
 /// Artifact-specific steps of a transition.
 pub trait TransitionBackend {
+    /// Check artifact rollback material before any recovery service effects.
+    fn validate_snapshot(&mut self, _dir: &Path) -> io::Result<()> {
+        Ok(())
+    }
+    /// Reconstruct crash-lost backend state from receipt and verified observations.
+    fn recover_transition(&mut self, _receipt: &UpgradeReceipt) -> io::Result<()> {
+        Ok(())
+    }
     fn current_version(&mut self) -> io::Result<String>;
     /// Fetch/verify the new artifact without mutating the running installation.
     fn prepare(&mut self, target: &str) -> io::Result<()>;
@@ -128,10 +137,10 @@ fn copy_tree(src: &Path, dst: &Path) -> io::Result<()> {
             fs::copy(entry.path(), &to)?;
         }
         // Do not silently omit state redirected outside this installation.
-        else if kind.is_symlink() {
+        else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "symlink in upgrade state",
+                "symlink or unsupported entry in upgrade state",
             ));
         }
     }
@@ -151,14 +160,14 @@ pub fn backup_state(
     reject_symlink_state(data_path, BACKUP_DIR)?;
     let parent = data_path.join(BACKUP_DIR);
     fs::create_dir_all(&parent)?;
-    let dir = tempfile::Builder::new()
+    let temporary = tempfile::Builder::new()
         .prefix(&format!("pre-upgrade-{from}-{stamp}-"))
-        .tempdir_in(parent)?
-        .keep();
+        .tempdir_in(parent)?;
+    let dir = temporary.path();
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&dir, fs::Permissions::from_mode(0o700))?;
+        fs::set_permissions(dir, fs::Permissions::from_mode(0o700))?;
     }
     for name in BACKED_UP_STATE_DIRS {
         let src = data_path.join(name);
@@ -169,7 +178,7 @@ pub fn backup_state(
     if let Some(cfg) = config.filter(|c| c.is_file()) {
         fs::copy(cfg, dir.join("config.yaml"))?;
     }
-    Ok(dir)
+    Ok(temporary.keep())
 }
 
 fn restore_state(data: &Path, config: Option<&Path>, backup: &Path) -> io::Result<()> {
@@ -390,9 +399,22 @@ pub fn run_upgrade(
             io::Error::new(cause.kind(), format!("stop failed: {cause}")),
         ));
     }
-    let backup = match backup_state(data_path, config, &from, stamp)
-        .and_then(|dir| backend.snapshot(&dir).map(|()| dir))
-    {
+    let backup = match backup_state(data_path, config, &from, stamp).and_then(|dir| {
+        if let Err(error) = backend
+            .snapshot(&dir)
+            .and_then(|()| backend.validate_snapshot(&dir))
+            .and_then(|()| seal_backup(&dir))
+        {
+            fs::remove_dir_all(&dir).map_err(|cleanup| {
+                io::Error::other(format!(
+                    "snapshot failed ({error}); partial backup cleanup failed ({cleanup}) at {}",
+                    dir.display()
+                ))
+            })?;
+            return Err(error);
+        }
+        Ok(dir)
+    }) {
         Ok(dir) => dir,
         Err(cause) => return Err(restart_after_failure(backend, cause)),
     };
@@ -516,16 +538,38 @@ pub fn find_active_receipt(data_path: &Path) -> io::Result<Option<UpgradeReceipt
     let committing = data_path.join(".upgrade-committing");
     let completed = data_path.join(".upgrade-completed");
 
-    if pending.exists() {
-        return parse_receipt_file(&pending, ReceiptKind::Pending).map(Some);
+    let mut active: Option<UpgradeReceipt> = None;
+    for (path, kind) in [
+        (pending, ReceiptKind::Pending),
+        (committing, ReceiptKind::Committing),
+        (completed, ReceiptKind::Completed),
+    ] {
+        match path.symlink_metadata() {
+            Err(e) if e.kind() == io::ErrorKind::NotFound => continue,
+            Err(e) => return Err(e),
+            Ok(meta) if !meta.is_file() => return Err(io::Error::other("unsafe upgrade receipt")),
+            Ok(_) => {},
+        }
+        let record = parse_receipt_file(&path, kind)?;
+        if let Some(first) = &active {
+            if kind == ReceiptKind::Completed {
+                return Err(io::Error::other(
+                    "completed and active upgrade receipts coexist; retaining evidence",
+                ));
+            }
+            if first.from != record.from
+                || first.target != record.target
+                || first.backup != record.backup
+            {
+                return Err(io::Error::other(
+                    "conflicting upgrade receipts; retaining evidence",
+                ));
+            }
+        } else {
+            active = Some(record);
+        }
     }
-    if committing.exists() {
-        return parse_receipt_file(&committing, ReceiptKind::Committing).map(Some);
-    }
-    if completed.exists() {
-        return parse_receipt_file(&completed, ReceiptKind::Completed).map(Some);
-    }
-    Ok(None)
+    Ok(active)
 }
 
 /// Failure cause when validating pre-upgrade backup integrity.
@@ -584,7 +628,10 @@ impl std::error::Error for BackupIntegrityError {}
 /// Ensures:
 /// 1. Path exists, is a directory, and is not a symlink.
 /// 2. Required directories `pki` and `kine/db` exist and are non-empty.
-/// 3. No symlinks are present within backed-up state.
+/// 3. The backup is private and its complete tree matches retained checksummed evidence.
+/// 4. No links or special entries are present, including intermediate directories.
+///
+/// This verifies byte preservation, not original SQLite/PKI semantic health.
 pub fn validate_backup_integrity(backup: &Path) -> Result<(), BackupIntegrityError> {
     let meta = match backup.symlink_metadata() {
         Ok(m) => m,
@@ -598,6 +645,17 @@ pub fn validate_backup_integrity(backup: &Path) -> Result<(), BackupIntegrityErr
     }
     if !meta.is_dir() {
         return Err(BackupIntegrityError::NotADirectory(backup.to_path_buf()));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = meta.permissions().mode() & 0o7777;
+        if mode != 0o700 {
+            return Err(BackupIntegrityError::InsecurePermissions {
+                path: backup.into(),
+                mode,
+            });
+        }
     }
 
     for dir in BACKED_UP_STATE_DIRS {
@@ -630,7 +688,7 @@ pub fn validate_backup_integrity(backup: &Path) -> Result<(), BackupIntegrityErr
             });
         }
     }
-    Ok(())
+    crate::upgrade_integrity::verify(backup).map_err(|e| BackupIntegrityError::Io(e.to_string()))
 }
 
 /// Outcome of executing operator recovery on an interrupted upgrade.
@@ -639,6 +697,35 @@ pub enum RecoveryOutcome {
     RolledBack { from: String, backup: PathBuf },
     Committed { target: String },
     AlreadyClean,
+}
+
+fn validate_recovery_source(
+    backend: &mut dyn TransitionBackend,
+    data: &Path,
+    receipt: &UpgradeReceipt,
+) -> io::Result<()> {
+    reject_symlink_state(data, BACKUP_DIR)?;
+    let root = data.join(BACKUP_DIR);
+    if receipt.backup.parent() != Some(root.as_path()) || receipt.backup.file_name().is_none() {
+        return Err(io::Error::other(
+            "recovery backup is outside the owned backup directory; retaining receipt",
+        ));
+    }
+    validate_backup_integrity(&receipt.backup).map_err(|e| io::Error::other(format!(
+        "recovery refused: backup at {} is invalid or unavailable ({e}); retaining receipt and data untouched for operator inspection", receipt.backup.display()
+    )))?;
+    backend.validate_snapshot(&receipt.backup)?;
+    backend.recover_transition(receipt)
+}
+
+fn clean_rollback_receipts(data: &Path, receipt: &UpgradeReceipt) -> io::Result<()> {
+    for name in [".upgrade-pending", ".upgrade-committing"] {
+        remove_receipt(data, &data.join(name)).map_err(|e| io::Error::new(e.kind(), format!(
+            "rollback to {} completed, but receipt cleanup failed ({e}); inspect {} and backup {} before retrying",
+            receipt.from, data.join(name).display(), receipt.backup.display()
+        )))?;
+    }
+    Ok(())
 }
 
 /// Executes operator recovery from an interrupted upgrade using retained receipts and backups.
@@ -660,6 +747,14 @@ pub fn recover_interrupted_upgrade(
         )?;
         return Ok(RecoveryOutcome::AlreadyClean);
     };
+    if classify_transition(&receipt.from, &receipt.target).is_err() {
+        return Err(io::Error::other(
+            "invalid recovery receipt versions; retaining receipt",
+        ));
+    }
+    if receipt.kind != ReceiptKind::Completed {
+        validate_recovery_source(backend, data_path, &receipt)?;
+    }
 
     match receipt.kind {
         ReceiptKind::Completed => {
@@ -682,9 +777,18 @@ pub fn recover_interrupted_upgrade(
                         stderr,
                         "  > Target installation is running; finalizing commit..."
                     )?;
-                    let _ = backend.commit();
-                    finish_commit_receipt(data_path, &receipt.path, &completed)?;
-                    writeln!(stderr, "  [ok] Upgrade committed to {}", receipt.target)?;
+                    backend.commit().map_err(|e| io::Error::new(e.kind(), format!(
+                        "target start succeeded but commit failed ({e}); retaining committing receipt {} and backup {}", receipt.path.display(), receipt.backup.display()
+                    )))?;
+                    if let Err(error) = finish_commit_receipt(data_path, &receipt.path, &completed)
+                    {
+                        let _ = writeln!(
+                            stderr,
+                            "  [warn] Upgrade committed; receipt cleanup incomplete ({error}); inspect retained receipts and backup {}",
+                            receipt.backup.display()
+                        );
+                    }
+                    let _ = writeln!(stderr, "  [ok] Upgrade committed to {}", receipt.target);
                     Ok(RecoveryOutcome::Committed {
                         target: receipt.target,
                     })
@@ -699,10 +803,11 @@ pub fn recover_interrupted_upgrade(
                             "cannot roll back interrupted commit: backup validation failed ({e}); retaining receipt and state for operator inspection"
                         ))
                     })?;
+                    backend.stop()?;
                     backend.restore(&receipt.backup)?;
                     restore_state(data_path, config, &receipt.backup)?;
                     backend.start()?;
-                    remove_receipt(data_path, &receipt.path)?;
+                    clean_rollback_receipts(data_path, &receipt)?;
                     writeln!(stderr, "  [ok] Rolled back to {}", receipt.from)?;
                     Ok(RecoveryOutcome::RolledBack {
                         from: receipt.from,
@@ -717,15 +822,8 @@ pub fn recover_interrupted_upgrade(
                 "  > Recovering interrupted upgrade (from {} to {})...",
                 receipt.from, receipt.target
             )?;
-            validate_backup_integrity(&receipt.backup).map_err(|e| {
-                io::Error::other(format!(
-                    "recovery refused: backup at {} is invalid or unavailable ({e}); retaining receipt and data untouched for operator inspection",
-                    receipt.backup.display()
-                ))
-            })?;
-
             // Stop current backend if running
-            let _ = backend.stop();
+            backend.stop()?;
 
             // Execute rollback to pre-upgrade backup
             backend.restore(&receipt.backup)?;
@@ -733,7 +831,7 @@ pub fn recover_interrupted_upgrade(
             backend.start()?;
 
             // Remove pending receipt
-            remove_receipt(data_path, &receipt.path)?;
+            clean_rollback_receipts(data_path, &receipt)?;
             writeln!(
                 stderr,
                 "  [ok] Rolled back to pre-upgrade state ({})",
@@ -771,6 +869,17 @@ impl<R: Runner> HostBackend<'_, R> {
 }
 
 impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
+    fn validate_snapshot(&mut self, dir: &Path) -> io::Result<()> {
+        if !dir.join("kubesolo.bin").symlink_metadata()?.is_file() {
+            return Err(io::Error::other("backup binary is not a regular file"));
+        }
+        if self.service_file.is_some() && !dir.join("service.unit").symlink_metadata()?.is_file() {
+            return Err(io::Error::other(
+                "backup service unit is not a regular file",
+            ));
+        }
+        Ok(())
+    }
     fn current_version(&mut self) -> io::Result<String> {
         let out = self
             .runner
@@ -801,7 +910,18 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
     }
 
     fn stop(&mut self) -> io::Result<()> {
-        self.svc("stop")
+        match self.svc("stop") {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                let inactive = !self.systemd
+                    && matches!(
+                        self.runner
+                            .status_code("service", &[self.service.clone(), "status".into()]),
+                        Ok(Some(3))
+                    );
+                if inactive { Ok(()) } else { Err(error) }
+            },
+        }
     }
 
     fn replace(&mut self, _target: &str) -> io::Result<()> {
@@ -813,19 +933,7 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
     }
 
     fn restore(&mut self, dir: &Path) -> io::Result<()> {
-        if let Err(error) = self.stop() {
-            // LSB init-script status 3 means the service is stopped. Other
-            // statuses, signals and probe failures do not prove quiescence.
-            let inactive = !self.systemd
-                && matches!(
-                    self.runner
-                        .status_code("service", &[self.service.clone(), "status".into()]),
-                    Ok(Some(3))
-                );
-            if !inactive {
-                return Err(error);
-            }
-        }
+        self.stop()?;
         atomic_copy_with_mode(&dir.join("kubesolo.bin"), &self.binary, true)?;
         if let (Some(unit), true) = (&self.service_file, dir.join("service.unit").is_file()) {
             atomic_copy(&dir.join("service.unit"), unit)?;
@@ -993,6 +1101,7 @@ pub struct ContainerBackend<'a, R: Runner> {
     replaced: bool,
     spec_path: Option<PathBuf>,
     target: Option<String>,
+    recovering_target: bool,
 }
 
 impl<'a, R: Runner> ContainerBackend<'a, R> {
@@ -1004,6 +1113,7 @@ impl<'a, R: Runner> ContainerBackend<'a, R> {
             replaced: false,
             spec_path: None,
             target: None,
+            recovering_target: false,
         }
     }
 
@@ -1026,6 +1136,58 @@ impl<'a, R: Runner> ContainerBackend<'a, R> {
 }
 
 impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
+    fn validate_snapshot(&mut self, dir: &Path) -> io::Result<()> {
+        ContainerSpec::parse(&fs::read_to_string(dir.join(CONTAINER_SPEC_FILE))?)
+            .map(|_| ())
+            .map_err(io::Error::other)
+    }
+
+    fn recover_transition(&mut self, receipt: &UpgradeReceipt) -> io::Result<()> {
+        let saved = ContainerSpec::parse(&fs::read_to_string(
+            receipt.backup.join(CONTAINER_SPEC_FILE),
+        )?)
+        .map_err(io::Error::other)?;
+        if saved.name != self.spec.name || saved.tag() != Some(receipt.from.as_str()) {
+            return Err(io::Error::other(
+                "container backup identity does not match receipt/installation",
+            ));
+        }
+        let name = saved.name.clone();
+        let old = format!("{name}-pre-upgrade");
+        let names = self.eng(&["ps", "-a", "--format", "{{.Names}}"])?;
+        let present = names.lines().any(|n| n == name);
+        let rollback = names.lines().any(|n| n == old);
+        if rollback {
+            let image = self.eng(&["inspect", "--format", "{{.Config.Image}}", &old])?;
+            if image.trim() != saved.image {
+                return Err(io::Error::other(
+                    "rollback container image does not match backup",
+                ));
+            }
+        }
+        if present {
+            let image = self.eng(&["inspect", "--format", "{{.Config.Image}}", &name])?;
+            let expected = if rollback || receipt.kind == ReceiptKind::Committing {
+                saved.with_version(&receipt.target).image
+            } else {
+                saved.image.clone()
+            };
+            if image.trim() != expected {
+                return Err(io::Error::other(
+                    "active container image does not match recovery phase",
+                ));
+            }
+        } else if !rollback || receipt.kind == ReceiptKind::Committing {
+            return Err(io::Error::other(
+                "recovery container is missing; retaining receipt",
+            ));
+        }
+        self.spec = saved;
+        self.replaced = rollback;
+        self.target = Some(receipt.target.clone());
+        self.recovering_target = rollback || receipt.kind == ReceiptKind::Committing;
+        Ok(())
+    }
     fn current_version(&mut self) -> io::Result<String> {
         self.spec
             .tag()
@@ -1044,7 +1206,17 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
 
     fn stop(&mut self) -> io::Result<()> {
         let name = self.spec.name.clone();
-        self.eng(&["stop", &name]).map(|_| ())
+        match self.eng(&["stop", &name]) {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                let names = self.eng(&["ps", "-a", "--format", "{{.Names}}"])?;
+                if names.lines().any(|n| n == name) {
+                    Err(error)
+                } else {
+                    Ok(())
+                }
+            },
+        }
     }
 
     fn replace(&mut self, target: &str) -> io::Result<()> {
@@ -1059,8 +1231,9 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
 
     fn start(&mut self) -> io::Result<()> {
         // After replace the new container is already running; before it, restart the old one.
-        if self.replaced {
+        if self.replaced || self.recovering_target {
             let name = self.spec.name.clone();
+            self.eng(&["start", &name])?;
             let status = self.eng(&["inspect", "--format", "{{.State.Running}}", &name])?;
             if status.trim() != "true" {
                 return Err(io::Error::other("replacement container is not running"));
@@ -1073,6 +1246,11 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
     }
 
     fn restore(&mut self, dir: &Path) -> io::Result<()> {
+        if self.recovering_target && !self.replaced {
+            return Err(io::Error::other(
+                "rollback container no longer exists; retaining commit receipt",
+            ));
+        }
         let (name, old) = (self.spec.name.clone(), self.old_name());
         if self.replaced {
             // A failed launch may not have created a container. Verify absence explicitly.
@@ -1087,6 +1265,7 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
             self.eng(&["rename", &old, &name])?;
             self.replaced = false;
         }
+        self.recovering_target = false;
         if let Some(path) = &self.spec_path {
             atomic_copy(&dir.join(CONTAINER_SPEC_FILE), path)?;
         }
@@ -1107,7 +1286,15 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
             staged.persist(path).map_err(|e| e.error)?;
         }
         let old = self.old_name();
-        self.eng(&["rm", &old])?;
+        if let Err(error) = self.eng(&["rm", &old]) {
+            if !self.recovering_target {
+                return Err(error);
+            }
+            let names = self.eng(&["ps", "-a", "--format", "{{.Names}}"])?;
+            if names.lines().any(|n| n == old) {
+                return Err(error);
+            }
+        }
         self.spec = next;
         Ok(())
     }
@@ -1121,6 +1308,9 @@ pub fn execute_upgrade(
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
     use std::time::{SystemTime, UNIX_EPOCH};
+    if options.recover {
+        return execute_recovery(options, inputs, stderr);
+    }
     writeln!(stderr, "\n  rubixctl  upgrade\n")?;
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1191,6 +1381,50 @@ pub fn execute_upgrade(
         Ok(_) => Ok(0),
         Err(e) => {
             writeln!(stderr, "  [fail] {e}")?;
+            Ok(1)
+        },
+    }
+}
+
+fn execute_recovery(
+    options: &crate::UpgradeOptions,
+    inputs: &mut dyn crate::CheckInputs,
+    stderr: &mut dyn Write,
+) -> io::Result<u8> {
+    let mut runner = ProcessRunner;
+    let spec_path = options.path.join(CONTAINER_SPEC_FILE);
+    let outcome = if spec_path.is_file() {
+        let spec =
+            ContainerSpec::parse(&fs::read_to_string(&spec_path)?).map_err(io::Error::other)?;
+        let mut backend =
+            ContainerBackend::new("docker", spec, &mut runner).with_spec_path(spec_path);
+        recover_interrupted_upgrade(&mut backend, &options.path, None, stderr)
+    } else {
+        let evidence = inputs.discover().map_err(io::Error::other)?;
+        let rubix_platform::Observation::Present(init) = rubix_platform::classify(&evidence).init
+        else {
+            return Err(io::Error::other("recovery requires a detected init system"));
+        };
+        let mut backend = HostBackend {
+            binary: PathBuf::from(crate::DEFAULT_INSTALL_PATH),
+            staged: PathBuf::new(),
+            service: SERVICE_NAME.into(),
+            runner: &mut runner,
+            systemd: init == rubix_platform::InitSystem::Systemd,
+            service_file: crate::migrate::service_file_path(init).map(PathBuf::from),
+            legacy_config: None,
+        };
+        recover_interrupted_upgrade(
+            &mut backend,
+            &options.path,
+            Some(Path::new(rubix_config::DEFAULT_CONFIG_PATH)),
+            stderr,
+        )
+    };
+    match outcome {
+        Ok(_) => Ok(0),
+        Err(error) => {
+            writeln!(stderr, "  [fail] {error}")?;
             Ok(1)
         },
     }

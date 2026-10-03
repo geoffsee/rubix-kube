@@ -18,14 +18,14 @@ use base64::prelude::BASE64_STANDARD;
 use rcgen::{BasicConstraints, CertificateParams, DnType, IsCa, Issuer, KeyPair, KeyUsagePurpose};
 use rubixctl::upgrade::{
     HostBackend, RecoveryOutcome, Runner, find_active_receipt, recover_interrupted_upgrade,
-    validate_backup_integrity,
+    run_upgrade, seal_backup, validate_backup_integrity,
 };
 use serde::{Deserialize, Serialize};
 use tempfile::{TempDir, tempdir};
 
 use crate::state_transition::datastore::compute_file_sha256;
 use crate::state_transition::pki::{KubeconfigFormat, parse_kubeconfig, verify_cert_chain};
-use crate::state_transition::storage::assert_pv_storage_preserved;
+use crate::state_transition::storage::{assert_pv_storage_preserved, scan_pv_storage};
 use crate::state_transition::versions::SupportedStartingVersion;
 
 /// Supported transition stages that can be interrupted during migration.
@@ -533,8 +533,15 @@ impl Runner for MockRunner {
 }
 
 /// Executes a failure rehearsal and operator recovery workflow on a disposable installation.
-#[allow(clippy::too_many_lines)]
 pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult> {
+    run_rehearsal_inner(scenario, false)
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_rehearsal_inner(
+    scenario: &RehearsalScenario,
+    damage_retained_state: bool,
+) -> io::Result<RehearsalResult> {
     let inst = DisposableInstallation::new(scenario.starting_version, scenario.kubeconfig_format)?;
 
     let mut runner = MockRunner {
@@ -553,6 +560,12 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
     };
 
     let stage = scenario.interrupt_stage;
+    let manifests_before = scan_pv_storage(&inst.manifests_dir)?;
+    let storage_before = scan_pv_storage(&inst.storage_dir)?;
+    let pki_before = scan_pv_storage(&inst.data_path.join("pki"))?;
+    let datastore_before = scan_pv_storage(&inst.data_path.join("kine/db"))?;
+    let binary_before = fs::read(&inst.binary_path)?;
+    let mut early_failure_verified = false;
     let mut receipt_observed = None;
     let mut backup_validated = false;
     let mut recovery_executed = false;
@@ -567,29 +580,118 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
 
     match stage {
         TransitionStage::Validation => {
-            // Fails before stopping or touching any files
-            diagnostic = Some("Validation check failed: target version mismatch".into());
+            diagnostic = Some(
+                run_upgrade(
+                    &mut backend,
+                    &inst.data_path,
+                    Some(&inst.config_path),
+                    "invalid-version",
+                    1,
+                    &mut Vec::new(),
+                )
+                .unwrap_err()
+                .to_string(),
+            );
+            early_failure_verified = backend.runner.calls.len() == 1;
         },
         TransitionStage::Preparation => {
             // Missing staged binary
             fs::remove_file(&inst.staged_binary_path)?;
-            diagnostic = Some("Preparation failed: staged binary not found".into());
+            diagnostic = Some(
+                run_upgrade(
+                    &mut backend,
+                    &inst.data_path,
+                    Some(&inst.config_path),
+                    &scenario.target_version,
+                    1,
+                    &mut Vec::new(),
+                )
+                .unwrap_err()
+                .to_string(),
+            );
+            early_failure_verified = backend.runner.calls.len() == 1;
         },
         TransitionStage::Quiesce => {
-            // Stop fails: old binary remains, no backup created
-            diagnostic = Some("Quiesce failed: unit failed to stop cleanly".into());
+            let mut failing = EarlyFailureBackend {
+                host: &mut backend,
+                stage,
+                data: &inst.data_path,
+            };
+            diagnostic = Some(
+                run_upgrade(
+                    &mut failing,
+                    &inst.data_path,
+                    Some(&inst.config_path),
+                    &scenario.target_version,
+                    1,
+                    &mut Vec::new(),
+                )
+                .unwrap_err()
+                .to_string(),
+            );
+            early_failure_verified = backend
+                .runner
+                .calls
+                .iter()
+                .any(|c| c == "systemctl start kubesolo");
         },
         TransitionStage::Snapshot => {
-            // Snapshot fails: partial backup quarantined, old unit restarted
-            fs::create_dir_all(&backup_dir)?;
-            fs::write(backup_dir.join("partial-data.tmp"), "incomplete")?;
-            diagnostic = Some("Snapshot failed: I/O error writing datastore".into());
+            let mut failing = EarlyFailureBackend {
+                host: &mut backend,
+                stage,
+                data: &inst.data_path,
+            };
+            diagnostic = Some(
+                run_upgrade(
+                    &mut failing,
+                    &inst.data_path,
+                    Some(&inst.config_path),
+                    &scenario.target_version,
+                    1,
+                    &mut Vec::new(),
+                )
+                .unwrap_err()
+                .to_string(),
+            );
+            early_failure_verified = backend
+                .runner
+                .calls
+                .iter()
+                .any(|c| c == "systemctl start kubesolo")
+                && fs::read_dir(inst.data_path.join("backups"))?
+                    .next()
+                    .is_none();
         },
         TransitionStage::ReceiptPending => {
-            // Snapshot succeeded, but writing .upgrade-pending failed
-            fs::create_dir_all(backup_dir.join("pki"))?;
-            fs::create_dir_all(backup_dir.join("kine/db"))?;
-            diagnostic = Some("Receipt persistence failed: disk quota exceeded".into());
+            let mut failing = EarlyFailureBackend {
+                host: &mut backend,
+                stage,
+                data: &inst.data_path,
+            };
+            diagnostic = Some(
+                run_upgrade(
+                    &mut failing,
+                    &inst.data_path,
+                    Some(&inst.config_path),
+                    &scenario.target_version,
+                    1,
+                    &mut Vec::new(),
+                )
+                .unwrap_err()
+                .to_string(),
+            );
+            // The injected directory obstructs persistence; no valid receipt exists.
+            fs::remove_dir(inst.data_path.join(".upgrade-pending"))?;
+            let retained: Vec<_> =
+                fs::read_dir(inst.data_path.join("backups"))?.collect::<io::Result<_>>()?;
+            backup_validated =
+                retained.len() == 1 && validate_backup_integrity(&retained[0].path()).is_ok();
+            early_failure_verified = backend
+                .runner
+                .calls
+                .iter()
+                .any(|c| c == "systemctl start kubesolo")
+                && backup_validated;
         },
         TransitionStage::ArtifactReplacement => {
             // Snapshot captured, receipt written, binary overwritten with corrupted file
@@ -640,6 +742,7 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
         TransitionStage::ReceiptCommitting => {
             // Target started, .upgrade-committing written, interrupted before commit
             create_pre_upgrade_backup(&inst, &backup_dir)?;
+            fs::write(&inst.binary_path, "committed target binary")?;
             let committing = inst.data_path.join(".upgrade-committing");
             let rec = format!(
                 "from={}\ntarget={}\nbackup={}\n",
@@ -652,7 +755,8 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
         },
         TransitionStage::Commit => {
             create_pre_upgrade_backup(&inst, &backup_dir)?;
-            let committing = inst.data_path.join(".upgrade-committing");
+            fs::write(&inst.binary_path, "committed target binary")?;
+            let committing = inst.data_path.join(".upgrade-completed");
             let rec = format!(
                 "from={}\ntarget={}\nbackup={}\n",
                 scenario.starting_version.as_str(),
@@ -660,18 +764,27 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
                 backup_dir.display()
             );
             fs::write(&committing, rec)?;
-            receipt_observed = Some(".upgrade-committing".into());
+            receipt_observed = Some(".upgrade-completed".into());
         },
         TransitionStage::PostCommitCleanup => {
+            fs::write(&inst.binary_path, "committed target binary")?;
             // Completed marker left on disk
             let completed = inst.data_path.join(".upgrade-completed");
-            fs::write(&completed, "completed")?;
+            fs::write(
+                &completed,
+                format!(
+                    "from={}\ntarget={}\nbackup={}\n",
+                    scenario.starting_version.as_str(),
+                    scenario.target_version,
+                    backup_dir.display()
+                ),
+            )?;
             receipt_observed = Some(".upgrade-completed".into());
         },
     }
 
     // Apply backup condition modifications
-    if stage.has_backup() {
+    if stage.is_mutating() && stage != TransitionStage::PostCommitCleanup {
         match scenario.backup_condition {
             BackupCondition::Valid => {
                 backup_validated = validate_backup_integrity(&backup_dir).is_ok();
@@ -705,6 +818,16 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
         }
     }
 
+    // Refusal must retain exact disk evidence, including active receipt bytes.
+    if damage_retained_state {
+        fs::write(inst.storage_dir.join("test-app-data.txt"), "lost PV data")?;
+        fs::write(
+            inst.manifests_dir.join("kube-apiserver.yaml"),
+            "changed manifest",
+        )?;
+    }
+    let before_recovery = disk_evidence(&inst)?;
+    let calls_before_recovery = backend.runner.calls.len();
     // Execute operator recovery
     let mut recovery_stderr = Vec::new();
     let recovery_result = recover_interrupted_upgrade(
@@ -798,13 +921,17 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
         storage_restored = pv_assert.all_checksums_match && pv_assert.all_permissions_match;
 
         // 6. Manifests domain:
-        manifests_restored = inst.manifests_dir.join("kube-apiserver.yaml").exists();
+        manifests_restored = scan_pv_storage(&inst.manifests_dir)? == manifests_before;
+        storage_restored =
+            storage_restored && scan_pv_storage(&inst.storage_dir)? == storage_before;
 
         // 7. Receipts cleaned:
         receipts_cleaned = find_active_receipt(&inst.data_path)?.is_none();
     } else if recovery_refused {
         // Recovery was refused due to corrupt/missing backup: receipts and diagnostics MUST be retained!
         receipts_cleaned = false; // Intentionally retained for operator inspection
+        recovery_refused = disk_evidence(&inst)? == before_recovery
+            && backend.runner.calls.len() == calls_before_recovery;
     }
 
     let overall_success = if scenario.backup_condition == BackupCondition::Valid {
@@ -819,10 +946,20 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
                 && receipts_cleaned
         } else if stage.is_mutating() {
             // Commit or post-commit stage: target is committed, receipts are cleaned
-            recovery_executed && receipts_cleaned
+            recovery_executed
+                && receipts_cleaned
+                && fs::read(&inst.binary_path)? == b"committed target binary"
+                && !backend.runner.calls.iter().any(|c| c.contains(" stop "))
         } else {
             // Pre-mutation stage: installation was never mutated
-            recovery_executed && receipts_cleaned
+            recovery_executed
+                && receipts_cleaned
+                && early_failure_verified
+                && fs::read(&inst.binary_path)? == binary_before
+                && scan_pv_storage(&inst.data_path.join("pki"))? == pki_before
+                && scan_pv_storage(&inst.data_path.join("kine/db"))? == datastore_before
+                && scan_pv_storage(&inst.manifests_dir)? == manifests_before
+                && scan_pv_storage(&inst.storage_dir)? == storage_before
         }
     } else {
         // Invalid backup: recovery must refuse without mutating
@@ -847,6 +984,26 @@ pub fn run_rehearsal(scenario: &RehearsalScenario) -> io::Result<RehearsalResult
         overall_success,
         known_limitations: version_recovery_limitations(scenario.starting_version),
     })
+}
+
+fn disk_evidence(
+    inst: &DisposableInstallation,
+) -> io::Result<std::collections::BTreeMap<PathBuf, crate::state_transition::storage::PvFileRecord>>
+{
+    use crate::state_transition::storage::PvEntryKind;
+    let mut entries = scan_pv_storage(inst.dir.path())?;
+    let lock = inst.data_path.join(".upgrade.lock");
+    entries.remove(
+        lock.strip_prefix(inst.dir.path())
+            .map_err(io::Error::other)?,
+    );
+    // Lock creation can change directory entry lengths, not their contents or modes.
+    for entry in entries.values_mut() {
+        if entry.entry_kind == PvEntryKind::Directory {
+            entry.size_bytes = 0;
+        }
+    }
+    Ok(entries)
 }
 
 fn create_pre_upgrade_backup(inst: &DisposableInstallation, backup_dir: &Path) -> io::Result<()> {
@@ -892,7 +1049,7 @@ fn create_pre_upgrade_backup(inst: &DisposableInstallation, backup_dir: &Path) -
         fs::copy(&inst.config_path, backup_dir.join("config.yaml"))?;
     }
 
-    Ok(())
+    seal_backup(backup_dir)
 }
 
 fn write_pending_receipt(
@@ -907,4 +1064,71 @@ fn write_pending_receipt(
         backup.display()
     );
     fs::write(pending, record)
+}
+
+/// Exercises actual pre-receipt failure handling; late-stage fixtures below are
+/// deliberately constructed disk states, not process-crash qualification.
+struct EarlyFailureBackend<'a, 'b> {
+    host: &'a mut HostBackend<'b, MockRunner>,
+    stage: TransitionStage,
+    data: &'a Path,
+}
+impl rubixctl::upgrade::TransitionBackend for EarlyFailureBackend<'_, '_> {
+    fn current_version(&mut self) -> io::Result<String> {
+        self.host.current_version()
+    }
+    fn prepare(&mut self, target: &str) -> io::Result<()> {
+        self.host.prepare(target)
+    }
+    fn stop(&mut self) -> io::Result<()> {
+        if self.stage == TransitionStage::Quiesce {
+            self.host
+                .runner
+                .calls
+                .push("systemctl stop kubesolo (injected failure)".into());
+            return Err(io::Error::other("injected stop failure"));
+        }
+        self.host.stop()
+    }
+    fn snapshot(&mut self, dir: &Path) -> io::Result<()> {
+        self.host.snapshot(dir)?;
+        if self.stage == TransitionStage::Snapshot {
+            fs::write(dir.join("partial-data.tmp"), "incomplete")?;
+            return Err(io::Error::other("injected snapshot failure"));
+        }
+        if self.stage == TransitionStage::ReceiptPending {
+            fs::create_dir(self.data.join(".upgrade-pending"))?;
+        }
+        Ok(())
+    }
+    fn replace(&mut self, target: &str) -> io::Result<()> {
+        self.host.replace(target)
+    }
+    fn start(&mut self) -> io::Result<()> {
+        self.host.start()
+    }
+    fn restore(&mut self, dir: &Path) -> io::Result<()> {
+        self.host.restore(dir)
+    }
+}
+
+#[cfg(test)]
+mod review_tests {
+    use super::*;
+
+    #[test]
+    fn rehearsal_detects_changed_retained_pv_and_manifest_contents() {
+        let scenario = RehearsalScenario {
+            starting_version: SupportedStartingVersion::V1_3_0,
+            target_version: "v1.4.0".into(),
+            kubeconfig_format: KubeconfigFormat::Yaml,
+            interrupt_stage: TransitionStage::ServiceStart,
+            backup_condition: BackupCondition::Valid,
+        };
+        let result = run_rehearsal_inner(&scenario, true).unwrap();
+        assert!(result.recovery_executed);
+        assert!(!result.storage_restored);
+        assert!(!result.manifests_restored);
+        assert!(!result.overall_success);
+    }
 }

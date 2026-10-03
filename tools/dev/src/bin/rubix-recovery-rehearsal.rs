@@ -150,7 +150,7 @@ fn run() -> Result<(), String> {
 
     println!("All migration failure rehearsal and operator recovery checks passed successfully.");
     println!(
-        "Production migration remains qualified within isolated fixture boundaries; live Linux cluster qualification remains separate."
+        "Synthetic filesystem and mocked-service checks passed; production migration remains unqualified."
     );
     Ok(())
 }

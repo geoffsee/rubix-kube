@@ -72,9 +72,9 @@ Evidence: Profiling compares candidate measurements to E01 budgets across startu
 Next step: Ingest verified paired Linux hardware captures for amd64 and arm64 to qualify E29; timestamp: 2026-10-03T23:00:00Z
 
 Work item: E30.02 (https://github.com/geoffsee/rubix-kube/issues/125); Parent criteria 2, 3
-Outcome: Completed
-Readiness: Done
+Outcome: Fixture implementation
+Readiness: Not qualified
 Ownership: Unassigned
 Stack: migration/recovery-rehearsal
-Evidence: Implemented disposable installation failure rehearsals and operator recovery across all supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1–v1.3.3) and 10 interrupted transition stages in rubixctl and rubix-dev. Validates restored state across 5 core domains: Configuration (restoring flags or 0600 YAML), PKI (rcgen CA signature verification), Datastore (Kine SQLite + WAL rollback), Workloads (manifest preservation), and Storage (PV directory and permission assertions). Dual-format client access verified across YAML and JSON kubeconfigs with cryptographic CA authentication. Fail-closed recovery refuses corrupted, empty, or symlinked backups without mutating disk state or deleting receipts. Version-specific operator procedures and limitations documented.
-Next step: None; timestamp: 2026-10-03T18:50:00Z
+Evidence: Synthetic filesystem fixtures cover historical starting versions and 11 lifecycle stages. Pre-receipt stages drive real run_upgrade failure handling with mocked services; later stages reconstruct interrupted disk states. Regressions compare original configuration, identity and opaque datastore bytes, complete manifests and PV inventories, and retained evidence on backup refusal. Fresh container backends exercise rollback and failed-commit retry against a stateful engine double. Snapshot checksums detect changed backups but do not establish original SQLite health or live application readiness. No production Kine transition, abrupt real-container interruption or live Linux migration was performed.
+Next step: Rehearse real interrupted Kine-backed transitions with retained executables, exact inputs and mTLS, measuring readiness and verifying backup source health before qualifying C14.

@@ -192,6 +192,7 @@ impl Default for UninstallOptions {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct UpgradeOptions {
+    pub recover: bool,
     pub version: String,
     pub path: PathBuf,
     pub offline_install: Option<PathBuf>,
@@ -202,6 +203,7 @@ pub struct UpgradeOptions {
 impl fmt::Debug for UpgradeOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("UpgradeOptions")
+            .field("recover", &self.recover)
             .field("version", &self.version)
             .field("path", &self.path)
             .field("offline_install", &self.offline_install)
@@ -217,6 +219,7 @@ impl fmt::Debug for UpgradeOptions {
 impl Default for UpgradeOptions {
     fn default() -> Self {
         Self {
+            recover: false,
             version: crate::artifact::DEFAULT_VERSION.to_string(),
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             offline_install: None,

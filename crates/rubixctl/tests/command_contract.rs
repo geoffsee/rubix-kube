@@ -1109,3 +1109,38 @@ fn kubeconfig_remove_is_selective_and_requires_name() {
     .unwrap();
     assert_eq!(code, 1);
 }
+
+#[test]
+fn upgrade_recovery_cli_does_not_prepare_or_download_an_artifact() {
+    let root = tempfile::tempdir().unwrap();
+    // A completed receipt needs no backend mutation. The recorded spec selects
+    // container mode but Docker is never invoked for receipt-only cleanup.
+    std::fs::write(
+        root.path().join("container.spec"),
+        "name=rubix\nimage=example/rubix:v1.3.0\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.path().join(".upgrade-completed"),
+        "from=v1.2.0\ntarget=v1.3.0\nbackup=/unused\n",
+    )
+    .unwrap();
+    let mut inputs = TestInputs::default();
+    let result = execute(
+        &args(&[
+            "upgrade",
+            "--recover",
+            "--path",
+            root.path().to_str().unwrap(),
+        ]),
+        &BTreeMap::new(),
+        "v1.3.0",
+        &mut inputs,
+        &mut Vec::new(),
+        &mut Vec::new(),
+    )
+    .unwrap();
+    assert_eq!(result, 0);
+    assert!(inputs.download_url_called.is_none());
+    assert!(!root.path().join(".upgrade-completed").exists());
+}

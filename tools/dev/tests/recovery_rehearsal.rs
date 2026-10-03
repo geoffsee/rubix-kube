@@ -279,6 +279,11 @@ fn test_backup_validation_detects_empty_state_directory() {
     let backup_dir = tmp.path().join("empty-backup");
     fs::create_dir_all(backup_dir.join("pki")).unwrap();
     fs::create_dir_all(backup_dir.join("kine/db")).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&backup_dir, fs::Permissions::from_mode(0o700)).unwrap();
+    }
 
     // pki and kine/db are empty directories
     let err = validate_backup_integrity(&backup_dir).unwrap_err();
