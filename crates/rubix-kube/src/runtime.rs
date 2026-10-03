@@ -410,13 +410,8 @@ impl NodeRuntime {
             PortainerAgentConfig::from_rubix_config(&builder.config().config().portainer, arch);
         if portainer_cfg.is_enabled() {
             let portainer_service = PortainerService::new(portainer_cfg, Arc::new(client));
-            let portainer_reg = PortainerAdapter::registration(
-                COMPONENT_PORTAINER,
-                portainer_service,
-                vec![COMPONENT_APISERVER.to_string()],
-                timeout,
-            );
-            builder = builder.register_component(portainer_reg);
+            builder = builder
+                .register_portainer(portainer_service, vec![COMPONENT_APISERVER.to_string()]);
         }
 
         builder.build()
