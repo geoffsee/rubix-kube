@@ -104,3 +104,18 @@ host interfaces. Specify `127.0.0.1:8080:80` for local access. User mappings may
 not add a binding for the built-in API server or enabled D2K port. Reinstalling
 recreates only the selected container, retaining its volume and reconciling its
 instance bridge MTU; a bridge still in use causes an explicit Engine error.
+
+Upgrade stages the artifact before stopping the selected deployment, then copies
+the quiesced `pki` and `kine/db` directories into a unique private backup. Failed
+replacement, migration, start or commit restores deployment artifacts, the
+configuration's previous presence and contents, and captured PKI/datastore state.
+Systemd unit changes are reloaded before start. Container upgrades persist their
+new version record and check that the replacement is running before discarding
+the previous container; this check does not establish Kubernetes readiness.
+
+An exclusive file lock serializes upgrades for a data path. Before replacement,
+`.upgrade-pending` records the source version, target and backup directory. An
+interruption retains that receipt and backup; subsequent upgrade attempts refuse
+to mutate the installation until the interrupted operation is recovered. These
+file and fake-runner checks do not qualify live Linux, Docker, datastore recovery
+or all supported init systems.

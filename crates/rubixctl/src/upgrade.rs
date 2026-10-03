@@ -1,6 +1,6 @@
 //! Version-aware host and container upgrades (`rubixctl upgrade`).
 //!
-//! The engine in [`run_upgrade`] sequences prepare → backup → stop → replace → start and rolls
+//! The engine in [`run_upgrade`] sequences prepare → stop → backup → replace → start and rolls
 //! back automatically when replace or start fails. Backends own artifact-specific effects:
 //!
 //! - [`HostBackend`] replaces only the configured Rubix binary and its service.
@@ -22,7 +22,7 @@ pub const BACKUP_DIR: &str = "backups";
 /// Container spec file recorded at install time under the data path.
 pub const CONTAINER_SPEC_FILE: &str = "container.spec";
 /// State directories (relative to the data path) captured before an upgrade.
-pub const BACKED_UP_STATE_DIRS: [&str; 2] = ["pki", "db"];
+pub const BACKED_UP_STATE_DIRS: [&str; 2] = ["pki", "kine/db"];
 /// Default service unit name.
 pub const SERVICE_NAME: &str = "kubesolo";
 
@@ -106,6 +106,7 @@ pub enum UpgradeOutcome {
 
 fn copy_tree(src: &Path, dst: &Path) -> io::Result<()> {
     fs::create_dir_all(dst)?;
+    fs::set_permissions(dst, fs::metadata(src)?.permissions())?;
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         let to = dst.join(entry.file_name());
@@ -115,7 +116,13 @@ fn copy_tree(src: &Path, dst: &Path) -> io::Result<()> {
         } else if kind.is_file() {
             fs::copy(entry.path(), &to)?;
         }
-        // Symlinks are not followed so the backup cannot escape the data path.
+        // Do not silently omit state redirected outside this installation.
+        else if kind.is_symlink() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "symlink in upgrade state",
+            ));
+        }
     }
     Ok(())
 }
@@ -127,10 +134,20 @@ pub fn backup_state(
     from: &str,
     stamp: u64,
 ) -> io::Result<PathBuf> {
-    let dir = data_path
-        .join(BACKUP_DIR)
-        .join(format!("pre-upgrade-{from}-{stamp}"));
-    fs::create_dir_all(&dir)?;
+    for name in BACKED_UP_STATE_DIRS {
+        reject_symlink_state(data_path, name)?;
+    }
+    let parent = data_path.join(BACKUP_DIR);
+    fs::create_dir_all(&parent)?;
+    let dir = tempfile::Builder::new()
+        .prefix(&format!("pre-upgrade-{from}-{stamp}-"))
+        .tempdir_in(parent)?
+        .keep();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&dir, fs::Permissions::from_mode(0o700))?;
+    }
     for name in BACKED_UP_STATE_DIRS {
         let src = data_path.join(name);
         if src.is_dir() {
@@ -143,6 +160,92 @@ pub fn backup_state(
     Ok(dir)
 }
 
+fn restore_state(data: &Path, config: Option<&Path>, backup: &Path) -> io::Result<()> {
+    for name in BACKED_UP_STATE_DIRS {
+        reject_symlink_state(data, name)?;
+        let path = data.join(name);
+        remove_owned_entry(&path)?;
+        let saved = backup.join(name);
+        if saved.is_dir() {
+            copy_tree(&saved, &path)?;
+        }
+    }
+    if let Some(path) = config {
+        let saved = backup.join("config.yaml");
+        if saved.is_file() {
+            atomic_copy(&saved, path)?;
+        } else {
+            remove_owned_entry(path)?;
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn reject_symlink_state(data: &Path, relative: &str) -> io::Result<()> {
+    let mut path = data.to_path_buf();
+    for part in std::iter::once(None).chain(Path::new(relative).components().map(Some)) {
+        if let Some(part) = part {
+            path.push(part);
+        }
+        match path.symlink_metadata() {
+            Ok(meta) if meta.file_type().is_symlink() => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("refusing symlinked state path {}", path.display()),
+                ));
+            },
+            Ok(_) => {},
+            Err(e) if e.kind() == io::ErrorKind::NotFound => break,
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn remove_owned_entry(path: &Path) -> io::Result<()> {
+    match path.symlink_metadata() {
+        Ok(meta) if meta.is_dir() => fs::remove_dir_all(path),
+        Ok(_) => fs::remove_file(path),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e),
+    }
+}
+
+fn atomic_copy(source: &Path, destination: &Path) -> io::Result<()> {
+    atomic_copy_with_mode(source, destination, false)
+}
+
+fn atomic_copy_with_mode(source: &Path, destination: &Path, executable: bool) -> io::Result<()> {
+    let mut staged =
+        tempfile::NamedTempFile::new_in(destination.parent().unwrap_or(Path::new(".")))?;
+    let mut file = fs::File::open(source)?;
+    io::copy(&mut file, staged.as_file_mut())?;
+    staged
+        .as_file()
+        .set_permissions(file.metadata()?.permissions())?;
+    #[cfg(unix)]
+    if executable {
+        use std::os::unix::fs::PermissionsExt;
+        staged
+            .as_file()
+            .set_permissions(fs::Permissions::from_mode(0o755))?;
+    }
+    #[cfg(not(unix))]
+    let _ = executable;
+    staged.as_file().sync_all()?;
+    staged.persist(destination).map_err(|e| e.error)?;
+    Ok(())
+}
+
+fn restart_after_failure(backend: &mut dyn TransitionBackend, cause: io::Error) -> io::Error {
+    match backend.start() {
+        Ok(()) => cause,
+        Err(restart) => io::Error::other(format!(
+            "{cause}; restarting previous deployment failed: {restart}"
+        )),
+    }
+}
+
 /// Runs a transition; failures after the service is stopped restore and restart the old unit.
 pub fn run_upgrade(
     backend: &mut dyn TransitionBackend,
@@ -152,6 +255,24 @@ pub fn run_upgrade(
     stamp: u64,
     stderr: &mut dyn Write,
 ) -> io::Result<UpgradeOutcome> {
+    fs::create_dir_all(data_path)?;
+    let mut options = fs::OpenOptions::new();
+    options.read(true).write(true).create(true).truncate(false);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let lock = options.open(data_path.join(".upgrade.lock"))?;
+    lock.try_lock()
+        .map_err(|e| io::Error::other(format!("another upgrade owns this installation: {e}")))?;
+    let pending = data_path.join(".upgrade-pending");
+    if pending.exists() {
+        return Err(io::Error::other(format!(
+            "an interrupted upgrade requires recovery using {}",
+            pending.display()
+        )));
+    }
     let from = backend.current_version()?;
     match classify_transition(&from, target).map_err(io::Error::other)? {
         Transition::Same => {
@@ -169,30 +290,45 @@ pub fn run_upgrade(
     backend
         .prepare(target)
         .map_err(|e| io::Error::new(e.kind(), format!("prepare failed: {e}")))?;
-    // Stage 2: backup before any mutation.
-    let backup = backup_state(data_path, config, &from, stamp)?;
-    backend.snapshot(&backup)?;
-    writeln!(stderr, "  [ok] State backed up to {}", backup.display())?;
-
-    // Stage 3: stop/replace/start with rollback.
+    // Quiesce writers before copying the datastore, then restart on backup failure.
     if let Err(cause) = backend.stop() {
-        // Nothing replaced; ensure the old unit is running again.
-        let _ = backend.start();
-        return Err(io::Error::new(
-            cause.kind(),
-            format!("stop failed: {cause}"),
+        return Err(restart_after_failure(
+            backend,
+            io::Error::new(cause.kind(), format!("stop failed: {cause}")),
         ));
     }
+    let backup = match backup_state(data_path, config, &from, stamp)
+        .and_then(|dir| backend.snapshot(&dir).map(|()| dir))
+    {
+        Ok(dir) => dir,
+        Err(cause) => return Err(restart_after_failure(backend, cause)),
+    };
+    let record = format!(
+        "from={from}\ntarget={target}\nbackup={}\n",
+        backup.display()
+    );
+    let save_receipt = (|| {
+        let mut marker = tempfile::NamedTempFile::new_in(data_path)?;
+        marker.write_all(record.as_bytes())?;
+        marker.as_file().sync_all()?;
+        marker.persist_noclobber(&pending).map_err(|e| e.error)?;
+        fs::File::open(data_path)?.sync_all()
+    })();
+    if let Err(e) = save_receipt {
+        return Err(restart_after_failure(backend, e));
+    }
+    // From this point interruptions leave a durable recovery receipt and preserve the backup.
     let attempt = backend
         .replace(target)
         .and_then(|()| {
             backend.migrate_config(target, stderr)?;
             Ok(())
         })
-        .and_then(|()| backend.start());
+        .and_then(|()| backend.start())
+        .and_then(|()| backend.commit());
     match attempt {
         Ok(()) => {
-            backend.commit()?;
+            fs::remove_file(&pending)?;
             writeln!(stderr, "  [ok] Upgraded to {target}")?;
             if supports_config_file(target) {
                 writeln!(
@@ -203,9 +339,11 @@ pub fn run_upgrade(
             Ok(UpgradeOutcome::Upgraded { backup })
         },
         Err(cause) => {
-            writeln!(stderr, "  [fail] {cause}; rolling back to {from}")?;
+            // Reporting failure must never prevent recovery after the deployment was stopped.
+            let _ = writeln!(stderr, "  [fail] {cause}; rolling back to {from}");
             backend
                 .restore(&backup)
+                .and_then(|()| restore_state(data_path, config, &backup))
                 .and_then(|()| backend.start())
                 .map_err(|e| {
                     io::Error::other(format!(
@@ -213,6 +351,7 @@ pub fn run_upgrade(
                         backup.display()
                     ))
                 })?;
+            fs::remove_file(&pending)?;
             writeln!(stderr, "  [ok] Rolled back to {from}")?;
             Ok(UpgradeOutcome::RolledBack {
                 backup,
@@ -280,15 +419,7 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
     }
 
     fn replace(&mut self, _target: &str) -> io::Result<()> {
-        // Same-directory temp + rename: a crash leaves either the old or the new binary.
-        let tmp = self.binary.with_extension("upgrade-new");
-        fs::copy(&self.staged, &tmp)?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&tmp, fs::Permissions::from_mode(0o755))?;
-        }
-        fs::rename(&tmp, &self.binary)
+        atomic_copy_with_mode(&self.staged, &self.binary, true)
     }
 
     fn start(&mut self) -> io::Result<()> {
@@ -296,16 +427,16 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
     }
 
     fn restore(&mut self, dir: &Path) -> io::Result<()> {
-        let tmp = self.binary.with_extension("upgrade-restore");
-        fs::copy(dir.join("kubesolo.bin"), &tmp)?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&tmp, fs::Permissions::from_mode(0o755))?;
-        }
-        fs::rename(&tmp, &self.binary)?;
+        self.stop()?;
+        atomic_copy_with_mode(&dir.join("kubesolo.bin"), &self.binary, true)?;
         if let (Some(unit), true) = (&self.service_file, dir.join("service.unit").is_file()) {
-            fs::copy(dir.join("service.unit"), unit)?;
+            atomic_copy(&dir.join("service.unit"), unit)?;
+            let mut marker = unit.as_os_str().to_owned();
+            marker.push(".migration-pending");
+            remove_owned_entry(Path::new(&marker))?;
+            if self.systemd {
+                self.runner.run("systemctl", &["daemon-reload".into()])?;
+            }
         }
         Ok(())
     }
@@ -321,10 +452,11 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
             None,
             stderr,
         )?;
-        Ok(matches!(
-            result,
-            crate::ServiceMigrationResult::Migrated { .. }
-        ))
+        let migrated = matches!(result, crate::ServiceMigrationResult::Migrated { .. });
+        if migrated && self.systemd {
+            self.runner.run("systemctl", &["daemon-reload".into()])?;
+        }
+        Ok(migrated)
     }
 }
 
@@ -461,6 +593,8 @@ pub struct ContainerBackend<'a, R: Runner> {
     pub spec: ContainerSpec,
     pub runner: &'a mut R,
     replaced: bool,
+    spec_path: Option<PathBuf>,
+    target: Option<String>,
 }
 
 impl<'a, R: Runner> ContainerBackend<'a, R> {
@@ -470,7 +604,16 @@ impl<'a, R: Runner> ContainerBackend<'a, R> {
             spec,
             runner,
             replaced: false,
+            spec_path: None,
+            target: None,
         }
+    }
+
+    /// Associates the installed version record with this deployment.
+    #[must_use]
+    pub fn with_spec_path(mut self, path: PathBuf) -> Self {
+        self.spec_path = Some(path);
+        self
     }
 
     fn old_name(&self) -> String {
@@ -510,6 +653,7 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
         let (name, old) = (self.spec.name.clone(), self.old_name());
         self.eng(&["rename", &name, &old])?;
         self.replaced = true;
+        self.target = Some(target.to_string());
         let args = self.spec.with_version(target).run_args(&name);
         let engine = self.engine.clone();
         self.runner.run(&engine, &args).map(|_| ())
@@ -518,6 +662,11 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
     fn start(&mut self) -> io::Result<()> {
         // After replace the new container is already running; before it, restart the old one.
         if self.replaced {
+            let name = self.spec.name.clone();
+            let status = self.eng(&["inspect", "--format", "{{.State.Running}}", &name])?;
+            if status.trim() != "true" {
+                return Err(io::Error::other("replacement container is not running"));
+            }
             Ok(())
         } else {
             let name = self.spec.name.clone();
@@ -525,19 +674,44 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
         }
     }
 
-    fn restore(&mut self, _dir: &Path) -> io::Result<()> {
+    fn restore(&mut self, dir: &Path) -> io::Result<()> {
         let (name, old) = (self.spec.name.clone(), self.old_name());
         if self.replaced {
-            let _ = self.eng(&["rm", "-f", &name]);
+            // A failed launch may not have created a container. Verify absence explicitly.
+            if self.eng(&["rm", "-f", &name]).is_err() {
+                let names = self.eng(&["ps", "-a", "--format", "{{.Names}}"])?;
+                if names.lines().any(|n| n == name) {
+                    return Err(io::Error::other(
+                        "cannot remove failed replacement container",
+                    ));
+                }
+            }
             self.eng(&["rename", &old, &name])?;
             self.replaced = false;
+        }
+        if let Some(path) = &self.spec_path {
+            atomic_copy(&dir.join(CONTAINER_SPEC_FILE), path)?;
         }
         Ok(())
     }
 
     fn commit(&mut self) -> io::Result<()> {
+        let target = self
+            .target
+            .as_deref()
+            .ok_or_else(|| io::Error::other("no staged container version"))?;
+        let next = self.spec.with_version(target);
+        if let Some(path) = &self.spec_path {
+            let mut staged =
+                tempfile::NamedTempFile::new_in(path.parent().unwrap_or(Path::new(".")))?;
+            staged.write_all(next.render().as_bytes())?;
+            staged.as_file().sync_all()?;
+            staged.persist(path).map_err(|e| e.error)?;
+        }
         let old = self.old_name();
-        self.eng(&["rm", &old]).map(|_| ())
+        self.eng(&["rm", &old])?;
+        self.spec = next;
+        Ok(())
     }
 }
 
@@ -561,7 +735,8 @@ pub fn execute_upgrade(
             .and_then(|t| ContainerSpec::parse(&t));
         match spec {
             Ok(spec) => {
-                let mut backend = ContainerBackend::new("docker", spec, &mut runner);
+                let mut backend = ContainerBackend::new("docker", spec, &mut runner)
+                    .with_spec_path(spec_path.clone());
                 run_upgrade(
                     &mut backend,
                     &options.path,
@@ -582,13 +757,23 @@ pub fn execute_upgrade(
                 return Ok(1);
             },
         };
+        let evidence = inputs.discover().map_err(io::Error::other)?;
+        let init = match rubix_platform::classify(&evidence).init {
+            rubix_platform::Observation::Present(init) => init,
+            rubix_platform::Observation::Absent => {
+                return Err(io::Error::other("init system absent"));
+            },
+            rubix_platform::Observation::Unknown(e) => {
+                return Err(io::Error::other(format!("init detection failed: {e:?}")));
+            },
+        };
         let mut backend = HostBackend {
             binary: PathBuf::from(crate::DEFAULT_INSTALL_PATH),
             staged,
             service: SERVICE_NAME.to_string(),
             runner: &mut runner,
-            systemd: Path::new("/run/systemd/system").is_dir(),
-            service_file: Some(PathBuf::from("/etc/systemd/system/kubesolo.service")),
+            systemd: init == rubix_platform::InitSystem::Systemd,
+            service_file: crate::migrate::service_file_path(init).map(PathBuf::from),
             legacy_config: None,
         };
         run_upgrade(
@@ -677,6 +862,9 @@ mod tests {
         fn run(&mut self, program: &str, args: &[String]) -> io::Result<String> {
             let line = format!("{program} {}", args.join(" "));
             self.log.push(line.clone());
+            if args.first().is_some_and(|a| a == "inspect") {
+                return Ok("true".into());
+            }
             if self
                 .fail_on
                 .as_ref()
@@ -706,8 +894,8 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         fs::create_dir_all(d.path().join("pki")).unwrap();
         fs::write(d.path().join("pki/ca.crt"), "CA").unwrap();
-        fs::create_dir_all(d.path().join("db")).unwrap();
-        fs::write(d.path().join("db/state.db"), "DB").unwrap();
+        fs::create_dir_all(d.path().join("kine/db")).unwrap();
+        fs::write(d.path().join("kine/db/state.db"), "DB").unwrap();
         d
     }
 
@@ -761,7 +949,7 @@ mod tests {
         );
         assert_eq!(fs::read_to_string(backup.join("pki/ca.crt")).unwrap(), "CA");
         assert_eq!(
-            fs::read_to_string(backup.join("db/state.db")).unwrap(),
+            fs::read_to_string(backup.join("kine/db/state.db")).unwrap(),
             "DB"
         );
         assert_eq!(
