@@ -10,7 +10,9 @@
 //! - daemon: PID file and log paths
 //! - foreground: command execution spec
 
-use crate::service::escaping::{escape_openrc_double_quote, escape_systemd_env, shell_quote};
+use crate::service::escaping::{
+    escape_openrc_double_quote, escape_systemd_env, shell_quote, systemd_quote,
+};
 use crate::service::lifecycle::UnsupportedTargetError;
 use crate::service::model::{
     CustomServicePaths, InitBackend, RunMode, ServiceConfig, ServiceDefinition, ServiceFile,
@@ -33,6 +35,25 @@ fn resolve_prefixed(root: Option<&Path>, default_rel: &str) -> PathBuf {
 pub fn generate_service_definition(
     config: &ServiceConfig,
 ) -> Result<ServiceDefinition, UnsupportedTargetError> {
+    if config.name.is_empty()
+        || matches!(config.name.as_str(), "." | "..")
+        || !config
+            .name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
+    {
+        return Err(UnsupportedTargetError::InvalidServiceName);
+    }
+    for key in config.environment.keys() {
+        let mut bytes = key.bytes();
+        if !bytes
+            .next()
+            .is_some_and(|byte| byte.is_ascii_alphabetic() || byte == b'_')
+            || !bytes.all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        {
+            return Err(UnsupportedTargetError::InvalidEnvironmentKey);
+        }
+    }
     match config.run_mode {
         RunMode::Service => {
             let backend = config
@@ -90,10 +111,10 @@ fn generate_systemd(config: &ServiceConfig) -> ServiceDefinition {
     let mut exec_args = String::new();
     for arg in &config.args {
         exec_args.push(' ');
-        exec_args.push_str(&shell_quote(arg));
+        exec_args.push_str(&systemd_quote(arg));
     }
 
-    let binary = config.binary_path.to_string_lossy();
+    let binary = systemd_quote(&config.binary_path.to_string_lossy());
 
     let content = format!(
         r"[Unit]
@@ -181,8 +202,9 @@ fn generate_openrc(config: &ServiceConfig) -> ServiceDefinition {
         command_args.push_str(&shell_quote(arg));
     }
 
-    let binary = config.binary_path.to_string_lossy();
-    let pid_str = pid_file.to_string_lossy();
+    let command_args = escape_openrc_double_quote(&command_args);
+    let binary = escape_openrc_double_quote(&config.binary_path.to_string_lossy());
+    let pid_str = escape_openrc_double_quote(&pid_file.to_string_lossy());
 
     let script_content = format!(
         r#"#!/sbin/openrc-run
@@ -326,6 +348,16 @@ fn render_sysvinit_script(
     log_str: &str,
     env_exports: &str,
 ) -> String {
+    let launch = escape_openrc_double_quote(&format!(
+        "exec {}{} >> {} 2>&1",
+        shell_quote(binary),
+        exec_args,
+        shell_quote(log_str)
+    ));
+    let binary = escape_openrc_double_quote(binary);
+    let exec_args = escape_openrc_double_quote(exec_args);
+    let pid_str = escape_openrc_double_quote(pid_str);
+    let log_str = escape_openrc_double_quote(log_str);
     format!(
         r#"#!/bin/sh
 ### BEGIN INIT INFO
@@ -345,18 +377,23 @@ DAEMON="{binary}"
 DAEMON_ARGS="{exec_args}"
 PIDFILE="{pid_str}"
 LOGFILE="{log_str}"
+LAUNCH="{launch}"
 
-[ -x "$DAEMON" ] || exit 0
+case "$1" in
+    status) ;;
+    start|restart|force-reload) [ -x "$DAEMON" ] || exit 1 ;;
+    *) [ -x "$DAEMON" ] || exit 0 ;;
+esac
 
 {env_exports}start() {{
     echo "Starting $DESC: $NAME"
     start-stop-daemon --start --background --make-pidfile \
-        --pidfile "$PIDFILE" --startas /bin/sh -- -c "exec $DAEMON $DAEMON_ARGS >> '$LOGFILE' 2>&1"
+        --pidfile "$PIDFILE" --startas /bin/sh -- -c "$LAUNCH"
 }}
 
 stop() {{
     echo "Stopping $DESC: $NAME"
-    start-stop-daemon --stop --quiet --oknodo --pidfile "$PIDFILE" --retry 10
+    start-stop-daemon --stop --quiet --oknodo --pidfile "$PIDFILE" --retry 10 || return $?
     rm -f "$PIDFILE"
 }}
 
@@ -378,8 +415,7 @@ case "$1" in
         stop
         ;;
     restart|force-reload)
-        stop
-        start
+        stop && start
         ;;
     status)
         status
@@ -390,7 +426,7 @@ case "$1" in
         ;;
 esac
 
-exit 0
+exit $?
 "#
     )
 }
@@ -426,7 +462,7 @@ fn generate_upstart(config: &ServiceConfig) -> ServiceDefinition {
         exec_args.push_str(&shell_quote(arg));
     }
 
-    let binary = config.binary_path.to_string_lossy();
+    let binary = shell_quote(&config.binary_path.to_string_lossy());
 
     let content = format!(
         r#"description "Rubix Kubernetes Node"
@@ -495,7 +531,7 @@ fn generate_runit(config: &ServiceConfig) -> ServiceDefinition {
         exec_args.push_str(&shell_quote(arg));
     }
 
-    let binary = config.binary_path.to_string_lossy();
+    let binary = shell_quote(&config.binary_path.to_string_lossy());
 
     let run_content = format!(
         r"#!/bin/sh
@@ -561,7 +597,7 @@ fn generate_s6(config: &ServiceConfig) -> ServiceDefinition {
         exec_args.push_str(&shell_quote(arg));
     }
 
-    let binary = config.binary_path.to_string_lossy();
+    let binary = shell_quote(&config.binary_path.to_string_lossy());
 
     let run_content = format!(
         r"#!/bin/sh

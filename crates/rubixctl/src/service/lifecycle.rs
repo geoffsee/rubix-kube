@@ -7,10 +7,21 @@ use std::path::PathBuf;
 /// Explicit errors for unsupported targets or execution modes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UnsupportedTargetError {
+    /// Service name is unsafe for generated paths or definitions.
+    InvalidServiceName,
+    /// An environment key is not a portable shell identifier.
+    InvalidEnvironmentKey,
     /// Service run mode requested, but no init backend was detected or specified.
     MissingInitBackend,
     /// Unknown or unsupported init system name.
     UnknownInitSystem(String),
+    /// Unknown execution mode.
+    UnknownRunMode(String),
+    /// Process control is not implemented for this mode/action.
+    UnsupportedAction {
+        mode: RunMode,
+        action: LifecycleAction,
+    },
     /// Container mode cannot be managed via host init service commands.
     ContainerModeNotHostService,
     /// Non-Linux OS requested for Linux service installation.
@@ -20,6 +31,15 @@ pub enum UnsupportedTargetError {
 impl fmt::Display for UnsupportedTargetError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidServiceName => f.write_str("invalid service name"),
+            Self::InvalidEnvironmentKey => f.write_str("invalid environment key"),
+            Self::UnknownRunMode(mode) => write!(
+                f,
+                "unsupported run mode '{mode}'; supported modes: service, daemon, foreground, container"
+            ),
+            Self::UnsupportedAction { mode, action } => {
+                write!(f, "{action:?} is not implemented for {mode} mode")
+            },
             Self::MissingInitBackend => {
                 write!(
                     f,
@@ -533,60 +553,18 @@ fn plan_daemon_action(
     action: LifecycleAction,
     config: &ServiceConfig,
 ) -> Result<LifecyclePlan, UnsupportedTargetError> {
-    let def = crate::service::generator::generate_service_definition(config)?;
-    let pid_file = def.primary_file.clone();
-
-    match action {
-        LifecycleAction::Install | LifecycleAction::Start | LifecycleAction::Restart => {
-            Ok(LifecyclePlan {
-                action,
-                backend: None,
-                run_mode: RunMode::Daemon,
-                definition: Some(def),
-                commands: Vec::new(),
-                cleanup_paths: Vec::new(),
-            })
-        },
-        LifecycleAction::Uninstall | LifecycleAction::Stop => Ok(LifecyclePlan {
-            action,
-            backend: None,
-            run_mode: RunMode::Daemon,
-            definition: None,
-            commands: Vec::new(),
-            cleanup_paths: vec![pid_file],
-        }),
-        LifecycleAction::Status => Ok(LifecyclePlan {
-            action,
-            backend: None,
-            run_mode: RunMode::Daemon,
-            definition: None,
-            commands: Vec::new(),
-            cleanup_paths: Vec::new(),
-        }),
-    }
+    Err(UnsupportedTargetError::UnsupportedAction {
+        mode: config.run_mode,
+        action,
+    })
 }
 
 fn plan_foreground_action(
     action: LifecycleAction,
     config: &ServiceConfig,
 ) -> Result<LifecyclePlan, UnsupportedTargetError> {
-    let def = crate::service::generator::generate_service_definition(config)?;
-    match action {
-        LifecycleAction::Start => Ok(LifecyclePlan {
-            action,
-            backend: None,
-            run_mode: RunMode::Foreground,
-            definition: Some(def),
-            commands: Vec::new(),
-            cleanup_paths: Vec::new(),
-        }),
-        _ => Ok(LifecyclePlan {
-            action,
-            backend: None,
-            run_mode: RunMode::Foreground,
-            definition: None,
-            commands: Vec::new(),
-            cleanup_paths: Vec::new(),
-        }),
-    }
+    Err(UnsupportedTargetError::UnsupportedAction {
+        mode: config.run_mode,
+        action,
+    })
 }

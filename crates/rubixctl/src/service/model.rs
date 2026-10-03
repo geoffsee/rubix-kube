@@ -102,7 +102,7 @@ impl FromStr for RunMode {
             "daemon" => Ok(Self::Daemon),
             "foreground" => Ok(Self::Foreground),
             "container" => Ok(Self::Container),
-            _ => Err(UnsupportedTargetError::UnknownInitSystem(name.to_string())),
+            _ => Err(UnsupportedTargetError::UnknownRunMode(name.to_string())),
         }
     }
 }

@@ -28,7 +28,9 @@ impl Default for BuildInfoCollector {
         Self {
             version: env!("CARGO_PKG_VERSION").to_string(),
             commit: option_env!("GIT_COMMIT").unwrap_or("unknown").to_string(),
-            rust_version: "1.97.1".to_string(),
+            rust_version: option_env!("RUBIX_RUSTC_VERSION")
+                .unwrap_or("unknown")
+                .to_string(),
             arch: match std::env::consts::ARCH {
                 "aarch64" => "arm64".to_string(),
                 "x86_64" => "amd64".to_string(),
