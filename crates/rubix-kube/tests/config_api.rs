@@ -483,3 +483,121 @@ fn restrictive_umask_socket_child() {
         assert_eq!(mode(&socket_path), 0o600);
     });
 }
+
+async fn incomplete_patch(harness: &TestServerHarness) -> UnixStream {
+    let mut stream = UnixStream::connect(&harness.socket_path).await.unwrap();
+    let body = r#"{"logging":{"debug":true}}"#;
+    stream.write_all(format!(
+        "PATCH /api/v1/config HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: {}\r\n\r\n", body.len()
+    ).as_bytes()).await.unwrap();
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    stream
+}
+
+async fn assert_connection_closed_without_write(mut stream: UnixStream, config_path: &Path) {
+    let _ = stream.write_all(br#"{"logging":{"debug":true}}"#).await;
+    let mut response = Vec::new();
+    let _ = tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        stream.read_to_end(&mut response),
+    )
+    .await
+    .expect("connection closed within deadline");
+    assert!(!String::from_utf8_lossy(&response).contains("200 OK"));
+    assert!(
+        !rubix_config::read_file(config_path)
+            .unwrap()
+            .unwrap()
+            .config
+            .logging
+            .debug
+    );
+}
+
+#[tokio::test]
+async fn shutdown_closes_incomplete_requests_before_reporting_stopped() {
+    let mut harness = TestServerHarness::start(&Config::default());
+    let stream = incomplete_patch(&harness).await;
+    tokio::time::timeout(std::time::Duration::from_secs(1), harness.shutdown())
+        .await
+        .unwrap();
+    assert!(!harness.socket_path.exists());
+    assert_connection_closed_without_write(stream, &harness.config_path).await;
+}
+
+#[tokio::test]
+async fn cancellation_aborts_connections_and_unlinks_owned_socket() {
+    let harness = TestServerHarness::start(&Config::default());
+    let stream = incomplete_patch(&harness).await;
+    harness.task.abort();
+    assert!(harness.task.await.unwrap_err().is_cancelled());
+    assert!(!harness.socket_path.exists());
+    assert_connection_closed_without_write(stream, &harness.config_path).await;
+}
+
+#[tokio::test]
+async fn dropped_shutdown_sender_stops_server_and_connections() {
+    let harness = TestServerHarness::start(&Config::default());
+    let stream = incomplete_patch(&harness).await;
+    drop(harness.shutdown_tx);
+    tokio::time::timeout(std::time::Duration::from_secs(1), harness.task)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert!(!harness.socket_path.exists());
+    assert_connection_closed_without_write(stream, &harness.config_path).await;
+}
+
+#[tokio::test]
+async fn unpolled_future_and_listener_drop_preserve_replacement_paths() {
+    let tmp = tempfile::tempdir().unwrap();
+    let socket_path = tmp.path().join("s.sock");
+    let server = ConfigApiServer::new(
+        socket_path.clone(),
+        tmp.path().join("config.yaml"),
+        HostContext::default(),
+    );
+    let listener = server.bind().unwrap();
+    let (_tx, rx) = watch::channel(false);
+    drop(server.clone().run_with_listener(listener, rx));
+    assert!(!socket_path.exists());
+
+    let listener = server.bind().unwrap();
+    fs::remove_file(&socket_path).unwrap();
+    fs::write(&socket_path, b"unrelated replacement").unwrap();
+    drop(listener);
+    assert_eq!(fs::read(&socket_path).unwrap(), b"unrelated replacement");
+}
+
+#[tokio::test]
+async fn validation_redacts_keys_and_optional_map_edits_reach_all_handlers() {
+    let mut harness = TestServerHarness::start(&Config::default());
+    let body = r#"{"portainer":{"edgeKey":"review-synthetic-secret"},"kubernetes":{"kubelet":{"systemReserved":{"cpu":"100m"}}}}"#;
+    for (method, uri) in [
+        ("POST", "/api/v1/config:validate"),
+        ("PUT", "/api/v1/config"),
+        ("PATCH", "/api/v1/config"),
+    ] {
+        let (status, _, raw, parsed) =
+            request_json(&harness.socket_path, method, uri, body, &[]).await;
+        assert_eq!(status, 200, "{raw}");
+        assert_eq!(parsed["config"]["portainer"]["edgeKey"], "***");
+        assert!(!raw.contains("review-synthetic-secret"));
+        assert_eq!(
+            parsed["config"]["kubernetes"]["kubelet"]["systemReserved"]["cpu"],
+            "100m"
+        );
+        if method == "POST" {
+            let stored = rubix_config::read_file(&harness.config_path)
+                .unwrap()
+                .unwrap()
+                .config;
+            assert!(stored.portainer.edge_key.is_empty());
+            assert!(stored.kubernetes.kubelet.system_reserved.is_none());
+        } else {
+            request_json(&harness.socket_path, "DELETE", "/api/v1/config", "", &[]).await;
+        }
+    }
+    harness.shutdown().await;
+}

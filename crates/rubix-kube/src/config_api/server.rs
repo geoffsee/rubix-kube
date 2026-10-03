@@ -3,9 +3,10 @@
 use std::convert::Infallible;
 use std::fs::{self, Permissions};
 use std::io;
-use std::os::unix::fs::{FileTypeExt, PermissionsExt};
+use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
 
 use bytes::Bytes;
 use http::{Method, Request, Response, StatusCode, header};
@@ -20,9 +21,38 @@ use rubix_config::{
 };
 use tokio::net::UnixListener;
 use tokio::sync::{Mutex, watch};
+use tokio::task::JoinSet;
+
+/// Bound listener and its owned socket inode. Dropping it closes and unlinks
+/// the socket, including when the server future is never polled or is cancelled.
+#[derive(Debug)]
+pub struct ConfigApiListener {
+    listener: UnixListener,
+    socket: SocketGuard,
+}
+
+#[derive(Debug)]
+struct SocketGuard {
+    path: PathBuf,
+    device: u64,
+    inode: u64,
+}
+
+impl Drop for SocketGuard {
+    fn drop(&mut self) {
+        if let Ok(meta) = fs::symlink_metadata(&self.path)
+            && meta.file_type().is_socket()
+            && meta.dev() == self.device
+            && meta.ino() == self.inode
+        {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
+}
 
 /// Maximum accepted request body size (1 MiB).
 pub const MAX_BODY_BYTES: usize = 1024 * 1024;
+const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Verifies and cleans up any existing stale socket inode at `path`.
 ///
@@ -94,25 +124,46 @@ impl ConfigApiServer {
     }
 
     /// Binds the Unix listener on `socket_path` with 0600 permissions.
-    pub fn bind(&self) -> io::Result<UnixListener> {
+    pub fn bind(&self) -> io::Result<ConfigApiListener> {
         clear_stale_socket(&self.socket_path)?;
         if let Some(parent) = self.socket_path.parent() {
             fs::create_dir_all(parent)?;
         }
         let listener = UnixListener::bind(&self.socket_path)?;
+        let meta = fs::symlink_metadata(&self.socket_path)?;
+        let owned = ConfigApiListener {
+            listener,
+            socket: SocketGuard {
+                path: self.socket_path.clone(),
+                device: meta.dev(),
+                inode: meta.ino(),
+            },
+        };
         fs::set_permissions(&self.socket_path, Permissions::from_mode(0o600))?;
-        Ok(listener)
+        Ok(owned)
     }
 
     /// Runs the HTTP server using an already-bound listener until shutdown is signaled.
     pub async fn run_with_listener(
         self,
-        listener: UnixListener,
+        listener: ConfigApiListener,
         mut shutdown_rx: watch::Receiver<bool>,
     ) -> io::Result<()> {
         let server = Arc::new(self);
+        let ConfigApiListener { listener, socket } = listener;
+        let mut connections = JoinSet::new();
         loop {
+            if *shutdown_rx.borrow() {
+                break;
+            }
             tokio::select! {
+                biased;
+                changed = shutdown_rx.changed() => {
+                    if changed.is_err() || *shutdown_rx.borrow() {
+                        break;
+                    }
+                }
+                _ = connections.join_next(), if !connections.is_empty() => {}
                 res = listener.accept() => {
                     let (stream, _) = match res {
                         Ok(conn) => conn,
@@ -125,7 +176,7 @@ impl ConfigApiServer {
                     let io = TokioIo::new(stream);
                     let s = server.clone();
 
-                    tokio::spawn(async move {
+                    connections.spawn(async move {
                         let service = service_fn(move |req: Request<Incoming>| {
                             let s = s.clone();
                             async move {
@@ -141,16 +192,22 @@ impl ConfigApiServer {
                         }
                     });
                 }
-                _ = shutdown_rx.changed() => {
-                    if *shutdown_rx.borrow() {
-                        break;
-                    }
-                }
             }
         }
 
-        // Clean up socket file on clean shutdown
-        let _ = fs::remove_file(&server.socket_path);
+        // Closing the listener and aborting owned connections also interrupts
+        // incomplete bodies and idle keepalive streams. Join cancellation before
+        // reporting shutdown so no connection can persist a later write.
+        drop(listener);
+        tokio::time::timeout(SHUTDOWN_TIMEOUT, connections.shutdown())
+            .await
+            .map_err(|_| {
+                io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "config API connection cleanup timed out",
+                )
+            })?;
+        drop(socket);
         Ok(())
     }
 
@@ -549,7 +606,9 @@ impl ConfigApiServer {
         };
 
         let changed = diff_configs(&stored, &candidate);
-        let body = format_api_response(&candidate, &changed);
+        let mut response_config = candidate;
+        redact_secrets(&mut response_config);
+        let body = format_api_response(&response_config, &changed);
 
         Response::builder()
             .status(StatusCode::OK)

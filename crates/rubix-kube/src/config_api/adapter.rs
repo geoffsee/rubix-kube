@@ -56,30 +56,29 @@ impl Adapter for ConfigApiAdapter {
             };
 
             let (shutdown_tx, shutdown_rx) = watch::channel(false);
-            let server = self.server.clone();
-            let server_task =
-                tokio::spawn(async move { server.run_with_listener(listener, shutdown_rx).await });
-
             if !context.ready() {
-                let _ = shutdown_tx.send(true);
-                let _ = server_task.await;
                 return Err(AdapterError {
                     code: "config_api_readiness_rejected",
                 });
             }
 
+            // Keep the server in this adapter's future. Supervisor cancellation
+            // drops its listener guard and aborts its owned connection tasks.
+            let server = self.server.run_with_listener(listener, shutdown_rx);
+            tokio::pin!(server);
             loop {
-                match context.changed().await {
-                    StopPhase::Running => {},
-                    StopPhase::Graceful | StopPhase::Force => {
-                        let _ = shutdown_tx.send(true);
-                        break;
-                    },
+                tokio::select! {
+                    result = &mut server => {
+                        return result.map_err(|_| AdapterError { code: "config_api_server_error" });
+                    }
+                    phase = context.changed() => {
+                        if phase != StopPhase::Running {
+                            let _ = shutdown_tx.send(true);
+                            return server.await.map_err(|_| AdapterError { code: "config_api_server_error" });
+                        }
+                    }
                 }
             }
-
-            let _ = server_task.await;
-            Ok(())
         })
     }
 }

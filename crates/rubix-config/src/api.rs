@@ -133,9 +133,15 @@ fn merge_patch_values(
     patch: &serde_json::Value,
     defaults: &serde_json::Value,
 ) {
-    if let (serde_json::Value::Object(target_map), serde_json::Value::Object(patch_map)) =
-        (target, patch)
-    {
+    if let serde_json::Value::Object(patch_map) = patch {
+        // RFC 7386: an object patch first replaces a non-object target with an
+        // empty object. Optional configuration maps initially serialize as null.
+        if !target.is_object() {
+            *target = serde_json::Value::Object(serde_json::Map::new());
+        }
+        let target_map = target
+            .as_object_mut()
+            .expect("object target established above");
         let default_map = defaults.as_object();
         for (key, patch_v) in patch_map {
             if patch_v.is_null() {
@@ -399,5 +405,66 @@ mod tests {
             "portainer": { "edgeKey": "real-key" }
         });
         assert!(!has_redacted_secrets(&ok_patch));
+    }
+}
+
+#[cfg(test)]
+mod merge_regressions {
+    use super::*;
+
+    #[test]
+    fn object_patches_populate_null_maps_for_patch_and_put() {
+        let initial = Config::default();
+        let value = serde_json::json!({"kubernetes":{"kubelet":{
+            "systemReserved":{"cpu":"100m"},
+            "cpuManager":{"policyOptions":{"full-pcpus-only":"true"}}
+        }}});
+        for candidate in [
+            apply_merge_patch(&initial, &value),
+            apply_put_replacement(&initial, &value),
+        ] {
+            let candidate = candidate.unwrap();
+            assert_eq!(
+                candidate.kubernetes.kubelet.system_reserved.unwrap()["cpu"],
+                "100m"
+            );
+            assert_eq!(
+                candidate
+                    .kubernetes
+                    .kubelet
+                    .cpu_manager
+                    .policy_options
+                    .unwrap()["full-pcpus-only"],
+                "true"
+            );
+        }
+    }
+
+    #[test]
+    fn patch_removes_map_members_and_rejects_object_for_scalar_fields() {
+        let populated = apply_merge_patch(
+            &Config::default(),
+            &serde_json::json!({
+                "kubernetes":{"kubelet":{"systemReserved":{"cpu":"100m","memory":"64Mi"}}}
+            }),
+        )
+        .unwrap();
+        let patched = apply_merge_patch(
+            &populated,
+            &serde_json::json!({
+                "kubernetes":{"kubelet":{"systemReserved":{"cpu":null}}}
+            }),
+        )
+        .unwrap();
+        let map = patched.kubernetes.kubelet.system_reserved.unwrap();
+        assert!(!map.contains_key("cpu"));
+        assert_eq!(map["memory"], "64Mi");
+        assert!(
+            apply_merge_patch(
+                &Config::default(),
+                &serde_json::json!({"logging":{"debug":{}}})
+            )
+            .is_err()
+        );
     }
 }
