@@ -1082,9 +1082,12 @@ fn kubeconfig_remove_is_selective_and_requires_name() {
     assert_eq!(code, 0);
     assert!(engine.calls.is_empty());
     let written = std::fs::read_to_string(&path).unwrap();
-    assert!(!written.contains("name: dev"));
-    assert!(written.contains("name: other"));
-    assert!(!written.contains("current-context: dev"));
+    assert!(!written.contains("name: dev") && !written.contains("\"name\": \"dev\""));
+    assert!(written.contains("name: other") || written.contains("\"name\": \"other\""));
+    assert!(
+        !written.contains("current-context: dev")
+            && !written.contains("\"current-context\": \"dev\"")
+    );
 
     let code = rubixctl::kubeconfig::execute_kubeconfig_with_engine(
         &endpoint_opts("remove", None, &path),
