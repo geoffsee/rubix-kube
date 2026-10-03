@@ -37,7 +37,10 @@ pub fn unquote_shell_value(val: &str) -> String {
 /// Checks if a service content line or definition already contains `--config`.
 pub fn has_config_flag(content: &str) -> bool {
     let re = Regex::new(SERVICE_FLAG_REGEX).expect("valid regex");
-    for mat in re.find_iter(content) {
+    for mat in argument_lines(content)
+        .into_iter()
+        .flat_map(|(_, line)| re.find_iter(line))
+    {
         let flag_str = mat.as_str();
         let name_part = flag_str
             .strip_prefix("--")
@@ -134,6 +137,10 @@ fn legacy_arguments(line: &str) -> Vec<LegacyArgument> {
             missing_value = true;
             String::new()
         };
+        // Expansions and escapes depend on the service manager's runtime context.
+        if value.contains(['$', '%', '`', '\\']) {
+            missing_value = true;
+        }
         // Include surrounding whole-token quotes, but leave an assignment's outer quotes intact.
         if range.start > 0 && (range.start < 2 || line.as_bytes()[range.start - 2] != b'=') {
             let quote = line.as_bytes()[range.start - 1];
@@ -165,6 +172,8 @@ fn argument_lines(content: &str) -> Vec<(usize, &str)> {
                 || trimmed.starts_with("command_args=")
                 || trimmed.starts_with("DAEMON_ARGS=")
                 || trimmed.starts_with("exec ")
+                || trimmed.starts_with("kubesolo ")
+                || trimmed.starts_with("rubix-kube ")
                 || trimmed.starts_with("start-stop-daemon ")
                 || continuing
                 || trimmed.starts_with("--")
