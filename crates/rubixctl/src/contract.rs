@@ -175,6 +175,7 @@ impl fmt::Debug for InstallOptions {
 pub struct UninstallOptions {
     pub path: PathBuf,
     pub purge: bool,
+    pub keep_config: bool,
     pub force: bool,
 }
 
@@ -183,6 +184,7 @@ impl Default for UninstallOptions {
         Self {
             path: PathBuf::from(crate::artifact::DEFAULT_DATA_PATH),
             purge: false,
+            keep_config: false,
             force: false,
         }
     }
@@ -334,6 +336,7 @@ pub trait CommandHandler {
     ) -> io::Result<u8> {
         let kind = crate::cleanup::CleanupKind::Uninstall {
             purge: options.purge,
+            keep_config: options.keep_config,
         };
         crate::cleanup::execute_cleanup(kind, &options.path, options.force, stderr)
     }
