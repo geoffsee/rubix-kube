@@ -67,6 +67,7 @@ users:
   "apiVersion": "v1",
   "kind": "Config",
   "current-context": "admin@kubesolo",
+  "contexts": [{"name":"admin@kubesolo", "context":{"cluster":"kubesolo", "user":"admin"}}],
   "clusters": [
     {
       "name": "kubesolo",

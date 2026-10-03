@@ -54,6 +54,26 @@ pub fn has_config_flag(content: &str) -> bool {
     false
 }
 
+/// Resolve a single literal absolute config argument from active service command fields.
+/// Runtime expansions and ambiguous arguments cannot establish an offline verification path.
+pub fn service_config_path(content: &str) -> Result<std::path::PathBuf, String> {
+    let re = Regex::new(r#"(?:^|\s)["']?--config(?:=|\s+)("[^"]*"|'[^']*'|[^\s"']+)"#)
+        .expect("valid regex");
+    let paths: Vec<_> = argument_lines(content)
+        .into_iter()
+        .flat_map(|(_, line)| re.captures_iter(line))
+        .map(|capture| unquote_shell_value(&capture[1]))
+        .collect();
+    let [value] = paths.as_slice() else {
+        return Err("service requires exactly one literal --config path".into());
+    };
+    let path = std::path::PathBuf::from(value);
+    if !path.is_absolute() || value.contains(['$', '%', '`', '\\']) {
+        return Err("service --config path must be absolute without runtime expansions".into());
+    }
+    Ok(path)
+}
+
 /// Information about a known `KubeSolo` flag definition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum FlagKind {
