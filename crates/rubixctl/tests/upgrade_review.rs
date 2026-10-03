@@ -26,6 +26,12 @@ impl Runner for Recorded {
             return Err(io::Error::other("injected failure"));
         }
         if args.first().is_some_and(|arg| arg == "inspect") {
+            if args
+                .last()
+                .is_some_and(|name| name.ends_with("-pre-upgrade"))
+            {
+                return Ok("false".into());
+            }
             return Ok(self.running.to_string());
         }
         Ok("v1.2.0".into())
@@ -844,11 +850,15 @@ fn recovery_prevalidation_rejects_changed_bytes_missing_artifacts_and_unsafe_ent
 }
 
 #[derive(Debug)]
+// Independent failure injection switches in the engine double, not production state.
+#[allow(clippy::struct_excessive_bools)]
 struct RecoveryEngine {
     containers: std::collections::BTreeMap<String, (String, bool)>,
     fail_stop: bool,
     fail_commit: bool,
     fail_start_once: bool,
+    fail_rollback_stop: bool,
+    rollback_stop_unconfirmed: bool,
     calls: Vec<Vec<String>>,
 }
 impl Runner for RecoveryEngine {
@@ -874,11 +884,20 @@ impl Runner for RecoveryEngine {
                 })
             },
             "stop" if self.fail_stop => Err(io::Error::other("stop failed")),
+            "stop" if self.fail_rollback_stop && name.ends_with("-pre-upgrade") => {
+                Err(io::Error::other("rollback container stop failed"))
+            },
             "start" if self.fail_start_once => {
                 self.fail_start_once = false;
                 Err(io::Error::other("injected target start failure"))
             },
             "stop" | "start" => {
+                if args[0] == "stop"
+                    && name.ends_with("-pre-upgrade")
+                    && self.rollback_stop_unconfirmed
+                {
+                    return Ok(String::new());
+                }
                 self.containers
                     .get_mut(name)
                     .ok_or_else(|| io::Error::other("missing"))?
@@ -886,6 +905,15 @@ impl Runner for RecoveryEngine {
                 Ok(String::new())
             },
             "rename" => {
+                if self
+                    .containers
+                    .get(&args[1])
+                    .is_some_and(|(_, running)| *running)
+                {
+                    return Err(io::Error::other(
+                        "cannot restore from a running rollback container",
+                    ));
+                }
                 let value = self
                     .containers
                     .remove(&args[1])
@@ -921,6 +949,10 @@ fn fresh_container_recovery_reconstructs_rollback_and_retains_failed_commit_for_
         "image-mismatch",
         "dual-marker",
         "commit-start-failure",
+        "old-running",
+        "old-stop-failure",
+        "old-stop-unconfirmed",
+        "committing-old-running",
     ] {
         let dir = data();
         let spec = ContainerSpec::parse(
@@ -934,7 +966,7 @@ fn fresh_container_recovery_reconstructs_rollback_and_retains_failed_commit_for_
         seal_backup(&backup).unwrap();
         let committing = matches!(
             phase,
-            "committing" | "committed-crash" | "commit-start-failure"
+            "committing" | "committed-crash" | "commit-start-failure" | "committing-old-running"
         );
         let receipt = dir.path().join(if committing {
             ".upgrade-committing"
@@ -959,8 +991,16 @@ fn fresh_container_recovery_reconstructs_rollback_and_retains_failed_commit_for_
             fail_stop: phase == "stop-failure",
             fail_commit: phase == "committing",
             fail_start_once: phase == "commit-start-failure",
+            fail_rollback_stop: phase == "old-stop-failure",
+            rollback_stop_unconfirmed: phase == "old-stop-unconfirmed",
             calls: Vec::new(),
         };
+        if matches!(
+            phase,
+            "old-running" | "old-stop-failure" | "old-stop-unconfirmed" | "committing-old-running"
+        ) {
+            engine.containers.get_mut("rubix-pre-upgrade").unwrap().1 = true;
+        }
         let installed = if phase == "committed-crash" {
             engine.containers.remove("rubix-pre-upgrade");
             let installed = spec.with_version("v1.3.0");
@@ -982,9 +1022,12 @@ fn fresh_container_recovery_reconstructs_rollback_and_retains_failed_commit_for_
                 recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new());
             if phase == "committing" {
                 assert!(outcome.unwrap_err().to_string().contains("commit failed"));
-            } else if matches!(phase, "stop-failure" | "image-mismatch") {
+            } else if matches!(
+                phase,
+                "stop-failure" | "image-mismatch" | "old-stop-failure" | "old-stop-unconfirmed"
+            ) {
                 assert!(outcome.is_err());
-            } else if phase == "committed-crash" {
+            } else if matches!(phase, "committed-crash" | "committing-old-running") {
                 assert!(matches!(
                     outcome.unwrap(),
                     RecoveryOutcome::Committed { .. }
@@ -996,14 +1039,21 @@ fn fresh_container_recovery_reconstructs_rollback_and_retains_failed_commit_for_
                 ));
             }
         }
-        if matches!(phase, "stop-failure" | "image-mismatch") {
+        if matches!(
+            phase,
+            "stop-failure" | "image-mismatch" | "old-stop-failure" | "old-stop-unconfirmed"
+        ) {
             assert!(receipt.exists());
             assert_eq!(
                 fs::read(dir.path().join("kine/db/state.db")).unwrap(),
                 b"dirty"
             );
             assert!(engine.containers.contains_key("rubix-pre-upgrade"));
-        } else if phase == "committed-crash" {
+            if matches!(phase, "old-stop-failure" | "old-stop-unconfirmed") {
+                assert!(engine.containers.contains_key("rubix"));
+                assert!(!engine.calls.iter().any(|args| args[0] == "rm"));
+            }
+        } else if matches!(phase, "committed-crash" | "committing-old-running") {
             assert!(!receipt.exists());
             assert!(!engine.containers.contains_key("rubix-pre-upgrade"));
             assert_eq!(

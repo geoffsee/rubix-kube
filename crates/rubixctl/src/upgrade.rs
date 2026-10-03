@@ -1133,6 +1133,18 @@ impl<'a, R: Runner> ContainerBackend<'a, R> {
         let engine = self.engine.clone();
         self.runner.run(&engine, &args)
     }
+
+    fn quiesce_rollback_container(&mut self) -> io::Result<()> {
+        let old = self.old_name();
+        self.eng(&["stop", &old])?;
+        let running = self.eng(&["inspect", "--format", "{{.State.Running}}", &old])?;
+        if running.trim() != "false" {
+            return Err(io::Error::other(
+                "rollback container quiescence is not confirmed",
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
@@ -1231,6 +1243,9 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
 
     fn start(&mut self) -> io::Result<()> {
         // After replace the new container is already running; before it, restart the old one.
+        if self.recovering_target && self.replaced {
+            self.quiesce_rollback_container()?;
+        }
         if self.replaced || self.recovering_target {
             let name = self.spec.name.clone();
             self.eng(&["start", &name])?;
@@ -1253,6 +1268,9 @@ impl<R: Runner> TransitionBackend for ContainerBackend<'_, R> {
         }
         let (name, old) = (self.spec.name.clone(), self.old_name());
         if self.replaced {
+            // Reconstructed rollback containers can have restarted since the
+            // original quiesce. Prove this writer is stopped before any restore.
+            self.quiesce_rollback_container()?;
             // A failed launch may not have created a container. Verify absence explicitly.
             if self.eng(&["rm", "-f", &name]).is_err() {
                 let names = self.eng(&["ps", "-a", "--format", "{{.Names}}"])?;
@@ -1495,6 +1513,12 @@ mod tests {
             let line = format!("{program} {}", args.join(" "));
             self.log.push(line.clone());
             if args.first().is_some_and(|a| a == "inspect") {
+                if args
+                    .last()
+                    .is_some_and(|name| name.ends_with("-pre-upgrade"))
+                {
+                    return Ok("false".into());
+                }
                 return Ok("true".into());
             }
             if self
