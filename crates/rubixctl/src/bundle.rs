@@ -31,6 +31,7 @@ pub struct BundleSpec {
     pub version: String,
     pub architecture: Architecture,
     pub libc: Libc,
+    pub variant: Variant,
     pub inputs: Vec<BundleInput>,
     pub output_dir: PathBuf,
 }
@@ -50,11 +51,9 @@ pub fn build_offline_bundle(spec: &BundleSpec) -> Result<PathBuf, String> {
     let cell = Matrix::NODE_VARIANTS
         .iter()
         .find(|c| {
-            c.architecture == spec.architecture
-                && c.libc == spec.libc
-                && c.variant == Variant::Offline
+            c.architecture == spec.architecture && c.libc == spec.libc && c.variant == spec.variant
         })
-        .ok_or("no offline bundle exists for this target")?;
+        .ok_or("no bundle exists for this target")?;
     let filename = cell.archive_filename(BUNDLE_PREFIX, &spec.version);
 
     fs::create_dir_all(&spec.output_dir).map_err(|e| e.to_string())?;

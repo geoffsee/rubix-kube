@@ -1,4 +1,4 @@
-use rubix_assets::{Architecture, Libc};
+use rubix_assets::{Architecture, Libc, Variant};
 use rubix_platform::preflight::PortAvailability;
 use rubix_platform::preflight_probe::SupplementalFacts;
 use rubix_platform::{ExecutableAbi, HostEvidence, Observation, PlatformError, ProbeFailure};
@@ -72,6 +72,7 @@ fn spec(root: &Path, machine: u16) -> BundleSpec {
         version: "v1.1.8".to_string(),
         architecture: Architecture::Arm64,
         libc: Libc::Glibc,
+        variant: Variant::Offline,
         inputs: vec![
             BundleInput {
                 source: src.join("rubix-kube"),

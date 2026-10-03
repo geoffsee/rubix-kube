@@ -1199,6 +1199,8 @@ dependencies = [
  "flate2",
  "regex",
  "rubix-assets",
+ "rubix-platform",
+ "rubixctl",
  "rustix",
  "serde",
  "serde_json",
