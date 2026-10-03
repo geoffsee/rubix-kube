@@ -89,3 +89,9 @@ cargo clippy -p rubixctl --all-targets --locked -- -D warnings
 
 Real host-check executable qualification runs only in disposable Linux containers;
 ordinary tests use injected effects or invoke only help/version.
+
+Legacy service migration stages a private, exclusive backup and replacement
+before publishing configuration. A matching `.migration-pending` marker allows
+retry after interruption between config and service publication. Conflicting
+backups, markers and existing configs are preserved. This is file-level evidence;
+live init-system restart qualification remains outstanding.
