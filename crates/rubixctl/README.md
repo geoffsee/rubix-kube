@@ -182,3 +182,19 @@ protects transport to the chosen endpoint, but this download slice does not
 verify release signatures or independently trusted artifact digests. A staged
 bundle is not authenticated release qualification and must not be treated as
 such by a future installer.
+
+`rubixctl d2k fetch|install --name <instance>` exports the flat node PKI files
+`pki/ca.crt`, `pki/d2k-client.crt` and `pki/d2k-client.key`. The default output is
+`~/.docker/d2k/<instance>` for the invoking user; `--output` selects a certificate
+**directory**. All exported files are private (0600) in a private directory (0700).
+Symlinked directory components are rejected and leaf symlinks are atomically
+replaced without modifying their targets. Existing directories must belong to
+that user. For privileged export to a different user's identity, precreate the
+output directory as that user; missing directories fail closed instead of
+chowning entries in a directory that the user can rename concurrently.
+Container exports use the managed `kubesolo[-<instance>]` identity and
+require a valid, unambiguous loopback-reachable published port. Docker context
+configuration runs with the invoking user's identity and Docker configuration,
+not root's configuration under sudo. Exported credentials may remain after a
+Docker context error, but the command reports failure and never claims the
+context was configured. These unit-tested adapters do not qualify live D2K nodes.

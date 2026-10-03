@@ -1012,8 +1012,10 @@ mod tests {
 
     #[test]
     fn confirmation_required_and_declined_changes_nothing() {
-        let d = tree();
         for answer in ["", "n\n", "no\n", "\n"] {
+            // Each answer is an independent confirmation case. Reusing one lock inode
+            // can observe unrelated concurrent test children's inherited fork handles.
+            let d = tree();
             let mut h = FakeHost::default();
             let mut input = io::Cursor::new(answer.as_bytes().to_vec());
             let r = run_host_cleanup(
@@ -1028,6 +1030,7 @@ mod tests {
             assert!(r.declined && h.log.is_empty());
             assert!(exists(d.path(), "kine/db"));
         }
+        let d = tree();
         let mut h = FakeHost::default();
         let mut input = io::Cursor::new(b"yes\n".to_vec());
         let r = run_host_cleanup(
