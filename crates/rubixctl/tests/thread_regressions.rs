@@ -146,7 +146,12 @@ fn custom_url_cannot_inject_curl_options_or_change_protocol_policy() {
         .get_args()
         .map(|arg| arg.to_str().unwrap())
         .collect();
-    assert_eq!(&args[args.len() - 2..], &["--", "-K/etc/private"]);
+    assert_eq!(&args[args.len() - 2..], &["--config", "-"]);
+    assert!(!args.contains(&"-K/etc/private"));
+    assert_eq!(
+        rubixctl::download::curl_download_config("-K/etc/private", None),
+        "url = \"-K/etc/private\"\n"
+    );
     assert!(
         args.windows(2)
             .any(|pair| pair == ["--proto", "=https,http"])
@@ -186,4 +191,20 @@ fn unrelated_non_utf8_environment_does_not_panic() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("must be UTF-8"));
     assert!(!String::from_utf8_lossy(&output.stderr).contains("panicked"));
+}
+
+#[test]
+fn download_secrets_are_only_in_protected_config_and_cannot_inject_lines() {
+    let url = "https://example.invalid/file?token=private-token";
+    let proxy = "https://user:private-password@proxy";
+    let command = rubixctl::download::curl_download_command(url, Path::new("out"), Some(proxy));
+    let args = command.get_args().collect::<Vec<_>>();
+    assert!(!format!("{args:?}").contains("private-"));
+    let config = rubixctl::download::curl_download_config(url, Some(proxy));
+    assert!(config.contains(url));
+    assert!(config.contains(proxy));
+    let injection =
+        rubixctl::download::curl_download_config("https://x/\"\noutput = /private\r", None);
+    assert_eq!(injection.lines().count(), 1);
+    assert!(injection.contains("\\\"\\noutput"));
 }
