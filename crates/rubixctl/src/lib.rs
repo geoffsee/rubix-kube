@@ -145,10 +145,13 @@ fn render_finding(finding: &Finding, stderr: &mut dyn Write) -> io::Result<bool>
         writeln!(stderr, "     {}", check_name(finding.check))?;
         Ok(true)
     } else {
-        let severity_note = if finding.is_recoverable() {
-            " (recoverable limitation)"
-        } else {
-            " (fatal error)"
+        let severity_note = match finding.severity() {
+            Some(rubix_platform::preflight::ErrorSeverity::Recoverable) => {
+                " (recoverable limitation)"
+            },
+            Some(rubix_platform::preflight::ErrorSeverity::Uncertain) => " (uncertain observation)",
+            Some(rubix_platform::preflight::ErrorSeverity::Fatal) => " (fatal error)",
+            None => "",
         };
         writeln!(
             stderr,

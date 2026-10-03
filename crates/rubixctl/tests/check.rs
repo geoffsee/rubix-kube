@@ -295,6 +295,8 @@ fn probe_errors_and_unknown_ports_never_pass_or_hide_earlier_progress() {
     let result = execute(&["check"], &mut fake);
     assert_eq!(result.0, 1);
     assert!(result.2.contains("host information could not be read"));
+    assert!(result.2.contains("(uncertain observation)"));
+    assert!(!result.2.contains("(fatal error)"));
     assert!(!result.2.contains("All 7 checks passed"));
 }
 
