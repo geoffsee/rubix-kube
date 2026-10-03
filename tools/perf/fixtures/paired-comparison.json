@@ -1,7 +1,7 @@
 {
-  "all_passed": true,
+  "all_passed": false,
   "amd64": {
-    "all_passed": true,
+    "all_passed": false,
     "architecture": "amd64",
     "candidate_id": "amd64-candidate-rust",
     "reference_id": "amd64-reference-go",
@@ -108,7 +108,7 @@
       },
       {
         "candidate_value": 479199232.0,
-        "details": "Initial 471859200 bytes -> Final 479199232 bytes (1.016x), 0 OOMs, 0 crashes",
+        "details": "Initial 471859200 bytes -> Final 479199232 bytes (1.016x), 24h, 0 OOMs, 0 crashes, 0 unexplained failures",
         "higher_is_better": false,
         "name": "Sustained Growth (24h Soak)",
         "passed": true,
@@ -126,10 +126,13 @@
         "target_threshold": 30.0,
         "threshold_multiplier": 1.0
       }
+    ],
+    "validation_errors": [
+      "Not qualified: reference SyntheticFixture, candidate SyntheticFixture; verified live-capture provenance/import is not implemented"
     ]
   },
   "arm64": {
-    "all_passed": true,
+    "all_passed": false,
     "architecture": "arm64",
     "candidate_id": "arm64-candidate-rust",
     "reference_id": "arm64-reference-go",
@@ -236,7 +239,7 @@
       },
       {
         "candidate_value": 479199232.0,
-        "details": "Initial 471859200 bytes -> Final 479199232 bytes (1.016x), 0 OOMs, 0 crashes",
+        "details": "Initial 471859200 bytes -> Final 479199232 bytes (1.016x), 24h, 0 OOMs, 0 crashes, 0 unexplained failures",
         "higher_is_better": false,
         "name": "Sustained Growth (24h Soak)",
         "passed": true,
@@ -254,9 +257,13 @@
         "target_threshold": 30.0,
         "threshold_multiplier": 1.0
       }
+    ],
+    "validation_errors": [
+      "Not qualified: reference SyntheticFixture, candidate SyntheticFixture; verified live-capture provenance/import is not implemented"
     ]
   },
+  "evidence_kind": "synthetic-fixture",
   "schema_version": 1,
   "timestamp": "2026-10-03T14:30:00Z",
-  "title": "Paired Go Reference vs Rust Candidate Performance Comparison"
+  "title": "Synthetic Go Reference vs Rust Candidate Arithmetic Example"
 }

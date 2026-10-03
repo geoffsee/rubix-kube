@@ -106,7 +106,7 @@ impl VarianceSummary {
     /// Calculate statistical summary from raw samples.
     /// Uses nearest-rank method for p95 as required by the compatibility contract.
     pub fn from_samples(mut raw: Vec<f64>) -> Option<Self> {
-        if raw.is_empty() {
+        if raw.is_empty() || raw.iter().any(|value| !value.is_finite() || *value < 0.0) {
             return None;
         }
 
@@ -125,6 +125,9 @@ impl VarianceSummary {
             0.0
         };
         let std_dev = variance.sqrt();
+        if !mean.is_finite() || !variance.is_finite() || !std_dev.is_finite() {
+            return None;
+        }
 
         let p50 = Self::nearest_rank(&raw, 50.0);
         let p90 = Self::nearest_rank(&raw, 90.0);
@@ -238,6 +241,8 @@ pub struct ShutdownMeasurement {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PerformanceReport {
     pub schema_version: u32,
+    #[serde(default)]
+    pub evidence_kind: EvidenceKind,
     pub id: String,
     pub implementation: ImplementationKind,
     pub architecture: Architecture,
@@ -251,4 +256,13 @@ pub struct PerformanceReport {
     pub pod_density: PodDensity,
     pub sustained_growth: SustainedGrowth,
     pub shutdown: ShutdownMeasurement,
+}
+
+/// This tooling has no verified live-capture importer yet. Neither variant qualifies C13.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum EvidenceKind {
+    SyntheticFixture,
+    #[default]
+    UnverifiedCapture,
 }

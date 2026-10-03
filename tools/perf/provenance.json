@@ -1,14 +1,14 @@
 {
-  "schema_version": 1,
-  "generator": "rubix-perf v0.1.0",
-  "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "evidence_kind": "synthetic-fixture",
   "files": {
-    "inputs.json": "f3b1977ddcf8255f81b8a0e088578536bdd5e4537475bffda1b67ee3267bf876",
-    "baselines/amd64-candidate-rust.json": "bbd2bea882cd120a4426c3dea83b45fc4d9de8d41ae1b5991c8d7ff25f13fbfe",
-    "baselines/amd64-reference-go.json": "f303dfdd3b24dc7cbf210421b1745601653e92e39582e5015a30f90f66757848",
-    "baselines/arm64-candidate-rust.json": "18ba18e8f91146cd18718caa326e90c37e3784421b3d671562beddea3cafdadf",
-    "baselines/arm64-reference-go.json": "8116ffa1055ba5d76b1f75e114556b2bd41b9cba834110982f86f0d04a3d76a0",
-    "baselines/paired-comparison.json": "a78ed69f12782b48f0b694515ea2ea9f4609b6d9c481f8b0c694faf5da51d4e0",
-    "baselines/secondary-targets.json": "c33436da705b874686d4ef0fc83d9396aea353e60d8e2959b15e2c88cd55959b"
-  }
+    "fixtures/amd64-candidate-rust.json": "3cbb3ac502a654fb4841b07ffe66519d6dc6b8a8f06ed5e42e67dd1ef6e89634",
+    "fixtures/amd64-reference-go.json": "fcca4f1f5d9b9ef86ab5478d45433a8ba6bd740b7690e96e8d05d532fbd952c8",
+    "fixtures/arm64-candidate-rust.json": "ea9230441945a09b2e93d12b7da4603a4b0e47744b479e2cb12bf64ca7f3adca",
+    "fixtures/arm64-reference-go.json": "e748effc438a3a041b000ab39f0e13466c9fef9eb594a05e68a2218e5277f771",
+    "fixtures/paired-comparison.json": "692851aa927fd4ced29f1d35193797d0f076a0254713839cea6df623354a04b2",
+    "fixtures/secondary-targets.json": "35ffa0fbcd805d22509f52664801021617a8a528c06fd9865610a1a88acbd6c8",
+    "inputs.json": "a11c0a855af9c3305ff30d09bfada5dfd24bed214fb26dc041fcab3b0b053755"
+  },
+  "purpose": "fixture integrity only; not live capture provenance",
+  "schema_version": 1
 }

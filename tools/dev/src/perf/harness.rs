@@ -109,11 +109,11 @@ pub fn verify_retained_process_coverage(report: &PerformanceReport) -> Result<()
         .idle_footprint
         .retained_processes
         .iter()
-        .map(|p| p.process_name.to_lowercase())
+        .filter_map(|p| process_role(&p.process_name).map(str::to_owned))
         .collect();
 
     for required in REQUIRED_RETAINED_PROCESSES {
-        let matched = reported_names.iter().any(|name| name.contains(required));
+        let matched = reported_names.contains(required);
         if !matched {
             return Err(format!(
                 "Report {} is missing required retained process accounting for '{required}'. All retained processes must be measured.",
@@ -124,6 +124,23 @@ pub fn verify_retained_process_coverage(report: &PerformanceReport) -> Result<()
     }
 
     Ok(())
+}
+
+/// Approved process aliases are disjoint: a runtime shim cannot represent its daemon.
+pub fn process_role(name: &str) -> Option<&'static str> {
+    match name {
+        "kube-apiserver" | "apiserver" => Some("apiserver"),
+        "kube-controller-manager" | "controller-manager" => Some("controller-manager"),
+        "kubelet" => Some("kubelet"),
+        "kube-proxy" | "proxy" => Some("proxy"),
+        "kine" => Some("kine"),
+        "containerd" => Some("containerd"),
+        "containerd-shim-runc-v2" | "containerd-shim" => Some("containerd-shim"),
+        "kubesolo" | "rubix-kube" | "kubesolo-node-daemon" | "rubix-kube-node-daemon" => {
+            Some("node-daemon")
+        },
+        _ => None,
+    }
 }
 
 /// Calculate aggregated PSS and RSS sums from a list of process memory breakdowns.
@@ -143,8 +160,8 @@ pub fn synthesize_summary(samples: &[f64]) -> Result<VarianceSummary> {
         .ok_or_else(|| "cannot synthesize summary from empty sample list".into())
 }
 
-/// Construct authoritative reference baseline report for a given architecture.
-pub fn build_reference_baseline(arch: Architecture) -> PerformanceReport {
+/// Construct a synthetic reference fixture report for a given architecture.
+pub fn build_reference_fixture(arch: Architecture) -> PerformanceReport {
     let (
         machine_model,
         kernel,
@@ -242,6 +259,7 @@ pub fn build_reference_baseline(arch: Architecture) -> PerformanceReport {
 
     PerformanceReport {
         schema_version: 1,
+        evidence_kind: super::metrics::EvidenceKind::SyntheticFixture,
         id: format!("{}-reference-go", arch.as_str()),
         implementation: ImplementationKind::Go,
         architecture: arch,
@@ -384,8 +402,8 @@ pub fn build_reference_baseline(arch: Architecture) -> PerformanceReport {
     }
 }
 
-/// Construct authoritative candidate baseline report for a given architecture.
-pub fn build_candidate_baseline(arch: Architecture) -> PerformanceReport {
+/// Construct a synthetic candidate fixture report for a given architecture.
+pub fn build_candidate_fixture(arch: Architecture) -> PerformanceReport {
     let (
         machine_model,
         kernel,
@@ -483,6 +501,7 @@ pub fn build_candidate_baseline(arch: Architecture) -> PerformanceReport {
 
     PerformanceReport {
         schema_version: 1,
+        evidence_kind: super::metrics::EvidenceKind::SyntheticFixture,
         id: format!("{}-candidate-rust", arch.as_str()),
         implementation: ImplementationKind::Rust,
         architecture: arch,

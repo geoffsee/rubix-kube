@@ -1,4 +1,4 @@
-//! Matched Go and Rust performance baseline measurement and evaluation harness.
+//! Synthetic performance fixtures, statistical arithmetic and fail-closed qualification.
 
 #![allow(
     clippy::cast_precision_loss,
@@ -13,6 +13,7 @@ pub mod harness;
 pub mod metrics;
 pub mod report;
 pub mod secondary;
+pub mod validation;
 
 pub use contract::{GateEvaluationReport, GateResult};
 pub use harness::{

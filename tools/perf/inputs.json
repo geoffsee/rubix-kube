@@ -1,5 +1,7 @@
 {
   "schema_version": 1,
+  "evidence_kind": "synthetic-fixture",
+  "purpose": "fictional input/digest examples, not verified source or workload provenance",
   "upstream_reference": {
     "repository": "https://github.com/portainer/kubesolo",
     "commit": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",

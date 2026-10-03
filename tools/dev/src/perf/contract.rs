@@ -23,12 +23,23 @@ pub struct GateEvaluationReport {
     pub reference_id: String,
     pub candidate_id: String,
     pub all_passed: bool,
+    pub validation_errors: Vec<String>,
     pub results: Vec<GateResult>,
 }
 
 impl GateEvaluationReport {
     /// Evaluate all measurable engineering gates from the compatibility contract.
     pub fn evaluate(reference: &PerformanceReport, candidate: &PerformanceReport) -> Self {
+        if let Err(error) = super::validation::validate_pair(reference, candidate) {
+            return Self {
+                architecture: candidate.architecture.as_str().into(),
+                reference_id: reference.id.clone(),
+                candidate_id: candidate.id.clone(),
+                all_passed: false,
+                results: Vec::new(),
+                validation_errors: vec![error.to_string()],
+            };
+        }
         let mut results = Vec::new();
 
         // 1. Boot-to-API latency: candidate nearest-rank p95 <= 1.10 * ref p95
@@ -204,8 +215,10 @@ impl GateEvaluationReport {
         // 11. Sustained growth: final median <= 1.10 * initial median, 0 OOMs, 0 crashes
         let init_mem = candidate.sustained_growth.initial_settled_idle_median_bytes as f64;
         let final_mem = candidate.sustained_growth.final_settled_idle_median_bytes as f64;
-        let growth_ratio = candidate.sustained_growth.growth_ratio;
-        let growth_passed = growth_ratio <= 1.10
+        let growth_ratio = final_mem / init_mem;
+        let growth_passed = init_mem > 0.0
+            && candidate.sustained_growth.duration_hours >= 24
+            && growth_ratio <= 1.10
             && candidate.sustained_growth.oom_kill_count == 0
             && candidate.sustained_growth.crash_count == 0
             && candidate.sustained_growth.unexplained_failures == 0;
@@ -218,7 +231,9 @@ impl GateEvaluationReport {
             higher_is_better: false,
             passed: growth_passed,
             details: format!(
-                "Initial {init_mem:.0} bytes -> Final {final_mem:.0} bytes ({growth_ratio:.3}x), 0 OOMs, 0 crashes"
+                "Initial {init_mem:.0} bytes -> Final {final_mem:.0} bytes ({growth_ratio:.3}x), {}h, {} OOMs, {} crashes, {} unexplained failures",
+                candidate.sustained_growth.duration_hours, candidate.sustained_growth.oom_kill_count,
+                candidate.sustained_growth.crash_count, candidate.sustained_growth.unexplained_failures
             ),
         });
 
@@ -227,6 +242,8 @@ impl GateEvaluationReport {
         let surviving = candidate.shutdown.surviving_owned_processes;
         let shutdown_passed = graceful_p95 <= 30.0
             && candidate.shutdown.escalation_duration_seconds.p95 <= 35.0
+            && candidate.shutdown.graceful_duration_seconds.max <= 30.0
+            && candidate.shutdown.escalation_duration_seconds.max <= 35.0
             && surviving == 0
             && candidate.shutdown.unrelated_processes_killed == 0;
         results.push(GateResult {
@@ -242,12 +259,20 @@ impl GateEvaluationReport {
             ),
         });
 
-        let all_passed = results.iter().all(|r| r.passed);
+        // Raw 900-sample run captures, soak logs, process receipts, libc/filesystem/variant
+        // identity and source hashes have no verified importer in this slice. Fail closed
+        // even if a caller labels supplied numbers as live data. This is arithmetic only.
+        let validation_errors = vec![format!(
+            "Not qualified: reference {:?}, candidate {:?}; verified live-capture provenance/import is not implemented",
+            reference.evidence_kind, candidate.evidence_kind
+        )];
+        let all_passed = false;
         Self {
             architecture: candidate.architecture.as_str().to_string(),
             reference_id: reference.id.clone(),
             candidate_id: candidate.id.clone(),
             all_passed,
+            validation_errors,
             results,
         }
     }

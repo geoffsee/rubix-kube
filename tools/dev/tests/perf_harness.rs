@@ -1,235 +1,256 @@
-//! Integration tests for the performance measurement harness, statistical calculations,
-//! contract gate evaluations, and committed baselines.
-
+//! Arithmetic fixtures are useful test inputs, never evidence of live qualification.
+use rubix_dev::perf::harness::{build_candidate_fixture, build_reference_fixture};
 use rubix_dev::perf::{
-    GateEvaluationReport, SecondaryTargetsRegistry, VarianceSummary, generate_markdown_report,
-    load_report, verify_retained_process_coverage,
+    Architecture, GateEvaluationReport, PerformanceReport, VarianceSummary,
+    generate_markdown_report, load_report, verify_retained_process_coverage,
 };
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
-fn repo_root() -> PathBuf {
+fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
         .parent()
         .unwrap()
-        .to_path_buf()
+        .into()
+}
+fn pair() -> (PerformanceReport, PerformanceReport) {
+    (
+        build_reference_fixture(Architecture::Amd64),
+        build_candidate_fixture(Architecture::Amd64),
+    )
+}
+fn assert_invalid(reference: &PerformanceReport, candidate: &PerformanceReport) {
+    let evaluation = GateEvaluationReport::evaluate(reference, candidate);
+    assert!(!evaluation.all_passed);
+    assert!(
+        evaluation.results.is_empty(),
+        "invalid input must never print passing arithmetic"
+    );
+    assert!(!evaluation.validation_errors.is_empty());
 }
 
 #[test]
 #[allow(clippy::float_cmp)]
-fn test_statistical_summary_and_nearest_rank_p95() {
-    // 20 sorted values: 1.0, 2.0, ..., 20.0
-    let samples: Vec<f64> = (1..=20).map(f64::from).collect();
-    let summary = VarianceSummary::from_samples(samples).expect("summary from 20 samples");
-
-    assert_eq!(summary.count, 20);
-    assert_eq!(summary.min, 1.0);
-    assert_eq!(summary.max, 20.0);
-    assert_eq!(summary.mean, 10.5);
-
-    // Nearest-rank percentile for P=95 and N=20:
-    // rank = ceil((95 / 100) * 20) = ceil(19.0) = 19.
-    // 19th element (1-indexed) is 19.0.
-    assert_eq!(summary.p95, 19.0);
-
-    // Median for P=50 and N=20:
-    // rank = ceil((50 / 100) * 20) = ceil(10.0) = 10.
-    assert_eq!(summary.p50, 10.0);
-    assert_eq!(summary.p90, 18.0);
-
-    // Sample variance for 1..20: sum((x - 10.5)^2) / 19 = 665 / 19 = 35.0
-    assert!((summary.variance - 35.0).abs() < 1e-6);
-    assert!((summary.std_dev - 35.0f64.sqrt()).abs() < 1e-6);
-}
-
-#[test]
-fn test_gate_evaluation_directionality() {
-    let ref_report =
-        rubix_dev::perf::harness::build_reference_baseline(rubix_dev::perf::Architecture::Amd64);
-
-    let mut cand_report =
-        rubix_dev::perf::harness::build_candidate_baseline(rubix_dev::perf::Architecture::Amd64);
-
-    // Normal candidate passes all gates
-    let eval = GateEvaluationReport::evaluate(&ref_report, &cand_report);
-    assert!(eval.all_passed, "Baseline candidate should pass all gates");
-
-    // Test Pod Density: higher is better (threshold >= 0.90 * ref)
-    // Ref density is 110.0. 0.90 * 110 = 99.0.
-    // If candidate density is 90.0, it must fail!
-    cand_report.pod_density.max_ready_replicas.p50 = 90.0;
-    let eval_density_fail = GateEvaluationReport::evaluate(&ref_report, &cand_report);
-    assert!(
-        !eval_density_fail.all_passed,
-        "Density 90.0 < 99.0 must fail the density gate"
+fn nearest_rank_and_invalid_samples() {
+    let summary = VarianceSummary::from_samples((1..=20).map(f64::from).collect()).unwrap();
+    assert_eq!(
+        (summary.count, summary.p50, summary.p90, summary.p95),
+        (20, 10.0, 18.0, 19.0)
     );
-    let density_gate = eval_density_fail
-        .results
-        .iter()
-        .find(|g| g.name.contains("Pod Density"))
-        .expect("pod density gate");
-    assert!(!density_gate.passed);
-    assert!(density_gate.higher_is_better);
-
-    // If candidate density is 100.0 (>= 99.0), it should pass
-    cand_report.pod_density.max_ready_replicas.p50 = 100.0;
-    let eval_density_pass = GateEvaluationReport::evaluate(&ref_report, &cand_report);
-    let density_gate_pass = eval_density_pass
-        .results
-        .iter()
-        .find(|g| g.name.contains("Pod Density"))
-        .unwrap();
-    assert!(density_gate_pass.passed);
-
-    // Test Boot-to-API latency: lower is better (candidate p95 <= 1.10 * ref p95)
-    // Ref p95 is ~14.05. Limit is ~15.455. If candidate is 16.0, it must fail!
-    cand_report.startup_latencies.boot_to_api_seconds.p95 = 16.0;
-    let eval_boot_fail = GateEvaluationReport::evaluate(&ref_report, &cand_report);
-    let boot_gate = eval_boot_fail
-        .results
-        .iter()
-        .find(|g| g.name.contains("Boot-to-API"))
-        .unwrap();
-    assert!(!boot_gate.passed);
-    assert!(!boot_gate.higher_is_better);
-
-    // Reset boot latency
-    cand_report.startup_latencies.boot_to_api_seconds.p95 = 10.0;
-
-    // Test Shutdown surviving processes: if > 0, must fail!
-    cand_report.shutdown.surviving_owned_processes = 1;
-    let eval_shutdown_fail = GateEvaluationReport::evaluate(&ref_report, &cand_report);
-    let shutdown_gate = eval_shutdown_fail
-        .results
-        .iter()
-        .find(|g| g.name.contains("Shutdown"))
-        .unwrap();
-    assert!(!shutdown_gate.passed);
+    assert!((summary.variance - 35.0).abs() < 1e-9);
+    for samples in [
+        vec![],
+        vec![f64::NAN],
+        vec![f64::INFINITY],
+        vec![-1.0],
+        vec![f64::MAX; 20],
+    ] {
+        assert!(VarianceSummary::from_samples(samples).is_none());
+    }
 }
 
 #[test]
-fn test_retained_process_coverage_enforcement() {
-    let mut report =
-        rubix_dev::perf::harness::build_candidate_baseline(rubix_dev::perf::Architecture::Amd64);
-
-    // Full report has all 8 processes
-    assert!(verify_retained_process_coverage(&report).is_ok());
-
-    // Remove kube-apiserver
-    report
-        .idle_footprint
-        .retained_processes
-        .retain(|p| !p.process_name.contains("apiserver"));
-    let err = verify_retained_process_coverage(&report).unwrap_err();
-    assert!(err.to_string().contains("apiserver"));
-
-    // Remove containerd
-    let mut report2 =
-        rubix_dev::perf::harness::build_candidate_baseline(rubix_dev::perf::Architecture::Amd64);
-    report2
-        .idle_footprint
-        .retained_processes
-        .retain(|p| !p.process_name.contains("containerd"));
-    let err2 = verify_retained_process_coverage(&report2).unwrap_err();
-    assert!(err2.to_string().contains("containerd"));
+fn synthetic_arithmetic_never_qualifies_and_directionality_uses_raw_values() {
+    let (reference, mut candidate) = pair();
+    let evaluation = GateEvaluationReport::evaluate(&reference, &candidate);
+    assert!(!evaluation.all_passed);
+    assert_eq!(evaluation.results.len(), 12);
+    assert!(evaluation.results.iter().all(|g| g.passed));
+    assert!(evaluation.validation_errors[0].contains("Not qualified"));
+    candidate.pod_density.max_ready_replicas =
+        VarianceSummary::from_samples(vec![90.0; 5]).unwrap();
+    let density = GateEvaluationReport::evaluate(&reference, &candidate);
+    assert!(
+        !density
+            .results
+            .iter()
+            .find(|g| g.name.contains("Pod Density"))
+            .unwrap()
+            .passed
+    );
+    candidate.startup_latencies.boot_to_api_seconds =
+        VarianceSummary::from_samples(vec![1000.0; 20]).unwrap();
+    let boot = GateEvaluationReport::evaluate(&reference, &candidate);
+    assert!(!boot.results[0].passed);
 }
 
 #[test]
-fn test_committed_baselines_integrity_and_provenance() {
-    let root = repo_root();
-    let perf_dir = root.join("tools/perf");
-    let baselines_dir = perf_dir.join("baselines");
-    let prov_path = perf_dir.join("provenance.json");
+fn stale_statistics_and_incomplete_or_nonfinite_raw_samples_are_rejected() {
+    let (reference, candidate) = pair();
+    for mutation in 0..6 {
+        let mut candidate = candidate.clone();
+        let summary = &mut candidate.startup_latencies.boot_to_api_seconds;
+        match mutation {
+            0 => {
+                summary.samples = vec![1000.0];
+                summary.count = 1;
+            },
+            1 => summary.p95 = 0.01,
+            2 => summary.mean = 0.01,
+            3 => summary.variance = f64::NAN,
+            4 => summary.samples[0] = f64::INFINITY,
+            _ => summary.samples[0] = -1.0,
+        }
+        assert_invalid(&reference, &candidate);
+    }
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("stale.json");
+    let mut stale = candidate;
+    stale.startup_latencies.boot_to_api_seconds.p95 = 0.01;
+    rubix_dev::perf::save_report(&path, &stale).unwrap();
+    assert!(load_report(&path).is_err());
+}
 
-    assert!(prov_path.is_file(), "tools/perf/provenance.json must exist");
-    let prov_bytes = std::fs::read(&prov_path).expect("read provenance");
-    let prov: serde_json::Value = serde_json::from_slice(&prov_bytes).expect("parse provenance");
-    let files_map = prov["files"].as_object().expect("provenance files map");
+#[test]
+fn unmatched_environment_payload_and_wrong_implementation_are_rejected() {
+    let (reference, candidate) = pair();
+    for mutation in 0..7 {
+        let mut candidate = candidate.clone();
+        match mutation {
+            0 => {
+                candidate.architecture = Architecture::Arm64;
+                candidate.hardware.architecture = Architecture::Arm64;
+            },
+            1 => candidate.hardware.machine_model = "different".into(),
+            2 => candidate.hardware.kernel_version = "different".into(),
+            3 => {
+                candidate.workload.density_node_memory_limit_bytes *= 2;
+                candidate.pod_density.node_memory_limit_bytes *= 2;
+            },
+            4 => candidate.workload.probe_digest = "different".into(),
+            5 => candidate.versions.containerd = "different".into(),
+            _ => candidate.implementation = rubix_dev::perf::ImplementationKind::Go,
+        }
+        assert_invalid(&reference, &candidate);
+    }
+}
 
-    // Verify SHA-256 for all listed files
-    for (rel_path, expected_hash_val) in files_map {
-        let file_path = perf_dir.join(rel_path);
-        assert!(file_path.is_file(), "File {rel_path} must exist on disk");
-        let content = std::fs::read(&file_path).expect("read file for hash check");
-        let actual_hash = rubix_dev::sha256(&content);
+#[test]
+fn soak_is_derived_duration_bound_and_observed_failures_are_reported() {
+    let (reference, candidate) = pair();
+    for mutation in 0..5 {
+        let mut candidate = candidate.clone();
+        match mutation {
+            0 => {
+                candidate.sustained_growth.initial_settled_idle_median_bytes = 100;
+                candidate.sustained_growth.final_settled_idle_median_bytes = 1000;
+                candidate.sustained_growth.growth_ratio = 1.0;
+            },
+            1 => candidate.sustained_growth.duration_hours = 0,
+            2 => candidate.sustained_growth.initial_settled_idle_median_bytes = 0,
+            3 => candidate.sustained_growth.oom_kill_count = 3,
+            _ => candidate.sustained_growth.crash_count = 2,
+        }
+        let evaluation = GateEvaluationReport::evaluate(&reference, &candidate);
+        assert!(
+            !evaluation
+                .results
+                .iter()
+                .find(|g| g.name.contains("Sustained Growth"))
+                .unwrap()
+                .passed
+        );
+        let text = generate_markdown_report(&reference, &candidate, &evaluation, None);
+        assert!(text.contains("NOT QUALIFIED"));
+        if mutation == 3 {
+            assert!(text.contains("3 OOMs"));
+        }
+        if mutation == 4 {
+            assert!(text.contains("2 crashes"));
+        }
+    }
+}
+
+#[test]
+fn retained_daemon_and_shim_are_independent_roles() {
+    for removed in ["containerd", "containerd-shim-runc-v2", "kube-apiserver"] {
+        let mut candidate = build_candidate_fixture(Architecture::Amd64);
+        candidate
+            .idle_footprint
+            .retained_processes
+            .retain(|p| p.process_name != removed);
+        assert!(verify_retained_process_coverage(&candidate).is_err());
+    }
+}
+
+#[test]
+fn a_single_deadline_violation_is_not_hidden_by_shutdown_p95() {
+    let (reference, mut candidate) = pair();
+    let mut samples = vec![1.0; 19];
+    samples.push(36.0);
+    candidate.shutdown.graceful_duration_seconds = VarianceSummary::from_samples(samples).unwrap();
+    let evaluation = GateEvaluationReport::evaluate(&reference, &candidate);
+    assert!(
+        !evaluation
+            .results
+            .iter()
+            .find(|g| g.name.contains("Shutdown"))
+            .unwrap()
+            .passed
+    );
+}
+
+#[test]
+fn fixture_integrity_and_all_cli_qualification_paths_fail_closed() {
+    let directory = root().join("tools/perf");
+    let provenance: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("provenance.json")).unwrap()).unwrap();
+    assert_eq!(provenance["evidence_kind"], "synthetic-fixture");
+    for (name, digest) in provenance["files"].as_object().unwrap() {
         assert_eq!(
-            expected_hash_val.as_str().unwrap(),
-            actual_hash,
-            "Checksum mismatch for {rel_path}"
+            digest.as_str().unwrap(),
+            rubix_dev::sha256(&std::fs::read(directory.join(name)).unwrap())
         );
     }
-
-    // Load and verify both pairs
-    let amd64_ref =
-        load_report(&baselines_dir.join("amd64-reference-go.json")).expect("load amd64 ref");
-    let amd64_cand =
-        load_report(&baselines_dir.join("amd64-candidate-rust.json")).expect("load amd64 cand");
-    let arm64_ref =
-        load_report(&baselines_dir.join("arm64-reference-go.json")).expect("load arm64 ref");
-    let arm64_cand =
-        load_report(&baselines_dir.join("arm64-candidate-rust.json")).expect("load arm64 cand");
-
-    for r in [&amd64_ref, &amd64_cand, &arm64_ref, &arm64_cand] {
-        verify_retained_process_coverage(r).expect("all 8 retained processes covered");
+    for architecture in ["amd64", "arm64"] {
+        let reference = directory.join(format!("fixtures/{architecture}-reference-go.json"));
+        let candidate = directory.join(format!("fixtures/{architecture}-candidate-rust.json"));
+        let evaluation = GateEvaluationReport::evaluate(
+            &load_report(&reference).unwrap(),
+            &load_report(&candidate).unwrap(),
+        );
+        assert!(!evaluation.all_passed);
+        for command in ["evaluate-gates", "report"] {
+            let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+                .arg(command)
+                .arg("--reference")
+                .arg(&reference)
+                .arg("--candidate")
+                .arg(&candidate)
+                .output()
+                .unwrap();
+            assert!(!output.status.success());
+            assert!(!String::from_utf8_lossy(&output.stdout).contains("Overall: PASS"));
+        }
     }
-
-    let amd64_eval = GateEvaluationReport::evaluate(&amd64_ref, &amd64_cand);
-    assert!(
-        amd64_eval.all_passed,
-        "amd64 candidate must pass all 12 contract gates against Go reference"
-    );
-
-    let arm64_eval = GateEvaluationReport::evaluate(&arm64_ref, &arm64_cand);
-    assert!(
-        arm64_eval.all_passed,
-        "arm64 candidate must pass all 12 contract gates against Go reference"
-    );
-
-    // Verify paired-comparison.json
-    let paired_path = baselines_dir.join("paired-comparison.json");
-    let paired_bytes = std::fs::read(&paired_path).expect("read paired comparison");
-    let paired: serde_json::Value =
-        serde_json::from_slice(&paired_bytes).expect("parse paired comparison");
-    assert_eq!(paired["all_passed"], true);
-
-    // Verify secondary targets registry
-    let sec_path = baselines_dir.join("secondary-targets.json");
-    let sec_bytes = std::fs::read(&sec_path).expect("read secondary targets");
-    let sec: SecondaryTargetsRegistry =
-        serde_json::from_slice(&sec_bytes).expect("parse secondary targets");
-    sec.validate().expect("secondary targets validation");
-
-    let armv7_gap = sec.targets.get("armv7").expect("armv7 gap record");
-    assert_eq!(armv7_gap.maximum_pod_density, 45);
-    assert!(!armv7_gap.d2k_supported);
-    assert!(armv7_gap.crun_source_build_required);
-
-    let riscv64_gap = sec.targets.get("riscv64").expect("riscv64 gap record");
-    assert_eq!(riscv64_gap.maximum_pod_density, 30);
-    assert!(!riscv64_gap.portainer_supported);
-    assert!(!riscv64_gap.d2k_supported);
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("check-baselines")
+        .arg(directory.join("fixtures"))
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
 }
 
 #[test]
-fn test_markdown_report_formatting() {
-    let amd64_ref =
-        rubix_dev::perf::harness::build_reference_baseline(rubix_dev::perf::Architecture::Amd64);
-    let amd64_cand =
-        rubix_dev::perf::harness::build_candidate_baseline(rubix_dev::perf::Architecture::Amd64);
-    let eval = GateEvaluationReport::evaluate(&amd64_ref, &amd64_cand);
-    let sec = SecondaryTargetsRegistry::default_contract();
-
-    let md = generate_markdown_report(&amd64_ref, &amd64_cand, &eval, Some(&sec));
-    assert!(md.contains("# Performance Baseline Comparison: AMD64 (Go) vs AMD64 (Rust)"));
-    assert!(md.contains("## 1. Contract Gates Evaluation Summary"));
-    assert!(md.contains("## 2. Declared Hardware & Workload Specification"));
-    assert!(md.contains("## 3. Startup Latencies (20 Fresh Boots)"));
-    assert!(md.contains("## 4. Whole-Distribution Idle Footprint & Retained Processes"));
-    assert!(md.contains("## 5. Artifact Footprint"));
-    assert!(md.contains("## 6. Pod Density & Soak Stability"));
-    assert!(md.contains("## 7. Explicit Secondary Architecture Gaps"));
-    assert!(md.contains("PASSED (All 12 Gates Met)"));
-    assert!(md.contains("armv7"));
-    assert!(md.contains("riscv64"));
+fn generated_fixtures_and_relabelled_captures_cannot_qualify() {
+    let directory = tempfile::tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("generate-fixtures")
+        .arg(directory.path())
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let path = directory.path().join("fixtures/amd64-candidate-rust.json");
+    let mut candidate = load_report(&path).unwrap();
+    candidate.evidence_kind = rubix_dev::perf::metrics::EvidenceKind::UnverifiedCapture;
+    let reference = build_reference_fixture(Architecture::Amd64);
+    assert!(!GateEvaluationReport::evaluate(&reference, &candidate).all_passed);
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("check-baselines")
+        .arg(directory.path().join("fixtures"))
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
 }

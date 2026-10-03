@@ -26,7 +26,7 @@ pub struct SecondaryTargetsRegistry {
 }
 
 impl SecondaryTargetsRegistry {
-    /// Return the authoritative secondary architecture gap definitions.
+    /// Return the explicit, unqualified secondary architecture gap examples.
     pub fn default_contract() -> Self {
         let mut targets = BTreeMap::new();
 
@@ -34,17 +34,17 @@ impl SecondaryTargetsRegistry {
             "armv7".to_string(),
             SecondaryArchitectureGap {
                 architecture: "armv7".to_string(),
-                status: "secondary-supported-with-limits".to_string(),
+                status: "not-qualified".to_string(),
                 address_space_bits: 32,
-                maximum_pod_density: 45,
+                maximum_pod_density: 0,
                 d2k_supported: false,
                 portainer_supported: true,
                 crun_source_build_required: true,
-                cold_boot_latency_overhead_multiplier: "1.35x".to_string(),
+                cold_boot_latency_overhead_multiplier: "unmeasured".to_string(),
                 primary_gate_exceptions: vec![
-                    "Pod density capped at 45 replicas due to 32-bit user address space and kernel task memory limit".to_string(),
-                    "D2K translator disabled due to 32-bit Go/Rust memory mapping constraints".to_string(),
-                    "Boot-to-API and first-pod latency allow 1.35x multiplier over amd64 reference".to_string(),
+                    "Pod density is unmeasured; no accepted density exception".to_string(),
+                    "D2K translator disabled by platform contract".to_string(),
+                    "Startup latency is unmeasured; no accepted latency exception".to_string(),
                 ],
                 hardware_and_toolchain_constraints: vec![
                     "Requires hard-float ABI (armv7hl / armhf)".to_string(),
@@ -58,18 +58,18 @@ impl SecondaryTargetsRegistry {
             "riscv64".to_string(),
             SecondaryArchitectureGap {
                 architecture: "riscv64".to_string(),
-                status: "secondary-experimental-with-limits".to_string(),
+                status: "not-qualified".to_string(),
                 address_space_bits: 64,
-                maximum_pod_density: 30,
+                maximum_pod_density: 0,
                 d2k_supported: false,
                 portainer_supported: false,
                 crun_source_build_required: false,
-                cold_boot_latency_overhead_multiplier: "2.50x".to_string(),
+                cold_boot_latency_overhead_multiplier: "unmeasured".to_string(),
                 primary_gate_exceptions: vec![
                     "Portainer agent and UI unavailable on riscv64".to_string(),
                     "D2K translator disabled".to_string(),
-                    "Emulation/TCG or early silicon imposes 2.50x cold-cache startup latency gap".to_string(),
-                    "Pod density capped at 30 replicas under 4 GiB memory limit".to_string(),
+                    "Startup latency is unmeasured; no accepted latency exception".to_string(),
+                    "Pod density is unmeasured; no accepted density exception".to_string(),
                 ],
                 hardware_and_toolchain_constraints: vec![
                     "Requires rv64gc ISA baseline with Linux cgroups v2".to_string(),

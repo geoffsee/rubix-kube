@@ -12,7 +12,7 @@ fn print_usage() {
         "Usage: rubix-perf <command> [options]\n\n\
         Commands:\n  \
         check-baselines <dir>                                Validate committed baseline directory\n  \
-        generate-baselines <dir>                             Generate authoritative baseline files\n  \
+        generate-fixtures <dir>                             Generate synthetic arithmetic fixtures (never qualification)\n  \
         evaluate-gates --reference <ref> --candidate <cand>  Evaluate candidate gates against reference\n  \
         report --reference <ref> --candidate <cand>          Generate comparative Markdown report\n  \
         verify-secondary <file>                              Verify secondary architecture gaps\n"
@@ -43,19 +43,27 @@ fn check_baselines(dir: &Path) -> Result<(), Box<dyn std::error::Error + Send + 
     for report in [&amd64_ref, &amd64_cand, &arm64_ref, &arm64_cand] {
         verify_retained_process_coverage(report)?;
     }
-    println!("✓ Retained process accounting verified across all 4 primary baselines");
+    println!("Declared retained process roles present across all 4 reports");
 
     // Evaluate amd64 gates
     let amd64_eval = GateEvaluationReport::evaluate(&amd64_ref, &amd64_cand);
     if !amd64_eval.all_passed {
-        return Err("amd64 candidate failed one or more contract performance gates".into());
+        return Err(format!(
+            "amd64 is not qualified: {}",
+            amd64_eval.validation_errors.join("; ")
+        )
+        .into());
     }
     println!("✓ amd64 paired comparison: all 12 contract gates passed");
 
     // Evaluate arm64 gates
     let arm64_eval = GateEvaluationReport::evaluate(&arm64_ref, &arm64_cand);
     if !arm64_eval.all_passed {
-        return Err("arm64 candidate failed one or more contract performance gates".into());
+        return Err(format!(
+            "arm64 is not qualified: {}",
+            arm64_eval.validation_errors.join("; ")
+        )
+        .into());
     }
     println!("✓ arm64 paired comparison: all 12 contract gates passed");
 
@@ -93,7 +101,11 @@ fn evaluate_gates_cmd(
         println!("Overall: PASS (All gates satisfied)");
         Ok(())
     } else {
-        Err("Overall: FAIL (One or more gates exceeded threshold)".into())
+        Err(format!(
+            "Overall: NOT QUALIFIED: {}",
+            eval.validation_errors.join("; ")
+        )
+        .into())
     }
 }
 
@@ -115,7 +127,11 @@ fn report_cmd(
 
     let md = generate_markdown_report(&reference, &candidate, &eval, sec_reg.as_ref());
     println!("{md}");
-    Ok(())
+    if eval.all_passed {
+        Ok(())
+    } else {
+        Err("report is not qualified performance evidence".into())
+    }
 }
 
 fn verify_secondary_cmd(path: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -130,22 +146,22 @@ fn verify_secondary_cmd(path: &Path) -> Result<(), Box<dyn std::error::Error + S
     Ok(())
 }
 
-fn generate_baselines_cmd(dir: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let baselines_dir = if dir.ends_with("baselines") {
+fn generate_fixtures_cmd(dir: &Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let baselines_dir = if dir.ends_with("fixtures") {
         dir.to_path_buf()
     } else {
-        dir.join("baselines")
+        dir.join("fixtures")
     };
     std::fs::create_dir_all(&baselines_dir)?;
 
     let amd64_ref =
-        rubix_dev::perf::harness::build_reference_baseline(rubix_dev::perf::Architecture::Amd64);
+        rubix_dev::perf::harness::build_reference_fixture(rubix_dev::perf::Architecture::Amd64);
     let amd64_cand =
-        rubix_dev::perf::harness::build_candidate_baseline(rubix_dev::perf::Architecture::Amd64);
+        rubix_dev::perf::harness::build_candidate_fixture(rubix_dev::perf::Architecture::Amd64);
     let arm64_ref =
-        rubix_dev::perf::harness::build_reference_baseline(rubix_dev::perf::Architecture::Arm64);
+        rubix_dev::perf::harness::build_reference_fixture(rubix_dev::perf::Architecture::Arm64);
     let arm64_cand =
-        rubix_dev::perf::harness::build_candidate_baseline(rubix_dev::perf::Architecture::Arm64);
+        rubix_dev::perf::harness::build_candidate_fixture(rubix_dev::perf::Architecture::Arm64);
 
     rubix_dev::perf::save_report(&baselines_dir.join("amd64-reference-go.json"), &amd64_ref)?;
     rubix_dev::perf::save_report(
@@ -166,7 +182,8 @@ fn generate_baselines_cmd(dir: &Path) -> Result<(), Box<dyn std::error::Error + 
     let arm64_eval = rubix_dev::perf::GateEvaluationReport::evaluate(&arm64_ref, &arm64_cand);
     let paired = serde_json::json!({
         "schema_version": 1,
-        "title": "Paired Go Reference vs Rust Candidate Performance Comparison",
+        "evidence_kind": "synthetic-fixture",
+        "title": "Synthetic Go Reference vs Rust Candidate Arithmetic Example",
         "timestamp": "2026-10-03T14:30:00Z",
         "all_passed": amd64_eval.all_passed && arm64_eval.all_passed,
         "amd64": amd64_eval,
@@ -177,8 +194,37 @@ fn generate_baselines_cmd(dir: &Path) -> Result<(), Box<dyn std::error::Error + 
         serde_json::to_vec_pretty(&paired)?,
     )?;
 
+    let root = baselines_dir
+        .parent()
+        .ok_or("fixture directory requires a parent")?;
+    let mut files = std::collections::BTreeMap::new();
+    for name in [
+        "amd64-reference-go.json",
+        "amd64-candidate-rust.json",
+        "arm64-reference-go.json",
+        "arm64-candidate-rust.json",
+        "paired-comparison.json",
+        "secondary-targets.json",
+    ] {
+        let bytes = std::fs::read(baselines_dir.join(name))?;
+        files.insert(format!("fixtures/{name}"), rubix_dev::sha256(&bytes));
+    }
+    if root.join("inputs.json").is_file() {
+        files.insert(
+            "inputs.json".into(),
+            rubix_dev::sha256(&std::fs::read(root.join("inputs.json"))?),
+        );
+    }
+    std::fs::write(
+        root.join("provenance.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "schema_version": 1, "evidence_kind": "synthetic-fixture",
+            "purpose": "fixture integrity only; not live capture provenance", "files": files
+        }))?,
+    )?;
+
     println!(
-        "Generated committed baselines in {}",
+        "Generated synthetic fixtures (NOT QUALIFIED) in {}",
         baselines_dir.display()
     );
     Ok(())
@@ -271,12 +317,12 @@ fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             }
             verify_secondary_cmd(Path::new(&args[1]))
         },
-        "generate-baselines" => {
+        "generate-fixtures" => {
             if args.len() < 2 {
                 print_usage();
-                return Err("generate-baselines requires directory path".into());
+                return Err("generate-fixtures requires directory path".into());
             }
-            generate_baselines_cmd(Path::new(&args[1]))
+            generate_fixtures_cmd(Path::new(&args[1]))
         },
         other => {
             print_usage();

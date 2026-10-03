@@ -11,6 +11,7 @@ use std::path::Path;
 pub fn load_report(path: &Path) -> Result<PerformanceReport> {
     let bytes = crate::read_bounded(path, 16 * 1024 * 1024)?;
     let report: PerformanceReport = serde_json::from_slice(&bytes)?;
+    super::validation::validate_report(&report)?;
     Ok(report)
 }
 
@@ -50,9 +51,12 @@ pub fn generate_markdown_report(
     let overall_status = if evaluation.all_passed {
         "PASSED (All 12 Gates Met)"
     } else {
-        "FAILED (One or More Gates Exceeded)"
+        "NOT QUALIFIED (Invalid, synthetic or unverified evidence)"
     };
     let _ = writeln!(out, "**Overall Gate Status:** {overall_status}");
+    for error in &evaluation.validation_errors {
+        let _ = writeln!(out, "- {error}");
+    }
     let _ = writeln!(out);
     let _ = writeln!(
         out,
@@ -183,12 +187,12 @@ pub fn generate_markdown_report(
             .idle_footprint
             .retained_processes
             .iter()
-            .find(|p| p.process_name.to_lowercase().contains(key));
+            .find(|p| super::harness::process_role(&p.process_name) == Some(key));
         let c_proc = candidate
             .idle_footprint
             .retained_processes
             .iter()
-            .find(|p| p.process_name.to_lowercase().contains(key));
+            .find(|p| super::harness::process_role(&p.process_name) == Some(key));
 
         let (r_pss, r_rss) = r_proc.map_or((0.0, 0.0), |p| {
             (p.pss_bytes as f64 / mib, p.rss_bytes as f64 / mib)
@@ -263,10 +267,15 @@ pub fn generate_markdown_report(
     );
     let _ = writeln!(
         out,
-        "- **Sustained Growth (24h Soak):** Initial settled {:.2} MiB -> Final settled {:.2} MiB ({:.3}x growth, 0 OOMs, 0 crashes)",
+        "- **Sustained Growth (Declared {}h Soak):** Initial settled {:.2} MiB -> Final settled {:.2} MiB ({:.3}x derived growth, {} OOMs, {} crashes, {} unexplained failures)",
+        candidate.sustained_growth.duration_hours,
         candidate.sustained_growth.initial_settled_idle_median_bytes as f64 / mib,
         candidate.sustained_growth.final_settled_idle_median_bytes as f64 / mib,
-        candidate.sustained_growth.growth_ratio
+        candidate.sustained_growth.final_settled_idle_median_bytes as f64
+            / candidate.sustained_growth.initial_settled_idle_median_bytes as f64,
+        candidate.sustained_growth.oom_kill_count,
+        candidate.sustained_growth.crash_count,
+        candidate.sustained_growth.unexplained_failures
     );
     let _ = writeln!(
         out,

@@ -3,17 +3,17 @@
   "targets": {
     "armv7": {
       "architecture": "armv7",
-      "status": "secondary-supported-with-limits",
+      "status": "not-qualified",
       "address_space_bits": 32,
-      "maximum_pod_density": 45,
+      "maximum_pod_density": 0,
       "d2k_supported": false,
       "portainer_supported": true,
       "crun_source_build_required": true,
-      "cold_boot_latency_overhead_multiplier": "1.35x",
+      "cold_boot_latency_overhead_multiplier": "unmeasured",
       "primary_gate_exceptions": [
-        "Pod density capped at 45 replicas due to 32-bit user address space and kernel task memory limit",
-        "D2K translator disabled due to 32-bit Go/Rust memory mapping constraints",
-        "Boot-to-API and first-pod latency allow 1.35x multiplier over amd64 reference"
+        "Pod density is unmeasured; no accepted density exception",
+        "D2K translator disabled by platform contract",
+        "Startup latency is unmeasured; no accepted latency exception"
       ],
       "hardware_and_toolchain_constraints": [
         "Requires hard-float ABI (armv7hl / armhf)",
@@ -23,18 +23,18 @@
     },
     "riscv64": {
       "architecture": "riscv64",
-      "status": "secondary-experimental-with-limits",
+      "status": "not-qualified",
       "address_space_bits": 64,
-      "maximum_pod_density": 30,
+      "maximum_pod_density": 0,
       "d2k_supported": false,
       "portainer_supported": false,
       "crun_source_build_required": false,
-      "cold_boot_latency_overhead_multiplier": "2.50x",
+      "cold_boot_latency_overhead_multiplier": "unmeasured",
       "primary_gate_exceptions": [
         "Portainer agent and UI unavailable on riscv64",
         "D2K translator disabled",
-        "Emulation/TCG or early silicon imposes 2.50x cold-cache startup latency gap",
-        "Pod density capped at 30 replicas under 4 GiB memory limit"
+        "Startup latency is unmeasured; no accepted latency exception",
+        "Pod density is unmeasured; no accepted density exception"
       ],
       "hardware_and_toolchain_constraints": [
         "Requires rv64gc ISA baseline with Linux cgroups v2",
