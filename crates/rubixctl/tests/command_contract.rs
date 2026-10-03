@@ -26,6 +26,7 @@ struct TestInputs {
     download_url_called: Option<String>,
     download_dest_called: Option<PathBuf>,
     download_proxy_called: Option<String>,
+    download_temp_dir_called: Option<PathBuf>,
     copy_self_dest_called: Option<PathBuf>,
     parent_environ_data: Option<Vec<u8>>,
     download_fails: bool,
@@ -41,6 +42,7 @@ impl Default for TestInputs {
             download_url_called: None,
             download_dest_called: None,
             download_proxy_called: None,
+            download_temp_dir_called: None,
             copy_self_dest_called: None,
             parent_environ_data: None,
             download_fails: false,
@@ -96,13 +98,20 @@ impl CheckInputs for TestInputs {
         ])
     }
 
-    fn download_file(&mut self, url: &str, dest: &Path, proxy: Option<&str>) -> io::Result<()> {
+    fn download_file(
+        &mut self,
+        url: &str,
+        dest: &Path,
+        proxy: Option<&str>,
+        temp_dir: Option<&Path>,
+    ) -> io::Result<()> {
         if self.download_fails {
             return Err(io::Error::other("mock download failure"));
         }
         self.download_url_called = Some(url.to_string());
         self.download_dest_called = Some(dest.to_path_buf());
         self.download_proxy_called = proxy.map(str::to_string);
+        self.download_temp_dir_called = temp_dir.map(Path::to_path_buf);
         Ok(())
     }
 
@@ -453,6 +462,7 @@ fn test_execute_completion_cli() {
 fn test_execute_download_success() {
     let mut inputs = TestInputs {
         arch: "aarch64".into(),
+        libc: Libc::Musl,
         ..TestInputs::default()
     };
     let mut stdout = Vec::new();
@@ -494,6 +504,33 @@ fn test_execute_download_success() {
     let err_str = String::from_utf8_lossy(&stderr);
     assert!(err_str.contains("Target resolved: kubesolo-v1.1.8-linux-arm64-musl-offline.tar.gz"));
     assert!(err_str.contains("Bundle ready in /tmp/rubix-download-test"));
+    assert_eq!(
+        inputs.download_temp_dir_called,
+        Some(PathBuf::from("/tmp/scratch"))
+    );
+    assert!(
+        err_str.contains("--offline-install=./kubesolo-v1.1.8-linux-arm64-musl-offline.tar.gz")
+    );
+}
+
+#[test]
+fn mismatched_installer_libc_is_rejected_before_bundle_writes() {
+    for (executable_libc, selected_libc) in [(Libc::Glibc, Libc::Musl), (Libc::Musl, Libc::Glibc)] {
+        let mut inputs = TestInputs {
+            libc: executable_libc,
+            ..Default::default()
+        };
+        let options = DownloadOptions {
+            libc: Some(selected_libc),
+            ..Default::default()
+        };
+        assert_eq!(
+            execute_download(&options, &mut inputs, &mut Vec::new(), &mut Vec::new()).unwrap(),
+            1
+        );
+        assert!(inputs.download_dest_called.is_none());
+        assert!(inputs.copy_self_dest_called.is_none());
+    }
 }
 
 #[test]
@@ -550,10 +587,7 @@ fn test_recover_sudo_env_from_bytes() {
     // Scenario B: Running under sudo (SUDO_USER present), edge key missing in env -> recovered
     env.insert("SUDO_USER".into(), "alice".into());
     recover_sudo_env_from_bytes(&mut env, raw_bytes);
-    assert_eq!(
-        env.get("KUBESOLO_VERSION").map(String::as_str),
-        Some("v1.2.0")
-    );
+    assert!(!env.contains_key("KUBESOLO_VERSION"));
     assert_eq!(
         env.get("KUBESOLO_PORTAINER_EDGE_KEY").map(String::as_str),
         Some("secret_key_abc")

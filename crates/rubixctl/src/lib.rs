@@ -43,6 +43,7 @@ pub trait CheckInputs {
         _url: &str,
         _dest: &std::path::Path,
         _proxy: Option<&str>,
+        _temp_dir: Option<&std::path::Path>,
     ) -> io::Result<()> {
         Err(io::Error::new(
             io::ErrorKind::Unsupported,

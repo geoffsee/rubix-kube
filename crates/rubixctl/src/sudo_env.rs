@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::io;
 
 /// Scans raw environ bytes (typically from `/proc/$PPID/environ`) and recovers
-/// `KUBESOLO_*` variables stripped by sudo `env_reset`.
+/// Portainer Edge variables stripped by sudo `env_reset`.
 ///
 /// Only triggers when running under sudo (`SUDO_USER` is present) with
 /// `KUBESOLO_PORTAINER_EDGE_KEY` missing from the current process environment.
@@ -24,6 +24,15 @@ pub fn recover_sudo_env_from_bytes(
                 std::str::from_utf8(&chunk[pos + 1..]),
             )
         {
+            if !matches!(
+                key,
+                "KUBESOLO_PORTAINER_EDGE_ID"
+                    | "KUBESOLO_PORTAINER_EDGE_KEY"
+                    | "KUBESOLO_PORTAINER_EDGE_ASYNC"
+                    | "KUBESOLO_PORTAINER_EDGE_IMAGE"
+            ) {
+                continue;
+            }
             environment
                 .entry(key.to_string())
                 .or_insert_with(|| val.to_string());

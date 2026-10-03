@@ -19,7 +19,7 @@ The command shell also supports completion and artifact download, with a
 `CommandHandler` seam for the remaining management commands. Download archive
 selection covers all 16 Linux architecture/libc/online/offline cells. Because the
 current bundle stages the running `rubixctl`, download execution requires a Linux
-executable matching the selected architecture. macOS and cross-architecture
+executable matching the selected architecture and libc ABI. macOS and cross-architecture
 invocations fail before downloading or copying files; run the command with a
 matching Linux `rubixctl`. Selecting a node archive alone does not verify the
 included management executable, and this restriction remains until matching

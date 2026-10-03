@@ -17,7 +17,7 @@ pub struct CompletionOptions {
     pub raw_arg: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct DownloadOptions {
     pub version: String,
     pub path: PathBuf,
@@ -27,6 +27,24 @@ pub struct DownloadOptions {
     pub proxy: Option<String>,
     pub offline: bool,
     pub libc: Option<Libc>,
+}
+
+impl fmt::Debug for DownloadOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DownloadOptions")
+            .field("version", &self.version)
+            .field("path", &self.path)
+            .field("arch", &self.arch)
+            .field(
+                "custom_url",
+                &self.custom_url.as_ref().map(|_| "<redacted>"),
+            )
+            .field("temp_dir", &self.temp_dir)
+            .field("proxy", &self.proxy.as_ref().map(|_| "<redacted>"))
+            .field("offline", &self.offline)
+            .field("libc", &self.libc)
+            .finish()
+    }
 }
 
 impl Default for DownloadOptions {
@@ -129,7 +147,7 @@ impl fmt::Debug for InstallOptions {
             .field("debug", &self.debug)
             .field("pprof_server", &self.pprof_server)
             .field("run_mode", &self.run_mode)
-            .field("proxy", &self.proxy)
+            .field("proxy", &self.proxy.as_ref().map(|_| "<redacted>"))
             .field("offline_install", &self.offline_install)
             .field("install_prereqs", &self.install_prereqs)
             .field("d2k", &self.d2k)
@@ -144,7 +162,10 @@ impl fmt::Debug for InstallOptions {
             .field("container_image", &self.container_image)
             .field("container_ports", &self.container_ports)
             .field("name", &self.name)
-            .field("custom_url", &self.custom_url)
+            .field(
+                "custom_url",
+                &self.custom_url.as_ref().map(|_| "<redacted>"),
+            )
             .field("temp_dir", &self.temp_dir)
             .finish()
     }
@@ -165,13 +186,28 @@ impl Default for UninstallOptions {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct UpgradeOptions {
     pub version: String,
     pub path: PathBuf,
     pub offline_install: Option<PathBuf>,
     pub custom_url: Option<String>,
     pub proxy: Option<String>,
+}
+
+impl fmt::Debug for UpgradeOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UpgradeOptions")
+            .field("version", &self.version)
+            .field("path", &self.path)
+            .field("offline_install", &self.offline_install)
+            .field(
+                "custom_url",
+                &self.custom_url.as_ref().map(|_| "<redacted>"),
+            )
+            .field("proxy", &self.proxy.as_ref().map(|_| "<redacted>"))
+            .finish()
+    }
 }
 
 impl Default for UpgradeOptions {

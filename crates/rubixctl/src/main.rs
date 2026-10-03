@@ -21,23 +21,17 @@ impl rubixctl::CheckInputs for Host {
         url: &str,
         dest: &std::path::Path,
         proxy: Option<&str>,
+        temp_dir: Option<&std::path::Path>,
     ) -> io::Result<()> {
-        if let Some(parent) = dest.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let mut cmd = std::process::Command::new("curl");
-        cmd.arg("-fSL").arg("-o").arg(dest);
-        if let Some(p) = proxy {
-            cmd.arg("--proxy").arg(p);
-        }
-        cmd.arg(url);
-        let status = cmd.status()?;
-        if !status.success() {
-            return Err(io::Error::other(format!(
-                "curl failed with status: {status}"
-            )));
-        }
-        Ok(())
+        rubixctl::download::stage_download(dest, temp_dir, |staged| {
+            let status = rubixctl::download::curl_download_command(url, staged, proxy).status()?;
+            if !status.success() {
+                return Err(io::Error::other(format!(
+                    "curl failed with status: {status}"
+                )));
+            }
+            Ok(())
+        })
     }
     fn copy_self(&mut self, dest: &std::path::Path) -> io::Result<()> {
         if let Some(parent) = dest.parent() {
@@ -82,7 +76,26 @@ fn main() -> std::process::ExitCode {
         let _ = writeln!(io::stderr(), "error: command arguments must be UTF-8");
         return std::process::ExitCode::FAILURE;
     };
-    let mut environment: BTreeMap<String, String> = std::env::vars().collect();
+    let mut environment = BTreeMap::new();
+    for (key, value) in std::env::vars_os() {
+        let Ok(key) = key.into_string() else { continue };
+        if !(key.starts_with("KUBESOLO_")
+            || matches!(
+                key.as_str(),
+                "SUDO_USER" | "TEMP_DIR" | "HTTP_PROXY" | "HTTPS_PROXY"
+            ))
+        {
+            continue;
+        }
+        let Ok(value) = value.into_string() else {
+            let _ = writeln!(
+                io::stderr(),
+                "error: management environment inputs must be UTF-8"
+            );
+            return std::process::ExitCode::FAILURE;
+        };
+        environment.insert(key, value);
+    }
     if environment.contains_key("SUDO_USER")
         && !environment.contains_key("KUBESOLO_PORTAINER_EDGE_KEY")
     {

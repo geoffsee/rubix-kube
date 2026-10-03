@@ -1,7 +1,58 @@
 use crate::CheckInputs;
 use crate::artifact::{artifact_archive_name, artifact_download_url, resolve_target};
 use crate::contract::DownloadOptions;
+use rubix_platform::Libc;
 use std::io::{self, Write};
+use std::path::Path;
+
+/// Downloads into owned staging, then atomically publishes on the destination
+/// filesystem. Failed downloads leave existing bundles untouched.
+pub fn stage_download(
+    dest: &Path,
+    temp_dir: Option<&Path>,
+    fetch: impl FnOnce(&Path) -> io::Result<()>,
+) -> io::Result<()> {
+    let staging = match temp_dir {
+        Some(parent) => {
+            std::fs::create_dir_all(parent)?;
+            tempfile::TempDir::new_in(parent)?
+        },
+        None => tempfile::TempDir::new()?,
+    };
+    let staged = staging.path().join("bundle");
+    fetch(&staged)?;
+    let parent = dest
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    std::fs::create_dir_all(parent)?;
+    let mut published = tempfile::NamedTempFile::new_in(parent)?;
+    let mut source = std::fs::File::open(staged)?;
+    io::copy(&mut source, &mut published)?;
+    published.as_file().sync_all()?;
+    published.persist(dest).map_err(|error| error.error)?;
+    Ok(())
+}
+
+/// Curl receives a bounded protocol policy and an explicit end of options.
+pub fn curl_download_command(url: &str, dest: &Path, proxy: Option<&str>) -> std::process::Command {
+    let mut command = std::process::Command::new("curl");
+    command
+        .args([
+            "-fSL",
+            "--proto",
+            "=https,http",
+            "--proto-redir",
+            "=https,http",
+            "-o",
+        ])
+        .arg(dest);
+    if let Some(proxy) = proxy {
+        command.arg("--proxy").arg(proxy);
+    }
+    command.arg("--").arg(url);
+    command
+}
 
 /// Executes the artifact download workflow: resolves target architecture and libc,
 /// calculates archive name and URL, fetches the binary bundle, and stages the management CLI.
@@ -53,10 +104,17 @@ pub fn execute_download(
     };
 
     let executable_target = resolve_target(None, None, Some(&evidence));
-    if !matches!(executable_target, Ok(host) if host.architecture == target.architecture) {
+    let executable_libc = match evidence.executable.environment.as_str() {
+        "gnu" => Some(Libc::Glibc),
+        "musl" => Some(Libc::Musl),
+        _ => None,
+    };
+    if !matches!(executable_target, Ok(host) if host.architecture == target.architecture)
+        || executable_libc != Some(target.libc)
+    {
         writeln!(
             stderr,
-            "  [fail] bundle installer does not match the selected Linux architecture; run download with a matching Linux rubixctl executable. No bundle files were created."
+            "  [fail] bundle installer does not match the selected Linux architecture and libc ABI; run download with a matching Linux rubixctl executable. No bundle files were created."
         )?;
         return Ok(1);
     }
@@ -77,7 +135,12 @@ pub fn execute_download(
     let dest_dir = &options.path;
     let archive_path = dest_dir.join(&archive_name);
 
-    if let Err(err) = inputs.download_file(&download_url, &archive_path, options.proxy.as_deref()) {
+    if let Err(err) = inputs.download_file(
+        &download_url,
+        &archive_path,
+        options.proxy.as_deref(),
+        options.temp_dir.as_deref(),
+    ) {
         writeln!(stderr, "  [fail] download: {err}")?;
         return Ok(1);
     }
@@ -92,7 +155,7 @@ pub fn execute_download(
         stderr,
         "  [ok] Bundle ready in {}\n\n  Next steps:\n  Transfer the files to the target machine, then:\n    sudo ./rubixctl install --offline-install={}\n",
         dest_dir.display(),
-        archive_path.display()
+        format_args!("./{archive_name}")
     )?;
 
     Ok(0)
