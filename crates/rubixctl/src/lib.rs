@@ -1,5 +1,6 @@
 //! Read-only management command boundary, independent from node startup parsing.
 pub mod artifact;
+pub mod bundle;
 pub mod check_workflow;
 pub mod completion;
 pub mod contract;

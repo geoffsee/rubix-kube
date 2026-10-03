@@ -40,7 +40,7 @@ pub struct BundleManifest {
     pub entries: Vec<BundleEntry>,
 }
 
-fn safe_relative(path: &str) -> Result<PathBuf, String> {
+pub(crate) fn safe_relative(path: &str) -> Result<PathBuf, String> {
     let p = Path::new(path);
     if path.is_empty() || p.is_absolute() {
         return Err(format!("unsafe bundle path '{path}'"));
@@ -123,7 +123,7 @@ impl BundleManifest {
     }
 }
 
-fn arch_name(a: Architecture) -> &'static str {
+pub(crate) fn arch_name(a: Architecture) -> &'static str {
     match a {
         Architecture::Amd64 => "amd64",
         Architecture::Arm64 => "arm64",
@@ -132,7 +132,7 @@ fn arch_name(a: Architecture) -> &'static str {
     }
 }
 
-fn libc_name(l: Libc) -> &'static str {
+pub(crate) fn libc_name(l: Libc) -> &'static str {
     match l {
         Libc::Glibc => "glibc",
         Libc::Musl => "musl",
@@ -149,7 +149,7 @@ fn elf_machine(a: Architecture) -> u16 {
 }
 
 /// Checks the ELF identity of an executable against the target architecture.
-fn check_elf(path: &Path, arch: Architecture) -> Result<(), String> {
+pub(crate) fn check_elf(path: &Path, arch: Architecture) -> Result<(), String> {
     let bytes = fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     if bytes.len() < 20 || &bytes[..4] != b"\x7fELF" {
         return Err(format!("{} is not an ELF executable", path.display()));
@@ -170,7 +170,7 @@ fn check_elf(path: &Path, arch: Architecture) -> Result<(), String> {
     Ok(())
 }
 
-fn sha256_hex(path: &Path) -> io::Result<String> {
+pub(crate) fn sha256_hex(path: &Path) -> io::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();
     let mut buf = [0u8; 8192];
@@ -189,7 +189,7 @@ fn sha256_hex(path: &Path) -> io::Result<String> {
 }
 
 /// Lists archive members and rejects traversal, absolute paths and links.
-fn audit_archive(archive: &Path) -> Result<(), String> {
+pub(crate) fn audit_archive(archive: &Path) -> Result<(), String> {
     let out = Command::new("tar")
         .arg("-tzvf")
         .arg(archive)
