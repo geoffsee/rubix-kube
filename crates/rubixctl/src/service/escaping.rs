@@ -46,6 +46,11 @@ pub fn escape_systemd_env(s: &str) -> String {
     escaped
 }
 
+/// Quotes one systemd command argument and suppresses specifier/environment expansion.
+pub fn systemd_quote(s: &str) -> String {
+    format!("\"{}\"", escape_systemd_env(s).replace('$', "$$"))
+}
+
 /// Strips carriage returns and newlines to prevent service file / template header injection.
 pub fn sanitize_newlines(s: &str) -> String {
     s.chars().filter(|&c| c != '\r' && c != '\n').collect()

@@ -102,7 +102,7 @@ impl FromStr for RunMode {
             "daemon" => Ok(Self::Daemon),
             "foreground" => Ok(Self::Foreground),
             "container" => Ok(Self::Container),
-            _ => Err(UnsupportedTargetError::UnknownInitSystem(name.to_string())),
+            _ => Err(UnsupportedTargetError::UnknownRunMode(name.to_string())),
         }
     }
 }
@@ -135,7 +135,7 @@ pub struct CustomServicePaths {
     pub pid_file_path: Option<PathBuf>,
     /// Explicit log file path (default `/var/log/kubesolo.log`).
     pub log_file_path: Option<PathBuf>,
-    /// Explicit environment file path (if applicable).
+    /// Explicit environment file path (if applicable). `OpenRC` uses its canonical conf.d path.
     pub env_file_path: Option<PathBuf>,
 }
 

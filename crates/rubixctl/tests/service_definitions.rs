@@ -4,7 +4,59 @@ use rubixctl::{
     generate_service_definition, plan_lifecycle_action, render_custom_definition, shell_quote,
 };
 use std::collections::BTreeMap;
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
+
+#[test]
+fn generated_backends_reject_unsafe_names_and_environment_keys() {
+    for backend in [
+        InitBackend::Systemd,
+        InitBackend::OpenRc,
+        InitBackend::SysVinit,
+        InitBackend::Upstart,
+        InitBackend::Runit,
+        InitBackend::S6,
+    ] {
+        for name in [
+            "",
+            ".",
+            "..",
+            "../node",
+            "node/name",
+            "node\nexec id",
+            "$(id)",
+            "node'",
+        ] {
+            let config = ServiceConfig {
+                name: name.into(),
+                backend: Some(backend),
+                ..ServiceConfig::default()
+            };
+            assert_eq!(
+                generate_service_definition(&config).unwrap_err(),
+                UnsupportedTargetError::InvalidServiceName
+            );
+        }
+        for key in ["", "1A", "A=1;id", "A\nexec id", "A-B", "$(id)"] {
+            let mut config = ServiceConfig {
+                backend: Some(backend),
+                ..ServiceConfig::default()
+            };
+            config.environment.insert(key.into(), "value".into());
+            assert_eq!(
+                generate_service_definition(&config).unwrap_err(),
+                UnsupportedTargetError::InvalidEnvironmentKey
+            );
+        }
+        let mut config = ServiceConfig {
+            name: "node-1.test_name".into(),
+            backend: Some(backend),
+            ..ServiceConfig::default()
+        };
+        config.environment.insert("_VALID_1".into(), "value".into());
+        assert!(generate_service_definition(&config).is_ok());
+    }
+}
 
 #[test]
 fn test_shell_quoting_and_sanitization() {
@@ -82,7 +134,11 @@ fn test_systemd_default_definition() {
     assert!(content.contains("[Service]"));
     assert!(content.contains("KillMode=process"));
     assert!(content.contains("LimitNOFILE=1048576"));
-    assert!(content.contains("ExecStart=/usr/local/bin/kubesolo '--debug' '--run-mode' 'service'"));
+    assert!(
+        content.contains(
+            "ExecStart=\"/usr/local/bin/kubesolo\" \"--debug\" \"--run-mode\" \"service\""
+        )
+    );
     assert!(content.contains("Environment=\"HTTP_PROXY=http://10.0.0.1:8080\"\n"));
     assert!(content.contains("Environment=\"KUBESOLO_EXTRA=percent%%and\\\"quote\"\n"));
     assert!(content.contains("[Install]\nWantedBy=multi-user.target"));
@@ -207,7 +263,7 @@ fn test_upstart_default_definition() {
     assert!(conf.content.contains("env FOO=\"bar\""));
     assert!(
         conf.content
-            .contains("exec /usr/local/bin/kubesolo '--local-storage'")
+            .contains("exec '/usr/local/bin/kubesolo' '--local-storage'")
     );
 }
 
@@ -238,7 +294,7 @@ fn test_runit_default_definition() {
     assert_eq!(run_file.mode, 0o755);
     assert!(run_file.content.starts_with("#!/bin/sh\nexec 2>&1\n"));
     assert!(run_file.content.contains("export MY_VAR=\"val\""));
-    assert!(run_file.content.contains("exec /usr/local/bin/kubesolo"));
+    assert!(run_file.content.contains("exec '/usr/local/bin/kubesolo'"));
 
     assert_eq!(def.symlinks.len(), 1);
     assert_eq!(
@@ -276,7 +332,7 @@ fn test_s6_default_definition() {
     assert_eq!(run.mode, 0o755);
     assert!(
         run.content
-            .contains("exec /usr/local/bin/kubesolo '--debug'")
+            .contains("exec '/usr/local/bin/kubesolo' '--debug'")
     );
 
     let finish = &def.files[1];
@@ -538,7 +594,10 @@ fn test_lifecycle_plan_command_specifics() {
     };
     let runit_plan = plan_lifecycle_action(LifecycleAction::Install, &runit_cfg).unwrap();
     assert_eq!(runit_plan.commands[0].program, "sv");
-    assert_eq!(runit_plan.commands[0].args, vec!["restart", "testsvc"]);
+    assert_eq!(
+        runit_plan.commands[0].args,
+        vec!["restart", "/etc/runit/sv/testsvc"]
+    );
 
     // s6
     let s6_cfg = ServiceConfig {
@@ -550,4 +609,237 @@ fn test_lifecycle_plan_command_specifics() {
     let s6_plan = plan_lifecycle_action(LifecycleAction::Install, &s6_cfg).unwrap();
     assert_eq!(s6_plan.commands[0].program, "s6-svc");
     assert_eq!(s6_plan.commands[0].args, vec!["-u", "/etc/s6/sv/testsvc"]);
+}
+
+#[test]
+fn lifecycle_rejects_unimplemented_process_control_and_reports_bad_mode() {
+    let mut config = ServiceConfig::default();
+    for mode in [RunMode::Daemon, RunMode::Foreground] {
+        config.run_mode = mode;
+        for action in [
+            LifecycleAction::Install,
+            LifecycleAction::Uninstall,
+            LifecycleAction::Start,
+            LifecycleAction::Stop,
+            LifecycleAction::Restart,
+            LifecycleAction::Status,
+        ] {
+            assert_eq!(
+                plan_lifecycle_action(action, &config).unwrap_err(),
+                UnsupportedTargetError::UnsupportedAction { mode, action }
+            );
+        }
+    }
+    assert!(
+        "bogus"
+            .parse::<RunMode>()
+            .unwrap_err()
+            .to_string()
+            .contains("run mode")
+    );
+}
+
+#[test]
+fn assignments_do_not_execute_argument_substitutions() {
+    let mut config = ServiceConfig {
+        args: vec![r#"$(printf EXECUTED) `printf EXECUTED` $HOME "quote""#.into()],
+        ..ServiceConfig::default()
+    };
+    for backend in [InitBackend::OpenRc, InitBackend::SysVinit] {
+        config.backend = Some(backend);
+        let def = generate_service_definition(&config).unwrap();
+        let assignments = def.files[0]
+            .content
+            .lines()
+            .filter(|line| line.starts_with("command_args=") || line.starts_with("DAEMON_ARGS="))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let variable = if backend == InitBackend::OpenRc {
+            "command_args"
+        } else {
+            "DAEMON_ARGS"
+        };
+        let script = format!("{assignments}\nprintf '%s' \"${variable}\"");
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(script)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert_eq!(
+            String::from_utf8(output.stdout).unwrap().trim(),
+            shell_quote(&config.args[0])
+        );
+    }
+}
+
+#[test]
+fn systemd_quotes_literals_and_shell_backends_execute_spaced_binary() {
+    let mut config = ServiceConfig {
+        backend: Some(InitBackend::Systemd),
+        binary_path: PathBuf::from("/custom install/node"),
+        args: vec![r#"%n ${UNSET} ' " \"#.into()],
+        ..ServiceConfig::default()
+    };
+    let def = generate_service_definition(&config).unwrap();
+    assert!(
+        def.files[0]
+            .content
+            .contains(r#"ExecStart="/custom install/node" "%%n $${UNSET} ' \" \\""#)
+    );
+    let dir = tempfile::tempdir().unwrap();
+    let binary = dir.path().join("node with spaces");
+    std::fs::write(&binary, "#!/bin/sh\nprintf '%s' \"$1\"\n").unwrap();
+    std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o755)).unwrap();
+    config.binary_path = binary;
+    config.args = vec!["literal argument".into()];
+    for backend in [InitBackend::Runit, InitBackend::S6] {
+        config.backend = Some(backend);
+        let def = generate_service_definition(&config).unwrap();
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(&def.files[0].content)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        assert_eq!(output.stdout, b"literal argument");
+    }
+}
+
+#[test]
+fn sysv_status_preserves_stopped_exit_code() {
+    let mut config = ServiceConfig {
+        backend: Some(InitBackend::SysVinit),
+        binary_path: PathBuf::from("/bin/sh"),
+        ..ServiceConfig::default()
+    };
+    let dir = tempfile::tempdir().unwrap();
+    config.custom_paths.pid_file_path = Some(dir.path().join("absent.pid"));
+    let def = generate_service_definition(&config).unwrap();
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(&def.files[0].content)
+        .arg("test")
+        .arg("status")
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(3));
+    config.binary_path = dir.path().join("absent-node");
+    let def = generate_service_definition(&config).unwrap();
+    for (action, expected) in [("status", 3), ("start", 1), ("restart", 1)] {
+        let output = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(&def.files[0].content)
+            .arg("test")
+            .arg(action)
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(expected));
+    }
+}
+
+#[test]
+fn service_binary_paths_reject_ambiguous_or_control_character_inputs() {
+    for path in ["relative/node", "/usr/bin/node\nextra", "/usr/bin/node\\"] {
+        let config = ServiceConfig {
+            binary_path: PathBuf::from(path),
+            ..ServiceConfig::default()
+        };
+        assert_eq!(
+            generate_service_definition(&config).unwrap_err(),
+            UnsupportedTargetError::InvalidBinaryPath
+        );
+    }
+}
+
+#[test]
+fn openrc_uses_the_canonical_conf_path_and_cleans_all_generated_files() {
+    let root = tempfile::tempdir().unwrap();
+    let config = ServiceConfig {
+        backend: Some(InitBackend::OpenRc),
+        environment: [("MODE".into(), "offline".into())].into(),
+        custom_paths: CustomServicePaths {
+            root_prefix: Some(root.path().into()),
+            env_file_path: Some(root.path().join("custom.env")),
+            ..CustomServicePaths::default()
+        },
+        ..ServiceConfig::default()
+    };
+    let def = generate_service_definition(&config).unwrap();
+    assert!(
+        def.files
+            .iter()
+            .any(|file| file.path == root.path().join("etc/conf.d/kubesolo"))
+    );
+    assert!(
+        !def.files
+            .iter()
+            .any(|file| file.path == root.path().join("custom.env"))
+    );
+    let plan = plan_lifecycle_action(LifecycleAction::Uninstall, &config).unwrap();
+    assert!(
+        def.files
+            .iter()
+            .all(|file| plan.cleanup_paths.contains(&file.path))
+    );
+}
+
+#[test]
+fn supervised_directory_uninstall_stops_before_removing_every_owned_artifact() {
+    for backend in [InitBackend::Runit, InitBackend::S6] {
+        let config = ServiceConfig {
+            backend: Some(backend),
+            ..ServiceConfig::default()
+        };
+        let def = generate_service_definition(&config).unwrap();
+        let plan = plan_lifecycle_action(LifecycleAction::Uninstall, &config).unwrap();
+        for file in &def.files {
+            assert!(plan.cleanup_paths.contains(&file.path));
+        }
+        for (directory, _) in &def.directories {
+            assert!(plan.cleanup_paths.contains(directory));
+        }
+        for (_, link) in &def.symlinks {
+            assert!(plan.cleanup_paths.contains(link));
+        }
+        if backend == InitBackend::Runit {
+            let target = def.directories[0].0.to_string_lossy().into_owned();
+            assert_eq!(plan.commands[0].args, ["-w", "7", "down", &target]);
+            assert_eq!(plan.commands[1].program, "rm");
+            assert_eq!(
+                plan.commands[1].args[2],
+                def.symlinks[0].1.to_string_lossy()
+            );
+            assert_eq!(plan.commands[2].args, ["-w", "7", "exit", &target]);
+        } else {
+            assert_eq!(plan.commands[1].program, "s6-svunlink");
+            assert_eq!(plan.commands[1].args[0..2], ["-t", "7000"]);
+            assert_eq!(plan.commands[2].program, "sh");
+            assert!(plan.commands[2].args[1].contains("-eq 1"));
+        }
+    }
+}
+
+#[test]
+fn s6_supervisor_exit_probe_rejects_a_live_supervisor_and_probe_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let probe = dir.path().join("s6-svok");
+    std::fs::write(&probe, "#!/bin/sh\nexit \"$RUBIX_PROBE_CODE\"\n").unwrap();
+    std::fs::set_permissions(&probe, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let config = ServiceConfig {
+        backend: Some(InitBackend::S6),
+        ..ServiceConfig::default()
+    };
+    let plan = plan_lifecycle_action(LifecycleAction::Uninstall, &config).unwrap();
+    let check = &plan.commands[2];
+    assert_eq!(check.program, "sh");
+    for (code, absent) in [(0, false), (1, true), (111, false)] {
+        let status = std::process::Command::new("/bin/sh")
+            .args(&check.args)
+            .env("PATH", dir.path())
+            .env("RUBIX_PROBE_CODE", code.to_string())
+            .status()
+            .unwrap();
+        assert_eq!(status.success(), absent, "probe exit {code}");
+    }
 }
