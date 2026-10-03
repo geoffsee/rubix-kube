@@ -11,7 +11,17 @@ gzip payload at its inventory path. Private archive staging, link/traversal reje
 and bundle hash checks run before import. The decoder then verifies the exact image
 bytes, config platform and layer DiffIDs before passing those same bytes to Docker.
 No pull fallback is allowed after import; container creation uses `--pull=never`.
-A missing imported tag or import failure stops before owned resource creation.
+Exactly one archive tag is required before import; additional tags that Docker would
+restore are rejected. A missing imported tag or import failure stops before owned
+resource creation. Docker image load/pull commands have ten-minute execution deadlines;
+other commands have one-minute deadlines plus a one-second child cleanup budget. An
+owner thread kills and reaps the CLI child; delayed kernel cleanup returns an explicit
+unconfirmed error to the caller while the owner retains the child and capture files.
+Separate private stdout/stderr capture is monitored every ten milliseconds and requests
+termination above eight MiB per stream, with bounded final reads. Files can overshoot
+that threshold between polls; this is not a strict filesystem quota. This owns the CLI
+child, not arbitrary descendants or remote Engine operations: killing the client does
+not prove an already-accepted daemon mutation was cancelled.
 
 An explicit `--image` override retains registry-pull behavior and takes precedence
 over the offline bundle. Default online selection uses the requested version.

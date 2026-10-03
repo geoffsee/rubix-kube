@@ -12,6 +12,7 @@ pub mod container_lifecycle;
 pub mod container_ports;
 pub mod contract;
 pub mod d2k;
+mod docker_command;
 pub mod docker_engine;
 pub mod download;
 pub mod endpoints;

@@ -7,12 +7,23 @@ use std::{collections::HashMap, io};
 mod vectors;
 
 fn image_inventory() -> (rubix_assets::DeclaredInventory, Vec<u8>) {
+    image_inventory_with_tags(&["example.invalid/image:fixture"])
+}
+
+fn image_inventory_with_tags(tags: &[&str]) -> (rubix_assets::DeclaredInventory, Vec<u8>) {
     let raw_layer = vectors::entry("payload", b"image fixture");
     let layer = vectors::gzip(&raw_layer);
     let mut config: Value = serde_json::from_slice(&vectors::config("amd64", None, 1)).unwrap();
     config["rootfs"]["diff_ids"] = json!([format!("sha256:{}", vectors::hex(&raw_layer))]);
     let config = serde_json::to_vec(&config).unwrap();
-    let archive = vectors::archive(&config, &[&layer], &vectors::manifest(&config, &[&layer]));
+    let mut archive_manifest: Value =
+        serde_json::from_slice(&vectors::manifest(&config, &[&layer])).unwrap();
+    archive_manifest[0]["RepoTags"] = json!(tags);
+    let archive = vectors::archive(
+        &config,
+        &[&layer],
+        &serde_json::to_vec(&archive_manifest).unwrap(),
+    );
     let bytes = vectors::gzip(&archive);
     let mut manifest: Value = serde_json::from_slice(include_bytes!(
         "../../rubix-assets/tests/fixtures/offline-arm64.json"
@@ -179,5 +190,30 @@ fn corrupt_payload_import_failure_and_missing_imported_tag_never_pull_or_create(
             .is_err()
         );
         assert_eq!(engine.calls, ["load"]);
+    }
+}
+
+#[test]
+fn multiple_or_missing_tags_fail_before_any_engine_effect() {
+    for tags in [
+        vec![],
+        vec![
+            "example.invalid/image:fixture",
+            "unrelated.local/image:keep",
+        ],
+    ] {
+        let (inventory, bytes) = image_inventory_with_tags(&tags);
+        let mut session = inventory.decoding_session(DecodeLimits::default()).unwrap();
+        let mut engine = Engine::default();
+        assert!(
+            install_selected_container(
+                &mut engine,
+                &InstallOptions::default(),
+                params(),
+                Some((&mut session, &bytes)),
+            )
+            .is_err()
+        );
+        assert!(engine.calls.is_empty());
     }
 }

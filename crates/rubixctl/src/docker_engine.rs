@@ -7,20 +7,26 @@ use serde_json::Value;
 use std::{
     collections::HashMap,
     io::{self, Write},
-    process::Command,
+    time::Duration,
 };
 
 #[derive(Debug, Default)]
 pub struct DockerEngine;
 
 impl DockerEngine {
-    fn output(args: &[&str]) -> io::Result<std::process::Output> {
-        Command::new("docker").args(args).output()
+    fn output(args: &[&str]) -> io::Result<crate::docker_command::CommandOutput> {
+        let timeout =
+            if args.first() == Some(&"image") && matches!(args.get(1), Some(&"load" | &"pull")) {
+                Duration::from_mins(10)
+            } else {
+                Duration::from_mins(1)
+            };
+        crate::docker_command::output("docker", args, timeout)
     }
 
     fn run(args: &[&str]) -> io::Result<String> {
         let out = Self::output(args)?;
-        if !out.status.success() {
+        if !out.successful {
             return Err(io::Error::other(format!(
                 "Docker {} failed: {}",
                 args[0],
@@ -32,7 +38,7 @@ impl DockerEngine {
 
     fn inspect(kind: &str, name: &str) -> io::Result<Option<Value>> {
         let out = Self::output(&[kind, "inspect", "--", name])?;
-        if !out.status.success() {
+        if !out.successful {
             let message = String::from_utf8_lossy(&out.stderr);
             let absent = match kind {
                 "network" => {

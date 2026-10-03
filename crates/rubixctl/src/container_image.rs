@@ -39,12 +39,11 @@ pub fn verify_container_image<'a>(
             LayerDecodeLimits::default(),
         )
         .map_err(|e| format!("image payload verification failed: {e}"))?;
-    let reference = observation
-        .archive()
-        .repo_tags()
-        .first()
-        .cloned()
-        .ok_or_else(|| "offline bundle does not contain any image repo tags".to_string())?;
+    let tags = observation.archive().repo_tags();
+    if tags.len() != 1 {
+        return Err("offline bundle must contain exactly one image repo tag".into());
+    }
+    let reference = tags[0].clone();
     Ok(VerifiedContainerImage { reference, bytes })
 }
 
