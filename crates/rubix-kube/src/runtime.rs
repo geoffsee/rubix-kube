@@ -492,9 +492,29 @@ impl NodeRuntime {
             .run_with_sink(stop_receiver, io::stderr(), FlushPolicy::EachFrame)
             .await;
 
-        match report.cause {
-            StopCause::Fatal(_) => Ok(1),
-            _ => Ok(0),
-        }
+        Ok(runtime_exit_code(&report.cause))
+    }
+}
+
+fn runtime_exit_code(cause: &StopCause) -> u8 {
+    u8::from(!matches!(cause, StopCause::Requested))
+}
+
+#[cfg(test)]
+mod exit_code_tests {
+    use super::*;
+
+    #[test]
+    fn only_requested_shutdown_is_successful() {
+        assert_eq!(runtime_exit_code(&StopCause::Requested), 0);
+        assert_eq!(runtime_exit_code(&StopCause::ControlClosed), 1);
+        assert_eq!(runtime_exit_code(&StopCause::Finished), 1);
+        assert_eq!(
+            runtime_exit_code(&StopCause::Fatal(rubix_supervisor::ComponentFailure {
+                component: "test-core".into(),
+                kind: rubix_supervisor::FailureKind::UnexpectedExit,
+            })),
+            1
+        );
     }
 }

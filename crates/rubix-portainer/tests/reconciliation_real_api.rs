@@ -408,6 +408,59 @@ async fn test_supervisor_portainer_adapter_enabled_and_shutdown() {
 }
 
 #[tokio::test]
+async fn readiness_timeout_bounds_a_long_poll_interval() {
+    let temp = TempDir::new().unwrap();
+    let (_apiserver, client) = setup_test_cluster(&temp);
+    let config = sample_config();
+    let reconciler = PortainerReconciler::new(&config);
+    let started = std::time::Instant::now();
+    let result = reconciler
+        .wait_for_readiness(&client, Duration::from_millis(20), Duration::from_secs(10))
+        .await;
+    assert!(matches!(
+        result,
+        Err(rubix_portainer::error::PortainerError::ReadinessTimeout { .. })
+    ));
+    assert!(started.elapsed() < Duration::from_secs(1));
+}
+
+#[tokio::test]
+async fn stop_during_readiness_does_not_wait_for_timeout() {
+    let temp = TempDir::new().unwrap();
+    let (_apiserver, client) = setup_test_cluster(&temp);
+    let service = PortainerService::new(
+        sample_config().with_readiness_timeout(Duration::from_secs(30)),
+        Arc::new(client.clone()),
+    );
+    let reg = PortainerAdapter::registration(
+        COMPONENT_PORTAINER,
+        service,
+        vec![],
+        Duration::from_mins(1),
+    );
+    let supervisor = Supervisor::new(vec![reg]).unwrap();
+    let (stop, receiver) = stop_channel();
+    let task = tokio::spawn(supervisor.run(receiver));
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while client
+            .get_deployment(PORTAINER_NAMESPACE, PORTAINER_AGENT_DEPLOYMENT_NAME)
+            .await
+            .is_err()
+        {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .unwrap();
+    stop.stop();
+    let report = tokio::time::timeout(Duration::from_secs(1), task)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(report.cause, StopCause::Requested);
+}
+
+#[tokio::test]
 async fn test_supervisor_portainer_adapter_disabled_mode() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);

@@ -455,37 +455,41 @@ impl PortainerReconciler {
         let start = std::time::Instant::now();
         let mut attempts = 0;
 
-        while start.elapsed() < timeout {
-            attempts += 1;
-            match client
-                .get_deployment(PORTAINER_NAMESPACE, PORTAINER_AGENT_DEPLOYMENT_NAME)
-                .await
-            {
-                Ok(doc) => {
-                    let ready = doc
+        let polling = async {
+            loop {
+                attempts += 1;
+                let ready = match client
+                    .get_deployment(PORTAINER_NAMESPACE, PORTAINER_AGENT_DEPLOYMENT_NAME)
+                    .await
+                {
+                    Ok(doc) => doc
                         .get("status")
                         .and_then(|s| s.get("readyReplicas"))
                         .and_then(Value::as_i64)
-                        .unwrap_or(0);
-
-                    if ready > 0 {
-                        debug!(
-                            "Portainer Edge agent is ready with {ready} replica(s) after {attempts} attempts"
-                        );
-                        return Ok(());
-                    }
-                },
-                Err(ApiserverError::NotFound { .. }) => {
-                    // Deployment not yet visible; continue polling
-                },
-                Err(err) => return Err(PortainerError::Apiserver(err)),
+                        .unwrap_or(0),
+                    Err(ApiserverError::NotFound { .. }) => {
+                        // Deployment not yet visible; continue polling.
+                        0
+                    },
+                    Err(err) => return Err(PortainerError::Apiserver(err)),
+                };
+                if ready > 0 {
+                    debug!(
+                        "Portainer Edge agent is ready with {ready} replica(s) after {attempts} attempts"
+                    );
+                    return Ok(());
+                }
+                tokio::time::sleep(poll_interval).await;
             }
-            tokio::time::sleep(poll_interval).await;
-        }
+        };
 
-        Err(PortainerError::ReadinessTimeout {
-            elapsed: start.elapsed(),
-            attempts,
-        })
+        tokio::time::timeout(timeout, polling)
+            .await
+            .unwrap_or_else(|_| {
+                Err(PortainerError::ReadinessTimeout {
+                    elapsed: start.elapsed(),
+                    attempts,
+                })
+            })
     }
 }

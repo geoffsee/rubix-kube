@@ -79,10 +79,19 @@ impl Adapter for PortainerAdapter {
 
             // 3. Wait for readiness
             let timeout = self.service.config().readiness_timeout;
-            if let Err(err) = self.service.wait_for_readiness(timeout).await {
-                return Err(AdapterError {
-                    code: err.diagnostic_code(),
-                });
+            tokio::select! {
+                biased;
+                () = async {
+                    while context.stop_phase() == StopPhase::Running {
+                        context.changed().await;
+                    }
+                } => {
+                    self.service.stop();
+                    return Ok(());
+                },
+                result = self.service.wait_for_readiness(timeout) => {
+                    result.map_err(|err| AdapterError { code: err.diagnostic_code() })?;
+                },
             }
 
             // 4. Signal readiness to supervisor coordinator
