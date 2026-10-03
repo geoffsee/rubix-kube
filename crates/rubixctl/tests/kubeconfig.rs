@@ -5,6 +5,30 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
 
+#[cfg(unix)]
+#[test]
+fn publication_rejects_symlinked_and_foreign_owned_parents() {
+    use std::os::unix::fs::{MetadataExt, symlink};
+    let dir = tempfile::tempdir().unwrap();
+    let real = dir.path().join("real");
+    fs::create_dir(&real).unwrap();
+    let destination = real.join("config");
+    fs::write(&destination, b"unrelated credentials").unwrap();
+    let link = dir.path().join("link");
+    symlink(&real, &link).unwrap();
+    let owner = fs::metadata(&real).unwrap().uid();
+    let mut user = InvokingUser {
+        username: "test".into(),
+        home_dir: dir.path().to_owned(),
+        uid: Some(owner),
+        gid: None,
+    };
+    assert!(atomic_write_secure(&link.join("config"), b"new", &user).is_err());
+    user.uid = Some(owner.wrapping_add(1));
+    assert!(atomic_write_secure(&destination, b"new", &user).is_err());
+    assert_eq!(fs::read(destination).unwrap(), b"unrelated credentials");
+}
+
 #[test]
 fn test_invoking_user_resolution_sudo() {
     let mut env = BTreeMap::new();
