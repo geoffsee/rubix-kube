@@ -4,12 +4,13 @@
 //!
 //! | Entry            | reset  | uninstall | uninstall `--purge` |
 //! | ---------------- | ------ | --------- | ------------------- |
-//! | `db`             | remove | remove    | remove              |
-//! | `kubelet`        | remove | remove    | remove              |
-//! | `containerd`     | remove | remove    | remove              |
-//! | `network`        | remove | remove    | remove              |
+//! | `kine/db`        | remove | keep      | remove              |
+//! | `kubelet`        | remove | keep      | remove              |
+//! | `containerd/root`, `containerd/state` | remove | keep | remove |
+//! | remaining `containerd` inputs | keep | keep | remove          |
+//! | `network`        | remove | keep      | remove              |
 //! | `pki`            | keep   | keep      | remove              |
-//! | `storage`        | keep   | keep      | remove              |
+//! | `local-path-storage` | keep | keep   | remove              |
 //! | `backups`        | keep   | keep      | remove              |
 //! | `container.spec` | keep   | keep      | remove              |
 //! | anything else    | keep   | keep      | keep                |
@@ -27,12 +28,24 @@ use std::path::{Path, PathBuf};
 
 use crate::upgrade::{CONTAINER_SPEC_FILE, ContainerSpec, Runner};
 
-/// Entries removed by every cleanup.
-pub const RUNTIME_STATE: [&str; 4] = ["db", "kubelet", "containerd", "network"];
+/// Disposable entries removed by reset and purge; ordinary uninstall retains data.
+pub const RUNTIME_STATE: [&str; 5] = [
+    "kine/db",
+    "kubelet",
+    "containerd/root",
+    "containerd/state",
+    "network",
+];
 /// Entries additionally removed by `uninstall --purge`.
-pub const PURGE_STATE: [&str; 4] = ["pki", "storage", "backups", CONTAINER_SPEC_FILE];
+pub const PURGE_STATE: [&str; 5] = [
+    "pki",
+    "local-path-storage",
+    "backups",
+    CONTAINER_SPEC_FILE,
+    "containerd",
+];
 /// Entries retained unless purging, listed for reporting.
-pub const RETAINED_STATE: [&str; 4] = PURGE_STATE;
+pub const RETAINED_STATE: [&str; 5] = PURGE_STATE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CleanupKind {
@@ -72,9 +85,16 @@ pub fn plan_cleanup(kind: CleanupKind, data: &Path) -> CleanupPlan {
     let mut plan = CleanupPlan::default();
     let exists = |p: &Path| p.symlink_metadata().is_ok();
     for name in RUNTIME_STATE {
+        if purge && name.starts_with("containerd/") {
+            continue;
+        }
         let p = data.join(name);
         if exists(&p) {
-            plan.remove.push(p);
+            if kind == (CleanupKind::Uninstall { purge: false }) {
+                plan.retain.push(p);
+            } else {
+                plan.remove.push(p);
+            }
         }
     }
     for name in RETAINED_STATE {
@@ -157,7 +177,7 @@ fn announce(
     confirm(&format!("  Really {what}?"), input, stderr)
 }
 
-/// Host cleanup. Order: confirm, stop, unmount owned mounts, remove, then (reset) restart.
+/// Host cleanup. Order: confirm, stop, unmount selected mounts, remove, then (reset) restart.
 /// Removal is refused for any owned entry that still contains a mount point.
 pub fn run_host_cleanup(
     host: &mut dyn CleanupHost,
@@ -169,6 +189,7 @@ pub fn run_host_cleanup(
 ) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     let plan = plan_cleanup(kind, data);
+    validate_removal_ancestors(data, &plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -178,11 +199,19 @@ pub fn run_host_cleanup(
         });
     }
     host.stop_service()?;
-    for mount in host.mounts_under(data)? {
+    for mount in host
+        .mounts_under(data)?
+        .into_iter()
+        .filter(|mount| plan.remove.iter().any(|path| mount.starts_with(path)))
+    {
         host.unmount(&mount)?;
     }
     // Defence in depth: never delete through a surviving mount.
-    if let Some(left) = host.mounts_under(data)?.into_iter().next() {
+    if let Some(left) = host
+        .mounts_under(data)?
+        .into_iter()
+        .find(|mount| plan.remove.iter().any(|path| mount.starts_with(path)))
+    {
         return Err(io::Error::other(format!(
             "mount {} is still active; refusing to remove data",
             left.display()
@@ -223,6 +252,7 @@ pub fn run_container_cleanup(
 ) -> io::Result<CleanupReport> {
     validate_data_path(data).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     let plan = plan_cleanup(kind, data);
+    validate_removal_ancestors(data, &plan)?;
     if !announce(kind, &plan, force, input, stderr)? {
         writeln!(stderr, "  Aborted; nothing was changed.")?;
         return Ok(CleanupReport {
@@ -236,8 +266,23 @@ pub fn run_container_cleanup(
         let args: Vec<String> = args.iter().map(ToString::to_string).collect();
         runner.run(engine, &args)
     };
-    // `stop` of an already stopped/missing container is tolerated for idempotence.
-    let _ = run(runner, &["stop", &name]);
+    // Only verified absence is idempotent; an Engine or stop failure must not permit deletion.
+    let present = match run(runner, &["stop", &name]) {
+        Ok(_) => true,
+        Err(stop_error) => {
+            let names = run(runner, &["ps", "-a", "--format", "{{.Names}}"])?;
+            if names.lines().any(|n| n == name) {
+                return Err(stop_error);
+            }
+            false
+        },
+    };
+    if !present && kind == CleanupKind::Reset {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "cannot reset a missing container",
+        ));
+    }
     let mut report = CleanupReport {
         retained: plan.retain.clone(),
         ..CleanupReport::default()
@@ -252,7 +297,9 @@ pub fn run_container_cleanup(
             writeln!(stderr, "  [ok] Cluster state reset; container restarted")?;
         },
         CleanupKind::Uninstall { purge } => {
-            let _ = run(runner, &["rm", &name]);
+            if present {
+                run(runner, &["rm", &name])?;
+            }
             for p in &plan.remove {
                 remove_entry(p)?;
                 report.removed.push(p.clone());
@@ -263,6 +310,18 @@ pub fn run_container_cleanup(
         },
     }
     Ok(report)
+}
+
+fn validate_removal_ancestors(data: &Path, plan: &CleanupPlan) -> io::Result<()> {
+    crate::upgrade::reject_symlink_state(data, "")?;
+    for path in &plan.remove {
+        let relative = path.strip_prefix(data).map_err(io::Error::other)?;
+        // Unlink a selected symlink itself, but never traverse a symlinked parent.
+        if let Some(parent) = relative.parent() {
+            crate::upgrade::reject_symlink_state(data, &parent.to_string_lossy())?;
+        }
+    }
+    Ok(())
 }
 
 /// Real host: `systemd` or `SysV` service control, `/proc/self/mounts`, `umount`.
@@ -436,12 +495,15 @@ mod tests {
     fn tree() -> tempfile::TempDir {
         let d = tempfile::tempdir().unwrap();
         for n in [
-            "db",
+            "kine/db",
             "kubelet",
-            "containerd",
+            "containerd/root",
+            "containerd/state",
+            "containerd/images",
+            "containerd/registry",
             "network",
             "pki",
-            "storage",
+            "local-path-storage",
             "backups",
             "neighbor",
         ] {
@@ -480,9 +542,23 @@ mod tests {
         .unwrap();
         assert_eq!(
             names(d.path(), &r.removed),
-            ["containerd", "db", "kubelet", "network"]
+            [
+                "containerd/root",
+                "containerd/state",
+                "kine/db",
+                "kubelet",
+                "network"
+            ]
         );
-        for keep in ["pki", "storage", "backups", "neighbor", CONTAINER_SPEC_FILE] {
+        for keep in [
+            "pki",
+            "local-path-storage",
+            "backups",
+            "neighbor",
+            "containerd/images",
+            "containerd/registry",
+            CONTAINER_SPEC_FILE,
+        ] {
             assert!(exists(d.path(), keep), "{keep}");
         }
         assert_eq!(h.log, ["stop", "start"]);
@@ -506,10 +582,21 @@ mod tests {
         .unwrap();
         assert_eq!(
             names(d.path(), &r.retain_or_empty()),
-            ["backups", "container.spec", "pki", "storage"]
+            [
+                "backups",
+                "container.spec",
+                "containerd",
+                "containerd/root",
+                "containerd/state",
+                "kine/db",
+                "kubelet",
+                "local-path-storage",
+                "network",
+                "pki"
+            ]
         );
-        assert!(exists(d.path(), "pki") && exists(d.path(), "storage"));
-        assert!(!exists(d.path(), "db"));
+        assert!(exists(d.path(), "pki") && exists(d.path(), "local-path-storage"));
+        assert!(exists(d.path(), "kine/db"));
         assert!(h.log.contains(&"rm-service".to_string()) && !h.log.contains(&"start".to_string()));
     }
 
@@ -526,7 +613,14 @@ mod tests {
             &mut Vec::new(),
         )
         .unwrap();
-        for gone in ["db", "pki", "storage", "backups", CONTAINER_SPEC_FILE] {
+        for gone in [
+            "kine/db",
+            "pki",
+            "local-path-storage",
+            "backups",
+            "containerd",
+            CONTAINER_SPEC_FILE,
+        ] {
             assert!(!exists(d.path(), gone), "{gone}");
         }
         assert!(exists(d.path(), "neighbor"));
@@ -538,9 +632,9 @@ mod tests {
         let d = tree();
         let vol = tempfile::tempdir().unwrap();
         fs::write(vol.path().join("precious"), "data").unwrap();
-        fs::remove_dir_all(d.path().join("storage")).unwrap();
+        fs::remove_dir_all(d.path().join("local-path-storage")).unwrap();
         #[cfg(unix)]
-        std::os::unix::fs::symlink(vol.path(), d.path().join("storage")).unwrap();
+        std::os::unix::fs::symlink(vol.path(), d.path().join("local-path-storage")).unwrap();
         let mut h = FakeHost::default();
         run_host_cleanup(
             &mut h,
@@ -551,7 +645,7 @@ mod tests {
             &mut Vec::new(),
         )
         .unwrap();
-        assert!(!exists(d.path(), "storage"));
+        assert!(!exists(d.path(), "local-path-storage"));
         assert!(vol.path().join("precious").is_file());
     }
 
@@ -571,7 +665,7 @@ mod tests {
             )
             .unwrap();
             assert!(r.declined && h.log.is_empty());
-            assert!(exists(d.path(), "db"));
+            assert!(exists(d.path(), "kine/db"));
         }
         let mut h = FakeHost::default();
         let mut input = io::Cursor::new(b"yes\n".to_vec());
@@ -584,7 +678,7 @@ mod tests {
             &mut Vec::new(),
         )
         .unwrap();
-        assert!(!r.declined && !exists(d.path(), "db"));
+        assert!(!r.declined && !exists(d.path(), "kine/db"));
     }
 
     #[test]
@@ -604,7 +698,7 @@ mod tests {
             &mut Vec::new(),
         );
         assert!(e.is_err());
-        assert!(exists(d.path(), "db") && exists(d.path(), "kubelet/f"));
+        assert!(exists(d.path(), "kine/db") && exists(d.path(), "kubelet/f"));
     }
 
     #[test]
@@ -666,7 +760,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(r.0, ["docker stop rubix", "docker rm rubix"]);
-        assert!(exists(d.path(), "pki") && !exists(d.path(), "db"));
+        assert!(exists(d.path(), "pki") && exists(d.path(), "kine/db"));
         assert!(vol.path().exists());
     }
 

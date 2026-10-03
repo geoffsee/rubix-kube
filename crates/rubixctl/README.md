@@ -119,3 +119,18 @@ interruption retains that receipt and backup; subsequent upgrade attempts refuse
 to mutate the installation until the interrupted operation is recovered. These
 file and fake-runner checks do not qualify live Linux, Docker, datastore recovery
 or all supported init systems.
+
+Reset deletes the established `kine/db` cluster datastore, kubelet state and
+disposable managed runtime root/state. It retains runtime executables, image
+archives, registry configuration, PKI and `local-path-storage` volume data.
+Ordinary uninstall retains installation data; `--purge` explicitly removes the
+selected instance's owned state. Cleanup unmounts only mount points under paths
+selected for removal, preserving the data-root mount and retained or neighboring
+mounts. Symlinked parent directories are rejected before service operations;
+selected symlink entries themselves are unlinked without following them.
+
+Container stop or removal failures abort before data deletion. An already absent
+container is tolerated for uninstall only after the Engine confirms its absence;
+reset of a missing container fails without deleting state. Cleanup regressions
+use temporary directories and injected host/Engine effects. Live Linux mount,
+service and Docker qualification remains outstanding.
