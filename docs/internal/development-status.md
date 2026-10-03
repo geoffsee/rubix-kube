@@ -47,6 +47,14 @@ Stack: packages/release-artifacts
 Evidence: Descriptor validation and synthetic dependency materialization cover the required matrix. No real node archives, target executables, images or installer executions were produced; these checks do not qualify a release.
 Next step: Assemble real artifacts, verify bytes and machine targets, and capture disposable installation evidence for every required cell; timestamp: 2026-10-03T07:17:00Z
 
+Work item: E28.02 (https://github.com/geoffsee/rubix-kube/issues/119); Parent criteria 3
+Outcome: In progress
+Readiness: Fixture coverage; C13 not qualified
+Ownership: Unassigned
+Stack: qual/recovery-lifecycle
+Evidence: Native/in-process recovery fixtures include an actually killed owned Rust runtime with exact acknowledged-object recovery, and a TERM-ignoring owned Rust child with observed bounded KILL and reaping. Mock adapters separately exercise failure policy. The historical regression test is an inventory check, not verification evidence. These tests do not qualify retained kube-apiserver/Kine, Linux reboot/power loss, real optional services, host mounts or production lifecycle interruption.
+Next step: Capture current-source disposable Linux evidence for the selected production boundary and every unresolved historical recovery gate; timestamp: 2026-10-03T19:30:00Z
+
 Work item: E30.01 (https://github.com/geoffsee/rubix-kube/issues/124)
 Outcome: In progress
 Readiness: Not qualified

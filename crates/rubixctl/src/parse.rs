@@ -418,6 +418,9 @@ pub fn parse_command(
                 "purge" if topic == HelpTopic::Uninstall => {
                     uninstall_opts.purge = value.map_or(Ok(true), boolean)?;
                 },
+                "keep-config" if topic == HelpTopic::Uninstall => {
+                    uninstall_opts.keep_config = value.map_or(Ok(true), boolean)?;
+                },
                 "force" if topic == HelpTopic::Uninstall => {
                     uninstall_opts.force = value.map_or(Ok(true), boolean)?;
                 },
