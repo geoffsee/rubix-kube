@@ -445,10 +445,13 @@ pub fn verify_publication_artifacts(
                 .into());
             },
         }
-        if fs::metadata(dist_dir.join(&binary.filename))?.len() != binary.size_bytes {
-            return Err(
-                format!("manifest size for {} disagrees with file", binary.filename).into(),
-            );
+        let observed_size = fs::metadata(dist_dir.join(&binary.filename))?.len();
+        if observed_size != binary.size_bytes {
+            return Err(format!(
+                "manifest size for {} is {}, observed {}",
+                binary.filename, binary.size_bytes, observed_size
+            )
+            .into());
         }
     }
     for archive in &manifest.node_archives {
