@@ -90,6 +90,70 @@ fn configuration_verification_reads_the_service_selected_path() {
 }
 
 #[test]
+fn quoted_service_configuration_paths_are_resolved_without_truncation() {
+    let tmp = tempdir().unwrap();
+    let actual = tmp.path().join("actual config.yaml");
+    let service = tmp.path().join("service");
+    let requested = tmp.path().join("requested.yaml");
+    fs::write(&actual, "apiVersion: kubesolo.io/v1alpha1\nkind: KubeSoloConfiguration\nnetwork:\n  nodeIP: 10.0.0.9\n").unwrap();
+    fs::write(tmp.path().join("actual"), "invalid prefix decoy").unwrap();
+    for command in [
+        format!(
+            "ExecStart=/usr/bin/kubesolo '--config={}'",
+            actual.display()
+        ),
+        format!(
+            "ExecStart=/usr/bin/kubesolo \"--config={}\"",
+            actual.display()
+        ),
+        format!(
+            "ExecStart=/usr/bin/kubesolo --config='{}'",
+            actual.display()
+        ),
+        format!(
+            "ExecStart=/usr/bin/kubesolo --config \"{}\"",
+            actual.display()
+        ),
+        format!("command_args=\"--config='{}'\"", actual.display()),
+        format!("DAEMON_ARGS='--config=\"{}\"'", actual.display()),
+    ] {
+        fs::write(&service, format!("{command}\n")).unwrap();
+        let result = validate_config_transition(
+            SupportedStartingVersion::V1_3_0,
+            &service,
+            &requested,
+            None,
+        )
+        .unwrap();
+        assert_eq!(result.config_path, actual);
+        assert_eq!(result.node_ip, "10.0.0.9");
+    }
+    for command in [
+        "ExecStart=/usr/bin/kubesolo '--config=/unterminated path".into(),
+        "command_args=\"--config=$CONFIG\"".into(),
+        format!(
+            "ExecStart=/usr/bin/kubesolo '--config={}'X",
+            actual.display()
+        ),
+        format!(
+            "ExecStart=/usr/bin/kubesolo --config='{}'X",
+            actual.display()
+        ),
+    ] {
+        fs::write(&service, format!("{command}\n")).unwrap();
+        assert!(
+            validate_config_transition(
+                SupportedStartingVersion::V1_3_0,
+                &service,
+                &requested,
+                None
+            )
+            .is_err()
+        );
+    }
+}
+
+#[test]
 fn kubeconfig_resolves_active_context_and_rejects_ambiguous_references() {
     use rubix_dev::state_transition::parse_kubeconfig;
     let mut config = serde_json::json!({

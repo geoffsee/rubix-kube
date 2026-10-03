@@ -287,3 +287,33 @@ fn secondary_contract_rejects_tampered_platform_claims() {
         }
     }
 }
+
+#[test]
+fn report_rejects_invalid_secondary_registry_before_markdown_output() {
+    use rubix_dev::perf::SecondaryTargetsRegistry;
+
+    let directory = tempfile::tempdir().unwrap();
+    let secondary = directory.path().join("secondary.json");
+    let mut registry = SecondaryTargetsRegistry::default_contract();
+    registry.targets.get_mut("riscv64").unwrap().d2k_supported = true;
+    std::fs::write(&secondary, serde_json::to_vec(&registry).unwrap()).unwrap();
+    let fixtures = root().join("tools/perf/fixtures");
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("report")
+        .arg("--reference")
+        .arg(fixtures.join("amd64-reference-go.json"))
+        .arg("--candidate")
+        .arg(fixtures.join("amd64-candidate-rust.json"))
+        .arg("--secondary")
+        .arg(&secondary)
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        output.stdout.is_empty(),
+        "invalid claims must never be published"
+    );
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("secondary targets validation failed")
+    );
+}

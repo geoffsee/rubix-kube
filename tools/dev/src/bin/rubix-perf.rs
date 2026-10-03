@@ -120,7 +120,11 @@ fn report_cmd(
 
     let sec_reg = if let Some(p) = sec_path {
         let bytes = rubix_dev::read_bounded(p, 4 * 1024 * 1024)?;
-        Some(serde_json::from_slice::<SecondaryTargetsRegistry>(&bytes)?)
+        let registry: SecondaryTargetsRegistry = serde_json::from_slice(&bytes)?;
+        registry
+            .validate()
+            .map_err(|error| format!("secondary targets validation failed: {error}"))?;
+        Some(registry)
     } else {
         None
     };
