@@ -54,6 +54,54 @@ pub fn has_config_flag(content: &str) -> bool {
     false
 }
 
+/// Resolve a single literal absolute config argument from active service command fields.
+/// Runtime expansions and ambiguous arguments cannot establish an offline verification path.
+pub fn service_config_path(content: &str) -> Result<std::path::PathBuf, String> {
+    let re = Regex::new(r#"(?:^|\s|=)(?:"--config=([^"]*)"|'--config=([^']*)'|--config(?:=|\s+)("[^"]*"|'[^']*'|[^\s"']+)|--config(?:\s|$))"#)
+        .expect("valid regex");
+    let mut paths = Vec::new();
+    for (_, line) in argument_lines(content) {
+        let trimmed = line.trim();
+        // These shell assignments quote an argument list, not an individual argument.
+        let arguments = match trimmed.split_once('=') {
+            Some(("command_args" | "DAEMON_ARGS", args)) => unquote_shell_value(args),
+            _ => trimmed.to_string(),
+        };
+        for capture in re.captures_iter(&arguments) {
+            let matched = capture.get(0).unwrap();
+            if arguments[matched.end()..]
+                .chars()
+                .next()
+                .is_some_and(|c| !c.is_whitespace())
+            {
+                return Err(
+                    "concatenated --config argument cannot establish a literal path".into(),
+                );
+            }
+            let value = capture
+                .get(1)
+                .or_else(|| capture.get(2))
+                .or_else(|| capture.get(3))
+                .ok_or("missing --config argument")?;
+            if capture.get(3).is_some() && !value.as_str().starts_with(['\'', '"']) {
+                let remainder = arguments[matched.end()..].trim();
+                if !remainder.is_empty() && !remainder.starts_with("--") {
+                    return Err("ambiguous unquoted --config argument".into());
+                }
+            }
+            paths.push(unquote_shell_value(value.as_str()));
+        }
+    }
+    let [value] = paths.as_slice() else {
+        return Err("service requires exactly one literal --config path".into());
+    };
+    let path = std::path::PathBuf::from(value);
+    if !path.is_absolute() || value.contains(['$', '%', '`', '\\']) {
+        return Err("service --config path must be absolute without runtime expansions".into());
+    }
+    Ok(path)
+}
+
 /// Information about a known `KubeSolo` flag definition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum FlagKind {
