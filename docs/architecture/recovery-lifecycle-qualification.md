@@ -27,7 +27,7 @@ does not establish Kine SQLite recovery or replace that boundary.
   configured 30-second grace period, and reports the observed signal, reaped leader
   and completed owner thread. Observation is bounded to 41 seconds. This checks a
   single owned fixture leader; it does not prove arbitrary descendants cannot escape.
-  This test remains ignored on macOS: an exploratory run observed KILL/reaping but
+  This test is Linux-only: an exploratory macOS run observed KILL/reaping but
   an unsuccessful process-group cleanup receipt. That platform behavior is not
   reclassified as successful cleanup or production qualification.
 - A separate completed mock adapter checks fatal failure policy and diagnostic

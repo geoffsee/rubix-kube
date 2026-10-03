@@ -223,8 +223,13 @@ async fn crash_runtime_child() {
         .await
         .expect("read acknowledged object");
     std::fs::write(
-        root.join("acknowledged.json"),
+        root.join("acknowledged.tmp"),
         serde_json::to_vec(&object).unwrap(),
+    )
+    .unwrap();
+    std::fs::rename(
+        root.join("acknowledged.tmp"),
+        root.join("acknowledged.json"),
     )
     .unwrap();
     // The parent kills this process while the runtime and datastore lock remain live.
