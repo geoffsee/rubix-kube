@@ -127,7 +127,7 @@ pub struct ContainerInspect {
 /// verification of Linux/macOS engine requests, and WSL2 workflow qualification.
 pub trait ContainerEngineClient {
     /// Inspects whether a network exists.
-    fn inspect_network(&mut self, name: &str) -> io::Result<Option<()>>;
+    fn inspect_network(&mut self, name: &str) -> io::Result<Option<CreateNetworkRequest>>;
     /// Creates a network.
     fn create_network(&mut self, req: &CreateNetworkRequest) -> io::Result<()>;
     /// Removes a network.
@@ -267,6 +267,19 @@ pub fn build_port_configuration(
 ) -> Result<ContainerPortConfig, ContainerLifecycleError> {
     let mut exposed_ports = Vec::new();
     let mut port_bindings: BTreeMap<String, Vec<HostPortBinding>> = BTreeMap::new();
+    if apiserver_host_port == Some(0) || (d2k && d2k_host_port == Some(0)) {
+        return Err(ContainerLifecycleError::PortValidation(
+            crate::container_ports::PortParseError::InvalidPortNumber("0".into()),
+        ));
+    }
+    if d2k
+        && let Some(port) = apiserver_host_port
+        && Some(port) == d2k_host_port
+    {
+        return Err(ContainerLifecycleError::PortValidation(
+            crate::container_ports::PortParseError::DuplicateHostPort(port, "tcp".into()),
+        ));
+    }
 
     // 1. Kubernetes API Server: 6443/tcp
     let api_key = "6443/tcp".to_string();
@@ -300,6 +313,26 @@ pub fn build_port_configuration(
             parse_container_ports(specs).map_err(ContainerLifecycleError::PortValidation)?;
 
         for mapping in parsed_mappings {
+            if mapping.protocol == "tcp" {
+                if mapping.container_port == 6443 || (d2k && mapping.container_port == 2376) {
+                    return Err(ContainerLifecycleError::PortValidation(
+                        crate::container_ports::PortParseError::DuplicateContainerPort(
+                            mapping.container_port,
+                            mapping.protocol,
+                        ),
+                    ));
+                }
+                if Some(mapping.host_port) == apiserver_host_port
+                    || (d2k && Some(mapping.host_port) == d2k_host_port)
+                {
+                    return Err(ContainerLifecycleError::PortValidation(
+                        crate::container_ports::PortParseError::DuplicateHostPort(
+                            mapping.host_port,
+                            mapping.protocol,
+                        ),
+                    ));
+                }
+            }
             let key = mapping.container_port_key();
             if !exposed_ports.contains(&key) {
                 exposed_ports.push(key.clone());
@@ -372,11 +405,38 @@ pub fn install_container(
     let mut created = CreatedResources::default();
 
     let install_action = || -> Result<ContainerInstallResult, ContainerLifecycleError> {
+        // Reinstall only the selected instance; retain its persistent data volume.
+        if let Some(existing) = engine.inspect_container(&cname).map_err(|e| {
+            ContainerLifecycleError::Engine(format!("container inspect failed: {e}"))
+        })? {
+            if existing.running {
+                engine.stop_container(&cname, 10).map_err(|e| {
+                    ContainerLifecycleError::Engine(format!("container stop failed: {e}"))
+                })?;
+            }
+            engine.remove_container(&cname, false).map_err(|e| {
+                ContainerLifecycleError::Engine(format!("container removal failed: {e}"))
+            })?;
+        }
         // 1. Ensure Network
-        let network_exists = engine
+        let network = engine
             .inspect_network(&nname)
-            .map_err(|e| ContainerLifecycleError::Engine(format!("network inspect failed: {e}")))?
-            .is_some();
+            .map_err(|e| ContainerLifecycleError::Engine(format!("network inspect failed: {e}")))?;
+        let requested_network = CreateNetworkRequest::new(&nname, params.mtu);
+        let network_exists = if let Some(existing) = network {
+            if existing.driver != requested_network.driver
+                || existing.options != requested_network.options
+            {
+                engine.remove_network(&nname).map_err(|e| {
+                    ContainerLifecycleError::Engine(format!("network reconcile failed: {e}"))
+                })?;
+                false
+            } else {
+                true
+            }
+        } else {
+            false
+        };
 
         let created_new_network = if network_exists {
             false
@@ -418,37 +478,21 @@ pub fn install_container(
                 .map_err(|e| ContainerLifecycleError::Engine(format!("image pull failed: {e}")))?;
         }
 
-        // 4. Check existing container
-        if let Some(existing) = engine.inspect_container(&cname).map_err(|e| {
-            ContainerLifecycleError::Engine(format!("container inspect failed: {e}"))
-        })? && existing.running
-        {
-            let apiserver_port = existing
-                .allocated_ports
-                .get("6443/tcp")
-                .copied()
-                .unwrap_or(6443);
-            let d2k_port = existing.allocated_ports.get("2376/tcp").copied();
-            return Ok(ContainerInstallResult {
-                container_name: cname,
-                container_id: existing.id,
-                network_name: nname,
-                volume_name: vname,
-                apiserver_port,
-                d2k_port,
-                created_new_network,
-                created_new_volume,
-            });
-        }
-
         // 5. Build ContainerConfig
         let mut env_vars = vec![
             "KUBESOLO_CONTAINER_MODE=true".to_string(),
             format!("KUBESOLO_NAME={}", params.instance_name),
         ];
         for (k, v) in &params.extra_env {
-            env_vars.push(format!("{k}={v}"));
+            if !matches!(
+                k.as_str(),
+                "KUBESOLO_D2K" | "KUBESOLO_CONTAINER_MODE" | "KUBESOLO_NAME"
+            ) {
+                env_vars.push(format!("{k}={v}"));
+            }
         }
+
+        env_vars.push(format!("KUBESOLO_D2K={}", params.d2k));
 
         let container_cfg = ContainerConfig {
             image: params.image.clone(),
@@ -490,7 +534,8 @@ pub fn install_container(
             .allocated_ports
             .get("6443/tcp")
             .copied()
-            .unwrap_or_else(|| params.apiserver_host_port.unwrap_or(6443));
+            .filter(|port| *port != 0)
+            .ok_or_else(|| ContainerLifecycleError::Engine("missing allocated API port".into()))?;
 
         let d2k_port = if params.d2k {
             Some(
@@ -498,7 +543,10 @@ pub fn install_container(
                     .allocated_ports
                     .get("2376/tcp")
                     .copied()
-                    .unwrap_or_else(|| params.d2k_host_port.unwrap_or(2376)),
+                    .filter(|port| *port != 0)
+                    .ok_or_else(|| {
+                        ContainerLifecycleError::Engine("missing allocated D2K port".into())
+                    })?,
             )
         } else {
             None

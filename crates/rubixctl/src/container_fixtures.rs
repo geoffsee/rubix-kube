@@ -1,110 +1,34 @@
-//! Engine request fixtures for Linux, macOS, and WSL2 container-mode workflows.
-//!
-//! Provides JSON representations and structured request comparisons matching Docker Engine API v1.41+.
-
+//! JSON Engine request fixtures shared by Linux, macOS and WSL2 workflows.
 use crate::container::{ContainerConfig, CreateNetworkRequest, CreateVolumeRequest};
+use serde_json::{Map, Value, json};
 
-/// Serializes a `CreateNetworkRequest` to Docker Engine API JSON format.
-///
-/// Matches `POST /networks/create`:
-/// ```json
-/// {
-///   "Name": "kubesolo-net",
-///   "Driver": "bridge",
-///   "Options": {
-///     "com.docker.network.driver.mtu": "1500"
-///   }
-/// }
-/// ```
+/// Serializes a network creation request with escaped string values.
 pub fn serialize_network_create_request(req: &CreateNetworkRequest) -> String {
-    let mut options_json = Vec::new();
-    for (k, v) in &req.options {
-        options_json.push(format!("\"{k}\":\"{v}\""));
-    }
-    format!(
-        "{{\"Name\":\"{}\",\"Driver\":\"{}\",\"Options\":{{{}}}}}",
-        req.name,
-        req.driver,
-        options_json.join(",")
-    )
+    json!({"Name": req.name, "Driver": req.driver, "Options": req.options}).to_string()
 }
 
-/// Serializes a `CreateVolumeRequest` to Docker Engine API JSON format.
-///
-/// Matches `POST /volumes/create`:
-/// ```json
-/// {
-///   "Name": "kubesolo-data",
-///   "Driver": "local"
-/// }
-/// ```
+/// Serializes a volume creation request, including labels.
 pub fn serialize_volume_create_request(req: &CreateVolumeRequest) -> String {
-    format!(
-        "{{\"Name\":\"{}\",\"Driver\":\"{}\"}}",
-        req.name, req.driver
-    )
+    json!({"Name": req.name, "Driver": req.driver, "Labels": req.labels}).to_string()
 }
 
-/// Serializes a `ContainerConfig` to Docker Engine API JSON format.
-///
-/// Matches `POST /containers/create?name=<name>`:
-/// Includes `HostConfig` with `Privileged`, `CgroupnsMode`, `Binds`, `PortBindings`, `NetworkMode`, `RestartPolicy`.
+/// Serializes a container creation request using the Engine's field names.
 pub fn serialize_container_create_request(config: &ContainerConfig) -> String {
-    // 1. ExposedPorts: {"6443/tcp": {}}
-    let exposed_str = config
+    let exposed: Map<String, Value> = config
         .exposed_ports
         .iter()
-        .map(|p| format!("\"{p}\":{{}}"))
-        .collect::<Vec<_>>()
-        .join(",");
-
-    // 2. Env: ["VAR=val", ...]
-    let env_str = config
-        .env
-        .iter()
-        .map(|e| format!("\"{e}\""))
-        .collect::<Vec<_>>()
-        .join(",");
-
-    // 3. Binds: ["kubesolo-data:/var/lib/kubesolo"]
-    let binds_str = config
-        .binds
-        .iter()
-        .map(|b| format!("\"{b}\""))
-        .collect::<Vec<_>>()
-        .join(",");
-
-    // 4. PortBindings: {"6443/tcp": [{"HostIp": "127.0.0.1", "HostPort": ""}]}
-    let port_bindings_str = config
-        .port_bindings
-        .iter()
-        .map(|(port_key, bindings)| {
-            let bindings_str = bindings
-                .iter()
-                .map(|b| {
-                    format!(
-                        "{{\"HostIp\":\"{}\",\"HostPort\":\"{}\"}}",
-                        b.host_ip, b.host_port
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join(",");
-            format!("\"{port_key}\":[{bindings_str}]")
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-
-    format!(
-        "{{\"Image\":\"{}\",\"Hostname\":\"{}\",\"Env\":[{}],\"ExposedPorts\":{{{}}},\"HostConfig\":{{\"Binds\":[{}],\"NetworkMode\":\"{}\",\"PortBindings\":{{{}}},\"Privileged\":{},\"CgroupnsMode\":\"{}\",\"RestartPolicy\":{{\"Name\":\"{}\"}}}}}}",
-        config.image,
-        config.hostname,
-        env_str,
-        exposed_str,
-        binds_str,
-        config.network_mode,
-        port_bindings_str,
-        config.privileged,
-        config.cgroupns_mode,
-        config.restart_policy
-    )
+        .map(|key| (key.clone(), json!({})))
+        .collect();
+    let bindings: Map<String, Value> = config.port_bindings.iter().map(|(key, values)| (key.clone(), Value::Array(values.iter().map(|binding| json!({"HostIp": binding.host_ip, "HostPort": binding.host_port})).collect()))).collect();
+    json!({
+        "Image": config.image, "Hostname": config.hostname, "Env": config.env,
+        "ExposedPorts": exposed,
+        "HostConfig": {
+            "Binds": config.binds, "NetworkMode": config.network_mode,
+            "PortBindings": bindings, "Privileged": config.privileged,
+            "CgroupnsMode": config.cgroupns_mode,
+            "RestartPolicy": {"Name": config.restart_policy}
+        }
+    })
+    .to_string()
 }

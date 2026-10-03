@@ -39,8 +39,8 @@ struct MockContainerEngine {
 }
 
 impl ContainerEngineClient for MockContainerEngine {
-    fn inspect_network(&mut self, name: &str) -> io::Result<Option<()>> {
-        Ok(self.networks.get(name).map(|_| ()))
+    fn inspect_network(&mut self, name: &str) -> io::Result<Option<CreateNetworkRequest>> {
+        Ok(self.networks.get(name).cloned())
     }
 
     fn create_network(&mut self, req: &CreateNetworkRequest) -> io::Result<()> {
@@ -109,6 +109,12 @@ impl ContainerEngineClient for MockContainerEngine {
     fn create_container(&mut self, name: &str, config: &ContainerConfig) -> io::Result<String> {
         if self.fail_create_container {
             return Err(io::Error::other("mock fail create container"));
+        }
+        if self.containers.contains_key(name) {
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "container name reserved",
+            ));
         }
         let mut allocated = HashMap::new();
         // Allocate ports matching bindings
@@ -412,8 +418,8 @@ fn test_engine_request_fixtures_matching_api() {
     let vol_req = CreateVolumeRequest::new("kubesolo-data");
     let vol_json = serialize_volume_create_request(&vol_req);
     assert_eq!(
-        vol_json,
-        "{\"Name\":\"kubesolo-data\",\"Driver\":\"local\"}"
+        serde_json::from_str::<serde_json::Value>(&vol_json).unwrap(),
+        serde_json::json!({"Name":"kubesolo-data", "Driver":"local", "Labels":{}})
     );
 
     // Container create serialization
@@ -474,4 +480,87 @@ fn test_cpu_manager_policy_rejected_in_container_mode() {
     assert!(result.is_err());
     let err_str = result.unwrap_err().to_string();
     assert!(err_str.contains("cpu-manager-policy \"static\" is not supported in container mode"));
+}
+
+fn regression_params() -> ContainerInstallParams {
+    ContainerInstallParams {
+        instance_name: "review".into(),
+        image: "node:old".into(),
+        mtu: Some(1500),
+        d2k: true,
+        container_ports: None,
+        extra_env: vec![],
+        apiserver_host_port: Some(6443),
+        d2k_host_port: Some(2376),
+    }
+}
+
+#[test]
+fn reinstall_replaces_running_or_stopped_instance_and_reconciles_mtu() {
+    for running in [false, true] {
+        let mut engine = MockContainerEngine::default();
+        let mut params = regression_params();
+        install_container(&mut engine, &params).unwrap();
+        let cname = container_name(&params.instance_name);
+        engine.containers.get_mut(&cname).unwrap().1 = running;
+        params.image = "node:new".into();
+        params.mtu = Some(1400);
+        params.extra_env = vec![
+            ("KUBESOLO_D2K".into(), "false".into()),
+            ("SPECIAL".into(), "a\"b\\c\n".into()),
+        ];
+        let result = install_container(&mut engine, &params).unwrap();
+        let config = &engine.containers[&cname].0;
+        assert_eq!(config.image, "node:new");
+        assert!(config.env.contains(&"KUBESOLO_D2K=true".into()));
+        assert!(!config.env.contains(&"KUBESOLO_D2K=false".into()));
+        assert_eq!(engine.created_containers.len(), 2);
+        assert!(engine.removed_containers.contains(&cname));
+        assert_eq!(
+            engine.networks[&result.network_name].options["com.docker.network.driver.mtu"],
+            "1400"
+        );
+        assert_eq!(engine.created_volumes.len(), 1);
+        assert!(engine.removed_volumes.is_empty());
+        let payload: serde_json::Value =
+            serde_json::from_str(&serialize_container_create_request(config)).unwrap();
+        assert_eq!(payload["Env"], serde_json::json!(config.env));
+        assert_eq!(payload["HostConfig"]["Privileged"], true);
+    }
+}
+
+#[test]
+fn reserved_port_conflicts_fail_before_engine_mutation() {
+    for (api, d2k, mapping) in [
+        (6443, 2376, Some("127.0.0.1:6443:80")),
+        (6443, 6443, None),
+        (6443, 2376, Some("8443:6443")),
+        (6443, 2376, Some("8443:2376")),
+    ] {
+        let mut engine = MockContainerEngine::default();
+        let mut params = regression_params();
+        params.apiserver_host_port = Some(api);
+        params.d2k_host_port = Some(d2k);
+        params.container_ports = mapping.map(String::from);
+        assert!(install_container(&mut engine, &params).is_err());
+        assert!(engine.created_networks.is_empty());
+        assert!(engine.created_volumes.is_empty());
+        assert!(engine.created_containers.is_empty());
+    }
+}
+
+#[test]
+fn engine_json_roundtrips_special_strings_and_labels() {
+    let special = "a\"b\\c\n";
+    let mut network = CreateNetworkRequest::new(special, None);
+    network.options.insert(special.into(), special.into());
+    let value: serde_json::Value =
+        serde_json::from_str(&serialize_network_create_request(&network)).unwrap();
+    assert_eq!(value["Name"], special);
+    assert_eq!(value["Options"][special], special);
+    let mut volume = CreateVolumeRequest::new(special);
+    volume.labels.insert(special.into(), special.into());
+    let value: serde_json::Value =
+        serde_json::from_str(&serialize_volume_create_request(&volume)).unwrap();
+    assert_eq!(value["Labels"][special], special);
 }
