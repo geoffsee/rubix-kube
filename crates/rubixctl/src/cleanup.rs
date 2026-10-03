@@ -437,17 +437,11 @@ impl<'a, R: Runner> ServiceHost<'a, R> {
             plan_lifecycle_action(LifecycleAction::Uninstall, &config).map_err(io::Error::other)?;
         let mut artifacts = plan.cleanup_paths;
         if config.backend == Some(InitBackend::OpenRc) {
-            let conf = config
-                .custom_paths
-                .env_file_path
-                .clone()
-                .unwrap_or_else(|| {
-                    let relative = format!("etc/conf.d/{}", config.name);
-                    config.custom_paths.root_prefix.as_ref().map_or_else(
-                        || Path::new("/").join(&relative),
-                        |root| root.join(&relative),
-                    )
-                });
+            let relative = format!("etc/conf.d/{}", config.name);
+            let conf = config.custom_paths.root_prefix.as_ref().map_or_else(
+                || Path::new("/").join(&relative),
+                |root| root.join(&relative),
+            );
             if !artifacts.contains(&conf) {
                 artifacts.push(conf);
             }
