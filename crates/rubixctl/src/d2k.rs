@@ -309,6 +309,33 @@ mod tests {
         assert!(may_create_directory(0, Some(0)));
     }
 
+    #[test]
+    fn cross_uid_directory_refusal_has_no_effects_and_preowned_export_succeeds() {
+        let (_temporary, options, environment) = fixture();
+        let directory = options.output.as_ref().unwrap();
+        let owner = resolve_invoking_user(&environment);
+        let mut other = owner.clone();
+        other.uid = Some(owner.uid.unwrap().checked_add(1).unwrap());
+        let credentials = vec![("key.pem", b"credential".to_vec())];
+        let error = publish_credentials(directory, &credentials, &other).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        assert!(!directory.exists());
+        fs::create_dir(directory).unwrap();
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(publish_credentials(directory, &credentials, &other).is_err());
+        assert!(!directory.join("key.pem").exists());
+        assert_eq!(
+            fs::metadata(directory).unwrap().permissions().mode() & 0o777,
+            0o755
+        );
+        publish_credentials(directory, &credentials, &owner).unwrap();
+        assert_eq!(fs::read(directory.join("key.pem")).unwrap(), b"credential");
+        assert_eq!(
+            fs::metadata(directory).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
+    }
+
     #[derive(Default)]
     struct MockDocker {
         copies: Vec<(String, String)>,
