@@ -54,6 +54,13 @@ pub fn generate_service_definition(
             return Err(UnsupportedTargetError::InvalidEnvironmentKey);
         }
     }
+    let binary = config.binary_path.to_string_lossy();
+    if !config.binary_path.is_absolute()
+        || binary.chars().any(char::is_control)
+        || binary.ends_with('\\')
+    {
+        return Err(UnsupportedTargetError::InvalidBinaryPath);
+    }
     match config.run_mode {
         RunMode::Service => {
             let backend = config
@@ -183,16 +190,10 @@ fn generate_openrc(config: &ServiceConfig) -> ServiceDefinition {
         });
 
     let default_conf_path = format!("/etc/conf.d/{name}");
-    let conf_file = config
-        .custom_paths
-        .env_file_path
-        .clone()
-        .unwrap_or_else(|| {
-            resolve_prefixed(
-                config.custom_paths.root_prefix.as_deref(),
-                &default_conf_path,
-            )
-        });
+    let conf_file = resolve_prefixed(
+        config.custom_paths.root_prefix.as_deref(),
+        &default_conf_path,
+    );
 
     let mut command_args = String::new();
     for (i, arg) in config.args.iter().enumerate() {

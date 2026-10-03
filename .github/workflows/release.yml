@@ -1,0 +1,68 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., v1.0.0)"
+        required: true
+        type: string
+      candidate_run_id:
+        description: "Successful default-branch CI run containing a complete release-candidate artifact"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    name: Verify prepared candidate and publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-rust
+        with:
+          cache-key: publish
+      - name: Select a successful trusted candidate run for this revision
+        env:
+          VERSION: ${{ inputs.version }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]] || exit 1
+          [[ "$CANDIDATE_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+          # A failed lookup must fail the job; only an absent exact tag permits publication.
+          gh api "repos/$REPOSITORY/git/matching-refs/tags/$VERSION" > candidate-tags.json
+          jq -e --arg tag "refs/tags/$VERSION" \
+            'type == "array" and all(.[]; .ref != $tag)' candidate-tags.json
+          gh api "repos/$REPOSITORY/actions/runs/$CANDIDATE_RUN_ID" > candidate-run.json
+          jq -e --arg repository "$REPOSITORY" --arg branch "$DEFAULT_BRANCH" --arg sha "$EXPECTED_SHA" \
+            '.conclusion == "success" and .event == "push" and .head_branch == $branch and .head_sha == $sha and .head_repository.full_name == $repository and .path == ".github/workflows/ci.yml"' \
+            candidate-run.json
+          gh run download "$CANDIDATE_RUN_ID" --repo "$REPOSITORY" --name release-candidate --dir candidate
+      - name: Verify the complete prepared publication before generating metadata
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # Missing artifacts, incomplete target matrices and invalid inventories fail closed.
+          cargo run --locked -p rubix-dev --bin rubix-provenance -- candidate/dist "$VERSION" . candidate/inventories
+          cargo run --locked -p rubix-dev --bin rubix-matrix -- verify-manifest candidate/dist/release-manifest.json
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          REPOSITORY: ${{ github.repository }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          shopt -s failglob
+          gh release create "$VERSION" candidate/dist/* --repo "$REPOSITORY" \
+            --target "$EXPECTED_SHA" --title "$VERSION" --notes ""
