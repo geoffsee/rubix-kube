@@ -51,3 +51,9 @@ pub use materialize::{
 
 mod selection;
 pub use selection::{AssetSelector, SelectedDelivery, SelectionError};
+
+mod package;
+pub use package::{
+    ManagementArtifact, NodeArchiveArtifact, OciImageIndexArtifact, OciPlatformDescriptor,
+    PackageError, ReleasePackageManifest, ReleasePackager,
+};

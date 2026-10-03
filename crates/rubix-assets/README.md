@@ -197,3 +197,20 @@ or `UnsupportedTarget`) for each asset across:
   `SelectionError::EgressDeniedRegistryRequired`.
 - **Target Policy Enforcement**: Unsupported architecture combinations (e.g. Portainer on `riscv64`,
   D2K on `armv7`/`riscv64`) are enforced per target policy via `SelectionError::UnsupportedTargetFeature`.
+
+## Release metadata validation (E27.02/#115)
+
+`ReleasePackager` checks descriptor consistency for 16 node archive cells, four
+management targets and the node plus six dependency image indices. It validates
+release identity, naming, inventory policy, image references, digest syntax and
+platform partitions. It does not compare those digests to release artifact bytes
+or authenticate the manifest.
+
+`smoke_check_node_archive_layout` exercises dependency materialization into the
+canonical writable layout using synthetic fixtures. It does not require or run
+the node executable and is not an installation smoke test. Cross-target
+management checks validate descriptors, not executable machine headers.
+
+E27.02 remains incomplete: release assembly, real target binaries, node archives
+and images, digest-to-byte verification, and disposable installation evidence
+for every required matrix cell are still needed.
