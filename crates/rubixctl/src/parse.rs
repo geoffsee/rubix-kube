@@ -68,6 +68,18 @@ fn environment_bool(environment: &BTreeMap<String, String>, key: &str) -> bool {
     )
 }
 
+fn scheme_proxy(environment: &BTreeMap<String, String>, url: Option<&str>) -> Option<String> {
+    let key = if url.is_some_and(|url| {
+        url.get(..7)
+            .is_some_and(|scheme| scheme.eq_ignore_ascii_case("http://"))
+    }) {
+        "HTTP_PROXY"
+    } else {
+        "HTTPS_PROXY"
+    };
+    environment.get(key).cloned()
+}
+
 fn boolean(value: &str) -> Result<bool, ParseError> {
     match value {
         "1" | "t" | "T" | "TRUE" | "true" | "True" => Ok(true),
@@ -150,11 +162,7 @@ pub fn parse_command(
             .get("KUBESOLO_TEMP_DIR")
             .or_else(|| environment.get("TEMP_DIR"))
             .map(PathBuf::from),
-        proxy: environment
-            .get("KUBESOLO_PROXY")
-            .or_else(|| environment.get("HTTP_PROXY"))
-            .or_else(|| environment.get("HTTPS_PROXY"))
-            .cloned(),
+        proxy: environment.get("KUBESOLO_PROXY").cloned(),
         offline: environment_bool(environment, "KUBESOLO_OFFLINE"),
         libc: None,
     };
@@ -182,11 +190,7 @@ pub fn parse_command(
             .get("KUBESOLO_RUN_MODE")
             .cloned()
             .unwrap_or_else(|| "service".to_string()),
-        proxy: environment
-            .get("KUBESOLO_PROXY")
-            .or_else(|| environment.get("HTTP_PROXY"))
-            .or_else(|| environment.get("HTTPS_PROXY"))
-            .cloned(),
+        proxy: environment.get("KUBESOLO_PROXY").cloned(),
         offline_install: environment
             .get("KUBESOLO_OFFLINE_INSTALL")
             .map(PathBuf::from),
@@ -507,8 +511,18 @@ pub fn parse_command(
             let raw_arg = positional.first().map(|s| (*s).to_string());
             Command::Completion(CompletionOptions { shell, raw_arg })
         },
-        HelpTopic::Download => Command::Download(download_opts),
-        HelpTopic::Install => Command::Install(install_opts),
+        HelpTopic::Download => {
+            download_opts.proxy = download_opts
+                .proxy
+                .or_else(|| scheme_proxy(environment, download_opts.custom_url.as_deref()));
+            Command::Download(download_opts)
+        },
+        HelpTopic::Install => {
+            install_opts.proxy = install_opts
+                .proxy
+                .or_else(|| scheme_proxy(environment, install_opts.custom_url.as_deref()));
+            Command::Install(install_opts)
+        },
         HelpTopic::Uninstall => Command::Uninstall(uninstall_opts),
         HelpTopic::Upgrade => Command::Upgrade(upgrade_opts),
         HelpTopic::Reset => Command::Reset(reset_opts),

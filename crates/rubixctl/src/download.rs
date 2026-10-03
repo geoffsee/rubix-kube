@@ -6,7 +6,7 @@ use std::io::{self, Write};
 use std::path::Path;
 
 /// Downloads into owned staging, then atomically publishes on the destination
-/// filesystem. Failed downloads leave existing bundles untouched.
+/// filesystem. Failed archive downloads leave existing archives untouched.
 pub fn stage_download(
     dest: &Path,
     temp_dir: Option<&Path>,
@@ -31,6 +31,31 @@ pub fn stage_download(
     io::copy(&mut source, &mut published)?;
     published.as_file().sync_all()?;
     published.persist(dest).map_err(|error| error.error)?;
+    Ok(())
+}
+
+/// Publishes an executable only after a complete copy, permission enforcement,
+/// and sync. Partial copies cannot truncate a previously published installer.
+pub fn stage_installer(
+    dest: &Path,
+    copy: impl FnOnce(&mut std::fs::File) -> io::Result<()>,
+) -> io::Result<()> {
+    let parent = dest
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    std::fs::create_dir_all(parent)?;
+    let mut installer = tempfile::NamedTempFile::new_in(parent)?;
+    copy(installer.as_file_mut())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        installer
+            .as_file()
+            .set_permissions(std::fs::Permissions::from_mode(0o755))?;
+    }
+    installer.as_file().sync_all()?;
+    installer.persist(dest).map_err(|error| error.error)?;
     Ok(())
 }
 

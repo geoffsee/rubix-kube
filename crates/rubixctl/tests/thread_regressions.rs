@@ -3,6 +3,80 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 #[test]
+fn partial_installer_copy_preserves_previous_executable_and_cleans_temporary_file() {
+    use std::io::Write;
+    let dir = tempfile::TempDir::new().unwrap();
+    let installer = dir.path().join("rubixctl");
+    std::fs::write(&installer, "previous installer").unwrap();
+    let result = rubixctl::download::stage_installer(&installer, |file| {
+        file.write_all(b"partial")?;
+        Err(std::io::Error::other("copy failure"))
+    });
+    assert!(result.is_err());
+    assert_eq!(
+        std::fs::read_to_string(&installer).unwrap(),
+        "previous installer"
+    );
+    assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+    rubixctl::download::stage_installer(&installer, |file| file.write_all(b"complete installer"))
+        .unwrap();
+    assert_eq!(
+        std::fs::read_to_string(&installer).unwrap(),
+        "complete installer"
+    );
+    assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            std::fs::metadata(installer).unwrap().permissions().mode() & 0o777,
+            0o755
+        );
+    }
+}
+
+#[test]
+fn proxy_selection_uses_final_url_scheme_and_preserves_explicit_overrides() {
+    use rubixctl::{Command, parse_command};
+    let env = BTreeMap::from([
+        ("HTTP_PROXY".into(), "http-specific".into()),
+        ("HTTPS_PROXY".into(), "https-specific".into()),
+    ]);
+    for command in ["download", "install"] {
+        for (extra, expected) in [
+            (vec![], "https-specific"),
+            (
+                vec!["--custom-url=http://example.test/archive"],
+                "http-specific",
+            ),
+            (
+                vec!["--custom-url=https://example.test/archive"],
+                "https-specific",
+            ),
+            (vec!["--proxy=explicit"], "explicit"),
+            (vec!["--proxy="], ""),
+        ] {
+            let args: Vec<String> = std::iter::once(command)
+                .chain(extra)
+                .map(str::to_owned)
+                .collect();
+            let proxy = match parse_command(&args, &env).unwrap() {
+                Command::Download(options) => options.proxy,
+                Command::Install(options) => options.proxy,
+                _ => panic!("expected download or install"),
+            };
+            assert_eq!(proxy.as_deref(), Some(expected));
+        }
+    }
+    let mut env = env;
+    env.insert("KUBESOLO_PROXY".into(), "distribution-specific".into());
+    let Command::Download(options) = parse_command(&["download".into()], &env).unwrap() else {
+        panic!("download")
+    };
+    assert_eq!(options.proxy.as_deref(), Some("distribution-specific"));
+}
+
+#[test]
 fn url_and_proxy_credentials_are_redacted_in_all_command_debug_output() {
     let url = Some("https://user:url-secret@example.test/archive?token=query-secret".into());
     let proxy = Some("https://user:proxy-secret@example.test".into());

@@ -34,21 +34,12 @@ impl rubixctl::CheckInputs for Host {
         })
     }
     fn copy_self(&mut self, dest: &std::path::Path) -> io::Result<()> {
-        if let Some(parent) = dest.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
         let current_exe = std::env::current_exe()?;
-        std::fs::copy(&current_exe, dest)?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            if let Ok(metadata) = std::fs::metadata(dest) {
-                let mut perms = metadata.permissions();
-                perms.set_mode(0o755);
-                let _ = std::fs::set_permissions(dest, perms);
-            }
-        }
-        Ok(())
+        let mut source = std::fs::File::open(current_exe)?;
+        rubixctl::download::stage_installer(dest, |installer| {
+            io::copy(&mut source, installer)?;
+            Ok(())
+        })
     }
     fn read_parent_environ(&mut self) -> io::Result<Vec<u8>> {
         let status = std::fs::read_to_string("/proc/self/status")?;
