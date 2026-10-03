@@ -18,7 +18,8 @@ mod inventory;
 mod verify;
 pub use catalog::{AssetId, CatalogEntry, Encoding, Kind, catalog};
 pub use inventory::{
-    DeclaredInventory, Delivery, InventoryError, InventoryRequest, Limits, Manifest, Scope, Variant,
+    DeclaredInventory, Delivery, FeatureSupport, InventoryError, InventoryRequest, Limits,
+    Manifest, OptionalFeature, Scope, Variant, feature_support,
 };
 pub use verify::{EncodedBlobMatch, VerificationError, VerificationSession};
 
