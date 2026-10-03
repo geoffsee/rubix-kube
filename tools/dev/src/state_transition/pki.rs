@@ -234,10 +234,13 @@ fn parse_kubeconfig_yaml(text: &str) -> Result<ParsedKubeconfig, String> {
 
 /// Result of PKI transition assertion.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+// Independent preservation checks in a serialized evidence record, not mutually exclusive states.
+#[allow(clippy::struct_excessive_bools)]
 pub struct PkiTransitionAssertion {
     pub ca_sha256_before: String,
     pub ca_sha256_after: String,
     pub ca_preserved: bool,
+    pub ca_key_preserved: bool,
     pub sa_key_sha256_before: String,
     pub sa_key_sha256_after: String,
     pub sa_key_preserved: bool,
@@ -270,14 +273,13 @@ pub fn assert_pki_transition(
     let ca_preserved = ca_sha_before == ca_sha_after;
 
     // 2. Service account key
-    let sa_key_before = find_file(pki_dir_before, "service-account.key")
-        .map(|p| fs::read(&p))
-        .transpose()?
-        .unwrap_or_default();
-    let sa_key_after = find_file(pki_dir_after, "service-account.key")
-        .map(|p| fs::read(&p))
-        .transpose()?
-        .unwrap_or_default();
+    let sa_key_before = read_signing_key(pki_dir_before, "service-account.key")?;
+    let sa_key_after = read_signing_key(pki_dir_after, "service-account.key")?;
+    let ca_key_before = read_signing_key(pki_dir_before, "ca.key")?;
+    let ca_key_after = read_signing_key(pki_dir_after, "ca.key")?;
+    let ca_key_preserved = ca_key_before == ca_key_after
+        && signing_key_matches_cert(&ca_key_before, &ca_bytes_before)?
+        && signing_key_matches_cert(&ca_key_after, &ca_bytes_after)?;
 
     let sa_sha_before = digest_bytes(&sa_key_before);
     let sa_sha_after = digest_bytes(&sa_key_after);
@@ -289,19 +291,44 @@ pub fn assert_pki_transition(
         parse_kubeconfig(&kcfg_bytes).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     // Verify client cert is signed by CA cert
-    let client_verified =
-        verify_cert_chain(&ca_bytes_after, &parsed_kcfg.client_cert_bytes).unwrap_or(false);
+    let client_verified = parsed_kcfg.ca_cert_bytes == ca_bytes_after
+        && verify_cert_chain(&ca_bytes_after, &parsed_kcfg.client_cert_bytes).unwrap_or(false);
 
     Ok(PkiTransitionAssertion {
         ca_sha256_before: ca_sha_before,
         ca_sha256_after: ca_sha_after,
         ca_preserved,
+        ca_key_preserved,
         sa_key_sha256_before: sa_sha_before,
         sa_key_sha256_after: sa_sha_after,
         sa_key_preserved,
         client_cert_verified: client_verified,
         kubeconfig_format: parsed_kcfg.format,
     })
+}
+
+fn read_signing_key(root: &Path, name: &str) -> io::Result<Vec<u8>> {
+    let path = find_file(root, name)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, format!("missing {name}")))?;
+    let bytes = fs::read(path)?;
+    let pem = std::str::from_utf8(&bytes)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid signing key"))?;
+    rcgen::KeyPair::from_pem(pem)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid signing key"))?;
+    Ok(bytes)
+}
+
+fn signing_key_matches_cert(key: &[u8], cert: &[u8]) -> io::Result<bool> {
+    let text = std::str::from_utf8(key)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid signing key"))?;
+    let key = rcgen::KeyPair::from_pem(text)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid signing key"))?;
+    let (_, pem) = parse_x509_pem(cert)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid CA certificate"))?;
+    let cert = pem
+        .parse_x509()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid CA certificate"))?;
+    Ok(cert.public_key().subject_public_key.data.as_ref() == key.public_key_raw())
 }
 
 /// Finds a file by name recursively within a directory.
@@ -324,7 +351,7 @@ fn find_file(root: &Path, filename: &str) -> Option<std::path::PathBuf> {
     None
 }
 
-/// Cryptographically validates that a client certificate's issuer matches the CA's subject.
+/// Validates a directly signed client certificate against the preserved CA.
 pub fn verify_cert_chain(ca_pem: &[u8], client_pem: &[u8]) -> Result<bool, String> {
     let (_, ca_pem_obj) =
         parse_x509_pem(ca_pem).map_err(|e| format!("failed to parse CA PEM: {e}"))?;
@@ -338,7 +365,30 @@ pub fn verify_cert_chain(ca_pem: &[u8], client_pem: &[u8]) -> Result<bool, Strin
         .parse_x509()
         .map_err(|e| format!("failed to parse client X.509 cert: {e}"))?;
 
-    // Check Issuer matches CA Subject
-    let issuer_matches = client_cert.issuer() == ca_cert.subject();
-    Ok(issuer_matches)
+    let ca_text = std::str::from_utf8(ca_pem).map_err(|_| "invalid CA PEM".to_string())?;
+    let client_text =
+        std::str::from_utf8(client_pem).map_err(|_| "invalid client PEM".to_string())?;
+    if rubix_pki::verify_certificate_chain(client_text, ca_text).is_err()
+        || client_cert.issuer() != ca_cert.subject()
+        || !ca_cert.is_ca()
+        || client_cert.is_ca()
+    {
+        return Ok(false);
+    }
+    if ca_cert
+        .key_usage()
+        .map_err(|e| e.to_string())?
+        .is_some_and(|usage| !usage.value.key_cert_sign())
+        || client_cert
+            .key_usage()
+            .map_err(|e| e.to_string())?
+            .is_some_and(|usage| !usage.value.digital_signature())
+        || client_cert
+            .extended_key_usage()
+            .map_err(|e| e.to_string())?
+            .is_some_and(|usage| !usage.value.client_auth && !usage.value.any)
+    {
+        return Ok(false);
+    }
+    Ok(true)
 }

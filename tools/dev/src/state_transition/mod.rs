@@ -1,11 +1,11 @@
-//! Supported Go-to-Rust state transition validation and rehearsal tooling.
+//! State preservation checks and isolated native snapshot experiments.
 //!
 //! Epic E30 / Issue #124:
 //! - Validates supported starting versions (`v1.1.8`, `v1.2.0`, `v1.3.0`, `v1.3.1-v1.3.3`) and rejects unsupported ones.
 //! - Validates configuration transition from legacy service flags and existing YAML config.
 //! - Validates PKI trust roots and client credentials, accommodating **both YAML and JSON** kubeconfig formats.
-//! - Validates `SQLite` datastore preservation under supervised Kine, explicit export/import into `rubix-datastore`,
-//!   and proves on-disk non-interchangeability.
+//! - Exercises native snapshot conversion of in-memory fixtures and format non-interchangeability.
+//!   Production Kine `SQLite` adoption and WAL checkpointing remain unqualified.
 //! - Validates static workloads, Kubernetes resource identities, and state portability classification.
 //! - Validates persistent volume (PV) storage data and byte checksum preservation.
 

@@ -210,11 +210,12 @@ fn test_pki_trust_roots_and_kubeconfig_both_formats() {
     // Setup before and after PKI trees
     fs::write(pki_before.join("ca.crt"), &ca_pem).unwrap();
     fs::write(pki_before.join("ca.key"), &ca_key_pem).unwrap();
-    fs::write(pki_before.join("service-account.key"), b"mock-sa-key").unwrap();
+    let sa_key = KeyPair::generate().unwrap().serialize_pem();
+    fs::write(pki_before.join("service-account.key"), &sa_key).unwrap();
 
     fs::write(pki_after.join("ca.crt"), &ca_pem).unwrap();
     fs::write(pki_after.join("ca.key"), &ca_key_pem).unwrap();
-    fs::write(pki_after.join("service-account.key"), b"mock-sa-key").unwrap();
+    fs::write(pki_after.join("service-account.key"), &sa_key).unwrap();
 
     let ca_b64 = BASE64_STANDARD.encode(&ca_pem);
     let cert_b64 = BASE64_STANDARD.encode(&client_pem);
@@ -248,6 +249,7 @@ users:
 
     let assertion_yaml = assert_pki_transition(&pki_before, &pki_after, &yaml_kubeconfig).unwrap();
     assert!(assertion_yaml.ca_preserved);
+    assert!(assertion_yaml.ca_key_preserved);
     assert!(assertion_yaml.sa_key_preserved);
     assert!(assertion_yaml.client_cert_verified);
     assert_eq!(assertion_yaml.kubeconfig_format, KubeconfigFormat::Yaml);
@@ -281,6 +283,7 @@ users:
 
     let assertion_json = assert_pki_transition(&pki_before, &pki_after, &json_kubeconfig).unwrap();
     assert!(assertion_json.ca_preserved);
+    assert!(assertion_json.ca_key_preserved);
     assert!(assertion_json.sa_key_preserved);
     assert!(assertion_json.client_cert_verified);
     assert_eq!(assertion_json.kubeconfig_format, KubeconfigFormat::Json);
@@ -361,6 +364,8 @@ async fn test_datastore_non_interchangeability_and_explicit_export_import() {
 
     // 1. Proof of non-interchangeability: raw SQLite format was rejected
     assert!(assertion.raw_sqlite_rejected_by_rubix_datastore);
+    assert!(!assertion.wal_checkpointed);
+    assert!(!assertion.production_transition_qualified);
 
     // 2. Export / import preserved all active keys
     assert_eq!(assertion.total_records_before, 5);
@@ -412,6 +417,13 @@ fn test_static_workloads_and_kubernetes_resource_identities() {
     let mut after_drift = before.clone();
     after_drift[1].uid = "mutated-uid-999".into();
     assert!(assert_workload_identities_preserved(&before, &after_drift).is_err());
+    let mut duplicated = before.clone();
+    duplicated[1] = duplicated[0].clone();
+    assert!(assert_workload_identities_preserved(&before, &duplicated).is_err());
+    assert!(assert_workload_identities_preserved(&duplicated, &before).is_err());
+    let mut wrong_group = before.clone();
+    wrong_group[1].api_version = "other.example/v1".into();
+    assert!(assert_workload_identities_preserved(&before, &wrong_group).is_err());
 
     // Static manifests verification
     let tmp = tempdir().unwrap();
@@ -515,4 +527,98 @@ fn test_state_transition_report_formatting() {
     assert!(md.contains("# State Transition Report: v1.2.0 -> Rubix v0.1.0 (Candidate)"));
     assert!(md.contains("**Estimated Downtime**: ~5 minutes"));
     assert!(md.contains("**PASS**"));
+    assert!(md.contains("Production Migration Qualification**: **UNQUALIFIED**"));
+}
+
+#[test]
+fn rejects_same_subject_wrong_ca_signature() {
+    let (ca, _, client, _) = generate_test_pki();
+    let (other_ca, _, _, _) = generate_test_pki();
+    assert!(rubix_dev::state_transition::verify_cert_chain(&ca, &client).unwrap());
+    assert!(!rubix_dev::state_transition::verify_cert_chain(&other_ca, &client).unwrap());
+}
+
+#[test]
+fn missing_or_replaced_signing_keys_cannot_report_preservation() {
+    let tmp = tempdir().unwrap();
+    let before = tmp.path().join("before");
+    let after = tmp.path().join("after");
+    fs::create_dir_all(&before).unwrap();
+    fs::create_dir_all(&after).unwrap();
+    let (ca, ca_key, client, client_key) = generate_test_pki();
+    let sa = KeyPair::generate().unwrap().serialize_pem();
+    for dir in [&before, &after] {
+        fs::write(dir.join("ca.crt"), &ca).unwrap();
+        fs::write(dir.join("ca.key"), &ca_key).unwrap();
+    }
+    let config = tmp.path().join("kubeconfig");
+    fs::write(&config, serde_json::to_vec(&serde_json::json!({
+        "current-context": "admin", "clusters": [{"name":"cluster", "cluster": {
+            "server":"https://127.0.0.1:6443", "certificate-authority-data": BASE64_STANDARD.encode(&ca)
+        }}], "users":[{"name":"admin", "user": {
+            "client-certificate-data":BASE64_STANDARD.encode(client),
+            "client-key-data": BASE64_STANDARD.encode(client_key)
+        }}]
+    })).unwrap()).unwrap();
+    assert!(assert_pki_transition(&before, &after, &config).is_err());
+    for dir in [&before, &after] {
+        fs::write(dir.join("service-account.key"), &sa).unwrap();
+    }
+    fs::remove_file(after.join("ca.key")).unwrap();
+    assert!(assert_pki_transition(&before, &after, &config).is_err());
+    fs::write(
+        after.join("ca.key"),
+        KeyPair::generate().unwrap().serialize_pem(),
+    )
+    .unwrap();
+    assert!(
+        !assert_pki_transition(&before, &after, &config)
+            .unwrap()
+            .ca_key_preserved
+    );
+    fs::write(after.join("ca.key"), &ca_key).unwrap();
+    fs::write(
+        after.join("service-account.key"),
+        KeyPair::generate().unwrap().serialize_pem(),
+    )
+    .unwrap();
+    assert!(
+        !assert_pki_transition(&before, &after, &config)
+            .unwrap()
+            .sa_key_preserved
+    );
+    fs::write(after.join("service-account.key"), b"invalid-key").unwrap();
+    assert!(assert_pki_transition(&before, &after, &config).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn pv_empty_directories_links_and_special_permission_bits_are_preserved() {
+    use std::os::unix::fs::{PermissionsExt, symlink};
+    let tmp = tempdir().unwrap();
+    let before = tmp.path().join("before");
+    let after = tmp.path().join("after");
+    fs::create_dir_all(before.join("empty-pvc")).unwrap();
+    fs::create_dir_all(&after).unwrap();
+    symlink("missing-target", before.join("link")).unwrap();
+    assert!(assert_pv_storage_preserved(&before, &after).is_err());
+    fs::create_dir_all(after.join("empty-pvc")).unwrap();
+    symlink("missing-target", after.join("link")).unwrap();
+    let same = assert_pv_storage_preserved(&before, &after).unwrap();
+    assert!(same.all_checksums_match && same.all_permissions_match);
+    fs::remove_file(after.join("link")).unwrap();
+    symlink("different-target", after.join("link")).unwrap();
+    assert!(
+        !assert_pv_storage_preserved(&before, &after)
+            .unwrap()
+            .all_checksums_match
+    );
+    fs::set_permissions(after.join("empty-pvc"), fs::Permissions::from_mode(0o1700)).unwrap();
+    assert!(
+        !assert_pv_storage_preserved(&before, &after)
+            .unwrap()
+            .all_permissions_match
+    );
+    fs::remove_dir_all(&after).unwrap();
+    assert!(assert_pv_storage_preserved(&before, &after).is_err());
 }

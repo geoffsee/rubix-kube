@@ -126,7 +126,7 @@ fn verify_state_classification() {
 }
 
 fn run() -> Result<(), String> {
-    println!("=== Rubix Go-to-Rust State Transition Verifier (Issue #124) ===");
+    println!("=== Rubix State Transition Fixture Checks (Issue #124) ===");
     println!("Minimum supported baseline: {MINIMUM_SUPPORTED_VERSION}\n");
 
     verify_version_catalog()?;
@@ -134,6 +134,7 @@ fn run() -> Result<(), String> {
     verify_state_classification();
 
     println!("All static state transition checks passed successfully.");
+    println!("Production Kine migration, WAL checkpointing and downtime remain UNQUALIFIED.");
     Ok(())
 }
 

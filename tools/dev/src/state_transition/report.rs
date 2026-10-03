@@ -65,8 +65,9 @@ impl StateTransitionReport {
         if let Some(pki) = &self.pki_assertion {
             let _ = writeln!(
                 s,
-                "- **CA Root Preserved**: {}\n- **ServiceAccount Key Preserved**: {}\n- **Kubeconfig Format Tested**: {}\n- **Client Cert Authenticated by CA**: {}\n",
+                "- **CA Root Preserved**: {}\n- **CA Private Key Preserved**: {}\n- **ServiceAccount Key Preserved**: {}\n- **Kubeconfig Format Tested**: {}\n- **Client Cert Authenticated by CA**: {}\n",
                 pki.ca_preserved,
+                pki.ca_key_preserved,
                 pki.sa_key_preserved,
                 pki.kubeconfig_format,
                 pki.client_cert_verified
@@ -75,7 +76,7 @@ impl StateTransitionReport {
             s.push_str("- *Not evaluated in this run.*\n\n");
         }
 
-        s.push_str("## 4. Datastore & Non-Interchangeability\n");
+        s.push_str("## 4. Native Snapshot Experiment (not production Kine migration)\n");
         if let Some(ds) = &self.datastore_assertion {
             let _ = writeln!(
                 s,
@@ -109,7 +110,7 @@ impl StateTransitionReport {
         s.push_str("## 6. Operational Prerequisites\n");
         let _ = writeln!(
             s,
-            "- **Nonportable State Items Classified**: {}\n- **Estimated Downtime**: ~{} minutes\n- **Required Backups Verified**: {}\n- **Overall Migration Feasibility Gate**: {}",
+            "- **Nonportable State Items Classified**: {}\n- **Estimated Downtime**: ~{} minutes (unmeasured)\n- **Required Backups Verified**: {}\n- **Fixture Checks Successful**: {}\n- **Production Migration Qualification**: **UNQUALIFIED** (no live Kine transition evidence)",
             self.nonportable_state_classified,
             self.downtime_documented_minutes,
             self.required_backups_verified,

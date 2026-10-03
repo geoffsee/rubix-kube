@@ -113,9 +113,12 @@ pub fn assert_workload_identities_preserved(
     before: &[WorkloadIdentity],
     after: &[WorkloadIdentity],
 ) -> Result<(), String> {
-    let mut before_map: BTreeMap<(&str, &str, &str), &WorkloadIdentity> = BTreeMap::new();
+    let mut before_map = BTreeMap::new();
     for item in before {
-        before_map.insert((&item.kind, &item.namespace, &item.name), item);
+        let key = (&item.api_version, &item.kind, &item.namespace, &item.name);
+        if before_map.insert(key, item).is_some() {
+            return Err(format!("duplicate workload before transition: {key:?}"));
+        }
     }
 
     if before.len() != after.len() {
@@ -126,12 +129,12 @@ pub fn assert_workload_identities_preserved(
         ));
     }
 
+    let mut seen = std::collections::BTreeSet::new();
     for item in after {
-        let key = (
-            item.kind.as_str(),
-            item.namespace.as_str(),
-            item.name.as_str(),
-        );
+        let key = (&item.api_version, &item.kind, &item.namespace, &item.name);
+        if !seen.insert(key) {
+            return Err(format!("duplicate workload after transition: {key:?}"));
+        }
         match before_map.get(&key) {
             Some(prev) => {
                 if prev.uid != item.uid {

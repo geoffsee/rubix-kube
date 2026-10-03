@@ -1,12 +1,12 @@
-//! Datastore state transition and non-interchangeability validation.
+//! Synthetic native snapshot conversion experiment; not a production Kine migration.
 //!
 //! Validates:
-//! 1. Kine `SQLite` datastore (`state.db`) schema and record persistence under supervised Kine.
-//! 2. Clean checkpointing of WAL segments (`state.db-wal`, `state.db-shm`) before transition.
-//! 3. Revision monotonicity: cluster resource versions resume without resets.
-//! 4. Explicit export from Kine records into `rubix-datastore` (`RUBXSNP1`) format with SHA-256 verification.
+//! 1. Revision preservation for supplied in-memory fixture records.
+//! 2. Conversion into experimental `rubix-datastore` (`RUBXSNP1`) format with SHA-256 verification.
 //! 5. Explicit proof of non-interchangeability: raw `SQLite` databases are rejected by `rubix-datastore`
-//!    rather than blindly assumed compatible on-disk.
+//!    rather than blindly assumed compatible on-disk. No `SQLite` database is opened or checkpointed.
+//!
+//! The selected production boundary retains Kine and its `SQLite` state.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
@@ -53,6 +53,8 @@ pub struct DatastoreTransitionAssertion {
     pub active_keys_before: usize,
     pub max_revision_before: u64,
     pub wal_checkpointed: bool,
+    /// Always false for this in-memory experiment; a live Kine rehearsal is required.
+    pub production_transition_qualified: bool,
     pub raw_sqlite_rejected_by_rubix_datastore: bool,
     pub explicit_export_format: String,
     pub export_verified_sha256: String,
@@ -154,7 +156,7 @@ pub fn assert_raw_sqlite_rejected(sqlite_path: &Path) -> bool {
     }
 }
 
-/// Validates full before/after assertions for datastore transition.
+/// Exercises native snapshot conversion on fixture records, without qualifying production migration.
 pub async fn validate_datastore_transition(
     source_records: &[KineRecord],
     work_dir: &Path,
@@ -219,7 +221,8 @@ pub async fn validate_datastore_transition(
         total_records_before: source_records.len(),
         active_keys_before: active_before.len(),
         max_revision_before: max_rev_before,
-        wal_checkpointed: true,
+        wal_checkpointed: false,
+        production_transition_qualified: false,
         raw_sqlite_rejected_by_rubix_datastore: raw_rejected,
         explicit_export_format: meta.format_version,
         export_verified_sha256: meta.snapshot_sha256,
