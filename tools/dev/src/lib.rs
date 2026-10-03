@@ -116,6 +116,7 @@ pub mod preflight_probes;
 
 pub mod api_json;
 pub mod component_boundary;
+pub mod conformance;
 pub mod perf;
 pub mod platform_management;
 pub mod provenance;
