@@ -16,6 +16,47 @@ impl rubixctl::CheckInputs for Host {
     fn ports(&mut self, pprof: bool) -> Result<[Observation<PortAvailability>; 4], PlatformError> {
         probe_ports(pprof)
     }
+    fn download_file(
+        &mut self,
+        url: &str,
+        dest: &std::path::Path,
+        proxy: Option<&str>,
+        temp_dir: Option<&std::path::Path>,
+    ) -> io::Result<()> {
+        rubixctl::download::stage_download(dest, temp_dir, |staged| {
+            let status = rubixctl::download::curl_download_command(url, staged, proxy).status()?;
+            if !status.success() {
+                return Err(io::Error::other(format!(
+                    "curl failed with status: {status}"
+                )));
+            }
+            Ok(())
+        })
+    }
+    fn copy_self(&mut self, dest: &std::path::Path) -> io::Result<()> {
+        let current_exe = std::env::current_exe()?;
+        let mut source = std::fs::File::open(current_exe)?;
+        rubixctl::download::stage_installer(dest, |installer| {
+            io::copy(&mut source, installer)?;
+            Ok(())
+        })
+    }
+    fn read_parent_environ(&mut self) -> io::Result<Vec<u8>> {
+        let status = std::fs::read_to_string("/proc/self/status")?;
+        for line in status.lines() {
+            if let Some(rest) = line.strip_prefix("PPid:") {
+                let ppid: u32 = rest
+                    .trim()
+                    .parse()
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+                return std::fs::read(format!("/proc/{ppid}/environ"));
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "PPid not found in /proc/self/status",
+        ))
+    }
 }
 fn main() -> std::process::ExitCode {
     let Ok(args): Result<Vec<String>, _> = std::env::args_os()
@@ -26,11 +67,33 @@ fn main() -> std::process::ExitCode {
         let _ = writeln!(io::stderr(), "error: command arguments must be UTF-8");
         return std::process::ExitCode::FAILURE;
     };
-    let environment: BTreeMap<String, String> =
-        ["KUBESOLO_INSTALL_PREREQS", "KUBESOLO_PPROF_SERVER"]
-            .into_iter()
-            .filter_map(|key| std::env::var(key).ok().map(|value| (key.into(), value)))
-            .collect();
+    let mut environment = BTreeMap::new();
+    for (key, value) in std::env::vars_os() {
+        let Ok(key) = key.into_string() else { continue };
+        if !(key.starts_with("KUBESOLO_")
+            || matches!(
+                key.as_str(),
+                "SUDO_USER" | "TEMP_DIR" | "HTTP_PROXY" | "HTTPS_PROXY"
+            ))
+        {
+            continue;
+        }
+        let Ok(value) = value.into_string() else {
+            let _ = writeln!(
+                io::stderr(),
+                "error: management environment inputs must be UTF-8"
+            );
+            return std::process::ExitCode::FAILURE;
+        };
+        environment.insert(key, value);
+    }
+    if environment.contains_key("SUDO_USER")
+        && !environment.contains_key("KUBESOLO_PORTAINER_EDGE_KEY")
+    {
+        rubixctl::recover_sudo_environment(&mut environment, |ppid| {
+            std::fs::read(format!("/proc/{ppid}/environ"))
+        });
+    }
     let parsed = rubixctl::parse_command(&args, &environment);
     if let Ok(rubixctl::Command::Check(options)) = parsed
         && options.install_prerequisites
