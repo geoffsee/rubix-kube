@@ -35,7 +35,7 @@ locked payload. Versions and source revisions alone do not satisfy that requirem
 
 | ID | Accepted version/reference | Role / presence | Encoded payload | Pin status / evidence |
 |---|---|---|---|---|
-| kube-apiserver | officialKubernetes v1.35.7 | supervised node component, every node target | identity ELF (initial transport policy) | raw published sha256 for amd64/arm64 only; missing size/compressed hash/ABI closure and other targets; R1,R3 |
+| kube-apiserver | officialKubernetes v1.35.7 | supervised node component, every node target | identity ELF (initial transport policy) | raw published sha256 for amd64/arm64; raw size known for arm64 only; missing compressed hash/ABI closure and other targets; R1,R3 |
 | kube-controller-manager | officialKubernetes v1.35.7 | supervised, every node target | identity ELF (initial transport policy) | no production executable pin in reviewed repository; R1 |
 | kubelet | officialKubernetes v1.35.7 | supervised, every node target | identity ELF (initial transport policy) | no production executable pin; R1 |
 | kube-proxy | officialKubernetes v1.35.7 | supervised, every node target | identity ELF (initial transport policy) | no production executable pin; R1 |
