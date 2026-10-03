@@ -229,7 +229,6 @@ pub fn parse_command(
     let mut upgrade_opts = UpgradeOptions::default();
     let mut reset_opts = ResetOptions::default();
     let mut config_opts = ConfigOptions {
-        file: environment.get("KUBESOLO_CONFIG").map(PathBuf::from),
         environment: environment.clone(),
         ..ConfigOptions::default()
     };

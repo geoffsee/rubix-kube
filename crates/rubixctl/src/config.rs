@@ -2,11 +2,11 @@ use crate::CheckInputs;
 use crate::contract::ConfigOptions;
 use rubix_config::{
     API_VERSION, Config, FIELDS, HostContext, apply_merge_patch, apply_put_replacement,
-    describe_settings, parse_setting, read_file, redact_secrets, render_effective_yaml,
-    write_document,
+    describe_settings, has_redacted_secrets, parse_setting, read_file, redact_secrets,
+    render_effective_yaml, write_document,
 };
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 use std::fs;
 use std::io::{self, Read, Write};
@@ -22,10 +22,13 @@ const RESTART_WARNING: &str = "Warning: Restart required for changes to take eff
 /// Resolves the configuration file path.
 /// Priority: explicit `-f`/`--file`, then `$KUBESOLO_CONFIG`, then `/etc/kubesolo/config.yaml`.
 #[must_use]
-pub fn resolve_config_path(explicit_file: Option<&Path>) -> PathBuf {
+pub fn resolve_config_path(
+    explicit_file: Option<&Path>,
+    environment: &BTreeMap<String, String>,
+) -> PathBuf {
     if let Some(path) = explicit_file {
         path.to_path_buf()
-    } else if let Ok(env_path) = std::env::var("KUBESOLO_CONFIG") {
+    } else if let Some(env_path) = environment.get("KUBESOLO_CONFIG") {
         if env_path.is_empty() {
             PathBuf::from(DEFAULT_CONFIG_PATH)
         } else {
@@ -39,24 +42,33 @@ pub fn resolve_config_path(explicit_file: Option<&Path>) -> PathBuf {
 /// Resolves the Unix domain socket path.
 /// Priority: `$KUBESOLO_API_SOCKET_PATH`, then resolved config `api.socket_path`,
 /// then if stored config has `path`, `<path>/config.sock`, then `/var/lib/kubesolo/config.sock`.
-#[must_use]
-pub fn resolve_socket_path(config_path: &Path) -> PathBuf {
-    if let Ok(env_socket) = std::env::var("KUBESOLO_API_SOCKET_PATH")
+pub fn resolve_socket_path(
+    config_path: &Path,
+    environment: &BTreeMap<String, String>,
+) -> io::Result<Option<PathBuf>> {
+    let Some(decoded) = read_file(config_path)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?
+    else {
+        return Ok(None);
+    };
+    if !decoded.config.api.enabled {
+        return Ok(None);
+    }
+    if let Some(env_socket) = environment.get("KUBESOLO_API_SOCKET_PATH")
         && !env_socket.is_empty()
     {
-        return PathBuf::from(env_socket);
+        return Ok(Some(PathBuf::from(env_socket)));
     }
 
-    if let Ok(Some(decoded)) = read_file(config_path) {
-        if !decoded.config.api.socket_path.is_empty() {
-            return PathBuf::from(&decoded.config.api.socket_path);
-        }
-        if !decoded.config.path.is_empty() {
-            return Path::new(&decoded.config.path).join(DEFAULT_SOCKET_NAME);
-        }
+    if !decoded.config.api.socket_path.is_empty() {
+        return Ok(Some(PathBuf::from(&decoded.config.api.socket_path)));
     }
-
-    Path::new(DEFAULT_DATA_PATH).join(DEFAULT_SOCKET_NAME)
+    if !decoded.config.path.is_empty() {
+        return Ok(Some(
+            Path::new(&decoded.config.path).join(DEFAULT_SOCKET_NAME),
+        ));
+    }
+    Ok(Some(Path::new(DEFAULT_DATA_PATH).join(DEFAULT_SOCKET_NAME)))
 }
 
 struct HttpResponse {
@@ -68,12 +80,15 @@ struct HttpResponse {
 /// Performs a synchronous HTTP/1.1 request over a Unix domain socket.
 /// Returns `None` if the socket cannot be connected (e.g. `NotFound` or `ConnectionRefused`).
 fn socket_request(
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     method: &str,
     uri: &str,
     body: &str,
     headers: &[(&str, &str)],
 ) -> io::Result<Option<HttpResponse>> {
+    let Some(socket_path) = socket_path else {
+        return Ok(None);
+    };
     let mut stream = match UnixStream::connect(socket_path) {
         Ok(s) => s,
         Err(err)
@@ -159,16 +174,52 @@ pub fn execute_config(
         return Ok(0);
     };
 
-    let config_path = resolve_config_path(options.file.as_deref());
-    let socket_path = resolve_socket_path(&config_path);
+    let config_path = resolve_config_path(options.file.as_deref(), &options.environment);
+    if subcommand == "path" {
+        return handle_path(&config_path, stdout);
+    }
+    let socket_path = match resolve_socket_path(&config_path, &options.environment) {
+        Ok(path) => path,
+        Err(e) => {
+            writeln!(
+                stderr,
+                "error: failed to resolve configuration backend: {e}"
+            )?;
+            return Ok(1);
+        },
+    };
 
     match subcommand {
         "path" => handle_path(&config_path, stdout),
-        "schema" => handle_schema(&socket_path, stdout, stderr),
-        "validate" => handle_validate(options, &config_path, &socket_path, stdout, stderr),
-        "get" => handle_get(options, &config_path, &socket_path, stdout, stderr),
-        "set" => handle_set(options, &config_path, &socket_path, stdout, stderr),
-        "edit" => handle_edit(options, &config_path, &socket_path, stdout, stderr),
+        "schema" => handle_schema(socket_path.as_deref(), stdout, stderr),
+        "validate" => handle_validate(
+            options,
+            &config_path,
+            socket_path.as_deref(),
+            stdout,
+            stderr,
+        ),
+        "get" => handle_get(
+            options,
+            &config_path,
+            socket_path.as_deref(),
+            stdout,
+            stderr,
+        ),
+        "set" => handle_set(
+            options,
+            &config_path,
+            socket_path.as_deref(),
+            stdout,
+            stderr,
+        ),
+        "edit" => handle_edit(
+            options,
+            &config_path,
+            socket_path.as_deref(),
+            stdout,
+            stderr,
+        ),
         other => {
             writeln!(
                 stderr,
@@ -185,7 +236,7 @@ fn handle_path(config_path: &Path, stdout: &mut dyn Write) -> io::Result<u8> {
 }
 
 fn handle_schema(
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
@@ -220,7 +271,7 @@ fn handle_schema(
 fn handle_validate(
     options: &ConfigOptions,
     config_path: &Path,
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
@@ -298,7 +349,7 @@ fn handle_validate(
 fn handle_get(
     options: &ConfigOptions,
     config_path: &Path,
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
@@ -337,7 +388,9 @@ fn handle_get_key(
         return Ok(1);
     }
 
-    let json_val = match serde_json::to_value(config) {
+    let mut display_config = config.clone();
+    redact_secrets(&mut display_config);
+    let json_val = match serde_json::to_value(display_config) {
         Ok(v) => v,
         Err(e) => {
             writeln!(stderr, "error: {e}")?;
@@ -377,7 +430,7 @@ fn handle_get_key(
 fn handle_set(
     options: &ConfigOptions,
     config_path: &Path,
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     _stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
@@ -419,7 +472,7 @@ fn handle_set(
 }
 
 fn try_socket_set(
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     patch_json: &str,
     stderr: &mut dyn Write,
 ) -> io::Result<Option<u8>> {
@@ -427,7 +480,13 @@ fn try_socket_set(
         return Ok(None);
     };
     if get_resp.status != 200 {
-        return Ok(None);
+        writeln!(
+            stderr,
+            "error: API returned status {}: {}",
+            get_resp.status,
+            extract_error_message(&get_resp.body)
+        )?;
+        return Ok(Some(1));
     }
 
     let etag = get_resp.headers.get("etag").cloned().unwrap_or_default();
@@ -439,7 +498,8 @@ fn try_socket_set(
     let Some(patch_resp) =
         socket_request(socket_path, "PATCH", "/api/v1/config", patch_json, &headers)?
     else {
-        return Ok(None);
+        writeln!(stderr, "error: config API became unavailable during update")?;
+        return Ok(Some(1));
     };
 
     if patch_resp.status == 200 {
@@ -455,6 +515,13 @@ fn try_socket_set(
 }
 
 fn fallback_file_set(config_path: &Path, patch: &Value, stderr: &mut dyn Write) -> io::Result<u8> {
+    if has_redacted_secrets(patch) {
+        writeln!(
+            stderr,
+            "error: redacted secret placeholders cannot be saved"
+        )?;
+        return Ok(1);
+    }
     let existing = match read_file(config_path) {
         Ok(Some(decoded)) => decoded.config,
         Ok(None) => Config::default(),
@@ -490,7 +557,7 @@ fn fallback_file_set(config_path: &Path, patch: &Value, stderr: &mut dyn Write) 
 fn handle_edit(
     options: &ConfigOptions,
     config_path: &Path,
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     stdout: &mut dyn Write,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
@@ -533,6 +600,7 @@ fn handle_edit(
         Ok(d) => d,
         Err(e) => {
             writeln!(stderr, "error: invalid configuration YAML: {e}")?;
+            preserve_edit(temp_file, stderr)?;
             return Ok(1);
         },
     };
@@ -540,21 +608,35 @@ fn handle_edit(
     let host = HostContext::detect();
     if let Err(e) = decoded.config.clone().validate(&host) {
         writeln!(stderr, "error: validation failed: {e}")?;
+        preserve_edit(temp_file, stderr)?;
         return Ok(1);
     }
 
-    save_edited_config(
+    let result = save_edited_config(
         config_path,
         socket_path,
         &initial_config,
         &decoded.config,
         etag.as_deref(),
         stderr,
+    );
+    if !matches!(result, Ok(0)) {
+        preserve_edit(temp_file, stderr)?;
+    }
+    result
+}
+
+fn preserve_edit(temp_file: tempfile::NamedTempFile, stderr: &mut dyn Write) -> io::Result<()> {
+    let (_file, path) = temp_file.keep().map_err(|e| e.error)?;
+    writeln!(
+        stderr,
+        "Edited configuration retained at {}",
+        path.display()
     )
 }
 
 fn read_config_for_edit(
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     config_path: &Path,
     stderr: &mut dyn Write,
 ) -> io::Result<(Option<Config>, Option<String>)> {
@@ -564,9 +646,22 @@ fn read_config_for_edit(
         "/api/v1/config?showSecrets=true",
         "",
         &[],
-    )? && resp.status == 200
-    {
-        let etag = resp.headers.get("etag").cloned();
+    )? {
+        if resp.status != 200 {
+            writeln!(
+                stderr,
+                "error: API returned status {}: {}",
+                resp.status,
+                extract_error_message(&resp.body)
+            )?;
+            return Ok((None, None));
+        }
+        let etag = Some(resp.headers.get("etag").cloned().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "config API response is missing ETag",
+            )
+        })?);
         let parsed: Value = serde_json::from_str(&resp.body)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
         let cfg: Config = serde_json::from_value(parsed["config"].clone())
@@ -596,13 +691,37 @@ fn launch_editor(
     let editor = options
         .environment
         .get("EDITOR")
+        .filter(|value| !value.trim().is_empty())
         .cloned()
-        .or_else(|| options.environment.get("VISUAL").cloned())
-        .or_else(|| std::env::var("EDITOR").ok())
-        .or_else(|| std::env::var("VISUAL").ok())
+        .or_else(|| {
+            options
+                .environment
+                .get("VISUAL")
+                .filter(|value| !value.trim().is_empty())
+                .cloned()
+        })
+        .or_else(|| {
+            std::env::var("EDITOR")
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+        })
+        .or_else(|| {
+            std::env::var("VISUAL")
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+        })
         .unwrap_or_else(|| "vi".to_string());
 
-    let status = std::process::Command::new(&editor)
+    let words = shlex::split(&editor)
+        .filter(|words| !words.is_empty())
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid editor command quoting",
+            )
+        })?;
+    let status = std::process::Command::new(&words[0])
+        .args(&words[1..])
         .arg(temp_file_path)
         .status();
 
@@ -638,12 +757,19 @@ fn launch_editor(
 
 fn save_edited_config(
     config_path: &Path,
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     initial_config: &Config,
     new_config: &Config,
     etag: Option<&str>,
     stderr: &mut dyn Write,
 ) -> io::Result<u8> {
+    if has_redacted_secrets(&serde_json::to_value(new_config).map_err(io::Error::other)?) {
+        writeln!(
+            stderr,
+            "error: redacted secret placeholders cannot be saved"
+        )?;
+        return Ok(1);
+    }
     if let Some(etag_val) = etag {
         let json_val = match serde_json::to_value(new_config) {
             Ok(v) => v,
@@ -674,8 +800,20 @@ fn save_edited_config(
             writeln!(stderr, "error: {msg}")?;
             return Ok(1);
         }
+        writeln!(stderr, "error: config API became unavailable during edit")?;
+        return Ok(1);
     }
 
+    let current = read_file(config_path)
+        .map_err(io::Error::other)?
+        .map_or_else(Config::default, |decoded| decoded.config);
+    if &current != initial_config {
+        writeln!(
+            stderr,
+            "error: configuration changed while editing; reload before saving"
+        )?;
+        return Ok(1);
+    }
     if let Err(e) = write_document(config_path, new_config) {
         writeln!(stderr, "error: failed to write configuration: {e}")?;
         return Ok(1);
@@ -686,7 +824,7 @@ fn save_edited_config(
 }
 
 fn read_config_for_display(
-    socket_path: &Path,
+    socket_path: Option<&Path>,
     config_path: &Path,
     stderr: &mut dyn Write,
 ) -> io::Result<Option<Config>> {
@@ -742,4 +880,46 @@ fn extract_error_message(body: &str) -> String {
         return err_str.to_string();
     }
     body.trim().to_string()
+}
+
+#[cfg(test)]
+mod review_tests {
+    use super::*;
+
+    #[test]
+    fn edit_never_falls_back_after_api_selection_or_overwrites_stale_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("config.yaml");
+        let initial = Config::default();
+        let mut concurrent = initial.clone();
+        concurrent.network.mtu = 1400;
+        write_document(&file, &concurrent).unwrap();
+        let before = fs::read(&file).unwrap();
+        let mut edited = initial.clone();
+        edited.network.mtu = 1500;
+        assert_eq!(
+            save_edited_config(
+                &file,
+                Some(&dir.path().join("absent.sock")),
+                &initial,
+                &edited,
+                Some("old-etag"),
+                &mut Vec::new()
+            )
+            .unwrap(),
+            1
+        );
+        assert_eq!(fs::read(&file).unwrap(), before);
+        assert_eq!(
+            save_edited_config(&file, None, &initial, &edited, None, &mut Vec::new()).unwrap(),
+            1
+        );
+        assert_eq!(fs::read(&file).unwrap(), before);
+        edited.portainer.edge_key = "***".into();
+        assert_eq!(
+            save_edited_config(&file, None, &concurrent, &edited, None, &mut Vec::new()).unwrap(),
+            1
+        );
+        assert_eq!(fs::read(file).unwrap(), before);
+    }
 }

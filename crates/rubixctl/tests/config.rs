@@ -45,7 +45,7 @@ fn test_config_path_resolution() {
     let mut stderr = Vec::new();
 
     // Default path
-    let env = BTreeMap::new();
+    let (_socket_dir, env) = isolated_environment();
     let code = execute(
         &args(&["config", "path"]),
         &env,
@@ -110,7 +110,7 @@ fn test_config_schema_fallback() {
     let mut inputs = DummyInputs;
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
-    let env = BTreeMap::new();
+    let (_socket_dir, env) = isolated_environment();
 
     let code = execute(
         &args(&["config", "schema"]),
@@ -144,7 +144,7 @@ fn test_config_validate_direct_file() {
     fs::write(&invalid_file, b"network:\n  mtu: not_a_number\n").unwrap();
 
     let mut inputs = DummyInputs;
-    let env = BTreeMap::new();
+    let (_socket_dir, env) = isolated_environment();
 
     // Valid file
     let mut stdout = Vec::new();
@@ -211,7 +211,7 @@ fn test_config_get_direct_file() {
     write_document(&file, &cfg).unwrap();
 
     let mut inputs = DummyInputs;
-    let env = BTreeMap::new();
+    let (_socket_dir, env) = isolated_environment();
 
     // Full config: redacted secrets
     let mut stdout = Vec::new();
@@ -304,7 +304,7 @@ fn test_config_set_direct_file() {
     write_document(&file, &cfg).unwrap();
 
     let mut inputs = DummyInputs;
-    let env = BTreeMap::new();
+    let (_socket_dir, env) = isolated_environment();
 
     // Set network.mtu 1400
     let mut stdout = Vec::new();
@@ -404,7 +404,7 @@ fn test_config_edit_direct_file() {
     write_document(&file, &cfg).unwrap();
 
     let mut inputs = DummyInputs;
-    let mut env = BTreeMap::new();
+    let (_socket_dir, mut env) = isolated_environment();
 
     // Mock editor 1: true (does nothing, leaves file unchanged)
     env.insert("EDITOR".into(), "true".into());
@@ -495,6 +495,7 @@ fn test_config_commands_via_socket() {
     let config_path = tmp.path().join("config.yaml");
 
     let mut initial_config = Config::default();
+    initial_config.api.enabled = true;
     initial_config.api.socket_path = socket_path.to_str().unwrap().to_string();
     write_document(&config_path, &initial_config).unwrap();
 
@@ -596,4 +597,229 @@ fn test_config_commands_via_socket() {
     );
 
     server_handle.join().unwrap();
+}
+
+// Keep every direct-file test away from a real host API.
+fn isolated_environment() -> (tempfile::TempDir, BTreeMap<String, String>) {
+    let dir = tempfile::tempdir().unwrap();
+    let env = BTreeMap::from([(
+        "KUBESOLO_API_SOCKET_PATH".into(),
+        dir.path().join("absent.sock").to_str().unwrap().into(),
+    )]);
+    (dir, env)
+}
+
+#[test]
+fn empty_config_environment_uses_default_and_explicit_file_wins() {
+    let env = BTreeMap::from([("KUBESOLO_CONFIG".into(), String::new())]);
+    assert_eq!(
+        rubixctl::resolve_config_path(None, &env),
+        std::path::Path::new("/etc/kubesolo/config.yaml")
+    );
+    assert_eq!(
+        rubixctl::resolve_config_path(Some(std::path::Path::new("/explicit")), &env),
+        std::path::Path::new("/explicit")
+    );
+}
+
+#[test]
+fn keyed_secret_output_is_redacted() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("config.yaml");
+    let mut cfg = Config::default();
+    cfg.portainer.edge_key = "private-key".into();
+    write_document(&file, &cfg).unwrap();
+    let (_socket_dir, env) = isolated_environment();
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    assert_eq!(
+        execute(
+            &args(&[
+                "config",
+                "-f",
+                file.to_str().unwrap(),
+                "get",
+                "portainer.edgeKey"
+            ]),
+            &env,
+            "test",
+            &mut DummyInputs,
+            &mut out,
+            &mut err
+        )
+        .unwrap(),
+        0
+    );
+    assert_eq!(String::from_utf8(out).unwrap().trim(), "***");
+    assert_eq!(
+        rubix_config::read_file(&file)
+            .unwrap()
+            .unwrap()
+            .config
+            .portainer
+            .edge_key,
+        "private-key"
+    );
+}
+
+#[test]
+fn api_get_failures_preserve_file_and_do_not_open_editor() {
+    for action in ["set", "edit"] {
+        for status in [403, 500] {
+            let dir = tempfile::tempdir().unwrap();
+            let file = dir.path().join("config.yaml");
+            let mut config = Config::default();
+            config.api.enabled = true;
+            write_document(&file, &config).unwrap();
+            let before = fs::read(&file).unwrap();
+            let socket = dir.path().join("api.sock");
+            let listener = UnixListener::bind(&socket).unwrap();
+            let server = std::thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut buf = [0; 4096];
+                assert!(stream.read(&mut buf).unwrap() > 0);
+                write!(
+                    stream,
+                    "HTTP/1.1 {status} Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                )
+                .unwrap();
+            });
+            let env = BTreeMap::from([
+                (
+                    "KUBESOLO_API_SOCKET_PATH".into(),
+                    socket.to_str().unwrap().into(),
+                ),
+                ("EDITOR".into(), "/nonexistent-editor".into()),
+            ]);
+            let mut argv = args(&["config", "-f", file.to_str().unwrap(), action]);
+            if action == "set" {
+                argv.extend(args(&["network.mtu", "1400"]));
+            }
+            let mut out = Vec::new();
+            let mut err = Vec::new();
+            assert_eq!(
+                execute(&argv, &env, "test", &mut DummyInputs, &mut out, &mut err).unwrap(),
+                1
+            );
+            assert!(
+                String::from_utf8(err)
+                    .unwrap()
+                    .contains(&status.to_string())
+            );
+            assert_eq!(fs::read(&file).unwrap(), before);
+            server.join().unwrap();
+        }
+    }
+}
+
+#[test]
+fn disabled_api_and_missing_config_do_not_select_host_socket() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("config.yaml");
+    let socket = dir.path().join("api.sock");
+    let _listener = UnixListener::bind(&socket).unwrap();
+    let env = BTreeMap::from([(
+        "KUBESOLO_API_SOCKET_PATH".into(),
+        socket.to_str().unwrap().into(),
+    )]);
+    write_document(&file, &Config::default()).unwrap();
+    assert!(
+        rubixctl::resolve_socket_path(&file, &env)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        rubixctl::resolve_socket_path(&dir.path().join("absent.yaml"), &env)
+            .unwrap()
+            .is_none()
+    );
+    fs::write(&file, "network: [broken").unwrap();
+    assert!(rubixctl::resolve_socket_path(&file, &env).is_err());
+}
+
+#[test]
+fn direct_file_set_rejects_redaction_placeholder() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("config.yaml");
+    let mut cfg = Config::default();
+    cfg.portainer.edge_key = "private-key".into();
+    write_document(&file, &cfg).unwrap();
+    let before = fs::read(&file).unwrap();
+    let (_socket_dir, env) = isolated_environment();
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    assert_eq!(
+        execute(
+            &args(&[
+                "config",
+                "-f",
+                file.to_str().unwrap(),
+                "set",
+                "portainer.edgeKey",
+                "***"
+            ]),
+            &env,
+            "test",
+            &mut DummyInputs,
+            &mut out,
+            &mut err
+        )
+        .unwrap(),
+        1
+    );
+    assert_eq!(fs::read(file).unwrap(), before);
+}
+
+#[test]
+fn editor_arguments_work_and_failed_edits_are_recoverable() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("config.yaml");
+    write_document(&file, &Config::default()).unwrap();
+    let before = fs::read(&file).unwrap();
+    let (_socket_dir, mut env) = isolated_environment();
+    env.insert("EDITOR".into(), String::new());
+    env.insert("VISUAL".into(), "true --".into());
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    assert_eq!(
+        execute(
+            &args(&["config", "-f", file.to_str().unwrap(), "edit"]),
+            &env,
+            "test",
+            &mut DummyInputs,
+            &mut out,
+            &mut err
+        )
+        .unwrap(),
+        0
+    );
+    let editor = dir.path().join("editor with spaces");
+    fs::write(&editor, "#!/bin/sh\nprintf 'network: [broken' > \"$1\"\n").unwrap();
+    fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+    env.insert("EDITOR".into(), format!("'{}'", editor.display()));
+    err.clear();
+    assert_eq!(
+        execute(
+            &args(&["config", "-f", file.to_str().unwrap(), "edit"]),
+            &env,
+            "test",
+            &mut DummyInputs,
+            &mut out,
+            &mut err
+        )
+        .unwrap(),
+        1
+    );
+    let diagnostic = String::from_utf8(err).unwrap();
+    let retained = diagnostic
+        .lines()
+        .find_map(|line| line.strip_prefix("Edited configuration retained at "))
+        .unwrap();
+    assert_eq!(fs::read_to_string(retained).unwrap(), "network: [broken");
+    assert_eq!(
+        fs::metadata(retained).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    assert_eq!(fs::read(file).unwrap(), before);
+    fs::remove_file(retained).unwrap();
 }
