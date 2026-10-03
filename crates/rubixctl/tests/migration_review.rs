@@ -2,6 +2,30 @@ use rubixctl::migrate::migrate_legacy_service;
 use std::fs;
 
 #[test]
+fn whole_token_quoted_paths_with_spaces_are_rejected_before_publication() {
+    for argument in ["\"--path=/data/my dir\"", "'--path=/data/my dir'"] {
+        let directory = tempfile::tempdir().unwrap();
+        let service = directory.path().join("node.service");
+        let config = directory.path().join("config.yaml");
+        let original = format!("ExecStart=/usr/local/bin/kubesolo {argument}\n");
+        fs::write(&service, &original).unwrap();
+        assert!(
+            migrate_legacy_service(&service, Some(&config), "v1.3.0", None, &mut Vec::new())
+                .is_err()
+        );
+        assert_eq!(fs::read_to_string(&service).unwrap(), original);
+        assert!(!config.exists());
+        assert!(!directory.path().join("node.service.bak").exists());
+        assert!(
+            !directory
+                .path()
+                .join("node.service.migration-pending")
+                .exists()
+        );
+    }
+}
+
+#[test]
 fn backup_obstruction_preserves_files_and_allows_retry() {
     let dir = tempfile::tempdir().unwrap();
     let service = dir.path().join("node.service");

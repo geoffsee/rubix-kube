@@ -144,9 +144,14 @@ fn legacy_arguments(line: &str) -> Vec<LegacyArgument> {
         // Include surrounding whole-token quotes, but leave an assignment's outer quotes intact.
         if range.start > 0 && (range.start < 2 || line.as_bytes()[range.start - 2] != b'=') {
             let quote = line.as_bytes()[range.start - 1];
-            if matches!(quote, b'\'' | b'"') && line.as_bytes().get(range.end) == Some(&quote) {
-                range.start -= 1;
-                range.end += 1;
+            if matches!(quote, b'\'' | b'"') {
+                if line.as_bytes().get(range.end) == Some(&quote) {
+                    range.start -= 1;
+                    range.end += 1;
+                } else {
+                    // Refuse partial tokens rather than persisting a truncated value.
+                    missing_value = true;
+                }
             }
         }
         consumed = range.end;
