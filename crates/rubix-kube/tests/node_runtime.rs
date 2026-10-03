@@ -56,20 +56,20 @@ fn test_config(dir: &Path, debug: bool, local_path: bool) -> ValidatedConfig {
         r#"
 path: "{}"
 network:
-  node_ip: "127.0.0.1"
+  nodeIP: "127.0.0.1"
 kubernetes:
-  node_name: "test-node"
+  nodeName: "test-node"
 logging:
   debug: {}
 storage:
-  local_path:
+  localPath:
     enabled: {}
 "#,
         dir.display(),
         debug,
         local_path
     );
-    resolve_layers(
+    let config = resolve_layers(
         Some(decode(&yaml).expect("decode")),
         &BTreeMap::new(),
         &ExplicitFlags::default(),
@@ -81,7 +81,11 @@ storage:
         },
     )
     .expect("resolve")
-    .validated
+    .validated;
+    assert_eq!(config.config().network.node_ip, "127.0.0.1");
+    assert_eq!(config.config().kubernetes.node_name, "test-node");
+    assert_eq!(config.config().storage.local_path.enabled, local_path);
+    config
 }
 
 fn setup_cluster_infra(

@@ -277,6 +277,20 @@ impl NodeRuntime {
 
     /// Assembles the default production node runtime from validated configuration.
     pub fn from_config(config: ValidatedConfig) -> Result<Self, RuntimeError> {
+        Self::from_config_with_context(
+            config,
+            PathBuf::from("/etc/kubesolo/config.yaml"),
+            rubix_config::HostContext::detect(),
+        )
+    }
+
+    /// Assembles runtime services with the file and host context selected at startup.
+    /// This keeps stored configuration and API validation bound to that invocation.
+    pub fn from_config_with_context(
+        config: ValidatedConfig,
+        config_path: PathBuf,
+        host: rubix_config::HostContext,
+    ) -> Result<Self, RuntimeError> {
         let state_dir = PathBuf::from(&config.config().path);
         std::fs::create_dir_all(&state_dir)?;
 
@@ -370,11 +384,6 @@ impl NodeRuntime {
             } else {
                 PathBuf::from(&builder.config().config().api.socket_path)
             };
-            let config_path = std::env::var("KUBESOLO_CONFIG")
-                .ok()
-                .filter(|s| !s.is_empty())
-                .map_or_else(|| PathBuf::from("/etc/kubesolo/config.yaml"), PathBuf::from);
-            let host = rubix_config::HostContext::detect();
             let server = crate::config_api::ConfigApiServer::new(socket_path, config_path, host);
             builder = builder.register_config_api(server);
         }
