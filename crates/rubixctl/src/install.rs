@@ -219,6 +219,13 @@ pub(crate) fn audit_archive(archive: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn copy_archive(source: &Path) -> io::Result<(tempfile::TempDir, PathBuf)> {
+    let staging = tempfile::TempDir::new()?;
+    let archive = staging.path().join("bundle.tar.gz");
+    fs::copy(source, &archive)?;
+    Ok((staging, archive))
+}
+
 /// Verifies a staged bundle: manifest metadata vs. target, digests, ELF identity,
 /// and the absence of unlisted files. Performs no mutation outside `staged`.
 pub fn verify_staged_bundle(
@@ -252,6 +259,21 @@ pub fn verify_staged_bundle(
         }
         if entry.executable {
             check_elf(&full, arch)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mode = fs::metadata(&full)
+                    .map_err(|e| e.to_string())?
+                    .permissions()
+                    .mode()
+                    & 0o7777;
+                if mode != 0o755 {
+                    return Err(format!(
+                        "invalid executable permissions for {}: expected 755, observed {mode:o}",
+                        entry.path.display()
+                    ));
+                }
+            }
         }
     }
     let mut stack = vec![staged.to_path_buf()];
@@ -274,21 +296,49 @@ pub fn verify_staged_bundle(
     Ok(manifest)
 }
 
+#[cfg(unix)]
 fn publish(staged: &Path, target: &Path, manifest: &BundleManifest) -> io::Result<()> {
+    use rustix::fs::{Mode, OFlags, mkdirat, open, openat, renameat};
+    let directory_flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     fs::create_dir_all(target)?;
+    let root = fs::File::from(open(target, directory_flags, Mode::empty())?);
+    let source = fs::File::open(staged)?;
     let rels = manifest
         .entries
         .iter()
         .map(|e| e.path.clone())
         .chain(std::iter::once(PathBuf::from(BUNDLE_MANIFEST)));
+    // Open every destination parent before publishing any file. Directory handles
+    // pin the verified parents, so later pathname/symlink substitution cannot
+    // redirect rename into an unrelated directory.
+    let mut destinations = Vec::new();
     for rel in rels {
-        let dest = target.join(&rel);
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent)?;
+        let mut parent = root.try_clone()?;
+        let mut components = rel.components().peekable();
+        while let Some(component) = components.next() {
+            let Component::Normal(name) = component else {
+                return Err(io::Error::other("unsafe destination path"));
+            };
+            if components.peek().is_none() {
+                destinations.push((rel.clone(), parent, name.to_os_string()));
+                break;
+            }
+            match mkdirat(&parent, name, Mode::from_raw_mode(0o755)) {
+                Ok(()) | Err(rustix::io::Errno::EXIST) => {},
+                Err(error) => return Err(error.into()),
+            }
+            parent = fs::File::from(openat(&parent, name, directory_flags, Mode::empty())?);
         }
-        fs::rename(staged.join(&rel), dest)?;
+    }
+    for (rel, parent, name) in destinations {
+        renameat(&source, &rel, &parent, &name)?;
     }
     Ok(())
+}
+
+#[cfg(not(unix))]
+fn publish(_staged: &Path, _target: &Path, _manifest: &BundleManifest) -> io::Result<()> {
+    Err(io::Error::other("offline host installation requires Unix"))
 }
 
 #[allow(clippy::too_many_lines)] // linear fail-fast workflow with per-step diagnostics
@@ -319,12 +369,6 @@ pub fn execute_install(
         },
     };
 
-    let host_libc = match evidence.executable.environment.as_str() {
-        "gnu" => Some(Libc::Glibc),
-        "musl" => Some(Libc::Musl),
-        _ => None,
-    };
-
     let Some(offline_path) = &options.offline_install else {
         writeln!(
             stderr,
@@ -346,7 +390,7 @@ pub fn execute_install(
     };
 
     if parsed.variant.architecture != host_target.architecture
-        || Some(parsed.variant.libc) != host_libc
+        || parsed.variant.libc != host_target.libc
     {
         writeln!(
             stderr,
@@ -357,7 +401,14 @@ pub fn execute_install(
     writeln!(stderr, "  [ok] Bundle matches host architecture")?;
 
     // Everything below up to `publish` touches only a private staging directory.
-    if let Err(err) = audit_archive(offline_path) {
+    let (_archive_staging, checked_archive) = match copy_archive(offline_path) {
+        Ok(archive) => archive,
+        Err(err) => {
+            writeln!(stderr, "  [fail] archive staging: {err}")?;
+            return Ok(1);
+        },
+    };
+    if let Err(err) = audit_archive(&checked_archive) {
         writeln!(stderr, "  [fail] bundle validation: {err}")?;
         return Ok(1);
     }
@@ -376,7 +427,7 @@ pub fn execute_install(
     };
     match Command::new("tar")
         .arg("-xzf")
-        .arg(offline_path)
+        .arg(&checked_archive)
         .arg("-C")
         .arg(staging.path())
         .status()
@@ -419,4 +470,47 @@ pub fn execute_install(
         manifest.entries.len()
     )?;
     Ok(0)
+}
+
+#[cfg(test)]
+mod archive_snapshot_tests {
+    use super::*;
+
+    #[test]
+    fn replacing_the_input_cannot_change_the_archive_audited_and_extracted() {
+        let source = tempfile::tempdir().unwrap();
+        let payload = source.path().join("payload");
+        fs::write(&payload, b"checked payload").unwrap();
+        let archive = source.path().join("input.tar.gz");
+        assert!(
+            Command::new("tar")
+                .arg("-czf")
+                .arg(&archive)
+                .arg("-C")
+                .arg(source.path())
+                .arg("payload")
+                .status()
+                .unwrap()
+                .success()
+        );
+        let (_private_copy, checked) = copy_archive(&archive).unwrap();
+        audit_archive(&checked).unwrap();
+        fs::remove_file(&archive).unwrap();
+        fs::write(&archive, b"replacement is not the audited archive").unwrap();
+        let destination = tempfile::tempdir().unwrap();
+        assert!(
+            Command::new("tar")
+                .arg("-xzf")
+                .arg(&checked)
+                .arg("-C")
+                .arg(destination.path())
+                .status()
+                .unwrap()
+                .success()
+        );
+        assert_eq!(
+            fs::read(destination.path().join("payload")).unwrap(),
+            b"checked payload"
+        );
+    }
 }

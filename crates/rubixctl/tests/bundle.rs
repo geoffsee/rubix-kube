@@ -1,4 +1,4 @@
-use rubix_assets::{Architecture, Libc, Variant};
+use rubix_assets::{Architecture, Libc};
 use rubix_platform::preflight::PortAvailability;
 use rubix_platform::preflight_probe::SupplementalFacts;
 use rubix_platform::{ExecutableAbi, HostEvidence, Observation, PlatformError, ProbeFailure};
@@ -13,6 +13,75 @@ use std::process::Command;
 use tempfile::TempDir;
 
 type Case = (&'static str, fn(&Path), &'static str);
+
+#[cfg(unix)]
+#[test]
+fn builder_normalizes_executable_modes_and_installer_rejects_missing_execute_bits() {
+    use std::os::unix::fs::PermissionsExt;
+    let t = TempDir::new().unwrap();
+    let s = spec(t.path(), 183);
+    fs::set_permissions(&s.inputs[0].source, fs::Permissions::from_mode(0o644)).unwrap();
+    let archive = build_offline_bundle(&s).unwrap();
+    let dest = t.path().join("dest");
+    let (code, err) = install(archive, &dest);
+    assert_eq!(code, 0, "{err}");
+    assert_eq!(
+        fs::metadata(dest.join("bin/rubix-kube"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o7777,
+        0o755
+    );
+
+    let t = TempDir::new().unwrap();
+    let archive = tampered(t.path(), |tree| {
+        fs::set_permissions(
+            tree.join("bin/rubix-kube"),
+            fs::Permissions::from_mode(0o644),
+        )
+        .unwrap();
+    });
+    let dest = t.path().join("dest");
+    let (code, err) = install(archive, &dest);
+    assert_eq!(code, 1);
+    assert!(err.contains("invalid executable permissions"), "{err}");
+    assert!(!dest.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn publication_rejects_destination_symlinks_without_overwriting_files() {
+    use std::os::unix::fs::symlink;
+    for root_link in [false, true] {
+        let t = TempDir::new().unwrap();
+        let archive = build_offline_bundle(&spec(t.path(), 183)).unwrap();
+        let dest = t.path().join("dest");
+        let outside = t.path().join("outside");
+        fs::create_dir(&outside).unwrap();
+        fs::write(outside.join("rubix-kube"), b"unrelated host data").unwrap();
+        if root_link {
+            symlink(&outside, &dest).unwrap();
+        } else {
+            fs::create_dir(&dest).unwrap();
+            fs::write(dest.join("data.txt"), b"existing installation").unwrap();
+            symlink(&outside, dest.join("bin")).unwrap();
+        }
+        let (code, err) = install(archive, &dest);
+        assert_eq!(code, 1, "{err}");
+        assert_eq!(
+            fs::read(outside.join("rubix-kube")).unwrap(),
+            b"unrelated host data"
+        );
+        assert!(!dest.join("bundle.manifest").exists());
+        if !root_link {
+            assert_eq!(
+                fs::read(dest.join("data.txt")).unwrap(),
+                b"existing installation"
+            );
+        }
+    }
+}
 
 struct Mock;
 
@@ -72,7 +141,6 @@ fn spec(root: &Path, machine: u16) -> BundleSpec {
         version: "v1.1.8".to_string(),
         architecture: Architecture::Arm64,
         libc: Libc::Glibc,
-        variant: Variant::Offline,
         inputs: vec![
             BundleInput {
                 source: src.join("rubix-kube"),

@@ -36,7 +36,11 @@ impl CheckInputs for Mock {
             hostname: denied(),
             container_environment_set: false,
             landmarks: BTreeMap::new(),
-            musl_linkers: denied(),
+            musl_linkers: Observation::Present(if self.libc == "musl" {
+                vec!["/lib/ld-musl.so.1".into()]
+            } else {
+                vec![]
+            }),
             files: BTreeMap::new(),
             requested_paths: vec![],
         })
@@ -61,19 +65,23 @@ impl CheckInputs for Mock {
 fn elf(machine: u16) -> Vec<u8> {
     let mut b = vec![0u8; 64];
     b[..4].copy_from_slice(b"\x7fELF");
-    b[4] = 2;
+    b[4] = if machine == 0x28 { 1 } else { 2 };
     b[5] = 1;
     b[18..20].copy_from_slice(&machine.to_le_bytes());
     b
 }
 
 #[test]
-fn layout_smoke_verification_all_cells() {
+fn synthetic_offline_bundle_roundtrip_all_targets() {
     let dist = TempDir::new().unwrap();
     let version = "0.1.0";
 
-    // 1. Build all 16 candidate archive cells using bundle builder
-    for variant in Matrix::all_node_variants() {
+    // The offline bundle builder covers eight architecture/libc targets. The
+    // dependency-materialization fixtures separately cover all sixteen cells.
+    for variant in Matrix::all_node_variants()
+        .iter()
+        .filter(|v| v.variant == rubix_assets::Variant::Offline)
+    {
         let src = dist.path().join(format!("src_{}", variant.cell));
         fs::create_dir_all(&src).unwrap();
 
@@ -91,7 +99,6 @@ fn layout_smoke_verification_all_cells() {
             version: version.to_string(),
             architecture: variant.architecture,
             libc: variant.libc,
-            variant: variant.variant,
             inputs: vec![
                 BundleInput {
                     source: src.join("rubix-kube"),
@@ -146,18 +153,32 @@ fn layout_smoke_verification_all_cells() {
             .unwrap();
         assert_eq!(code, 0);
 
-        assert!(install_dest.join("bin/rubix-kube").exists());
-        assert!(install_dest.join("data.txt").exists());
+        assert_eq!(
+            fs::read(install_dest.join("bin/rubix-kube")).unwrap(),
+            elf(machine)
+        );
+        assert_eq!(fs::read(install_dest.join("data.txt")).unwrap(), b"payload");
     }
 
     // 3. Use candidate package outputs and provenance records
     let checksums = ChecksumManifest::generate(dist.path()).unwrap();
-    assert_eq!(checksums.entries().len(), 16);
+    assert_eq!(checksums.entries().len(), 8);
 
     let provenance = generate_source_provenance(GENERATOR, INVENTORY, version, &checksums).unwrap();
-    assert_eq!(provenance.artifacts.len(), 16);
+    assert_eq!(provenance.artifacts.len(), 8);
 
     let manifest = generate_manifest(dist.path(), version, "kubesolo", "rubixctl").unwrap();
-    assert_eq!(manifest.node_archives.len(), 16);
+    assert_eq!(manifest.node_archives.len(), 8);
     assert_eq!(manifest.management_binaries.len(), 0);
+    // These synthetic bundle round trips do not contain production dependencies,
+    // management binaries or OCI evidence, and must not qualify a release.
+    assert!(
+        rubix_assets::ReleasePackager::verify_release_manifest(
+            &manifest,
+            BUNDLE_PREFIX,
+            "rubixctl",
+            version,
+        )
+        .is_err()
+    );
 }

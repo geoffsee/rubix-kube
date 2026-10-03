@@ -292,7 +292,7 @@ fn oci_descriptor(platform: &str, arch: &str, digest: &str) -> OciPlatformDescri
 }
 
 fn build_synthetic_oci_images() -> Vec<OciImageIndexArtifact> {
-    vec![
+    let mut images = vec![
         OciImageIndexArtifact {
             asset_id: "image-coredns".to_string(),
             image_reference: "docker.io/coredns/coredns:1.14.4".to_string(),
@@ -371,7 +371,25 @@ fn build_synthetic_oci_images() -> Vec<OciImageIndexArtifact> {
             ],
             unsupported_platforms: vec!["linux/arm/v7".to_string(), "linux/riscv64".to_string()],
         },
-    ]
+    ];
+    for (id, reference) in [
+        ("image-rubix-kube", "ghcr.io/geoffsee/rubix-kube:0.1.0"),
+        ("image-pause", "docker.io/portainer/pause:latest"),
+        (
+            "image-local-path",
+            "docker.io/rancher/local-path-provisioner:v0.0.36",
+        ),
+        (
+            "image-local-path-helper",
+            "docker.io/library/busybox:latest",
+        ),
+    ] {
+        let mut image = images[0].clone();
+        image.asset_id = id.into();
+        image.image_reference = reference.into();
+        images.push(image);
+    }
+    images
 }
 
 #[test]
@@ -394,7 +412,7 @@ fn smoke_check_layout_all_16_node_cells() {
                 .expect("verify descriptor");
         assert_eq!(verified_variant.cell, variant.cell);
 
-        // Verify layout and installation smoke check
+        // Verify synthetic dependency materialization; no node executable or installation.
         let test_dir = TestDir::new(&format!("smoke-cell-{}", variant.cell));
         let outcome = ReleasePackager::smoke_check_node_archive_layout(
             inventory,
@@ -494,8 +512,7 @@ fn verify_oci_image_manifest_indices() {
     }
 }
 
-#[test]
-fn complete_release_package_manifest_verification() {
+fn synthetic_release_manifest() -> ReleasePackageManifest {
     let mut node_archives = Vec::new();
     for variant in Matrix::all_node_variants() {
         let fixture_json = match variant.variant {
@@ -514,7 +531,7 @@ fn complete_release_package_manifest_verification() {
 
     let oci_images = build_synthetic_oci_images();
 
-    let manifest = ReleasePackageManifest {
+    ReleasePackageManifest {
         schema_version: 1,
         product_name: "rubix-kube".to_string(),
         version: "0.1.0".to_string(),
@@ -525,8 +542,12 @@ fn complete_release_package_manifest_verification() {
             "Windows binaries (native win32/win64 excluded per E01; WSL2 uses Linux userspace)"
                 .to_string(),
         ],
-    };
+    }
+}
 
+#[test]
+fn complete_release_package_manifest_verification() {
+    let manifest = synthetic_release_manifest();
     ReleasePackager::verify_release_manifest(&manifest, "rubix-kube", "rubixctl", "0.1.0")
         .expect("verify complete release package manifest");
 
@@ -535,4 +556,73 @@ fn complete_release_package_manifest_verification() {
     let deserialized: ReleasePackageManifest =
         serde_json::from_str(&json_str).expect("deserialize manifest");
     assert_eq!(deserialized, manifest);
+}
+
+#[test]
+fn release_metadata_rejects_incomplete_or_contradictory_descriptors() {
+    let mutations: &[fn(&mut ReleasePackageManifest)] = &[
+        |m| m.oci_images.clear(),
+        |m| {
+            m.oci_images.pop();
+        },
+        |m| m.oci_images.push(m.oci_images[0].clone()),
+        |m| m.schema_version = 999,
+        |m| m.product_name = "other-product".into(),
+        |m| m.version = "9.9.9".into(),
+        |m| m.node_archives[0].architecture = "windows-x86".into(),
+        |m| m.node_archives[0].libc = "unknown".into(),
+        |m| m.node_archives[0].variant = "hardened".into(),
+        |m| m.node_archives[0].size_bytes = 0,
+        |m| m.node_archives[0].filename = format!("../../x/{}", m.node_archives[0].filename),
+        |m| m.node_archives[0].filename = format!("dir\\{}", m.node_archives[0].filename),
+        |m| {
+            let artifact = m
+                .node_archives
+                .iter_mut()
+                .find(|a| a.architecture == "arm")
+                .unwrap();
+            artifact.filename = artifact.filename.replace("-arm", "-armv7");
+        },
+        |m| {
+            m.management_binaries[0].filename =
+                format!("dir/{}", m.management_binaries[0].filename);
+        },
+        |m| {
+            m.management_binaries[0].filename =
+                format!("dir\\{}", m.management_binaries[0].filename);
+        },
+        |m| m.node_archives[0].sha256 = "A".repeat(64),
+        |m| m.management_binaries[0].sha256 = "A".repeat(64),
+        |m| m.oci_images[0].index_digest = format!("sha256:{}", "A".repeat(64)),
+        |m| m.oci_images[0].platforms[0].digest = format!("sha256:{}", "A".repeat(64)),
+        |m| m.node_archives[0].bundled_assets.clear(),
+        |m| m.node_archives[0].bundled_assets.push("image-d2k".into()),
+        |m| m.management_binaries[0].size_bytes = 0,
+        |m| m.management_binaries[1] = m.management_binaries[0].clone(),
+        |m| m.oci_images[0].image_reference = "docker.io/unrelated:latest".into(),
+        |m| m.oci_images[0].index_digest = "not-a-digest".into(),
+        |m| m.oci_images[0].index_media_type = "text/plain".into(),
+        |m| m.oci_images[0].platforms[0].digest = format!("sha256:{}", "z".repeat(64)),
+        |m| m.oci_images[0].platforms[0].os = "windows".into(),
+        |m| m.oci_images[0].platforms[0].architecture = "incorrect".into(),
+        |m| m.oci_images[0].platforms[0].media_type = "text/plain".into(),
+        |m| {
+            let p = m.oci_images[0].platforms[0].clone();
+            m.oci_images[0].platforms.push(p);
+        },
+        |m| {
+            m.oci_images[0]
+                .unsupported_platforms
+                .push("linux/amd64".into());
+        },
+    ];
+    for (index, mutate) in mutations.iter().enumerate() {
+        let mut manifest = synthetic_release_manifest();
+        mutate(&mut manifest);
+        assert!(
+            ReleasePackager::verify_release_manifest(&manifest, "rubix-kube", "rubixctl", "0.1.0")
+                .is_err(),
+            "mutation {index} accepted"
+        );
+    }
 }

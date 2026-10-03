@@ -1,4 +1,5 @@
-//! Workload conformance, manifest tiers, and baseline qualification for Gate C13 (E28.01).
+//! Synthetic API/controller fixture evidence and planned C13/E28 conformance inventory.
+//! No selected retained-executable node or upstream conformance suite is qualified here.
 
 #[allow(clippy::pedantic)]
 pub mod kubeconfig;

@@ -11,7 +11,7 @@ pub const CONFORMANCE_SKIP_REGEX: &str =
     r"\[Serial\]|\[Disruptive\]|\[Slow\]|\[Flaky\]|two nodes|multiple nodes|more than one node";
 
 /// Explicit disclaimer avoiding false claims of full Kubernetes certification.
-pub const CERTIFICATION_DISCLAIMER: &str = "Notice: Rubix is a single-node Kubernetes distribution. These test results demonstrate qualification against explicitly selected single-node upstream conformance and manifest tiers; they explicitly DO NOT claim official CNCF Certified Kubernetes qualification or multi-node certification.";
+pub const CERTIFICATION_DISCLAIMER: &str = "Synthetic in-process fixtures only. C13/E28 and the selected upstream conformance suite remain unqualified. DO NOT claim official CNCF Certified Kubernetes qualification or multi-node certification.";
 
 /// Reason category for excluding upstream conformance tests.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,33 +67,57 @@ pub struct ConformanceSummary {
 }
 
 impl ConformanceSummary {
-    /// Verify that all selected tests passed, zero unexplained failures, and disclaimer is intact.
-    pub fn verify_qualification(&self) -> Result<(), String> {
-        if !self
-            .certification_disclaimer
-            .contains("DO NOT claim official CNCF Certified Kubernetes qualification")
+    fn verify_inventory(&self) -> Result<(), String> {
+        if self.total_selected != ConformanceInventory::selected_tests().len()
+            || self.focus_filter != CONFORMANCE_FOCUS_REGEX
+            || self.skip_filter != CONFORMANCE_SKIP_REGEX
+            || self.certification_disclaimer != CERTIFICATION_DISCLAIMER
+            || self.exclusions != ConformanceInventory::explicit_exclusions()
+            || self.excluded_count != self.exclusions.len()
         {
+            return Err("Conformance selection or exclusion inventory disagrees with the recorded candidates".into());
+        }
+        Ok(())
+    }
+
+    /// Synthetic fixtures do not execute any of the selected upstream tests.
+    pub fn verify_fixture(&self) -> Result<(), String> {
+        self.verify_inventory()?;
+        if !self.results.is_empty() || self.passed != 0 || self.failed != 0 {
             return Err(
-                "Qualification report missing required certification disclaimer".to_string(),
+                "Synthetic fixtures cannot claim executed upstream conformance results".into(),
             );
         }
-        if self.failed > 0 {
-            return Err(format!(
-                "Selected conformance reported {} test failures",
-                self.failed
-            ));
+        Ok(())
+    }
+
+    /// Require exactly one successful result for each selected candidate.
+    /// This checks report consistency only; it does not establish execution provenance.
+    pub fn verify_qualification(&self) -> Result<(), String> {
+        self.verify_inventory()?;
+        let expected = ConformanceInventory::selected_tests();
+        if self.results.len() != expected.len() {
+            return Err("Required conformance results are missing or extra".into());
         }
-        if self.passed == 0 || self.passed != self.total_selected {
-            return Err(format!(
-                "Mismatch in conformance test count: {} passed out of {} selected",
-                self.passed, self.total_selected
-            ));
+        let mut seen = std::collections::BTreeSet::new();
+        for result in &self.results {
+            let selected = expected
+                .iter()
+                .find(|t| t.id == result.test_id)
+                .ok_or_else(|| format!("Unknown conformance ID: {}", result.test_id))?;
+            if !seen.insert(&result.test_id)
+                || result.name != selected.name
+                || !result.passed
+                || result.error.is_some()
+            {
+                return Err(format!(
+                    "Duplicate, mismatched or unsuccessful conformance result: {}",
+                    result.test_id
+                ));
+            }
         }
-        if self.exclusions.is_empty() {
-            return Err(
-                "Exclusions list must explicitly document skipped patterns with rationale"
-                    .to_string(),
-            );
+        if self.passed != self.results.len() || self.failed != 0 {
+            return Err("Conformance summary counts disagree with individual results".into());
         }
         Ok(())
     }
@@ -393,7 +417,7 @@ mod tests {
             exclusions: ConformanceInventory::explicit_exclusions(),
             results: vec![],
         };
-        assert!(summary.verify_qualification().is_ok());
+        assert!(summary.verify_qualification().is_err());
 
         let mut invalid = summary.clone();
         invalid.certification_disclaimer = "Fully certified Kubernetes cluster".to_string();

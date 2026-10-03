@@ -234,62 +234,70 @@ impl Kubeconfig {
             .map_err(|e| KubeconfigError::Parse(format!("JSON serialization error: {e}")))
     }
 
-    /// Serialize to standard YAML format.
+    /// Serialize YAML using JSON-escaped scalar values (valid YAML 1.2).
     pub fn to_yaml(&self) -> String {
-        let mut yaml = String::new();
-        yaml.push_str("apiVersion: v1\n");
-        yaml.push_str("kind: Config\n");
-        yaml.push_str(&format!("current-context: {}\n", self.current_context));
-        yaml.push_str("preferences: {}\n");
-
+        fn quoted(value: &str) -> String {
+            Value::String(value.to_owned()).to_string()
+        }
+        let mut yaml = format!(
+            "apiVersion: {}\nkind: {}\ncurrent-context: {}\npreferences: {}\n",
+            quoted(&self.api_version),
+            quoted(&self.kind),
+            quoted(&self.current_context),
+            Value::Object(self.preferences.clone()),
+        );
         yaml.push_str("clusters:\n");
         for c in &self.clusters {
-            yaml.push_str(&format!("- name: {}\n", c.name));
-            yaml.push_str("  cluster:\n");
-            yaml.push_str(&format!("    server: {}\n", c.cluster.server));
-            if let Some(ref cad) = c.cluster.certificate_authority_data {
-                yaml.push_str(&format!("    certificate-authority-data: {cad}\n"));
-            }
-            if let Some(ref ca) = c.cluster.certificate_authority {
-                yaml.push_str(&format!("    certificate-authority: {ca}\n"));
+            yaml.push_str(&format!(
+                "- name: {}\n  cluster:\n    server: {}\n",
+                quoted(&c.name),
+                quoted(&c.cluster.server)
+            ));
+            for (key, value) in [
+                (
+                    "certificate-authority-data",
+                    &c.cluster.certificate_authority_data,
+                ),
+                ("certificate-authority", &c.cluster.certificate_authority),
+            ] {
+                if let Some(value) = value {
+                    yaml.push_str(&format!("    {key}: {}\n", quoted(value)));
+                }
             }
             if let Some(skip) = c.cluster.insecure_skip_tls_verify {
                 yaml.push_str(&format!("    insecure-skip-tls-verify: {skip}\n"));
             }
         }
-
         yaml.push_str("contexts:\n");
-        for ctx in &self.contexts {
-            yaml.push_str(&format!("- name: {}\n", ctx.name));
-            yaml.push_str("  context:\n");
-            yaml.push_str(&format!("    cluster: {}\n", ctx.context.cluster));
-            yaml.push_str(&format!("    user: {}\n", ctx.context.user));
-            if let Some(ref ns) = ctx.context.namespace {
-                yaml.push_str(&format!("    namespace: {ns}\n"));
+        for c in &self.contexts {
+            yaml.push_str(&format!(
+                "- name: {}\n  context:\n    cluster: {}\n    user: {}\n",
+                quoted(&c.name),
+                quoted(&c.context.cluster),
+                quoted(&c.context.user)
+            ));
+            if let Some(ns) = &c.context.namespace {
+                yaml.push_str(&format!("    namespace: {}\n", quoted(ns)));
             }
         }
-
         yaml.push_str("users:\n");
         for u in &self.users {
-            yaml.push_str(&format!("- name: {}\n", u.name));
-            yaml.push_str("  user:\n");
-            if let Some(ref cert) = u.user.client_certificate_data {
-                yaml.push_str(&format!("    client-certificate-data: {cert}\n"));
+            yaml.push_str(&format!("- name: {}\n  user: {{", quoted(&u.name)));
+            let mut fields = Vec::new();
+            for (key, value) in [
+                ("client-certificate-data", &u.user.client_certificate_data),
+                ("client-key-data", &u.user.client_key_data),
+                ("client-certificate", &u.user.client_certificate),
+                ("client-key", &u.user.client_key),
+                ("token", &u.user.token),
+            ] {
+                if let Some(value) = value {
+                    fields.push(format!("{}: {}", quoted(key), quoted(value)));
+                }
             }
-            if let Some(ref key) = u.user.client_key_data {
-                yaml.push_str(&format!("    client-key-data: {key}\n"));
-            }
-            if let Some(ref cert) = u.user.client_certificate {
-                yaml.push_str(&format!("    client-certificate: {cert}\n"));
-            }
-            if let Some(ref key) = u.user.client_key {
-                yaml.push_str(&format!("    client-key: {key}\n"));
-            }
-            if let Some(ref tok) = u.user.token {
-                yaml.push_str(&format!("    token: {tok}\n"));
-            }
+            yaml.push_str(&fields.join(", "));
+            yaml.push_str("}\n");
         }
-
         yaml
     }
 }

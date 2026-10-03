@@ -12,13 +12,16 @@ fn print_help() {
         r"rubix-conformance: Gate C13 workload and conformance qualification
 
 Usage:
-  rubix-conformance run [--output <dir>]
+  rubix-conformance run
+  rubix-conformance fixture [--output <dir>]
   rubix-conformance verify <report-json>
+  rubix-conformance verify-fixture <report-json>
   rubix-conformance check-kubeconfig <path>
   rubix-conformance --help
 
 Commands:
-  run                Execute smoke, 6 manifest domains, and selected single-node conformance
+  run                Unavailable: retained-executable node qualification is not implemented
+  fixture            Execute synthetic in-process fixtures; does not qualify C13/E28
   verify             Validate an existing qualification report with zero hidden skips
   check-kubeconfig   Verify dual-format accommodation (YAML and JSON) of a kubeconfig file
 "
@@ -36,6 +39,12 @@ async fn main() -> ExitCode {
 
     match args[0].as_str() {
         "run" => {
+            eprintln!(
+                "error: retained-executable C13/E28 node qualification is not implemented; use fixture for synthetic evidence"
+            );
+            ExitCode::FAILURE
+        },
+        "fixture" => {
             let mut output_dir: Option<PathBuf> = None;
             let mut i = 1;
             while i < args.len() {
@@ -52,9 +61,9 @@ async fn main() -> ExitCode {
                 }
             }
 
-            println!("Running Gate C13 workload, manifest tier and conformance qualification...");
+            println!("Running synthetic in-process fixtures; C13/E28 remains unqualified...");
             let runner = QualificationRunner::new();
-            let report = match runner.run_qualification().await {
+            let report = match runner.run_fixture().await {
                 Ok(rep) => rep,
                 Err(e) => {
                     eprintln!("error: qualification execution failed: {e}");
@@ -75,8 +84,8 @@ async fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
 
-                let json_path = dir.join("qualification-report.json");
-                let md_path = dir.join("qualification-report.md");
+                let json_path = dir.join("fixture-report.json");
+                let md_path = dir.join("fixture-report.md");
 
                 let json_content = match report.to_json() {
                     Ok(c) => c,
@@ -101,7 +110,7 @@ async fn main() -> ExitCode {
 
             ExitCode::SUCCESS
         },
-        "verify" => {
+        "verify" | "verify-fixture" => {
             if args.len() < 2 {
                 eprintln!("error: verify requires a report JSON file path");
                 return ExitCode::FAILURE;
@@ -123,14 +132,18 @@ async fn main() -> ExitCode {
                 },
             };
 
-            if let Err(e) = report.verify_qualification() {
+            let verification = if args[0] == "verify-fixture" {
+                report.verify_fixture()
+            } else {
+                report.verify_qualification()
+            };
+            if let Err(e) = verification {
                 eprintln!("error: qualification verification failed: {e}");
                 return ExitCode::FAILURE;
             }
 
             println!(
-                "Qualification verified: all smoke checks passed, all 6 manifest domains passed with no hidden skips, {} selected conformance tests passed without certification claims.",
-                report.conformance_summary.passed
+                "Synthetic fixture coverage verified; pod egress and upstream conformance were not executed; C13/E28 remains unqualified."
             );
             ExitCode::SUCCESS
         },

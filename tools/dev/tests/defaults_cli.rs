@@ -121,11 +121,7 @@ fn shared_runner_bounds_logs_and_cleanup_continues_after_settled_command_failure
 #[test]
 fn cancellation_during_owned_cleanup_is_recorded_and_rejects_success() {
     use rubix_dev::defaults::capture::{OwnedDocker, Runner, successful};
-    use std::{
-        collections::BTreeMap,
-        os::unix::fs::PermissionsExt,
-        time::{Duration, Instant},
-    };
+    use std::{collections::BTreeMap, os::unix::fs::PermissionsExt, sync::mpsc, time::Duration};
     let dir = tempfile::tempdir().unwrap();
     let logs = dir.path().join("logs");
     fs::create_dir(&logs).unwrap();
@@ -142,14 +138,19 @@ fn cancellation_during_owned_cleanup_is_recorded_and_rejects_success() {
     runner.environment = Some(environment);
     runner.launcher = Some(PathBuf::from(env!("CARGO_BIN_EXE_rubix-defaults")));
     let cancellation = runner.commands.cancellation.clone();
+    let (finished, completion) = mpsc::channel();
     let trigger = std::thread::spawn(move || {
-        let deadline = Instant::now() + Duration::from_secs(5);
         while !marker.exists() {
-            assert!(Instant::now() < deadline, "cleanup handshake timed out");
-            std::thread::sleep(Duration::from_millis(5));
+            // The command owner already enforces its 30s bound. A shorter startup deadline
+            // here can strand the fixture under build contention before it publishes the marker.
+            match completion.recv_timeout(Duration::from_millis(5)) {
+                Err(mpsc::RecvTimeoutError::Timeout) => {},
+                Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => return false,
+            }
         }
         cancellation.request();
         fs::write(release, b"release").unwrap();
+        true
     });
     let owned = OwnedDocker {
         tag: "owned-test".into(),
@@ -157,8 +158,15 @@ fn cancellation_during_owned_cleanup_is_recorded_and_rejects_success() {
         containers: vec![],
     };
     let mut report = json!({"errors":[],"cleanup_errors":[]});
-    runner.finish(&mut report, &logs, &owned).unwrap();
-    trigger.join().unwrap();
+    let result = runner.finish(&mut report, &logs, &owned);
+    // Always stop the trigger and join it before surfacing a real runner failure.
+    let _ = finished.send(());
+    let entered_cleanup = trigger.join().unwrap();
+    result.unwrap();
+    assert!(
+        entered_cleanup,
+        "cleanup ended before publishing its marker"
+    );
     assert_eq!(report["cancelled"], true);
     assert_eq!(report["cleanup_errors"], json!([]));
     assert_eq!(report["remaining_images"], json!([]));

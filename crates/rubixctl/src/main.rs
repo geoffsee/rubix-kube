@@ -24,7 +24,7 @@ impl rubixctl::CheckInputs for Host {
         temp_dir: Option<&std::path::Path>,
     ) -> io::Result<()> {
         rubixctl::download::stage_download(dest, temp_dir, |staged| {
-            let status = rubixctl::download::curl_download_command(url, staged, proxy).status()?;
+            let status = rubixctl::download::run_curl_download(url, staged, proxy)?;
             if !status.success() {
                 return Err(io::Error::other(format!(
                     "curl failed with status: {status}"
@@ -86,13 +86,6 @@ fn main() -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         };
         environment.insert(key, value);
-    }
-    if environment.contains_key("SUDO_USER")
-        && !environment.contains_key("KUBESOLO_PORTAINER_EDGE_KEY")
-    {
-        rubixctl::recover_sudo_environment(&mut environment, |ppid| {
-            std::fs::read(format!("/proc/{ppid}/environ"))
-        });
     }
     let parsed = rubixctl::parse_command(&args, &environment);
     if let Ok(rubixctl::Command::Check(options)) = parsed

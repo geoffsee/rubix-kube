@@ -31,7 +31,6 @@ pub struct BundleSpec {
     pub version: String,
     pub architecture: Architecture,
     pub libc: Libc,
-    pub variant: Variant,
     pub inputs: Vec<BundleInput>,
     pub output_dir: PathBuf,
 }
@@ -51,9 +50,11 @@ pub fn build_offline_bundle(spec: &BundleSpec) -> Result<PathBuf, String> {
     let cell = Matrix::NODE_VARIANTS
         .iter()
         .find(|c| {
-            c.architecture == spec.architecture && c.libc == spec.libc && c.variant == spec.variant
+            c.architecture == spec.architecture
+                && c.libc == spec.libc
+                && c.variant == Variant::Offline
         })
-        .ok_or("no bundle exists for this target")?;
+        .ok_or("no offline bundle exists for this target")?;
     let filename = cell.archive_filename(BUNDLE_PREFIX, &spec.version);
 
     fs::create_dir_all(&spec.output_dir).map_err(|e| e.to_string())?;
@@ -82,6 +83,13 @@ pub fn build_offline_bundle(spec: &BundleSpec) -> Result<PathBuf, String> {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
         fs::copy(&input.source, &dest).map_err(|e| format!("{}: {e}", input.source.display()))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = if input.executable { 0o755 } else { 0o644 };
+            fs::set_permissions(&dest, fs::Permissions::from_mode(mode))
+                .map_err(|e| format!("{}: {e}", dest.display()))?;
+        }
         entries.push(BundleEntry {
             sha256: sha256_hex(&dest).map_err(|e| e.to_string())?,
             path: rel,

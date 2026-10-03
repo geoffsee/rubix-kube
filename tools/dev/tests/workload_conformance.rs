@@ -9,17 +9,20 @@ use rubix_dev::conformance::{
 };
 
 #[tokio::test]
-async fn test_workload_and_conformance_qualification_e2e() {
+async fn synthetic_fixture_evidence_cannot_qualify_a_node() {
     let runner = QualificationRunner::new();
     let report = runner
-        .run_qualification()
+        .run_fixture()
         .await
-        .expect("Full qualification suite should pass");
+        .expect("Synthetic fixture suite should pass");
 
     // 1. Verify smoke results
     assert_eq!(report.smoke_results.len(), 3);
     for smoke in &report.smoke_results {
-        assert!(smoke.passed, "Smoke check {} should pass", smoke.name);
+        assert_eq!(
+            smoke.passed,
+            smoke.check != rubix_dev::conformance::SmokeCheck::PodEgress
+        );
     }
 
     // 2. Verify all 6 manifest domains
@@ -55,7 +58,8 @@ async fn test_workload_and_conformance_qualification_e2e() {
     // 3. Verify selected conformance results
     let conf = &report.conformance_summary;
     assert_eq!(conf.total_selected, 24);
-    assert_eq!(conf.passed, 24);
+    assert_eq!(conf.passed, 0);
+    assert!(conf.results.is_empty());
     assert_eq!(conf.failed, 0);
     assert_eq!(conf.excluded_count, 7);
 
@@ -74,12 +78,27 @@ async fn test_workload_and_conformance_qualification_e2e() {
 
     // 4. Verify no hidden skips rule
     report
-        .verify_qualification()
-        .expect("Verification must pass with zero hidden skips");
+        .verify_fixture()
+        .expect("Exact fixture coverage must pass");
+    assert!(report.verify_qualification().is_err());
+    assert!(runner.run_qualification().await.is_err());
+    let mut duplicate = report.clone();
+    duplicate.smoke_results[1] = duplicate.smoke_results[0].clone();
+    assert!(duplicate.verify_fixture().is_err());
+    let mut duplicate = report.clone();
+    duplicate.manifest_domain_results[1] = duplicate.manifest_domain_results[0].clone();
+    assert!(duplicate.verify_fixture().is_err());
+    let mut incorrect = report.clone();
+    incorrect.total_assertions_checked += 1;
+    assert!(incorrect.verify_fixture().is_err());
+    let mut invented = report.clone();
+    invented.conformance_summary.passed = 24;
+    assert!(invented.verify_fixture().is_err());
 
     // 5. Verify Markdown report output
     let md = report.to_markdown();
-    assert!(md.contains("# Rubix Workload & Conformance Qualification Report (E28.01)"));
+    assert!(md.contains("# Rubix Synthetic In-Process Fixture Report"));
+    assert!(md.contains("C13/E28 remains unqualified"));
     assert!(md.contains("## 1. Baseline Smoke Verification"));
     assert!(md.contains("## 2. Six Baseline Manifest Domains"));
     assert!(md.contains("## 3. Selected Single-Node Conformance Summary"));
@@ -91,7 +110,7 @@ async fn test_workload_and_conformance_qualification_e2e() {
     let deser: QualificationReport =
         serde_json::from_str(&json_str).expect("Deserialize from JSON");
     assert_eq!(deser.conformance_summary.total_selected, 24);
-    assert_eq!(deser.conformance_summary.passed, 24);
+    assert_eq!(deser.conformance_summary.passed, 0);
 }
 
 #[test]

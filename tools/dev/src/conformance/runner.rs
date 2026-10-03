@@ -7,9 +7,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
 
-use rubix_apiserver::{
-    ApiserverConfig, ApiserverError, ApiserverService, KubernetesApiClient, KubernetesStorage,
-};
+use rubix_apiserver::{ApiserverConfig, ApiserverService, KubernetesApiClient, KubernetesStorage};
 use rubix_controller::webhook::{WebhookConfig, WebhookService};
 use rubix_controller::{ControllerManagerConfig, ControllerManagerService};
 use rubix_datastore::{DatastoreConfig, DatastoreEngine};
@@ -23,7 +21,7 @@ use super::kubeconfig::Kubeconfig;
 use super::manifests::*;
 use super::selected_conformance::{
     CERTIFICATION_DISCLAIMER, CONFORMANCE_FOCUS_REGEX, CONFORMANCE_SKIP_REGEX,
-    ConformanceInventory, ConformanceResult, ConformanceSummary,
+    ConformanceInventory, ConformanceSummary,
 };
 
 /// The six baseline manifest domains defined in Issue #118 and Epic E28.
@@ -96,6 +94,7 @@ pub struct DomainReport {
 /// Overall qualification report covering smoke, manifest tiers, and conformance.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QualificationReport {
+    pub evidence_kind: String,
     pub timestamp: String,
     pub smoke_results: Vec<SmokeReport>,
     pub manifest_domain_results: Vec<DomainReport>,
@@ -106,54 +105,73 @@ pub struct QualificationReport {
 }
 
 impl QualificationReport {
-    /// Validate that all smoke checks, manifest tiers, and conformance tests passed with no hidden skips.
+    /// In-process fixtures never qualify the selected retained executables.
     pub fn verify_qualification(&self) -> Result<(), String> {
-        // 1. Check smoke results
-        if self.smoke_results.len() != 3 {
-            return Err(format!(
-                "Expected 3 smoke checks, found {}",
-                self.smoke_results.len()
-            ));
-        }
-        for s in &self.smoke_results {
-            if !s.passed {
-                return Err(format!("Smoke check '{}' failed: {}", s.name, s.details));
-            }
-        }
+        self.verify_fixture()?;
+        Err("Synthetic in-process fixture evidence cannot qualify C13/E28; a retained-executable node runner is not implemented".into())
+    }
 
-        // 2. Check manifest domain results (all 6 must pass with zero skips)
-        if self.manifest_domain_results.len() != 6 {
-            return Err(format!(
-                "Expected 6 manifest domains, found {}",
-                self.manifest_domain_results.len()
-            ));
-        }
-        for d in &self.manifest_domain_results {
-            if !d.passed {
-                return Err(format!(
-                    "Manifest domain '{}' failed with details: {:?}",
-                    d.name, d.details
-                ));
-            }
-            if d.assertions_count == 0 {
-                return Err(format!(
-                    "Manifest domain '{}' executed 0 assertions (hidden skip detected)",
-                    d.name
-                ));
-            }
-        }
-
-        // 3. Check selected conformance summary
-        self.conformance_summary.verify_qualification()?;
-
-        // 4. Verify certification disclaimer
-        if !self
-            .certification_disclaimer
-            .contains("DO NOT claim official CNCF Certified Kubernetes qualification")
+    /// Validate exact fixture coverage and counts without claiming live qualification.
+    pub fn verify_fixture(&self) -> Result<(), String> {
+        let smoke = [
+            SmokeCheck::WorkloadPod,
+            SmokeCheck::InClusterDns,
+            SmokeCheck::PodEgress,
+        ];
+        let domains = [
+            (ManifestDomain::WorkloadsNetworking, 10),
+            (ManifestDomain::Storage, 12),
+            (ManifestDomain::ConfigIdentity, 6),
+            (ManifestDomain::Controllers, 11),
+            (ManifestDomain::DnsLoadBalancer, 5),
+            (ManifestDomain::LbUpdate, 11),
+        ];
+        if self.evidence_kind != "synthetic_fixture"
+            || self.smoke_results.len() != smoke.len()
+            || self.manifest_domain_results.len() != domains.len()
+            || self.certification_disclaimer != CERTIFICATION_DISCLAIMER
+            || self.kubeconfig_format_accommodated != "YAML and JSON (dual-format validated)"
         {
-            return Err("Report missing required CNCF non-certification disclaimer".to_string());
+            return Err("Invalid fixture evidence kind or required coverage".into());
         }
-
+        for id in smoke {
+            let rows: Vec<_> = self
+                .smoke_results
+                .iter()
+                .filter(|s| s.check == id)
+                .collect();
+            if rows.len() != 1
+                || rows[0].name != id.display_name()
+                || rows[0].passed != (id != SmokeCheck::PodEgress)
+            {
+                return Err("Missing, duplicate or incorrectly classified smoke fixture".into());
+            }
+        }
+        for (id, count) in domains {
+            let rows: Vec<_> = self
+                .manifest_domain_results
+                .iter()
+                .filter(|d| d.domain == id)
+                .collect();
+            if rows.len() != 1
+                || !rows[0].passed
+                || rows[0].name != id.display_name()
+                || rows[0].assertions_count != count
+            {
+                return Err("Missing, duplicate or inconsistent manifest fixture evidence".into());
+            }
+        }
+        self.conformance_summary.verify_fixture()?;
+        // The fixture performs three API admission assertions and two synthetic DNS
+        // assertions; pod egress and upstream conformance are not executed.
+        let expected_assertions = 5 + self
+            .manifest_domain_results
+            .iter()
+            .map(|d| d.assertions_count)
+            .sum::<usize>();
+        if self.total_assertions_checked != expected_assertions {
+            return Err("Assertion total disagrees with executed fixture checks".into());
+        }
         Ok(())
     }
 
@@ -165,7 +183,7 @@ impl QualificationReport {
     /// Render to GitHub-flavored Markdown summary table.
     pub fn to_markdown(&self) -> String {
         let mut md = String::new();
-        md.push_str("# Rubix Workload & Conformance Qualification Report (E28.01)\n\n");
+        md.push_str("# Rubix Synthetic In-Process Fixture Report\n\nC13/E28 remains unqualified. No retained-executable node or upstream conformance suite was run.\n\n");
         md.push_str("> ");
         md.push_str(&self.certification_disclaimer);
         md.push_str("\n\n");
@@ -174,7 +192,13 @@ impl QualificationReport {
         md.push_str("| Smoke Check | Status | Duration | Details |\n");
         md.push_str("|---|---|---|---|\n");
         for s in &self.smoke_results {
-            let status = if s.passed { "PASS" } else { "FAIL" };
+            let status = if s.check == SmokeCheck::PodEgress {
+                "NOT EXECUTED"
+            } else if s.passed {
+                "PASS (fixture)"
+            } else {
+                "FAIL"
+            };
             md.push_str(&format!(
                 "| {} | {} | {}ms | {} |\n",
                 s.name, status, s.duration_ms, s.details
@@ -195,6 +219,7 @@ impl QualificationReport {
         md.push('\n');
 
         md.push_str("## 3. Selected Single-Node Conformance Summary\n\n");
+        md.push_str("NOT EXECUTED. The inventory lists planned candidates; API-object creation does not establish upstream test execution.\n\n");
         md.push_str(&format!(
             "- **Total Selected Tests**: {}\n",
             self.conformance_summary.total_selected
@@ -267,6 +292,11 @@ impl QualificationRunner {
 
     /// Execute the complete smoke, manifest tier, and conformance qualification suite.
     pub async fn run_qualification(&self) -> Result<QualificationReport, String> {
+        Err("Retained-executable C13/E28 node qualification is not implemented; use the explicit synthetic fixture command".into())
+    }
+
+    /// Execute only synthetic in-process API/controller fixtures.
+    pub async fn run_fixture(&self) -> Result<QualificationReport, String> {
         let temp = TempDir::new().map_err(|e| format!("TempDir error: {e}"))?;
 
         // 1. Setup PKI
@@ -353,7 +383,6 @@ impl QualificationRunner {
         smoke_results.push(s2);
 
         let s3 = self.run_smoke_egress(&client).await?;
-        total_assertions += 2;
         smoke_results.push(s3);
 
         // ── 9. Execute Manifest Domains ───────────────────────────────────────
@@ -396,7 +425,14 @@ impl QualificationRunner {
         controller_service.stop();
 
         let report = QualificationReport {
-            timestamp: "2026-10-03T19:20:00Z".to_string(),
+            evidence_kind: "synthetic_fixture".into(),
+            timestamp: format!(
+                "unix:{}",
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_err(|e| e.to_string())?
+                    .as_secs()
+            ),
             smoke_results,
             manifest_domain_results,
             conformance_summary,
@@ -405,7 +441,7 @@ impl QualificationRunner {
             certification_disclaimer: CERTIFICATION_DISCLAIMER.to_string(),
         };
 
-        report.verify_qualification()?;
+        report.verify_fixture()?;
         Ok(report)
     }
 
@@ -521,19 +557,13 @@ impl QualificationRunner {
     // ── Smoke Check 3: Pod Egress ────────────────────────────────────────────
     async fn run_smoke_egress(&self, _client: &KubernetesApiClient) -> Result<SmokeReport, String> {
         let start = Instant::now();
-        // Egress rule verification: validates that SNAT masquerade rule structure is preserved
-        let masquerade_chain = "KUBE-POSTROUTING";
-        let snat_rule =
-            "-m comment --comment \"kubernetes service traffic requiring SNAT\" -j MASQUERADE";
-
         Ok(SmokeReport {
             check: SmokeCheck::PodEgress,
             name: SmokeCheck::PodEgress.display_name().to_string(),
-            passed: true,
+            passed: false,
             duration_ms: start.elapsed().as_millis() as u64,
-            details: format!(
-                "Pod egress masquerading verified in chain '{masquerade_chain}' with rule: {snat_rule}"
-            ),
+            details: "NOT EXECUTED: in-process fixtures have no pod runtime or network dataplane"
+                .into(),
         })
     }
 
@@ -833,7 +863,9 @@ impl QualificationRunner {
         std::fs::create_dir_all(&vol_dir).map_err(|e| e.to_string())?;
         std::fs::write(vol_dir.join("marker"), b"persisted-ok\n").map_err(|e| e.to_string())?;
         assertions += 1;
-        details.push("Writer completed writing marker 'persisted-ok' to PVC volume".to_string());
+        details.push(
+            "Synthetic host fixture wrote the marker; no writer workload executed".to_string(),
+        );
 
         // Delete writer pod and job
         client
@@ -1578,189 +1610,24 @@ impl QualificationRunner {
     // ── Selected Conformance Suite ───────────────────────────────────────────
     async fn run_selected_conformance(
         &self,
-        client: &KubernetesApiClient,
+        _client: &KubernetesApiClient,
     ) -> Result<(ConformanceSummary, usize), String> {
-        let tests = ConformanceInventory::selected_tests();
-        let exclusions = ConformanceInventory::explicit_exclusions();
-        let mut results = Vec::new();
-        let mut total_assertions = 0;
-
-        let conf_ns = "conformance-lite-test";
-        client
-            .create_namespace(conf_ns)
-            .await
-            .map_err(|e| e.to_string())?;
-
-        for t in &tests {
-            let start = Instant::now();
-
-            // Execute conformance assertion based on focus area
-            let test_res = match t.focus_keyword.as_str() {
-                "ConfigMap" => {
-                    let mut data = BTreeMap::new();
-                    data.insert("key".to_string(), "value-123".to_string());
-                    let cm_name = format!("cm-{}", t.id);
-                    client
-                        .create_configmap(conf_ns, &cm_name, data)
-                        .await
-                        .map(|_| ())
-                },
-                "Secret" => {
-                    let mut data = BTreeMap::new();
-                    data.insert("password".to_string(), "conf-secret-data".to_string());
-                    let sec_name = format!("sec-{}", t.id);
-                    client
-                        .create_secret(conf_ns, &sec_name, data, Some("Opaque"))
-                        .await
-                        .map(|_| ())
-                },
-                "Pods" => {
-                    let pod = json!({
-                        "apiVersion": "v1",
-                        "kind": "Pod",
-                        "metadata": { "name": format!("pod-{}", t.id), "namespace": conf_ns },
-                        "spec": {
-                            "restartPolicy": "Never",
-                            "containers": [{
-                                "name": "app",
-                                "image": "busybox:1.36",
-                                "command": ["sh", "-c", "echo ok"]
-                            }]
-                        }
-                    });
-                    client.create_pod(conf_ns, pod).await.map(|_| ())
-                },
-                "Services" => {
-                    let svc = json!({
-                        "apiVersion": "v1",
-                        "kind": "Service",
-                        "metadata": { "name": format!("svc-{}", t.id), "namespace": conf_ns },
-                        "spec": {
-                            "type": "ClusterIP",
-                            "ports": [{ "port": 8080, "targetPort": 8080 }]
-                        }
-                    });
-                    client.create_service(conf_ns, svc).await.map(|_| ())
-                },
-                "Deployment" => {
-                    let dep = json!({
-                        "apiVersion": "apps/v1",
-                        "kind": "Deployment",
-                        "metadata": { "name": format!("dep-{}", t.id), "namespace": conf_ns },
-                        "spec": {
-                            "replicas": 1,
-                            "selector": { "matchLabels": { "app": t.id } },
-                            "template": {
-                                "metadata": { "labels": { "app": t.id } },
-                                "spec": {
-                                    "containers": [{ "name": "app", "image": "nginx" }]
-                                }
-                            }
-                        }
-                    });
-                    client.create_deployment(conf_ns, dep).await.map(|_| ())
-                },
-                "ReplicaSet" => {
-                    let rs = json!({
-                        "apiVersion": "apps/v1",
-                        "kind": "ReplicaSet",
-                        "metadata": { "name": format!("rs-{}", t.id), "namespace": conf_ns },
-                        "spec": {
-                            "replicas": 1,
-                            "selector": { "matchLabels": { "app": t.id } },
-                            "template": {
-                                "metadata": { "labels": { "app": t.id } },
-                                "spec": {
-                                    "containers": [{ "name": "app", "image": "nginx" }]
-                                }
-                            }
-                        }
-                    });
-                    client.create_replicaset(conf_ns, rs).await.map(|_| ())
-                },
-                "DNS" => {
-                    let prober = DnsProber::new(ProbeTransport::Synthetic {
-                        client: Arc::new(client.clone()),
-                        config: CoreDnsConfig::new(),
-                    });
-                    let svc_ip: Ipv4Addr = "10.43.0.1".parse().unwrap();
-                    let probe = DnsResolutionProbe::same_namespace(
-                        "kubernetes",
-                        "default",
-                        svc_ip,
-                        DnsProtocol::Udp,
-                    );
-                    prober.execute_probe(&probe).await.map(|_| ()).map_err(|e| {
-                        ApiserverError::Internal {
-                            reason: e.to_string(),
-                        }
-                    })
-                },
-                "Projected" | "Downward" | "EmptyDir" => {
-                    let pod = json!({
-                        "apiVersion": "v1",
-                        "kind": "Pod",
-                        "metadata": { "name": format!("proj-{}", t.id), "namespace": conf_ns },
-                        "spec": {
-                            "containers": [{
-                                "name": "app",
-                                "image": "busybox:1.36",
-                                "command": ["sh", "-c", "sleep 10"]
-                            }]
-                        }
-                    });
-                    client.create_pod(conf_ns, pod).await.map(|_| ())
-                },
-                _ => Ok(()),
-            };
-
-            total_assertions += 1;
-            match test_res {
-                Ok(_) => {
-                    results.push(ConformanceResult {
-                        test_id: t.id.clone(),
-                        name: t.name.clone(),
-                        passed: true,
-                        duration_ms: start.elapsed().as_millis() as u64,
-                        error: None,
-                    });
-                },
-                Err(e) => {
-                    results.push(ConformanceResult {
-                        test_id: t.id.clone(),
-                        name: t.name.clone(),
-                        passed: false,
-                        duration_ms: start.elapsed().as_millis() as u64,
-                        error: Some(e.to_string()),
-                    });
-                },
-            }
-        }
-
-        // Cleanup
-        client
-            .delete_namespace(conf_ns)
-            .await
-            .map_err(|e| e.to_string())?;
-        total_assertions += 1;
-
-        let passed_count = results.iter().filter(|r| r.passed).count();
-        let failed_count = results.iter().filter(|r| !r.passed).count();
-        let excluded_count = exclusions.len();
-
-        let summary = ConformanceSummary {
-            total_selected: tests.len(),
-            passed: passed_count,
-            failed: failed_count,
-            excluded_count,
-            focus_filter: CONFORMANCE_FOCUS_REGEX.to_string(),
-            skip_filter: CONFORMANCE_SKIP_REGEX.to_string(),
-            certification_disclaimer: CERTIFICATION_DISCLAIMER.to_string(),
-            exclusions,
-            results,
-        };
-
-        Ok((summary, total_assertions))
+        // Creating API objects is not execution of the selected upstream tests.
+        // Preserve the planned inventory while recording no executed results.
+        Ok((
+            ConformanceSummary {
+                total_selected: ConformanceInventory::selected_tests().len(),
+                passed: 0,
+                failed: 0,
+                excluded_count: ConformanceInventory::explicit_exclusions().len(),
+                focus_filter: CONFORMANCE_FOCUS_REGEX.into(),
+                skip_filter: CONFORMANCE_SKIP_REGEX.into(),
+                certification_disclaimer: CERTIFICATION_DISCLAIMER.into(),
+                exclusions: ConformanceInventory::explicit_exclusions(),
+                results: Vec::new(),
+            },
+            0,
+        ))
     }
 }
 
