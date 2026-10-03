@@ -132,14 +132,12 @@ The following values are copied from R3, not freshly resolved or invented:
 |kube-proxy v1.35.7|arm64|40,632,504|`216b76b4ab7f642a1e305f6402a0a466af7cea1287bf89fefb9269396ba04dc2`|
 |Kine v0.16.3|arm64|44,465,296|`ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8`|
 |Kine v0.16.3|amd64|-|`1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976`|
-|containerd v2.2.5 archive|arm64|32,082,683|`ad3f7aec168ebbae8d24c412fdd2e8806d96599757f6032e38997d62a108158a`|
-|crun 1.26|arm64|3,166,864|`4fa62f6fadd21a1ea4c1f7a040d4d2df4f7120fed788bf77e9ecfcaa922c417d`|
-|cni-plugins v1.9.0 archive|arm64|51,229,731|`2596ef56329dd1269026f46b8df262f09ba43c92dbfb940e1e69fbccccd30a29`|
-|containerd-fuse-overlayfs v2.1.7 archive|arm64|4,205,517|`94ed6c2c3bece42e0c789ea056565b64fe487de4644121ee0dfb8acd8ef9369c`|
-|CoreDNS 1.14.4 image archive|arm64|21,071,411|`546ffb720afb37c1c537c5113c366b9cd3f7a714a4f80e5c3ca11843eedc6124`|
 
-The accepted Linux ARM64/glibc payload cell is captured in `tests/fixtures/online-arm64.json`
-and `tests/fixtures/offline-arm64.json`. Sizes and raw published hashes reflect official releases.
+`tests/fixtures/online-arm64.json` and `tests/fixtures/offline-arm64.json` are structural
+manifests. The Kubernetes arm64 rows above match `dl.k8s.io` v1.35.7 hashes and sizes.
+Every other bundled digest is the SHA-256 of the asset id with `encoded_bytes` 64, so it
+cannot be read as an upstream pin. Containerd, crun, CNI, the fuse snapshotter, and image
+archives still need encoded-byte pins before these manifests are an accepted payload cell.
 ABI verification and packaging assembly belong to E27.
 
 Reusable source authority already recorded:

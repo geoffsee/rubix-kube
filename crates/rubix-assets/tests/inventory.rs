@@ -227,7 +227,7 @@ fn feature_support_matches_expected_architecture_policy() {
     );
 }
 #[test]
-fn accepted_linux_arm64_glibc_payload_cell_validates_both_variants() {
+fn structural_linux_arm64_glibc_manifests_validate_both_variants() {
     let online_bytes = include_bytes!("fixtures/online-arm64.json");
     let online = Manifest::decode(online_bytes, Limits::default())
         .expect("valid online manifest")
@@ -253,6 +253,88 @@ fn accepted_linux_arm64_glibc_payload_cell_validates_both_variants() {
     assert_eq!(offline.bundled_assets().len(), 19);
     assert_image_contract(&offline, Architecture::Arm64, Variant::Offline);
     assert_optional_support(&offline, Architecture::Arm64);
+    assert_structural_placeholders(online_bytes, &online);
+    assert_structural_placeholders(offline_bytes, &offline);
+}
+
+fn assert_structural_placeholders(raw: &[u8], inventory: &DeclaredInventory) {
+    let text = std::str::from_utf8(raw).expect("fixture utf-8");
+    for reused in [
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "35b5ba6e08cdd034b8d1920f9c7203e5d66f258e1915f164a01de0af14f34710",
+        "114dde0fefebbca13165d0da9c500a66190e497a82a53dcaabc3172d630be1e9",
+        "ba5b1d81f9993f384b8f032914e5491306f056088821c2dba1c366bcb0893169",
+        "33b37ab0b0901175c2699d81c10b0c887f0dff944de74763cca00c155904d6fb",
+        "546ffb720afb37c1c537c5113c366b9cd3f7a714a4f80e5c3ca11843eedc6124",
+    ] {
+        assert!(!text.contains(reused), "reused digest {reused}");
+    }
+    for (id, delivery) in inventory.assets() {
+        let Delivery::Bundled {
+            sha256,
+            encoded_bytes,
+            ..
+        } = delivery
+        else {
+            continue;
+        };
+        if matches!(
+            id,
+            AssetId::KubeApiserver
+                | AssetId::KubeControllerManager
+                | AssetId::Kubelet
+                | AssetId::KubeProxy
+                | AssetId::Kine
+        ) {
+            continue;
+        }
+        assert_eq!(*encoded_bytes, 64, "{id:?}");
+        assert_eq!(sha256, structural_digest(id), "{id:?}");
+    }
+    let apiserver = inventory
+        .assets()
+        .find(|(id, _)| *id == AssetId::KubeApiserver);
+    let Some((_, Delivery::Bundled { sha256, .. })) = apiserver else {
+        panic!("kube-apiserver pin missing");
+    };
+    assert_eq!(
+        sha256,
+        "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"
+    );
+}
+
+fn structural_digest(id: AssetId) -> &'static str {
+    match id {
+        AssetId::ContainerdShim => {
+            "78bb7ccefd41ab2d1c83ef2f0f5178bd57a4cdb359cb5298961d3d2fef6bd591"
+        },
+        AssetId::Crun => "7334035c70464154385408b773496920602ba4012b6a690eb1f635b02dd62c30",
+        AssetId::CniBridge => "adde2235bc72cdd111fe7cef9de85d196eb24d6a24c975b8e43d65491eaa811c",
+        AssetId::CniHostLocal => "df28e12d46743e1810d54e39fa0288e0285e0d8dae67c755fad6e57c6c5f62c2",
+        AssetId::CniPortmap => "2d7720ad0daa2fc1238ee21e305af372b0d0d87c3e4a2754d588fac3172cdeef",
+        AssetId::CniLoopback => "d10ed367231b7a5637885ae36ccb1b3162fed4a48fe48ee894339caa1c5d024a",
+        AssetId::Containerd => "2397d068a8d1552a4c3f9147ba9c94e086bfd66fb2acb5bbaf47197105127d5f",
+        AssetId::FuseOverlayfsSnapshotter => {
+            "3935c8f4bf206670ccecc8126fa81f54dc0248576a1be29153c3b1ea6ed8e6f3"
+        },
+        AssetId::ImageCoredns => "dd0e4c5ec09bd5e73f21e4f297acf5355f9b2d924d976090e22d6098089eb1a3",
+        AssetId::ImagePause => "c43544793a1810ab5e7149f17d37833c473d85c8279739ee9d42b0274b5c727c",
+        AssetId::ImageLocalPath => {
+            "55ec058998391634e19a91a8e7b7393c3c3ee7a4645df0b5221f64ede22d62fe"
+        },
+        AssetId::ImageLocalPathHelper => {
+            "a8e722d3f5a1b9e7aa7db1e77cf03efff286664fb1fe811ef83f52e3def79405"
+        },
+        AssetId::ImagePortainerAgent => {
+            "3d92978a213132043410654949cd06ade2b05cbbefe61ac57b6c667f94ee1bda"
+        },
+        AssetId::ImageD2k => "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743",
+        AssetId::KubeApiserver
+        | AssetId::KubeControllerManager
+        | AssetId::Kubelet
+        | AssetId::KubeProxy
+        | AssetId::Kine => unreachable!("upstream pins stay outside the placeholder contract"),
+    }
 }
 #[test]
 fn absent_or_truncated_manifest_bytes_fail_before_inventory_validation() {
