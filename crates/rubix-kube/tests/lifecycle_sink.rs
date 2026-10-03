@@ -16,7 +16,7 @@ use rubix_supervisor::{
     FailurePolicy, Registration, StopCause, Supervisor, stop_channel,
 };
 use serde_json::Value;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::oneshot;
 
 #[derive(Clone)]
 struct Probe(Arc<Mutex<ProbeState>>);
@@ -237,10 +237,46 @@ async fn write_and_flush_failures_stop_without_attempting_later_frames() {
     );
 }
 
+fn setup_test_cluster(
+    dir: &tempfile::TempDir,
+) -> (
+    rubix_apiserver::ApiserverService,
+    rubix_apiserver::client::KubernetesApiClient,
+) {
+    let node_ip: std::net::IpAddr = "127.0.0.1".parse().unwrap();
+    let pki_dir = dir.path().join("pki");
+    std::fs::create_dir_all(&pki_dir).unwrap();
+    let datastore_dir = dir.path().join("datastore");
+    std::fs::create_dir_all(&datastore_dir).unwrap();
+
+    let pki_config = rubix_pki::cluster::ClusterPkiConfig::new(
+        pki_dir.clone(),
+        "test-node".to_string(),
+        node_ip,
+    );
+    let pki = rubix_pki::cluster::ClusterPki::new(pki_config);
+    pki.reconcile().expect("PKI reconcile");
+
+    let (engine, _) = rubix_datastore::DatastoreEngine::open(
+        rubix_datastore::DatastoreConfig::new(datastore_dir),
+    )
+    .unwrap();
+    let storage = rubix_apiserver::KubernetesStorage::new(engine.client(), "/registry");
+
+    let apiserver_config = rubix_apiserver::ApiserverConfig::default_for_pki(&pki_dir, node_ip);
+    let apiserver_service = rubix_apiserver::ApiserverService::new(apiserver_config, storage);
+    let client = apiserver_service.admin_client();
+
+    (apiserver_service, client)
+}
+
 #[tokio::test]
 async fn optional_failure_reaches_the_sink_while_the_healthy_worker_answers() {
+    let temp = tempfile::TempDir::new().unwrap();
+    let (apiserver, client) = setup_test_cluster(&temp);
+    apiserver.check_prerequisites().await.unwrap();
+
     let (fail, failed) = oneshot::channel();
-    let (ping, mut requests) = mpsc::channel::<oneshot::Sender<()>>(1);
     let secret = "private-adapter-token".to_string();
     let (supervisor, observer) = Supervisor::new(vec![
         registration("optional", FailurePolicy::Degrade, move |_| async move {
@@ -250,15 +286,12 @@ async fn optional_failure_reaches_the_sink_while_the_healthy_worker_answers() {
                 code: "optional_failed",
             })
         }),
-        registration("core", FailurePolicy::Fatal, move |mut context| async move {
-            context.ready();
-            loop {
-                tokio::select! {
-                    request = requests.recv() => request.expect("request").send(()).expect("reply"),
-                    _ = context.changed() => return Ok(()),
-                }
-            }
-        }),
+        rubix_apiserver::ApiserverAdapter::registration(
+            "apiserver",
+            apiserver,
+            vec![],
+            Duration::from_secs(5),
+        ),
     ])
     .expect("register")
     .with_observer();
@@ -287,9 +320,24 @@ async fn optional_failure_reaches_the_sink_while_the_healthy_worker_answers() {
     })
     .await
     .expect("failure frame");
-    let (answer, reply) = oneshot::channel();
-    ping.send(answer).await.expect("ping");
-    reply.await.expect("core answered");
+
+    // Live Kubernetes API operations succeed while optional component is degraded:
+    client
+        .create_namespace("probe-ns")
+        .await
+        .expect("create namespace");
+    let mut data = BTreeMap::new();
+    data.insert("key".to_string(), "value".to_string());
+    client
+        .create_configmap("probe-ns", "probe-cm", data)
+        .await
+        .expect("create configmap");
+    let cm = client
+        .get_configmap("probe-ns", "probe-cm")
+        .await
+        .expect("get configmap");
+    assert_eq!(cm["data"]["key"], "value");
+
     stop.stop();
     let report = running.await.expect("supervisor");
     assert_eq!(report.cause, StopCause::Requested);
@@ -302,5 +350,6 @@ async fn optional_failure_reaches_the_sink_while_the_healthy_worker_answers() {
     let text = probe.text();
     assert!(!text.contains("private-adapter-token"));
     assert!(text.contains("\"detail_code\":\"optional_failed\""));
+    assert!(text.contains("\"event\":\"supervisor_degraded\""));
     assert!(!text.contains("\"level\":\"debug\""));
 }
