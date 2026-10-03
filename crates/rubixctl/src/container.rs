@@ -144,6 +144,8 @@ pub trait ContainerEngineClient {
     fn inspect_image(&mut self, image: &str) -> io::Result<Option<()>>;
     /// Pulls an image if missing.
     fn pull_image(&mut self, image: &str) -> io::Result<()>;
+    /// Loads an image from a tarball.
+    fn load_image(&mut self, bytes: &[u8]) -> io::Result<()>;
 
     /// Inspects container state.
     fn inspect_container(&mut self, name: &str) -> io::Result<Option<ContainerInspect>>;

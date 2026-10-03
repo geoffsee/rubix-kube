@@ -71,6 +71,7 @@ fn build_offline_archive() -> (rubix_assets::DeclaredInventory, Vec<u8>) {
                 "image-local-path-helper" => AssetId::ImageLocalPathHelper,
                 "image-portainer-agent" => AssetId::ImagePortainerAgent,
                 "image-d2k" => AssetId::ImageD2k,
+                "image-kubesolo" => AssetId::ImageKubesolo,
                 other => panic!("unknown asset {other}"),
             };
 
@@ -81,7 +82,8 @@ fn build_offline_archive() -> (rubix_assets::DeclaredInventory, Vec<u8>) {
                 | AssetId::ImageLocalPath
                 | AssetId::ImageLocalPathHelper
                 | AssetId::ImagePortainerAgent
-                | AssetId::ImageD2k => gzip(&entry("layer.tar", b"test layer")),
+                | AssetId::ImageD2k
+                | AssetId::ImageKubesolo => gzip(&entry("layer.tar", b"test layer")),
                 _ => format!("test-bin-{id:?}").into_bytes(),
             };
 

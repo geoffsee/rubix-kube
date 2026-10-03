@@ -88,6 +88,9 @@ impl ContainerEngineClient for MockContainerEngine {
         self.images.insert(image.to_string(), true);
         Ok(())
     }
+    fn load_image(&mut self, _bytes: &[u8]) -> io::Result<()> {
+        Ok(())
+    }
 
     fn inspect_container(&mut self, name: &str) -> io::Result<Option<ContainerInspect>> {
         if self.fail_post_start_inspect && self.started_containers.contains(&name.to_string()) {

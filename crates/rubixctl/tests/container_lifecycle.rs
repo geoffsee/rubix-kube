@@ -55,6 +55,9 @@ impl ContainerEngineClient for Engine {
         self.images.insert(i.to_string());
         Ok(())
     }
+    fn load_image(&mut self, _bytes: &[u8]) -> io::Result<()> {
+        Ok(())
+    }
     fn inspect_container(&mut self, n: &str) -> io::Result<Option<ContainerInspect>> {
         Ok(self
             .containers

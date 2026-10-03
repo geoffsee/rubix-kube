@@ -179,7 +179,15 @@
     {
       "id": "image-d2k",
       "delivery": {
-        "kind": "registry-required"
+        "kind": "registry-required",
+        "sha256": "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
+      }
+    },
+    {
+      "id": "image-kubesolo",
+      "delivery": {
+        "kind": "registry-required",
+        "sha256": "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
       }
     }
   ]

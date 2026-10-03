@@ -98,6 +98,11 @@ fn assert_image_contract(
             AssetId::ImageD2k,
             matches!(architecture, Architecture::Amd64 | Architecture::Arm64),
         );
+        assert_delivery(
+            inventory,
+            AssetId::ImageKubesolo,
+            matches!(architecture, Architecture::Amd64 | Architecture::Arm64),
+        );
     }
 }
 #[test]
@@ -328,7 +333,9 @@ fn structural_digest(id: AssetId) -> &'static str {
         AssetId::ImagePortainerAgent => {
             "3d92978a213132043410654949cd06ade2b05cbbefe61ac57b6c667f94ee1bda"
         },
-        AssetId::ImageD2k => "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743",
+        AssetId::ImageD2k | AssetId::ImageKubesolo => {
+            "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
+        },
         AssetId::KubeApiserver
         | AssetId::KubeControllerManager
         | AssetId::Kubelet

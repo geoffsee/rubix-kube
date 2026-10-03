@@ -197,6 +197,16 @@
         "encoded_bytes": 64,
         "sha256": "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
       }
+    },
+    {
+      "id": "image-kubesolo",
+      "delivery": {
+        "kind": "bundled",
+        "path": "fixtures/image-d2k",
+        "encoding": "gzip",
+        "encoded_bytes": 64,
+        "sha256": "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
+      }
     }
   ]
 }

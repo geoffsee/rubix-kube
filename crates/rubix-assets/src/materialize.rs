@@ -231,6 +231,7 @@ impl AssetLayout {
             AssetId::ImageLocalPathHelper => "containerd/images/local-path-helper.tar.gz",
             AssetId::ImagePortainerAgent => "containerd/images/portainer-agent.tar.gz",
             AssetId::ImageD2k => "containerd/images/d2k.tar.gz",
+            AssetId::ImageKubesolo => "containerd/images/kubesolo.tar.gz",
         }
     }
 
@@ -1081,6 +1082,7 @@ fn id_tag(id: AssetId) -> &'static str {
         AssetId::ImageLocalPathHelper => "image-local-path-helper",
         AssetId::ImagePortainerAgent => "image-portainer-agent",
         AssetId::ImageD2k => "image-d2k",
+        AssetId::ImageKubesolo => "image-kubesolo",
     }
 }
 

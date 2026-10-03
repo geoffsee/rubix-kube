@@ -11,6 +11,7 @@ workspace = true
 [dependencies]
 tempfile = "=3.27.0"
 rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
+rubix-assets = { version = "=0.1.0", path = "../rubix-assets" }
 
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
 tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "signal"] }

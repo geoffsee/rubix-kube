@@ -22,7 +22,8 @@ fn inventory(bytes: &[u8], arch: Architecture) -> DeclaredInventory {
             row["delivery"]["encoded_bytes"] = json!(bytes.len());
             row["delivery"]["sha256"] = json!(hex(bytes));
         }
-        if (row["id"] == "image-d2k" && matches!(arch, Architecture::ArmV7 | Architecture::Riscv64))
+        if ((row["id"] == "image-d2k" || row["id"] == "image-kubesolo")
+            && matches!(arch, Architecture::ArmV7 | Architecture::Riscv64))
             || (row["id"] == "image-portainer-agent" && arch == Architecture::Riscv64)
         {
             row["delivery"] = json!({"kind":"unavailable"});

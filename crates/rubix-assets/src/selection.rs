@@ -248,6 +248,16 @@ impl AssetSelector {
                     SelectedDelivery::Disabled
                 }
             },
+            AssetId::ImageKubesolo => {
+                if self.variant == Variant::Offline {
+                    SelectedDelivery::Bundled
+                } else {
+                    SelectedDelivery::RegistryPull {
+                        reference: default_ref.to_string(),
+                        custom: false,
+                    }
+                }
+            },
             AssetId::ImageD2k => {
                 if self.d2k_enabled {
                     if feature_support(self.target.architecture, OptionalFeature::D2k)
@@ -329,6 +339,16 @@ impl AssetSelector {
             },
 
             // D2K image
+            AssetId::ImageKubesolo => {
+                if self.variant == Variant::Offline {
+                    SelectedDelivery::Bundled
+                } else {
+                    SelectedDelivery::RegistryPull {
+                        reference: default_ref.to_string(),
+                        custom: false,
+                    }
+                }
+            },
             AssetId::ImageD2k => {
                 if self.d2k_enabled {
                     if feature_support(self.target.architecture, OptionalFeature::D2k)

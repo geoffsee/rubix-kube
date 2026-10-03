@@ -4,6 +4,7 @@ pub mod check_workflow;
 pub mod completion;
 pub mod container;
 pub mod container_fixtures;
+pub mod container_image;
 pub mod container_lifecycle;
 pub mod container_ports;
 pub mod contract;
