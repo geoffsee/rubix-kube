@@ -7,6 +7,14 @@ Stack: payload/asset-inventory
 Evidence: Linux ARM64/glibc manifests validate structurally. Kubernetes v1.35.7 arm64 kube-apiserver, kube-controller-manager, kubelet, and kube-proxy hashes and sizes match dl.k8s.io. Image, CNI, containerd, crun, and shim rows use placeholder digests until encoded-byte pins exist, so the manifests are not an accepted payload cell.
 Next step: Pin encoded bytes for images, CNI, containerd, crun, and the shim; timestamp: 2026-10-02T23:50:00Z
 
+Work item: E27.01 (https://github.com/geoffsee/rubix-kube/issues/114); Parent criteria 1, 2, 3
+Outcome: In progress
+Readiness: Not done
+Ownership: Unassigned
+Stack: build/node-variants
+Evidence: Naming accepts only arch[-musl][-offline], rejects non-canonical aliases, and rejects optional images that a cell does not bundle. Packaged digest comparison is available. Clean-checkout builds of the 16 archive cells have not been produced.
+Next step: Build and compare the 16 cells from a clean checkout; timestamp: 2026-10-02T23:50:00Z
+
 Work item: E07.02 (https://github.com/geoffsee/rubix-kube/issues/52)
 Outcome: Completed
 Readiness: Done

@@ -1196,6 +1196,7 @@ dependencies = [
  "base64 0.22.1",
  "flate2",
  "regex",
+ "rubix-assets",
  "rustix",
  "serde",
  "serde_json",
