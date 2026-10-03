@@ -16,6 +16,8 @@ pub const CNI_PLUGINS: [&str; 4] = ["bridge", "host-local", "portmap", "loopback
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConstrainedFacts {
     pub sysctls: [Observation<String>; 4],
+    /// `/proc` or `/proc/sys` mounted read-only. A wrong value cannot be prepared in place.
+    pub proc_sys_read_only: Observation<bool>,
     pub ip_tables_names: Observation<bool>,
     pub default_cni_plugins: [Observation<bool>; 4],
     /// Entry names only, including directories as in the baseline ordering warning.
@@ -46,6 +48,8 @@ pub enum SysctlState {
     /// Missing IPv6 controls do not require a write; IPv4 forwarding is mandatory.
     OptionalAbsent,
     RequiredAbsent,
+    /// The value needs a write, but the sysctl mount is read-only.
+    ReadOnly,
     Unknown(ProbeFailure),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -78,8 +82,12 @@ pub struct ConstrainedReport {
     pub cni_ordering: Observation<CniOrdering>,
     pub responsibilities: RuntimeResponsibilities,
 }
-fn sysctl(value: Observation<&String>, optional: bool) -> SysctlState {
-    match value {
+fn sysctl(
+    value: Observation<&String>,
+    optional: bool,
+    read_only: Observation<bool>,
+) -> SysctlState {
+    let state = match value {
         Observation::Present(text) => match text.trim() {
             "1" => SysctlState::AlreadyCorrect,
             "0" => SysctlState::NeedsPreparation,
@@ -88,6 +96,13 @@ fn sysctl(value: Observation<&String>, optional: bool) -> SysctlState {
         Observation::Absent if optional => SysctlState::OptionalAbsent,
         Observation::Absent => SysctlState::RequiredAbsent,
         Observation::Unknown(error) => SysctlState::Unknown(error),
+    };
+    match (state, read_only) {
+        (
+            SysctlState::NeedsPreparation | SysctlState::RequiredAbsent,
+            Observation::Present(true),
+        ) => SysctlState::ReadOnly,
+        (state, _) => state,
     }
 }
 fn ordering(names: Observation<&Vec<String>>) -> Observation<CniOrdering> {
@@ -141,7 +156,9 @@ pub fn evaluate_constrained(
         Observation::Unknown(error) => Observation::Unknown(error),
     };
     ConstrainedReport {
-        sysctls: std::array::from_fn(|i| sysctl(facts.sysctls[i].as_ref(), i != 0)),
+        sysctls: std::array::from_fn(|i| {
+            sysctl(facts.sysctls[i].as_ref(), i != 0, facts.proc_sys_read_only)
+        }),
         proxy_selection,
         module_family,
         xtables_comment: inputs.xtables_comment,
@@ -184,6 +201,36 @@ fn directory_names(path: &Path, limit: usize) -> Observation<Vec<String>> {
     names.sort();
     Observation::Present(names)
 }
+fn proc_sys_read_only(limit: usize) -> Observation<bool> {
+    let text = match bounded_text(Path::new("/proc/mounts"), limit.min(65_536)) {
+        Observation::Present(text) => text,
+        Observation::Absent => return Observation::Absent,
+        Observation::Unknown(failure) => return Observation::Unknown(failure),
+    };
+    let mut read_only = None;
+    for line in text.lines() {
+        let mut fields = line.split_whitespace();
+        let Some(_device) = fields.next() else {
+            continue;
+        };
+        let Some(mount) = fields.next() else {
+            continue;
+        };
+        let Some(_filesystem) = fields.next() else {
+            continue;
+        };
+        let Some(options) = fields.next() else {
+            continue;
+        };
+        if mount == "/proc" || mount == "/proc/sys" {
+            read_only = Some(options.split(',').any(|option| option == "ro"));
+            if mount == "/proc/sys" {
+                break;
+            }
+        }
+    }
+    read_only.map_or(Observation::Absent, Observation::Present)
+}
 /// Reads fixed public paths only. No write, command, access, socket or CRI probe.
 /// Limits bound allocation/counts, not filesystem or kernel latency.
 pub fn collect_constrained(limits: ProbeLimits) -> Result<ConstrainedFacts, PlatformError> {
@@ -194,6 +241,7 @@ pub fn collect_constrained(limits: ProbeLimits) -> Result<ConstrainedFacts, Plat
     Ok(ConstrainedFacts {
         sysctls: SYSCTL_PATHS
             .map(|path| bounded_text(Path::new(path), limits.bytes_per_file.min(4096))),
+        proc_sys_read_only: proc_sys_read_only(limits.bytes_per_file),
         ip_tables_names: exists(Path::new("/proc/net/ip_tables_names")),
         default_cni_plugins: CNI_PLUGINS.map(|name| exists(&Path::new("/opt/cni/bin").join(name))),
         cni_config_names: directory_names(Path::new("/etc/cni/net.d"), limits.directory_entries),

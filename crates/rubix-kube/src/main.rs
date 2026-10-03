@@ -105,23 +105,11 @@ fn run() -> io::Result<u8> {
                 match rubix_kube::NodeRuntime::from_config(*config) {
                     Ok(node) => node.run_to_completion().await,
                     Err(error) => {
-                        let component = match &error {
-                            rubix_kube::RuntimeError::Pki(_) => "pki",
-                            rubix_kube::RuntimeError::Datastore(_) => "datastore",
-                            rubix_kube::RuntimeError::Apiserver(_) => "apiserver",
-                            rubix_kube::RuntimeError::Supervisor(_) => "supervisor",
-                            rubix_kube::RuntimeError::Io(_) => "io",
-                            rubix_kube::RuntimeError::ChannelCapacity => "logging",
-                        };
+                        // Assembly failed before a supervisor existed. Keep the
+                        // original diagnostic and do not invent lifecycle events.
                         let _ = writeln!(
                             io::stderr().lock(),
-                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"component_failure\",\"component\":\"{}\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
-                            component,
-                            error.diagnostic_code()
-                        );
-                        let _ = writeln!(
-                            io::stderr().lock(),
-                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"supervisor_stop\",\"code\":\"adapter\",\"detail_code\":\"{}\"}}",
+                            "{{\"schema\":1,\"level\":\"error\",\"event\":\"runtime_assembly_failed\",\"code\":\"{}\"}}",
                             error.diagnostic_code()
                         );
                         Ok(1)
