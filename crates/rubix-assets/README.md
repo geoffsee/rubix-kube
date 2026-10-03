@@ -186,10 +186,12 @@ or `UnsupportedTarget`) for each asset across:
   build tag's absence of embedded executables.
 - **Local Storage Toggle**: Disabling local storage (`with_local_storage(false)`) skips extraction
   and deployment of both the local-path provisioner and its helper image.
+  Selection applies to archive, directory, provider and single-asset materialization.
+  The single-asset API returns `MaterializationError::NotSelected` for a nonbundled
+  selection before reading payload bytes or creating the destination/staging directory.
 - **Portainer Custom Images & Egress Validation**: Custom Portainer agent image overrides remain
   explicit registry pulls (runtime import delegated to E09). When network egress is denied
   (`with_egress_denied(true)`), any active asset requiring a registry pull is rejected with
   `SelectionError::EgressDeniedRegistryRequired`.
 - **Target Policy Enforcement**: Unsupported architecture combinations (e.g. Portainer on `riscv64`,
   D2K on `armv7`/`riscv64`) are enforced per target policy via `SelectionError::UnsupportedTargetFeature`.
-

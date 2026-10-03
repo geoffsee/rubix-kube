@@ -64,6 +64,8 @@ pub enum MaterializationError {
     },
     CorruptArchive(String),
     MissingAssetPayload(AssetId),
+    /// The attached selector does not permit bundled materialization of this asset.
+    NotSelected(AssetId),
     SizeMismatch {
         asset: AssetId,
         expected: u64,
@@ -114,6 +116,10 @@ impl fmt::Display for MaterializationError {
             Self::MissingAssetPayload(id) => {
                 write!(f, "missing payload for bundled asset {id:?}")
             },
+            Self::NotSelected(id) => write!(
+                f,
+                "asset {id:?} is not selected for bundled materialization"
+            ),
             Self::SizeMismatch {
                 asset,
                 expected,
@@ -522,6 +528,14 @@ impl Materializer {
     ) -> Result<MaterializedAsset, MaterializationError> {
         if !self.limits.valid() {
             return Err(MaterializationError::InvalidLimits);
+        }
+
+        if self
+            .selector
+            .as_ref()
+            .is_some_and(|selector| !selector.is_bundled(id))
+        {
+            return Err(MaterializationError::NotSelected(id));
         }
 
         let blob = self

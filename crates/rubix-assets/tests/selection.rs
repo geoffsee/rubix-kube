@@ -444,3 +444,135 @@ fn materializer_honors_asset_selection_filter() {
             .is_some()
     );
 }
+
+#[test]
+fn single_asset_selection_rejects_disabled_and_registry_images_before_reading() {
+    struct MustNotRead;
+    impl std::io::Read for MustNotRead {
+        fn read(&mut self, _output: &mut [u8]) -> std::io::Result<usize> {
+            panic!("excluded payload must not be read");
+        }
+    }
+    let target = NodeTarget {
+        architecture: Architecture::Arm64,
+        libc: Libc::Glibc,
+    };
+    for (id, selector) in [
+        (
+            AssetId::ImageLocalPath,
+            AssetSelector::new(target, Variant::Offline, Scope::SupervisedBundle)
+                .with_local_storage(false),
+        ),
+        (
+            AssetId::ImageLocalPathHelper,
+            AssetSelector::new(target, Variant::Offline, Scope::SupervisedBundle)
+                .with_local_storage(false),
+        ),
+        (
+            AssetId::ImagePortainerAgent,
+            AssetSelector::new(target, Variant::Offline, Scope::SupervisedBundle)
+                .with_portainer_agent(true, Some("example.invalid/custom:tag".into())),
+        ),
+        (
+            AssetId::ImageD2k,
+            AssetSelector::new(target, Variant::Offline, Scope::SupervisedBundle).with_d2k(false),
+        ),
+    ] {
+        let (inventory, _) = build_offline_archive();
+        let dir = TestDir::new("rubix-single-asset-selection");
+        let destination = dir.path().join("uncreated");
+        let materializer = Materializer::new(inventory, &destination).with_selector(selector);
+        assert!(
+            matches!(materializer.materialize_single_asset(id, MustNotRead), Err(rubix_assets::MaterializationError::NotSelected(asset)) if asset == id)
+        );
+        assert!(
+            !destination.exists(),
+            "rejection must precede staging/lock creation"
+        );
+    }
+}
+
+fn bundled_payload<'a>(
+    inventory: &rubix_assets::DeclaredInventory,
+    archive: &'a [u8],
+    id: AssetId,
+) -> &'a [u8] {
+    let expected_path = inventory
+        .bundled_assets()
+        .find(|row| row.0 == id)
+        .unwrap()
+        .1;
+    let mut offset = 0;
+    loop {
+        let header = &archive[offset..offset + 512];
+        let name_len = header[..100].iter().position(|&byte| byte == 0).unwrap();
+        let name = std::str::from_utf8(&header[..name_len]).unwrap();
+        let size =
+            usize::from_str_radix(std::str::from_utf8(&header[124..135]).unwrap(), 8).unwrap();
+        if name == expected_path {
+            return &archive[offset + 512..offset + 512 + size];
+        }
+        offset += 512 + size.div_ceil(512) * 512;
+    }
+}
+
+#[test]
+fn directory_and_provider_selection_skip_excluded_payloads() {
+    let (inventory, archive) = build_offline_archive();
+    let target = NodeTarget {
+        architecture: Architecture::Arm64,
+        libc: Libc::Glibc,
+    };
+    let selector = AssetSelector::new(target, Variant::Offline, Scope::SupervisedBundle)
+        .with_local_storage(false)
+        .with_portainer_agent(true, Some("example.invalid/custom:tag".into()));
+    let source = TestDir::new("rubix-selected-source");
+    for (id, path, _, _) in inventory.bundled_assets() {
+        if selector.is_bundled(id) {
+            let payload = source.path().join(path);
+            fs::create_dir_all(payload.parent().unwrap()).unwrap();
+            fs::write(payload, bundled_payload(&inventory, &archive, id)).unwrap();
+        }
+    }
+    let destination = TestDir::new("rubix-selected-directory");
+    let (directory_inventory, _) = build_offline_archive();
+    let materializer =
+        Materializer::new(directory_inventory, destination.path()).with_selector(selector.clone());
+    let directory = materializer.materialize_from_dir(source.path()).unwrap();
+    let provider_root = TestDir::new("rubix-selected-provider");
+    let (provider_inventory, _) = build_offline_archive();
+    let provider = Materializer::new(provider_inventory, provider_root.path())
+        .with_selector(selector.clone())
+        .materialize_from_payloads(|id, _| {
+            assert!(
+                selector.is_bundled(id),
+                "excluded payload must not be requested"
+            );
+            Ok(Box::new(Cursor::new(
+                bundled_payload(&inventory, &archive, id).to_vec(),
+            )))
+        })
+        .unwrap();
+    for result in [&directory, &provider] {
+        for id in [
+            AssetId::ImageLocalPath,
+            AssetId::ImageLocalPathHelper,
+            AssetId::ImagePortainerAgent,
+            AssetId::ImageD2k,
+        ] {
+            assert!(result.get(id).is_none());
+        }
+        assert!(result.get(AssetId::KubeApiserver).is_some());
+    }
+    let single = materializer
+        .materialize_single_asset(
+            AssetId::KubeApiserver,
+            Cursor::new(bundled_payload(
+                &inventory,
+                &archive,
+                AssetId::KubeApiserver,
+            )),
+        )
+        .unwrap();
+    assert!(single.path.is_file());
+}
