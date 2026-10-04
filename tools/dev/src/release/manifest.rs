@@ -48,13 +48,17 @@ fn regular_files(dir: &Path) -> Result<BTreeSet<String>> {
             } else if kind.is_file() {
                 let name = path
                     .strip_prefix(root)?
-                    .to_str()
-                    .ok_or("non-UTF8 release filename")?
-                    .replace('\\', "/");
+                    .components()
+                    .map(|component| match component {
+                        Component::Normal(part) => part.to_str().ok_or("non-UTF8 release filename"),
+                        _ => Err("invalid release path component"),
+                    })
+                    .collect::<std::result::Result<Vec<_>, _>>()?
+                    .join("/");
                 if name == "SHA256SUMS" {
                     continue;
                 }
-                if name.contains(['\n', '\r']) {
+                if name.contains(['\n', '\r', '\\']) {
                     return Err("invalid release filename".into());
                 }
                 out.insert(name);

@@ -171,3 +171,12 @@ fn nested_oci_files_are_bound_and_tampering_detected() {
             .is_err()
     );
 }
+#[cfg(unix)]
+#[test]
+fn backslash_filename_cannot_alias_an_oci_path() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::create_dir_all(dir.path().join("oci")).unwrap();
+    fs::write(dir.path().join("oci/index.json"), "bound bytes").unwrap();
+    fs::write(dir.path().join("oci\\index.json"), "unbound alias bytes").unwrap();
+    assert!(assemble_checksum_manifest(dir.path()).is_err());
+}
