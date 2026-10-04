@@ -55,6 +55,14 @@ Stack: qual/recovery-lifecycle
 Evidence: Native/in-process recovery fixtures include an actually killed owned Rust runtime with exact acknowledged-object recovery, and a TERM-ignoring owned Rust child with observed bounded KILL and reaping. Mock adapters separately exercise failure policy. The historical regression test is an inventory check, not verification evidence. These tests do not qualify retained kube-apiserver/Kine, Linux reboot/power loss, real optional services, host mounts or production lifecycle interruption.
 Next step: Capture current-source disposable Linux evidence for the selected production boundary and every unresolved historical recovery gate; timestamp: 2026-10-03T19:30:00Z
 
+Work item: E28.03 (https://github.com/geoffsee/rubix-kube/issues/120); Parent criteria 1, 2, 3
+Outcome: In progress / Not qualified
+Readiness: Synthetic platform and soak fixture consistency; C14 execution pending
+Ownership: Platform Matrix & Soak Engineer
+Stack: qual/platform-soak
+Evidence: Synthetic plan and arithmetic fixtures cover the matrix and record inventories. Candidate verification requires independently read files and an independent expected version; fixture reports contain no candidate observations. No retained-node platform execution, 24-hour soak, restart/state preservation or historical/per-epic execution is qualified. Qualification run/verify fail closed.
+Next step: Implement and capture authenticated current-source disposable Linux execution receipts for every C14 requirement.
+
 Work item: E30.01 (https://github.com/geoffsee/rubix-kube/issues/124)
 Outcome: In progress
 Readiness: Not qualified

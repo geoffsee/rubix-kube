@@ -119,4 +119,5 @@ pub mod component_boundary;
 pub mod conformance;
 pub mod perf;
 pub mod platform_management;
+pub mod platform_soak;
 pub mod provenance;
