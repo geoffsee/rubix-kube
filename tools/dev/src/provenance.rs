@@ -165,8 +165,7 @@ fn artifact_files(dir: &Path) -> Result<Vec<String>> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GeneratedInput {
     pub id: String,
-    #[serde(default)]
-    pub path: Option<String>,
+    pub path: String,
     pub url: String,
     pub sha256: String,
     pub bytes: u64,

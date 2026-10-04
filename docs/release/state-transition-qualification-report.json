@@ -1,50 +1,7 @@
 {
-  "starting_version": "V1_1_8",
-  "target_distribution": "Rubix v0.1.0",
-  "config_assertion": {
-    "starting_version": "V1_1_8",
-    "service_migrated": true,
-    "config_path": "/etc/kubesolo/config.yaml",
-    "backup_path": "/etc/kubesolo/config.yaml.bak",
-    "node_ip": "10.0.0.10",
-    "disable_ipv6": false,
-    "edge_id": "edge-test-cluster",
-    "permissions_valid_0600": true
-  },
-  "pki_assertion": {
-    "ca_sha256_before": "b7e2898cf4230870959f20cd51ab523f33fae68b37ad06900f0724ae80cbccbe",
-    "ca_sha256_after": "b7e2898cf4230870959f20cd51ab523f33fae68b37ad06900f0724ae80cbccbe",
-    "ca_preserved": true,
-    "ca_key_preserved": true,
-    "sa_key_sha256_before": "b7e2898cf4230870959f20cd51ab523f33fae68b37ad06900f0724ae80cbccbe",
-    "sa_key_sha256_after": "b7e2898cf4230870959f20cd51ab523f33fae68b37ad06900f0724ae80cbccbe",
-    "sa_key_preserved": true,
-    "client_cert_verified": true,
-    "kubeconfig_format": "Yaml"
-  },
-  "datastore_assertion": {
-    "total_records_before": 42,
-    "active_keys_before": 35,
-    "max_revision_before": 100,
-    "wal_checkpointed": false,
-    "production_transition_qualified": false,
-    "raw_sqlite_rejected_by_rubix_datastore": true,
-    "explicit_export_format": "RUBXSNP1",
-    "export_verified_sha256": "b7e2898cf4230870959f20cd51ab523f33fae68b37ad06900f0724ae80cbccbe",
-    "restored_keys": 35,
-    "restored_revision": 100,
-    "keys_identical": true,
-    "revisions_monotonic": true
-  },
-  "pv_storage_assertion": {
-    "total_volumes": 2,
-    "total_files": 15,
-    "total_bytes": 40960,
-    "all_checksums_match": true,
-    "all_permissions_match": true
-  },
-  "nonportable_state_classified": 10,
-  "downtime_documented_minutes": 10,
-  "required_backups_verified": true,
-  "overall_success": true
+  "schema_version": 2,
+  "status": "UNQUALIFIED_FIXTURE_ONLY",
+  "observed_transitions": [],
+  "qualified": false,
+  "note": "No live retained-node/Kine transition, PKI/PV reconciliation or downtime measurement was executed. C16/C17 remain pending; rehearsal fixtures are not production migration evidence."
 }

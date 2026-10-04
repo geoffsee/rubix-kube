@@ -8,7 +8,7 @@ C13/E28 remains unqualified. No retained-executable node or upstream conformance
 
 | Smoke Check | Status | Duration | Details |
 |---|---|---|---|
-| Smoke 1 — Workload Pod Scheduling and Placement | PASS (fixture) | 16ms | Synthetic Pod API admission applied NodeSetter mutation, nodeName='rubix-node-qual'; no workload executed |
+| Smoke 1 — Workload Pod Scheduling and Placement | PASS (fixture) | 46ms | Synthetic Pod API admission applied NodeSetter mutation, nodeName='rubix-node-qual'; no workload executed |
 | Smoke 2 — In-Cluster CoreDNS Resolution | PASS (fixture) | 5ms | Synthetic DNS model matched kubernetes.default.svc.cluster.local to ClusterIP 10.43.0.1; no CoreDNS server or pod query executed |
 | Smoke 3 — Pod Egress Masquerade / SNAT Routing | NOT EXECUTED | 0ms | NOT EXECUTED: in-process fixtures have no pod runtime or network dataplane |
 
@@ -16,12 +16,12 @@ C13/E28 remains unqualified. No retained-executable node or upstream conformance
 
 | Domain | Status | Assertions | Duration |
 |---|---|---|---|
-| Tier 1 — Workloads & Networking | PASS | 10 | 58ms |
-| Tier 2 — Storage Persistence | PASS | 12 | 104ms |
-| Tier 3 — Config & Identity | PASS | 6 | 27ms |
-| Tier 4 — Controllers | PASS | 11 | 162ms |
-| Tier 5 — DNS & LoadBalancer | PASS | 5 | 88ms |
-| Tier 6 — LoadBalancer UPDATE path [KS-75] | PASS | 10 | 149ms |
+| Tier 1 — Workloads & Networking | PASS | 10 | 52ms |
+| Tier 2 — Storage Persistence | PASS | 12 | 78ms |
+| Tier 3 — Config & Identity | PASS | 6 | 21ms |
+| Tier 4 — Controllers | PASS | 11 | 103ms |
+| Tier 5 — DNS & LoadBalancer | PASS | 5 | 77ms |
+| Tier 6 — LoadBalancer UPDATE path [KS-75] | PASS | 10 | 133ms |
 
 ## 3. Selected Single-Node Conformance Summary
 

@@ -1,7 +1,6 @@
 {
-  "schema_version": 1,
-  "generated_date": "2026-10-03",
-  "status": "EVALUATED_AGAINST_CONTRACT_THRESHOLDS",
+  "schema_version": 2,
+  "status": "UNQUALIFIED_FIXTURE_ONLY",
   "amd64_evaluation": {
     "architecture": "amd64",
     "reference_id": "amd64-reference-go",
@@ -263,9 +262,5 @@
         "details": "Graceful p95: 5.40s <= 30s, Escalation p95: 0.00s <= 35s, Surviving owned processes: 0"
       }
     ]
-  },
-  "sustained_growth_ratio_max": 1.1,
-  "secondary_targets_gap_declared": true,
-  "physical_sanity_validated": true,
-  "note": "Arithmetic gate evaluation against committed paired baselines. Fail-closed against live qualification until authenticated Linux hardware capture."
+  }
 }
