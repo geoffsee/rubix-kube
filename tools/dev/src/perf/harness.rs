@@ -1,10 +1,10 @@
-//! Repeatable performance measurement harness and statistical sampling routines.
-
+use super::contract::{ContractThresholds, GateEvaluationReport};
 use super::metrics::{
     Architecture, ArtifactFootprint, ComponentVersions, HardwareInfo, IdleFootprint,
     ImplementationKind, PerformanceReport, PodDensity, ProcessMemoryBreakdown, ShutdownMeasurement,
     StartupLatencies, SustainedGrowth, VarianceSummary, WorkloadSpec,
 };
+use super::secondary::SecondaryTargetsRegistry;
 use crate::Result;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -642,4 +642,380 @@ pub fn build_candidate_fixture(arch: Architecture) -> PerformanceReport {
             unrelated_processes_killed: 0,
         },
     }
+}
+
+/// An individual workload/idle cycle during sustained soak testing.
+#[derive(Clone, Debug, serde::Deserialize, PartialEq, serde::Serialize)]
+pub struct WorkloadIdleCycle {
+    pub cycle_index: u32,
+    pub workload_active_seconds: u32,
+    pub idle_settle_seconds: u32,
+    pub peak_workload_pss_bytes: u64,
+    pub settled_idle_pss_bytes: u64,
+    pub settled_cgroup_bytes: u64,
+    pub oom_events: u32,
+    pub crash_events: u32,
+    pub failed_probes: u32,
+    pub process_breakdown: Vec<ProcessMemoryBreakdown>,
+}
+
+/// Analysis summary of repeated workload/idle cycles across the full distribution.
+#[derive(Clone, Debug, serde::Deserialize, PartialEq, serde::Serialize)]
+pub struct SustainedCycleAnalysis {
+    pub total_cycles: usize,
+    pub duration_hours: u32,
+    pub initial_settled_pss: u64,
+    pub final_settled_pss: u64,
+    pub growth_ratio: f64,
+    pub max_cycle_growth_ratio: f64,
+    /// Conservative fixture-analysis signal: aggregate and each retained role grow at most 10%.
+    /// This is stricter than the whole-distribution contract gate and never qualifies live runs.
+    pub is_bounded: bool,
+    pub oom_total: u32,
+    pub crash_total: u32,
+    pub failed_probes_total: u32,
+    pub process_growth_ratios: BTreeMap<String, f64>,
+}
+
+/// Validate a series of workload/idle cycles during a soak run across the full distribution.
+pub fn analyze_workload_idle_cycles(
+    cycles: &[WorkloadIdleCycle],
+) -> Result<SustainedCycleAnalysis> {
+    if cycles.is_empty() {
+        return Err("soak run contains zero workload/idle cycles".into());
+    }
+    if cycles.len() < 2 {
+        return Err("soak run requires at least 2 cycles to measure sustained growth".into());
+    }
+
+    let initial = &cycles[0];
+    let final_cycle = &cycles[cycles.len() - 1];
+
+    if initial.settled_idle_pss_bytes == 0 || final_cycle.settled_idle_pss_bytes == 0 {
+        return Err("idle settled PSS must be strictly positive in all cycles".into());
+    }
+
+    let mut oom_total = 0u32;
+    let mut crash_total = 0u32;
+    let mut failed_probes_total = 0u32;
+    let mut max_cycle_growth_ratio = 1.0f64;
+
+    let mut initial_process_pss = BTreeMap::new();
+    let mut final_process_pss = BTreeMap::new();
+
+    for p in &initial.process_breakdown {
+        if let Some(role) = process_role(&p.process_name) {
+            initial_process_pss.insert(role.to_string(), p.pss_bytes);
+        }
+    }
+    for p in &final_cycle.process_breakdown {
+        if let Some(role) = process_role(&p.process_name) {
+            final_process_pss.insert(role.to_string(), p.pss_bytes);
+        }
+    }
+
+    for required in REQUIRED_RETAINED_PROCESSES {
+        if !initial_process_pss.contains_key(required) || !final_process_pss.contains_key(required)
+        {
+            return Err(format!(
+                "soak cycles missing full-distribution accounting for required process '{required}'"
+            )
+            .into());
+        }
+    }
+
+    let mut prev_settled = initial.settled_idle_pss_bytes;
+    for (idx, cycle) in cycles.iter().enumerate() {
+        oom_total = oom_total.saturating_add(cycle.oom_events);
+        crash_total = crash_total.saturating_add(cycle.crash_events);
+        failed_probes_total = failed_probes_total.saturating_add(cycle.failed_probes);
+
+        if idx > 0 && prev_settled > 0 {
+            let cycle_ratio = cycle.settled_idle_pss_bytes as f64 / prev_settled as f64;
+            if cycle_ratio > max_cycle_growth_ratio {
+                max_cycle_growth_ratio = cycle_ratio;
+            }
+        }
+        prev_settled = cycle.settled_idle_pss_bytes;
+    }
+
+    let growth_ratio =
+        final_cycle.settled_idle_pss_bytes as f64 / initial.settled_idle_pss_bytes as f64;
+    let mut process_growth_ratios = BTreeMap::new();
+    for (role, init_pss) in &initial_process_pss {
+        if let Some(fin_pss) = final_process_pss.get(role) {
+            let ratio = if *init_pss > 0 {
+                *fin_pss as f64 / *init_pss as f64
+            } else {
+                1.0
+            };
+            process_growth_ratios.insert(role.clone(), ratio);
+        }
+    }
+    let is_bounded = growth_ratio <= 1.10
+        && process_growth_ratios.values().all(|ratio| *ratio <= 1.10)
+        && oom_total == 0
+        && crash_total == 0
+        && failed_probes_total == 0;
+
+    let total_duration_secs: u64 = cycles
+        .iter()
+        .map(|c| u64::from(c.workload_active_seconds) + u64::from(c.idle_settle_seconds))
+        .sum();
+    let duration_hours = u32::try_from(total_duration_secs / 3600).unwrap_or(u32::MAX);
+
+    Ok(SustainedCycleAnalysis {
+        total_cycles: cycles.len(),
+        duration_hours,
+        initial_settled_pss: initial.settled_idle_pss_bytes,
+        final_settled_pss: final_cycle.settled_idle_pss_bytes,
+        growth_ratio,
+        max_cycle_growth_ratio,
+        is_bounded,
+        oom_total,
+        crash_total,
+        failed_probes_total,
+        process_growth_ratios,
+    })
+}
+
+/// Synthesize a series of 24 workload/idle cycles for testing soak bounds and leak detection.
+pub fn generate_soak_cycles(
+    arch: Architecture,
+    leaky_process: Option<(&str, f64)>,
+    oom_cycle: Option<usize>,
+) -> Vec<WorkloadIdleCycle> {
+    let candidate = build_candidate_fixture(arch);
+    let base_processes = candidate.idle_footprint.retained_processes;
+    let mut cycles = Vec::with_capacity(24);
+
+    for c in 0..24 {
+        let mut processes = base_processes.clone();
+        let mut total_pss = 0u64;
+
+        for p in &mut processes {
+            if let Some((leaker, rate)) = leaky_process {
+                if process_role(&p.process_name) == Some(leaker) || p.process_name == leaker {
+                    let factor = 1.0 + (rate * c as f64);
+                    p.pss_bytes = (p.pss_bytes as f64 * factor) as u64;
+                    p.rss_bytes = (p.rss_bytes as f64 * factor) as u64;
+                }
+            } else {
+                let jitter = 1.0 + ((c as f64 * 0.0006) - 0.003);
+                p.pss_bytes = (p.pss_bytes as f64 * jitter) as u64;
+                p.rss_bytes = (p.rss_bytes as f64 * jitter) as u64;
+            }
+            total_pss = total_pss.saturating_add(p.pss_bytes);
+        }
+
+        let oom_events = u32::from(oom_cycle == Some(c));
+
+        cycles.push(WorkloadIdleCycle {
+            cycle_index: u32::try_from(c).unwrap_or(0),
+            workload_active_seconds: 2700,
+            idle_settle_seconds: 900,
+            peak_workload_pss_bytes: (total_pss as f64 * 1.35) as u64,
+            settled_idle_pss_bytes: total_pss,
+            settled_cgroup_bytes: (total_pss as f64 * 1.10) as u64,
+            oom_events,
+            crash_events: 0,
+            failed_probes: 0,
+            process_breakdown: processes,
+        });
+    }
+
+    cycles
+}
+
+/// Enforce committed platform thresholds, rebaseline policy, and sustained memory growth in CI.
+pub fn run_ci_regression_gates(perf_dir: &Path) -> Result<()> {
+    const REQUIRED_FILES: [&str; 7] = [
+        "inputs.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/paired-comparison.json",
+        "fixtures/secondary-targets.json",
+    ];
+    let base_dir = if perf_dir.ends_with("fixtures") {
+        perf_dir.parent().unwrap_or(perf_dir)
+    } else {
+        perf_dir
+    };
+
+    println!(
+        "[gate-ci] Enforcing committed platform thresholds and rebaseline policy in {}...",
+        base_dir.display()
+    );
+
+    // 1. Provenance Integrity Check
+    let provenance_path = base_dir.join("provenance.json");
+    if !provenance_path.is_file() {
+        return Err(format!("missing provenance file: {}", provenance_path.display()).into());
+    }
+    let prov_bytes = crate::read_bounded(&provenance_path, 4 * 1024 * 1024)?;
+    let prov = crate::json::parse(&prov_bytes)?;
+    let files_map = prov["files"]
+        .as_object()
+        .ok_or("provenance.json missing 'files' object")?;
+
+    for required in REQUIRED_FILES {
+        if !files_map.contains_key(required) {
+            return Err(format!("provenance.json missing required file entry: {required}").into());
+        }
+    }
+    for path in files_map.keys() {
+        if !REQUIRED_FILES.contains(&path.as_str()) {
+            return Err(format!("unexpected provenance file entry: {path}").into());
+        }
+    }
+
+    // Parse the same bounded bytes whose digest was verified; later gate checks never reopen files.
+    let mut verified = BTreeMap::new();
+    for rel_path in REQUIRED_FILES {
+        let expected_digest = files_map[rel_path]
+            .as_str()
+            .ok_or_else(|| format!("invalid digest for {rel_path}"))?;
+        if expected_digest.len() != 64
+            || !expected_digest
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(format!("invalid SHA-256 digest for {rel_path}").into());
+        }
+        let target_file = base_dir.join(rel_path);
+        let file_bytes = crate::read_bounded(&target_file, 16 * 1024 * 1024)?;
+        let actual_digest = crate::sha256(&file_bytes);
+        if actual_digest != expected_digest {
+            return Err(format!(
+                "provenance digest mismatch for {rel_path}: expected {expected_digest}, got {actual_digest}"
+            )
+            .into());
+        }
+        verified.insert(rel_path, crate::json::parse(&file_bytes)?);
+    }
+    println!(
+        "[gate-ci] Provenance integrity: verified {} committed fixture digests",
+        files_map.len()
+    );
+
+    // 2. Committed Platform Thresholds Check
+    let inputs = &verified["inputs.json"];
+    let thresholds_val = inputs
+        .get("contract_thresholds")
+        .ok_or("inputs.json missing 'contract_thresholds'")?;
+    let contract_thresholds: ContractThresholds = serde_json::from_value(thresholds_val.clone())?;
+    contract_thresholds
+        .validate()
+        .map_err(|e| format!("committed platform thresholds validation failed: {e}"))?;
+    println!("[gate-ci] Committed platform thresholds: validated immutable contract multipliers");
+
+    // 3. Baselines Load & Structural Validation
+    let load = |path: &str, architecture: Architecture| -> Result<PerformanceReport> {
+        let report = serde_json::from_value(verified[path].clone())?;
+        super::validation::validate_report(&report)?;
+        if report.architecture != architecture {
+            return Err(format!("{path}: expected {} architecture", architecture.as_str()).into());
+        }
+        let growth = &report.sustained_growth;
+        if growth.duration_hours < 24 {
+            return Err(format!("{path}: sustained growth duration must be >= 24h").into());
+        }
+        if growth.oom_kill_count > 0 || growth.crash_count > 0 || growth.unexplained_failures > 0 {
+            return Err(format!("{path}: sustained growth observed failures").into());
+        }
+        let shutdown = &report.shutdown;
+        if shutdown.surviving_owned_processes > 0 || shutdown.unrelated_processes_killed > 0 {
+            return Err(format!("{path}: shutdown unclean").into());
+        }
+        if shutdown.graceful_duration_seconds.max
+            > contract_thresholds.shutdown_graceful_deadline_seconds
+            || shutdown.escalation_duration_seconds.max
+                > contract_thresholds.shutdown_escalation_deadline_seconds
+        {
+            return Err(format!("{path}: shutdown exceeds per-run deadline").into());
+        }
+
+        if growth.initial_settled_idle_median_bytes == 0 {
+            return Err(format!("{path}: initial sustained growth memory must be positive").into());
+        }
+        let derived = growth.final_settled_idle_median_bytes as f64
+            / growth.initial_settled_idle_median_bytes as f64;
+        // Existing fixtures store three-decimal ratios; allow only that rounding precision.
+        if !growth.growth_ratio.is_finite() || (growth.growth_ratio - derived).abs() > 0.000_500_001
+        {
+            return Err(format!(
+                "{path}: reported sustained growth ratio {} disagrees with byte-derived ratio {derived}",
+                growth.growth_ratio
+            ).into());
+        }
+        Ok(report)
+    };
+    let amd64_ref = load("fixtures/amd64-reference-go.json", Architecture::Amd64)?;
+    let amd64_cand = load("fixtures/amd64-candidate-rust.json", Architecture::Amd64)?;
+    let arm64_ref = load("fixtures/arm64-reference-go.json", Architecture::Arm64)?;
+    let arm64_cand = load("fixtures/arm64-candidate-rust.json", Architecture::Arm64)?;
+
+    for report in [&amd64_ref, &amd64_cand, &arm64_ref, &arm64_cand] {
+        verify_retained_process_coverage(report)?;
+    }
+    println!("[gate-ci] Full-distribution retained process coverage: 8 canonical roles verified");
+
+    super::validation::validate_pair(&amd64_ref, &amd64_cand)?;
+    super::validation::validate_pair(&arm64_ref, &arm64_cand)?;
+
+    // 4. Contract Gates Evaluation with Committed Thresholds
+    for (arch_name, r, c) in [
+        ("amd64", &amd64_ref, &amd64_cand),
+        ("arm64", &arm64_ref, &arm64_cand),
+    ] {
+        let eval = GateEvaluationReport::evaluate_with_thresholds(r, c, &contract_thresholds);
+        if !eval.arithmetic_all_passed() {
+            let failed_gates: Vec<String> = eval
+                .results
+                .iter()
+                .filter(|g| !g.passed)
+                .map(|g| format!("{}: {}", g.name, g.details))
+                .collect();
+            return Err(format!(
+                "{arch_name} failed contract gates under committed thresholds: {}",
+                failed_gates.join("; ")
+            )
+            .into());
+        }
+
+        let density_gate = eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Pod Density"))
+            .ok_or_else(|| format!("{arch_name} missing Pod Density gate result"))?;
+        if !density_gate.higher_is_better {
+            return Err(format!(
+                "{arch_name} Pod Density must be configured higher_is_better = true"
+            )
+            .into());
+        }
+        if density_gate.candidate_value < density_gate.target_threshold {
+            return Err(format!(
+                "{arch_name} Pod Density failed: candidate {:.1} < threshold {:.1}",
+                density_gate.candidate_value, density_gate.target_threshold
+            )
+            .into());
+        }
+    }
+    println!("[gate-ci] Contract gates evaluation: all 12 gates PASSED for amd64 and arm64");
+
+    // 5. Secondary Targets Registry Validation
+    let sec_reg: SecondaryTargetsRegistry =
+        serde_json::from_value(verified["fixtures/secondary-targets.json"].clone())?;
+    sec_reg
+        .validate()
+        .map_err(|e| format!("secondary targets validation failed: {e}"))?;
+    println!("[gate-ci] Secondary architecture gaps: armv7 and riscv64 verified explicit");
+
+    println!(
+        "[gate-ci] ✓ Performance CI regression gating PASSED: fixture integrity and contract arithmetic only; live performance NOT QUALIFIED"
+    );
+    Ok(())
 }

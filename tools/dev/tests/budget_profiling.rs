@@ -334,13 +334,14 @@ fn report_conclusions_use_actual_inputs_without_verified_attribution() {
     let (mut reference, mut candidate) = fixture_pair(Architecture::Arm64);
     reference.startup_latencies.first_pod_cold_seconds =
         VarianceSummary::from_samples(vec![71.23; 20]).unwrap();
-    candidate
+    let kubelet = candidate
         .idle_footprint
         .retained_processes
         .iter_mut()
         .find(|p| p.process_name == "kubelet")
-        .unwrap()
-        .pss_bytes = 900 * 1024 * 1024;
+        .unwrap();
+    kubelet.pss_bytes = 900 * 1024 * 1024;
+    kubelet.rss_bytes = kubelet.pss_bytes;
     candidate.idle_footprint.summed_pss_bytes =
         VarianceSummary::from_samples(vec![900_000_000.0; 5]).unwrap();
     let report = BudgetProfileReport::analyze(&reference, &candidate).unwrap();

@@ -317,3 +317,776 @@ fn report_rejects_invalid_secondary_registry_before_markdown_output() {
         String::from_utf8_lossy(&output.stderr).contains("secondary targets validation failed")
     );
 }
+
+#[test]
+fn deliberately_regressed_samples_fail_every_contract_gate() {
+    let (reference, base_candidate) = pair();
+
+    // Verify baseline passes all 12 gates
+    let baseline_eval = GateEvaluationReport::evaluate(&reference, &base_candidate);
+    assert_eq!(baseline_eval.results.len(), 12);
+    assert!(baseline_eval.arithmetic_all_passed());
+
+    check_startup_latency_regressions(&reference, &base_candidate);
+    check_footprint_and_artifact_regressions(&reference, &base_candidate);
+    check_capacity_growth_and_shutdown_regressions(&reference, &base_candidate);
+}
+
+fn check_startup_latency_regressions(
+    reference: &PerformanceReport,
+    base_candidate: &PerformanceReport,
+) {
+    // 1. Boot-to-API latency regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.startup_latencies.boot_to_api_seconds =
+        VarianceSummary::from_samples(vec![
+            reference.startup_latencies.boot_to_api_seconds.p95
+                * 1.25;
+            20
+        ])
+        .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Boot-to-API"))
+            .unwrap()
+            .passed
+    );
+
+    // 2. Node Ready latency regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.startup_latencies.node_ready_seconds =
+        VarianceSummary::from_samples(vec![
+            reference.startup_latencies.node_ready_seconds.p95
+                * 1.25;
+            20
+        ])
+        .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Node Ready"))
+            .unwrap()
+            .passed
+    );
+
+    // 3. First Pod preloaded latency regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.startup_latencies.first_pod_preloaded_seconds = VarianceSummary::from_samples(vec![
+        reference
+            .startup_latencies
+            .first_pod_preloaded_seconds
+            .p95
+            * 1.25;
+        20
+    ])
+    .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Preloaded"))
+            .unwrap()
+            .passed
+    );
+
+    // 4. First Pod cold latency regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.startup_latencies.first_pod_cold_seconds =
+        VarianceSummary::from_samples(vec![
+            reference.startup_latencies.first_pod_cold_seconds.p95
+                * 1.25;
+            20
+        ])
+        .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Cold Image"))
+            .unwrap()
+            .passed
+    );
+}
+
+fn check_footprint_and_artifact_regressions(
+    reference: &PerformanceReport,
+    base_candidate: &PerformanceReport,
+) {
+    // 5. Idle PSS regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.idle_footprint.summed_pss_bytes =
+        VarianceSummary::from_samples(vec![
+            reference.idle_footprint.summed_pss_bytes.p50 * 1.25;
+            5
+        ])
+        .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Summed PSS"))
+            .unwrap()
+            .passed
+    );
+
+    // 6. Idle Cgroup memory regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.idle_footprint.cgroup_memory_bytes =
+        VarianceSummary::from_samples(vec![
+            reference.idle_footprint.cgroup_memory_bytes.p50 * 1.25;
+            5
+        ])
+        .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Cgroup Memory"))
+            .unwrap()
+            .passed
+    );
+
+    // 7. Compressed archive size regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.artifact_footprint.compressed_archive_bytes =
+        reference.artifact_footprint.compressed_archive_bytes * 5 / 4;
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Compressed Archive"))
+            .unwrap()
+            .passed
+    );
+
+    // 8. Extracted executables size regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.artifact_footprint.extracted_executable_bytes =
+        reference.artifact_footprint.extracted_executable_bytes * 5 / 4;
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Extracted Executables"))
+            .unwrap()
+            .passed
+    );
+
+    // 9. Default image payload regressed (> 1.10x reference)
+    let mut cand = base_candidate.clone();
+    cand.artifact_footprint.default_image_payload_bytes =
+        reference.artifact_footprint.default_image_payload_bytes * 5 / 4;
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Default Image Payload"))
+            .unwrap()
+            .passed
+    );
+}
+
+fn check_capacity_growth_and_shutdown_regressions(
+    reference: &PerformanceReport,
+    base_candidate: &PerformanceReport,
+) {
+    // 10. Pod density regressed (< 0.90x reference)
+    let mut cand = base_candidate.clone();
+    cand.pod_density.max_ready_replicas =
+        VarianceSummary::from_samples(vec![reference.pod_density.max_ready_replicas.p50 * 0.80; 5])
+            .unwrap();
+    let eval = GateEvaluationReport::evaluate(reference, &cand);
+    assert!(!eval.arithmetic_all_passed());
+    assert!(
+        !eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Pod Density"))
+            .unwrap()
+            .passed
+    );
+
+    // 11. Sustained growth regressions (ratio > 1.10, OOM > 0, crash > 0, failures > 0, duration < 24)
+    for (idx, (ratio, oom, crash, failures, hours)) in [
+        (1.25f64, 0, 0, 0, 24),
+        (1.01f64, 1, 0, 0, 24),
+        (1.01f64, 0, 1, 0, 24),
+        (1.01f64, 0, 0, 1, 24),
+        (1.01f64, 0, 0, 0, 12),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let mut cand = base_candidate.clone();
+        cand.sustained_growth.growth_ratio = ratio;
+        let init_bytes = cand.sustained_growth.initial_settled_idle_median_bytes;
+        cand.sustained_growth.final_settled_idle_median_bytes = if (ratio - 1.25f64).abs() < 0.01 {
+            init_bytes * 5 / 4
+        } else {
+            (init_bytes * 101) / 100
+        };
+        cand.sustained_growth.oom_kill_count = oom;
+        cand.sustained_growth.crash_count = crash;
+        cand.sustained_growth.unexplained_failures = failures;
+        cand.sustained_growth.duration_hours = hours;
+        let eval = GateEvaluationReport::evaluate(reference, &cand);
+        assert!(
+            !eval.arithmetic_all_passed(),
+            "sustained growth case {idx} should fail"
+        );
+        assert!(
+            !eval
+                .results
+                .iter()
+                .find(|g| g.name.contains("Sustained Growth"))
+                .unwrap()
+                .passed
+        );
+    }
+
+    // 12. Shutdown regressions (graceful > 30s, escalation > 35s, surviving > 0, unrelated killed > 0)
+    for (idx, (graceful, escalation, surviving, unrelated)) in [
+        (32.0, 0.0, 0, 0),
+        (10.0, 36.0, 0, 0),
+        (10.0, 0.0, 1, 0),
+        (10.0, 0.0, 0, 1),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let mut cand = base_candidate.clone();
+        cand.shutdown.graceful_duration_seconds =
+            VarianceSummary::from_samples(vec![graceful; 20]).unwrap();
+        cand.shutdown.escalation_duration_seconds =
+            VarianceSummary::from_samples(vec![escalation; 20]).unwrap();
+        cand.shutdown.surviving_owned_processes = surviving;
+        cand.shutdown.unrelated_processes_killed = unrelated;
+        let eval = GateEvaluationReport::evaluate(reference, &cand);
+        assert!(
+            !eval.arithmetic_all_passed(),
+            "shutdown regression case {idx} should fail"
+        );
+        assert!(
+            !eval
+                .results
+                .iter()
+                .find(|g| g.name.contains("Shutdown"))
+                .unwrap()
+                .passed
+        );
+    }
+}
+
+#[test]
+fn pod_density_directionality_higher_is_better_verified() {
+    let (reference, base_candidate) = pair();
+    let ref_density = reference.pod_density.max_ready_replicas.p50; // 110.0
+    let threshold = 0.90 * ref_density; // 99.0
+
+    for (density_val, should_pass, desc) in [
+        (
+            130.0,
+            true,
+            "superior density exceeds reference (130 > 110)",
+        ),
+        (110.0, true, "parity density matches reference (110 == 110)"),
+        (105.0, true, "slight decline within budget (105 > 99)"),
+        (99.0, true, "exact boundary threshold (99.0 == 99.0)"),
+        (98.9, false, "just below boundary threshold (98.9 < 99.0)"),
+        (90.0, false, "regressed density (90 < 99)"),
+        (50.0, false, "severely collapsed capacity (50 < 99)"),
+    ] {
+        let mut cand = base_candidate.clone();
+        cand.pod_density.max_ready_replicas =
+            VarianceSummary::from_samples(vec![density_val; 5]).unwrap();
+        let eval = GateEvaluationReport::evaluate(&reference, &cand);
+        let gate = eval
+            .results
+            .iter()
+            .find(|g| g.name.contains("Pod Density"))
+            .unwrap();
+        assert!(
+            gate.higher_is_better,
+            "Pod density must be higher_is_better"
+        );
+        assert!((gate.threshold_multiplier - 0.90).abs() < f64::EPSILON);
+        assert!((gate.target_threshold - threshold).abs() < f64::EPSILON);
+        assert_eq!(
+            gate.passed, should_pass,
+            "Pod density {density_val} failed expectation: {desc}"
+        );
+    }
+
+    let mut cand_latency = base_candidate.clone();
+    cand_latency.startup_latencies.boot_to_api_seconds =
+        VarianceSummary::from_samples(vec![20.0; 20]).unwrap();
+    let eval_lat = GateEvaluationReport::evaluate(&reference, &cand_latency);
+    let lat_gate = eval_lat
+        .results
+        .iter()
+        .find(|g| g.name.contains("Boot-to-API"))
+        .unwrap();
+    assert!(
+        !lat_gate.higher_is_better,
+        "Latency must be lower_is_better"
+    );
+    assert!(!lat_gate.passed, "Regressed latency must fail");
+}
+
+#[test]
+fn small_process_growth_is_not_hidden_by_aggregate_soak_memory() {
+    let cycles = rubix_dev::perf::generate_soak_cycles(
+        Architecture::Amd64,
+        Some(("containerd-shim", 0.03)),
+        None,
+    );
+    let analysis = rubix_dev::perf::analyze_workload_idle_cycles(&cycles).unwrap();
+    assert!(analysis.growth_ratio < 1.10);
+    assert!(analysis.process_growth_ratios["containerd-shim"] > 1.50);
+    assert!(!analysis.is_bounded);
+}
+
+#[test]
+fn workload_idle_duration_widens_each_input_before_addition() {
+    let mut cycles = rubix_dev::perf::generate_soak_cycles(Architecture::Amd64, None, None);
+    for cycle in &mut cycles {
+        cycle.workload_active_seconds = u32::MAX;
+        cycle.idle_settle_seconds = u32::MAX;
+    }
+    let analysis = rubix_dev::perf::analyze_workload_idle_cycles(&cycles).unwrap();
+    let expected = (u64::from(u32::MAX) * 2 * cycles.len() as u64) / 3600;
+    assert_eq!(u64::from(analysis.duration_hours), expected);
+}
+
+#[test]
+fn repeated_workload_idle_cycles_show_bounded_memory_growth_across_full_distribution() {
+    use rubix_dev::perf::{analyze_workload_idle_cycles, generate_soak_cycles};
+
+    // Case 1: Clean 24-hour soak with bounded memory growth across all 8 retained processes
+    let clean_cycles = generate_soak_cycles(Architecture::Amd64, None, None);
+    assert_eq!(clean_cycles.len(), 24);
+    let analysis = analyze_workload_idle_cycles(&clean_cycles).unwrap();
+    assert!(analysis.is_bounded);
+    assert!(analysis.growth_ratio <= 1.10);
+    assert_eq!(analysis.oom_total, 0);
+    assert_eq!(analysis.crash_total, 0);
+    assert_eq!(analysis.failed_probes_total, 0);
+    assert_eq!(analysis.process_growth_ratios.len(), 8);
+    for (proc_name, ratio) in &analysis.process_growth_ratios {
+        assert!(
+            *ratio <= 1.05,
+            "retained process {proc_name} grew beyond expected jitter: {ratio}"
+        );
+    }
+
+    // Case 2: Memory leak in a specific retained process (kubelet leaking 3% per cycle)
+    let leaky_cycles = generate_soak_cycles(Architecture::Amd64, Some(("kubelet", 0.03)), None);
+    let leaky_analysis = analyze_workload_idle_cycles(&leaky_cycles).unwrap();
+    assert!(
+        !leaky_analysis.is_bounded,
+        "leaking kubelet must not be bounded"
+    );
+    assert!(
+        *leaky_analysis.process_growth_ratios.get("kubelet").unwrap() > 1.50,
+        "kubelet should show significant leak"
+    );
+
+    // Case 3: OOM kill occurring during soak
+    let oom_cycles = generate_soak_cycles(Architecture::Amd64, None, Some(14));
+    let oom_analysis = analyze_workload_idle_cycles(&oom_cycles).unwrap();
+    assert!(
+        !oom_analysis.is_bounded,
+        "OOM event must fail bounded check"
+    );
+    assert_eq!(oom_analysis.oom_total, 1);
+
+    // Case 4: Incomplete distribution (omitting one of the 8 canonical processes)
+    let mut incomplete_cycles = clean_cycles.clone();
+    for c in &mut incomplete_cycles {
+        c.process_breakdown
+            .retain(|p| p.process_name != "containerd-shim-runc-v2");
+    }
+    assert!(
+        analyze_workload_idle_cycles(&incomplete_cycles).is_err(),
+        "dropping a canonical retained process must fail cycle analysis"
+    );
+}
+
+#[test]
+fn unmeasured_footprint_and_startup_claims_are_rejected() {
+    let (_, base_candidate) = pair();
+
+    // 1. Dishonest sub-200MB footprint claim
+    let mut cand = base_candidate.clone();
+    cand.idle_footprint.summed_pss_bytes =
+        VarianceSummary::from_samples(vec![150_000_000.0; 5]).unwrap();
+    assert!(
+        rubix_dev::perf::validation::validate_report(&cand).is_err(),
+        "sub-200MB claim contradicting retained processes must be rejected"
+    );
+
+    // 2. Retained process with 0 memory (claiming zero-cost component)
+    let mut cand = base_candidate.clone();
+    cand.idle_footprint.retained_processes[0].pss_bytes = 0;
+    assert!(
+        rubix_dev::perf::validation::validate_report(&cand).is_err(),
+        "zero PSS process must be rejected"
+    );
+
+    // 3. Physically impossible PSS > RSS
+    let mut cand = base_candidate.clone();
+    cand.idle_footprint.retained_processes[0].pss_bytes =
+        cand.idle_footprint.retained_processes[0].rss_bytes + 1_000_000;
+    assert!(
+        rubix_dev::perf::validation::validate_report(&cand).is_err(),
+        "PSS > RSS must be rejected"
+    );
+
+    // 4. Negative latency sample
+    let mut cand = base_candidate.clone();
+    cand.startup_latencies.boot_to_api_seconds.samples[0] = -5.0;
+    assert!(
+        rubix_dev::perf::validation::validate_report(&cand).is_err(),
+        "negative latency must be rejected"
+    );
+}
+
+#[test]
+fn ci_gate_enforces_committed_thresholds_and_rebaseline_policy() {
+    let perf_dir = root().join("tools/perf");
+
+    // 1. gate-ci passes on clean committed baselines
+    rubix_dev::perf::run_ci_regression_gates(&perf_dir)
+        .expect("clean committed baselines must pass CI gate");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("gate-ci")
+        .arg(&perf_dir)
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Performance CI regression gating PASSED"));
+
+    // 2. Tampered threshold relaxation in inputs.json fails CI gate
+    let tmp = tempfile::tempdir().unwrap();
+    for file in [
+        "inputs.json",
+        "provenance.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/paired-comparison.json",
+        "fixtures/secondary-targets.json",
+    ] {
+        let src = perf_dir.join(file);
+        let dst = tmp.path().join(file);
+        std::fs::create_dir_all(dst.parent().unwrap()).unwrap();
+        std::fs::copy(&src, &dst).unwrap();
+    }
+
+    let inputs_path = tmp.path().join("inputs.json");
+    let mut inputs_json: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&inputs_path).unwrap()).unwrap();
+    inputs_json["contract_thresholds"]["pod_density_median_multiplier"] = serde_json::json!(0.70);
+    std::fs::write(
+        &inputs_path,
+        serde_json::to_vec_pretty(&inputs_json).unwrap(),
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("gate-ci")
+        .arg(tmp.path())
+        .output()
+        .unwrap();
+    assert!(
+        !output.status.success(),
+        "relaxed threshold must fail gate-ci"
+    );
+
+    // 3. Missing architecture baseline fails CI gate
+    let tmp2 = tempfile::tempdir().unwrap();
+    for file in [
+        "inputs.json",
+        "provenance.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/secondary-targets.json",
+    ] {
+        let src = perf_dir.join(file);
+        let dst = tmp2.path().join(file);
+        std::fs::create_dir_all(dst.parent().unwrap()).unwrap();
+        std::fs::copy(&src, &dst).unwrap();
+    }
+    assert!(
+        rubix_dev::perf::run_ci_regression_gates(tmp2.path()).is_err(),
+        "missing arm64 architecture must fail CI gate"
+    );
+}
+
+fn copy_ci_fixture_tree() -> tempfile::TempDir {
+    let directory = tempfile::tempdir().unwrap();
+    for file in [
+        "provenance.json",
+        "inputs.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/paired-comparison.json",
+        "fixtures/secondary-targets.json",
+    ] {
+        let destination = directory.path().join(file);
+        std::fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        std::fs::copy(root().join("tools/perf").join(file), destination).unwrap();
+    }
+    directory
+}
+
+#[test]
+fn ci_provenance_requires_exact_unique_complete_inventory() {
+    let source: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root().join("tools/perf/provenance.json")).unwrap())
+            .unwrap();
+    for removed in source["files"].as_object().unwrap().keys() {
+        let directory = copy_ci_fixture_tree();
+        let mut provenance = source.clone();
+        provenance["files"].as_object_mut().unwrap().remove(removed);
+        std::fs::write(
+            directory.path().join("provenance.json"),
+            serde_json::to_vec(&provenance).unwrap(),
+        )
+        .unwrap();
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("missing required file entry"), "{error}");
+        assert!(error.contains(removed), "{error}");
+    }
+    for unexpected in [
+        "",
+        "/tmp/input.json",
+        "../inputs.json",
+        "./inputs.json",
+        "fixtures\\candidate.json",
+        "extra.json",
+    ] {
+        let directory = copy_ci_fixture_tree();
+        let mut provenance = source.clone();
+        provenance["files"][unexpected] = serde_json::json!("0".repeat(64));
+        std::fs::write(
+            directory.path().join("provenance.json"),
+            serde_json::to_vec(&provenance).unwrap(),
+        )
+        .unwrap();
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("unexpected provenance file entry"),
+            "{error}"
+        );
+    }
+    let directory = copy_ci_fixture_tree();
+    let mut empty = source.clone();
+    empty["files"] = serde_json::json!({});
+    std::fs::write(
+        directory.path().join("provenance.json"),
+        serde_json::to_vec(&empty).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string()
+            .contains("missing required file entry")
+    );
+    let duplicate = serde_json::to_string(&source).unwrap().replacen(
+        "\"files\":{",
+        &format!("\"files\":{{\"inputs.json\":\"{}\",", "0".repeat(64)),
+        1,
+    );
+    std::fs::write(directory.path().join("provenance.json"), duplicate).unwrap();
+    assert!(
+        rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate JSON key")
+    );
+}
+
+#[test]
+fn ci_gate_rejects_inconsistent_growth_after_valid_rehash() {
+    for candidate_path in [
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/amd64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+    ] {
+        let directory = copy_ci_fixture_tree();
+        let mut candidate: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.path().join(candidate_path)).unwrap())
+                .unwrap();
+        candidate["sustained_growth"]["growth_ratio"] = serde_json::json!(1.001);
+        let bytes = serde_json::to_vec(&candidate).unwrap();
+        std::fs::write(directory.path().join(candidate_path), &bytes).unwrap();
+        let provenance_path = directory.path().join("provenance.json");
+        let mut provenance: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&provenance_path).unwrap()).unwrap();
+        provenance["files"][candidate_path] = serde_json::json!(rubix_dev::sha256(&bytes));
+        std::fs::write(&provenance_path, serde_json::to_vec(&provenance).unwrap()).unwrap();
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("reported sustained growth ratio"), "{error}");
+    }
+}
+
+#[test]
+fn rebaseline_policy_cli_accepts_directory_alias_and_preserves_unqualified_label() {
+    let output = Command::new(env!("CARGO_BIN_EXE_rubix-perf"))
+        .arg("check-rebaseline-policy")
+        .arg(root().join("tools/perf"))
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("live performance NOT QUALIFIED"));
+}
+
+fn write_rehashed_report(directory: &Path, path: &str, report: &serde_json::Value) {
+    let bytes = serde_json::to_vec(report).unwrap();
+    std::fs::write(directory.join(path), &bytes).unwrap();
+    let provenance_path = directory.join("provenance.json");
+    let mut provenance: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&provenance_path).unwrap()).unwrap();
+    provenance["files"][path] = serde_json::json!(rubix_dev::sha256(&bytes));
+    std::fs::write(provenance_path, serde_json::to_vec(&provenance).unwrap()).unwrap();
+}
+
+#[test]
+fn ci_gate_rejects_short_or_failed_soaks_for_every_report() {
+    for path in [
+        "fixtures/amd64-reference-go.json",
+        "fixtures/amd64-candidate-rust.json",
+        "fixtures/arm64-reference-go.json",
+        "fixtures/arm64-candidate-rust.json",
+    ] {
+        for (field, value, expected) in [
+            ("duration_hours", 23, "duration must be >= 24h"),
+            ("oom_kill_count", 1, "observed failures"),
+            ("crash_count", 1, "observed failures"),
+            ("unexplained_failures", 1, "observed failures"),
+        ] {
+            let directory = copy_ci_fixture_tree();
+            let mut report: serde_json::Value =
+                serde_json::from_slice(&std::fs::read(directory.path().join(path)).unwrap())
+                    .unwrap();
+            report["sustained_growth"][field] = serde_json::json!(value);
+            write_rehashed_report(directory.path(), path, &report);
+            let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(path) && error.contains(expected), "{error}");
+        }
+    }
+}
+
+#[test]
+fn ci_gate_binds_report_files_to_architecture() {
+    for (target, replacement) in [("amd64", "arm64"), ("arm64", "amd64")] {
+        let directory = copy_ci_fixture_tree();
+        for kind in ["reference-go", "candidate-rust"] {
+            let report: serde_json::Value = serde_json::from_slice(
+                &std::fs::read(
+                    directory
+                        .path()
+                        .join(format!("fixtures/{replacement}-{kind}.json")),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            write_rehashed_report(
+                directory.path(),
+                &format!("fixtures/{target}-{kind}.json"),
+                &report,
+            );
+        }
+        let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains(&format!("expected {target} architecture")),
+            "{error}"
+        );
+    }
+}
+
+#[test]
+fn ci_gate_rejects_unhealthy_reference_shutdown_and_probes() {
+    for architecture in ["amd64", "arm64"] {
+        let path = format!("fixtures/{architecture}-reference-go.json");
+        for field in [
+            "surviving_owned_processes",
+            "unrelated_processes_killed",
+            "graceful_duration_seconds",
+            "escalation_duration_seconds",
+            "probe_success_rate",
+        ] {
+            let directory = copy_ci_fixture_tree();
+            let mut report: serde_json::Value =
+                serde_json::from_slice(&std::fs::read(directory.path().join(&path)).unwrap())
+                    .unwrap();
+            let expected = match field {
+                "probe_success_rate" => {
+                    report["pod_density"][field] = serde_json::json!(0.99);
+                    "successful probes"
+                },
+                "graceful_duration_seconds" | "escalation_duration_seconds" => {
+                    let mut samples = vec![1.0; 20];
+                    samples[19] = 36.0;
+                    report["shutdown"][field] = serde_json::to_value(
+                        rubix_dev::perf::VarianceSummary::from_samples(samples).unwrap(),
+                    )
+                    .unwrap();
+                    "per-run deadline"
+                },
+                _ => {
+                    report["shutdown"][field] = serde_json::json!(1);
+                    "shutdown unclean"
+                },
+            };
+            write_rehashed_report(directory.path(), &path, &report);
+            let error = rubix_dev::perf::run_ci_regression_gates(directory.path())
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(expected), "{error}");
+        }
+    }
+}
