@@ -121,4 +121,5 @@ pub mod perf;
 pub mod platform_management;
 pub mod platform_soak;
 pub mod provenance;
+pub mod release;
 pub mod release_qualification;

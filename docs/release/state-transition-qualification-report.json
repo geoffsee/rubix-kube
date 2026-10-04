@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "status": "UNQUALIFIED_FIXTURE_ONLY",
+  "observed_transitions": [],
+  "qualified": false,
+  "note": "No live retained-node/Kine transition, PKI/PV reconciliation or downtime measurement was executed. C16/C17 remain pending; rehearsal fixtures are not production migration evidence."
+}

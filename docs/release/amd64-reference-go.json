@@ -1,0 +1,402 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic-fixture",
+  "id": "amd64-reference-go",
+  "implementation": "go",
+  "architecture": "amd64",
+  "timestamp": "2026-10-03T12:00:00Z",
+  "hardware": {
+    "machine_model": "c3-standard-8 (Intel Xeon Sapphire Rapids)",
+    "cpu_cores": 8,
+    "ram_bytes": 17179869184,
+    "storage_type": "NVMe SSD",
+    "kernel_version": "Linux 6.8.0-45-generic",
+    "cgroup_version": "cgroups-v2",
+    "architecture": "amd64",
+    "os": "Ubuntu 24.04 LTS (Noble Numbat)"
+  },
+  "workload": {
+    "probe_image": "docker.io/library/busybox:1.37.0",
+    "probe_digest": "sha256:a5d4330f7bb1749544fb4f62a5f0859baceddd6a401d4fb8865e9b44f0b29803",
+    "probe_resource_cpu": "10m",
+    "probe_resource_memory": "16Mi",
+    "probe_interval_seconds": 5,
+    "density_node_memory_limit_bytes": 4294967296,
+    "settle_duration_seconds": 600,
+    "sample_interval_seconds": 1,
+    "sample_duration_seconds": 900
+  },
+  "versions": {
+    "kubernetes": "v1.35.7",
+    "containerd": "v2.2.5",
+    "kine": "v0.16.3",
+    "crun": "1.26",
+    "cni_plugins": "v1.9.0",
+    "coredns": "1.14.4",
+    "pause": "3.10",
+    "local_path_provisioner": "v0.0.31",
+    "distribution_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+    "compiler_version": "go1.26.5"
+  },
+  "startup_latencies": {
+    "boot_to_api_seconds": {
+      "samples": [
+        10.8,
+        11.2,
+        11.5,
+        11.8,
+        12.0,
+        12.1,
+        12.3,
+        12.4,
+        12.5,
+        12.6,
+        12.7,
+        12.8,
+        13.0,
+        13.1,
+        13.2,
+        13.4,
+        13.6,
+        13.8,
+        14.05,
+        14.2
+      ],
+      "count": 20,
+      "min": 10.8,
+      "max": 14.2,
+      "mean": 12.6525,
+      "variance": 0.8582828947368417,
+      "std_dev": 0.9264355858541066,
+      "p50": 12.6,
+      "p90": 13.8,
+      "p95": 14.05
+    },
+    "node_ready_seconds": {
+      "samples": [
+        15.2,
+        15.6,
+        16.0,
+        16.2,
+        16.5,
+        16.8,
+        17.0,
+        17.1,
+        17.3,
+        17.5,
+        17.7,
+        17.9,
+        18.2,
+        18.5,
+        18.8,
+        19.0,
+        19.2,
+        19.5,
+        19.82,
+        20.1
+      ],
+      "count": 20,
+      "min": 15.2,
+      "max": 20.1,
+      "mean": 17.696,
+      "variance": 2.035477894736842,
+      "std_dev": 1.4267017539544984,
+      "p50": 17.5,
+      "p90": 19.5,
+      "p95": 19.82
+    },
+    "first_pod_preloaded_seconds": {
+      "samples": [
+        18.5,
+        19.0,
+        19.4,
+        19.8,
+        20.1,
+        20.4,
+        20.7,
+        21.0,
+        21.2,
+        21.5,
+        21.7,
+        22.0,
+        22.3,
+        22.6,
+        22.9,
+        23.1,
+        23.3,
+        23.6,
+        23.85,
+        24.2
+      ],
+      "count": 20,
+      "min": 18.5,
+      "max": 24.2,
+      "mean": 21.5575,
+      "variance": 2.829282894736844,
+      "std_dev": 1.6820472332062628,
+      "p50": 21.5,
+      "p90": 23.6,
+      "p95": 23.85
+    },
+    "first_pod_cold_seconds": {
+      "samples": [
+        28.5,
+        29.0,
+        29.5,
+        30.0,
+        30.4,
+        30.8,
+        31.2,
+        31.6,
+        32.0,
+        32.4,
+        32.8,
+        33.2,
+        33.6,
+        34.0,
+        34.4,
+        34.8,
+        35.1,
+        35.4,
+        35.75,
+        36.2
+      ],
+      "count": 20,
+      "min": 28.5,
+      "max": 36.2,
+      "mean": 32.5325,
+      "variance": 5.573756578947369,
+      "std_dev": 2.3608804668909795,
+      "p50": 32.4,
+      "p90": 35.4,
+      "p95": 35.75
+    }
+  },
+  "idle_footprint": {
+    "settle_minutes": 10,
+    "sampling_minutes": 15,
+    "sample_count": 900,
+    "retained_processes": [
+      {
+        "process_name": "kube-apiserver",
+        "pid": 101,
+        "rss_bytes": 228589568,
+        "pss_bytes": 218103808,
+        "vmsize_bytes": 1258291200
+      },
+      {
+        "process_name": "kube-controller-manager",
+        "pid": 102,
+        "rss_bytes": 89128960,
+        "pss_bytes": 82837504,
+        "vmsize_bytes": 805306368
+      },
+      {
+        "process_name": "kubelet",
+        "pid": 103,
+        "rss_bytes": 80740352,
+        "pss_bytes": 74448896,
+        "vmsize_bytes": 939524096
+      },
+      {
+        "process_name": "kube-proxy",
+        "pid": 104,
+        "rss_bytes": 31457280,
+        "pss_bytes": 27262976,
+        "vmsize_bytes": 754974720
+      },
+      {
+        "process_name": "kine",
+        "pid": 105,
+        "rss_bytes": 35651584,
+        "pss_bytes": 31457280,
+        "vmsize_bytes": 738197504
+      },
+      {
+        "process_name": "containerd",
+        "pid": 106,
+        "rss_bytes": 48234496,
+        "pss_bytes": 41943040,
+        "vmsize_bytes": 872415232
+      },
+      {
+        "process_name": "containerd-shim-runc-v2",
+        "pid": 107,
+        "rss_bytes": 14680064,
+        "pss_bytes": 12582912,
+        "vmsize_bytes": 721420288
+      },
+      {
+        "process_name": "kubesolo-node-daemon",
+        "pid": 100,
+        "rss_bytes": 49283072,
+        "pss_bytes": 44040192,
+        "vmsize_bytes": 771751936
+      }
+    ],
+    "system_pods_memory_bytes": 33554432,
+    "summed_pss_bytes": {
+      "samples": [
+        555000000.0,
+        560000000.0,
+        566231040.0,
+        572000000.0,
+        578813952.0
+      ],
+      "count": 5,
+      "min": 555000000.0,
+      "max": 578813952.0,
+      "mean": 566408998.4,
+      "variance": 89103586720972.81,
+      "std_dev": 9439469.620745268,
+      "p50": 566231040.0,
+      "p90": 578813952.0,
+      "p95": 578813952.0
+    },
+    "cgroup_memory_bytes": {
+      "samples": [
+        608000000.0,
+        612000000.0,
+        618659840.0,
+        624000000.0,
+        629145600.0
+      ],
+      "count": 5,
+      "min": 608000000.0,
+      "max": 629145600.0,
+      "mean": 618361088.0,
+      "variance": 74001966366720.0,
+      "std_dev": 8602439.559027428,
+      "p50": 618659840.0,
+      "p90": 629145600.0,
+      "p95": 629145600.0
+    },
+    "memory_accounting_mode": "PSS with RSS fallback labeled; cgroup v2 verified"
+  },
+  "artifact_footprint": {
+    "compressed_archive_bytes": 173015040,
+    "extracted_executable_bytes": 281018368,
+    "default_image_payload_bytes": 193986560,
+    "component_binary_sizes": {
+      "containerd": 52428800,
+      "containerd-shim-runc-v2": 10485760,
+      "crun": 3145728,
+      "kine": 31457280,
+      "kube-apiserver": 125829120,
+      "kube-controller-manager": 115343360,
+      "kube-proxy": 47185920,
+      "kubelet": 110100480,
+      "kubesolo": 44040192
+    },
+    "component_image_sizes": {
+      "docker.io/coredns/coredns:1.14.4": 62914560,
+      "docker.io/library/busybox:1.37.0": 4194304,
+      "docker.io/portainer/agent:2.33.6": 41943040,
+      "docker.io/portainer/d2k:v0.1.3": 31771853,
+      "docker.io/portainer/pause:latest": 734003,
+      "docker.io/rancher/local-path-provisioner:v0.0.31": 52428800
+    }
+  },
+  "pod_density": {
+    "node_memory_limit_bytes": 4294967296,
+    "max_ready_replicas": {
+      "samples": [
+        108.0,
+        109.0,
+        110.0,
+        110.0,
+        110.0
+      ],
+      "count": 5,
+      "min": 108.0,
+      "max": 110.0,
+      "mean": 109.4,
+      "variance": 0.8,
+      "std_dev": 0.8944271909999159,
+      "p50": 110.0,
+      "p90": 110.0,
+      "p95": 110.0
+    },
+    "probe_success_rate": 1.0,
+    "hold_duration_seconds": 600
+  },
+  "sustained_growth": {
+    "duration_hours": 24,
+    "initial_settled_idle_median_bytes": 566231040,
+    "final_settled_idle_median_bytes": 580386816,
+    "growth_ratio": 1.025,
+    "oom_kill_count": 0,
+    "crash_count": 0,
+    "unexplained_failures": 0
+  },
+  "shutdown": {
+    "graceful_duration_seconds": {
+      "samples": [
+        6.5,
+        6.8,
+        7.1,
+        7.4,
+        7.6,
+        7.8,
+        8.0,
+        8.2,
+        8.3,
+        8.5,
+        8.7,
+        8.9,
+        9.1,
+        9.4,
+        9.6,
+        9.9,
+        10.2,
+        10.5,
+        11.2,
+        12.0
+      ],
+      "count": 20,
+      "min": 6.5,
+      "max": 12.0,
+      "mean": 8.784999999999998,
+      "variance": 2.162394736842105,
+      "std_dev": 1.4705083260023062,
+      "p50": 8.5,
+      "p90": 10.5,
+      "p95": 11.2
+    },
+    "escalation_duration_seconds": {
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "count": 20,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "variance": 0.0,
+      "std_dev": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "p95": 0.0
+    },
+    "surviving_owned_processes": 0,
+    "unrelated_processes_killed": 0
+  }
+}
