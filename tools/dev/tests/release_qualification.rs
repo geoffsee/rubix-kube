@@ -211,6 +211,26 @@ fn test_attribution_rejects_identity_and_wrong_column_tokens() -> Result<()> {
             .join("\n");
         fs::write(&destination, wrong_columns)?;
         assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+
+        for column in [3, 4] {
+            let misplaced_field = original
+                .lines()
+                .map(|line| {
+                    if line.starts_with(&format!("| `{}`", component.name)) {
+                        let mut cells: Vec<_> = line.split('|').map(str::to_owned).collect();
+                        let token = cells[column].clone();
+                        cells[2].push_str(&token);
+                        cells[column] = " UNKNOWN ".into();
+                        cells.join("|")
+                    } else {
+                        line.to_owned()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            fs::write(&destination, misplaced_field)?;
+            assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+        }
     }
     Ok(())
 }
