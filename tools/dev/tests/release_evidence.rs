@@ -72,10 +72,19 @@ async fn missing_state_assertions_cannot_claim_success() {
 #[tokio::test]
 async fn published_license_inventory_and_notices_checked() {
     let dir = fixture().await;
+    let valid_inventory = fs::read(dir.path().join("licenses.json")).unwrap();
     fs::write(dir.path().join("licenses.json"), "{}").unwrap();
-    fs::write(dir.path().join("attribution.md"), "").unwrap();
     rehash(dir.path());
     assert!(verify_fixture_evidence(&root(), dir.path()).is_err());
+    fs::write(dir.path().join("licenses.json"), valid_inventory).unwrap();
+    fs::write(dir.path().join("attribution.md"), "").unwrap();
+    rehash(dir.path());
+    assert!(
+        verify_fixture_evidence(&root(), dir.path())
+            .unwrap_err()
+            .to_string()
+            .contains("attribution")
+    );
 }
 #[tokio::test]
 async fn omitted_mandatory_checksums_rejected() {
@@ -128,6 +137,19 @@ fn symlink_checksum_inputs_rejected() {
 #[test]
 fn yaml_json_parser_equivalence() {
     verify_kubeconfig_dual_format_accommodation().unwrap();
+}
+#[test]
+fn production_cli_never_reports_fixture_as_qualified() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_rubix-release"))
+        .args(["verify", root().join("docs/release").to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("qualification unavailable")
+    );
 }
 #[test]
 fn nested_oci_files_are_bound_and_tampering_detected() {
