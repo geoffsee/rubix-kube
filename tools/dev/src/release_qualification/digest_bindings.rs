@@ -169,7 +169,7 @@ pub fn verify_catalog_bindings() -> Result<usize> {
 }
 
 /// Verifies candidate release artifacts against an expected checksum map or `SHA256SUMS`.
-/// Strictly fails closed upon missing files, unlisted files, or digest mismatches.
+/// Strictly fails closed upon missing files, unlisted files, traversal keys, or digest mismatches.
 pub fn verify_artifacts_integrity(
     dist_dir: &Path,
     expected_checksums: &BTreeMap<String, String>,
@@ -178,22 +178,99 @@ pub fn verify_artifacts_integrity(
         return Err("expected checksums map cannot be empty".into());
     }
 
-    // Check each expected file exists and matches observed SHA-256
+    if !dist_dir.is_dir() {
+        return Err(format!(
+            "distribution directory does not exist or is not a directory: {}",
+            dist_dir.display()
+        )
+        .into());
+    }
+
+    // 1. Validate keys are relative, non-traversing, root-contained filenames
     for (filename, expected_digest) in expected_checksums {
+        let p = Path::new(filename);
+        if filename.is_empty() || p.is_absolute() {
+            return Err(
+                format!("invalid absolute or empty artifact path key: '{filename}'").into(),
+            );
+        }
+        for component in p.components() {
+            match component {
+                std::path::Component::ParentDir
+                | std::path::Component::RootDir
+                | std::path::Component::Prefix(_) => {
+                    return Err(format!(
+                        "traversal or non-relative component in artifact key: '{filename}'"
+                    )
+                    .into());
+                },
+                _ => {},
+            }
+        }
         if !is_valid_sha256_hex(expected_digest) {
             return Err(format!(
                 "invalid expected sha256 format for {filename}: {expected_digest}"
             )
             .into());
         }
+    }
 
-        let file_path = dist_dir.join(filename);
-        if !file_path.is_file() {
-            return Err(
-                format!("missing expected release artifact: {}", file_path.display()).into(),
-            );
+    // 2. Discover actual files in dist_dir and ensure no symlinks or unlisted files
+    let mut actual_files = std::collections::BTreeSet::new();
+    for entry in fs::read_dir(dist_dir).map_err(|e| {
+        format!(
+            "failed to read distribution directory {}: {e}",
+            dist_dir.display()
+        )
+    })? {
+        let entry =
+            entry.map_err(|e| format!("failed to read entry in {}: {e}", dist_dir.display()))?;
+        let path = entry.path();
+        let meta = fs::symlink_metadata(&path)
+            .map_err(|e| format!("cannot read symlink metadata for {}: {e}", path.display()))?;
+        if meta.file_type().is_symlink() {
+            return Err(format!(
+                "symlinks are not permitted in release distribution: {}",
+                path.display()
+            )
+            .into());
         }
+        if meta.is_file() {
+            let fname = entry.file_name().to_string_lossy().to_string();
+            actual_files.insert(fname);
+        } else if meta.is_dir() {
+            return Err(format!(
+                "subdirectories not expected in flat release distribution: {}",
+                path.display()
+            )
+            .into());
+        }
+    }
 
+    // 3. Reconcile expected files vs actual files
+    for filename in expected_checksums.keys() {
+        if !actual_files.contains(filename) {
+            return Err(format!(
+                "missing expected release artifact: {}",
+                dist_dir.join(filename).display()
+            )
+            .into());
+        }
+    }
+
+    for actual in &actual_files {
+        if !expected_checksums.contains_key(actual) {
+            return Err(format!(
+                "unlisted file present in distribution directory: {}",
+                dist_dir.join(actual).display()
+            )
+            .into());
+        }
+    }
+
+    // 4. Check each file matches observed SHA-256
+    for (filename, expected_digest) in expected_checksums {
+        let file_path = dist_dir.join(filename);
         let content = fs::read(&file_path)
             .map_err(|e| format!("failed to read artifact {}: {e}", file_path.display()))?;
         let observed_digest = ReleasePackager::sha256_hex(&content);
@@ -270,6 +347,38 @@ mod tests {
         fs::write(&file1, b"tampered content 1")?;
         let err = verify_artifacts_integrity(temp.path(), &checksums).unwrap_err();
         assert!(err.to_string().contains("digest mismatch"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_traversal_and_unlisted_files_rejected() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let file1 = temp.path().join("artifact1.tar.gz");
+        fs::write(&file1, b"original content 1")?;
+
+        let mut checksums = BTreeMap::new();
+        checksums.insert(
+            "../outside.tar.gz".into(),
+            ReleasePackager::sha256_hex(b"original content 1"),
+        );
+
+        // Traversal key must fail closed
+        let err = verify_artifacts_integrity(temp.path(), &checksums).unwrap_err();
+        assert!(err.to_string().contains("traversal"));
+
+        // Unlisted file must fail closed
+        let mut valid_checksums = BTreeMap::new();
+        valid_checksums.insert(
+            "artifact1.tar.gz".into(),
+            ReleasePackager::sha256_hex(b"original content 1"),
+        );
+
+        // Add extra unlisted file
+        let unlisted = temp.path().join("unlisted.tar.gz");
+        fs::write(&unlisted, b"rogue artifact")?;
+        let err = verify_artifacts_integrity(temp.path(), &valid_checksums).unwrap_err();
+        assert!(err.to_string().contains("unlisted file"));
 
         Ok(())
     }

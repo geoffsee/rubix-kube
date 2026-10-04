@@ -140,24 +140,41 @@ pub fn verify_retained_attribution(root: &Path) -> Result<usize> {
     })?;
 
     for component in RETAINED_COMPONENTS {
-        if !content.contains(component.name) {
+        // Find the specific table row for this component
+        let component_row = content.lines().find(|line| {
+            let trimmed = line.trim();
+            if !trimmed.starts_with('|') {
+                return false;
+            }
+            let cols: Vec<&str> = trimmed.split('|').map(str::trim).collect();
+            // cols[0] is empty before leading '|', cols[1] is the Component column
+            if cols.len() > 1 {
+                cols[1].contains(component.name)
+            } else {
+                false
+            }
+        });
+
+        let Some(row) = component_row else {
             return Err(format!(
-                "attribution document missing retained component name '{}'",
+                "attribution document missing retained component entry for '{}'",
                 component.name
             )
             .into());
-        }
-        if !content.contains(component.license) {
+        };
+
+        if !row.contains(component.license) {
             return Err(format!(
-                "attribution document missing license '{}' for component '{}'",
-                component.license, component.name
+                "attribution document row for component '{}' missing expected license '{}': {}",
+                component.name, component.license, row
             )
             .into());
         }
-        if !content.contains(component.copyright) {
+
+        if !row.contains(component.copyright) {
             return Err(format!(
-                "attribution document missing copyright holder '{}' for component '{}'",
-                component.copyright, component.name
+                "attribution document row for component '{}' missing expected copyright '{}': {}",
+                component.name, component.copyright, row
             )
             .into());
         }
@@ -231,6 +248,28 @@ mod tests {
             .unwrap();
         let count = verify_workspace_license_policy(root)?;
         assert!(count >= 3);
+        Ok(())
+    }
+
+    #[test]
+    fn test_retained_attribution_row_corruption_fails_closed() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let docs_arch = temp.path().join("docs/architecture");
+        fs::create_dir_all(&docs_arch)?;
+        let attr_file = docs_arch.join("attribution.md");
+
+        // Create attribution where kube-apiserver row is missing its license/copyright
+        let corrupted_content = r"
+# Attribution
+| Component | Upstream Reference | License (SPDX) | Copyright Holders / Authors | Upstream Repository |
+| --- | --- | --- | --- | --- |
+| `kube-apiserver` | Official v1.35.7 | unknown | unknown | https://github.com/kubernetes/kubernetes |
+| `kube-controller-manager` | Official v1.35.7 | Apache-2.0 | The Kubernetes Authors | https://github.com/kubernetes/kubernetes |
+";
+        fs::write(&attr_file, corrupted_content)?;
+
+        let err = verify_retained_attribution(temp.path()).unwrap_err();
+        assert!(err.to_string().contains("missing expected license"));
         Ok(())
     }
 }

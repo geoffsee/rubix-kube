@@ -131,10 +131,14 @@ pub fn verify_documentation_links(root: &Path) -> Result<LinkIntegritySummary> {
                 let link_text = cap.get(1).map_or("", |m| m.as_str());
                 let target = cap.get(2).map_or("", |m| m.as_str()).trim();
 
-                // Skip external URLs
+                // Skip external URLs and OCI image references
                 if target.starts_with("http://")
                     || target.starts_with("https://")
                     || target.starts_with("mailto:")
+                    || target.starts_with("docker.io/")
+                    || target.starts_with("ghcr.io/")
+                    || target.starts_with("quay.io/")
+                    || target.starts_with("registry.k8s.io/")
                 {
                     summary.external_links_skipped += 1;
                     continue;
