@@ -180,3 +180,56 @@ fn backslash_filename_cannot_alias_an_oci_path() {
     fs::write(dir.path().join("oci\\index.json"), "unbound alias bytes").unwrap();
     assert!(assemble_checksum_manifest(dir.path()).is_err());
 }
+#[tokio::test]
+async fn fixture_overview_cannot_add_qualification_claims_after_rehash() {
+    let dir = fixture().await;
+    let file = dir.path().join("README.md");
+    let mut text = fs::read_to_string(&file).unwrap();
+    text.push_str("Production migration and all platforms qualified.\n");
+    fs::write(file, text).unwrap();
+    rehash(dir.path());
+    assert!(
+        verify_fixture_evidence(&root(), dir.path())
+            .unwrap_err()
+            .to_string()
+            .contains("canonical unqualified")
+    );
+}
+#[test]
+fn workspace_and_registry_sources_follow_cargo_metadata() {
+    let metadata = serde_json::json!({"workspace_members":["local"], "packages":[
+        {"id":"local","name":"rubix-assets","version":"0.1.0","license":"Apache-2.0","source":null},
+        {"id":"patched","name":"patched-parser","version":"1.0.0","license":"MIT","source":null},
+        {"id":"remote","name":"remote-crate","version":"1.0.0","license":"MIT","source":"registry+https://github.com/rust-lang/crates.io-index"}
+    ]});
+    let record = AttributionRecord::build(&metadata.to_string()).unwrap();
+    for (name, expected) in [
+        ("rubix-assets", "workspace path crate"),
+        ("patched-parser", "local path dependency"),
+        (
+            "remote-crate",
+            "registry+https://github.com/rust-lang/crates.io-index",
+        ),
+    ] {
+        assert_eq!(
+            record
+                .components
+                .iter()
+                .find(|entry| entry.name == name)
+                .unwrap()
+                .upstream_repository,
+            expected
+        );
+    }
+}
+#[tokio::test]
+async fn conformance_exclusions_never_claim_live_concurrency_qualification() {
+    let report = rubix_dev::conformance::QualificationRunner::new()
+        .run_fixture()
+        .await
+        .unwrap();
+    let text = report.to_json().unwrap();
+    assert!(text.contains("no live single-node concurrency is qualified"));
+    assert!(!text.contains("Single-node concurrency is qualified via"));
+    report.verify_fixture().unwrap();
+}

@@ -1,12 +1,12 @@
 {
   "evidence_kind": "synthetic_fixture",
-  "timestamp": "unix:1791130034",
+  "timestamp": "unix:1791131696",
   "smoke_results": [
     {
       "check": "workload_pod",
       "name": "Smoke 1 — Workload Pod Scheduling and Placement",
       "passed": true,
-      "duration_ms": 25,
+      "duration_ms": 15,
       "details": "Synthetic Pod API admission applied NodeSetter mutation, nodeName='rubix-node-qual'; no workload executed"
     },
     {
@@ -29,7 +29,7 @@
       "domain": "workloads_networking",
       "name": "Tier 1 — Workloads & Networking",
       "passed": true,
-      "duration_ms": 50,
+      "duration_ms": 52,
       "assertions_count": 10,
       "details": [
         "Deployment reconciled to ReplicaSet web-rs with 2 replicas",
@@ -42,7 +42,7 @@
       "domain": "storage",
       "name": "Tier 2 — Storage Persistence",
       "passed": true,
-      "duration_ms": 87,
+      "duration_ms": 79,
       "assertions_count": 12,
       "details": [
         "local-path StorageClass reconciled with Retain policy",
@@ -55,7 +55,7 @@
       "domain": "config_identity",
       "name": "Tier 3 — Config & Identity",
       "passed": true,
-      "duration_ms": 22,
+      "duration_ms": 19,
       "assertions_count": 6,
       "details": [
         "ConfigMap app-config created with greeting=hello-kubesolo",
@@ -67,7 +67,7 @@
       "domain": "controllers",
       "name": "Tier 4 — Controllers",
       "passed": true,
-      "duration_ms": 134,
+      "duration_ms": 115,
       "assertions_count": 11,
       "details": [
         "StatefulSet reconciled ordinal child Pod API object stateful-0",
@@ -79,7 +79,7 @@
       "domain": "dns_load_balancer",
       "name": "Tier 5 — DNS & LoadBalancer",
       "passed": true,
-      "duration_ms": 80,
+      "duration_ms": 78,
       "assertions_count": 5,
       "details": [
         "LoadBalancer webhook assigned node IP: 192.0.2.10",
@@ -90,7 +90,7 @@
       "domain": "lb_update",
       "name": "Tier 6 — LoadBalancer UPDATE path [KS-75]",
       "passed": true,
-      "duration_ms": 140,
+      "duration_ms": 141,
       "assertions_count": 10,
       "details": [
         "Control born-lb assigned IP: 192.0.2.10",
@@ -112,7 +112,7 @@
       {
         "pattern": "[Serial]",
         "category": "serial_slow",
-        "rationale": "Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Single-node concurrency is qualified via focused domain tests."
+        "rationale": "Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Synthetic in-process domain tests exercise concurrency; no live single-node concurrency is qualified."
       },
       {
         "pattern": "[Disruptive]",

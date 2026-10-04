@@ -13,6 +13,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::{fs, path::Path, process::Command};
 const STATUS: &str = "UNQUALIFIED_FIXTURE_ONLY";
+const FIXTURE_README: &str = "# Release fixture diagnostics\n\nUNQUALIFIED_FIXTURE_ONLY. C13/C14/C16/C17 remain pending. No release archives or management binaries are fabricated or bound here; no OCI artifact hashes are synthesized. Performance sources are synthetic observations, conformance is in-process, and no live state transition or downtime was observed. License records are inventory drafts, not a legal compliance certification.\n\nVerify diagnostic consistency with `cargo run --locked -p rubix-dev --bin rubix-release -- verify-fixtures docs/release`. Production `verify` always fails closed until a verified current-source live evidence importer exists.\n";
 const SOURCES: [&str; 4] = [
     "amd64-reference-go.json",
     "amd64-candidate-rust.json",
@@ -122,10 +123,7 @@ pub async fn assemble_fixture_evidence(root: &Path, target: &Path) -> Result<()>
         target.join("release-notes.md"),
         ReleaseNotes::build().to_markdown(),
     )?;
-    fs::write(
-        target.join("README.md"),
-        "# Release fixture diagnostics\n\nUNQUALIFIED_FIXTURE_ONLY. C13/C14/C16/C17 remain pending. No release archives or management binaries are fabricated or bound here; no OCI artifact hashes are synthesized. Performance sources are synthetic observations, conformance is in-process, and no live state transition or downtime was observed. License records are inventory drafts, not a legal compliance certification.\n\nVerify diagnostic consistency with `cargo run --locked -p rubix-dev --bin rubix-release -- verify-fixtures docs/release`. Production `verify` always fails closed until a verified current-source live evidence importer exists.\n",
-    )?;
+    fs::write(target.join("README.md"), FIXTURE_README)?;
     fs::write(
         target.join("SHA256SUMS"),
         assemble_checksum_manifest(target)?,
@@ -170,8 +168,8 @@ pub fn verify_fixture_evidence(root: &Path, dir: &Path) -> Result<()> {
     if fs::read_to_string(dir.join("release-notes.md"))? != ReleaseNotes::build().to_markdown() {
         return Err("release notes disagree with unqualified candidate disclosures".into());
     }
-    if !fs::read_to_string(dir.join("README.md"))?.contains(STATUS) {
-        return Err("fixture overview must declare unqualified status".into());
+    if fs::read_to_string(dir.join("README.md"))? != FIXTURE_README {
+        return Err("fixture overview must match canonical unqualified disclosures".into());
     }
     verify_kubeconfig_dual_format_accommodation()
 }

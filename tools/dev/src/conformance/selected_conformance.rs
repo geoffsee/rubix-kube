@@ -327,7 +327,7 @@ impl ConformanceInventory {
             ConformanceExclusion {
                 pattern: "[Serial]".into(),
                 category: ExclusionCategory::SerialSlow,
-                rationale: "Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Single-node concurrency is qualified via focused domain tests.".into(),
+                rationale: "Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Synthetic in-process domain tests exercise concurrency; no live single-node concurrency is qualified.".into(),
             },
             ConformanceExclusion {
                 pattern: "[Disruptive]".into(),

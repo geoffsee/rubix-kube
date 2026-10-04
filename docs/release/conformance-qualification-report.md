@@ -8,7 +8,7 @@ C13/E28 remains unqualified. No retained-executable node or upstream conformance
 
 | Smoke Check | Status | Duration | Details |
 |---|---|---|---|
-| Smoke 1 — Workload Pod Scheduling and Placement | PASS (fixture) | 25ms | Synthetic Pod API admission applied NodeSetter mutation, nodeName='rubix-node-qual'; no workload executed |
+| Smoke 1 — Workload Pod Scheduling and Placement | PASS (fixture) | 15ms | Synthetic Pod API admission applied NodeSetter mutation, nodeName='rubix-node-qual'; no workload executed |
 | Smoke 2 — In-Cluster CoreDNS Resolution | PASS (fixture) | 4ms | Synthetic DNS model matched kubernetes.default.svc.cluster.local to ClusterIP 10.43.0.1; no CoreDNS server or pod query executed |
 | Smoke 3 — Pod Egress Masquerade / SNAT Routing | NOT EXECUTED | 0ms | NOT EXECUTED: in-process fixtures have no pod runtime or network dataplane |
 
@@ -16,12 +16,12 @@ C13/E28 remains unqualified. No retained-executable node or upstream conformance
 
 | Domain | Status | Assertions | Duration |
 |---|---|---|---|
-| Tier 1 — Workloads & Networking | PASS | 10 | 50ms |
-| Tier 2 — Storage Persistence | PASS | 12 | 87ms |
-| Tier 3 — Config & Identity | PASS | 6 | 22ms |
-| Tier 4 — Controllers | PASS | 11 | 134ms |
-| Tier 5 — DNS & LoadBalancer | PASS | 5 | 80ms |
-| Tier 6 — LoadBalancer UPDATE path [KS-75] | PASS | 10 | 140ms |
+| Tier 1 — Workloads & Networking | PASS | 10 | 52ms |
+| Tier 2 — Storage Persistence | PASS | 12 | 79ms |
+| Tier 3 — Config & Identity | PASS | 6 | 19ms |
+| Tier 4 — Controllers | PASS | 11 | 115ms |
+| Tier 5 — DNS & LoadBalancer | PASS | 5 | 78ms |
+| Tier 6 — LoadBalancer UPDATE path [KS-75] | PASS | 10 | 141ms |
 
 ## 3. Selected Single-Node Conformance Summary
 
@@ -38,7 +38,7 @@ NOT EXECUTED. The inventory lists planned candidates; API-object creation does n
 
 | Pattern | Category | Technical Rationale |
 |---|---|---|
-| `[Serial]` | `SerialSlow` | Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Single-node concurrency is qualified via focused domain tests. |
+| `[Serial]` | `SerialSlow` | Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Synthetic in-process domain tests exercise concurrency; no live single-node concurrency is qualified. |
 | `[Disruptive]` | `Disruptive` | Disruptive tests intentionally cordon, drain, or reboot the node, which terminates the single control plane / worker host in single-node topologies. |
 | `[Slow]` | `SerialSlow` | Tests tagged [Slow] test multi-hour soaking and extreme replica counts (1000+ pods) that exceed single-node edge footprints. |
 | `[Flaky]` | `Flaky` | Upstream tests identified as flaky are excluded to prevent non-deterministic failure reporting in automated qualification gates. |

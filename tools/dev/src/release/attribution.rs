@@ -57,6 +57,20 @@ pub struct AttributionRecord {
     pub license_texts: BTreeMap<String, String>,
 }
 
+#[derive(Deserialize)]
+struct MetadataSources {
+    packages: Vec<MetadataPackage>,
+    workspace_members: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct MetadataPackage {
+    id: String,
+    name: String,
+    version: String,
+    source: Option<String>,
+}
+
 impl AttributionRecord {
     /// Compiles authoritative attribution for Rubix v0.1.0 including
     /// Kubernetes v1.35.7, Kine v0.16.3, containerd v2.2.5, and OCI image dependencies.
@@ -265,13 +279,32 @@ impl AttributionRecord {
         });
 
         // 5. Rust Workspace Dependencies
+        let metadata: MetadataSources = serde_json::from_str(cargo_metadata_json)?;
+        let sources = metadata
+            .packages
+            .into_iter()
+            .map(|package| {
+                let source = package.source.unwrap_or_else(|| {
+                    if metadata.workspace_members.contains(&package.id) {
+                        "workspace path crate".into()
+                    } else {
+                        "local path dependency".into()
+                    }
+                });
+                ((package.name, package.version), source)
+            })
+            .collect::<BTreeMap<_, _>>();
         let rust_inventory = crate::provenance::generate_license_inventory(cargo_metadata_json)?;
         for dep in rust_inventory.rust_dependencies {
+            let source = sources
+                .get(&(dep.name.clone(), dep.version.clone()))
+                .ok_or("missing Cargo metadata dependency source")?
+                .clone();
             components.push(AttributedComponent {
                 name: dep.name,
                 version: dep.version,
                 spdx_license: dep.license,
-                upstream_repository: "crates.io".into(),
+                upstream_repository: source,
                 copyright: "Various crate authors".into(),
                 category: ComponentCategory::RustWorkspaceDependency,
                 architectural_role:
