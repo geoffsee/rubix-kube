@@ -180,3 +180,66 @@ fn test_tamper_detection_fails_closed_on_digest_mismatch() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_attribution_rejects_identity_and_wrong_column_tokens() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let destination = temp.path().join("docs/architecture/attribution.md");
+    fs::create_dir_all(destination.parent().ok_or("missing parent")?)?;
+    let original = fs::read_to_string(root_dir()?.join("docs/architecture/attribution.md"))?;
+    for component in attribution::RETAINED_COMPONENTS {
+        let fake_identity = original.replace(
+            &format!("`{}`", component.name),
+            &format!("`fake-{}`", component.name),
+        );
+        fs::write(&destination, fake_identity)?;
+        assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+
+        let wrong_columns = original
+            .lines()
+            .map(|line| {
+                if line.starts_with(&format!("| `{}`", component.name)) {
+                    format!(
+                        "| `{}` | WRONG {} {} | UNKNOWN | UNKNOWN | INVALID |",
+                        component.name, component.license, component.copyright
+                    )
+                } else {
+                    line.to_owned()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&destination, wrong_columns)?;
+        assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_artifact_inventory_rejects_socket_and_symlink_root() -> Result<()> {
+    use rubix_assets::ReleasePackager;
+    use std::os::unix::{fs::symlink, net::UnixListener};
+
+    let temp = tempfile::tempdir()?;
+    let distribution = temp.path().join("distribution");
+    fs::create_dir(&distribution)?;
+    fs::write(distribution.join("candidate.tar.gz"), b"artifact")?;
+    let checksums = BTreeMap::from([(
+        "candidate.tar.gz".to_owned(),
+        ReleasePackager::sha256_hex(b"artifact"),
+    )]);
+    assert_eq!(
+        digest_bindings::verify_artifacts_integrity(&distribution, &checksums)?,
+        1
+    );
+    let _socket = UnixListener::bind(distribution.join("unlisted.socket"))?;
+    let error = digest_bindings::verify_artifacts_integrity(&distribution, &checksums).unwrap_err();
+    assert!(error.to_string().contains("nonregular artifact"));
+
+    let linked_root = temp.path().join("linked-distribution");
+    symlink(&distribution, &linked_root)?;
+    let error = digest_bindings::verify_artifacts_integrity(&linked_root, &checksums).unwrap_err();
+    assert!(error.to_string().contains("not a symlink"));
+    Ok(())
+}
