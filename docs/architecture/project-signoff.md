@@ -1,8 +1,8 @@
 # Gate C17 project signoff remains pending
 
 Roadmap issue #263 and child issue #126 require qualification evidence under the
-[acceptance matrix](../architecture/acceptance-matrix.md) and
-[compatibility contract](../architecture/compatibility-contract.md).
+[acceptance matrix](acceptance-matrix.md) and
+[compatibility contract](compatibility-contract.md).
 Closing a tracking issue does not establish that its acceptance criteria passed.
 
 The repository metadata audit reports all 11 roadmap criteria as pending.
