@@ -470,6 +470,82 @@ async fn test_exclusive_cpu_allocation_and_checkpoint_state() {
 }
 
 #[tokio::test]
+async fn checkpoint_removal_failure_preserves_allocations_and_prevents_start() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, mut options) = setup_test_environment(&temp);
+    options.write_kubelet_config_file().unwrap();
+    let previous_yaml = fs::read(&options.config_file).unwrap();
+    options.cpu_manager_policy = "static".to_string();
+    options.reserved_cpus = "0".to_string();
+    let checkpoint = options.cpu_manager_checkpoint_path();
+    fs::write(
+        &checkpoint,
+        r#"{"policyName":"static","defaultCpuSet":"","entries":{"default/pinned/app":"1"}}"#,
+    )
+    .unwrap();
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+    let kubelet = KubeletService::new(
+        options.clone(),
+        Arc::new(apiserver),
+        Arc::new(MockRuntimeProvider::new("test-runtime")),
+    );
+    let allocations = kubelet.reconciler().cpu_manager().current_allocations();
+    assert!(!allocations.is_empty());
+
+    // A directory at the owned checkpoint path makes remove_file fail even as root.
+    fs::remove_file(&checkpoint).unwrap();
+    fs::create_dir(&checkpoint).unwrap();
+    fs::write(
+        checkpoint.join("retained-state"),
+        b"keep checkpoint evidence",
+    )
+    .unwrap();
+    let error = kubelet.start().await.unwrap_err();
+    let diagnostic = error.to_string();
+    assert!(diagnostic.contains("failed to remove stale CPU manager checkpoint"));
+    assert!(diagnostic.contains(checkpoint.to_str().unwrap()));
+    assert_eq!(fs::read(&options.config_file).unwrap(), previous_yaml);
+    assert_eq!(
+        fs::read(checkpoint.join("retained-state")).unwrap(),
+        b"keep checkpoint evidence"
+    );
+    assert_eq!(
+        kubelet.reconciler().cpu_manager().current_allocations(),
+        allocations
+    );
+    assert!(!kubelet.reconciler().is_checkpoint_invalidated());
+    assert!(!kubelet.is_running());
+    assert!(kubelet.client().get_node(&options.node_name).await.is_err());
+}
+
+#[test]
+fn previous_configuration_read_failure_preserves_checkpoint() {
+    let temp = TempDir::new().unwrap();
+    let options = KubeletConfigOptions {
+        config_file: temp.path().join("kubelet.yaml"),
+        root_dir: temp.path().to_path_buf(),
+        ..Default::default()
+    };
+    fs::create_dir(&options.config_file).unwrap();
+    let checkpoint = options.cpu_manager_checkpoint_path();
+    fs::write(&checkpoint, b"retained checkpoint").unwrap();
+    let error = options.write_kubelet_config_file().unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("failed to read previous configuration")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains(options.config_file.to_str().unwrap())
+    );
+    assert!(options.config_file.is_dir());
+    assert_eq!(fs::read(checkpoint).unwrap(), b"retained checkpoint");
+}
+
+#[tokio::test]
 async fn test_external_runtime_workload_restart_diagnostics() {
     let temp = TempDir::new().unwrap();
     let (apiserver, mut kubelet_options) = setup_test_environment(&temp);

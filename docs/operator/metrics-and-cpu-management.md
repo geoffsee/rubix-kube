@@ -73,19 +73,23 @@ kubernetes:
     cpuManager:
       policy: static
       reservedCPUs: "0"
-      policyOptions:
-        full-pcpus-only: "true"
 ```
 
-`policyOptions` values are strings; use only options supported by the retained
-Kubelet/version and verify effective reservations and pod QoS/resources. Options
-such as distribute-cpus-across-numa require the appropriate topology and version;
-a YAML example is not proof of real exclusive-core assignment or latency results.
+`policyOptions` values are strings. The experimental Rust CPU manager allocates
+the first available logical CPUs; it does not enforce `full-pcpus-only`, NUMA
+distribution or socket alignment. `align-by-socket` is rejected by the current
+configuration validator. Rendering accepted option strings for the retained
+upstream Kubelet does not qualify those policies: verify support in its pinned
+version, effective topology, reservations and pod QoS/resources independently.
+A YAML example is not proof of real exclusive-core assignment or latency results.
 Static policy is rejected in container mode by configuration validation.
 
 The Kubelet configuration adapter compares effective CPU-manager settings when
 writing rendered configuration and can invalidate `cpu_manager_state` under its
-configured Kubelet root. This is not permission to delete a live checkpoint to
+configured Kubelet root. A previous-configuration read failure or stale-checkpoint
+removal failure aborts configuration replacement and Rust service startup before
+in-memory allocations are cleared. A missing previous configuration or checkpoint
+is permitted. This is not permission to delete a live checkpoint to
 force an update. Stop/quiesce the owning Kubelet and rehearse policy changes while
 preserving workload and CPU ownership. Do not confuse the experimental Rust CPU
 manager with replacement of the selected upstream Kubelet executable.

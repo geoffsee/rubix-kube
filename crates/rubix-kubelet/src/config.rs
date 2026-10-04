@@ -346,36 +346,48 @@ impl KubeletConfigOptions {
     /// Invalidates the CPU manager checkpoint if the effective CPU manager settings differ
     /// from the previously written configuration file.
     ///
-    /// Returns `true` if the checkpoint was removed/invalidated, `false` otherwise.
-    pub fn invalidate_cpu_manager_checkpoint(&self, new_yaml: &str) -> bool {
-        let Ok(previous) = fs::read_to_string(&self.config_file) else {
-            return false;
+    /// Returns whether settings changed; errors prevent configuration replacement and startup.
+    pub fn invalidate_cpu_manager_checkpoint(&self, new_yaml: &str) -> Result<bool, KubeletError> {
+        let previous = match fs::read_to_string(&self.config_file) {
+            Ok(previous) => previous,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "config_file".to_string(),
+                    reason: format!(
+                        "failed to read previous configuration {}: {error}",
+                        self.config_file.display()
+                    ),
+                });
+            },
         };
 
         let previous_settings = Self::read_cpu_manager_settings(&previous);
         let new_settings = Self::read_cpu_manager_settings(new_yaml);
 
         if previous_settings == new_settings {
-            return false;
+            return Ok(false);
         }
 
         let checkpoint = self.cpu_manager_checkpoint_path();
-        if checkpoint.exists() {
-            if let Err(e) = fs::remove_file(&checkpoint) {
-                eprintln!(
-                    "failed to remove stale cpu manager checkpoint {}: {}",
-                    checkpoint.display(),
-                    e
-                );
-                return true;
-            }
-            eprintln!(
+        match fs::remove_file(&checkpoint) {
+            Ok(()) => eprintln!(
                 "cpu manager settings changed, removed {}. exclusive cores are reassigned as pinned workloads restart; with an external container runtime, restart them yourself",
                 checkpoint.display()
-            );
+            ),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
+            Err(error) => {
+                return Err(KubeletError::InvalidConfiguration {
+                    field: "checkpoint".to_string(),
+                    reason: format!(
+                        "failed to remove stale CPU manager checkpoint {}: {error}",
+                        checkpoint.display()
+                    ),
+                });
+            },
         }
 
-        true
+        Ok(true)
     }
 
     /// Writes the generated YAML document to `self.config_file`.
@@ -402,7 +414,7 @@ impl KubeletConfigOptions {
 
         fs::create_dir_all(parent)?;
         let yaml = self.render_yaml();
-        let invalidated = self.invalidate_cpu_manager_checkpoint(&yaml);
+        let invalidated = self.invalidate_cpu_manager_checkpoint(&yaml)?;
         fs::write(&self.config_file, yaml)?;
         Ok(invalidated)
     }
