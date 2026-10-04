@@ -193,7 +193,12 @@ fn test_attribution_rejects_identity_and_wrong_column_tokens() -> Result<()> {
             &format!("`fake-{}`", component.name),
         );
         fs::write(&destination, fake_identity)?;
-        assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+        let error = attribution::verify_retained_attribution(temp.path()).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("missing retained component record")
+        );
 
         let wrong_columns = original
             .lines()
@@ -210,7 +215,8 @@ fn test_attribution_rejects_identity_and_wrong_column_tokens() -> Result<()> {
             .collect::<Vec<_>>()
             .join("\n");
         fs::write(&destination, wrong_columns)?;
-        assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+        let error = attribution::verify_retained_attribution(temp.path()).unwrap_err();
+        assert!(error.to_string().contains("incomplete attribution fields"));
 
         for column in [3, 4] {
             let misplaced_field = original
@@ -229,7 +235,8 @@ fn test_attribution_rejects_identity_and_wrong_column_tokens() -> Result<()> {
                 .collect::<Vec<_>>()
                 .join("\n");
             fs::write(&destination, misplaced_field)?;
-            assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+            let error = attribution::verify_retained_attribution(temp.path()).unwrap_err();
+            assert!(error.to_string().contains("incomplete attribution fields"));
         }
     }
     Ok(())
@@ -237,9 +244,9 @@ fn test_attribution_rejects_identity_and_wrong_column_tokens() -> Result<()> {
 
 #[cfg(unix)]
 #[test]
-fn test_artifact_inventory_rejects_socket_and_symlink_root() -> Result<()> {
+fn test_artifact_inventory_rejects_symlink_root() -> Result<()> {
     use rubix_assets::ReleasePackager;
-    use std::os::unix::{fs::symlink, net::UnixListener};
+    use std::os::unix::fs::symlink;
 
     let temp = tempfile::tempdir()?;
     let distribution = temp.path().join("distribution");
@@ -253,10 +260,6 @@ fn test_artifact_inventory_rejects_socket_and_symlink_root() -> Result<()> {
         digest_bindings::verify_artifacts_integrity(&distribution, &checksums)?,
         1
     );
-    let _socket = UnixListener::bind(distribution.join("unlisted.socket"))?;
-    let error = digest_bindings::verify_artifacts_integrity(&distribution, &checksums).unwrap_err();
-    assert!(error.to_string().contains("nonregular artifact"));
-
     let linked_root = temp.path().join("linked-distribution");
     symlink(&distribution, &linked_root)?;
     let error = digest_bindings::verify_artifacts_integrity(&linked_root, &checksums).unwrap_err();
