@@ -28,13 +28,13 @@ UNQUALIFIED_FIXTURE_ONLY. This draft inventories declared upstream components an
 
 | Component | Version / Ref | License (SPDX) | Upstream Authority | Architectural Role |
 |---|---|---|---|---|
-| `CoreDNS` | `1.14.4` | `Apache-2.0` | The CoreDNS Authors (`docker.io/coredns/coredns:1.14.4`) | Cluster DNS resolver pod providing service discovery across cluster namespaces |
-| `pause sandbox` | `latest (v3.10 baseline)` | `Apache-2.0` | The Kubernetes Authors / Portainer.io (`docker.io/portainer/pause:latest`) | CRI sandbox container holding network namespace and IPC resources for pods |
-| `local-path-provisioner` | `v0.0.36` | `Apache-2.0` | Rancher Labs, Inc. (`docker.io/rancher/local-path-provisioner:v0.0.36`) | Persistent volume controller provisioning hostPath-backed storage with Retain reclaim policy |
-| `local-path helper (busybox)` | `latest (image contents unresolved)` | `GPL-2.0-only` | Erik Andersen, Rob Landley, Denys Vlasenko, and others (`docker.io/library/busybox:latest`) | Helper utility pod used by local-path-provisioner for volume initialization |
-| `Portainer Edge Agent` | `lts` | `Zlib` | Portainer.io (`docker.io/portainer/agent:lts`) | Optional management agent establishing reverse tunnel connectivity to Portainer Server |
-| `D2K` | `1.2.3` | `Apache-2.0` | Portainer.io (`docker.io/portainer/d2k:1.2.3`) | Optional Docker-to-Kubernetes translation gateway exposing Docker Engine API on port 2376 |
-| `KubeSolo node image` | `latest` | `Apache-2.0` | Portainer.io (`ghcr.io/portainer/kubesolo:latest`) | Containerized node distribution image for container execution modes |
+| `CoreDNS` | `1.14.4` | `Apache-2.0` | [The CoreDNS Authors](https://github.com/coredns/coredns) | Cluster DNS resolver pod providing service discovery across cluster namespaces |
+| `pause sandbox` | `latest (v3.10 baseline)` | `Apache-2.0` | [The Kubernetes Authors / Portainer.io](https://github.com/kubernetes/kubernetes) | CRI sandbox container holding network namespace and IPC resources for pods |
+| `local-path-provisioner` | `v0.0.36` | `Apache-2.0` | [Rancher Labs, Inc.](https://github.com/rancher/local-path-provisioner) | Persistent volume controller provisioning hostPath-backed storage with Retain reclaim policy |
+| `local-path helper (busybox)` | `latest (image contents unresolved)` | `GPL-2.0-only` | [Erik Andersen, Rob Landley, Denys Vlasenko, and others](https://busybox.net) | Helper utility pod used by local-path-provisioner for volume initialization |
+| `Portainer Edge Agent` | `lts` | `Zlib` | [Portainer.io](https://github.com/portainer/agent) | Optional management agent establishing reverse tunnel connectivity to Portainer Server |
+| `D2K` | `1.2.3` | `Apache-2.0` | [Portainer.io](https://github.com/portainer/d2k) | Optional Docker-to-Kubernetes translation gateway exposing Docker Engine API on port 2376 |
+| `KubeSolo node image` | `latest` | `Apache-2.0` | [Portainer.io](https://github.com/portainer/kubesolo) | Containerized node distribution image for container execution modes |
 
 ## Networking and Snapshotter Utilities
 
