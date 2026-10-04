@@ -255,6 +255,33 @@ E30 closes only after all prior acceptance criteria and migration/recovery/opera
 are integrated. Actual publication additionally requires an established destination and authorized
 version policy; preparing a candidate or rehearsal is not publishing a supported release.
 
+## Release completion audit (Roadmap #263)
+
+All E01–E30 contracts above remain authoritative. Issue closure, source presence,
+metadata checks, unit tests and synthetic fixtures do not establish completion.
+The new `rubix-qualification` command audits repository metadata but returns a
+nonzero exit status for release qualification: no validated current candidate-bound
+completion receipt reader is implemented. `--metadata-only` explicitly performs
+only the repository audit and cannot qualify a release.
+
+| Criterion | Pending qualification evidence |
+| --- | --- |
+| 1 | Independently sourced current evidence for all required E01–E30 deliverables |
+| 2 | Production boundary and live positive/negative datastore mTLS checks |
+| 3 | Build/layout/install evidence for all 16 node cells, four OCI architectures and four management targets |
+| 4 | Exact BusyBox helper digest, fresh egress-denied PVC provisioning, live image acquisition and D2K authentication |
+| 5 | Host/container lifecycle interruption and retention matrices |
+| 6 | Fresh candidate-bound conformance, restart and platform soak |
+| 7 | Paired live amd64/arm64 budgets, 24-hour memory and shutdown |
+| 8 | Supported-version live Kine migration and interrupted recovery |
+| 9 | All required final debug/release/audit/drift/integration checks |
+| 10 | Actual prepared inputs, complete candidate inventory and report bindings |
+| 11 | Fresh operator rehearsal and supported release publication |
+
+C13, C14, C16 and C17 remain pending under the existing qualification contracts.
+Attribution and local link checks are metadata audits; they do not verify live
+behavior, externally fetched license notices, artifact layout or publication.
+
 [modules]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/go.mod
 [assets]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/build/download-deps.sh
 [constants]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/const.go

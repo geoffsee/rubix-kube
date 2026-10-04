@@ -102,3 +102,11 @@ Ownership: Operator Runbooks & Handoff Engineer
 Stack: release/operator-runbooks
 Evidence: Documents actual management command syntax, verified host bundle staging, Docker image import, external runtime ownership, CNI/storage identities, metrics/CPU configuration, receipt recovery and explicit evidence limitations. No universal automated host installer, production Go-to-Rust cutover, measured downtime or 24-hour workload qualification is established by these documents or their parser/schema tests.
 Next step: Capture current-source disposable Linux installation, egress-denied workloads, consistent Kine backup/restore and retained-node operator handoff receipts before qualifying C16/C17.
+
+Work item: E30.03 (#126); repository metadata audit and release qualification boundary
+Outcome: Repository digest declaration, attribution row and local-link audits implemented
+Readiness: Pending qualification
+Ownership: Unassigned
+Stack: release/acceptance-ledger
+Evidence: `rubix-qualification --metadata-only` audits declared repository metadata without fetching inputs or observing candidate artifacts. Normal `rubix-qualification` and `run_release_qualification` fail closed because validated current candidate-bound completion receipt verification is unavailable. All 11 Roadmap #263 completion criteria remain pending; synthetic fixtures and document presence do not qualify live behavior or a release.
+Next step: Implement trusted candidate-bound receipt readers and obtain the missing live qualification, operator rehearsal and publication evidence; timestamp: 2026-10-04T15:00:00Z
