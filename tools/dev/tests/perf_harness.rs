@@ -655,6 +655,18 @@ fn pod_density_directionality_higher_is_better_verified() {
 }
 
 #[test]
+fn workload_idle_duration_widens_each_input_before_addition() {
+    let mut cycles = rubix_dev::perf::generate_soak_cycles(Architecture::Amd64, None, None);
+    for cycle in &mut cycles {
+        cycle.workload_active_seconds = u32::MAX;
+        cycle.idle_settle_seconds = u32::MAX;
+    }
+    let analysis = rubix_dev::perf::analyze_workload_idle_cycles(&cycles).unwrap();
+    let expected = (u64::from(u32::MAX) * 2 * cycles.len() as u64) / 3600;
+    assert_eq!(u64::from(analysis.duration_hours), expected);
+}
+
+#[test]
 fn repeated_workload_idle_cycles_show_bounded_memory_growth_across_full_distribution() {
     use rubix_dev::perf::{analyze_workload_idle_cycles, generate_soak_cycles};
 

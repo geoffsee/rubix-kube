@@ -756,7 +756,7 @@ pub fn analyze_workload_idle_cycles(
 
     let total_duration_secs: u64 = cycles
         .iter()
-        .map(|c| u64::from(c.workload_active_seconds + c.idle_settle_seconds))
+        .map(|c| u64::from(c.workload_active_seconds) + u64::from(c.idle_settle_seconds))
         .sum();
     let duration_hours = u32::try_from(total_duration_secs / 3600).unwrap_or(u32::MAX);
 
