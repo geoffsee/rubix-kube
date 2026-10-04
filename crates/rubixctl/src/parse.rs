@@ -425,6 +425,9 @@ pub fn parse_command(
                     uninstall_opts.force = value.map_or(Ok(true), boolean)?;
                 },
                 // Upgrade flags
+                "recover" if topic == HelpTopic::Upgrade => {
+                    upgrade_opts.recover = value.map_or(Ok(true), boolean)?;
+                },
                 "version" if topic == HelpTopic::Upgrade => {
                     upgrade_opts.version = get_string_val(value, &mut i, args)?;
                 },

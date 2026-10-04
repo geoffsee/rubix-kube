@@ -24,6 +24,7 @@ pub mod preparation;
 pub mod service;
 pub mod sudo_env;
 pub mod upgrade;
+mod upgrade_integrity;
 
 pub use artifact::{
     ArtifactSelectionError, DEFAULT_DATA_PATH, DEFAULT_INSTALL_PATH, DEFAULT_RELEASE_BASE_URL,
@@ -117,7 +118,7 @@ pub fn help(topic: HelpTopic) -> &'static str {
             "Uninstall Rubix and remove associated system resources.\n\nUsage:\n  rubixctl uninstall [flags]\n\nFlags:\n  -h, --help          Help for uninstall\n      --force         Skip the confirmation prompt\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --keep-config   Keep the configuration file\n      --purge         Remove all configuration and data\n"
         },
         HelpTopic::Upgrade => {
-            "Upgrade Rubix to a different version.\n\nUsage:\n  rubixctl upgrade [flags]\n\nFlags:\n  -h, --help                   Help for upgrade\n      --offline-install string Path to a local tarball or binary to install instead of downloading\n      --path string            Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --proxy string           HTTP/HTTPS proxy URL\n      --version string         Version to upgrade to\n"
+            "Upgrade Rubix to a different version.\n\nUsage:\n  rubixctl upgrade [flags]\n\nFlags:\n  -h, --help                   Help for upgrade\n      --offline-install string Path to a local tarball or binary to install instead of downloading\n      --path string            Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n      --proxy string           HTTP/HTTPS proxy URL\n      --recover                Recover an interrupted upgrade from retained evidence\n      --version string         Version to upgrade to\n"
         },
         HelpTopic::Reset => {
             "Reset cluster data and restart services.\n\nUsage:\n  rubixctl reset [flags]\n\nFlags:\n  -h, --help          Help for reset\n      --force         Skip the confirmation prompt\n      --path string   Base directory for Rubix data (default: \"/var/lib/kubesolo\")\n"

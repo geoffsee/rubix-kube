@@ -12,6 +12,7 @@
 pub mod config;
 pub mod datastore;
 pub mod pki;
+pub mod recovery;
 pub mod report;
 pub mod storage;
 pub mod versions;
@@ -25,6 +26,10 @@ pub use datastore::{
 pub use pki::{
     KubeconfigFormat, ParsedKubeconfig, PkiTransitionAssertion, assert_pki_transition,
     parse_kubeconfig, verify_cert_chain,
+};
+pub use recovery::{
+    BackupCondition, DisposableInstallation, RehearsalResult, RehearsalScenario, TransitionStage,
+    run_rehearsal, version_recovery_limitations,
 };
 pub use report::StateTransitionReport;
 pub use storage::{PvFileRecord, PvStorageAssertion, assert_pv_storage_preserved, scan_pv_storage};

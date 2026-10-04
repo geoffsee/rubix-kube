@@ -75,3 +75,91 @@ cargo test --locked -p rubix-dev --test state_transitions
 The command checks static catalogs and synthetic kubeconfig samples and explicitly
 prints that production migration is unqualified. It consumes no production node
 or database capture. Passing tests on macOS do not qualify Linux migration.
+
+## Operator Recovery & Migration Failure Rehearsal (Gate C14 / E30.02)
+
+**Issue:** #125 (`[E30.02] Rehearse migration failure and operator recovery`)
+**Gate:** C14 remains unqualified. Disposable filesystem fixtures exercise lifecycle policy;
+they do not demonstrate a live Kine migration, application readiness, or process-crash recovery.
+
+### Transition Stages & Lifecycle Boundaries
+
+Upgrade and migration workflows transition through 11 discrete stages, classified by disk mutation and rollback requirements:
+
+| Stage | Classification | Active Receipt | Recovery Action |
+| --- | --- | --- | --- |
+| `Validation` | Pre-mutation | None | Reject invalid version without service changes |
+| `Preparation` | Pre-mutation | None | Reject unavailable artifact without service changes |
+| `Quiesce` | Pre-mutation | None | Restart old service |
+| `Snapshot` | Pre-mutation | None | Remove partial snapshot, restart old service |
+| `ReceiptPending` | Pre-mutation | None if persistence fails | Restart old service; retain complete orphaned backup for inspection |
+| `ArtifactReplacement` | Mutating | `.upgrade-pending` | Full rollback from backup |
+| `ConfigMigration` | Mutating | `.upgrade-pending` | Full rollback from backup |
+| `ServiceStart` | Mutating | `.upgrade-pending` | Full rollback from backup (reverses dirty datastore/pki writes) |
+| `ReceiptCommitting` | Committing | `.upgrade-committing` | Request target start, verify container running state, finalize commit |
+| `Commit` | Post-commit | `.upgrade-completed` | Idempotent receipt removal |
+| `PostCommitCleanup` | Post-commit | `.upgrade-completed` | Idempotent receipt removal |
+
+### Recovery Procedure & Fail-Closed Integrity Validation
+
+When an upgrade fails or is interrupted mid-flight, the operator explicitly requests
+recovery via `rubixctl upgrade --recover --path /var/lib/kubesolo`. There is no automatic
+supervisor recovery. Backups created before checksummed integrity evidence was implemented
+are refused; keep them for manual inspection rather than generating evidence after corruption.
+
+1. **Receipt Inspection:** Under the installation lock, read the active receipt to discover `from`, `target`, and the owned `backup` path. Completed receipts only require cleanup.
+2. **Fail-Closed Backup Integrity Validation:** Before stopping or starting services:
+   - Verify backup directory exists and is a directory (not an unsafe symlink).
+   - Require a private `0700` direct child of the installation's backup directory, complete `pki` and `kine/db` directories, and backend-specific binary/service or container-spec material.
+   - Compare every entry's type, permissions, length and SHA-256 against evidence captured once from the quiesced snapshot before replacement. Reject changed, missing, extra or linked entries, including intermediate directories.
+   - These checks preserve the original bytes; they do not prove the original database or identities were healthy. The integrity record is not an authenticated signature or SQLite integrity check.
+   - If backup is missing, corrupt, or empty, recovery **aborts immediately without mutation** (`BackupIntegrityError`), retaining active receipts and error diagnostics for operator triage.
+3. **Quiesce and State Restoration (Rollback for Pending Upgrades):** Require successful stop (or a structured observation proving absence/inactivity) before restoring state. For containers, verify exact active/rollback names and image references and reconstruct crash-lost replacement state first.
+   - Restore binary executable and host service units captured in the original snapshot; an initially absent standard unit is permitted, but deletion from a sealed snapshot is refused.
+   - Restore Kine SQLite database (`state.db`) and WAL files, reversing partial migrations or corrupt writes.
+   - Restore PKI private keys (`ca.key`, `service-account.key`) and certificates (`ca.crt`).
+   - Restore configuration according to version-specific limitations.
+   - Clean up `.upgrade-pending` upon successful restoration.
+4. **State Finalization (Commit for Committing Upgrades):**
+   - Request target start. Container recovery checks running state; host service-start success does not establish application readiness.
+   - Retain `.upgrade-committing` and diagnostics if backend finalization fails; retry uses observed engine state rather than lost in-memory flags.
+   - Clean receipts only after successful commit. If start fails, rollback requires the old artifact to remain available; otherwise retain evidence for manual repair.
+   - Before rollback changes artifacts or state, durably change `.upgrade-committing` to `.upgrade-pending` so interrupted or failed restoration retries rollback rather than target finalization.
+
+### Fixture Checks Across 5 Core Domains
+
+Filesystem fixtures check restored or retained state across these domains:
+1. **Configuration:** Restores exact pre-upgrade configuration files and permissions (`0600`).
+2. **PKI & Identities:** Restores exact captured keys/certificates. The fixture separately verifies a synthetic client certificate signature; recovery does not establish original PKI health.
+3. **Datastore:** Restores exact captured database/WAL bytes. The rehearsal uses synthetic byte files, not a live Kine SQLite database, and establishes no schema compatibility or integrity-check result.
+4. **Workloads:** Retains static manifests and pod definitions bit-for-bit.
+5. **Storage:** Preserves persistent volume directory trees, regular files, permissions, and symlink integrity without corruption.
+
+### Dual-Format Client Access Accommodation
+
+Kubeconfig access is validated across both historical and modern formats:
+- **YAML Format:** Standard Kubernetes kubeconfig with client certificate/key authentication.
+- **JSON Format:** Strict JSON representation parsed and validated against cryptographic CA roots.
+Both formats check synthetic credentials after fixture recovery; no live API access is exercised.
+
+### Version-Specific Known Limitations
+
+| Starting Version | Configuration Behavior | Rollback & Recovery Specifics |
+| --- | --- | --- |
+| `v1.1.8` | Legacy flags in the systemd unit `ExecStart` line; no `config.yaml` | Rollback deletes migration-created `/etc/kubesolo/config.yaml` and restores systemd unit flags. |
+| `v1.2.0` | Legacy flags in the systemd unit `ExecStart` line; no `config.yaml` | Rollback deletes migration-created `/etc/kubesolo/config.yaml` and restores systemd unit flags. |
+| `v1.3.0` | First version introducing standalone `/etc/kubesolo/config.yaml` | Rollback restores original YAML configuration file with strict `0600` permissions. |
+| `v1.3.1` | YAML configuration file with updated component defaults | Rollback restores original YAML configuration, preserving custom configuration fields. |
+| `v1.3.2` | YAML configuration file with updated component defaults | Rollback restores original YAML configuration, preserving custom configuration fields. |
+| `v1.3.3` | YAML configuration file with updated component defaults | Rollback restores original YAML configuration, preserving custom configuration fields. |
+
+### Running Failure Rehearsal & Verification
+
+```sh
+# Execute automated failure rehearsal matrix across all versions and stages
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal
+
+# Run synthetic filesystem and mocked-service regression tests
+cargo test --locked -p rubix-dev --test recovery_rehearsal
+cargo test --locked -p rubixctl --test upgrade_review
+```

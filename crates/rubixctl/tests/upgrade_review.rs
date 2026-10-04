@@ -26,6 +26,12 @@ impl Runner for Recorded {
             return Err(io::Error::other("injected failure"));
         }
         if args.first().is_some_and(|arg| arg == "inspect") {
+            if args
+                .last()
+                .is_some_and(|name| name.ends_with("-pre-upgrade"))
+            {
+                return Ok("false".into());
+            }
             return Ok(self.running.to_string());
         }
         Ok("v1.2.0".into())
@@ -276,6 +282,129 @@ fn snapshot_is_quiesced_and_snapshot_failure_restarts_old_deployment() {
     };
     assert!(run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 1, &mut Vec::new()).is_err());
     assert_eq!(backend.calls, ["prepare", "stop", "snapshot", "start"]);
+}
+
+#[test]
+fn incomplete_snapshot_restarts_old_service_without_receipt_or_replacement() {
+    for (relative, empty) in [
+        ("pki", false),
+        ("pki", true),
+        ("kine/db", false),
+        ("kine/db", true),
+    ] {
+        let dir = data();
+        fs::remove_dir_all(dir.path().join(relative)).unwrap();
+        if empty {
+            fs::create_dir_all(dir.path().join(relative)).unwrap();
+        }
+        let binary = dir.path().join("kubesolo");
+        let staged = dir.path().join("staged");
+        fs::write(&binary, "old-binary").unwrap();
+        fs::write(&staged, "target-binary").unwrap();
+        let mut runner = Recorded::default();
+        let mut backend = HostBackend {
+            binary: binary.clone(),
+            staged,
+            service: "kubesolo".into(),
+            runner: &mut runner,
+            systemd: true,
+            service_file: None,
+            legacy_config: None,
+        };
+        assert!(run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 1, &mut Vec::new()).is_err());
+        assert_eq!(fs::read(binary).unwrap(), b"old-binary");
+        assert_eq!(runner.calls.last().unwrap(), "systemctl start kubesolo");
+        assert!(!dir.path().join(".upgrade-pending").exists());
+        assert!(
+            fs::read_dir(dir.path().join("backups"))
+                .unwrap()
+                .next()
+                .is_none()
+        );
+    }
+}
+
+#[test]
+fn host_snapshot_allows_initially_absent_unit_but_rejects_present_nonregular_unit() {
+    let dir = data();
+    let binary = dir.path().join("kubesolo");
+    let staged = dir.path().join("staged");
+    fs::write(&binary, "old-binary").unwrap();
+    fs::write(&staged, "target-binary").unwrap();
+    let mut runner = Recorded::default();
+    let mut backend = HostBackend {
+        binary: binary.clone(),
+        staged,
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: Some(dir.path().join("absent-unit")),
+        legacy_config: None,
+    };
+    let backup = backup_state(dir.path(), None, "v1.2.0", 1).unwrap();
+    backend.snapshot(&backup).unwrap();
+    backend.validate_snapshot(&backup).unwrap();
+    fs::create_dir(backup.join("service.unit")).unwrap();
+    assert!(backend.validate_snapshot(&backup).is_err());
+    fs::remove_dir(backup.join("service.unit")).unwrap();
+    assert!(matches!(
+        run_upgrade(&mut backend, dir.path(), None, "v1.3.0", 2, &mut Vec::new()).unwrap(),
+        UpgradeOutcome::Upgraded { .. }
+    ));
+    assert_eq!(fs::read(binary).unwrap(), b"target-binary");
+}
+
+#[test]
+fn failed_committing_host_restore_retries_as_rollback_not_commit() {
+    use rubixctl::upgrade::{RecoveryOutcome, recover_interrupted_upgrade, seal_backup};
+    let dir = data();
+    let binary = dir.path().join("kubesolo");
+    let config = dir.path().join("missing-parent/config.yaml");
+    fs::write(&binary, "old-binary").unwrap();
+    let mut runner = MutatingStart {
+        data: dir.path().to_owned(),
+        calls: Vec::new(),
+        first: true,
+    };
+    let mut backend = HostBackend {
+        binary: binary.clone(),
+        staged: binary.clone(),
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: None,
+        legacy_config: None,
+    };
+    let backup = backup_state(dir.path(), None, "v1.2.0", 1).unwrap();
+    backend.snapshot(&backup).unwrap();
+    fs::write(backup.join("config.yaml"), "old-config").unwrap();
+    seal_backup(&backup).unwrap();
+    fs::write(&binary, "target-binary").unwrap();
+    fs::write(
+        dir.path().join(".upgrade-committing"),
+        format!("from=v1.2.0\ntarget=v1.3.0\nbackup={}\n", backup.display()),
+    )
+    .unwrap();
+    assert!(
+        recover_interrupted_upgrade(&mut backend, dir.path(), Some(&config), &mut Vec::new())
+            .is_err()
+    );
+    assert_eq!(fs::read(&binary).unwrap(), b"old-binary");
+    assert!(dir.path().join(".upgrade-pending").is_file());
+    assert!(!dir.path().join(".upgrade-committing").exists());
+    fs::create_dir(config.parent().unwrap()).unwrap();
+    assert!(matches!(
+        recover_interrupted_upgrade(&mut backend, dir.path(), Some(&config), &mut Vec::new())
+            .unwrap(),
+        RecoveryOutcome::RolledBack { .. }
+    ));
+    assert_eq!(fs::read(config).unwrap(), b"old-config");
+    assert_eq!(
+        fs::read(dir.path().join("kine/db/state.db")).unwrap(),
+        b"old-db"
+    );
+    assert_eq!(fs::read(dir.path().join("pki/ca.key")).unwrap(), b"old-key");
+    assert!(!dir.path().join(".upgrade-pending").exists());
 }
 
 #[test]
@@ -569,4 +698,618 @@ fn success_output_failure_does_not_turn_an_irreversible_commit_into_failure() {
     assert!(!dir.path().join(".upgrade-pending").exists());
     assert!(!dir.path().join(".upgrade-committing").exists());
     assert!(!dir.path().join(".upgrade-completed").exists());
+}
+
+#[test]
+fn interrupted_upgrade_recovery_restores_pre_upgrade_state_from_pending_receipt() {
+    use rubixctl::upgrade::{
+        ReceiptKind, RecoveryOutcome, find_active_receipt, parse_receipt_file,
+        recover_interrupted_upgrade,
+    };
+
+    let dir = data();
+    let binary = dir.path().join("kubesolo");
+    let staged = dir.path().join("staged");
+    let service = dir.path().join("node.service");
+    let config = dir.path().join("config.yaml");
+
+    let original_service = "Description=kubesolo\nExecStart=/usr/local/bin/kubesolo --debug\n";
+    fs::write(&binary, "old-binary").unwrap();
+    fs::write(&staged, "new-binary").unwrap();
+    fs::write(&service, original_service).unwrap();
+
+    // Create a valid backup
+    let backup_dir = dir.path().join("backups/pre-upgrade-v1.2.0-1-valid");
+    fs::create_dir_all(backup_dir.join("pki")).unwrap();
+    fs::create_dir_all(backup_dir.join("kine/db")).unwrap();
+    fs::write(backup_dir.join("pki/ca.key"), "old-key").unwrap();
+    fs::write(backup_dir.join("kine/db/state.db"), "old-db").unwrap();
+    fs::write(backup_dir.join("kubesolo.bin"), "old-binary").unwrap();
+    fs::write(backup_dir.join("service.unit"), original_service).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&backup_dir, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    rubixctl::upgrade::seal_backup(&backup_dir).unwrap();
+
+    // Simulate an interruption after replacement and dirty mutation:
+    fs::write(&binary, "new-corrupted-binary").unwrap();
+    fs::write(
+        &service,
+        "Description=kubesolo\nExecStart=/usr/local/bin/kubesolo --config=/etc/kubesolo/config.yaml\n",
+    )
+    .unwrap();
+    fs::write(&config, "network:\n  nodeIP: 10.0.0.1\n").unwrap();
+    fs::write(dir.path().join("pki/ca.key"), "dirty-key").unwrap();
+    fs::write(dir.path().join("kine/db/state.db"), "dirty-db").unwrap();
+
+    // Create .upgrade-pending receipt
+    let pending_receipt = dir.path().join(".upgrade-pending");
+    fs::write(
+        &pending_receipt,
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            backup_dir.display()
+        ),
+    )
+    .unwrap();
+
+    let active = find_active_receipt(dir.path()).unwrap().unwrap();
+    assert_eq!(active.kind, ReceiptKind::Pending);
+    assert_eq!(active.from, "v1.2.0");
+    assert_eq!(active.target, "v1.3.0");
+    assert_eq!(active.backup, backup_dir);
+
+    let parsed = parse_receipt_file(&pending_receipt, ReceiptKind::Pending).unwrap();
+    assert_eq!(parsed.from, "v1.2.0");
+
+    let mut runner = Recorded::default();
+    let mut backend = HostBackend {
+        binary: binary.clone(),
+        staged,
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: Some(service.clone()),
+        legacy_config: Some(config.clone()),
+    };
+
+    let outcome =
+        recover_interrupted_upgrade(&mut backend, dir.path(), Some(&config), &mut Vec::new())
+            .unwrap();
+
+    assert_eq!(
+        outcome,
+        RecoveryOutcome::RolledBack {
+            from: "v1.2.0".into(),
+            backup: backup_dir.clone(),
+        }
+    );
+
+    // Verify all state restored cleanly
+    assert_eq!(fs::read_to_string(&binary).unwrap(), "old-binary");
+    assert_eq!(fs::read_to_string(&service).unwrap(), original_service);
+    assert_eq!(
+        fs::read_to_string(dir.path().join("pki/ca.key")).unwrap(),
+        "old-key"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("kine/db/state.db")).unwrap(),
+        "old-db"
+    );
+    assert!(!config.exists(), "migration-created config was cleaned up");
+    assert!(!pending_receipt.exists(), "pending receipt was cleaned up");
+
+    // Re-running recovery reports already clean
+    let clean =
+        recover_interrupted_upgrade(&mut backend, dir.path(), Some(&config), &mut Vec::new())
+            .unwrap();
+    assert_eq!(clean, RecoveryOutcome::AlreadyClean);
+}
+
+#[test]
+fn interrupted_upgrade_recovery_refuses_corrupted_or_missing_backup_without_mutation() {
+    use rubixctl::upgrade::{
+        BackupIntegrityError, recover_interrupted_upgrade, validate_backup_integrity,
+    };
+
+    let dir = data();
+    let binary = dir.path().join("kubesolo");
+    let staged = dir.path().join("staged");
+    let service = dir.path().join("node.service");
+
+    fs::write(&binary, "current-binary").unwrap();
+    fs::write(&staged, "new-binary").unwrap();
+    fs::write(&service, "service-content").unwrap();
+
+    // 1. Missing backup directory
+    let non_existent_backup = dir.path().join("backups/missing");
+    let pending_receipt = dir.path().join(".upgrade-pending");
+    fs::write(
+        &pending_receipt,
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            non_existent_backup.display()
+        ),
+    )
+    .unwrap();
+
+    let mut runner = Recorded::default();
+    let mut backend = HostBackend {
+        binary: binary.clone(),
+        staged: staged.clone(),
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: Some(service.clone()),
+        legacy_config: None,
+    };
+
+    let err =
+        recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new()).unwrap_err();
+    assert!(
+        err.to_string().contains("recovery refused: backup at"),
+        "error must explain backup refusal: {err}"
+    );
+    // Crucial: pending receipt and files were NOT destroyed!
+    assert!(pending_receipt.exists());
+    assert_eq!(fs::read_to_string(&binary).unwrap(), "current-binary");
+
+    // 2. Corrupted backup (missing kine/db state directory)
+    let corrupt_backup = dir.path().join("backups/corrupt");
+    fs::create_dir_all(corrupt_backup.join("pki")).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&corrupt_backup, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    fs::write(corrupt_backup.join("pki/ca.crt"), "ca").unwrap();
+    // Missing kine/db directory
+    assert!(matches!(
+        validate_backup_integrity(&corrupt_backup),
+        Err(BackupIntegrityError::MissingStateDirectory { .. })
+    ));
+
+    fs::write(
+        &pending_receipt,
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            corrupt_backup.display()
+        ),
+    )
+    .unwrap();
+
+    let err2 =
+        recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new()).unwrap_err();
+    assert!(
+        err2.to_string()
+            .contains("missing required state directory")
+    );
+    assert!(pending_receipt.exists());
+}
+
+#[test]
+fn recovery_prevalidation_rejects_changed_bytes_missing_artifacts_and_unsafe_entries() {
+    use rubixctl::upgrade::{recover_interrupted_upgrade, seal_backup};
+    for defect in [
+        "database",
+        "key",
+        "binary",
+        "service",
+        "extra",
+        "nested-link",
+        "intermediate-link",
+        "permissions",
+    ] {
+        let dir = data();
+        let binary = dir.path().join("kubesolo");
+        let service = dir.path().join("service");
+        fs::write(&binary, "original binary").unwrap();
+        fs::write(&service, "original service").unwrap();
+        let mut runner = Recorded::default();
+        let mut backend = HostBackend {
+            binary: binary.clone(),
+            staged: binary.clone(),
+            service: "kubesolo".into(),
+            runner: &mut runner,
+            systemd: true,
+            service_file: Some(service.clone()),
+            legacy_config: None,
+        };
+        let backup = backup_state(dir.path(), None, "v1.2.0", 1).unwrap();
+        backend.snapshot(&backup).unwrap();
+        seal_backup(&backup).unwrap();
+        match defect {
+            "database" => {
+                fs::write(backup.join("kine/db/state.db"), "corrupt nonempty DB").unwrap();
+            },
+            "key" => fs::write(backup.join("pki/ca.key"), "invalid nonempty key").unwrap(),
+            "binary" => fs::remove_file(backup.join("kubesolo.bin")).unwrap(),
+            "service" => fs::remove_file(backup.join("service.unit")).unwrap(),
+            "extra" => fs::write(backup.join("pki/unknown"), "foreign").unwrap(),
+            #[cfg(unix)]
+            "nested-link" => std::os::unix::fs::symlink(&binary, backup.join("pki/link")).unwrap(),
+            #[cfg(unix)]
+            "intermediate-link" => {
+                fs::remove_dir_all(backup.join("kine")).unwrap();
+                std::os::unix::fs::symlink(dir.path().join("kine"), backup.join("kine")).unwrap();
+            },
+            #[cfg(unix)]
+            "permissions" => {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&backup, fs::Permissions::from_mode(0o755)).unwrap();
+            },
+            _ => continue,
+        }
+        let receipt = dir.path().join(".upgrade-pending");
+        fs::write(
+            &receipt,
+            format!("from=v1.2.0\ntarget=v1.3.0\nbackup={}\n", backup.display()),
+        )
+        .unwrap();
+        fs::write(dir.path().join("pki/ca.key"), "live key").unwrap();
+        fs::write(dir.path().join("kine/db/state.db"), "live database").unwrap();
+        assert!(
+            recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new()).is_err(),
+            "{defect}"
+        );
+        drop(backend);
+        assert!(
+            runner.calls.is_empty(),
+            "service effect before validating {defect}"
+        );
+        assert!(receipt.exists());
+        assert_eq!(fs::read(&binary).unwrap(), b"original binary");
+        assert_eq!(
+            fs::read(dir.path().join("pki/ca.key")).unwrap(),
+            b"live key"
+        );
+        assert_eq!(
+            fs::read(dir.path().join("kine/db/state.db")).unwrap(),
+            b"live database"
+        );
+    }
+}
+
+#[derive(Debug)]
+// Independent failure injection switches in the engine double, not production state.
+#[allow(clippy::struct_excessive_bools)]
+struct RecoveryEngine {
+    containers: std::collections::BTreeMap<String, (String, bool)>,
+    fail_stop: bool,
+    fail_commit: bool,
+    fail_start_once: bool,
+    fail_rollback_stop: bool,
+    rollback_stop_unconfirmed: bool,
+    calls: Vec<Vec<String>>,
+}
+impl Runner for RecoveryEngine {
+    fn run(&mut self, _: &str, args: &[String]) -> io::Result<String> {
+        self.calls.push(args.to_vec());
+        let name = args.last().unwrap();
+        match args[0].as_str() {
+            "ps" => Ok(self
+                .containers
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n")),
+            "inspect" => {
+                let (image, running) = self
+                    .containers
+                    .get(name)
+                    .ok_or_else(|| io::Error::other("missing"))?;
+                Ok(if args[2] == "{{.Config.Image}}" {
+                    image.clone()
+                } else {
+                    running.to_string()
+                })
+            },
+            "stop" if self.fail_stop => Err(io::Error::other("stop failed")),
+            "stop" if self.fail_rollback_stop && name.ends_with("-pre-upgrade") => {
+                Err(io::Error::other("rollback container stop failed"))
+            },
+            "start" if self.fail_start_once => {
+                self.fail_start_once = false;
+                Err(io::Error::other("injected target start failure"))
+            },
+            "stop" | "start" => {
+                if args[0] == "stop"
+                    && name.ends_with("-pre-upgrade")
+                    && self.rollback_stop_unconfirmed
+                {
+                    return Ok(String::new());
+                }
+                self.containers
+                    .get_mut(name)
+                    .ok_or_else(|| io::Error::other("missing"))?
+                    .1 = args[0] == "start";
+                Ok(String::new())
+            },
+            "rename" => {
+                if self
+                    .containers
+                    .get(&args[1])
+                    .is_some_and(|(_, running)| *running)
+                {
+                    return Err(io::Error::other(
+                        "cannot restore from a running rollback container",
+                    ));
+                }
+                let value = self
+                    .containers
+                    .remove(&args[1])
+                    .ok_or_else(|| io::Error::other("missing"))?;
+                self.containers.insert(name.clone(), value);
+                Ok(String::new())
+            },
+            "rm" if self.fail_commit && name.ends_with("-pre-upgrade") => {
+                Err(io::Error::other("commit failed"))
+            },
+            "rm" => {
+                self.containers
+                    .remove(name)
+                    .ok_or_else(|| io::Error::other("missing"))?;
+                Ok(String::new())
+            },
+            other => Err(io::Error::other(format!("unexpected command {other}"))),
+        }
+    }
+}
+
+#[test]
+// Keep each fresh-backend interruption and its retry in one complete transaction assertion.
+#[allow(clippy::too_many_lines)]
+fn fresh_container_recovery_reconstructs_rollback_and_retains_failed_commit_for_retry() {
+    use rubixctl::upgrade::{RecoveryOutcome, recover_interrupted_upgrade, seal_backup};
+    for phase in [
+        "pending",
+        "committing",
+        "stop-failure",
+        "rename-only",
+        "committed-crash",
+        "image-mismatch",
+        "dual-marker",
+        "commit-start-failure",
+        "commit-restore-failure",
+        "old-running",
+        "old-stop-failure",
+        "old-stop-unconfirmed",
+        "committing-old-running",
+    ] {
+        let dir = data();
+        let spec = ContainerSpec::parse(
+            "name=rubix\nimage=example/rubix:v1.2.0\nmount=/owned:/var/lib/kubesolo\n",
+        )
+        .unwrap();
+        let spec_path = dir.path().join("container.spec");
+        fs::write(&spec_path, spec.render()).unwrap();
+        let backup = backup_state(dir.path(), None, "v1.2.0", 1).unwrap();
+        fs::write(backup.join("container.spec"), spec.render()).unwrap();
+        let config = dir.path().join("missing-parent/config.yaml");
+        if phase == "commit-restore-failure" {
+            fs::write(backup.join("config.yaml"), "old-config").unwrap();
+        }
+        seal_backup(&backup).unwrap();
+        let committing = matches!(
+            phase,
+            "committing"
+                | "committed-crash"
+                | "commit-start-failure"
+                | "commit-restore-failure"
+                | "committing-old-running"
+        );
+        let receipt = dir.path().join(if committing {
+            ".upgrade-committing"
+        } else {
+            ".upgrade-pending"
+        });
+        fs::write(
+            &receipt,
+            format!("from=v1.2.0\ntarget=v1.3.0\nbackup={}\n", backup.display()),
+        )
+        .unwrap();
+        if phase == "dual-marker" {
+            fs::hard_link(&receipt, dir.path().join(".upgrade-committing")).unwrap();
+        }
+        fs::write(dir.path().join("kine/db/state.db"), "dirty").unwrap();
+        let mut engine = RecoveryEngine {
+            containers: [
+                ("rubix".into(), ("example/rubix:v1.3.0".into(), true)),
+                ("rubix-pre-upgrade".into(), (spec.image.clone(), false)),
+            ]
+            .into(),
+            fail_stop: phase == "stop-failure",
+            fail_commit: phase == "committing",
+            fail_start_once: matches!(phase, "commit-start-failure" | "commit-restore-failure"),
+            fail_rollback_stop: phase == "old-stop-failure",
+            rollback_stop_unconfirmed: phase == "old-stop-unconfirmed",
+            calls: Vec::new(),
+        };
+        if matches!(
+            phase,
+            "old-running" | "old-stop-failure" | "old-stop-unconfirmed" | "committing-old-running"
+        ) {
+            engine.containers.get_mut("rubix-pre-upgrade").unwrap().1 = true;
+        }
+        let installed = if phase == "committed-crash" {
+            engine.containers.remove("rubix-pre-upgrade");
+            let installed = spec.with_version("v1.3.0");
+            fs::write(&spec_path, installed.render()).unwrap();
+            installed
+        } else {
+            spec.clone()
+        };
+        if phase == "rename-only" {
+            engine.containers.remove("rubix");
+        }
+        if phase == "image-mismatch" {
+            engine.containers.get_mut("rubix").unwrap().0 = "unrelated:v1.3.0".into();
+        }
+        {
+            let mut backend = ContainerBackend::new("docker", installed, &mut engine)
+                .with_spec_path(spec_path.clone());
+            let recovery_config = (phase == "commit-restore-failure").then_some(config.as_path());
+            let outcome = recover_interrupted_upgrade(
+                &mut backend,
+                dir.path(),
+                recovery_config,
+                &mut Vec::new(),
+            );
+            if phase == "committing" {
+                assert!(outcome.unwrap_err().to_string().contains("commit failed"));
+            } else if matches!(
+                phase,
+                "stop-failure"
+                    | "image-mismatch"
+                    | "old-stop-failure"
+                    | "old-stop-unconfirmed"
+                    | "commit-restore-failure"
+            ) {
+                assert!(outcome.is_err());
+            } else if matches!(phase, "committed-crash" | "committing-old-running") {
+                assert!(matches!(
+                    outcome.unwrap(),
+                    RecoveryOutcome::Committed { .. }
+                ));
+            } else {
+                assert!(matches!(
+                    outcome.unwrap(),
+                    RecoveryOutcome::RolledBack { .. }
+                ));
+            }
+        }
+        if phase == "commit-restore-failure" {
+            assert!(dir.path().join(".upgrade-pending").is_file());
+            assert!(!receipt.exists());
+            assert!(!engine.containers.contains_key("rubix-pre-upgrade"));
+            assert_eq!(engine.containers["rubix"], (spec.image.clone(), false));
+            fs::create_dir(config.parent().unwrap()).unwrap();
+            let installed = ContainerSpec::parse(&fs::read_to_string(&spec_path).unwrap()).unwrap();
+            let mut backend = ContainerBackend::new("docker", installed, &mut engine)
+                .with_spec_path(spec_path.clone());
+            assert!(matches!(
+                recover_interrupted_upgrade(
+                    &mut backend,
+                    dir.path(),
+                    Some(&config),
+                    &mut Vec::new()
+                )
+                .unwrap(),
+                RecoveryOutcome::RolledBack { .. }
+            ));
+            assert_eq!(fs::read(config).unwrap(), b"old-config");
+            assert_eq!(engine.containers["rubix"], (spec.image, true));
+            assert_eq!(
+                fs::read(dir.path().join("kine/db/state.db")).unwrap(),
+                b"old-db"
+            );
+            assert!(!dir.path().join(".upgrade-pending").exists());
+        } else if matches!(
+            phase,
+            "stop-failure" | "image-mismatch" | "old-stop-failure" | "old-stop-unconfirmed"
+        ) {
+            assert!(receipt.exists());
+            assert_eq!(
+                fs::read(dir.path().join("kine/db/state.db")).unwrap(),
+                b"dirty"
+            );
+            assert!(engine.containers.contains_key("rubix-pre-upgrade"));
+            if matches!(phase, "old-stop-failure" | "old-stop-unconfirmed") {
+                assert!(engine.containers.contains_key("rubix"));
+                assert!(!engine.calls.iter().any(|args| args[0] == "rm"));
+            }
+        } else if matches!(phase, "committed-crash" | "committing-old-running") {
+            assert!(!receipt.exists());
+            assert!(!engine.containers.contains_key("rubix-pre-upgrade"));
+            assert_eq!(
+                fs::read(dir.path().join("kine/db/state.db")).unwrap(),
+                b"dirty"
+            );
+            assert_eq!(
+                ContainerSpec::parse(&fs::read_to_string(&spec_path).unwrap())
+                    .unwrap()
+                    .tag(),
+                Some("v1.3.0")
+            );
+        } else if phase == "committing" {
+            assert!(receipt.exists(), "failed commit must preserve marker");
+            assert!(engine.containers.contains_key("rubix-pre-upgrade"));
+            engine.fail_commit = false;
+            let installed = ContainerSpec::parse(&fs::read_to_string(&spec_path).unwrap()).unwrap();
+            let mut backend = ContainerBackend::new("docker", installed, &mut engine)
+                .with_spec_path(spec_path.clone());
+            assert!(matches!(
+                recover_interrupted_upgrade(&mut backend, dir.path(), None, &mut Vec::new())
+                    .unwrap(),
+                RecoveryOutcome::Committed { .. }
+            ));
+            assert!(!receipt.exists());
+        } else {
+            assert!(!receipt.exists());
+            assert!(!dir.path().join(".upgrade-committing").exists());
+            assert_eq!(engine.containers["rubix"], (spec.image, true));
+            assert!(!engine.containers.contains_key("rubix-pre-upgrade"));
+            assert_eq!(
+                fs::read(dir.path().join("kine/db/state.db")).unwrap(),
+                b"old-db"
+            );
+        }
+    }
+}
+
+#[test]
+fn recovery_rejects_foreign_backup_before_backend_calls() {
+    let dir = data();
+    let foreign = tempfile::tempdir().unwrap();
+    fs::write(
+        dir.path().join(".upgrade-pending"),
+        format!(
+            "from=v1.2.0\ntarget=v1.3.0\nbackup={}\n",
+            foreign.path().display()
+        ),
+    )
+    .unwrap();
+    let mut runner = Recorded::default();
+    let mut backend = HostBackend {
+        binary: dir.path().join("binary"),
+        staged: PathBuf::new(),
+        service: "kubesolo".into(),
+        runner: &mut runner,
+        systemd: true,
+        service_file: None,
+        legacy_config: None,
+    };
+    let error = rubixctl::upgrade::recover_interrupted_upgrade(
+        &mut backend,
+        dir.path(),
+        None,
+        &mut Vec::new(),
+    )
+    .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("outside the owned backup directory")
+    );
+    drop(backend);
+    assert!(runner.calls.is_empty());
+    assert!(dir.path().join(".upgrade-pending").exists());
+}
+
+#[test]
+fn upgrade_recovery_flag_is_explicit_and_defaults_to_normal_upgrade() {
+    use rubixctl::{Command, parse_command};
+    let args = |tokens: &[&str]| tokens.iter().map(|s| (*s).into()).collect::<Vec<String>>();
+    let environment = std::collections::BTreeMap::default();
+    assert!(
+        matches!(parse_command(&args(&["upgrade", "--recover", "--path", "/owned"]), &environment).unwrap(), Command::Upgrade(options) if options.recover && options.path == Path::new("/owned"))
+    );
+    assert!(
+        matches!(parse_command(&args(&["upgrade", "--recover=false"]), &environment).unwrap(), Command::Upgrade(options) if !options.recover)
+    );
+    assert!(
+        matches!(parse_command(&args(&["upgrade"]), &environment).unwrap(), Command::Upgrade(options) if !options.recover)
+    );
 }

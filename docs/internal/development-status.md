@@ -71,3 +71,10 @@ Stack: perf/budget-regressions
 Evidence: Profiling compares candidate measurements to E01 budgets across startup (10.42s boot-to-API vs 14.05s ref p95), idle memory (450.0 MiB PSS vs 540.0 MiB ref, with kube-apiserver consuming 208.0 MiB), and distribution size (148.0 MiB archive vs 165.0 MiB ref). Synthetic fixture differences illustrate daemon memory and binary comparisons; no optimization implementation, causal attribution, protocol parity or live reduction is qualified. Explicit budget decisions document refusal of unmeasured sub-200MB and under-60s claims. Verified live-capture importer remains unimplemented, failing closed.
 Next step: Ingest verified paired Linux hardware captures for amd64 and arm64 to qualify E29; timestamp: 2026-10-03T23:00:00Z
 
+Work item: E30.02 (https://github.com/geoffsee/rubix-kube/issues/125); Parent criteria 2, 3
+Outcome: Fixture implementation
+Readiness: Not qualified
+Ownership: Unassigned
+Stack: migration/recovery-rehearsal
+Evidence: Synthetic filesystem fixtures cover historical starting versions and 11 lifecycle stages. Pre-receipt stages drive real run_upgrade failure handling with mocked services; later stages reconstruct interrupted disk states. Regressions compare original configuration, identity and opaque datastore bytes, complete manifests and PV inventories, and retained evidence on backup refusal. Fresh container backends exercise rollback and failed-commit retry against a stateful engine double. Snapshot checksums detect changed backups but do not establish original SQLite health or live application readiness. No production Kine transition, abrupt real-container interruption or live Linux migration was performed.
+Next step: Rehearse real interrupted Kine-backed transitions with retained executables, exact inputs and mTLS, measuring readiness and verifying backup source health before qualifying C14.
