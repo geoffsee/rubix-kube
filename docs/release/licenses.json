@@ -1090,7 +1090,7 @@
     },
     {
       "name": "local-path helper (busybox)",
-      "version": "latest (1.37.0 baseline)",
+      "version": "latest (image contents unresolved)",
       "license": "GPL-2.0-only"
     },
     {

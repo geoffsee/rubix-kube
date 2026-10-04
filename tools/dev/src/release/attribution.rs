@@ -200,7 +200,7 @@ impl AttributionRecord {
         });
         components.push(AttributedComponent {
             name: "local-path helper (busybox)".into(),
-            version: "latest (1.37.0 baseline)".into(),
+            version: "latest (image contents unresolved)".into(),
             spdx_license: "GPL-2.0-only".into(),
             upstream_repository: "docker.io/library/busybox:latest".into(),
             copyright: "Erik Andersen, Rob Landley, Denys Vlasenko, and others".into(),
