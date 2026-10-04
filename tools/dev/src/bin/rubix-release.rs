@@ -35,9 +35,18 @@ async fn main() -> ExitCode {
     .await;
     match result {
         Ok(()) => {
-            println!(
-                "UNQUALIFIED_FIXTURE_ONLY: fixture consistency checked; no production release qualification."
-            );
+            let message = match args[0].as_str() {
+                "assemble-fixtures" => {
+                    "UNQUALIFIED_FIXTURE_ONLY: fixture diagnostics assembled and consistency checked; no production release qualification."
+                },
+                "verify-fixtures" => {
+                    "UNQUALIFIED_FIXTURE_ONLY: fixture consistency checked; no production release qualification."
+                },
+                "assemble" => "Production release evidence assembled.",
+                "verify" => "Production release evidence verified.",
+                _ => unreachable!("unknown commands return an error"),
+            };
+            println!("{message}");
             ExitCode::SUCCESS
         },
         Err(error) => {
