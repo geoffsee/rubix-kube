@@ -231,5 +231,8 @@ async fn conformance_exclusions_never_claim_live_concurrency_qualification() {
     let text = report.to_json().unwrap();
     assert!(text.contains("no live single-node concurrency is qualified"));
     assert!(!text.contains("Single-node concurrency is qualified via"));
+    for unsupported_claim in ["multiple hours", "multi-hour", "1000+", "1,000+"] {
+        assert!(!text.contains(unsupported_claim));
+    }
     report.verify_fixture().unwrap();
 }

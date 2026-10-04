@@ -327,22 +327,22 @@ impl ConformanceInventory {
             ConformanceExclusion {
                 pattern: "[Serial]".into(),
                 category: ExclusionCategory::SerialSlow,
-                rationale: "Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Synthetic in-process domain tests exercise concurrency; no live single-node concurrency is qualified.".into(),
+                rationale: "Tests tagged [Serial] are excluded; this report provides no test-specific runtime measurements. Synthetic in-process domain tests exercise concurrency; no live single-node concurrency is qualified.".into(),
             },
             ConformanceExclusion {
                 pattern: "[Disruptive]".into(),
                 category: ExclusionCategory::Disruptive,
-                rationale: "Disruptive tests intentionally cordon, drain, or reboot the node, which terminates the single control plane / worker host in single-node topologies.".into(),
+                rationale: "Tests tagged [Disruptive] are excluded by the selected single-node suite policy; this fixture provides no test-specific disruption or recovery observations.".into(),
             },
             ConformanceExclusion {
                 pattern: "[Slow]".into(),
                 category: ExclusionCategory::SerialSlow,
-                rationale: "Tests tagged [Slow] test multi-hour soaking and extreme replica counts (1000+ pods) that exceed single-node edge footprints.".into(),
+                rationale: "Tests tagged [Slow] are excluded; this report provides no test-specific soak-duration or replica-count evidence.".into(),
             },
             ConformanceExclusion {
                 pattern: "[Flaky]".into(),
                 category: ExclusionCategory::Flaky,
-                rationale: "Upstream tests identified as flaky are excluded to prevent non-deterministic failure reporting in automated qualification gates.".into(),
+                rationale: "Tests tagged [Flaky] are excluded by the selected suite policy; this fixture provides no upstream flakiness measurements.".into(),
             },
             ConformanceExclusion {
                 pattern: "two nodes".into(),
