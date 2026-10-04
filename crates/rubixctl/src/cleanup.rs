@@ -1069,18 +1069,70 @@ mod tests {
     fn repeated_cleanup_is_idempotent() {
         let d = tree();
         for _ in 0..2 {
-            let mut h = FakeHost::default();
-            run_host_cleanup(
-                &mut h,
+            reset_after_test_child_releases_lock(d.path()).unwrap();
+        }
+        assert!(exists(d.path(), "pki"));
+    }
+
+    // Concurrent tests can fork while cleanup owns the lock. A child temporarily
+    // retaining the same open-file description outlives cleanup's local guard.
+    // Retry only this contention before any host effects; other errors and a
+    // persistent owner still fail. Production cleanup remains nonblocking.
+    fn reset_after_test_child_releases_lock(data: &Path) -> io::Result<CleanupReport> {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+        let mut host = FakeHost::default();
+        loop {
+            match run_host_cleanup(
+                &mut host,
                 CleanupKind::Reset,
-                d.path(),
+                data,
                 true,
                 &mut io::empty().lock_empty(),
                 &mut Vec::new(),
-            )
-            .unwrap();
+            ) {
+                Err(error)
+                    if error.to_string()
+                        == "another upgrade or cleanup owns this installation: lock acquisition failed because the operation would block"
+                        && std::time::Instant::now() < deadline =>
+                {
+                    assert!(
+                        host.log.is_empty(),
+                        "a refused owner must have no host effects"
+                    );
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                },
+                result => return result,
+            }
         }
-        assert!(exists(d.path(), "pki"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn duplicated_lock_descriptor_blocks_cleanup_until_released() {
+        let data = tree();
+        let owner = crate::upgrade::lock_installation(data.path()).unwrap();
+        let retained = owner.try_clone().unwrap();
+        drop(owner);
+        let mut host = FakeHost::default();
+        let error = run_host_cleanup(
+            &mut host,
+            CleanupKind::Reset,
+            data.path(),
+            true,
+            &mut io::empty().lock_empty(),
+            &mut Vec::new(),
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("another upgrade or cleanup owns")
+        );
+        assert!(host.log.is_empty());
+        assert!(exists(data.path(), "kine/db"));
+        drop(retained);
+        reset_after_test_child_releases_lock(data.path()).unwrap();
+        assert!(!exists(data.path(), "kine/db"));
     }
 
     #[test]
