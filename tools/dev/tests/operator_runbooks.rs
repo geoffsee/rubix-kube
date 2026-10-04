@@ -1,210 +1,177 @@
-//! Integration tests for Rubix operator runbooks and handoff documentation (Issue #126 / Gate C16).
-//!
-//! Verifies that all required operator documentation files exist under `docs/operator/`,
-//! cross-reference authoritative architecture contracts, satisfy structural checklists,
-//! and accommodate dual-format (YAML and JSON) client kubeconfig configurations.
-
+//! Runbook examples must use implemented commands and the distribution schema.
+//! These parser/file checks establish no live installation or migration qualification.
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use rubix_dev::repository_root;
 use rubix_dev::state_transition::pki::{KubeconfigFormat, parse_kubeconfig};
 
+const RUNBOOKS: [&str; 7] = [
+    "README.md",
+    "fresh-installs.md",
+    "air-gap-deployment.md",
+    "external-container-runtime.md",
+    "networking-and-storage.md",
+    "metrics-and-cpu-management.md",
+    "migration-and-recovery.md",
+];
+
 fn operator_docs_dir() -> PathBuf {
-    let root = repository_root(Path::new(env!("CARGO_MANIFEST_DIR"))).expect("repository root");
-    root.join("docs").join("operator")
+    repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root")
+        .join("docs/operator")
+}
+
+fn fenced_blocks(content: &str, language: &str) -> Vec<String> {
+    let mut blocks = vec![];
+    let mut active = false;
+    let mut current = String::new();
+    for line in content.lines() {
+        if line == format!("```{language}") {
+            assert!(!active, "nested code fence");
+            active = true;
+        } else if line == "```" && active {
+            blocks.push(std::mem::take(&mut current));
+            active = false;
+        } else if active {
+            current.push_str(line);
+            current.push('\n');
+        }
+    }
+    assert!(!active, "unterminated code fence");
+    blocks
 }
 
 #[test]
-fn all_required_operator_runbooks_exist_and_are_non_empty() {
-    let dir = operator_docs_dir();
-    assert!(dir.is_dir(), "docs/operator directory must exist");
+fn runbook_links_resolve_to_actual_contracts_and_implementation() {
+    let directory = operator_docs_dir();
+    let links = regex::Regex::new(r"\]\(([^)]+)\)").unwrap();
+    for name in RUNBOOKS {
+        let path = directory.join(name);
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.len() > 500, "empty runbook {name}");
+        for matched in links.captures_iter(&text) {
+            let target = &matched[1];
+            if !target.starts_with("http") && !target.starts_with('#') {
+                assert!(
+                    directory.join(target).is_file(),
+                    "broken {name} link: {target}"
+                );
+            }
+        }
+    }
+}
 
-    let required_files = [
-        "README.md",
-        "fresh-installs.md",
-        "air-gap-deployment.md",
-        "external-container-runtime.md",
-        "networking-and-storage.md",
-        "metrics-and-cpu-management.md",
-        "migration-and-recovery.md",
-    ];
+#[test]
+fn documented_management_examples_use_actual_parser() {
+    let mut count = 0;
+    for name in RUNBOOKS {
+        let text = fs::read_to_string(operator_docs_dir().join(name)).unwrap();
+        for block in fenced_blocks(&text, "sh") {
+            for line in block
+                .lines()
+                .filter_map(|line| line.strip_prefix("rubixctl "))
+            {
+                // The recovery option is separately checked against the integrated parent.
+                if line.contains("--recover") {
+                    continue;
+                }
+                let args = line
+                    .split_whitespace()
+                    .map(String::from)
+                    .collect::<Vec<_>>();
+                assert!(
+                    rubixctl::parse_command(&args, &BTreeMap::new()).is_ok(),
+                    "unsupported documented command in {name}: {line}"
+                );
+                count += 1;
+            }
+        }
+    }
+    assert!(count >= 20, "no useful management examples inspected");
+}
 
-    for file in &required_files {
-        let path = dir.join(file);
-        assert!(path.is_file(), "required runbook missing: {file}");
-        let content =
-            fs::read_to_string(&path).unwrap_or_else(|e| panic!("failed to read {file}: {e}"));
+#[test]
+fn documented_recovery_option_uses_actual_parser() {
+    for name in ["README.md", "migration-and-recovery.md"] {
+        let text = fs::read_to_string(operator_docs_dir().join(name)).unwrap();
+        let commands = fenced_blocks(&text, "sh")
+            .into_iter()
+            .flat_map(|block| block.lines().map(String::from).collect::<Vec<_>>())
+            .filter(|line| line.starts_with("rubixctl ") && line.contains("--recover"))
+            .collect::<Vec<_>>();
+        assert_eq!(commands.len(), 1);
+        let args = commands[0]
+            .split_whitespace()
+            .skip(1)
+            .map(String::from)
+            .collect::<Vec<_>>();
         assert!(
-            content.len() > 500,
-            "runbook {file} is too short ({} bytes)",
-            content.len()
+            matches!(
+                rubixctl::parse_command(&args, &BTreeMap::new()),
+                Ok(rubixctl::Command::Upgrade(options)) if options.recover
+            ),
+            "recovery requires the explicit reviewed recovery dispatch"
         );
     }
 }
 
 #[test]
-fn fresh_installs_covers_universal_minimal_and_container_modes() {
-    let content = fs::read_to_string(operator_docs_dir().join("fresh-installs.md")).unwrap();
-
-    // Universal install & preflight
-    assert!(content.contains("rubixctl check"));
-    assert!(content.contains("rubixctl install"));
-    assert!(content.contains("--install-prereqs"));
-
-    // Init systems
-    assert!(content.contains("systemd"));
-    assert!(content.contains("OpenRC"));
-    assert!(content.contains("SysVinit"));
-    assert!(content.contains("Upstart"));
-    assert!(content.contains("runit"));
-    assert!(content.contains("s6"));
-
-    // Minimal manual install & execution modes
-    assert!(content.contains("kubesolo.io/v1alpha1"));
-    assert!(content.contains("/etc/kubesolo/config.yaml"));
-    assert!(content.contains("Foreground"));
-    assert!(content.contains("Daemon"));
-
-    // Container mode lifecycle
-    assert!(content.contains("rubixctl container create"));
-    assert!(content.contains("rubixctl container restart"));
-    assert!(content.contains("rubixctl container stop"));
-    assert!(content.contains("rubixctl container remove"));
-    assert!(content.contains("127.0.0.1"));
+fn documented_configuration_examples_have_no_ignored_fields() {
+    let mut count = 0;
+    for name in RUNBOOKS {
+        let text = fs::read_to_string(operator_docs_dir().join(name)).unwrap();
+        for yaml in fenced_blocks(&text, "yaml") {
+            let decoded = rubix_config::decode(&yaml).unwrap_or_else(|e| panic!("{name}: {e}"));
+            assert!(
+                decoded.warnings.is_empty(),
+                "ignored/misleading {name} settings: {:?}",
+                decoded.warnings
+            );
+            count += 1;
+        }
+    }
+    assert!(count >= 5);
 }
 
 #[test]
-fn air_gap_deployment_covers_16_cells_and_bundle_verification() {
-    let content = fs::read_to_string(operator_docs_dir().join("air-gap-deployment.md")).unwrap();
-
-    // 16 cells matrix
-    for cell_num in 1..=16 {
-        assert!(
-            content.contains(&format!("Cell {cell_num:02}")),
-            "missing Cell {cell_num:02} in air gap documentation"
+fn airgap_cells_match_exact_release_matrix() {
+    use rubix_platform::{Architecture, Libc};
+    let text = fs::read_to_string(operator_docs_dir().join("air-gap-deployment.md")).unwrap();
+    let rows = text
+        .lines()
+        .filter(|line| {
+            line.strip_prefix("| Cell ")
+                .and_then(|value| value.as_bytes().first())
+                .is_some_and(u8::is_ascii_digit)
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(rows.len(), rubix_assets::Matrix::NODE_VARIANTS.len());
+    for (row, variant) in rows.iter().zip(rubix_assets::Matrix::NODE_VARIANTS) {
+        let architecture = match variant.architecture {
+            Architecture::Amd64 => "amd64",
+            Architecture::Arm64 => "arm64",
+            Architecture::ArmV7 => "arm (ARMv7 hard-float)",
+            Architecture::Riscv64 => "riscv64",
+        };
+        let libc = match variant.libc {
+            Libc::Glibc => "glibc",
+            Libc::Musl => "musl",
+        };
+        let delivery = match variant.variant {
+            rubix_assets::Variant::Online => "online",
+            rubix_assets::Variant::Offline => "offline",
+        };
+        assert_eq!(
+            *row,
+            format!(
+                "| Cell {:02} | {architecture} | {libc} | {delivery} |",
+                variant.cell
+            )
         );
     }
-
-    // Required image assets
-    assert!(content.contains("coredns/coredns"));
-    assert!(content.contains("portainer/pause"));
-    assert!(content.contains("rancher/local-path-provisioner"));
-    assert!(content.contains("library/busybox"));
-    assert!(content.contains("portainer/agent"));
-    assert!(content.contains("portainer/d2k"));
-
-    // Security & integrity enforcements
-    assert!(content.contains("bundle.manifest"));
-    assert!(content.contains("--pull=never"));
-    assert!(content.contains("Zero Egress"));
 }
-
-#[test]
-fn external_runtime_covers_socket_and_cgroup_negotiation() {
-    let content =
-        fs::read_to_string(operator_docs_dir().join("external-container-runtime.md")).unwrap();
-
-    // Socket syntax & validation
-    assert!(content.contains("unix://"));
-    assert!(content.contains("/run/containerd/containerd.sock"));
-    assert!(content.contains("/run/crio/crio.sock"));
-
-    // Cgroup driver negotiation
-    assert!(content.contains("systemd"));
-    assert!(content.contains("cgroupfs"));
-    assert!(content.contains("RuntimeConfig"));
-    assert!(content.contains("cgroup v2"));
-
-    // Ownership boundary
-    assert!(content.contains("External Runtime Ownership Rule"));
-}
-
-#[test]
-fn networking_and_storage_covers_cni_egress_and_localpath() {
-    let content =
-        fs::read_to_string(operator_docs_dir().join("networking-and-storage.md")).unwrap();
-
-    // Network topology & CNI
-    assert!(content.contains("10.42.0.0/16"));
-    assert!(content.contains("10.43.0.0/16"));
-    assert!(content.contains("10-bridge.conflist"));
-    assert!(content.contains("bridge"));
-    assert!(content.contains("host-local"));
-    assert!(content.contains("portmap"));
-    assert!(content.contains("loopback"));
-
-    // Egress rules & zero blanket flush policy
-    assert!(content.contains("kubesolo-masq"));
-    assert!(content.contains("kubesolo: pod masquerade"));
-    assert!(content.contains("nftables"));
-    assert!(content.contains("iptables"));
-
-    // LocalPath storage
-    assert!(content.contains("rancher.io/local-path"));
-    assert!(content.contains("WaitForFirstConsumer"));
-    assert!(content.contains("/var/lib/kubesolo/local-path-storage"));
-}
-
-#[test]
-fn metrics_and_cpu_covers_routes_negotiation_and_policies() {
-    let content =
-        fs::read_to_string(operator_docs_dir().join("metrics-and-cpu-management.md")).unwrap();
-
-    // HTTP Routes
-    assert!(content.contains("/metrics"));
-    assert!(content.contains("/healthz"));
-    assert!(content.contains("/livez"));
-    assert!(content.contains("/readyz"));
-
-    // Content negotiation
-    assert!(content.contains("Prometheus"));
-    assert!(content.contains("OpenMetrics"));
-    assert!(content.contains("406 Not Acceptable"));
-
-    // Metric series
-    assert!(content.contains("kubesolo_build_info"));
-    assert!(content.contains("kubesolo_kine_db_size_bytes"));
-    assert!(content.contains("kubesolo_certificate_valid"));
-    assert!(content.contains("kubesolo_component_up"));
-
-    // CPU Manager
-    assert!(content.contains("static"));
-    assert!(content.contains("full-pcpus-only"));
-    assert!(content.contains("distribute-cpus-across-numa"));
-    assert!(content.contains("cpu_manager_state"));
-}
-
-#[test]
-fn migration_and_recovery_covers_steps_downtime_and_limits() {
-    let content =
-        fs::read_to_string(operator_docs_dir().join("migration-and-recovery.md")).unwrap();
-
-    // Versions
-    assert!(content.contains("v1.1.8"));
-    assert!(content.contains("v1.2.0"));
-    assert!(content.contains("v1.3.0"));
-    assert!(content.contains("v1.3.1"));
-    assert!(content.contains("v1.3.2"));
-    assert!(content.contains("v1.3.3"));
-
-    // Datastore WAL & PKI
-    assert!(content.contains("wal_checkpoint"));
-    assert!(content.contains("state.db"));
-    assert!(content.contains("pki"));
-
-    // Recovery
-    assert!(content.contains("rubixctl upgrade --recover"));
-    assert!(content.contains(".upgrade-pending"));
-    assert!(content.contains(".upgrade-committing"));
-
-    // Measured SLA & downtime bounds
-    assert!(content.contains("10 seconds"));
-    assert!(content.contains("5 seconds"));
-    assert!(content.contains("30 seconds"));
-    assert!(content.contains("1.10x"));
-}
-
 #[test]
 fn dual_format_kubeconfig_accommodation_verifies_yaml_and_json() {
     // Standard YAML format kubeconfig

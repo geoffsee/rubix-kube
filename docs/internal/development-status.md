@@ -96,9 +96,9 @@ Evidence: Implemented synthetic fixture integrity and contract arithmetic gating
 Next step: Add verified matched live Linux captures before qualifying performance; timestamp: 2026-10-03T18:45:00Z
 
 Work item: E30.03 (https://github.com/geoffsee/rubix-kube/issues/126)
-Outcome: Completed
-Readiness: Operator documentation and runbooks finalized
+Outcome: In progress
+Readiness: Operator references; production handoff not qualified
 Ownership: Operator Runbooks & Handoff Engineer
 Stack: release/operator-runbooks
-Evidence: Delivered comprehensive operator documentation and runbooks under `docs/operator/`: fresh installs (universal, minimal, named container lifecycle), offline air-gap deployment (16 target archive cells, verified bundle manifests, image archives), external container runtime integration (CRI socket endpoints, cgroup driver matching, ownership boundaries), networking and storage (CNI plugins, bridge conflist, pod egress rules, LocalPath storage provisioner), operational metrics and CPU management (HTTP routes, Prometheus/OpenMetrics negotiation, CPU manager static/none policies, checkpoint invalidation), and state migration and recovery runbooks (step-by-step Go-to-Rust migration, config conversion, Kine SQLite snapshot/restore, dedicated mTLS PKI preservation, fail-closed recovery, explicit downtime bounds, platform limitations).
-Next step: None; timestamp: 2026-10-03T23:45:00Z
+Evidence: Documents actual management command syntax, verified host bundle staging, Docker image import, external runtime ownership, CNI/storage identities, metrics/CPU configuration, receipt recovery and explicit evidence limitations. No universal automated host installer, production Go-to-Rust cutover, measured downtime or 24-hour workload qualification is established by these documents or their parser/schema tests.
+Next step: Capture current-source disposable Linux installation, egress-denied workloads, consistent Kine backup/restore and retained-node operator handoff receipts before qualifying C16/C17.

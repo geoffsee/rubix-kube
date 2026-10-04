@@ -1,172 +1,70 @@
-# External Container Runtime Integration Runbook
+# External container runtime reference
 
-This runbook details how to integrate Rubix with an externally managed host container runtime,
-such as pre-installed containerd or CRI-O, rather than using Rubix's built-in managed containerd.
+This describes configuration and adapter boundaries; it does not qualify a live
+external-runtime deployment. Read the [compatibility contract](../architecture/compatibility-contract.md),
+[acceptance matrix](../architecture/acceptance-matrix.md) and
+[managed runtime implementation](../../crates/rubix-containerd/README.md).
 
----
+## Managed and external ownership
 
-## 1. Managed vs. External Runtime Boundaries
+Managed mode selects bundled containerd and explicit runtime/shim/CNI assets.
+External mode connects to an already configured local CRI runtime, such as host
+containerd or CRI-O. Host daemons, sockets, images, registry trust/configuration and
+unrelated containers remain host-owned. Rubix cleanup is scoped to owned cluster
+state; it must not stop or reset the host runtime. Ordinary reset retains PKI and
+PV data. Uninstall's configuration/purge policies are documented in [the index](README.md).
+Do not delete `/etc/containerd`, `/etc/crio`, host images or unrelated CNI files.
 
-Rubix provides two distinct container runtime modes:
+The catalog includes observations/fixtures for historical runtime versions; that
+is not blanket qualification of every newer containerd/CRI-O release. Use the
+exact runtime and upstream inputs verified for the target, with independent CRI,
+pod, storage and restart receipts. Docker Engine by itself is not a CRI endpoint;
+an independently configured CRI adapter would be required.
 
-| Feature | Managed Containerd (Default) | External Container Runtime |
-| --- | --- | --- |
-| **Runtime Process** | Supervised and started by Rubix (`containerd v2.2.5`) | Started and supervised by host init system (systemd, OpenRC) |
-| **Configuration** | Owned by Rubix at `/var/lib/kubesolo/containerd/config.toml` | Owned by host (e.g. `/etc/containerd/config.toml` or `/etc/crio/crio.conf`) |
-| **Supported Runtimes** | Bundled containerd with crun | containerd (v2.0.2 / v1.7.24+), CRI-O (v1.32.0 / v1.30.0+) |
-| **CNI Configuration** | Managed `/var/lib/kubesolo/containerd/cni/conf` | Host `/etc/cni/net.d/` with Rubix-owned `10-bridge.conflist` |
-| **Lifecycle & Reset** | Rubix stops, cleans, and rebuilds runtime state on reset | **Host-owned:** Rubix never stops or cleans external runtime processes or host containers |
+## Endpoint configuration
 
-> [!IMPORTANT]
-> **External Runtime Ownership Rule:**
-> When external runtime mode is enabled, host-managed daemons, sockets, images, registries, and
-> non-Rubix containers remain strictly host-owned. During `rubixctl reset` or `rubixctl uninstall`,
-> Rubix cleans only its owned Kubernetes pods, CNI configuration, and PKI; it will **never** stop the
-> host runtime daemon or purge host images.
-
----
-
-## 2. CRI Socket Configuration
-
-To attach Rubix to an external CRI runtime, configure the socket path in `/etc/kubesolo/config.yaml`
-or via CLI flags/environment variables.
-
-### Configuration Methods
-
-#### Method A: Configuration YAML (`/etc/kubesolo/config.yaml`)
 ```yaml
 apiVersion: kubesolo.io/v1alpha1
 kind: Config
 runtime:
-  # Path to external CRI socket
   endpoint: "unix:///run/containerd/containerd.sock"
 ```
 
-#### Method B: Legacy CLI Flag / Environment Variable
-```sh
-# Via explicit CLI flag
-kubesolo --container-runtime-endpoint="unix:///run/crio/crio.sock"
+The legacy node flag is `--container-runtime-endpoint` and its environment input
+is `KUBESOLO_CONTAINER_RUNTIME_ENDPOINT`. A local absolute path is normalized to
+`unix://`; relative paths, root-only endpoints and unsupported network schemes
+are rejected. Empty endpoint selects managed mode. A CRI-O example is
+`unix:///run/crio/crio.sock`; verify the actual installed socket and permissions
+rather than assuming either path exists.
 
-# Via environment variable
-export KUBESOLO_CONTAINER_RUNTIME_ENDPOINT="unix:///run/containerd/containerd.sock"
-```
+Precedence remains defaults < config file < environment < explicit flags.
+Successful decoding does not establish CRI socket connectivity. `rubixctl check`
+uses its managed baseline context and is not a live external-CRI verifier.
 
-### Accepted URI Formats and Validation Rules
-Rubix strictly validates the `endpoint` URI:
-- **Accepted Formats:**
-  - `unix:///path/to/socket.sock` (Standard URI format)
-  - `/path/to/socket.sock` (Absolute filesystem path; automatically normalized to `unix://`)
-- **Rejected Formats (Fail-Closed):**
-  - Network schemes like `tcp://`, `http://`, or `https://` are strictly rejected with an error.
-  - Relative paths (e.g. `containerd.sock` or `./run/socket.sock`) are rejected.
-  - The root directory (`/` or `unix:///`) is rejected.
-  - Empty string (`""`) reverts to the built-in managed containerd runtime.
+## Cgroup-driver resolution
 
-### Standard External Runtime Sockets
+Adapter resolution consults CRI `RuntimeConfig` when available. A reported systemd
+or cgroupfs driver wins; unsupported/empty runtime configuration follows the
+container-mode, explicit setting and host-capability fallback policy described
+in the compatibility contract. Container-mode fallback is cgroupfs; ordinary
+host fallback selects systemd only with cgroup v2 and active systemd, otherwise
+cgroupfs. Network/transport failures must remain errors rather than fabricated
+successful RuntimeConfig observations.
 
-| Runtime | Standard Socket Location | Configuration Value |
-| --- | --- | --- |
-| **Host containerd** | `/run/containerd/containerd.sock` | `unix:///run/containerd/containerd.sock` |
-| **Host CRI-O** | `/run/crio/crio.sock` | `unix:///run/crio/crio.sock` |
-| **Docker Engine (cri-dockerd)** | `/run/cri-dockerd.sock` | `unix:///run/cri-dockerd.sock` |
+Kubelet and the selected CRI runtime must agree. Do not change a shared host
+runtime's driver or restart it merely to satisfy a generic example: that can
+interrupt unrelated workloads. Inspect the runtime's actual pinned configuration,
+its reported driver, rendered Kubelet configuration and startup diagnostics, then
+rehearse any host change in a disposable environment. There is no generic
+`--cgroup-driver` node flag or YAML `kubernetes.kubelet.cgroupDriver` setting in
+the distribution schema. Rendered upstream Kubelet configuration is a separate
+artifact, not a new arbitrary user-config field.
 
----
+## Verification boundary
 
-## 3. Cgroup Driver Matching and Negotiation
-
-Kubernetes requires that Kubelet and the underlying CRI runtime use identical cgroup drivers.
-Mismatches between `systemd` and `cgroupfs` cause container creation failures, resource accounting
-panics, or Kubelet startup crashes.
-
-### Automatic Cgroup Driver Negotiation Hierarchy
-Rubix negotiates the cgroup driver following this strict order of precedence:
-
-```mermaid
-flowchart TD
-    Start[Start Cgroup Driver Resolution] --> Q1{CRI RuntimeConfig Available?}
-    Q1 -- Yes --> UseCri[Use Driver Reported by External CRI]
-    Q1 -- No / Unimplemented --> Q2{Container Run Mode?}
-    Q2 -- Yes --> UseCgroupfs[Force cgroupfs]
-    Q2 -- No --> Q3{Explicit Config in YAML?}
-    Q3 -- Yes and != auto --> UseExplicit[Use Configured Driver]
-    Q3 -- No or auto --> Q4{Host cgroup v2 AND systemd Active?}
-    Q4 -- Yes --> UseSystemd[Select systemd]
-    Q4 -- No --> FallbackCgroupfs[Select cgroupfs]
-```
-
-1. **CRI Runtime Query (`RuntimeService.RuntimeConfig`):**
-   Rubix sends a `RuntimeConfigRequest` to the CRI socket over gRPC. If the runtime explicitly
-   reports `CgroupDriver::Systemd` or `CgroupDriver::Cgroupfs`, Rubix adopts that driver directly.
-2. **Container Mode Fallback:**
-   If running inside Docker container mode, Rubix defaults to `cgroupfs` (as nested systemd cgroups
-   require privileged rootless cgroup delegation).
-3. **Explicit Operator Override:**
-   If configured via `kubernetes.kubelet.cgroupDriver` (or `--cgroup-driver` flag), Rubix uses the
-   explicit setting (`systemd` or `cgroupfs`).
-4. **Host Capabilities Detection (Fail-Closed Fallback):**
-   If `RuntimeConfig` is unsupported by the external runtime (or returns an empty configuration),
-   Rubix inspects host capabilities:
-   - Evaluates `/sys/fs/cgroup/cgroup.controllers` (Presence indicates **cgroup v2**).
-   - Evaluates `/run/systemd/private` (Presence indicates active **systemd** init).
-   - If **both** are true: resolves to `systemd`.
-   - If either is false (e.g. cgroup v1 or Alpine/OpenRC host): resolves to `cgroupfs`.
-
-### Aligning Host containerd with systemd Cgroup Driver
-If your host runs systemd and cgroup v2, configure host containerd (`/etc/containerd/config.toml`):
-```toml
-version = 2
-
-[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
-  SystemdCgroup = true
-```
-Restart host containerd:
-```sh
-sudo systemctl restart containerd
-```
-
-### Aligning Host CRI-O with systemd Cgroup Driver
-In `/etc/crio/crio.conf` or `/etc/crio/crio.conf.d/00-cgroup-manager.conf`:
-```toml
-[crio.runtime]
-cgroup_manager = "systemd"
-```
-Restart host CRI-O:
-```sh
-sudo systemctl restart crio
-```
-
----
-
-## 4. Verification and Troubleshooting
-
-### Step 1: Verify CRI Socket Connectivity
-Use `crictl` or `rubixctl` to verify the external runtime responds:
-```sh
-sudo crictl --runtime-endpoint unix:///run/containerd/containerd.sock info
-```
-
-### Step 2: Confirm Kubelet Cgroup Configuration
-Check the effective rendered Kubelet configuration:
-```sh
-rubix-kube --print-config | grep cgroup
-```
-Or inspect `/var/lib/kubesolo/kubelet/kubelet.yaml`:
-```sh
-grep cgroupDriver /var/lib/kubesolo/kubelet/kubelet.yaml
-```
-Output must confirm either:
-```yaml
-cgroupDriver: systemd
-```
-or
-```yaml
-cgroupDriver: cgroupfs
-```
-
-### Step 3: Common Failure Diagnostics
-
-| Symptom | Cause | Resolution |
-| --- | --- | --- |
-| `failed to connect to CRI socket` | External runtime is stopped or socket path is incorrect. | Verify host service is running (`systemctl status containerd`) and permissions on `/run/containerd/containerd.sock`. |
-| `misaligned cgroup driver: runtime uses systemd but kubelet configured with cgroupfs` | Host runtime configured for `SystemdCgroup = true` on cgroup v1 host or non-systemd init. | Set `SystemdCgroup = false` in `/etc/containerd/config.toml` or align `/etc/kubesolo/config.yaml`. |
-| `unsupported CRI endpoint scheme 'tcp://'` | Attempted remote TCP connection without local Unix socket proxy. | Rubix requires local Unix domain sockets for CRI communications to preserve security boundaries. |
+An effective `rubix-kube --print-config` is distribution input resolution, not the
+negotiated runtime result or live pod test. Protect its potentially secret output.
+Before using external mode, collect actual CRI info, compatible driver settings,
+node readiness and workload creation/teardown evidence at exact versions. Preserve
+foreign runtime resources during all rollback/cleanup tests. No receipt in this
+runbook establishes current-source external containerd or CRI-O qualification.

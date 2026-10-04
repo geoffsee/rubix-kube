@@ -1,17 +1,14 @@
-# Operational Metrics & CPU Management Runbook
+# Operational metrics and CPU management
 
-This runbook documents the operational HTTP metrics server, health check endpoints,
-Prometheus/OpenMetrics integration, and Kubelet CPU manager policies in Rubix.
+The metrics adapter and Kubelet configuration renderer are implemented boundaries,
+not proof of live retained-node workload or CPU isolation qualification. Read the
+[compatibility contract](../architecture/compatibility-contract.md) and
+[acceptance matrix](../architecture/acceptance-matrix.md).
 
----
+## Metrics listener and routes
 
-## 1. Operational Metrics HTTP Server
+Metrics are disabled by default. Enable explicitly in configuration:
 
-Rubix provides a lightweight, dedicated HTTP server exposing cluster health and performance
-metrics for scraping by monitoring systems such as Prometheus, VictoriaMetrics, or Datadog.
-
-### Enabling the Metrics Server
-In `/etc/kubesolo/config.yaml`:
 ```yaml
 apiVersion: kubesolo.io/v1alpha1
 kind: Config
@@ -19,124 +16,76 @@ metrics:
   enabled: true
   bindAddress: "127.0.0.1:9105"
 ```
-Or via legacy environment variable / CLI flag:
-```sh
-export KUBESOLO_METRICS_SERVER="true"
-export KUBESOLO_METRICS_BIND_ADDRESS="0.0.0.0:9105"
-```
 
-### Server Constraints & Resource Safeguards
-- **Connection Backlog & Concurrency:** Capped at a maximum of `64` concurrent active connection tasks. Excess inbound connections wait in the kernel socket backlog.
-- **Header Read Deadline:** 5-second timeout on initial request header receipt. Slowloris or trickling header connections are dropped.
-- **Graceful Shutdown:** On cluster shutdown, active requests are drained within a bounded 5-second deadline before sockets are closed.
-- **Degraded Fallback:** If the configured address/port cannot be bound (e.g. port conflict), the metrics adapter records an operational warning and allows the node to continue running.
+The node inputs `KUBESOLO_METRICS_SERVER` and `KUBESOLO_METRICS_BIND_ADDRESS`
+(or corresponding metrics-server/metrics-bind-address flags) preserve ordinary
+configuration precedence. Binding 0.0.0.0 exposes the endpoint beyond loopback;
+choose deliberate network access controls rather than assuming authentication.
 
----
+The listener bounds 64 connection tasks, imposes a five-second header deadline,
+and drains/cancels owned connections within a five-second shutdown budget.
+A listener bind failure records a degraded warning; other node operations may continue.
 
-## 2. HTTP Route Inventory & Content Negotiation
-
-The metrics server exposes five standard routes:
-
-| Route | HTTP Methods | Response Status | Purpose / Description |
-| --- | --- | --- | --- |
-| `/metrics` | `GET` | `200 OK` / `406 Not Acceptable` | Prometheus / OpenMetrics scrape endpoint. |
-| `/healthz` | `GET` | `200 OK` | Liveness probe returning plaintext `ok\n`. |
-| `/livez` | `GET` | `200 OK` | Alias for liveness check returning plaintext `ok\n`. |
-| `/readyz` | `GET` | `200 OK` | Readiness check returning plaintext `ok\n`. |
-| `/` | `GET` | `200 OK` | Simple HTML navigation index with links to `/metrics` and `/healthz`. |
-
-Any non-`GET` request receives `405 Method Not Allowed`. Unknown routes receive `404 Not Found`.
-
-### Prometheus & OpenMetrics Negotiation
-The `/metrics` endpoint negotiates the exposition format based on the HTTP `Accept` header:
-- **Default Format (No `Accept` header or `*/*`):** Prometheus text format (`text/plain; version=0.0.4; charset=utf-8`).
-- **OpenMetrics Format:** Requested via `Accept: application/openmetrics-text; version=1.0.0`.
-- **Quality Values & Exclusions:** `q=` values and parameter specificity are respected; explicit `q=0` excludes a format. If no supported format can satisfy the client's request, the server returns `406 Not Acceptable`.
-
-Scraping example:
-```sh
-# Prometheus scrape
-curl -s http://127.0.0.1:9105/metrics
-
-# Explicit OpenMetrics scrape
-curl -s -H "Accept: application/openmetrics-text; version=1.0.0" http://127.0.0.1:9105/metrics
-```
-
----
-
-## 3. Metric Series Reference
-
-Rubix emits truthful, supervisor-connected operational gauges:
-
-### A. Build & Process Uptime
-- `kubesolo_build_info{version="...", commit="...", rust_version="...", arch="..."}`: Value `1.0`. Contains binary build metadata.
-- `kubesolo_start_time_seconds`: Unix epoch timestamp at which the metrics server started.
-- `kubesolo_uptime_seconds`: Elapsed time in seconds since node startup.
-
-### B. Datastore Storage
-- `kubesolo_kine_db_size_bytes`: Sum of the file size of the managed Kine SQLite database (`state.db`) and its active Write-Ahead Log (`state.db-wal`).
-
-### C. Certificate Expiry & Validity
-Monitors all internal control plane TLS certificates:
-- `kubesolo_certificate_valid{name="<cert-name>"}`: `1.0` if readable and currently inside validity window; `0.0` if expired or unparseable.
-- `kubesolo_certificate_expiry_timestamp_seconds{name="<cert-name>"}`: Unix timestamp when the certificate expires.
-
-Tracked certificate label names:
-`ca`, `apiserver`, `controller-manager`, `kubelet`, `admin`, `webhook`, `request-header-ca`, `request-header-client`, and optionally `d2k-server`, `d2k-client`.
-
-### D. Component Health & Probes
-Tracks supervisor lifecycle states for supervised components (`apiserver`, `controller`, `coredns`, `kine`, `kubelet`, `kubeproxy`, `runtime`, `webhook`):
-- `kubesolo_component_up{component="<name>"}`: `1.0` if healthy and responding to probes; `0.0` if degraded, crashed, or stopped.
-- `kubesolo_component_ready_timestamp_seconds{component="<name>"}`: Timestamp of the most recent transition to ready.
-- `kubesolo_component_last_probe_timestamp_seconds{component="<name>"}`: Timestamp of the most recent probe execution.
-
----
-
-## 4. Kubelet CPU Management Policies
-
-For latency-critical, telecom, or high-throughput workloads, Kubernetes supports pinning container
-processes to exclusive physical CPU cores via the Kubelet CPU Manager.
-
-### Supported Policies
-
-| Policy | Behavior | Best Suited For |
+| Route | GET result | Meaning |
 | --- | --- | --- |
-| **`none`** (Default) | Standard Linux CFS scheduler. Workloads share CPU time slices across all cores without CPU pinning. | General microservices, web servers, dev clusters. |
-| **`static`** | Allocates exclusive CPU cores to pods in the **Guaranteed QoS** class (i.e. CPU limits equal CPU requests, with integer values). | Database engines, DSP, trading engines, real-time networking. |
+| `/metrics` | 200 or 406 Not Acceptable | Prometheus/OpenMetrics exposition. |
+| `/healthz`, `/livez`, `/readyz` | 200 with `ok` | Metrics HTTP handler response; not Kubernetes node or workload readiness. |
+| `/` | 200 | Metrics navigation page. |
 
-### Configuring the Static CPU Policy
-In `/etc/kubesolo/config.yaml`:
+Unknown routes return 404; non-GET methods return 405. Prometheus text is the
+default (`text/plain; version=0.0.4`); supported OpenMetrics accepts
+`application/openmetrics-text; version=1.0.0`. Quality/version parameters and q=0
+exclusions apply. Unsupported acceptable formats yield 406. Inspect endpoint and
+component diagnostics independently; a successful `/readyz` scrape is not a
+production-readiness or C14 qualification check.
+
+## Metric series
+
+- `kubesolo_build_info`: version, commit, rust_version and arch labels; unavailable
+  build metadata can explicitly be unknown.
+- `kubesolo_start_time_seconds`, `kubesolo_uptime_seconds`: metrics endpoint start
+  and elapsed time, not a measurement of cluster/workload availability.
+- `kubesolo_kine_db_size_bytes`: observed database/WAL sizes; not a SQLite integrity
+  or WAL-checkpoint assertion.
+- `kubesolo_certificate_valid` and `kubesolo_certificate_expiry_timestamp_seconds`:
+  configured certificate observations. File/validity observations are not proof
+  of live client authentication or all application-specific PKI semantics.
+- `kubesolo_component_up`, `kubesolo_component_ready_timestamp_seconds` and
+  `kubesolo_component_last_probe_timestamp_seconds`: supervisor-connected component
+  observations. Interpret degraded/stopped state and actual probe scope, not a
+  fabricated all-components-ready total.
+
+Listener tests and scrape samples do not qualify actual Linux retained components.
+Protect logs/configuration and avoid publishing private certificate/key material.
+
+## Kubelet CPU manager
+
+The default policy is `none`. `static` settings render upstream Kubelet CPU-manager
+configuration and require valid host CPU reservations and non-container mode.
+A partial configuration example (reserve CPU 0 only on a host with additional
+available CPUs) is:
+
 ```yaml
 apiVersion: kubesolo.io/v1alpha1
 kind: Config
 kubernetes:
   kubelet:
     cpuManager:
-      policy: "static"
-      # Reserve system CPU cores so host daemons don't interrupt pinned workloads
-      reservedCPUs: "0-1"
+      policy: static
+      reservedCPUs: "0"
       policyOptions:
         full-pcpus-only: "true"
-        distribute-cpus-across-numa: "true"
 ```
 
-### Policy Options Reference
-- **`full-pcpus-only="true"`:** Allocates full physical CPU cores rather than individual SMT hyperthreads, preventing noisy neighbor contention on shared L1/L2 caches.
-- **`distribute-cpus-across-numa="true"`:** Spreads allocated CPU cores evenly across available NUMA nodes.
-- **`align-by-socket="true"`:** Aligns core allocation to physical CPU socket boundaries.
+`policyOptions` values are strings; use only options supported by the retained
+Kubelet/version and verify effective reservations and pod QoS/resources. Options
+such as distribute-cpus-across-numa require the appropriate topology and version;
+a YAML example is not proof of real exclusive-core assignment or latency results.
+Static policy is rejected in container mode by configuration validation.
 
-### Checkpoint Invalidation (`cpu_manager_state`)
-Kubelet persists active core assignments to a checkpoint file:
-```
-/var/lib/kubelet/cpu_manager_state
-```
-If an operator alters `policy`, `policyOptions`, or `reservedCPUs` in `/etc/kubesolo/config.yaml`:
-1. Rubix detects the change in CPU manager configuration.
-2. Rubix automatically invalidates/removes the stale `cpu_manager_state` file prior to launching Kubelet.
-3. Kubelet boots cleanly without throwing `SMTCpusInvalid` or `CPUAllocationConflict` errors.
-
-> [!WARNING]
-> **Container Mode Limitation:**
-> The `static` CPU manager policy is **strictly unsupported** when running Rubix in Docker container
-> mode (`--container-mode`). Docker container virtualization does not grant exclusive cpuset cgroup
-> isolation to nested processes. Setting `policy: "static"` in container mode will fail preflight.
+The Kubelet configuration adapter compares effective CPU-manager settings when
+writing rendered configuration and can invalidate `cpu_manager_state` under its
+configured Kubelet root. This is not permission to delete a live checkpoint to
+force an update. Stop/quiesce the owning Kubelet and rehearse policy changes while
+preserving workload and CPU ownership. Do not confuse the experimental Rust CPU
+manager with replacement of the selected upstream Kubelet executable.

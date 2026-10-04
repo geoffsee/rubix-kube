@@ -1,130 +1,73 @@
-# Networking & Local Storage Provisioning Runbook
+# Networking and local storage reference
 
-This runbook covers configuring host and pod networking, CNI plugins, packet filtering / egress
-masquerade rules, and persistent local storage provisioner behavior in Rubix.
+Read the [compatibility contract](../architecture/compatibility-contract.md) and
+[acceptance matrix](../architecture/acceptance-matrix.md). These implementation
+identities and configuration examples do not qualify current-source pod networking,
+service routing or PV access on a real node.
 
----
+## Addresses and MTU
 
-## 1. Network Topology & Addressing Architecture
+The baseline pod CIDR is `10.42.0.0/16`, service CIDR `10.43.0.0/16`, API service
+address `10.43.0.1` and CoreDNS service address `10.43.0.10`. Preserve these
+compatibility identities unless an explicitly supported configuration changes them.
+`network.nodeIP` and `network.mtu` select or override observed host properties.
+Zero MTU uses automatic resolution; positive MTU below 1280 is invalid when IPv6
+is enabled. Do not assume a generic 9000 upper bound or that every interface/VPN
+combination is qualified.
 
-Rubix establishes an isolated, single-node Kubernetes network fabric with fixed CIDR blocks:
-
-| Network Surface | Subnet / Address | Purpose |
-| --- | --- | --- |
-| **Pod Network (Pod CIDR)** | `10.42.0.0/16` | Assigned to Kubernetes pods on the node bridge. |
-| **Service Network (ClusterIP)** | `10.43.0.0/16` | Virtual IP addresses allocated to Kubernetes Services. |
-| **Kubernetes API ClusterIP** | `10.43.0.1` | In-cluster service endpoint for the Kubernetes API Server. |
-| **CoreDNS ClusterIP** | `10.43.0.10` | Internal cluster DNS resolver IP across namespaces. |
-| **Host Node IP** | Auto-detected / Configured | Host primary network interface IP address. |
-
-### MTU (Maximum Transmission Unit) Resolution
-- **Auto-detection:** Rubix queries the MTU of the default gateway interface.
-- **Constraints:** Minimum valid MTU is `1200` (e.g. for WireGuard/VPN encapsulation); maximum is `9000` (jumbo frames). Default is `1500`.
-- **Manual Override:** Specify `network.mtu` in `/etc/kubesolo/config.yaml`:
-  ```yaml
-  network:
-    mtu: 1420
-  ```
-
----
-
-## 2. CNI Plugin Configuration & Bridge Setup
-
-Rubix uses the standard CNI bridge plugin stack to provide pod network interfaces and IPAM.
-
-### Required CNI Plugins
-The following standard plugins must be present in the CNI bin directory (managed `/var/lib/kubesolo/containerd/cni/plugins` or host `/opt/cni/bin`):
-- `bridge`: Configures the virtual bridge (`cbr0` or `rubix-br0`) and veth pairs.
-- `host-local`: Manages local IPv4 address allocation out of `10.42.0.0/16`.
-- `portmap`: Implements hostPort port mappings via iptables/nftables.
-- `loopback`: Configures the container `lo` interface.
-
-### Owned CNI Conflist (`10-bridge.conflist`)
-Rubix generates and manages `/etc/cni/net.d/10-bridge.conflist` (or instance-scoped path in managed mode):
-```json
-{
-  "cniVersion": "0.3.1",
-  "name": "rubix-bridge",
-  "plugins": [
-    {
-      "type": "bridge",
-      "bridge": "cbr0",
-      "isGateway": true,
-      "isDefaultGateway": true,
-      "ipMasq": false,
-      "mtu": 1500,
-      "ipam": {
-        "type": "host-local",
-        "subnet": "10.42.0.0/16",
-        "routes": [
-          { "dst": "0.0.0.0/0" }
-        ]
-      }
-    },
-    {
-      "type": "portmap",
-      "capabilities": { "portMappings": true }
-    }
-  ]
-}
+```yaml
+apiVersion: kubesolo.io/v1alpha1
+kind: Config
+network:
+  mtu: 1420
 ```
 
-> [!NOTE]
-> In external runtime mode, Rubix writes only its owned `10-bridge.conflist`. It will never remove or
-> overwrite pre-existing third-party CNI conflist files.
+## CNI ownership and generated configuration
 
----
+Required programs include `bridge`, `host-local`, `portmap` and `loopback`; verify
+actual executable assets for the selected architecture/libc. The owned filename
+is `10-bridge.conflist`. The generator uses CNI version 1.0.0, name `kubesolo-net`,
+bridge `cni0`, `isGateway: true`, `ipMasq: false`, host-local IPAM and portmap.
+Do not replace these with `rubix-bridge`/`cbr0` identities from unrelated examples.
+Use the actual generated document rather than hand-copying a partial conflist.
 
-## 3. Pod Egress & Firewall Masquerade Rules
+Managed configuration is staged under `<base>/containerd/cni/conf`, with an owned
+standard-directory link; external mode writes the selected configuration directory.
+Inspect existing configuration ordering and any collision with the reserved name
+before activating Rubix. Preserve third-party CNI files and binaries. Earlier
+lexicographic configurations can change which network a runtime actually uses;
+a successfully written file is not proof of pod connectivity.
 
-To allow pods on `10.42.0.0/16` to reach external networks, Rubix manages outbound Network Address
-Translation (SNAT / Masquerade).
+## Pod egress coexistence
 
-### Egress Traffic Evaluation Rules:
-1. **Pod-to-External Traffic:** Source in `10.42.0.0/16`, destination outside `10.42.0.0/16`. **Action: Masquerade (SNAT).**
-2. **Pod-to-Pod Traffic:** Source in `10.42.0.0/16`, destination inside `10.42.0.0/16`. **Action: Direct routing (No Masquerade).**
-3. **Host Traffic:** Source outside `10.42.0.0/16`. **Action: Unmatched / Ignored.**
+The network adapter creates the owned nftables table `kubesolo-masq` or iptables
+rule comment `kubesolo: pod masquerade`. Pod-to-external traffic is masqueraded;
+pod-to-pod and unrelated host traffic remain outside that rule. Cleanup must
+select those exact identities, never blanket `iptables -F` or `nft flush ruleset`.
+Inspect actual backend/host capability observations rather than assuming one tool
+or kernel feature is installed. Startup dependency plans order host networking
+before retained Kubelet startup; plans/tests are not a guarantee of zero packet
+loss or a currently qualified restart on every host.
 
-### Firewall Coexistence Policy (Zero Blanket Flushes)
-Rubix is designed to safely coexist on hosts running Docker Engine, `ufw`, `firewalld`, or custom nftables rules:
-- **Backend Detection:** Rubix probes for `nft` (Linux nftables) first, falling back to `iptables`.
-- **nftables Mode:** Rules are placed exclusively in a dedicated table named `kubesolo-masq`.
-- **iptables Mode:** Rules are tagged with the specific comment:
-  `/* kubesolo: pod masquerade */`
-- **Strict Ownership:** Rubix **never** executes blanket NAT flushes (`iptables -F` or `nft flush ruleset`). When resetting or stopping, only rules matching the table name or comment are cleaned.
-- **Startup Ordering:** Egress rules are verified and established *before* Kubelet recovers persisted pods, ensuring existing workloads never experience network blackholes upon node restart.
-
-### IPv6 Handling
-On hosts where IPv6 is not configured or causes route leaks, set `network.disableIPv6: true`.
-Rubix configures `/proc/sys/net/ipv6/conf/all/disable_ipv6` and strips IPv6 nameserver entries from
-generated resolver configurations.
-
----
-
-## 4. LocalPath Storage Provisioner Behavior
-
-Rubix includes a built-in Kubernetes storage controller deploying the Rancher LocalPath provisioner
-(`rancher.io/local-path`) to satisfy `PersistentVolumeClaims` (PVCs) using host disk storage.
-
-### Core Storage Parameters
-- **Default StorageClass:** `local-path` (set as the default cluster StorageClass).
-- **Volume Binding Mode:** `WaitForFirstConsumer` (ensures volumes are only provisioned once a pod requesting the claim is scheduled).
-- **Reclaim Policies Supported:**
-  - `Delete` (Default): Directory on the host is deleted when the PVC is deleted.
-  - `Retain`: Directory on the host is retained when the PVC is deleted.
-
-### Host Storage Locations
-By default, persistent data is stored under:
-```
-/var/lib/kubesolo/local-path-storage/
-```
-Each volume receives a dedicated directory named:
-```
-pvc-<pvc-uuid>_<namespace>_<pvc-name>/
+```yaml
+apiVersion: kubesolo.io/v1alpha1
+kind: Config
+network:
+  disableIPv6: true
 ```
 
-### Configuring a Custom Shared Path
-To place persistent volumes on a dedicated partition, SSD, or external mount:
+IPv6/sysctl/resolver operations require their documented host ownership and
+capability checks. An input setting alone does not prove dual-stack workloads,
+DNS, firewall coexistence or successful sysctl mutation.
+
+## LocalPath storage
+
+The selected addon is Rancher LocalPath (`rancher.io/local-path`), with default
+StorageClass `local-path` and `WaitForFirstConsumer`. ReclaimPolicy Delete and
+Retain are distinct: inspect the actual PV/StorageClass before deleting a PVC.
+The default data root is `/var/lib/kubesolo/local-path-storage`; sharedPath is
+explicit configuration and can point outside the normal base directory.
+
 ```yaml
 apiVersion: kubesolo.io/v1alpha1
 kind: Config
@@ -134,24 +77,10 @@ storage:
     sharedPath: "/mnt/fast-nvme/k8s-volumes"
 ```
 
-### Path Traversal Defense & Teardown Safety
-When a PVC with `ReclaimPolicy: Delete` is removed, the provisioner executes a teardown routine using the helper pod. Rubix enforces strict path validation:
-- Symlinks inside volume paths are never followed blindly.
-- Volume paths must reside strictly within the designated storage root. Any attempt to specify paths containing relative traversals (`../`) or mount escapes is aborted with an error.
-
-### Example PVC Manifest
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: database-pvc
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 10Gi
-```
-Deploying a pod using `database-pvc` automatically provisions the host directory and mounts it inside the container.
+Provisioner helpers/path checks are implemented slices; neither passing fixture
+checks nor a stored Pod spec proves a real helper executed or a volume was mounted.
+Verify actual PVC binding, helper completion, pod reads/writes, retention and
+teardown in a disposable node. Quiesce PV writers before file comparisons; preserve
+ownership, full modes and symlink targets without following them. Ordinary reset
+and uninstall retain PV data. Explicit purge is destructive and must be reviewed
+against the selected owned root and mount boundaries.

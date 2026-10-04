@@ -1,180 +1,128 @@
-# Migration & Operator Recovery Runbook
+# Migration and operator recovery
 
-This runbook provides actionable procedures for migrating legacy Go KubeSolo clusters to
-Rubix (Rust distribution), recovering from interrupted upgrades or host crashes, and understanding
-operational downtime bounds and platform constraints.
+Production Go-to-Rust cutover is **NOT QUALIFIED** under C13/C14/E30. Historical
+version catalogs, file comparisons, recovery receipts and synthetic rehearsals do
+not establish a supported live transition, preserved running workloads or measured
+downtime. Read [state-transition limits](../architecture/state-transitions.md),
+[the compatibility contract](../architecture/compatibility-contract.md) and the
+[retained-executable ADR](../../experiments/component-boundary/ADR.md).
 
----
+## Historical starting-point catalog
 
-## 1. Supported Starting Versions & Compatibility Matrix
+| Fixture version | Configuration behavior |
+| --- | --- |
+| v1.1.8 | Legacy flags in the service ExecStart; no canonical config file. |
+| v1.2.0 | Legacy flags in the service ExecStart; no canonical config file. |
+| v1.3.0 | First config-file version: `/etc/kubesolo/config.yaml`. |
+| v1.3.1 | Preserve existing `/etc/kubesolo/config.yaml`. |
+| v1.3.2 | Preserve existing `/etc/kubesolo/config.yaml`. |
+| v1.3.3 | Preserve existing `/etc/kubesolo/config.yaml`. |
 
-Rubix provides automated, fail-closed state migration for legacy clusters running supported versions:
+These are fixture cases, not six qualified production migration paths. Older,
+empty or malformed catalog versions are refused. Upgrading an older cluster to
+a listed version does not itself qualify a Rust cutover. There is no `rubixctl
+migrate --from-version ... --dry-run` interface. Upgrade's legacy service/config
+conversion must be inspected against the actual service and target; unsupported
+or ambiguous inputs require operator investigation.
 
-| Starting Version | Configuration Source | On-Disk Layout | Migration Action Required |
-| --- | --- | --- | --- |
-| `v1.1.8` | systemd drop-in `flags.conf` | Legacy flags only | Converts flags to `/etc/kubesolo/config.yaml`; preserves datastore & PKI. |
-| `v1.2.0` | systemd drop-in `flags.conf` | Legacy flags only | Converts flags to `/etc/kubesolo/config.yaml`; preserves datastore & PKI. |
-| `v1.3.0` | `/etc/kubesolo/kubesolo.yaml` | Standalone YAML | Adopts YAML into canonical `config.yaml`; preserves datastore & PKI. |
-| `v1.3.1` | `/etc/kubesolo/kubesolo.yaml` | Standalone YAML | Adopts YAML into canonical `config.yaml`; preserves datastore & PKI. |
-| `v1.3.2` | `/etc/kubesolo/kubesolo.yaml` | Standalone YAML | Adopts YAML into canonical `config.yaml`; preserves datastore & PKI. |
-| `v1.3.3` | `/etc/kubesolo/config.yaml` | Canonical layout | Direct binary update; verifies schema & preserves state. |
+## Before a production cutover
 
-> [!WARNING]
-> Versions prior to `v1.1.8` (e.g. `v1.0.0`, `v1.1.7`), unversioned development builds, and custom
-> forks fail migration preflight fail-closed. These clusters must be upgraded to `v1.1.8`+ before migrating to Rubix.
+Keep the existing deployment until a disposable exact-revision rehearsal succeeds.
+Record source/target distribution versions, candidate hashes, binary and service
+paths, resolved configuration, ownership and a tested repair plan. Protect
+credentials and retain the original executable/service definition.
 
----
+Stop every datastore writer or use an independently verified consistent backup
+mechanism. Cordon or pause workload scheduling alone does not quiesce Kubernetes
+controllers, Kine or volume writers. Preserve Kine's `kine/db/state.db` and its
+WAL/SHM when applicable; a `wal_checkpoint` request can be busy or incomplete and
+must not be assumed successful. Do not copy only state.db while writes continue.
+Filesystem copying and sealed hash evidence preserve captured bytes but do not
+prove SQLite consistency, schema compatibility or original semantic health.
 
-## 2. Step-by-Step Go-to-Rust Migration Procedure
+Preserve cluster CA/signing keys, service-account identity, dedicated datastore
+CA/client/server mTLS identities, configuration/backups, static manifests and
+complete PV trees with ownership/modes/link targets. Never replace Kine SQLite
+with the experimental `RUBXSNP1` snapshot format. Native datastore conversion
+fixtures do not read or adopt a real Kine SQLite database.
 
-Follow these steps to transition a running Go KubeSolo node to Rubix:
+Rehearse restored API access and wrong/no-client rejection, workloads and UID/
+resourceVersion/spec reconciliation, real PV read/write access, network behavior,
+backup restoration and downtime before cutover. File equality and YAML/JSON
+kubeconfig parsing are not authenticated API or application readiness evidence.
+A direct binary swap followed by a successful service-start request does not meet
+these gates. This reference supplies no approved production cutover procedure.
 
-### Phase 1: Pre-Migration Backup & Inspection
-1. **Verify Cluster Health:**
-   ```sh
-   kubectl get nodes
-   kubectl get pods -A
-   ```
-2. **Quiesce Writers (Recommended):**
-   Temporarily pause or cordon workload deployments to minimize in-flight database writes.
-3. **Stop Legacy Service:**
-   ```sh
-   sudo systemctl stop kubesolo
-   ```
-4. **Checkpoint Kine SQLite WAL:**
-   Flush the Write-Ahead Log into the main SQLite database:
-   ```sh
-   sqlite3 /var/lib/kubesolo/kine/db/state.db "PRAGMA wal_checkpoint(TRUNCATE);"
-   ```
-5. **Create Immutable Backup Snapshot:**
-   ```sh
-   sudo mkdir -p /var/backups/kubesolo-pre-migration
-   sudo cp -a /var/lib/kubesolo/pki /var/backups/kubesolo-pre-migration/
-   sudo cp -a /var/lib/kubesolo/kine /var/backups/kubesolo-pre-migration/
-   [ -f /etc/kubesolo/kubesolo.yaml ] && sudo cp /etc/kubesolo/kubesolo.yaml /var/backups/kubesolo-pre-migration/
-   [ -f /etc/systemd/system/kubesolo.service.d/flags.conf ] && sudo cp -r /etc/systemd/system/kubesolo.service.d /var/backups/kubesolo-pre-migration/
-   ```
+## Implemented upgrade and explicit recovery interface
 
-### Phase 2: Configuration Conversion
-Rubix automatically parses existing CLI flags and systemd drop-ins and renders canonical
-`kubesolo.io/v1alpha1` YAML:
+Choose a reviewed target **distribution** version and existing installation path:
+
 ```sh
-# Generate and validate new configuration
-sudo rubixctl migrate --from-version v1.2.0 --dry-run
-```
-Inspect the generated `/etc/kubesolo/config.yaml`:
-```yaml
-apiVersion: kubesolo.io/v1alpha1
-kind: Config
-path: /var/lib/kubesolo
-network:
-  nodeIP: "192.168.1.100"
-  loadBalancer:
-    enabled: true
-storage:
-  localPath:
-    enabled: true
+rubixctl upgrade --version v1.3.3 --offline-install /media/candidate.tar.gz --path /var/lib/kubesolo
+rubixctl upgrade --recover --path /var/lib/kubesolo
 ```
 
-### Phase 3: Binary Replacement & Service Activation
-1. Install Rubix node and management binaries:
-   ```sh
-   sudo cp rubix-kube /usr/local/bin/kubesolo
-   sudo cp rubixctl /usr/local/bin/rubixctl
-   sudo chmod 0755 /usr/local/bin/kubesolo /usr/local/bin/rubixctl
-   ```
-2. Reload systemd and start the Rubix service:
-   ```sh
-   sudo systemctl daemon-reload
-   sudo systemctl start kubesolo
-   ```
-3. Verify node readiness:
-   ```sh
-   rubixctl check
-   kubectl get nodes
-   ```
+The artifact is an operator-selected verified candidate, not evidence that a Rust
+release v1.3.3 exists. Recovery is explicitly requested; the supervisor does not
+automatically recover interrupted upgrades. It dispatches receipt recovery without
+downloading/staging a new target. Do not combine recovery with a new version or
+artifact selection. Retain receipts and backups when a command fails; do not use
+`uninstall --purge` to clear the error while recovery is still needed.
 
----
+### Eleven stages and receipts
 
-## 3. Preserved State Invariants Across 5 Architectural Domains
+| Stage | Durable receipt | Behavior |
+| --- | --- | --- |
+| Validation | none | Reject invalid version without service changes. |
+| Preparation | none | Reject unavailable artifact without service changes. |
+| Quiesce | none | Restart old deployment on failure. |
+| Snapshot | none | Remove partial snapshot and restart old deployment. |
+| ReceiptPending | none if persistence fails | Restart old deployment; retain complete orphaned backup. |
+| ArtifactReplacement | `.upgrade-pending` | Pending recovery rolls back captured state. |
+| ConfigMigration | `.upgrade-pending` | Pending recovery rolls back captured state. |
+| ServiceStart | `.upgrade-pending` | Pending recovery rolls back captured state after confirmed quiescence. |
+| ReceiptCommitting | `.upgrade-committing` | Request target start, check container running state, finalize target. |
+| Commit | `.upgrade-completed` | Retain terminal recovery evidence if cleanup fails. |
+| PostCommitCleanup | `.upgrade-completed` | Retry idempotent receipt cleanup. |
 
-The migration process strictly guarantees state preservation across:
+Before effects, recovery requires the owned private 0700 direct child of the
+installation's `backups` directory, complete PKI and `kine/db` plus backend
+material, and exact full-tree type/mode/length/SHA-256 evidence sealed from the
+quiesced snapshot before replacement. Missing/extra/changed/link entries are
+refused, including unsafe intermediate directories. Backups predating integrity
+evidence cannot be repaired by generating hashes after suspected corruption.
 
-1. **Configuration:** Permissions are locked to `0600`. File contents are preserved with atomic backups.
-2. **PKI & Identities:** The root CA (`ca.crt`, `ca.key`), service-account private key (`service-account.key`), and dedicated datastore loopback mTLS certificates are preserved byte-for-byte. Client certificates remain valid under the original CA root.
-3. **Datastore (Kine SQLite):** Kine's SQLite database (`state.db`), WAL, and SHM files are retained. Native in-memory datastore experiments (`RUBXSNP1`) are **never** used in production; Kine continues managing SQLite directly.
-4. **Workloads:** Existing pods, namespaces, UIDs, and resourceVersions survive the transition without recreation.
-5. **Persistent Volumes:** LocalPath storage directories under `/var/lib/kubesolo/local-path-storage/` (or configured `sharedPath`) retain file ownership, permissions, and symlink structures.
+Pending rollback requires successful stop or structured proof of inactivity before
+restoration. Container recovery reconstructs persisted replacement state and checks
+exact active/rollback identities; it does not rely on lost in-memory flags.
+Committing recovery finalizes the target; completed receipts need cleanup only.
+Failed validation, quiescence, commit or recovery retains evidence for inspection.
+The integrity record detects changes to originally captured bytes; it is neither
+an authenticated publisher signature nor a PKI/SQLite health certificate.
 
----
+Host service-start success is only a request. Container running-state checks do
+not prove API readiness. Post-commit cleanup/output failure is a warning about
+retained evidence, not authority to roll back an already committed target whose
+old artifact may no longer exist.
 
-## 4. Disaster Recovery & Interrupted Upgrade Playbook
+## Declared targets, no observed SLA
 
-During upgrades and migrations, Rubix progresses through 10 discrete stages protected by durable
-receipt markers:
+| Criterion | Declared target | Current observed production result |
+| --- | --- | --- |
+| Clean component restart | 10 seconds | Not measured/qualified. |
+| Datastore crash restart | 10 seconds | Not measured/qualified. |
+| Outage shutdown escalation | 5 seconds | Not measured/qualified. |
+| Startup cancellation re-entry | 5 seconds | Not measured/qualified. |
+| Scoped reset cleanup | 30 seconds | Not measured/qualified. |
+| Real 24-hour settled memory | <=1.10x initial; zero failures | Not measured/qualified. |
 
-| Stage | Classification | Active Receipt | Automatic Recovery Action |
-| --- | --- | --- | --- |
-| `Validation` | Pre-mutation | None | Restart previous service |
-| `Preparation` | Pre-mutation | None | Clean temporary staging paths |
-| `Quiesce` | Pre-mutation | None | Restart previous service |
-| `Snapshot` | Pre-mutation | None | Remove partial snapshot, restart previous service |
-| `ReceiptPending` | Pre-mutation | `.upgrade-pending` | Clean receipt, restart previous service |
-| `ArtifactReplacement` | Mutating | `.upgrade-pending` | Full rollback from backup directory |
-| `ConfigMigration` | Mutating | `.upgrade-pending` | Full rollback from backup directory |
-| `ServiceStart` | Mutating | `.upgrade-pending` | Full rollback from backup (reverses dirty writes) |
-| `ReceiptCommitting` | Committing | `.upgrade-committing` | Verify health and finalize commit |
-| `Commit` | Post-commit | `.upgrade-completed` | Clean up commit receipts |
+Canonical synthetic timing/RSS inputs are not execution receipts or an SLA. C14
+remains pending actual retained-node workloads and independently observed recovery.
 
-### Triggering Automated Recovery
-If an upgrade is aborted or fails during execution:
-```sh
-sudo rubixctl upgrade --recover
-```
+## Platform limits
 
-### Fail-Closed Backup Integrity Validation
-Before modifying any host files during recovery, Rubix executes strict fail-closed checks:
-- Verifies the backup directory exists and is a genuine directory (not a symlink).
-- Verifies that valid, non-empty `pki` and `kine/db` directories exist within the backup.
-- If the backup is missing or corrupt, recovery aborts immediately without modifying the host, retaining error diagnostics for operator review.
-
-### Dual-Format Client Access Validation
-Following recovery, Rubix validates that both YAML and JSON formatted kubeconfig structures
-can successfully authenticate against the API server.
-
----
-
-## 5. Contractual Downtime Bounds & SLA
-
-Under Gate C14/C16 qualification, Rubix establishes the following measured timing bounds:
-
-| Scenario / Operation | Metric | Declared Contractual Bound | Observed Execution Time |
-| --- | --- | --- | --- |
-| **Clean Component Restart** | Node readiness recovery | **<= 10 seconds** | ~3,250 ms |
-| **Datastore Crash Restart** | SQLite recovery & API access | **<= 10 seconds** | ~2,800 ms |
-| **Outage Shutdown Escalation** | Process escalation & kill | **<= 5 seconds** | ~1,200 ms |
-| **Startup Cancellation Re-entry** | Lock release & clean re-entry | **<= 5 seconds** | ~850 ms |
-| **Scoped Reset Cleanup** | State cleanup completion | **<= 30 seconds** | ~4,100 ms |
-| **24-Hour Sustained Soak** | Settled memory growth ratio | **<= 1.10x initial** | 1.050x (PASS) |
-
----
-
-## 6. Known Platform Limitations & Technical Rationale
-
-Operators should be aware of the following technical limitations:
-
-1. **macOS Bare-Metal Node Daemon:**
-   - *Status:* Explicitly unsupported.
-   - *Rationale:* macOS does not possess native Linux cgroups or namespaces. Rubix runs on macOS exclusively via Docker container mode (`rubixctl container create`).
-2. **Native Windows Binaries:**
-   - *Status:* Excluded.
-   - *Rationale:* Windows node workloads must run inside WSL2 using the standard Linux container engine workflow.
-3. **Static CPU Manager in Container Mode:**
-   - *Status:* Unsupported.
-   - *Rationale:* Requires exclusive cpuset cgroups on the physical host, which nested container engines cannot provide.
-4. **Portainer Agent on RISC-V (`riscv64`):**
-   - *Status:* Unsupported.
-   - *Rationale:* Upstream Portainer does not compile or publish `linux/riscv64` agent binaries.
-5. **D2K Docker API Bridge on ARMv7 and RISC-V:**
-   - *Status:* Disabled.
-   - *Rationale:* Upstream D2K Docker bridge binaries are published only for 64-bit architectures (`amd64`, `arm64`).
+Native macOS nodes and native Windows binaries are unsupported; supported management
+clients require a Linux Engine (including Docker Desktop/WSL2). Static CPU policy
+is rejected in container mode. Portainer riscv64 and D2K ARMv7/riscv64 are excluded
+by upstream availability. Supported matrix entries are obligations to qualify,
+not proof that these migration procedures have been rehearsed on every platform.

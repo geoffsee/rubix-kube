@@ -1,94 +1,63 @@
-# Fresh Installation and Container Lifecycle Runbook
+# Fresh installation and container lifecycle reference
 
-This runbook guides operators through deploying fresh Rubix single-node Kubernetes clusters
-across supported platforms, including universal host installation, minimal manual installation,
-and containerized deployment via Docker Engine.
+A usable retained-executable node requires a complete verified candidate and
+current-source disposable Linux evidence. This runbook does not qualify universal
+host installation or application readiness. Consult the
+[compatibility contract](../architecture/compatibility-contract.md) and
+[management implementation notes](../../crates/rubixctl/README.md).
 
----
-
-## 1. Prerequisites & Preflight Inspection
-
-Before installing Rubix on a Linux host, run preflight checks using `rubixctl`:
+## Preflight
 
 ```sh
-# Execute host preflight checks
 rubixctl check
-```
-
-### Preflight Verification Scope
-Preflight evaluation inspects:
-- **Operating System & Architecture:** Confirms Linux kernel, architecture (`amd64`, `arm64`, `armv7`, or `riscv64`), and C library (`glibc` or `musl`).
-- **Required Kernel Capabilities:** Validates cgroups (v1 or v2 unified hierarchy), overlay filesystem support (`overlay` or `fuse-overlayfs`), and packet filtering (`iptables` or `nftables`).
-- **Port Availability:** Tests required control plane and service ports:
-  - `6443/tcp`: Kubernetes API Server
-  - `2379/tcp`: Kine etcd-compatible loopback listener
-  - `10443/tcp`: NodeSetter admission webhook
-  - `9105/tcp`: Operational metrics HTTP endpoint (when enabled)
-  - `2376/tcp`: D2K Docker API endpoint (when enabled)
-- **Filesystem Permissions:** Validates write access to `/var/lib/kubesolo` (default data directory) and `/etc/kubesolo` (configuration directory).
-
-### Alpine Linux / OpenRC Prerequisites
-On Alpine Linux, missing network tools and cgroups can be automatically configured with:
-```sh
 rubixctl check --install-prereqs
 ```
-This flag authorizes only explicit Alpine package additions (`iproute2`, `iptables`) and enabling the `cgroups` OpenRC service. On non-Alpine hosts, `--install-prereqs` is a safe no-op.
 
----
+The read-only check selects managed baseline context and observes Linux host
+capabilities and filesystem facts. Only after earlier checks permit probing does
+it briefly bind 2379, 6443 and 10443, plus 6060 when `--pprof-server` is enabled.
+It does not test every metrics/D2K port, reserve ports, establish CRI connectivity
+or prove node readiness. Non-Linux host checking is unsupported.
 
-## 2. Universal Host Installation
+Explicit prerequisite preparation permits missing Alpine `iproute2`/`iptables`
+packages and the cgroups OpenRC service. Other preparation targets are rejected;
+this is not a general host package installer. Ordinary checks never stop a
+conflicting process or modify the host.
 
-Universal installation automates artifact downloading, binary placement, configuration initialization,
-and service registration under the host's native init system.
+## Universal host installation: implemented staging boundary
 
-### Running Universal Installation
+Online host `install` is not implemented. Service-mode `--offline-install` checks
+host architecture/libc, copies the archive privately, rejects unsafe entries,
+verifies `bundle.manifest`, then publishes its declared files into `--path`.
+It returns after staging: it does not generate configuration, register/initiate
+an init service or place a complete running node at `/usr/local/bin`.
+
 ```sh
-# Install default version under systemd
-sudo rubixctl install --version 1.35.7
-
-# Install on an OpenRC system with custom data path
-sudo rubixctl install --version 1.35.7 --init openrc --path /mnt/fast-storage/kubesolo
-
-# Install specifying custom network interface IP
-sudo rubixctl install --node-ip 192.168.1.50
+rubixctl install --run-mode service --offline-install /media/candidate.tar.gz --path /srv/rubix-staging
 ```
 
-### Supported Init Systems & Service Unit Placement
+`candidate.tar.gz` must actually have a canonical matching archive filename and
+valid bundle metadata; this placeholder is not a downloadable release. Choose
+the distribution version and target as described in [air-gap delivery](air-gap-deployment.md).
+The installer accepts service/container modes; `--init` is not a CLI flag.
 
-`rubixctl` generates and installs native service definitions based on the detected init system:
+Service generation/lifecycle adapters exist for systemd, OpenRC, SysVinit,
+Upstart, runit and s6. Their presence does not make host installation automatic
+or qualify all six live supervisors. Before manually activating a service,
+inspect the generated definition, exact binary/configuration paths, supervisor
+scan/link ownership and retained executable assets. Use the selected backend's
+own documented controls and preserve unrelated services.
 
-| Init System | Unit File Path | Lifecycle Control Commands |
-| --- | --- | --- |
-| **systemd** | `/etc/systemd/system/kubesolo.service` | `systemctl daemon-reload && systemctl enable --now kubesolo` |
-| **OpenRC** | `/etc/init.d/kubesolo` | `rc-update add kubesolo default && rc-service kubesolo start` |
-| **SysVinit** | `/etc/init.d/kubesolo` | `update-rc.d kubesolo defaults && /etc/init.d/kubesolo start` |
-| **Upstart** | `/etc/init/kubesolo.conf` | `initctl reload-configuration && start kubesolo` |
-| **runit** | `/etc/sv/kubesolo/run` | `ln -s /etc/sv/kubesolo /var/service/` |
-| **s6** | `/etc/s6/services/kubesolo/run` | `s6-svc -u /etc/s6/services/kubesolo` |
+## Minimal manual host preparation
 
-### Installed Layout
-Universal install stages the following filesystem structure:
-- `/usr/local/bin/kubesolo`: Supervised node daemon (`rubix-kube`).
-- `/usr/local/bin/rubixctl`: Management CLI.
-- `/etc/kubesolo/config.yaml`: Canonical cluster configuration (`0600` permissions).
-- `/var/lib/kubesolo/`: Base directory containing PKI, datastore, runtime, and volume storage.
+Do not extract an unaudited archive directly into `/usr/local/bin`. Obtain a
+reviewed, digest-verified candidate and use private verified staging. Preserve
+retained executables, runtime shims, CNI programs, images and their inventory;
+copying only the management/node binaries is insufficient.
 
----
+The configuration schema and default paths remain KubeSolo-compatible. An
+example partial configuration is:
 
-## 3. Minimal Host Installation
-
-In resource-constrained, embedded, or custom environments where system package managers and init
-system daemons are unavailable or restricted, Rubix can be deployed manually.
-
-### Step 1: Download and Extract Candidate Archive
-Download the matching architecture archive cell (e.g. `rubix-kube-v1.35.7-linux-arm64.tar.gz`):
-```sh
-tar -xzf rubix-kube-v1.35.7-linux-arm64.tar.gz -C /usr/local/bin/
-chmod 0755 /usr/local/bin/kubesolo /usr/local/bin/rubixctl
-```
-
-### Step 2: Create Canonical Configuration File
-Create `/etc/kubesolo/config.yaml` with mode `0600`:
 ```yaml
 apiVersion: kubesolo.io/v1alpha1
 kind: Config
@@ -96,106 +65,70 @@ path: /var/lib/kubesolo
 logging:
   debug: false
 network:
-  nodeIP: ""         # Auto-detect primary host IP
-  mtu: 0             # Auto-detect interface MTU (minimum 1200, default 1500)
+  nodeIP: ""
+  mtu: 0
   disableIPv6: false
   loadBalancer:
     enabled: true
 runtime:
-  endpoint: ""       # Empty string selects managed containerd
-kubernetes:
-  nodeName: ""       # Empty string normalizes host hostname
+  endpoint: ""
 storage:
   localPath:
     enabled: true
 metrics:
-  enabled: true
+  enabled: false
   bindAddress: "127.0.0.1:9105"
 ```
 
-### Step 3: Launch in Desired Execution Mode
-
-#### Mode A: Interactive Foreground Execution
-```sh
-sudo /usr/local/bin/kubesolo --config /etc/kubesolo/config.yaml
-```
-In foreground mode, structured JSONL logs stream to stdout/stderr. Sending `SIGINT` or `SIGTERM`
-initiates cooperative graceful shutdown with a 30-second bounded drain.
-
-#### Mode B: Daemon Execution
-```sh
-sudo nohup /usr/local/bin/kubesolo --config /etc/kubesolo/config.yaml > /var/log/kubesolo.log 2>&1 &
-echo $! | sudo tee /var/run/kubesolo.pid
-```
-
----
-
-## 4. Named Container Lifecycle (Docker Engine Mode)
-
-Rubix supports running single-node clusters inside Docker containers on Linux, macOS (Docker Desktop),
-and Windows (WSL2 with Docker Engine). Multiple named clusters can coexist independently on a single host.
-
-### Container Architecture & Isolation
-Each container cluster is provisioned with:
-- **Dedicated Bridge Network:** `rubix-net-<name>` with MTU matched to the host Docker daemon.
-- **Dedicated Persistent Volume:** `rubix-data-<name>` mounted at `/var/lib/kubesolo`.
-- **Dedicated Container Instance:** `rubix-<name>`.
-- **Isolated Loopback API Port:** Assigned dynamically or mapped explicitly.
-
-### Creating Named Container Clusters
-```sh
-# Create a development cluster with default port allocation
-rubixctl container create --name dev-01
-
-# Create a cluster with explicit workload port mappings
-rubixctl container create --name web-cluster \
-  --port 8080:80 \
-  --port 8443:443 \
-  --port 127.0.0.1:9090:9090
-
-# Create a cluster specifying container image tag
-rubixctl container create --name edge-sim --image rubix-node:v1.35.7
-```
-
-### Port Mapping Security Rules
-- **Host Binding Defaults:** Mappings without an explicit host IP (e.g. `--port 8080:80`) bind exclusively to loopback (`127.0.0.1:8080:80`) to avoid unintentional LAN exposure.
-- **Reserved Port Protection:** Operators cannot bind host ports to internal control plane ports `6443` (API Server) or `2376` (D2K) directly; these are routed via authenticated endpoints.
-
-### Managing Named Container Lifecycles
-```sh
-# Inspect container cluster status and exposed ports
-rubixctl container status --name dev-01
-
-# Restart container cluster (preserves persistent volume)
-rubixctl container restart --name dev-01
-
-# Stop running container cluster
-rubixctl container stop --name dev-01
-
-# Remove container instance (volume data is retained by default)
-rubixctl container remove --name dev-01
-
-# Remove container and purge persistent data
-rubixctl container remove --name dev-01 --purge
-```
-
----
-
-## 5. Client Access Setup (`kubeconfig`)
-
-Once the cluster is running (either host or container mode), export client credentials:
+Store sensitive configuration at `/etc/kubesolo/config.yaml` with mode 0600.
+Use the checked-in [default example](../../crates/rubix-config/examples/default-config.yaml)
+and validate effective startup resolution on the actual host. `--print-config`
+can disclose credentials; protect its output.
 
 ```sh
-# Fetch admin kubeconfig and merge into current user's default config
-rubixctl kubeconfig fetch --merge
-
-# Export to a standalone kubeconfig file
-rubixctl kubeconfig fetch --output ~/.kube/rubix-dev-01.kubeconfig
-
-# Verify cluster connectivity
-kubectl --kubeconfig ~/.kube/rubix-dev-01.kubeconfig get nodes
-kubectl --kubeconfig ~/.kube/rubix-dev-01.kubeconfig get pods -A
+rubix-kube --config /etc/kubesolo/config.yaml --print-config
 ```
 
-Both YAML and JSON formatted kubeconfig structures are fully accommodated by `rubixctl` and
-underlying client libraries.
+Foreground/Daemon process and service plans require a separate verified manual
+launch setup; `install --run-mode foreground` and `daemon` are rejected by the
+current executable. Supervision and signal-handling tests do not establish live
+host startup qualification. Do not create an ad-hoc PID file and assume it grants
+ownership of every process or a complete 30-second node shutdown guarantee.
+
+## Named container installation
+
+A Linux Docker Engine is required on Linux, macOS or WSL2. The adapter queries
+Engine architecture; a container creation result is not Kubernetes readiness.
+The implemented entry point is:
+
+```sh
+rubixctl install --run-mode container --name dev-01 --image registry.example/rubix:reviewed --container-ports 8080:80,8443:443
+```
+
+Explicit `--image` may pull from a registry and overrides an offline bundle. For
+verified offline import, omit that override and use [the offline interface](air-gap-deployment.md).
+Named identities retain compatibility: `kubesolo-dev-01`,
+`kubesolo-dev-01-net`, `kubesolo-dev-01-data`; the default `rubix` name maps to
+`kubesolo`. Port mappings default to loopback. The API and enabled D2K endpoints
+use Engine-observed published ports; reserved workload mappings cannot replace
+them. Inspect the actual returned endpoints rather than assuming an address.
+
+Status/start/stop/restart/remove primitives exist in the container lifecycle
+library, but there is no public `rubixctl container` command. Use explicitly
+selected Docker Engine controls for operational inspection. Reset/uninstall
+select the instance via the persisted `container.spec` at `--path`, not a
+`--name`/`--run-mode` option. Do not direct cleanup at a path lacking the intended
+spec: it may select host-service cleanup. Named-volume and ambiguous configuration
+bindings can require explicit operator cleanup and fail before lifecycle effects.
+
+## Client access
+
+```sh
+rubixctl kubeconfig fetch --output /tmp/rubix-admin.kubeconfig
+rubixctl kubeconfig merge
+```
+
+`merge` is its own subcommand, not a `fetch --merge` flag. Fetch/parse supports
+YAML and JSON kubeconfig, but syntactic parsing is not authenticated live API
+access. Test the selected context with a real client only after the actual node
+is running, and retain private-key permissions and separate instance identities.
