@@ -62,6 +62,12 @@ uses the byte-derived final/initial ratio. A stored ratio must agree within its
 existing three-decimal rounding precision; it cannot choose the gate outcome.
 Zero initial memory and observed OOMs, crashes or unexplained failures fail.
 
+The synthetic workload/idle cycle analyzer uses a stricter diagnostic:
+`is_bounded` requires both aggregate and every retained-process first/final
+ratio to stay at or below 1.10, so growth in a small process cannot hide in the
+aggregate. This fixture-analysis signal does not add a per-component budget to
+the twelve whole-distribution contract gates or qualify live performance.
+
 Canonical process roles are `apiserver`, `controller-manager`, `kubelet`,
 `proxy`, `kine`, `containerd`, `containerd-shim` and `node-daemon`. The daemon and
 shim must be accounted for independently. Retained process PSS/RSS must be

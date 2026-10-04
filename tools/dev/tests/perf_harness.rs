@@ -655,6 +655,19 @@ fn pod_density_directionality_higher_is_better_verified() {
 }
 
 #[test]
+fn small_process_growth_is_not_hidden_by_aggregate_soak_memory() {
+    let cycles = rubix_dev::perf::generate_soak_cycles(
+        Architecture::Amd64,
+        Some(("containerd-shim", 0.03)),
+        None,
+    );
+    let analysis = rubix_dev::perf::analyze_workload_idle_cycles(&cycles).unwrap();
+    assert!(analysis.growth_ratio < 1.10);
+    assert!(analysis.process_growth_ratios["containerd-shim"] > 1.50);
+    assert!(!analysis.is_bounded);
+}
+
+#[test]
 fn workload_idle_duration_widens_each_input_before_addition() {
     let mut cycles = rubix_dev::perf::generate_soak_cycles(Architecture::Amd64, None, None);
     for cycle in &mut cycles {

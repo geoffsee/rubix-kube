@@ -668,6 +668,8 @@ pub struct SustainedCycleAnalysis {
     pub final_settled_pss: u64,
     pub growth_ratio: f64,
     pub max_cycle_growth_ratio: f64,
+    /// Conservative fixture-analysis signal: aggregate and each retained role grow at most 10%.
+    /// This is stricter than the whole-distribution contract gate and never qualifies live runs.
     pub is_bounded: bool,
     pub oom_total: u32,
     pub crash_total: u32,
@@ -739,9 +741,6 @@ pub fn analyze_workload_idle_cycles(
 
     let growth_ratio =
         final_cycle.settled_idle_pss_bytes as f64 / initial.settled_idle_pss_bytes as f64;
-    let is_bounded =
-        growth_ratio <= 1.10 && oom_total == 0 && crash_total == 0 && failed_probes_total == 0;
-
     let mut process_growth_ratios = BTreeMap::new();
     for (role, init_pss) in &initial_process_pss {
         if let Some(fin_pss) = final_process_pss.get(role) {
@@ -753,6 +752,11 @@ pub fn analyze_workload_idle_cycles(
             process_growth_ratios.insert(role.clone(), ratio);
         }
     }
+    let is_bounded = growth_ratio <= 1.10
+        && process_growth_ratios.values().all(|ratio| *ratio <= 1.10)
+        && oom_total == 0
+        && crash_total == 0
+        && failed_probes_total == 0;
 
     let total_duration_secs: u64 = cycles
         .iter()
