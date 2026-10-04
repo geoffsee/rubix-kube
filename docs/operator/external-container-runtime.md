@@ -32,8 +32,12 @@ runtime:
 
 The legacy node flag is `--container-runtime-endpoint` and its environment input
 is `KUBESOLO_CONTAINER_RUNTIME_ENDPOINT`. A local absolute path is normalized to
-`unix://`; relative paths, root-only endpoints and unsupported network schemes
-are rejected. Empty endpoint selects managed mode. A CRI-O example is
+`unix://`; relative paths and unsupported network schemes are rejected during
+config validation. Root-only paths pass config validation and runtime conversion
+stores `/` as the socket path. The separate CRI endpoint parser rejects `/`, but
+config conversion does not invoke it. Choose an actual socket path rather than
+treating config validation as proof of a usable endpoint.
+Empty endpoint selects managed mode. A CRI-O example is
 `unix:///run/crio/crio.sock`; verify the actual installed socket and permissions
 rather than assuming either path exists.
 

@@ -81,12 +81,13 @@ artifact selection. Retain receipts and backups when a command fails; do not use
 | ArtifactReplacement | `.upgrade-pending` | Pending recovery rolls back captured state. |
 | ConfigMigration | `.upgrade-pending` | Pending recovery rolls back captured state. |
 | ServiceStart | `.upgrade-pending` | Pending recovery rolls back captured state after confirmed quiescence. |
-| ReceiptCommitting | `.upgrade-committing` | Request target start, check container running state, finalize target. |
+| ReceiptCommitting | `.upgrade-committing` | Request target start and check container running state; finalize on success. Target startup failure validates the backup and attempts rollback. |
 | Commit | `.upgrade-completed` | Retain terminal recovery evidence if cleanup fails. |
 | PostCommitCleanup | `.upgrade-completed` | Retry idempotent receipt cleanup. |
 
-Before effects, recovery requires the owned private 0700 direct child of the
-installation's `backups` directory, complete PKI and `kine/db` plus backend
+Before effects for pending and committing receipts, recovery requires the owned
+private 0700 direct child of the installation's `backups` directory, complete PKI
+and `kine/db` plus backend
 material, and exact full-tree type/mode/length/SHA-256 evidence sealed from the
 quiesced snapshot before replacement. Missing/extra/changed/link entries are
 refused, including unsafe intermediate directories. Backups predating integrity
@@ -95,7 +96,12 @@ evidence cannot be repaired by generating hashes after suspected corruption.
 Pending rollback requires successful stop or structured proof of inactivity before
 restoration. Container recovery reconstructs persisted replacement state and checks
 exact active/rollback identities; it does not rely on lost in-memory flags.
-Committing recovery finalizes the target; completed receipts need cleanup only.
+Committing recovery finalizes the target after a successful start. If target
+startup fails, recovery validates the backup, persists pending rollback intent,
+then attempts to stop, restore and restart the prior state. Failure retains the
+pending receipt and evidence so another recovery attempt continues rollback.
+Completed receipts require receipt and version validation and cleanup only; a
+missing or damaged backup does not prevent their cleanup.
 Failed validation, quiescence, commit or recovery retains evidence for inspection.
 The integrity record detects changes to originally captured bytes; it is neither
 an authenticated publisher signature nor a PKI/SQLite health certificate.
