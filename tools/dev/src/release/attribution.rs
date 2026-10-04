@@ -11,6 +11,10 @@ use serde::{Deserialize, Serialize};
 use crate::Result;
 use crate::provenance::{LicenseEntry, LicenseInventory};
 
+// Kept local so fixture build contexts need no files outside the source crate.
+// Regression coverage compares this notice with the repository LICENSE.
+const DISTRIBUTION_LICENSE_TEXT: &str = "ISC License\n\nCopyright (c) 2026 Geoff S. and rubix-kube contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n";
+
 /// Architectural category of an attributed component.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -315,6 +319,7 @@ impl AttributionRecord {
         }
 
         let mut license_texts = BTreeMap::new();
+        license_texts.insert("ISC".into(), DISTRIBUTION_LICENSE_TEXT.into());
         license_texts.insert(
             "Apache-2.0".into(),
             "Apache License, Version 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0".into(),
@@ -343,7 +348,7 @@ impl AttributionRecord {
         Ok(Self {
             schema_version: 1,
             distribution_version: "0.1.0".into(),
-            distribution_license: "Apache-2.0".into(),
+            distribution_license: "ISC".into(),
             components,
             license_texts,
         })

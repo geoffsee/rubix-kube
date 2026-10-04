@@ -196,6 +196,23 @@ async fn fixture_overview_cannot_add_qualification_claims_after_rehash() {
     );
 }
 #[test]
+fn distribution_attribution_matches_repository_license() {
+    let metadata = serde_json::json!({"workspace_members":[], "packages":[]});
+    let record = AttributionRecord::build(&metadata.to_string()).unwrap();
+    assert_eq!(record.distribution_license, "ISC");
+    assert_eq!(
+        record.license_texts["ISC"],
+        fs::read_to_string(root().join("LICENSE")).unwrap()
+    );
+    let kubernetes = record
+        .components
+        .iter()
+        .find(|component| component.name == "kube-apiserver")
+        .unwrap();
+    assert_eq!(kubernetes.spdx_license, "Apache-2.0");
+    assert!(record.to_markdown().contains("UNQUALIFIED_FIXTURE_ONLY"));
+}
+#[test]
 fn workspace_and_registry_sources_follow_cargo_metadata() {
     let metadata = serde_json::json!({"workspace_members":["local"], "packages":[
         {"id":"local","name":"rubix-assets","version":"0.1.0","license":"Apache-2.0","source":null},
