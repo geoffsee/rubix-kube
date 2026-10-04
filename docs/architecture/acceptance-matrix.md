@@ -269,7 +269,7 @@ only the repository audit and cannot qualify a release.
 | 1 | Independently sourced current evidence for all required E01–E30 deliverables |
 | 2 | Production boundary and live positive/negative datastore mTLS checks |
 | 3 | Build/layout/install evidence for all 16 node cells, four OCI architectures and four management targets |
-| 4 | Live image acquisition, offline egress denial and D2K authentication |
+| 4 | Exact BusyBox helper digest, fresh egress-denied PVC provisioning, live image acquisition and D2K authentication |
 | 5 | Host/container lifecycle interruption and retention matrices |
 | 6 | Fresh candidate-bound conformance, restart and platform soak |
 | 7 | Paired live amd64/arm64 budgets, 24-hour memory and shutdown |
@@ -286,4 +286,3 @@ behavior, externally fetched license notices, artifact layout or publication.
 [assets]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/build/download-deps.sh
 [constants]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/types/const.go
 [helper]: https://github.com/portainer/kubesolo/blob/2ef1c4787989f11f868f81bb84ae2afd4a49a81d/pkg/components/localpath/configmap.go
-

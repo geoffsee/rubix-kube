@@ -106,7 +106,7 @@ pub const RETAINED_COMPONENTS: &[RetainedComponentSpec] = &[
     },
     RetainedComponentSpec {
         name: "busybox",
-        upstream_ref: "pinned digest",
+        upstream_ref: "busybox",
         license: "GPL-2.0-only",
         copyright: "Erik Andersen",
     },

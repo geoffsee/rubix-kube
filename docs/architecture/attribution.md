@@ -41,7 +41,7 @@ the [Acceptance Matrix](acceptance-matrix.md).
 | `coredns` | docker.io/coredns/coredns:1.14.4 | Apache-2.0 | The CoreDNS Authors | https://github.com/coredns/coredns |
 | `pause` | docker.io/portainer/pause:latest | Apache-2.0 | Portainer.io / Kubernetes Authors | https://github.com/kubernetes/kubernetes |
 | `local-path-provisioner` | docker.io/rancher/local-path-provisioner:v0.0.36 | Apache-2.0 | Rancher Labs, Inc. | https://github.com/rancher/local-path-provisioner |
-| `busybox` (helper pod) | busybox (pinned digest) | GPL-2.0-only | Erik Andersen, Rob Landley, Denys Vlasenko, et al. | https://busybox.net |
+| `busybox` (helper pod) | busybox (implicit mutable tag; not digest-pinned) | GPL-2.0-only | Erik Andersen, Rob Landley, Denys Vlasenko, et al. | https://busybox.net |
 | `portainer-agent` | docker.io/portainer/agent:lts | Zlib | Portainer.io | https://github.com/portainer/agent |
 | `d2k` | docker.io/portainer/d2k:1.2.3 | Apache-2.0 | Portainer.io | https://github.com/portainer/d2k |
 
@@ -98,6 +98,8 @@ the [Acceptance Matrix](acceptance-matrix.md).
 
 #### 9. Local-Path Provisioner & Helper Pod
 - **Version**: Provisioner `docker.io/rancher/local-path-provisioner:v0.0.36`; Helper `busybox`
+- **Qualification gap**: The default helper is an implicit mutable tag. An exact helper
+  digest and fresh egress-denied PVC provisioning evidence are still required by Criterion 4.
 - **License**: Apache-2.0 (provisioner); GPL-2.0-only (busybox)
 - **Copyright**: © Rancher Labs, Inc.; Erik Andersen et al.
 - **Role**: Single-node persistent volume dynamic provisioner and volume initialization helper. Supervised and configured by `rubix-storage`.

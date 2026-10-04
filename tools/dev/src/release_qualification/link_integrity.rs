@@ -80,9 +80,10 @@ fn walk_dir(dir: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() {
+        let file_type = entry.file_type()?;
+        if file_type.is_dir() {
             walk_dir(&path, files)?;
-        } else if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
+        } else if file_type.is_file() && path.extension().is_some_and(|ext| ext == "md") {
             files.push(path);
         }
     }

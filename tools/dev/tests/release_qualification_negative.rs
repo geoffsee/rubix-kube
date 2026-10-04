@@ -1,5 +1,5 @@
 //! Regression coverage for falsely qualified metadata and unsafe inventories.
-use rubix_dev::release_qualification::{attribution, criteria, digest_bindings};
+use rubix_dev::release_qualification::{attribution, criteria, digest_bindings, link_integrity};
 use rubix_dev::{Result, repository_root, sha256};
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
@@ -83,6 +83,20 @@ fn component_fields_cannot_be_borrowed_from_neighbor_records() -> Result<()> {
         format!("{text}\n{original}"),
     )?;
     assert!(attribution::verify_retained_attribution(temp.path()).is_err());
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn markdown_discovery_does_not_follow_directory_or_file_symlinks() -> Result<()> {
+    use std::os::unix::fs::symlink;
+    let temp = tempfile::tempdir()?;
+    put(temp.path(), "docs/actual.md", "Document")?;
+    let docs = temp.path().join("docs");
+    symlink(&docs, docs.join("loop"))?;
+    symlink(docs.join("actual.md"), docs.join("alias.md"))?;
+    let files = link_integrity::discover_markdown_files(temp.path())?;
+    assert_eq!(files, vec![docs.join("actual.md")]);
     Ok(())
 }
 
