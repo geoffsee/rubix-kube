@@ -1,0 +1,478 @@
+//! Upstream license attribution and dependency inventory generation.
+//!
+//! Complies with Gate C16/C17 requirements (Epic E30 / Issue #126) for attributing
+//! Kubernetes, Kine, containerd, OCI images, and transitive dependencies.
+
+use std::collections::BTreeMap;
+use std::fmt::Write as _;
+
+use serde::{Deserialize, Serialize};
+
+use crate::Result;
+use crate::provenance::{LicenseEntry, LicenseInventory};
+
+/// Architectural category of an attributed component.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ComponentCategory {
+    KubernetesCore,
+    DatastoreAndRuntime,
+    OciContainerImage,
+    NetworkAndSnapshotter,
+    RustWorkspaceDependency,
+}
+
+impl ComponentCategory {
+    pub const fn title(self) -> &'static str {
+        match self {
+            Self::KubernetesCore => "Kubernetes Core Supervised Components",
+            Self::DatastoreAndRuntime => "Datastore and Container Runtime",
+            Self::OciContainerImage => "OCI Container Images",
+            Self::NetworkAndSnapshotter => "Networking and Snapshotter Utilities",
+            Self::RustWorkspaceDependency => "Rust Workspace Dependencies",
+        }
+    }
+}
+
+/// Upstream attributed dependency or component.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttributedComponent {
+    pub name: String,
+    pub version: String,
+    pub spdx_license: String,
+    pub upstream_repository: String,
+    pub copyright: String,
+    pub category: ComponentCategory,
+    pub architectural_role: String,
+    pub notice: Option<String>,
+}
+
+/// Full upstream license attribution record for the Rubix distribution.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttributionRecord {
+    pub schema_version: u32,
+    pub distribution_version: String,
+    pub distribution_license: String,
+    pub components: Vec<AttributedComponent>,
+    pub license_texts: BTreeMap<String, String>,
+}
+
+impl AttributionRecord {
+    /// Compiles authoritative attribution for Rubix v0.1.0 including
+    /// Kubernetes v1.35.7, Kine v0.16.3, containerd v2.2.5, and OCI image dependencies.
+    #[allow(clippy::too_many_lines, clippy::vec_init_then_push)]
+    pub fn build(cargo_metadata_json: &str) -> Result<Self> {
+        let mut components = Vec::new();
+
+        // 1. Kubernetes Core Supervised Components
+        components.push(AttributedComponent {
+            name: "kube-apiserver".into(),
+            version: "v1.35.7".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/kubernetes/kubernetes".into(),
+            copyright: "The Kubernetes Authors".into(),
+            category: ComponentCategory::KubernetesCore,
+            architectural_role: "Supervised official API server binary handling authenticated HTTPS/JSON and admission".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "kube-controller-manager".into(),
+            version: "v1.35.7".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/kubernetes/kubernetes".into(),
+            copyright: "The Kubernetes Authors".into(),
+            category: ComponentCategory::KubernetesCore,
+            architectural_role:
+                "Supervised official controller manager driving Job, Pod, and core reconcilers"
+                    .into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "kubelet".into(),
+            version: "v1.35.7".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/kubernetes/kubernetes".into(),
+            copyright: "The Kubernetes Authors".into(),
+            category: ComponentCategory::KubernetesCore,
+            architectural_role: "Supervised node agent coordinating single-node pod lifecycles and CRI communication".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "kube-proxy".into(),
+            version: "v1.35.7".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/kubernetes/kubernetes".into(),
+            copyright: "The Kubernetes Authors".into(),
+            category: ComponentCategory::KubernetesCore,
+            architectural_role:
+                "Supervised service routing agent managing host iptables and nftables egress rules"
+                    .into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+
+        // 2. Datastore and Container Runtime
+        components.push(AttributedComponent {
+            name: "kine".into(),
+            version: "v0.16.3".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/k3s-io/kine".into(),
+            copyright: "Rancher Labs, Inc. / The K3s Authors".into(),
+            category: ComponentCategory::DatastoreAndRuntime,
+            architectural_role:
+                "Supervised etcd-to-SQLite translation daemon accessed over dedicated loopback mTLS"
+                    .into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "sqlite (embedded in kine)".into(),
+            version: "3.x".into(),
+            spdx_license: "blessing".into(),
+            upstream_repository: "https://sqlite.org".into(),
+            copyright: "Public Domain / D. Richard Hipp".into(),
+            category: ComponentCategory::DatastoreAndRuntime,
+            architectural_role: "On-disk single-node relational datastore engine powering Kine state persistence".into(),
+            notice: Some("The author disclaims copyright to this source code. In place of a legal notice: May you do good and not evil.".into()),
+        });
+        components.push(AttributedComponent {
+            name: "containerd".into(),
+            version: "v2.2.5".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/containerd/containerd".into(),
+            copyright: "The containerd Authors".into(),
+            category: ComponentCategory::DatastoreAndRuntime,
+            architectural_role: "Supervised core container runtime daemon implementing CRI v1 and OCI image services".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "containerd-shim-runc-v2".into(),
+            version: "v2.2.5".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/containerd/containerd".into(),
+            copyright: "The containerd Authors".into(),
+            category: ComponentCategory::DatastoreAndRuntime,
+            architectural_role: "Containerd runtime shim managing headless container execution and process accounting".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "crun".into(),
+            version: "1.26".into(),
+            spdx_license: "GPL-2.0-or-later".into(),
+            upstream_repository: "https://github.com/containers/crun".into(),
+            copyright: "Red Hat, Inc. and contributors".into(),
+            category: ComponentCategory::DatastoreAndRuntime,
+            architectural_role: "Lightweight OCI runtime binary executing container processes under containerd supervision".into(),
+            notice: Some("Licensed under the GNU General Public License, Version 2 or later".into()),
+        });
+
+        // 3. OCI Container Images
+        components.push(AttributedComponent {
+            name: "CoreDNS".into(),
+            version: "1.14.4".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "docker.io/coredns/coredns:1.14.4".into(),
+            copyright: "The CoreDNS Authors".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role:
+                "Cluster DNS resolver pod providing service discovery across cluster namespaces"
+                    .into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "pause sandbox".into(),
+            version: "latest (v3.10 baseline)".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "docker.io/portainer/pause:latest".into(),
+            copyright: "The Kubernetes Authors / Portainer.io".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role:
+                "CRI sandbox container holding network namespace and IPC resources for pods".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "local-path-provisioner".into(),
+            version: "v0.0.36".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "docker.io/rancher/local-path-provisioner:v0.0.36".into(),
+            copyright: "Rancher Labs, Inc.".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role: "Persistent volume controller provisioning hostPath-backed storage with Retain reclaim policy".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "local-path helper (busybox)".into(),
+            version: "latest (1.37.0 baseline)".into(),
+            spdx_license: "GPL-2.0-only".into(),
+            upstream_repository: "docker.io/library/busybox:latest".into(),
+            copyright: "Erik Andersen, Rob Landley, Denys Vlasenko, and others".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role: "Helper utility pod used by local-path-provisioner for volume initialization".into(),
+            notice: Some("Licensed under the GNU General Public License, Version 2 only".into()),
+        });
+        components.push(AttributedComponent {
+            name: "Portainer Edge Agent".into(),
+            version: "lts".into(),
+            spdx_license: "Zlib".into(),
+            upstream_repository: "docker.io/portainer/agent:lts".into(),
+            copyright: "Portainer.io".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role: "Optional management agent establishing reverse tunnel connectivity to Portainer Server".into(),
+            notice: Some("Licensed under the zlib License".into()),
+        });
+        components.push(AttributedComponent {
+            name: "D2K".into(),
+            version: "1.2.3".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "docker.io/portainer/d2k:1.2.3".into(),
+            copyright: "Portainer.io".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role: "Optional Docker-to-Kubernetes translation gateway exposing Docker Engine API on port 2376".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "KubeSolo node image".into(),
+            version: "latest".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "ghcr.io/portainer/kubesolo:latest".into(),
+            copyright: "Portainer.io".into(),
+            category: ComponentCategory::OciContainerImage,
+            architectural_role:
+                "Containerized node distribution image for container execution modes".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+
+        // 4. Networking and Snapshotter Utilities
+        components.push(AttributedComponent {
+            name: "containernetworking-plugins".into(),
+            version: "v1.9.0".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/containernetworking/plugins".into(),
+            copyright: "The CNI Authors".into(),
+            category: ComponentCategory::NetworkAndSnapshotter,
+            architectural_role: "CNI plugins (bridge, host-local, portmap, loopback) managing pod network namespaces".into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+        components.push(AttributedComponent {
+            name: "containerd-fuse-overlayfs-grpc".into(),
+            version: "v2.1.7".into(),
+            spdx_license: "Apache-2.0".into(),
+            upstream_repository: "https://github.com/containerd/fuse-overlayfs-snapshotter".into(),
+            copyright: "The containerd Authors".into(),
+            category: ComponentCategory::NetworkAndSnapshotter,
+            architectural_role:
+                "Supervised snapshotter plugin providing unprivileged fuse-overlayfs storage roots"
+                    .into(),
+            notice: Some("Licensed under the Apache License, Version 2.0".into()),
+        });
+
+        // 5. Rust Workspace Dependencies
+        let rust_inventory = crate::provenance::generate_license_inventory(cargo_metadata_json)?;
+        for dep in rust_inventory.rust_dependencies {
+            components.push(AttributedComponent {
+                name: dep.name,
+                version: dep.version,
+                spdx_license: dep.license,
+                upstream_repository: "crates.io".into(),
+                copyright: "Various crate authors".into(),
+                category: ComponentCategory::RustWorkspaceDependency,
+                architectural_role:
+                    "Rust dependency compiled into node supervisor, CLI, or maintenance tooling"
+                        .into(),
+                notice: None,
+            });
+        }
+
+        let mut license_texts = BTreeMap::new();
+        license_texts.insert(
+            "Apache-2.0".into(),
+            "Apache License, Version 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0".into(),
+        );
+        license_texts.insert(
+            "MIT".into(),
+            "MIT License\nhttps://opensource.org/licenses/MIT".into(),
+        );
+        license_texts.insert(
+            "GPL-2.0-only".into(),
+            "GNU General Public License, Version 2.0\nhttps://www.gnu.org/licenses/old-licenses/gpl-2.0.html".into(),
+        );
+        license_texts.insert(
+            "GPL-2.0-or-later".into(),
+            "GNU General Public License, Version 2.0 or later\nhttps://www.gnu.org/licenses/gpl-2.0.html".into(),
+        );
+        license_texts.insert(
+            "Zlib".into(),
+            "zlib License\nhttps://opensource.org/licenses/Zlib".into(),
+        );
+        license_texts.insert(
+            "blessing".into(),
+            "SQLite Blessing\nMay you do good and not evil.\nMay you find forgiveness for yourself and forgive others.\nMay you share freely, never taking more than you give.".into(),
+        );
+
+        Ok(Self {
+            schema_version: 1,
+            distribution_version: "0.1.0".into(),
+            distribution_license: "Apache-2.0".into(),
+            components,
+            license_texts,
+        })
+    }
+
+    /// Renders formal Markdown attribution documentation.
+    #[must_use]
+    pub fn to_markdown(&self) -> String {
+        let mut out = String::new();
+        let _ = writeln!(
+            out,
+            "# Upstream License Attribution and Third-Party Notices\n"
+        );
+        let _ = writeln!(
+            out,
+            "**Rubix Kubernetes Distribution Version**: `{}`  \n**Primary Distribution License**: `{}`\n",
+            self.distribution_version, self.distribution_license
+        );
+        out.push_str(
+            "This document compiles formal third-party license notices, copyright declarations, \
+             and architectural responsibilities for all retained upstream executables, OCI container \
+             images, protocol modules, and compiled Rust dependencies included in or supervised by \
+             the Rubix Kubernetes Distribution, in satisfaction of Gate C16/C17 (Epic E30 / Issue #126).\n\n"
+        );
+
+        let categories = [
+            ComponentCategory::KubernetesCore,
+            ComponentCategory::DatastoreAndRuntime,
+            ComponentCategory::OciContainerImage,
+            ComponentCategory::NetworkAndSnapshotter,
+        ];
+
+        for category in categories {
+            let _ = writeln!(out, "## {}\n", category.title());
+            let _ = writeln!(
+                out,
+                "| Component | Version / Ref | License (SPDX) | Upstream Authority | Architectural Role |"
+            );
+            let _ = writeln!(out, "|---|---|---|---|---|");
+
+            for c in self.components.iter().filter(|c| c.category == category) {
+                let _ = writeln!(
+                    out,
+                    "| `{}` | `{}` | `{}` | [{}]({}) | {} |",
+                    c.name,
+                    c.version,
+                    c.spdx_license,
+                    c.copyright,
+                    c.upstream_repository,
+                    c.architectural_role
+                );
+            }
+            out.push('\n');
+        }
+
+        // Rust dependencies summary table
+        let _ = writeln!(
+            out,
+            "## {}\n",
+            ComponentCategory::RustWorkspaceDependency.title()
+        );
+        out.push_str(
+            "The Rubix distribution binaries (`rubix-kube`, `rubixctl`) and developer verification tools \
+             are built from the pinned Rust toolchain (1.97.1, edition 2024). Below is the complete \
+             inventory of compiled Rust crates with their declared SPDX licenses:\n\n"
+        );
+        let _ = writeln!(out, "| Crate | Version | SPDX License | Source |");
+        let _ = writeln!(out, "|---|---|---|---|");
+
+        for c in self
+            .components
+            .iter()
+            .filter(|c| c.category == ComponentCategory::RustWorkspaceDependency)
+        {
+            let _ = writeln!(
+                out,
+                "| `{}` | `{}` | `{}` | `{}` |",
+                c.name, c.version, c.spdx_license, c.upstream_repository
+            );
+        }
+        out.push('\n');
+
+        out.push_str("## License Texts and Notices\n\n");
+        for (name, text) in &self.license_texts {
+            let _ = writeln!(out, "### {name}\n\n```\n{text}\n```\n");
+        }
+
+        out
+    }
+
+    /// Converts to the standardized `LicenseInventory` format.
+    #[must_use]
+    pub fn to_license_inventory(&self) -> LicenseInventory {
+        let mut rust_dependencies = Vec::new();
+        let mut retained_components = Vec::new();
+
+        for c in &self.components {
+            let entry = LicenseEntry {
+                name: c.name.clone(),
+                version: c.version.clone(),
+                license: c.spdx_license.clone(),
+            };
+            if c.category == ComponentCategory::RustWorkspaceDependency {
+                rust_dependencies.push(entry);
+            } else {
+                retained_components.push(entry);
+            }
+        }
+
+        rust_dependencies.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
+        retained_components.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
+
+        LicenseInventory {
+            schema_version: 1,
+            rust_dependencies,
+            retained_components,
+        }
+    }
+}
+
+/// Verifies that all required upstream components are present in an attribution record.
+pub fn verify_attribution_completeness(record: &AttributionRecord) -> Result<()> {
+    let required = [
+        "kube-apiserver",
+        "kube-controller-manager",
+        "kubelet",
+        "kube-proxy",
+        "kine",
+        "sqlite (embedded in kine)",
+        "containerd",
+        "containerd-shim-runc-v2",
+        "crun",
+        "CoreDNS",
+        "pause sandbox",
+        "local-path-provisioner",
+        "local-path helper (busybox)",
+        "Portainer Edge Agent",
+        "D2K",
+        "KubeSolo node image",
+        "containernetworking-plugins",
+        "containerd-fuse-overlayfs-grpc",
+    ];
+
+    for name in required {
+        if !record.components.iter().any(|c| c.name == name) {
+            return Err(format!("missing required upstream attribution for '{name}'").into());
+        }
+    }
+
+    // Verify all licenses are valid and documented
+    for c in &record.components {
+        if c.spdx_license.is_empty()
+            || c.spdx_license == "unrecorded"
+                && c.category != ComponentCategory::RustWorkspaceDependency
+        {
+            return Err(format!(
+                "component '{}' has unresolved license '{}'",
+                c.name, c.spdx_license
+            )
+            .into());
+        }
+    }
+
+    Ok(())
+}

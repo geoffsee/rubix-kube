@@ -1,0 +1,153 @@
+{
+  "evidence_kind": "synthetic_fixture",
+  "timestamp": "unix:1791071681",
+  "smoke_results": [
+    {
+      "check": "workload_pod",
+      "name": "Smoke 1 — Workload Pod Scheduling and Placement",
+      "passed": true,
+      "duration_ms": 16,
+      "details": "Synthetic Pod API admission applied NodeSetter mutation, nodeName='rubix-node-qual'; no workload executed"
+    },
+    {
+      "check": "in_cluster_dns",
+      "name": "Smoke 2 — In-Cluster CoreDNS Resolution",
+      "passed": true,
+      "duration_ms": 5,
+      "details": "Synthetic DNS model matched kubernetes.default.svc.cluster.local to ClusterIP 10.43.0.1; no CoreDNS server or pod query executed"
+    },
+    {
+      "check": "pod_egress",
+      "name": "Smoke 3 — Pod Egress Masquerade / SNAT Routing",
+      "passed": false,
+      "duration_ms": 0,
+      "details": "NOT EXECUTED: in-process fixtures have no pod runtime or network dataplane"
+    }
+  ],
+  "manifest_domain_results": [
+    {
+      "domain": "workloads_networking",
+      "name": "Tier 1 — Workloads & Networking",
+      "passed": true,
+      "duration_ms": 58,
+      "assertions_count": 10,
+      "details": [
+        "Deployment reconciled to ReplicaSet web-rs with 2 replicas",
+        "ReplicaSet generated 2 Pod API objects mutated with NodeSetter placement",
+        "ClusterIP service allocated IP: 10.43.20.1",
+        "NodePort service allocated port: 31080"
+      ]
+    },
+    {
+      "domain": "storage",
+      "name": "Tier 2 — Storage Persistence",
+      "passed": true,
+      "duration_ms": 104,
+      "assertions_count": 12,
+      "details": [
+        "local-path StorageClass reconciled with Retain policy",
+        "PVC annotated with volume.kubernetes.io/selected-node",
+        "Synthetic host fixture wrote the marker; no writer workload executed",
+        "Host fixture read the marker after Pod API object replacement; no reader workload executed"
+      ]
+    },
+    {
+      "domain": "config_identity",
+      "name": "Tier 3 — Config & Identity",
+      "passed": true,
+      "duration_ms": 27,
+      "assertions_count": 6,
+      "details": [
+        "ConfigMap app-config created with greeting=hello-kubesolo",
+        "Secret app-secret created with token stringData",
+        "Stored Pod spec retained Secret/projected-token volume declarations and token audience; no container consumed configuration, mounted volumes or received a token"
+      ]
+    },
+    {
+      "domain": "controllers",
+      "name": "Tier 4 — Controllers",
+      "passed": true,
+      "duration_ms": 162,
+      "assertions_count": 11,
+      "details": [
+        "StatefulSet reconciled ordinal child Pod API object stateful-0",
+        "Job oneshot reconciled child Pod API object oneshot-0",
+        "DaemonSet agent reconciled node Pod API object agent-node"
+      ]
+    },
+    {
+      "domain": "dns_load_balancer",
+      "name": "Tier 5 — DNS & LoadBalancer",
+      "passed": true,
+      "duration_ms": 88,
+      "assertions_count": 5,
+      "details": [
+        "LoadBalancer webhook assigned node IP: 192.0.2.10",
+        "Synthetic DNS model matched web.tier5-a.svc.cluster.local -> 10.43.50.10; no CoreDNS server or pod query executed"
+      ]
+    },
+    {
+      "domain": "lb_update",
+      "name": "Tier 6 — LoadBalancer UPDATE path [KS-75]",
+      "passed": true,
+      "duration_ms": 149,
+      "assertions_count": 10,
+      "details": [
+        "Control born-lb assigned IP: 192.0.2.10",
+        "Verified flip-me has no loadBalancer ingress IP while ClusterIP",
+        "API UPDATE fixture [KS-75] assigned loadBalancer status IP: 192.0.2.10; external connectivity unexecuted",
+        "Webhook rule split confirmed: Jobs matched on CREATE only; UPDATE accepted"
+      ]
+    }
+  ],
+  "conformance_summary": {
+    "total_selected": 24,
+    "passed": 0,
+    "failed": 0,
+    "excluded_count": 7,
+    "focus_filter": "(ConfigMap|Secret|Pods|Services|Deployment|ReplicaSet|DNS|Projected|Downward|EmptyDir).*\\[Conformance\\]",
+    "skip_filter": "\\[Serial\\]|\\[Disruptive\\]|\\[Slow\\]|\\[Flaky\\]|two nodes|multiple nodes|more than one node",
+    "certification_disclaimer": "Synthetic in-process fixtures only. C13/E28 and the selected upstream conformance suite remain unqualified. DO NOT claim official CNCF Certified Kubernetes qualification or multi-node certification.",
+    "exclusions": [
+      {
+        "pattern": "[Serial]",
+        "category": "serial_slow",
+        "rationale": "Tests tagged [Serial] serialize the entire test run and take multiple hours, exceeding CI budget. Single-node concurrency is qualified via focused domain tests."
+      },
+      {
+        "pattern": "[Disruptive]",
+        "category": "disruptive",
+        "rationale": "Disruptive tests intentionally cordon, drain, or reboot the node, which terminates the single control plane / worker host in single-node topologies."
+      },
+      {
+        "pattern": "[Slow]",
+        "category": "serial_slow",
+        "rationale": "Tests tagged [Slow] test multi-hour soaking and extreme replica counts (1000+ pods) that exceed single-node edge footprints."
+      },
+      {
+        "pattern": "[Flaky]",
+        "category": "flaky",
+        "rationale": "Upstream tests identified as flaky are excluded to prevent non-deterministic failure reporting in automated qualification gates."
+      },
+      {
+        "pattern": "two nodes",
+        "category": "multi_node",
+        "rationale": "Rubix is an architectural single-node Kubernetes distribution using NodeSetter admission; multi-node scheduling topologies are not applicable."
+      },
+      {
+        "pattern": "multiple nodes",
+        "category": "multi_node",
+        "rationale": "Multi-node scheduling, cross-node pod anti-affinity, and node failover are out of scope for single-node Rubix clusters."
+      },
+      {
+        "pattern": "more than one node",
+        "category": "multi_node",
+        "rationale": "Workload distribution across multiple physical hosts requires a full cluster topology, inapplicable to single-node architecture."
+      }
+    ],
+    "results": []
+  },
+  "total_assertions_checked": 59,
+  "kubeconfig_format_accommodated": "YAML and JSON (dual-format validated)",
+  "certification_disclaimer": "Synthetic in-process fixtures only. C13/E28 and the selected upstream conformance suite remain unqualified. DO NOT claim official CNCF Certified Kubernetes qualification or multi-node certification."
+}

@@ -120,3 +120,4 @@ pub mod conformance;
 pub mod perf;
 pub mod platform_management;
 pub mod provenance;
+pub mod release;
