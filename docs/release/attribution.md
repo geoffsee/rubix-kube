@@ -1,9 +1,9 @@
-# Upstream License Attribution and Third-Party Notices
+# Draft Upstream License Attribution and Third-Party Notices
 
 **Rubix Kubernetes Distribution Version**: `0.1.0`  
 **Primary Distribution License**: `Apache-2.0`
 
-This document compiles formal third-party license notices, copyright declarations, and architectural responsibilities for all retained upstream executables, OCI container images, protocol modules, and compiled Rust dependencies included in or supervised by the Rubix Kubernetes Distribution, in satisfaction of Gate C16/C17 (Epic E30 / Issue #126).
+UNQUALIFIED_FIXTURE_ONLY. This draft inventories declared upstream components and locked workspace dependency metadata. It does not attest the contents of built release binaries or OCI images, provide complete upstream license texts, or certify legal license compliance. Gate C16/C17 remain pending.
 
 ## Kubernetes Core Supervised Components
 
@@ -28,13 +28,13 @@ This document compiles formal third-party license notices, copyright declaration
 
 | Component | Version / Ref | License (SPDX) | Upstream Authority | Architectural Role |
 |---|---|---|---|---|
-| `CoreDNS` | `1.14.4` | `Apache-2.0` | [The CoreDNS Authors](docker.io/coredns/coredns:1.14.4) | Cluster DNS resolver pod providing service discovery across cluster namespaces |
-| `pause sandbox` | `latest (v3.10 baseline)` | `Apache-2.0` | [The Kubernetes Authors / Portainer.io](docker.io/portainer/pause:latest) | CRI sandbox container holding network namespace and IPC resources for pods |
-| `local-path-provisioner` | `v0.0.36` | `Apache-2.0` | [Rancher Labs, Inc.](docker.io/rancher/local-path-provisioner:v0.0.36) | Persistent volume controller provisioning hostPath-backed storage with Retain reclaim policy |
-| `local-path helper (busybox)` | `latest (1.37.0 baseline)` | `GPL-2.0-only` | [Erik Andersen, Rob Landley, Denys Vlasenko, and others](docker.io/library/busybox:latest) | Helper utility pod used by local-path-provisioner for volume initialization |
-| `Portainer Edge Agent` | `lts` | `Zlib` | [Portainer.io](docker.io/portainer/agent:lts) | Optional management agent establishing reverse tunnel connectivity to Portainer Server |
-| `D2K` | `1.2.3` | `Apache-2.0` | [Portainer.io](docker.io/portainer/d2k:1.2.3) | Optional Docker-to-Kubernetes translation gateway exposing Docker Engine API on port 2376 |
-| `KubeSolo node image` | `latest` | `Apache-2.0` | [Portainer.io](ghcr.io/portainer/kubesolo:latest) | Containerized node distribution image for container execution modes |
+| `CoreDNS` | `1.14.4` | `Apache-2.0` | The CoreDNS Authors (`docker.io/coredns/coredns:1.14.4`) | Cluster DNS resolver pod providing service discovery across cluster namespaces |
+| `pause sandbox` | `latest (v3.10 baseline)` | `Apache-2.0` | The Kubernetes Authors / Portainer.io (`docker.io/portainer/pause:latest`) | CRI sandbox container holding network namespace and IPC resources for pods |
+| `local-path-provisioner` | `v0.0.36` | `Apache-2.0` | Rancher Labs, Inc. (`docker.io/rancher/local-path-provisioner:v0.0.36`) | Persistent volume controller provisioning hostPath-backed storage with Retain reclaim policy |
+| `local-path helper (busybox)` | `latest (1.37.0 baseline)` | `GPL-2.0-only` | Erik Andersen, Rob Landley, Denys Vlasenko, and others (`docker.io/library/busybox:latest`) | Helper utility pod used by local-path-provisioner for volume initialization |
+| `Portainer Edge Agent` | `lts` | `Zlib` | Portainer.io (`docker.io/portainer/agent:lts`) | Optional management agent establishing reverse tunnel connectivity to Portainer Server |
+| `D2K` | `1.2.3` | `Apache-2.0` | Portainer.io (`docker.io/portainer/d2k:1.2.3`) | Optional Docker-to-Kubernetes translation gateway exposing Docker Engine API on port 2376 |
+| `KubeSolo node image` | `latest` | `Apache-2.0` | Portainer.io (`ghcr.io/portainer/kubesolo:latest`) | Containerized node distribution image for container execution modes |
 
 ## Networking and Snapshotter Utilities
 
@@ -45,7 +45,7 @@ This document compiles formal third-party license notices, copyright declaration
 
 ## Rust Workspace Dependencies
 
-The Rubix distribution binaries (`rubix-kube`, `rubixctl`) and developer verification tools are built from the pinned Rust toolchain (1.97.1, edition 2024). Below is the complete inventory of compiled Rust crates with their declared SPDX licenses:
+Locked workspace Cargo metadata supplies the following declared dependency licenses. This includes development/tooling and potentially inactive dependencies; it is not an inventory of crates linked into a particular release binary.
 
 | Crate | Version | SPDX License | Source |
 |---|---|---|---|

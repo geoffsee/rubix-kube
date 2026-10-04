@@ -316,13 +316,13 @@ impl AttributionRecord {
         })
     }
 
-    /// Renders formal Markdown attribution documentation.
+    /// Renders draft notices and metadata; this does not certify license compliance.
     #[must_use]
     pub fn to_markdown(&self) -> String {
         let mut out = String::new();
         let _ = writeln!(
             out,
-            "# Upstream License Attribution and Third-Party Notices\n"
+            "# Draft Upstream License Attribution and Third-Party Notices\n"
         );
         let _ = writeln!(
             out,
@@ -330,10 +330,10 @@ impl AttributionRecord {
             self.distribution_version, self.distribution_license
         );
         out.push_str(
-            "This document compiles formal third-party license notices, copyright declarations, \
-             and architectural responsibilities for all retained upstream executables, OCI container \
-             images, protocol modules, and compiled Rust dependencies included in or supervised by \
-             the Rubix Kubernetes Distribution, in satisfaction of Gate C16/C17 (Epic E30 / Issue #126).\n\n"
+            "UNQUALIFIED_FIXTURE_ONLY. This draft inventories declared upstream components and \
+             locked workspace dependency metadata. It does not attest the contents of built release \
+             binaries or OCI images, provide complete upstream license texts, or certify legal \
+             license compliance. Gate C16/C17 remain pending.\n\n"
         );
 
         let categories = [
@@ -352,15 +352,15 @@ impl AttributionRecord {
             let _ = writeln!(out, "|---|---|---|---|---|");
 
             for c in self.components.iter().filter(|c| c.category == category) {
+                let authority = if c.upstream_repository.starts_with("https://") {
+                    format!("[{}]({})", c.copyright, c.upstream_repository)
+                } else {
+                    format!("{} (`{}`)", c.copyright, c.upstream_repository)
+                };
                 let _ = writeln!(
                     out,
-                    "| `{}` | `{}` | `{}` | [{}]({}) | {} |",
-                    c.name,
-                    c.version,
-                    c.spdx_license,
-                    c.copyright,
-                    c.upstream_repository,
-                    c.architectural_role
+                    "| `{}` | `{}` | `{}` | {} | {} |",
+                    c.name, c.version, c.spdx_license, authority, c.architectural_role
                 );
             }
             out.push('\n');
@@ -373,9 +373,9 @@ impl AttributionRecord {
             ComponentCategory::RustWorkspaceDependency.title()
         );
         out.push_str(
-            "The Rubix distribution binaries (`rubix-kube`, `rubixctl`) and developer verification tools \
-             are built from the pinned Rust toolchain (1.97.1, edition 2024). Below is the complete \
-             inventory of compiled Rust crates with their declared SPDX licenses:\n\n"
+            "Locked workspace Cargo metadata supplies the following declared dependency licenses. \
+             This includes development/tooling and potentially inactive dependencies; it is not \
+             an inventory of crates linked into a particular release binary.\n\n",
         );
         let _ = writeln!(out, "| Crate | Version | SPDX License | Source |");
         let _ = writeln!(out, "|---|---|---|---|");

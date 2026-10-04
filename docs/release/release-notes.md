@@ -14,7 +14,7 @@ Preserve kubesolo.io/v1alpha1, KUBESOLO_* inputs, /etc/kubesolo and /var/lib/kub
 
 ## Performance
 
-The authoritative twelve gates use default 1.10 bounds for startup, aggregate idle memory and artifact sizes, density >= 0.90 of reference, >=24h sustained aggregate growth <=1.10, zero failures, and shutdown deadlines of30/35 seconds. Synthetic arithmetic passing does not qualify live performance. The authoritative policy and exact gate table are reproduced below.
+The authoritative twelve gates use default 1.10 bounds for startup, aggregate idle memory and artifact sizes, density >= 0.90 of reference, >=24h sustained aggregate growth <=1.10, zero failures, and shutdown deadlines of 30/35 seconds. Synthetic arithmetic passing does not qualify live performance. The authoritative policy and exact gate table are reproduced below.
 
 ## Certification
 
@@ -308,7 +308,7 @@ results into an accepted architecture before production integration depends on i
 # Performance Gating and Rebaseline Policy
 
 This policy implements the provisional engineering gates in the
-[compatibility contract](compatibility-contract.md#measurable-engineering-gates)
+[compatibility contract](../architecture/compatibility-contract.md#measurable-engineering-gates)
 for C13/E29. The compatibility contract owns performance thresholds and sampling.
 
 ## Scope and evidence boundary
