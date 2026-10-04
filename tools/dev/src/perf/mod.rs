@@ -8,6 +8,7 @@
     clippy::similar_names
 )]
 
+pub mod budget;
 pub mod contract;
 pub mod harness;
 pub mod metrics;
@@ -15,6 +16,11 @@ pub mod report;
 pub mod secondary;
 pub mod validation;
 
+pub use budget::{
+    BudgetDomain, BudgetMetricComparison, BudgetProfileReport, BudgetScopeDecision,
+    ComponentBinaryProfile, ProcessMemoryProfile, ScopedOptimization,
+    generate_budget_markdown_report, verify_optimization_parity,
+};
 pub use contract::{GateEvaluationReport, GateResult};
 pub use harness::{
     REQUIRED_RETAINED_PROCESSES, RunOrder, measure_artifact_footprint, parse_pss_bytes,

@@ -47,7 +47,16 @@ cargo run --locked -p rubix-dev --bin rubix-perf -- evaluate-gates \
 cargo run --locked -p rubix-dev --bin rubix-perf -- report \
   --reference tools/perf/fixtures/amd64-reference-go.json \
   --candidate tools/perf/fixtures/amd64-candidate-rust.json
+cargo run --locked -p rubix-dev --bin rubix-perf -- profile \
+  --reference tools/perf/fixtures/amd64-reference-go.json \
+  --candidate tools/perf/fixtures/amd64-candidate-rust.json
 ```
+
+`profile` performs metric-by-metric budget analysis against E01 contracts (<= 1.10x reference),
+profiles component process memory and binary shares, verifies before/after measurement justifications
+for scoped optimizations without reviving removed low-memory edge defaults (D09 / KS-68), and
+evaluates explicit budget scope decisions (refusal of unmeasured sub-200MB and under-60s claims).
+Like `report`, it emits the full analysis before failing closed on synthetic fixtures.
 
 `verify-secondary` checks gap-record structure only. The secondary examples record
 missing qualification and the platform's disabled D2K / unavailable Portainer
