@@ -115,7 +115,7 @@ are refused; keep them for manual inspection rather than generating evidence aft
    - These checks preserve the original bytes; they do not prove the original database or identities were healthy. The integrity record is not an authenticated signature or SQLite integrity check.
    - If backup is missing, corrupt, or empty, recovery **aborts immediately without mutation** (`BackupIntegrityError`), retaining active receipts and error diagnostics for operator triage.
 3. **Quiesce and State Restoration (Rollback for Pending Upgrades):** Require successful stop (or a structured observation proving absence/inactivity) before restoring state. For containers, verify exact active/rollback names and image references and reconstruct crash-lost replacement state first.
-   - Restore binary executable and host service units.
+   - Restore binary executable and host service units captured in the original snapshot; an initially absent standard unit is permitted, but deletion from a sealed snapshot is refused.
    - Restore Kine SQLite database (`state.db`) and WAL files, reversing partial migrations or corrupt writes.
    - Restore PKI private keys (`ca.key`, `service-account.key`) and certificates (`ca.crt`).
    - Restore configuration according to version-specific limitations.
@@ -124,6 +124,7 @@ are refused; keep them for manual inspection rather than generating evidence aft
    - Request target start. Container recovery checks running state; host service-start success does not establish application readiness.
    - Retain `.upgrade-committing` and diagnostics if backend finalization fails; retry uses observed engine state rather than lost in-memory flags.
    - Clean receipts only after successful commit. If start fails, rollback requires the old artifact to remain available; otherwise retain evidence for manual repair.
+   - Before rollback changes artifacts or state, durably change `.upgrade-committing` to `.upgrade-pending` so interrupted or failed restoration retries rollback rather than target finalization.
 
 ### Fixture Checks Across 5 Core Domains
 

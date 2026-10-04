@@ -404,6 +404,7 @@ pub fn run_upgrade(
             .snapshot(&dir)
             .and_then(|()| backend.validate_snapshot(&dir))
             .and_then(|()| seal_backup(&dir))
+            .and_then(|()| validate_backup_integrity(&dir).map_err(io::Error::other))
         {
             fs::remove_dir_all(&dir).map_err(|cleanup| {
                 io::Error::other(format!(
@@ -728,6 +729,13 @@ fn clean_rollback_receipts(data: &Path, receipt: &UpgradeReceipt) -> io::Result<
     Ok(())
 }
 
+fn mark_rollback_pending(data: &Path, receipt: &UpgradeReceipt) -> io::Result<()> {
+    // Persist rollback intent before changing artifacts or live state. A retry must never
+    // finalize a target after a partially completed restoration.
+    fs::rename(&receipt.path, data.join(".upgrade-pending"))?;
+    fs::File::open(data)?.sync_all()
+}
+
 /// Executes operator recovery from an interrupted upgrade using retained receipts and backups.
 ///
 /// Refuses to proceed if the backup is missing, incomplete, or corrupted, ensuring existing state
@@ -803,6 +811,7 @@ pub fn recover_interrupted_upgrade(
                             "cannot roll back interrupted commit: backup validation failed ({e}); retaining receipt and state for operator inspection"
                         ))
                     })?;
+                    mark_rollback_pending(data_path, &receipt)?;
                     backend.stop()?;
                     backend.restore(&receipt.backup)?;
                     restore_state(data_path, config, &receipt.backup)?;
@@ -873,10 +882,17 @@ impl<R: Runner> TransitionBackend for HostBackend<'_, R> {
         if !dir.join("kubesolo.bin").symlink_metadata()?.is_file() {
             return Err(io::Error::other("backup binary is not a regular file"));
         }
-        if self.service_file.is_some() && !dir.join("service.unit").symlink_metadata()?.is_file() {
-            return Err(io::Error::other(
-                "backup service unit is not a regular file",
-            ));
+        if self.service_file.is_some() {
+            match dir.join("service.unit").symlink_metadata() {
+                Ok(metadata) if !metadata.is_file() => {
+                    return Err(io::Error::other(
+                        "backup service unit is not a regular file",
+                    ));
+                },
+                Ok(_) => {},
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error),
+            }
         }
         Ok(())
     }
