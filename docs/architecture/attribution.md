@@ -2,8 +2,11 @@
 
 This document records the third-party software components, retained executables,
 container images, and library dependencies incorporated into or supervised by Rubix Kube.
-It fulfills the attribution requirements of [E30.03](https://github.com/geoffsee/rubix-kube/issues/126)
+It supports the attribution work for [E30.03](https://github.com/geoffsee/rubix-kube/issues/126)
 and [Roadmap #263](https://github.com/geoffsee/rubix-kube/issues/263) Completion Criteria 10 and 11.
+This declared inventory is not a candidate-bound license audit or release qualification.
+The `deny.toml` policy applies to workspace Rust dependencies; retained upstream
+executables and images have their own license obligations and notices.
 
 ## Baseline Heritage
 

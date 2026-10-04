@@ -106,7 +106,7 @@ pub const RETAINED_COMPONENTS: &[RetainedComponentSpec] = &[
     },
     RetainedComponentSpec {
         name: "busybox",
-        upstream_ref: "latest",
+        upstream_ref: "pinned digest",
         license: "GPL-2.0-only",
         copyright: "Erik Andersen",
     },
@@ -139,31 +139,70 @@ pub fn verify_retained_attribution(root: &Path) -> Result<usize> {
         )
     })?;
 
+    let mut records = std::collections::BTreeMap::new();
+    for line in content.lines().filter(|line| line.starts_with('|')) {
+        let fields: Vec<_> = line.trim_matches('|').split('|').map(str::trim).collect();
+        let Some(name) = fields.first().and_then(|field| field.split('`').nth(1)) else {
+            continue;
+        };
+        if !RETAINED_COMPONENTS
+            .iter()
+            .any(|component| component.name == name)
+        {
+            continue;
+        }
+        if fields.len() != 5 || records.insert(name, fields).is_some() {
+            return Err(format!("malformed or duplicate attribution record for {name}").into());
+        }
+    }
     for component in RETAINED_COMPONENTS {
-        if !content.contains(component.name) {
-            return Err(format!(
-                "attribution document missing retained component name '{}'",
+        let row = records.get(component.name).ok_or_else(|| {
+            format!(
+                "attribution document missing retained component record '{}'",
                 component.name
             )
-            .into());
-        }
-        if !content.contains(component.license) {
+        })?;
+        let license_matches = row[2]
+            .split('/')
+            .any(|license| license.trim() == component.license);
+        if !row[1]
+            .to_ascii_lowercase()
+            .contains(&component.upstream_ref.to_ascii_lowercase())
+            || !license_matches
+            || !row[3].contains(component.copyright)
+            || row[4] != upstream_repository(component.name)
+        {
             return Err(format!(
-                "attribution document missing license '{}' for component '{}'",
-                component.license, component.name
-            )
-            .into());
-        }
-        if !content.contains(component.copyright) {
-            return Err(format!(
-                "attribution document missing copyright holder '{}' for component '{}'",
-                component.copyright, component.name
+                "incomplete attribution fields for component '{}'",
+                component.name
             )
             .into());
         }
     }
 
     Ok(RETAINED_COMPONENTS.len())
+}
+
+fn upstream_repository(name: &str) -> &'static str {
+    match name {
+        "kube-apiserver" | "kube-controller-manager" | "kubelet" | "kube-proxy" | "pause" => {
+            "https://github.com/kubernetes/kubernetes"
+        },
+        "kine" => "https://github.com/k3s-io/kine",
+        "sqlite" => "https://sqlite.org",
+        "containerd" | "containerd-shim-runc-v2" => "https://github.com/containerd/containerd",
+        "crun" => "https://github.com/containers/crun",
+        "cni-plugins" => "https://github.com/containernetworking/plugins",
+        "containerd-fuse-overlayfs-grpc" => {
+            "https://github.com/containerd/fuse-overlayfs-snapshotter"
+        },
+        "coredns" => "https://github.com/coredns/coredns",
+        "local-path-provisioner" => "https://github.com/rancher/local-path-provisioner",
+        "busybox" => "https://busybox.net",
+        "portainer-agent" => "https://github.com/portainer/agent",
+        "d2k" => "https://github.com/portainer/d2k",
+        _ => "",
+    }
 }
 
 /// Verifies workspace dependency license policy defined in `deny.toml`.

@@ -1,10 +1,8 @@
-//! Automated release qualification verification harness and gates (Issue #126 / Gate C16/C17).
+//! Repository metadata audit and pending release qualification (Issue #126).
 //!
-//! Enforces:
-//! - Cryptographic artifact digest bindings.
-//! - License and attribution completeness.
-//! - Link integrity and completeness across all documentation artifacts.
-//! - Formal verification that all 11 Roadmap #263 completion criteria are satisfied with verifiable evidence.
+//! Input digest syntax, declared attribution and local document links are checked.
+//! No actual prepared inputs, candidate artifacts or live completion receipts are
+//! consumed by this entrypoint; C16/C17 and every completion criterion remain pending.
 
 pub mod attribution;
 pub mod criteria;
@@ -14,12 +12,12 @@ pub mod link_integrity;
 use crate::Result;
 use std::path::Path;
 
-/// Overall release qualification report.
+/// Repository metadata report; completion criteria remain unqualified.
 #[derive(Debug, Clone)]
 pub struct ReleaseQualificationReport {
-    pub upstream_inputs_verified: usize,
-    pub upstream_sources_verified: usize,
-    pub catalog_assets_verified: usize,
+    pub upstream_input_metadata_checked: usize,
+    pub upstream_source_metadata_checked: usize,
+    pub catalog_metadata_checked: usize,
     pub retained_components_attributed: usize,
     pub workspace_licenses_checked: usize,
     pub documentation_summary: link_integrity::LinkIntegritySummary,
@@ -31,22 +29,22 @@ impl ReleaseQualificationReport {
     pub fn print_summary(&self) {
         println!("===============================================================================");
         println!(
-            "                RUBIX KUBE RELEASE QUALIFICATION AUDIT LEDGER                   "
+            "                RUBIX KUBE REPOSITORY METADATA AUDIT (UNQUALIFIED)                   "
         );
         println!("===============================================================================");
         println!();
-        println!("1. CRYPTOGRAPHIC ARTIFACT DIGEST BINDINGS");
+        println!("1. DECLARED INPUT METADATA (NOT BYTE OR PROVENANCE VERIFICATION)");
         println!(
-            "  - Upstream generator inputs (tools/upstream/inputs.json):  {} verified (sha256)",
-            self.upstream_inputs_verified
+            "  - Upstream generator inputs (tools/upstream/inputs.json):  {} metadata entries (sha256 syntax)",
+            self.upstream_input_metadata_checked
         );
         println!(
-            "  - Upstream sources (docs/architecture/upstream-inputs.json): {} verified (git commit)",
-            self.upstream_sources_verified
+            "  - Upstream sources (docs/architecture/upstream-inputs.json): {} metadata entries (commit syntax)",
+            self.upstream_source_metadata_checked
         );
         println!(
-            "  - Asset catalog entries:                                     {} verified",
-            self.catalog_assets_verified
+            "  - Asset catalog entries:                                     {} metadata entries",
+            self.catalog_metadata_checked
         );
         println!();
         println!("2. LICENSE & ATTRIBUTION COMPLETENESS");
@@ -55,7 +53,7 @@ impl ReleaseQualificationReport {
             self.retained_components_attributed
         );
         println!(
-            "  - Permitted license categories (deny.toml):                          {} verified",
+            "  - Permitted license categories (deny.toml):                          {} metadata entries",
             self.workspace_licenses_checked
         );
         println!();
@@ -86,7 +84,7 @@ impl ReleaseQualificationReport {
             let mark = if status.satisfied {
                 "✓ [PASS]"
             } else {
-                "✗ [FAIL]"
+                "[PENDING]"
             };
             println!(
                 "  {:8} Criterion {:2}: {:<42} -> {}",
@@ -95,17 +93,19 @@ impl ReleaseQualificationReport {
         }
         println!();
         println!("===============================================================================");
-        println!("STATUS: ALL QUALIFICATION GATES PASSED (Gate C16/C17 Satisfied)");
+        println!("STATUS: RELEASE UNQUALIFIED (C16/C17 pending)");
         println!("===============================================================================");
     }
 }
 
-/// Executes all release qualification checks against the given repository root.
-pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationReport> {
+/// Audits repository metadata and reports all completion criteria as pending.
+/// A successful Result means the metadata audit ran, never that a release qualified.
+pub fn audit_repository_metadata(root: &Path) -> Result<ReleaseQualificationReport> {
     // 1. Cryptographic Digest Bindings
-    let upstream_inputs_verified = digest_bindings::verify_upstream_inputs(root)?;
-    let upstream_sources_verified = digest_bindings::verify_upstream_provenance(root)?;
-    let catalog_assets_verified = digest_bindings::verify_catalog_bindings()?;
+    let upstream_input_metadata_checked = digest_bindings::check_upstream_input_metadata(root)?;
+    let upstream_source_metadata_checked =
+        digest_bindings::check_upstream_provenance_metadata(root)?;
+    let catalog_metadata_checked = digest_bindings::check_catalog_metadata()?;
 
     // 2. License & Attribution Completeness
     let retained_components_attributed = attribution::verify_retained_attribution(root)?;
@@ -118,12 +118,22 @@ pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationRepo
     let criteria_reports = criteria::verify_all_criteria(root)?;
 
     Ok(ReleaseQualificationReport {
-        upstream_inputs_verified,
-        upstream_sources_verified,
-        catalog_assets_verified,
+        upstream_input_metadata_checked,
+        upstream_source_metadata_checked,
+        catalog_metadata_checked,
         retained_components_attributed,
         workspace_licenses_checked,
         documentation_summary,
         criteria_reports,
     })
+}
+
+/// Fails closed until a trusted current candidate-bound completion receipt
+/// verifier exists. Repository metadata success cannot qualify a release.
+pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationReport> {
+    audit_repository_metadata(root)?;
+    Err(
+        "RELEASE UNQUALIFIED: validated current candidate-bound completion receipts unavailable"
+            .into(),
+    )
 }

@@ -1,7 +1,7 @@
 //! Integration tests for automated release qualification verification (Gate C16/C17 / Issue #126).
 
 use rubix_dev::release_qualification::{
-    attribution, criteria, digest_bindings, link_integrity, run_release_qualification,
+    attribution, audit_repository_metadata, criteria, digest_bindings, link_integrity,
 };
 use rubix_dev::{Result, repository_root};
 use std::collections::BTreeMap;
@@ -15,14 +15,14 @@ fn root_dir() -> Result<std::path::PathBuf> {
 #[test]
 fn test_full_release_qualification_suite() -> Result<()> {
     let root = root_dir()?;
-    let report = run_release_qualification(&root)?;
+    let report = audit_repository_metadata(&root)?;
 
     // Print summary to capture formatted audit in test output
     report.print_summary();
 
-    assert!(report.upstream_inputs_verified > 0);
-    assert!(report.upstream_sources_verified > 0);
-    assert!(report.catalog_assets_verified > 0);
+    assert!(report.upstream_input_metadata_checked > 0);
+    assert!(report.upstream_source_metadata_checked > 0);
+    assert!(report.catalog_metadata_checked > 0);
     assert_eq!(report.retained_components_attributed, 17);
     assert!(report.workspace_licenses_checked >= 3);
     assert!(report.documentation_summary.documents_checked >= 8);
@@ -32,7 +32,7 @@ fn test_full_release_qualification_suite() -> Result<()> {
 
     for criterion in &report.criteria_reports {
         assert!(
-            criterion.satisfied,
+            !criterion.satisfied,
             "Criterion {} ({}) not satisfied",
             criterion.number, criterion.name
         );
@@ -46,15 +46,15 @@ fn test_cryptographic_digest_bindings() -> Result<()> {
     let root = root_dir()?;
 
     // 1. Upstream generator inputs (tools/upstream/inputs.json)
-    let inputs_count = digest_bindings::verify_upstream_inputs(&root)?;
+    let inputs_count = digest_bindings::check_upstream_input_metadata(&root)?;
     assert!(inputs_count > 0, "must verify upstream inputs");
 
     // 2. Upstream provenance sources (docs/architecture/upstream-inputs.json)
-    let sources_count = digest_bindings::verify_upstream_provenance(&root)?;
+    let sources_count = digest_bindings::check_upstream_provenance_metadata(&root)?;
     assert!(sources_count > 0, "must verify upstream provenance sources");
 
     // 3. Catalog assets
-    let catalog_count = digest_bindings::verify_catalog_bindings()?;
+    let catalog_count = digest_bindings::check_catalog_metadata()?;
     assert!(catalog_count > 0, "must verify catalog assets");
 
     // 4. Digest validation helper
@@ -111,7 +111,7 @@ fn test_all_11_roadmap_criteria() -> Result<()> {
     assert_eq!(results.len(), 11, "must verify all 11 criteria");
     for res in results {
         assert!(
-            res.satisfied,
+            !res.satisfied,
             "Criterion {} ({}) failed: {}",
             res.number, res.name, res.summary
         );
@@ -125,28 +125,19 @@ fn test_link_integrity_fails_closed_on_broken_link() -> Result<()> {
     let temp = tempfile::tempdir()?;
     let doc_file = temp.path().join("test.md");
 
-    // Write a document with a broken local relative link
     fs::write(
         &doc_file,
         b"Check out this [missing link](does-not-exist.md)",
     )?;
-
-    // link verification should detect the broken link
-    let inline_re = regex::Regex::new(r"\[([^\]]+)\]\(([^)]+)\)")?;
-
-    let content = fs::read_to_string(&doc_file)?;
-    let mut broken = Vec::new();
-    for cap in inline_re.captures_iter(&content) {
-        let target = cap.get(2).unwrap().as_str();
-        let resolved = temp.path().join(target);
-        if !resolved.exists() {
-            broken.push(target.to_string());
-        }
+    fs::create_dir_all(temp.path().join("docs/architecture"))?;
+    fs::copy(&doc_file, temp.path().join("docs/architecture/test.md"))?;
+    for document in link_integrity::REQUIRED_DOCUMENTS {
+        let path = temp.path().join(document);
+        fs::create_dir_all(path.parent().ok_or("missing parent")?)?;
+        fs::write(path, b"Required document")?;
     }
-
-    assert_eq!(broken.len(), 1);
-    assert_eq!(broken[0], "does-not-exist.md");
-
+    let error = link_integrity::verify_documentation_links(temp.path()).unwrap_err();
+    assert!(error.to_string().contains("does-not-exist.md"));
     Ok(())
 }
 

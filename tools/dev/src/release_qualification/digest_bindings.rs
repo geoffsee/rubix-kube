@@ -9,8 +9,9 @@
 use crate::Result;
 use rubix_assets::{ReleasePackager, catalog};
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 
 const EXPECTED_BASELINE: &str = "2ef1c4787989f11f868f81bb84ae2afd4a49a81d";
@@ -47,8 +48,9 @@ struct UpstreamInputEntry {
 }
 
 /// Verifies that all upstream generator inputs in `tools/upstream/inputs.json`
-/// have valid cryptographic SHA-256 bindings and positive sizes.
-pub fn verify_upstream_inputs(root: &Path) -> Result<usize> {
+/// declare syntactically valid SHA-256 strings and positive sizes.
+/// This metadata-only check neither reads prepared input bytes nor verifies their provenance.
+pub fn check_upstream_input_metadata(root: &Path) -> Result<usize> {
     let path = root.join("tools/upstream/inputs.json");
     let content = fs::read_to_string(&path)
         .map_err(|e| format!("failed to read upstream inputs at {}: {e}", path.display()))?;
@@ -102,9 +104,9 @@ struct ProvenanceSourceEntry {
     commit: String,
 }
 
-/// Verifies that `docs/architecture/upstream-inputs.json` records authoritative
-/// baseline commit and valid Git commit hashes for all upstream repositories.
-pub fn verify_upstream_provenance(root: &Path) -> Result<usize> {
+/// Checks that `docs/architecture/upstream-inputs.json` declares the expected
+/// baseline and syntactically valid commits. It does not fetch or verify repositories.
+pub fn check_upstream_provenance_metadata(root: &Path) -> Result<usize> {
     let path = root.join("docs/architecture/upstream-inputs.json");
     let content = fs::read_to_string(&path).map_err(|e| {
         format!(
@@ -152,8 +154,8 @@ pub fn verify_upstream_provenance(root: &Path) -> Result<usize> {
     Ok(doc.sources.len())
 }
 
-/// Verifies that all entries in the asset catalog have valid identities and references.
-pub fn verify_catalog_bindings() -> Result<usize> {
+/// Checks nonempty catalog reference metadata without acquiring or hashing assets.
+pub fn check_catalog_metadata() -> Result<usize> {
     let items = catalog();
     if items.is_empty() {
         return Err("asset catalog is empty".into());
@@ -178,6 +180,38 @@ pub fn verify_artifacts_integrity(
         return Err("expected checksums map cannot be empty".into());
     }
 
+    if !fs::symlink_metadata(dist_dir)?.file_type().is_dir() {
+        return Err("distribution root must be a regular directory, not a symlink".into());
+    }
+    for filename in expected_checksums.keys() {
+        let path = Path::new(filename);
+        if filename.is_empty()
+            || filename.contains(['/', '\\'])
+            || path.components().count() != 1
+            || !matches!(
+                path.components().next(),
+                Some(std::path::Component::Normal(_))
+            )
+        {
+            return Err(format!("invalid artifact name: {filename}").into());
+        }
+    }
+    let mut observed_names = BTreeSet::new();
+    for entry in fs::read_dir(dist_dir)? {
+        let entry = entry?;
+        if !entry.file_type()?.is_file() {
+            return Err(format!("nonregular artifact: {}", entry.path().display()).into());
+        }
+        let name = entry
+            .file_name()
+            .into_string()
+            .map_err(|_| "non-UTF-8 artifact name")?;
+        observed_names.insert(name);
+    }
+    if observed_names != expected_checksums.keys().cloned().collect() {
+        return Err("distribution artifact inventory mismatch: missing or unlisted files".into());
+    }
+
     // Check each expected file exists and matches observed SHA-256
     for (filename, expected_digest) in expected_checksums {
         if !is_valid_sha256_hex(expected_digest) {
@@ -194,9 +228,7 @@ pub fn verify_artifacts_integrity(
             );
         }
 
-        let content = fs::read(&file_path)
-            .map_err(|e| format!("failed to read artifact {}: {e}", file_path.display()))?;
-        let observed_digest = ReleasePackager::sha256_hex(&content);
+        let observed_digest = hash_regular_artifact(&file_path)?;
 
         if &observed_digest != expected_digest {
             return Err(format!(
@@ -207,6 +239,33 @@ pub fn verify_artifacts_integrity(
     }
 
     Ok(expected_checksums.len())
+}
+
+fn hash_regular_artifact(path: &Path) -> Result<String> {
+    use sha2::{Digest, Sha256};
+    let mut options = fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(i32::try_from(
+            (rustix::fs::OFlags::NOFOLLOW | rustix::fs::OFlags::NONBLOCK).bits(),
+        )?);
+    }
+    let mut file = options.open(path)?;
+    if !file.metadata()?.is_file() {
+        return Err(format!("nonregular artifact: {}", path.display()).into());
+    }
+    let mut digest = Sha256::new();
+    let mut buffer = [0_u8; 8192];
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        digest.update(&buffer[..count]);
+    }
+    Ok(ReleasePackager::hex_digest(&digest.finalize()))
 }
 
 #[cfg(test)]
