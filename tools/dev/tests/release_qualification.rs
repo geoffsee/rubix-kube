@@ -263,3 +263,59 @@ fn test_artifact_inventory_rejects_socket_and_symlink_root() -> Result<()> {
     assert!(error.to_string().contains("not a symlink"));
     Ok(())
 }
+
+#[test]
+fn attribution_rejects_component_name_suffixes() -> Result<()> {
+    let root = root_dir()?;
+    let temp = tempfile::tempdir()?;
+    let docs = temp.path().join("docs/architecture");
+    fs::create_dir_all(&docs)?;
+    let content = fs::read_to_string(root.join("docs/architecture/attribution.md"))?;
+    fs::write(
+        docs.join("attribution.md"),
+        content.replace("`kube-apiserver`", "`kube-apiserver-omitted`"),
+    )?;
+    let error = attribution::verify_retained_attribution(temp.path()).unwrap_err();
+    assert!(error.to_string().contains("missing retained component"));
+    Ok(())
+}
+
+#[test]
+fn attribution_rejects_tokens_in_wrong_columns() -> Result<()> {
+    let root = root_dir()?;
+    let temp = tempfile::tempdir()?;
+    let docs = temp.path().join("docs/architecture");
+    fs::create_dir_all(&docs)?;
+    let content = fs::read_to_string(root.join("docs/architecture/attribution.md"))?;
+    let valid = "| `kube-apiserver` | Official v1.35.7 | Apache-2.0 | The Kubernetes Authors | https://github.com/kubernetes/kubernetes |";
+    assert!(
+        content.contains(valid),
+        "fixture must contain the selected row"
+    );
+    fs::write(
+        docs.join("attribution.md"),
+        content.replace(valid, "| `kube-apiserver` | Official v1.35.7 | unknown | unknown | https://github.com/kubernetes/kubernetes Apache-2.0 The Kubernetes Authors |"),
+    )?;
+    let error = attribution::verify_retained_attribution(temp.path()).unwrap_err();
+    assert!(error.to_string().contains("incomplete attribution fields"));
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn artifact_inventory_rejects_unlisted_unix_socket() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    fs::write(temp.path().join("candidate.tar.gz"), b"")?;
+    let checksums = BTreeMap::from([(
+        "candidate.tar.gz".to_owned(),
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".to_owned(),
+    )]);
+    assert_eq!(
+        digest_bindings::verify_artifacts_integrity(temp.path(), &checksums)?,
+        1
+    );
+    let _listener = std::os::unix::net::UnixListener::bind(temp.path().join("unlisted.sock"))?;
+    let error = digest_bindings::verify_artifacts_integrity(temp.path(), &checksums).unwrap_err();
+    assert!(error.to_string().contains("nonregular artifact"));
+    Ok(())
+}
