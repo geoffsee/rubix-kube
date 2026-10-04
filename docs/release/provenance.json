@@ -1,0 +1,440 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "baseline": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+  "upstream_sources": [
+    {
+      "repository": "https://github.com/kubernetes/kubernetes",
+      "tag": "v1.35.7",
+      "commit": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+      "role": null
+    },
+    {
+      "repository": "https://github.com/containerd/containerd",
+      "tag": "v2.2.5",
+      "commit": "e53c7c1516c3b2bff98eb76f1f4117477e6f4e66",
+      "role": null
+    },
+    {
+      "repository": "https://github.com/k3s-io/kine",
+      "tag": "v0.16.3",
+      "commit": "7414fca1dc92b44d7ec6de82383ba614a86d2994",
+      "role": null
+    },
+    {
+      "repository": "https://github.com/containerd/containerd",
+      "tag": "api/v1.10.0",
+      "commit": "8b34ce391bd114e080892cccfa956ef3807c207c",
+      "role": "authoritative-containerd-client-protocol-module"
+    },
+    {
+      "repository": "https://github.com/protocolbuffers/protobuf",
+      "tag": "v36.2",
+      "commit": "2c74169b34066ceb8ddb6b882fcb3fb32d737a55",
+      "role": "well-known-protobuf-import-authority"
+    },
+    {
+      "repository": "https://github.com/etcd-io/etcd",
+      "tag": "v3.6.12",
+      "commit": "90b034a02766ab83e425f9b79262311f508dba4e",
+      "role": "Kine-server-TLS-client-auth-evidence-not-Rust-etcd-generation"
+    }
+  ],
+  "generated_inputs": [
+    {
+      "id": "openapi",
+      "path": "api/openapi-spec/swagger.json",
+      "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/96cb9ab4201d88ce5e549fde047a686171838fdb/api/openapi-spec/swagger.json",
+      "sha256": "483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446",
+      "bytes": 3846687
+    },
+    {
+      "id": "cri",
+      "path": "staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.proto",
+      "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/96cb9ab4201d88ce5e549fde047a686171838fdb/staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.proto",
+      "sha256": "aad0f475bbe2cb9709e9f1ffc020e382ba2235e09566f0f2fac7fcc2958533d5",
+      "bytes": 86323
+    },
+    {
+      "id": "containerd:api/services/containers/v1/containers.proto",
+      "path": "api/services/containers/v1/containers.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/containers/v1/containers.proto",
+      "sha256": "a6cb02f4a422e35c0c3535954ebca50279fb1cecb841029c37eca4b8e50c6570",
+      "bytes": 6201
+    },
+    {
+      "id": "containerd:api/services/content/v1/content.proto",
+      "path": "api/services/content/v1/content.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/content/v1/content.proto",
+      "sha256": "b91daba4649a0e8916d046660905c8a0c70c06d5ef27d23786d8d2b5e4a218a1",
+      "bytes": 10657
+    },
+    {
+      "id": "containerd:api/services/diff/v1/diff.proto",
+      "path": "api/services/diff/v1/diff.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/diff/v1/diff.proto",
+      "sha256": "62a7f0b1226fa4981b2e676aae070a242fea5a5820d6a56101fecf82fb1b1ea0",
+      "bytes": 3049
+    },
+    {
+      "id": "containerd:api/services/events/v1/events.proto",
+      "path": "api/services/events/v1/events.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/events/v1/events.proto",
+      "sha256": "307fd39ae5f46b7f9cf55ef17966cd5174347c95c67f0c3c41eaf46b7b233210",
+      "bytes": 2088
+    },
+    {
+      "id": "containerd:api/services/images/v1/images.proto",
+      "path": "api/services/images/v1/images.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/images/v1/images.proto",
+      "sha256": "7b87546a92673ce0a04a75bf3146d4bd84886c4c159ba926293311c9252d9140",
+      "bytes": 4419
+    },
+    {
+      "id": "containerd:api/services/leases/v1/leases.proto",
+      "path": "api/services/leases/v1/leases.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/leases/v1/leases.proto",
+      "sha256": "0148dfbf87a9cabe67e6fe4550a1955c8f5fe1c2b4374515a68e4b5d0eb21713",
+      "bytes": 3147
+    },
+    {
+      "id": "containerd:api/services/namespaces/v1/namespace.proto",
+      "path": "api/services/namespaces/v1/namespace.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/namespaces/v1/namespace.proto",
+      "sha256": "dc18052397826a5d1e187985e5acd987cbfd404dfcf92f87a048fd585b776ba7",
+      "bytes": 3312
+    },
+    {
+      "id": "containerd:api/services/snapshots/v1/snapshots.proto",
+      "path": "api/services/snapshots/v1/snapshots.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/snapshots/v1/snapshots.proto",
+      "sha256": "65fdabff266f082c88b51df1f6231da025ca41b5f95d718a50ea45a419c3580e",
+      "bytes": 4573
+    },
+    {
+      "id": "containerd:api/services/tasks/v1/tasks.proto",
+      "path": "api/services/tasks/v1/tasks.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/tasks/v1/tasks.proto",
+      "sha256": "45eddb73447247b2e2b0923c5f8ffad4a9964e383c6f47ab7524320b9aced0e8",
+      "bytes": 5194
+    },
+    {
+      "id": "containerd:api/services/transfer/v1/transfer.proto",
+      "path": "api/services/transfer/v1/transfer.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/transfer/v1/transfer.proto",
+      "sha256": "f839a924be27e2993f91b8bd0885add2d8e6a2c9d28508c399743a4a8f4506ac",
+      "bytes": 1100
+    },
+    {
+      "id": "containerd:api/services/version/v1/version.proto",
+      "path": "api/services/version/v1/version.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/services/version/v1/version.proto",
+      "sha256": "e90daf4163a2e803022f685ae3a6e41793030d68119e113030d1b687e8091439",
+      "bytes": 982
+    },
+    {
+      "id": "containerd:api/types/descriptor.proto",
+      "path": "api/types/descriptor.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/descriptor.proto",
+      "sha256": "b5d45974cb169e4d3cfaf2df9ed57ee5ade70677c92a4107eb44967bc6025368",
+      "bytes": 1053
+    },
+    {
+      "id": "containerd:api/types/event.proto",
+      "path": "api/types/event.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/event.proto",
+      "sha256": "af096bef57267dd10805ecc3cfcee9211e5ebbaab5d0829236c2b9e63a5a6d2e",
+      "bytes": 1023
+    },
+    {
+      "id": "containerd:api/types/fieldpath.proto",
+      "path": "api/types/fieldpath.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/fieldpath.proto",
+      "sha256": "5554333b663cd6259f2cc16ef14b6470d2044a152243802ba644f160599190bf",
+      "bytes": 1765
+    },
+    {
+      "id": "containerd:api/types/metrics.proto",
+      "path": "api/types/metrics.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/metrics.proto",
+      "sha256": "d759da1055afeda08f1debbe45114514af700db5dde0beaed7e6ff3c4e511711",
+      "bytes": 880
+    },
+    {
+      "id": "containerd:api/types/mount.proto",
+      "path": "api/types/mount.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/mount.proto",
+      "sha256": "610b81ec306307b7e1a3fe078f03ab7e6f10e1195ea67a0457685531dbadfb04",
+      "bytes": 1687
+    },
+    {
+      "id": "containerd:api/types/task/task.proto",
+      "path": "api/types/task/task.proto",
+      "url": "https://raw.githubusercontent.com/containerd/containerd/8b34ce391bd114e080892cccfa956ef3807c207c/api/types/task/task.proto",
+      "sha256": "9986ea9de579506be970d551f7e11a128c12f87bc0df5bae77f56f89aa96bd16",
+      "bytes": 1303
+    },
+    {
+      "id": "k8s-openapi-crate",
+      "path": null,
+      "url": "https://static.crates.io/crates/k8s-openapi/k8s-openapi-0.28.0.crate",
+      "sha256": "d9c6922f6afe80418dd6019818af5d0d34584c371780ff09b9752370c25b4abb",
+      "bytes": 3603008
+    },
+    {
+      "id": "k8s-openapi-version-map",
+      "path": null,
+      "url": "https://raw.githubusercontent.com/Arnavion/k8s-openapi/b2c839b8b1828e9035ff8467cdac87756190aa4e/k8s-openapi-codegen/src/supported_version.rs",
+      "sha256": "de5cb0579f98672fbd590ae9f2bb7d89771425b2ef9d76b009d45c3f7271da57",
+      "bytes": 8147
+    },
+    {
+      "id": "k8s-openapi-schema",
+      "path": null,
+      "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/v1.35.6/api/openapi-spec/swagger.json",
+      "sha256": "483500149ee52ce5753d75f5639101d985bb4f5e902cc05b1ba7627465d62446",
+      "bytes": 3846687
+    }
+  ],
+  "retained_components": [
+    {
+      "id": "KubeApiserver",
+      "kind": "executable",
+      "reference": "kubernetes/v1.35.7/kube-apiserver"
+    },
+    {
+      "id": "KubeControllerManager",
+      "kind": "executable",
+      "reference": "kubernetes/v1.35.7/kube-controller-manager"
+    },
+    {
+      "id": "Kubelet",
+      "kind": "executable",
+      "reference": "kubernetes/v1.35.7/kubelet"
+    },
+    {
+      "id": "KubeProxy",
+      "kind": "executable",
+      "reference": "kubernetes/v1.35.7/kube-proxy"
+    },
+    {
+      "id": "Kine",
+      "kind": "executable",
+      "reference": "kine/v0.16.3"
+    },
+    {
+      "id": "Containerd",
+      "kind": "executable",
+      "reference": "containerd/v2.2.5"
+    },
+    {
+      "id": "ContainerdShim",
+      "kind": "executable",
+      "reference": "containerd/v2.2.5/containerd-shim-runc-v2"
+    },
+    {
+      "id": "Crun",
+      "kind": "executable",
+      "reference": "crun/1.26"
+    },
+    {
+      "id": "CniBridge",
+      "kind": "executable",
+      "reference": "containernetworking/plugins/v1.9.0/bridge"
+    },
+    {
+      "id": "CniHostLocal",
+      "kind": "executable",
+      "reference": "containernetworking/plugins/v1.9.0/host-local"
+    },
+    {
+      "id": "CniPortmap",
+      "kind": "executable",
+      "reference": "containernetworking/plugins/v1.9.0/portmap"
+    },
+    {
+      "id": "CniLoopback",
+      "kind": "executable",
+      "reference": "containernetworking/plugins/v1.9.0/loopback"
+    },
+    {
+      "id": "FuseOverlayfsSnapshotter",
+      "kind": "executable",
+      "reference": "containerd-fuse-overlayfs-grpc/v2.1.7"
+    },
+    {
+      "id": "ImageCoredns",
+      "kind": "image",
+      "reference": "docker.io/coredns/coredns:1.14.4"
+    },
+    {
+      "id": "ImagePause",
+      "kind": "image",
+      "reference": "docker.io/portainer/pause:latest"
+    },
+    {
+      "id": "ImageLocalPath",
+      "kind": "image",
+      "reference": "docker.io/rancher/local-path-provisioner:v0.0.36"
+    },
+    {
+      "id": "ImageLocalPathHelper",
+      "kind": "image",
+      "reference": "docker.io/library/busybox:latest"
+    },
+    {
+      "id": "ImagePortainerAgent",
+      "kind": "image",
+      "reference": "docker.io/portainer/agent:lts"
+    },
+    {
+      "id": "ImageD2k",
+      "kind": "image",
+      "reference": "docker.io/portainer/d2k:1.2.3"
+    },
+    {
+      "id": "ImageKubesolo",
+      "kind": "image",
+      "reference": "ghcr.io/portainer/kubesolo:latest"
+    }
+  ],
+  "artifacts": [
+    {
+      "filename": "README.md",
+      "sha256": "fc403a36d2f00020718666ae1a471fb7619fedae5dc845296dd902288102b104"
+    },
+    {
+      "filename": "attribution.md",
+      "sha256": "ff8edf9ba52df812238dfc376197fbe399739a458c7900a0f4f50ac2c10f844f"
+    },
+    {
+      "filename": "conformance-qualification-report.json",
+      "sha256": "63cda9e11883a244bf2d74334b52663d7f37c7f42b05b6fcd6c387fef27675af"
+    },
+    {
+      "filename": "conformance-qualification-report.md",
+      "sha256": "1cc79272d76db26d3dd61986bd57d1744f77110158a93ec0687c67570fd08b12"
+    },
+    {
+      "filename": "licenses.json",
+      "sha256": "2e0fd5c016cbdd1c340293ce8236f037adc7206a3958f2e53a7fbbe08ae4f5da"
+    },
+    {
+      "filename": "performance-qualification-report.json",
+      "sha256": "0768bba47cb9b33445de9f7c63fcba29f28f1b606d8b52c369ec6336d2e5203b"
+    },
+    {
+      "filename": "performance-qualification-report.md",
+      "sha256": "058a4c730ae0ec784372d9f32976132807d31acc66d1895126b2ceb2aab91297"
+    },
+    {
+      "filename": "provenance.json",
+      "sha256": "0d00f91885d12283b937e837dcd9be5a7d1a8bf98e78b26199131de8ff1d5d49"
+    },
+    {
+      "filename": "release-manifest.json",
+      "sha256": "aaad2018f333193f41ab7de4253112a0590f365f38883507e382a595bf125e76"
+    },
+    {
+      "filename": "release-notes.md",
+      "sha256": "24730693500add844e518b5ef8b7d742a70df9a3e9e2e6d65df37a54516b8175"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-amd64-musl-offline.tar.gz",
+      "sha256": "59f9d25852954d1455b3c78d90f8a5e29a72723b07d0b85a4830e5baa61a0e2e"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-amd64-musl.tar.gz",
+      "sha256": "5162a40c0dc9088b42d3730502ba60e0ae2cc282f4a6ed8ab3f85f20ffd79dc7"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-amd64-offline.tar.gz",
+      "sha256": "a53aee3ca690fbf07c9d94fcb1590ca559e5e99bbf38bd7690c669150b3a9c59"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-amd64.tar.gz",
+      "sha256": "df6bf585f9d2fb74a025a6d2d0b90d279066b0970c6920225dd916cd185a781f"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm-musl-offline.tar.gz",
+      "sha256": "13cc6dfe886d9e3b02d184df555934e8d11b99f0eecd0d4e373d366b97577ab2"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm-musl.tar.gz",
+      "sha256": "f18520b95661cd3957ddb1ff81f0f7b202863064c78cb7063ee15aaaf1ed061c"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm-offline.tar.gz",
+      "sha256": "9533df94b4c6189351577bbe536d686d015e09f0b6f2a364a4c225dbd7e791c3"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm.tar.gz",
+      "sha256": "8758bb47318e030bc0192464c9d1f5328d10288b17303d4b5da42260088786ca"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm64-musl-offline.tar.gz",
+      "sha256": "5a5768897e2e6824b5198e91ee0737bd0ae0fccf86c947a43e55de78136c4c54"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm64-musl.tar.gz",
+      "sha256": "4c40663f219535cfc1f07bbdfc7ac789affaff76e9f8be1cf040ca99a7405d41"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm64-offline.tar.gz",
+      "sha256": "5f3a035168a368e68ae6fff027628bd3d234b4e32daeb08a0da786adc1bde996"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-arm64.tar.gz",
+      "sha256": "b8a3f11c1edf96461807465df723f0c2e6b91683f785b319dda5d658e5535bdf"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-riscv64-musl-offline.tar.gz",
+      "sha256": "84375e705197cfd0b071cf8ab625a9115b044999c1593d7485f7be36388b3ba6"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-riscv64-musl.tar.gz",
+      "sha256": "a56dfd703a5e8c9fea7082d759884ea7fc1970ee291f855ef7491445e67edf96"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-riscv64-offline.tar.gz",
+      "sha256": "975c7bd62b6e6368540643cd6da348a82558e7f333a4c682887190baab141dc2"
+    },
+    {
+      "filename": "rubix-kube-0.1.0-linux-riscv64.tar.gz",
+      "sha256": "359356e6dd9d8c7b01ea6638b5145d3735393004df1751a93d8fae34f51b5ade"
+    },
+    {
+      "filename": "rubixctl-darwin-amd64",
+      "sha256": "14ef3685535401b1a839a8014824995fe58c109910c14fb4ea7aea95ad59b8a1"
+    },
+    {
+      "filename": "rubixctl-darwin-arm64",
+      "sha256": "079393e68940a05d61b8ed7739b8b286ca83b33ddb769419a3417128d7aeb8ef"
+    },
+    {
+      "filename": "rubixctl-linux-amd64",
+      "sha256": "c372b6c9fd1a616bc328400f202d8319b21bae735cfc27c82576dc3eb7c6440e"
+    },
+    {
+      "filename": "rubixctl-linux-arm64",
+      "sha256": "049272ff5f35c67166353422fc544efd2b612a57bc3eb4874b80c9ed6f39961a"
+    },
+    {
+      "filename": "state-transition-qualification-report.json",
+      "sha256": "735af7862a43851e61ec66bae0df924436a69d0b06113edfc8887b6671ce4eea"
+    },
+    {
+      "filename": "state-transition-qualification-report.md",
+      "sha256": "01ea368c590803c12a8682f9f9387e147e088cf48d99a0643aa24587d7a9c5e9"
+    }
+  ],
+  "reproducibility": {
+    "inputs_pinned": true,
+    "bit_for_bit_claimed": false,
+    "remaining_nondeterminism": [
+      "Rust binaries are not verified bit-for-bit reproducible across hosts or toolchain paths",
+      "retained upstream executables and images are consumed as pinned digests, not rebuilt",
+      "archive container metadata (mtime, ordering) is not independently re-verified"
+    ]
+  }
+}
