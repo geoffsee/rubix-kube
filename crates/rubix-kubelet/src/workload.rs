@@ -20,11 +20,85 @@ pub struct ExecResult {
     pub stderr: String,
 }
 
+/// Observed state of one container, as reported by the runtime.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ContainerRuntimeState {
+    /// Created or otherwise not yet executing.
+    Waiting { reason: String },
+    /// The container process is alive.
+    Running { started_at: String },
+    /// The container process has exited.
+    Terminated {
+        exit_code: i32,
+        started_at: Option<String>,
+        finished_at: String,
+    },
+}
+
+/// Observed status of one container belonging to a pod.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContainerRuntimeStatus {
+    /// Container name from the pod spec.
+    pub name: String,
+    /// Runtime-qualified identifier of the real container, such as `podman://<id>`.
+    pub container_id: String,
+    pub image: String,
+    pub image_id: String,
+    pub state: ContainerRuntimeState,
+}
+
+/// Everything the runtime currently holds for one pod.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PodRuntimeStatus {
+    pub containers: Vec<ContainerRuntimeStatus>,
+}
+
+/// A pod the runtime still holds containers for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ManagedPodRef {
+    pub pod_id: String,
+    pub namespace: String,
+    pub name: String,
+    pub uid: String,
+}
+
+/// Summary of one pass over every pod in the cluster.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ReconcileReport {
+    pub bound: usize,
+    pub synced: usize,
+    pub failed: usize,
+    pub orphans_stopped: usize,
+}
+
 /// Abstract interface for container runtime providers executing workloads.
 #[async_trait]
 pub trait RuntimeProvider: std::fmt::Debug + Send + Sync {
     /// Identifier for the runtime provider (e.g. "containerd", "cri-o").
     fn provider_name(&self) -> &str;
+
+    /// Version string reported in the node's `containerRuntimeVersion`.
+    fn runtime_version(&self) -> String {
+        "v1.35.7".to_string()
+    }
+
+    /// Verifies the runtime answers before the node reports Ready.
+    async fn check_available(&self) -> Result<(), KubeletError> {
+        Ok(())
+    }
+
+    /// Reports the live containers of `pod`, or `None` when the provider does not
+    /// observe real processes and the reconciler must assume the pod runs.
+    async fn inspect_pod(&self, pod: &Value) -> Result<Option<PodRuntimeStatus>, KubeletError> {
+        let _ = pod;
+        Ok(None)
+    }
+
+    /// Lists pods the runtime still holds containers for, so containers whose
+    /// Pod object was deleted can be stopped.
+    async fn list_managed_pods(&self) -> Result<Vec<ManagedPodRef>, KubeletError> {
+        Ok(Vec::new())
+    }
 
     /// Whether this provider requires a live unix domain socket path to exist on the host filesystem.
     fn requires_socket(&self) -> bool {
@@ -1273,6 +1347,159 @@ impl PodReconciler {
         Ok(())
     }
 
+    /// Reconciles every pod in the cluster: binds unscheduled pods to this node,
+    /// syncs the pods assigned here, and stops containers whose Pod is gone.
+    pub async fn reconcile_all(&self) -> Result<ReconcileReport, KubeletError> {
+        let pod_list = self
+            .client
+            .list_all_pods()
+            .await
+            .map_err(KubeletError::from)?;
+        let mut report = ReconcileReport::default();
+        let mut live_uids = BTreeSet::new();
+        let empty = Vec::new();
+        let items = pod_list
+            .get("items")
+            .and_then(Value::as_array)
+            .unwrap_or(&empty);
+        for pod in items {
+            if let Some(uid) = pod.pointer("/metadata/uid").and_then(Value::as_str) {
+                live_uids.insert(uid.to_string());
+            }
+            let namespace = pod
+                .pointer("/metadata/namespace")
+                .and_then(Value::as_str)
+                .unwrap_or("default")
+                .to_string();
+            let pod_name = pod
+                .pointer("/metadata/name")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown")
+                .to_string();
+            let assigned = pod.pointer("/spec/nodeName").and_then(Value::as_str);
+            let pod = match assigned {
+                Some(node) if node == self.node_name => pod.clone(),
+                Some(_) => continue,
+                None => match self.bind_pod_to_node(&namespace, pod).await {
+                    Ok(bound) => {
+                        report.bound += 1;
+                        bound
+                    },
+                    Err(e) => {
+                        report.failed += 1;
+                        eprintln!("Failed to bind pod {namespace}/{pod_name}: {e}");
+                        continue;
+                    },
+                },
+            };
+            match self.sync_pod(&namespace, &pod).await {
+                Ok(()) => report.synced += 1,
+                Err(e) => {
+                    report.failed += 1;
+                    eprintln!("Failed to sync pod {namespace}/{pod_name}: {e}");
+                },
+            }
+        }
+        report.orphans_stopped = self.stop_orphaned_pods(&live_uids).await?;
+        Ok(report)
+    }
+
+    /// Assigns an unscheduled pod to this node. There is no scheduler in a
+    /// single-node distribution, so the kubelet performs the binding itself.
+    pub async fn bind_pod_to_node(
+        &self,
+        namespace: &str,
+        pod: &Value,
+    ) -> Result<Value, KubeletError> {
+        let name = pod
+            .pointer("/metadata/name")
+            .and_then(Value::as_str)
+            .ok_or_else(|| KubeletError::PodReconciliationFailed {
+                pod: "unknown".to_string(),
+                reason: "pod missing metadata.name".to_string(),
+            })?;
+        let mut bound = pod.clone();
+        bound["spec"]["nodeName"] = json!(self.node_name);
+        self.client
+            .update_pod(namespace, name, bound)
+            .await
+            .map_err(|e| KubeletError::PodReconciliationFailed {
+                pod: format!("{namespace}/{name}"),
+                reason: format!("failed to bind pod to node {}: {e}", self.node_name),
+            })
+    }
+
+    /// Stops runtime containers whose Pod object no longer exists.
+    pub async fn stop_orphaned_pods(
+        &self,
+        live_uids: &BTreeSet<String>,
+    ) -> Result<usize, KubeletError> {
+        let mut stopped = 0;
+        for managed in self.runtime.list_managed_pods().await? {
+            if live_uids.contains(&managed.uid) {
+                continue;
+            }
+            self.runtime.stop_pod(&managed.pod_id).await?;
+            eprintln!(
+                "stopped containers of deleted pod {}/{} ({})",
+                managed.namespace, managed.name, managed.uid
+            );
+            stopped += 1;
+        }
+        Ok(stopped)
+    }
+
+    /// Drives a pod whose runtime reports real container state.
+    ///
+    /// Status follows the processes: `Pending` until something runs, `Running`
+    /// while a container is alive, then `Succeeded` or `Failed` from exit codes.
+    async fn sync_observed_pod(
+        &self,
+        namespace: &str,
+        name: &str,
+        pod: &Value,
+        mut observed: PodRuntimeStatus,
+    ) -> Result<(), KubeletError> {
+        if observed.containers.is_empty() {
+            if pod.pointer("/status/phase").is_none() {
+                let pending = observed_pod_status(pod, &observed, &self.node_ip);
+                self.patch_status_if_changed(namespace, name, pod, pending)
+                    .await?;
+            }
+            if let Err(e) = self.runtime.run_pod(pod).await {
+                let mut failed = observed_pod_status(pod, &observed, &self.node_ip);
+                mark_create_error(&mut failed, &e);
+                self.patch_status_if_changed(namespace, name, pod, failed)
+                    .await?;
+                return Err(e);
+            }
+            observed = self.runtime.inspect_pod(pod).await?.unwrap_or_default();
+        }
+        let status = observed_pod_status(pod, &observed, &self.node_ip);
+        self.patch_status_if_changed(namespace, name, pod, status)
+            .await
+    }
+
+    async fn patch_status_if_changed(
+        &self,
+        namespace: &str,
+        name: &str,
+        pod: &Value,
+        status: Value,
+    ) -> Result<(), KubeletError> {
+        if pod.get("status") == Some(&status) {
+            return Ok(());
+        }
+        self.client
+            .patch_pod_status(namespace, name, status)
+            .await
+            .map(drop)
+            .map_err(|e| KubeletError::PodReconciliationFailed {
+                pod: format!("{namespace}/{name}"),
+                reason: format!("failed to patch pod status: {e}"),
+            })
+    }
+
     /// Synchronizes an individual pod's runtime state and updates its API status.
     pub async fn sync_pod(&self, namespace: &str, pod: &Value) -> Result<(), KubeletError> {
         let name = pod
@@ -1284,8 +1511,21 @@ impl PodReconciler {
                 reason: "pod missing metadata.name".to_string(),
             })?;
 
+        // Terminal pods keep their final status; nothing is restarted here.
+        if matches!(
+            pod.pointer("/status/phase").and_then(Value::as_str),
+            Some("Succeeded" | "Failed")
+        ) {
+            return Ok(());
+        }
+
         // 1. Prepare and stage volumes on host filesystem
         self.prepare_pod_volumes(namespace, pod).await?;
+
+        // Providers that observe real processes drive status from them.
+        if let Some(observed) = self.runtime.inspect_pod(pod).await? {
+            return self.sync_observed_pod(namespace, name, pod, observed).await;
+        }
 
         // 2. If the pod is already Running, evaluate probes and sync status
         if let Some(phase) = pod
@@ -1571,6 +1811,157 @@ fn stage_projected_downward_api(
         write_volume_file(&target, val.as_bytes())?;
     }
     Ok(())
+}
+
+/// Builds a Pod status from the containers the runtime actually reports.
+#[must_use]
+pub fn observed_pod_status(pod: &Value, observed: &PodRuntimeStatus, node_ip: &str) -> Value {
+    let empty = Vec::new();
+    let spec_containers = pod
+        .pointer("/spec/containers")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty);
+    let container_statuses: Vec<Value> = spec_containers
+        .iter()
+        .map(|container| {
+            let c_name = container
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("main");
+            let image = container
+                .get("image")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown");
+            observed
+                .containers
+                .iter()
+                .find(|c| c.name == c_name)
+                .map_or_else(
+                    || {
+                        json!({
+                            "name": c_name,
+                            "image": image,
+                            "imageID": "",
+                            "ready": false,
+                            "started": false,
+                            "restartCount": 0,
+                            "state": { "waiting": { "reason": "ContainerCreating" } }
+                        })
+                    },
+                    observed_container_status,
+                )
+        })
+        .collect();
+    let phase = observed_phase(observed, spec_containers.len());
+    let all_running = !container_statuses.is_empty()
+        && container_statuses
+            .iter()
+            .all(|s| s["ready"].as_bool() == Some(true));
+    let mut conditions = build_pod_conditions(all_running);
+    if matches!(phase, "Succeeded" | "Failed") {
+        for condition in &mut conditions {
+            if matches!(
+                condition["type"].as_str(),
+                Some("Ready" | "ContainersReady")
+            ) {
+                condition["reason"] = json!("PodCompleted");
+                condition["message"] = json!("all containers have terminated");
+            }
+        }
+    }
+    let start_time = pod
+        .pointer("/status/startTime")
+        .cloned()
+        .unwrap_or_else(|| json!(crate::registration::now_rfc3339_seconds()));
+    let qos = match determine_pod_qos(pod) {
+        PodQoSClass::Guaranteed => "Guaranteed",
+        PodQoSClass::Burstable => "Burstable",
+        PodQoSClass::BestEffort => "BestEffort",
+    };
+    json!({
+        "phase": phase,
+        "qosClass": qos,
+        "hostIP": node_ip,
+        "podIP": node_ip,
+        "startTime": start_time,
+        "conditions": conditions,
+        "containerStatuses": container_statuses
+    })
+}
+
+/// Records a container start failure on every container of a pending status.
+fn mark_create_error(status: &mut Value, error: &KubeletError) {
+    let Some(statuses) = status
+        .get_mut("containerStatuses")
+        .and_then(Value::as_array_mut)
+    else {
+        return;
+    };
+    for container in statuses {
+        container["state"] = json!({
+            "waiting": { "reason": "CreateContainerError", "message": error.to_string() }
+        });
+    }
+}
+
+/// Maps observed containers onto a Pod phase for `restartPolicy: Never` semantics.
+#[must_use]
+pub fn observed_phase(observed: &PodRuntimeStatus, expected: usize) -> &'static str {
+    let containers = &observed.containers;
+    if containers
+        .iter()
+        .any(|c| matches!(c.state, ContainerRuntimeState::Running { .. }))
+    {
+        return "Running";
+    }
+    if !containers.is_empty()
+        && containers.len() >= expected
+        && containers
+            .iter()
+            .all(|c| matches!(c.state, ContainerRuntimeState::Terminated { .. }))
+    {
+        let all_zero = containers.iter().all(|c| {
+            matches!(
+                c.state,
+                ContainerRuntimeState::Terminated { exit_code: 0, .. }
+            )
+        });
+        return if all_zero { "Succeeded" } else { "Failed" };
+    }
+    "Pending"
+}
+
+fn observed_container_status(container: &ContainerRuntimeStatus) -> Value {
+    let running = matches!(container.state, ContainerRuntimeState::Running { .. });
+    let state = match &container.state {
+        ContainerRuntimeState::Waiting { reason } => json!({ "waiting": { "reason": reason } }),
+        ContainerRuntimeState::Running { started_at } => {
+            json!({ "running": { "startedAt": started_at } })
+        },
+        ContainerRuntimeState::Terminated {
+            exit_code,
+            started_at,
+            finished_at,
+        } => json!({
+            "terminated": {
+                "exitCode": exit_code,
+                "reason": if *exit_code == 0 { "Completed" } else { "Error" },
+                "startedAt": started_at,
+                "finishedAt": finished_at,
+                "containerID": container.container_id
+            }
+        }),
+    };
+    json!({
+        "name": container.name,
+        "image": container.image,
+        "imageID": container.image_id,
+        "containerID": container.container_id,
+        "ready": running,
+        "started": running,
+        "restartCount": 0,
+        "state": state
+    })
 }
 
 fn build_pod_conditions(all_ready: bool) -> Vec<Value> {

@@ -8,6 +8,8 @@ pub mod config;
 pub mod container;
 pub mod error;
 pub mod health;
+pub mod oci;
+pub mod podman;
 pub mod registration;
 pub mod service;
 pub mod supervisor;
@@ -25,11 +27,18 @@ pub use container::{
 };
 pub use error::KubeletError;
 pub use health::KubeletHealthReport;
+pub use oci::{
+    ContainerSpec, ContainerState, ContainerSummary, OciEngine, OciRuntimeAdapter, PodIdentity,
+    PullPolicy,
+};
+pub use podman::PodmanEngine;
 pub use registration::NodeRegistration;
-pub use service::KubeletService;
+pub use service::{KubeletLogSource, KubeletService};
 pub use supervisor::{COMPONENT_KUBELET, DEFAULT_STARTUP_TIMEOUT, KubeletAdapter};
 pub use workload::{
-    CpuManager, CpuManagerState, ExecResult, MockRuntimeProvider, PodQoSClass, PodReconciler,
-    RuntimeProvider, WorkloadRestartReport, determine_pod_qos, is_container_cpu_pinning_eligible,
+    ContainerRuntimeState, ContainerRuntimeStatus, CpuManager, CpuManagerState, ExecResult,
+    ManagedPodRef, MockRuntimeProvider, PodQoSClass, PodReconciler, PodRuntimeStatus,
+    ReconcileReport, RuntimeProvider, WorkloadRestartReport, determine_pod_qos,
+    is_container_cpu_pinning_eligible, observed_phase, observed_pod_status,
     parse_cpu_quantity_milli, parse_memory_quantity_bytes,
 };

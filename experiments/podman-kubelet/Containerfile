@@ -1,0 +1,3 @@
+FROM scratch
+COPY rubix-hello /rubix-hello
+ENTRYPOINT ["/rubix-hello"]

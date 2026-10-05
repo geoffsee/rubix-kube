@@ -19,10 +19,13 @@ rubix-datastore = { version = "=0.1.0", path = "../rubix-datastore" }
 rubix-pki = { version = "=0.1.0", path = "../rubix-pki" }
 rubix-platform = { version = "=0.1.0", path = "../rubix-platform" }
 rubix-supervisor = { version = "=0.1.0", path = "../rubix-supervisor" }
+rustls = { version = "=0.23.45", default-features = false, features = ["aws-lc-rs", "std", "tls12"] }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.151"
 thiserror = "=2.0.18"
 tokio = { version = "=1.53.1", features = ["rt", "macros", "sync", "time", "net", "io-util", "fs"] }
+tokio-rustls = { version = "=0.26.4", default-features = false, features = ["tls12"] }
+x509-parser = "=0.18.1"
 
 [dev-dependencies]
 tempfile = "3.8"

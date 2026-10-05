@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 use std::fs;
+use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
 use serde_json::Value;
@@ -13,6 +14,7 @@ use crate::client::{ClientIdentity, KubernetesApiClient};
 use crate::config::ApiserverConfig;
 use crate::error::ApiserverError;
 use crate::health::{HealthReport, check_apiserver_readiness};
+use crate::logs::PodLogReader;
 use crate::pki::validate_pki_prerequisites;
 use crate::rbac::{ClusterRole, ClusterRoleBinding, RbacAuthorizer, Role, RoleBinding};
 use crate::storage::KubernetesStorage;
@@ -28,6 +30,8 @@ pub struct ApiserverService {
     admission: Arc<AdmissionEngine>,
     aggregation: Arc<AggregationManager>,
     crd_registry: Arc<RwLock<BTreeMap<String, Value>>>,
+    bound_addr: Arc<Mutex<Option<SocketAddr>>>,
+    pod_log_reader: Arc<RwLock<Option<Arc<dyn PodLogReader>>>>,
 }
 
 impl ApiserverService {
@@ -60,6 +64,8 @@ impl ApiserverService {
             admission,
             aggregation,
             crd_registry,
+            bound_addr: Arc::new(Mutex::new(None)),
+            pod_log_reader: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -222,6 +228,27 @@ impl ApiserverService {
     pub fn start(&self) -> Result<(), ApiserverError> {
         self.running.store(true, Ordering::SeqCst);
         Ok(())
+    }
+
+    pub(crate) fn set_bound_addr(&self, addr: SocketAddr) {
+        *self.bound_addr.lock().unwrap() = Some(addr);
+    }
+
+    /// Address of the HTTPS listener once the supervisor has bound it.
+    #[must_use]
+    pub fn bound_addr(&self) -> Option<SocketAddr> {
+        *self.bound_addr.lock().unwrap()
+    }
+
+    /// Registers the in-process kubelet as the source for the pod log subresource.
+    pub fn set_pod_log_reader(&self, reader: Arc<dyn PodLogReader>) {
+        *self.pod_log_reader.write().unwrap() = Some(reader);
+    }
+
+    /// The pod log source, if a kubelet has registered one.
+    #[must_use]
+    pub fn pod_log_reader(&self) -> Option<Arc<dyn PodLogReader>> {
+        self.pod_log_reader.read().unwrap().clone()
     }
 
     pub fn stop(&self) {

@@ -359,6 +359,7 @@ impl KubernetesApiClient {
                     "singularName": "namespace",
                     "namespaced": false,
                     "kind": "Namespace",
+                    "shortNames": ["ns"],
                     "verbs": ["create", "delete", "get", "list", "watch"]
                 },
                 {
@@ -366,6 +367,7 @@ impl KubernetesApiClient {
                     "singularName": "configmap",
                     "namespaced": true,
                     "kind": "ConfigMap",
+                    "shortNames": ["cm"],
                     "verbs": ["create", "delete", "get", "list", "update", "watch"]
                 },
                 {
@@ -380,6 +382,43 @@ impl KubernetesApiClient {
                     "singularName": "pod",
                     "namespaced": true,
                     "kind": "Pod",
+                    "shortNames": ["po"],
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "services",
+                    "singularName": "service",
+                    "namespaced": true,
+                    "kind": "Service",
+                    "shortNames": ["svc"],
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "serviceaccounts",
+                    "singularName": "serviceaccount",
+                    "namespaced": true,
+                    "kind": "ServiceAccount",
+                    "verbs": ["create", "delete", "get", "list", "watch"]
+                },
+                {
+                    "name": "nodes",
+                    "singularName": "node",
+                    "namespaced": false,
+                    "kind": "Node",
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "persistentvolumeclaims",
+                    "singularName": "persistentvolumeclaim",
+                    "namespaced": true,
+                    "kind": "PersistentVolumeClaim",
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "persistentvolumes",
+                    "singularName": "persistentvolume",
+                    "namespaced": false,
+                    "kind": "PersistentVolume",
                     "verbs": ["create", "delete", "get", "list", "update", "watch"]
                 }
             ]
@@ -474,6 +513,24 @@ impl KubernetesApiClient {
         }))
     }
 
+    fn namespaced_resource(name: &str, singular: &str, kind: &str) -> Value {
+        let short_names: &[&str] = match name {
+            "deployments" => &["deploy"],
+            "replicasets" => &["rs"],
+            "statefulsets" => &["sts"],
+            "daemonsets" => &["ds"],
+            _ => &[],
+        };
+        json!({
+            "name": name,
+            "singularName": singular,
+            "namespaced": true,
+            "kind": kind,
+            "shortNames": short_names,
+            "verbs": ["create", "delete", "get", "list", "update", "watch"]
+        })
+    }
+
     pub fn discover_group_resources(
         &self,
         group: &str,
@@ -520,13 +577,14 @@ impl KubernetesApiClient {
                 }));
             },
             ("apps", "v1") => {
-                resources.push(json!({
-                    "name": "deployments",
-                    "singularName": "deployment",
-                    "namespaced": true,
-                    "kind": "Deployment",
-                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
-                }));
+                for (name, singular, kind) in [
+                    ("deployments", "deployment", "Deployment"),
+                    ("replicasets", "replicaset", "ReplicaSet"),
+                    ("statefulsets", "statefulset", "StatefulSet"),
+                    ("daemonsets", "daemonset", "DaemonSet"),
+                ] {
+                    resources.push(Self::namespaced_resource(name, singular, kind));
+                }
             },
             _ => {},
         }
@@ -1340,6 +1398,31 @@ impl KubernetesApiClient {
             "metadata": {
                 "resourceVersion": cur_rev.to_string()
             },
+            "items": items
+        }))
+    }
+
+    /// Lists pods in every namespace; the kubelet uses this to find work for its node.
+    pub async fn list_all_pods(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "", "pods", None, None)?;
+        let prefix = format!("{}/pods/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "v1",
+            "kind": "PodList",
+            "metadata": { "resourceVersion": cur_rev.to_string() },
             "items": items
         }))
     }

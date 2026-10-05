@@ -198,6 +198,26 @@ impl NodeRegistration {
     }
 }
 
+/// Formats a Unix timestamp in seconds as RFC 3339 with second precision.
+pub(crate) fn rfc3339_seconds(unix_secs: u64) -> String {
+    let days = unix_secs / 86400;
+    let rem_secs = unix_secs % 86400;
+    let hours = rem_secs / 3600;
+    let mins = (rem_secs % 3600) / 60;
+    let s = rem_secs % 60;
+    let (year, month, day) = days_to_ymd(days);
+    format!("{year:04}-{month:02}-{day:02}T{hours:02}:{mins:02}:{s:02}Z")
+}
+
+/// Current wall-clock time as RFC 3339 with second precision.
+pub(crate) fn now_rfc3339_seconds() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    rfc3339_seconds(secs)
+}
+
 fn current_rfc3339_micros() -> String {
     let now = std::time::SystemTime::now();
     let dur = now

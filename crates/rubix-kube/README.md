@@ -86,6 +86,32 @@ fresh output directories. The suite arguments contain only print/version/help
 and deliberate failure paths; do not substitute a normal Go startup invocation
 on the host.
 
+## In-process kubelet and the OCI runtime adapter
+
+`NodeRuntime::from_config_with_context` registers `rubix-kubelet` after the apiserver
+when a `podman` executable is found on `PATH` or in the usual install locations
+(`/opt/podman/bin`, `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`). The kubelet
+uses the `kubelet.kubeconfig` and certificates that startup already generates, keeps
+its state under `<path>/kubelet`, registers the node, and then loops every two seconds:
+it lists all pods, binds unscheduled pods to this node (there is no scheduler), starts
+each container as one detached, labelled engine container, and writes status from what
+the engine reports: `Pending` while nothing runs, `Running` while
+the process is alive, `Succeeded` or `Failed` from the exit code. Deleting the Pod
+object stops and removes its containers on the next pass. `kubectl logs` reads the
+container's stdout and stderr through the apiserver's pod log subresource.
+
+The pod semantics live in `rubix_kubelet::oci::OciRuntimeAdapter`, which implements
+`RuntimeProvider` over the `OciEngine` trait (run, list by label, remove, logs, exec).
+`PodmanEngine` is the first engine and owns only the podman command line; docker or
+nerdctl would be further engines, not further providers.
+
+Without podman the node logs `kubelet_runtime_unavailable` and serves its API with no
+kubelet. This slice deliberately departs from the retained official kubelet and
+containerd boundary; it is a development path, not a qualification. It does not
+implement restarts, probes, volumes, exec, ports, pod networking or init containers.
+See [experiments/podman-kubelet](../../experiments/podman-kubelet/README.md) for the
+live macOS evidence.
+
 ## Optional metrics HTTP lifecycle
 
 Datastore size measures the managed snapshot and WAL files. Component health

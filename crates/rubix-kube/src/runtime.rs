@@ -25,6 +25,9 @@ use rubix_datastore::supervisor::DatastoreAdapter;
 use rubix_dns::config::CoreDnsConfig;
 use rubix_dns::service::CoreDnsService;
 use rubix_dns::supervisor::CoreDnsAdapter;
+use rubix_kubelet::{
+    KubeletAdapter, KubeletConfigOptions, KubeletService, OciRuntimeAdapter, PodmanEngine,
+};
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_portainer::config::PortainerAgentConfig;
 use rubix_portainer::service::PortainerService;
@@ -327,23 +330,11 @@ impl NodeRuntime {
         let state_dir = PathBuf::from(&config.config().path);
         std::fs::create_dir_all(&state_dir)?;
 
-        let node_ip: IpAddr = if config.config().network.node_ip.is_empty() {
-            "127.0.0.1".parse().unwrap()
-        } else {
-            config.config().network.node_ip.parse().map_err(|e| {
-                io::Error::new(io::ErrorKind::InvalidInput, format!("invalid node IP: {e}"))
-            })?
-        };
-
-        let node_name = if config.config().kubernetes.node_name.is_empty() {
-            "rubix-node".to_string()
-        } else {
-            config.config().kubernetes.node_name.clone()
-        };
+        let (node_ip, node_name) = node_identity(&config)?;
 
         let pki_dir = state_dir.join("pki");
         std::fs::create_dir_all(&pki_dir)?;
-        let pki_config = ClusterPkiConfig::new(pki_dir.clone(), node_name, node_ip);
+        let pki_config = ClusterPkiConfig::new(pki_dir.clone(), node_name.clone(), node_ip);
         let pki = ClusterPki::new(pki_config);
         pki.reconcile()?;
 
@@ -398,6 +389,16 @@ impl NodeRuntime {
                 vec![COMPONENT_APISERVER.to_string()],
                 CoreDnsAdapter::new(dns_service),
             );
+
+        builder = register_kubelet(
+            builder,
+            &apiserver_service,
+            &pki_dir,
+            &state_dir,
+            &node_name,
+            node_ip,
+            timeout,
+        );
 
         if builder.config().config().storage.local_path.enabled {
             let storage_config = LocalPathConfig::new().with_enabled(true);
@@ -561,6 +562,62 @@ impl NodeRuntime {
 
         Ok(runtime_exit_code(&report.cause))
     }
+}
+
+/// Resolves the node IP and name, applying the loopback and `rubix-node` defaults.
+fn node_identity(config: &ValidatedConfig) -> Result<(IpAddr, String), RuntimeError> {
+    let node_ip: IpAddr = if config.config().network.node_ip.is_empty() {
+        IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)
+    } else {
+        config.config().network.node_ip.parse().map_err(|e| {
+            io::Error::new(io::ErrorKind::InvalidInput, format!("invalid node IP: {e}"))
+        })?
+    };
+    let node_name = if config.config().kubernetes.node_name.is_empty() {
+        "rubix-node".to_string()
+    } else {
+        config.config().kubernetes.node_name.clone()
+    };
+    Ok((node_ip, node_name))
+}
+
+/// Registers the in-process kubelet when a supported container engine is present.
+///
+/// The kubelet drives pods through the OCI runtime adapter over podman and
+/// serves the pod log subresource via the apiserver. Without podman the node still serves its API, but pods
+/// stay unscheduled; the warning below is the only signal of that state.
+fn register_kubelet(
+    builder: RuntimeBuilder,
+    apiserver: &Arc<ApiserverService>,
+    pki_dir: &std::path::Path,
+    state_dir: &std::path::Path,
+    node_name: &str,
+    node_ip: IpAddr,
+    timeout: std::time::Duration,
+) -> RuntimeBuilder {
+    let Some(engine) = PodmanEngine::detect() else {
+        let _ = writeln!(
+            io::stderr(),
+            "{{\"schema\":1,\"level\":\"warn\",\"event\":\"kubelet_runtime_unavailable\",\"reason\":\"podman executable not found\"}}"
+        );
+        return builder;
+    };
+    let kubelet_dir = state_dir.join("kubelet");
+    let options = KubeletConfigOptions::default_for_pki(
+        pki_dir,
+        node_name,
+        node_ip.to_string(),
+        &kubelet_dir,
+    );
+    let runtime = OciRuntimeAdapter::new(Arc::new(engine));
+    let service = KubeletService::new(options, apiserver.clone(), Arc::new(runtime));
+    apiserver.set_pod_log_reader(Arc::new(service.log_source()));
+    builder.register_component(KubeletAdapter::registration(
+        COMPONENT_KUBELET,
+        service,
+        vec![COMPONENT_APISERVER.to_string()],
+        timeout,
+    ))
 }
 
 fn register_operational_metrics(

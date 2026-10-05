@@ -23,7 +23,12 @@ deny = [
     { crate = "native-tls", use-instead = "rustls" },
     { crate = "git2", use-instead = "gix" },
 ]
-skip = [{ name = "base64" }, { name = "syn" }]
+skip = [
+    { name = "base64" },
+    { name = "syn" },
+    # rustls-webpki 0.103 uses untrusted 0.9; aws-lc-rs 1.18 uses 0.7.
+    { name = "untrusted", version = "0.9.0" },
+]
 skip-tree = []
 
 [bans.std-replacements]

@@ -2,6 +2,7 @@ use rubix_supervisor::{
     Adapter, AdapterContext, AdapterError, AdapterFuture, ComponentKind, ComponentSpec,
     FailurePolicy, Registration, StopPhase,
 };
+use std::io::Write;
 use std::time::Duration;
 
 use crate::service::ApiserverService;
@@ -57,36 +58,67 @@ impl Adapter for ApiserverAdapter {
             match self.service.check_readiness().await {
                 Ok(report) if report.is_healthy => {},
                 Ok(_) => {
+                    self.service.stop();
                     return Err(AdapterError {
                         code: "apiserver-readiness-failed",
                     });
                 },
                 Err(err) => {
+                    self.service.stop();
                     return Err(AdapterError {
                         code: err.diagnostic_code(),
                     });
                 },
             }
 
-            // 4. Signal readiness to supervisor coordinator
+            let listener = match crate::http::bind_listener(self.service.config()).await {
+                Ok(listener) => listener,
+                Err(err) => {
+                    self.service.stop();
+                    return Err(AdapterError {
+                        code: err.diagnostic_code(),
+                    });
+                },
+            };
+            if let Ok(addr) = listener.local_addr() {
+                self.service.set_bound_addr(addr);
+                let _ = writeln!(
+                    std::io::stderr(),
+                    "{{\"schema\":1,\"level\":\"info\",\"event\":\"apiserver_listening\",\"address\":\"https://{addr}\"}}"
+                );
+            }
+
+            // 4. Signal readiness only after the HTTPS port is bound.
             if !context.ready() {
+                self.service.stop();
                 return Err(AdapterError {
                     code: "apiserver-readiness-rejected",
                 });
             }
 
-            // 5. Await shutdown
-            loop {
-                match context.changed().await {
-                    StopPhase::Running => {},
-                    StopPhase::Graceful | StopPhase::Force => {
-                        self.service.stop();
-                        break;
-                    },
+            // 5. Serve until shutdown.
+            let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+            let service = self.service.clone();
+            let serve = crate::http::serve(listener, service, shutdown_rx);
+            tokio::pin!(serve);
+            let result = loop {
+                tokio::select! {
+                    biased;
+                    outcome = &mut serve => {
+                        break outcome;
+                    }
+                    phase = context.changed() => {
+                        if matches!(phase, StopPhase::Graceful | StopPhase::Force) {
+                            let _ = shutdown_tx.send(true);
+                            break (&mut serve).await;
+                        }
+                    }
                 }
-            }
-
-            Ok(())
+            };
+            self.service.stop();
+            result.map_err(|err| AdapterError {
+                code: err.diagnostic_code(),
+            })
         })
     }
 }
