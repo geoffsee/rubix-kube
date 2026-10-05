@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+use rubix_apiserver::time::{now_rfc3339, now_unix, parse_rfc3339_seconds};
 use rubix_apiserver::{ApiserverService, KubernetesApiClient};
 
 use crate::config::{KubeletConfigOptions, detect_host_cpu_count, format_cpuset, parse_cpuset};
@@ -44,6 +45,9 @@ pub struct ContainerRuntimeStatus {
     pub container_id: String,
     pub image: String,
     pub image_id: String,
+    /// Attempt number of this container, starting at zero.
+    #[serde(default)]
+    pub restart_count: u32,
     pub state: ContainerRuntimeState,
 }
 
@@ -60,6 +64,60 @@ pub struct ManagedPodRef {
     pub namespace: String,
     pub name: String,
     pub uid: String,
+}
+
+/// Signal delivered to a pod's running containers during graceful termination.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PodSignal {
+    Terminate,
+    Kill,
+}
+
+/// Log read options forwarded from the pod log subresource.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct LogOptions {
+    pub tail_lines: Option<usize>,
+    pub timestamps: bool,
+    pub since_seconds: Option<u64>,
+}
+
+/// `spec.restartPolicy`; absent means `Always`, as in Kubernetes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RestartPolicy {
+    Always,
+    OnFailure,
+    Never,
+}
+
+impl RestartPolicy {
+    #[must_use]
+    pub fn of(pod: &Value) -> Self {
+        match pod.pointer("/spec/restartPolicy").and_then(Value::as_str) {
+            Some("Never") => Self::Never,
+            Some("OnFailure") => Self::OnFailure,
+            _ => Self::Always,
+        }
+    }
+
+    /// Whether a container that exited with `exit_code` is restarted.
+    #[must_use]
+    pub fn restarts(self, exit_code: i32) -> bool {
+        match self {
+            Self::Always => true,
+            Self::OnFailure => exit_code != 0,
+            Self::Never => false,
+        }
+    }
+}
+
+const RESTART_BACKOFF_INITIAL_SECS: u64 = 10;
+const RESTART_BACKOFF_MAX_SECS: u64 = 300;
+const RESTART_BACKOFF_RESET_SECS: u64 = 600;
+
+#[derive(Debug, Clone, Copy)]
+struct RestartBackoff {
+    delay_secs: u64,
+    not_before: u64,
 }
 
 /// Summary of one pass over every pod in the cluster.
@@ -98,6 +156,37 @@ pub trait RuntimeProvider: std::fmt::Debug + Send + Sync {
     /// Pod object was deleted can be stopped.
     async fn list_managed_pods(&self) -> Result<Vec<ManagedPodRef>, KubeletError> {
         Ok(Vec::new())
+    }
+
+    /// Signals a pod's running containers. Providers without signals stop the pod outright.
+    async fn signal_pod(&self, pod_id: &str, signal: PodSignal) -> Result<(), KubeletError> {
+        let _ = signal;
+        self.stop_pod(pod_id).await
+    }
+
+    /// Replaces one container with a fresh attempt numbered `attempt`.
+    async fn restart_container(
+        &self,
+        pod: &Value,
+        container_name: &str,
+        attempt: u32,
+    ) -> Result<(), KubeletError> {
+        let _ = (pod, attempt);
+        Err(KubeletError::ContainerOperationFailed {
+            container: container_name.to_string(),
+            reason: "container restart is not supported by this runtime".to_string(),
+        })
+    }
+
+    /// Reads logs with the full option set; the default honours only `tail_lines`.
+    async fn read_container_logs(
+        &self,
+        pod_id: &str,
+        container_name: &str,
+        options: &LogOptions,
+    ) -> Result<String, KubeletError> {
+        self.get_container_logs(pod_id, container_name, options.tail_lines)
+            .await
     }
 
     /// Whether this provider requires a live unix domain socket path to exist on the host filesystem.
@@ -788,6 +877,8 @@ pub struct PodReconciler {
     checkpoint_invalidated: Arc<AtomicBool>,
     root_dir: PathBuf,
     apiserver: Option<Arc<ApiserverService>>,
+    backoff: Arc<std::sync::Mutex<BTreeMap<String, RestartBackoff>>>,
+    terminating: Arc<std::sync::Mutex<BTreeSet<String>>>,
 }
 
 impl PodReconciler {
@@ -822,6 +913,8 @@ impl PodReconciler {
             checkpoint_invalidated: Arc::new(AtomicBool::new(false)),
             root_dir: PathBuf::from("/var/lib/kubelet"),
             apiserver: None,
+            backoff: Arc::new(std::sync::Mutex::new(BTreeMap::new())),
+            terminating: Arc::new(std::sync::Mutex::new(BTreeSet::new())),
         }
     }
 
@@ -1392,6 +1485,16 @@ impl PodReconciler {
                     },
                 },
             };
+            if pod.pointer("/metadata/deletionTimestamp").is_some() {
+                match self.terminate_pod(&namespace, &pod).await {
+                    Ok(()) => report.synced += 1,
+                    Err(e) => {
+                        report.failed += 1;
+                        eprintln!("Failed to terminate pod {namespace}/{pod_name}: {e}");
+                    },
+                }
+                continue;
+            }
             match self.sync_pod(&namespace, &pod).await {
                 Ok(()) => report.synced += 1,
                 Err(e) => {
@@ -1452,7 +1555,8 @@ impl PodReconciler {
     /// Drives a pod whose runtime reports real container state.
     ///
     /// Status follows the processes: `Pending` until something runs, `Running`
-    /// while a container is alive, then `Succeeded` or `Failed` from exit codes.
+    /// while a container is alive or being restarted, then `Succeeded` or
+    /// `Failed` from exit codes under the pod's `restartPolicy`.
     async fn sync_observed_pod(
         &self,
         namespace: &str,
@@ -1460,14 +1564,18 @@ impl PodReconciler {
         pod: &Value,
         mut observed: PodRuntimeStatus,
     ) -> Result<(), KubeletError> {
+        let policy = RestartPolicy::of(pod);
+        let no_backoff = BTreeMap::new();
         if observed.containers.is_empty() {
             if pod.pointer("/status/phase").is_none() {
-                let pending = observed_pod_status(pod, &observed, &self.node_ip);
+                let pending =
+                    observed_pod_status(pod, &observed, &self.node_ip, policy, &no_backoff);
                 self.patch_status_if_changed(namespace, name, pod, pending)
                     .await?;
             }
             if let Err(e) = self.runtime.run_pod(pod).await {
-                let mut failed = observed_pod_status(pod, &observed, &self.node_ip);
+                let mut failed =
+                    observed_pod_status(pod, &observed, &self.node_ip, policy, &no_backoff);
                 mark_create_error(&mut failed, &e);
                 self.patch_status_if_changed(namespace, name, pod, failed)
                     .await?;
@@ -1475,9 +1583,181 @@ impl PodReconciler {
             }
             observed = self.runtime.inspect_pod(pod).await?.unwrap_or_default();
         }
-        let status = observed_pod_status(pod, &observed, &self.node_ip);
+        let backing_off = self
+            .restart_exited_containers(namespace, name, pod, &mut observed, policy)
+            .await?;
+        let status = observed_pod_status(pod, &observed, &self.node_ip, policy, &backing_off);
         self.patch_status_if_changed(namespace, name, pod, status)
             .await
+    }
+
+    /// Restarts exited containers the policy says to restart, with the kubelet's
+    /// back-off: 10 s doubling to 5 min, reset once an attempt ran for 10 min.
+    /// Returns the `CrashLoopBackOff` message for containers that must still wait.
+    async fn restart_exited_containers(
+        &self,
+        namespace: &str,
+        name: &str,
+        pod: &Value,
+        observed: &mut PodRuntimeStatus,
+        policy: RestartPolicy,
+    ) -> Result<BTreeMap<String, String>, KubeletError> {
+        let uid = pod
+            .pointer("/metadata/uid")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let now = now_unix();
+        let mut waiting = BTreeMap::new();
+        let mut restarts = Vec::new();
+        let empty = Vec::new();
+        for container in pod
+            .pointer("/spec/containers")
+            .and_then(Value::as_array)
+            .unwrap_or(&empty)
+        {
+            let c_name = container
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("main");
+            let Some(latest) = latest_attempt(observed, c_name) else {
+                continue;
+            };
+            let ContainerRuntimeState::Terminated {
+                exit_code,
+                started_at,
+                finished_at,
+            } = &latest.state
+            else {
+                continue;
+            };
+            if !policy.restarts(*exit_code) {
+                continue;
+            }
+            let ran_for = started_at
+                .as_deref()
+                .and_then(parse_rfc3339_seconds)
+                .zip(parse_rfc3339_seconds(finished_at))
+                .map_or(0, |(started, finished)| finished.saturating_sub(started));
+            let key = format!("{uid}/{c_name}");
+            let decision = {
+                let mut backoffs = self
+                    .backoff
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                match backoffs.get(&key).copied() {
+                    Some(backoff) if now < backoff.not_before => Err(backoff.delay_secs),
+                    previous => {
+                        backoffs.insert(key, next_restart_backoff(previous, ran_for, now));
+                        Ok(latest.restart_count + 1)
+                    },
+                }
+            };
+            match decision {
+                Err(delay) => {
+                    waiting.insert(
+                        c_name.to_string(),
+                        format!(
+                            "back-off {delay}s restarting failed container={c_name} pod={name}_{namespace}({uid})"
+                        ),
+                    );
+                },
+                Ok(attempt) => restarts.push((c_name.to_string(), attempt)),
+            }
+        }
+        for (c_name, attempt) in &restarts {
+            self.runtime
+                .restart_container(pod, c_name, *attempt)
+                .await?;
+        }
+        if !restarts.is_empty() {
+            *observed = self.runtime.inspect_pod(pod).await?.unwrap_or_default();
+        }
+        Ok(waiting)
+    }
+
+    /// Drives a pod carrying `deletionTimestamp`: TERM its containers, KILL them
+    /// once the grace period is over, then record the final status, remove the
+    /// containers and delete the Pod object with a zero grace period.
+    async fn terminate_pod(&self, namespace: &str, pod: &Value) -> Result<(), KubeletError> {
+        let name = pod
+            .pointer("/metadata/name")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown");
+        let uid = pod
+            .pointer("/metadata/uid")
+            .and_then(Value::as_str)
+            .unwrap_or(name);
+        let deadline = pod
+            .pointer("/metadata/deletionTimestamp")
+            .and_then(Value::as_str)
+            .and_then(parse_rfc3339_seconds)
+            .unwrap_or(0);
+        let Some(observed) = self.runtime.inspect_pod(pod).await? else {
+            self.runtime.stop_pod(uid).await?;
+            return self.finish_deletion(namespace, name, uid).await;
+        };
+        let running = observed
+            .containers
+            .iter()
+            .any(|c| matches!(c.state, ContainerRuntimeState::Running { .. }));
+        if running {
+            let signal = if now_unix() >= deadline {
+                PodSignal::Kill
+            } else {
+                PodSignal::Terminate
+            };
+            let already_signalled = self
+                .terminating
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .contains(uid);
+            if signal == PodSignal::Kill || !already_signalled {
+                self.runtime.signal_pod(uid, signal).await?;
+                self.terminating
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .insert(uid.to_string());
+            }
+            return Ok(());
+        }
+        let status = observed_pod_status(
+            pod,
+            &observed,
+            &self.node_ip,
+            RestartPolicy::Never,
+            &BTreeMap::new(),
+        );
+        self.patch_status_if_changed(namespace, name, pod, status)
+            .await?;
+        self.runtime.stop_pod(uid).await?;
+        self.finish_deletion(namespace, name, uid).await
+    }
+
+    async fn finish_deletion(
+        &self,
+        namespace: &str,
+        name: &str,
+        uid: &str,
+    ) -> Result<(), KubeletError> {
+        self.terminating
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(uid);
+        self.backoff
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retain(|key, _| !key.starts_with(&format!("{uid}/")));
+        match self
+            .client
+            .delete_pod_options(namespace, name, Some(0))
+            .await
+        {
+            Ok(_) | Err(rubix_apiserver::ApiserverError::NotFound { .. }) => Ok(()),
+            Err(e) => Err(KubeletError::PodReconciliationFailed {
+                pod: format!("{namespace}/{name}"),
+                reason: format!("failed to delete terminated pod: {e}"),
+            }),
+        }
     }
 
     async fn patch_status_if_changed(
@@ -1813,66 +2093,96 @@ fn stage_projected_downward_api(
     Ok(())
 }
 
+/// Next restart delay: doubles after each quick failure, resets after a long run.
+fn next_restart_backoff(
+    previous: Option<RestartBackoff>,
+    ran_for: u64,
+    now: u64,
+) -> RestartBackoff {
+    let delay_secs = match previous {
+        Some(backoff) if ran_for < RESTART_BACKOFF_RESET_SECS => {
+            (backoff.delay_secs * 2).min(RESTART_BACKOFF_MAX_SECS)
+        },
+        _ => RESTART_BACKOFF_INITIAL_SECS,
+    };
+    RestartBackoff {
+        delay_secs,
+        not_before: now + delay_secs,
+    }
+}
+
+/// Latest attempt of a named container among what the runtime reports.
+fn latest_attempt<'a>(
+    observed: &'a PodRuntimeStatus,
+    name: &str,
+) -> Option<&'a ContainerRuntimeStatus> {
+    observed
+        .containers
+        .iter()
+        .filter(|c| c.name == name)
+        .max_by_key(|c| c.restart_count)
+}
+
 /// Builds a Pod status from the containers the runtime actually reports.
+///
+/// `backing_off` names containers that exited and wait for their next restart
+/// attempt; they are reported as `CrashLoopBackOff` with the previous exit in
+/// `lastState`, and the pod stays `Running`, as the kubelet reports it.
 #[must_use]
-pub fn observed_pod_status(pod: &Value, observed: &PodRuntimeStatus, node_ip: &str) -> Value {
+pub fn observed_pod_status(
+    pod: &Value,
+    observed: &PodRuntimeStatus,
+    node_ip: &str,
+    policy: RestartPolicy,
+    backing_off: &BTreeMap<String, String>,
+) -> Value {
     let empty = Vec::new();
     let spec_containers = pod
         .pointer("/spec/containers")
         .and_then(Value::as_array)
         .unwrap_or(&empty);
-    let container_statuses: Vec<Value> = spec_containers
+    let latest: Vec<(&str, Option<&ContainerRuntimeStatus>)> = spec_containers
         .iter()
         .map(|container| {
             let c_name = container
                 .get("name")
                 .and_then(Value::as_str)
                 .unwrap_or("main");
-            let image = container
-                .get("image")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown");
-            observed
-                .containers
-                .iter()
-                .find(|c| c.name == c_name)
-                .map_or_else(
-                    || {
-                        json!({
-                            "name": c_name,
-                            "image": image,
-                            "imageID": "",
-                            "ready": false,
-                            "started": false,
-                            "restartCount": 0,
-                            "state": { "waiting": { "reason": "ContainerCreating" } }
-                        })
-                    },
-                    observed_container_status,
-                )
+            (c_name, latest_attempt(observed, c_name))
         })
         .collect();
-    let phase = observed_phase(observed, spec_containers.len());
-    let all_running = !container_statuses.is_empty()
-        && container_statuses
-            .iter()
-            .all(|s| s["ready"].as_bool() == Some(true));
-    let mut conditions = build_pod_conditions(all_running);
-    if matches!(phase, "Succeeded" | "Failed") {
-        for condition in &mut conditions {
-            if matches!(
-                condition["type"].as_str(),
-                Some("Ready" | "ContainersReady")
-            ) {
-                condition["reason"] = json!("PodCompleted");
-                condition["message"] = json!("all containers have terminated");
-            }
-        }
-    }
+    let container_statuses: Vec<Value> = spec_containers
+        .iter()
+        .zip(&latest)
+        .map(
+            |(container, (c_name, attempt))| match (attempt, backing_off.get(*c_name)) {
+                (None, _) => json!({
+                    "name": c_name,
+                    "image": container.get("image").and_then(Value::as_str).unwrap_or("unknown"),
+                    "imageID": "",
+                    "ready": false,
+                    "started": false,
+                    "restartCount": 0,
+                    "state": { "waiting": { "reason": "ContainerCreating" } }
+                }),
+                (Some(attempt), Some(message)) => crash_loop_status(attempt, message),
+                (Some(attempt), None) => observed_container_status(attempt),
+            },
+        )
+        .collect();
+    let attempts: Vec<Option<&ContainerRuntimeStatus>> =
+        latest.iter().map(|(_, attempt)| *attempt).collect();
+    let phase = observed_phase(&attempts, policy, !backing_off.is_empty());
+    let unready: Vec<&str> = container_statuses
+        .iter()
+        .filter(|s| s["ready"].as_bool() != Some(true))
+        .filter_map(|s| s["name"].as_str())
+        .collect();
+    let conditions = observed_conditions(pod, phase, &unready, !observed.containers.is_empty());
     let start_time = pod
         .pointer("/status/startTime")
         .cloned()
-        .unwrap_or_else(|| json!(crate::registration::now_rfc3339_seconds()));
+        .unwrap_or_else(|| json!(now_rfc3339()));
     let qos = match determine_pod_qos(pod) {
         PodQoSClass::Guaranteed => "Guaranteed",
         PodQoSClass::Burstable => "Burstable",
@@ -1889,46 +2199,68 @@ pub fn observed_pod_status(pod: &Value, observed: &PodRuntimeStatus, node_ip: &s
     })
 }
 
-/// Records a container start failure on every container of a pending status.
-fn mark_create_error(status: &mut Value, error: &KubeletError) {
-    let Some(statuses) = status
-        .get_mut("containerStatuses")
-        .and_then(Value::as_array_mut)
-    else {
-        return;
-    };
-    for container in statuses {
-        container["state"] = json!({
-            "waiting": { "reason": "CreateContainerError", "message": error.to_string() }
-        });
-    }
-}
-
-/// Maps observed containers onto a Pod phase for `restartPolicy: Never` semantics.
+/// Maps the latest container attempts onto a Pod phase under `policy`.
+///
+/// Exited containers that the policy will restart keep the pod `Running`, as
+/// does an explicit `restarting` flag for containers in back-off.
 #[must_use]
-pub fn observed_phase(observed: &PodRuntimeStatus, expected: usize) -> &'static str {
-    let containers = &observed.containers;
-    if containers
+pub fn observed_phase(
+    attempts: &[Option<&ContainerRuntimeStatus>],
+    policy: RestartPolicy,
+    restarting: bool,
+) -> &'static str {
+    if attempts.is_empty() {
+        return "Pending";
+    }
+    let states: Vec<&ContainerRuntimeState> = attempts.iter().flatten().map(|c| &c.state).collect();
+    if states
         .iter()
-        .any(|c| matches!(c.state, ContainerRuntimeState::Running { .. }))
+        .any(|s| matches!(s, ContainerRuntimeState::Running { .. }))
+        || restarting
     {
         return "Running";
     }
-    if !containers.is_empty()
-        && containers.len() >= expected
-        && containers
+    let all_terminated = states.len() == attempts.len()
+        && states
             .iter()
-            .all(|c| matches!(c.state, ContainerRuntimeState::Terminated { .. }))
-    {
-        let all_zero = containers.iter().all(|c| {
-            matches!(
-                c.state,
-                ContainerRuntimeState::Terminated { exit_code: 0, .. }
-            )
-        });
-        return if all_zero { "Succeeded" } else { "Failed" };
+            .all(|s| matches!(s, ContainerRuntimeState::Terminated { .. }));
+    if !all_terminated {
+        return "Pending";
     }
-    "Pending"
+    let all_zero = states
+        .iter()
+        .all(|s| matches!(s, ContainerRuntimeState::Terminated { exit_code: 0, .. }));
+    let will_restart = states.iter().any(|s| match s {
+        ContainerRuntimeState::Terminated { exit_code, .. } => policy.restarts(*exit_code),
+        _ => false,
+    });
+    if will_restart {
+        "Running"
+    } else if all_zero {
+        "Succeeded"
+    } else {
+        "Failed"
+    }
+}
+
+fn terminated_state(container: &ContainerRuntimeStatus) -> Option<Value> {
+    let ContainerRuntimeState::Terminated {
+        exit_code,
+        started_at,
+        finished_at,
+    } = &container.state
+    else {
+        return None;
+    };
+    Some(json!({
+        "terminated": {
+            "exitCode": exit_code,
+            "reason": if *exit_code == 0 { "Completed" } else { "Error" },
+            "startedAt": started_at,
+            "finishedAt": finished_at,
+            "containerID": container.container_id
+        }
+    }))
 }
 
 fn observed_container_status(container: &ContainerRuntimeStatus) -> Value {
@@ -1938,19 +2270,9 @@ fn observed_container_status(container: &ContainerRuntimeStatus) -> Value {
         ContainerRuntimeState::Running { started_at } => {
             json!({ "running": { "startedAt": started_at } })
         },
-        ContainerRuntimeState::Terminated {
-            exit_code,
-            started_at,
-            finished_at,
-        } => json!({
-            "terminated": {
-                "exitCode": exit_code,
-                "reason": if *exit_code == 0 { "Completed" } else { "Error" },
-                "startedAt": started_at,
-                "finishedAt": finished_at,
-                "containerID": container.container_id
-            }
-        }),
+        ContainerRuntimeState::Terminated { .. } => {
+            terminated_state(container).unwrap_or(Value::Null)
+        },
     };
     json!({
         "name": container.name,
@@ -1959,9 +2281,111 @@ fn observed_container_status(container: &ContainerRuntimeStatus) -> Value {
         "containerID": container.container_id,
         "ready": running,
         "started": running,
-        "restartCount": 0,
+        "restartCount": container.restart_count,
         "state": state
     })
+}
+
+fn crash_loop_status(container: &ContainerRuntimeStatus, message: &str) -> Value {
+    json!({
+        "name": container.name,
+        "image": container.image,
+        "imageID": container.image_id,
+        "containerID": container.container_id,
+        "ready": false,
+        "started": false,
+        "restartCount": container.restart_count,
+        "state": { "waiting": { "reason": "CrashLoopBackOff", "message": message } },
+        "lastState": terminated_state(container).unwrap_or(Value::Null)
+    })
+}
+
+/// Pod conditions in the kubelet's order, keeping `lastTransitionTime` from the
+/// pod's current status whenever a condition's status is unchanged.
+fn observed_conditions(
+    pod: &Value,
+    phase: &str,
+    unready: &[&str],
+    containers_seen: bool,
+) -> Vec<Value> {
+    let empty = Vec::new();
+    let existing = pod
+        .pointer("/status/conditions")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty);
+    let now = now_rfc3339();
+    let terminal = matches!(phase, "Succeeded" | "Failed");
+    let (ready_status, ready_reason, ready_message) = if terminal {
+        ("False", "PodCompleted", String::new())
+    } else if unready.is_empty() {
+        ("True", "", String::new())
+    } else {
+        (
+            "False",
+            "ContainersNotReady",
+            format!("containers with unready status: [{}]", unready.join(" ")),
+        )
+    };
+    let condition = |kind: &str, status: &str, reason: &str, message: &str| {
+        let transition = existing
+            .iter()
+            .find(|c| c["type"].as_str() == Some(kind) && c["status"].as_str() == Some(status))
+            .and_then(|c| c.get("lastTransitionTime"))
+            .cloned()
+            .unwrap_or_else(|| json!(now));
+        let mut value = json!({
+            "type": kind,
+            "status": status,
+            "lastProbeTime": Value::Null,
+            "lastTransitionTime": transition
+        });
+        if !reason.is_empty() {
+            value["reason"] = json!(reason);
+        }
+        if !message.is_empty() {
+            value["message"] = json!(message);
+        }
+        value
+    };
+    vec![
+        condition(
+            "PodReadyToStartContainers",
+            if containers_seen { "True" } else { "False" },
+            "",
+            "",
+        ),
+        condition("Initialized", "True", "", ""),
+        condition("Ready", ready_status, ready_reason, &ready_message),
+        condition(
+            "ContainersReady",
+            ready_status,
+            ready_reason,
+            &ready_message,
+        ),
+        condition("PodScheduled", "True", "", ""),
+    ]
+}
+
+/// Records a container start failure on every container of a pending status.
+/// Spec translation failures are `CreateContainerConfigError`, runtime
+/// failures `CreateContainerError`, as the kubelet reports them.
+fn mark_create_error(status: &mut Value, error: &KubeletError) {
+    let reason = if matches!(error, KubeletError::InvalidConfiguration { .. }) {
+        "CreateContainerConfigError"
+    } else {
+        "CreateContainerError"
+    };
+    let Some(statuses) = status
+        .get_mut("containerStatuses")
+        .and_then(Value::as_array_mut)
+    else {
+        return;
+    };
+    for container in statuses {
+        container["state"] = json!({
+            "waiting": { "reason": reason, "message": error.to_string() }
+        });
+    }
 }
 
 fn build_pod_conditions(all_ready: bool) -> Vec<Value> {

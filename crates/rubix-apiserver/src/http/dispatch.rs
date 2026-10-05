@@ -8,6 +8,7 @@ use crate::error::ApiserverError;
 use crate::logs::PodLogOptions;
 use crate::service::ApiserverService;
 
+use super::query;
 use super::route::ResourcePath;
 
 pub(crate) enum Payload {
@@ -43,8 +44,7 @@ pub(crate) async fn dispatch(
         return read(client, path).await.map(ok_json);
     }
     if method == Method::DELETE {
-        delete(client, path).await?;
-        return Ok(status_outcome(http::StatusCode::OK, "Success", "deleted"));
+        return delete(client, path, query, body).await;
     }
     let doc = decode_body(content_type, body, path)?;
     create(client, path, doc).await.map(created_json)
@@ -77,22 +77,51 @@ async fn read(client: &KubernetesApiClient, path: &ResourcePath) -> Result<Value
     }
 }
 
-async fn delete(client: &KubernetesApiClient, path: &ResourcePath) -> Result<(), ApiserverError> {
+async fn delete(
+    client: &KubernetesApiClient,
+    path: &ResourcePath,
+    query: Option<&str>,
+    body: &[u8],
+) -> Result<Outcome, ApiserverError> {
     let Some(name) = &path.name else {
         return Err(ApiserverError::BadRequest {
             message: "delete requires a resource name".to_string(),
         });
     };
+    let deleted = status_outcome(http::StatusCode::OK, "Success", "deleted");
     if is_namespaced(&path.resource) {
         let Some(namespace) = &path.namespace else {
             return Err(ApiserverError::BadRequest {
                 message: format!("{} requires a namespace", path.resource),
             });
         };
-        delete_namespaced(client, &path.group, &path.resource, namespace, name).await
+        if path.group.is_empty() && path.resource == "pods" {
+            // Pods delete gracefully: the kubelet owns the final removal.
+            let grace = grace_period_seconds(query, body);
+            return Ok(client
+                .delete_pod_options(namespace, name, grace)
+                .await?
+                .map_or(deleted, ok_json));
+        }
+        delete_namespaced(client, &path.group, &path.resource, namespace, name).await?;
     } else {
-        delete_cluster(client, &path.resource, name).await
+        delete_cluster(client, &path.resource, name).await?;
     }
+    Ok(deleted)
+}
+
+/// `gracePeriodSeconds` from the query or a `DeleteOptions` body, whichever is given.
+fn grace_period_seconds(query: Option<&str>, body: &[u8]) -> Option<i64> {
+    if let Some(value) = query::parse(query)
+        .get("gracePeriodSeconds")
+        .and_then(|v| v.parse().ok())
+    {
+        return Some(value);
+    }
+    serde_json::from_slice::<Value>(body)
+        .ok()?
+        .get("gracePeriodSeconds")?
+        .as_i64()
 }
 
 async fn create(
@@ -213,7 +242,6 @@ async fn delete_namespaced(
     name: &str,
 ) -> Result<(), ApiserverError> {
     match (group, resource) {
-        ("", "pods") => client.delete_pod(namespace, name).await,
         ("", "configmaps") => client.delete_configmap(namespace, name, None).await,
         ("", "secrets") => client.delete_secret(namespace, name, None).await,
         ("", "services") => client.delete_service(namespace, name).await,
@@ -360,7 +388,7 @@ fn stamp_type_meta(doc: &mut Value, path: &ResourcePath) {
     }
 }
 
-fn kind_name(resource: &str) -> Option<&'static str> {
+pub(crate) fn kind_name(resource: &str) -> Option<&'static str> {
     Some(match resource {
         "namespaces" => "Namespace",
         "configmaps" => "ConfigMap",
@@ -704,7 +732,7 @@ async fn subresource_read(
                 });
             };
             let text = reader
-                .read_pod_log(&pod, &PodLogOptions::from_query(query))
+                .read_pod_log(&pod, &PodLogOptions::from_params(&query::parse(query)))
                 .await?;
             Ok(Outcome {
                 status: http::StatusCode::OK,

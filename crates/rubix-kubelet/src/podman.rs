@@ -1,20 +1,21 @@
-//! Podman engine for [`OciRuntimeAdapter`](crate::oci::OciRuntimeAdapter).
+//! Podman engine for [`EngineRuntimeAdapter`](crate::engine::EngineRuntimeAdapter).
 //!
 //! This module knows only the `podman` command line: how to spell `run`,
-//! `ps`, `rm`, `logs` and `exec`, and how to read `podman ps --format json`.
-//! Pod semantics live in [`crate::oci`]. Every invocation goes through
-//! [`PodmanEngine::podman`], and [`run_arguments`] is the single place that
-//! builds the `run` command line.
+//! `ps`, `kill`, `rm`, `logs` and `exec`, and how to read `podman ps --format
+//! json`. Pod semantics live in [`crate::engine`]. Every invocation goes
+//! through [`PodmanEngine::podman`], and [`run_arguments`] is the single place
+//! that builds the `run` command line.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 
 use async_trait::async_trait;
 use serde::Deserialize;
 
+use crate::engine::{ContainerEngine, ContainerSpec, ContainerState, ContainerSummary, PullPolicy};
 use crate::error::KubeletError;
-use crate::oci::{ContainerSpec, ContainerState, ContainerSummary, OciEngine, PullPolicy};
-use crate::workload::ExecResult;
+use crate::workload::{ExecResult, LogOptions};
 
 const ENGINE_NAME: &str = "podman";
 const STOP_TIMEOUT_SECONDS: &str = "5";
@@ -83,6 +84,13 @@ impl PodmanEngine {
         &self.binary
     }
 
+    fn unavailable(&self, e: &std::io::Error, what: &str) -> KubeletError {
+        KubeletError::RuntimeUnavailable {
+            endpoint: self.binary.display().to_string(),
+            reason: format!("failed to execute podman {what}: {e}"),
+        }
+    }
+
     /// Runs one podman command and returns its output. Spawn failures mean the
     /// engine is unavailable; nonzero exits carry stderr.
     async fn podman(
@@ -90,20 +98,17 @@ impl PodmanEngine {
         args: &[String],
         context: &str,
     ) -> Result<std::process::Output, KubeletError> {
+        let verb = args.first().map_or("", String::as_str);
         let output = tokio::process::Command::new(&self.binary)
             .args(args)
             .output()
             .await
-            .map_err(|e| KubeletError::RuntimeUnavailable {
-                endpoint: self.binary.display().to_string(),
-                reason: format!("failed to execute podman: {e}"),
-            })?;
+            .map_err(|e| self.unavailable(&e, verb))?;
         if !output.status.success() {
             return Err(KubeletError::ContainerOperationFailed {
                 container: context.to_string(),
                 reason: format!(
-                    "podman {} exited with {}: {}",
-                    args.first().map_or("", String::as_str),
+                    "podman {verb} exited with {}: {}",
                     output.status,
                     String::from_utf8_lossy(&output.stderr).trim()
                 ),
@@ -119,7 +124,7 @@ impl PodmanEngine {
 }
 
 #[async_trait]
-impl OciEngine for PodmanEngine {
+impl ContainerEngine for PodmanEngine {
     fn name(&self) -> &str {
         ENGINE_NAME
     }
@@ -169,6 +174,19 @@ impl OciEngine for PodmanEngine {
             .collect())
     }
 
+    async fn signal(&self, ids: &[String], signal: &str) -> Result<(), KubeletError> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let mut args = vec![
+            "kill".to_string(),
+            "--signal".to_string(),
+            signal.to_string(),
+        ];
+        args.extend(ids.iter().cloned());
+        self.podman(&args, &ids.join(",")).await.map(drop)
+    }
+
     async fn remove(&self, ids: &[String]) -> Result<(), KubeletError> {
         if ids.is_empty() {
             return Ok(());
@@ -183,16 +201,45 @@ impl OciEngine for PodmanEngine {
         self.podman(&args, &ids.join(",")).await.map(drop)
     }
 
-    async fn logs(&self, id: &str, tail_lines: Option<usize>) -> Result<String, KubeletError> {
-        let mut args = vec!["logs".to_string()];
-        if let Some(tail) = tail_lines {
-            args.push("--tail".to_string());
-            args.push(tail.to_string());
+    /// `podman logs` replays the container's log in time order but writes each
+    /// entry to its original stream. Both streams are joined onto one pipe so the
+    /// order survives, as it does in a CRI log file.
+    async fn logs(&self, id: &str, options: &LogOptions) -> Result<String, KubeletError> {
+        let args = log_arguments(id, options);
+        let (reader, writer) = std::io::pipe().map_err(|e| self.unavailable(&e, "logs"))?;
+        let stderr_writer = writer
+            .try_clone()
+            .map_err(|e| self.unavailable(&e, "logs"))?;
+        let mut child = tokio::process::Command::new(&self.binary)
+            .args(&args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::from(writer))
+            .stderr(Stdio::from(stderr_writer))
+            .spawn()
+            .map_err(|e| self.unavailable(&e, "logs"))?;
+        let collect = tokio::task::spawn_blocking(move || {
+            let mut reader = reader;
+            let mut buffer = Vec::new();
+            std::io::Read::read_to_end(&mut reader, &mut buffer).map(|_| buffer)
+        });
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| self.unavailable(&e, "logs"))?;
+        let output = collect
+            .await
+            .map_err(|e| KubeletError::ContainerOperationFailed {
+                container: id.to_string(),
+                reason: format!("log reader task failed: {e}"),
+            })?
+            .map_err(|e| self.unavailable(&e, "logs"))?;
+        let text = String::from_utf8_lossy(&output).into_owned();
+        if !status.success() {
+            return Err(KubeletError::ContainerOperationFailed {
+                container: id.to_string(),
+                reason: format!("podman logs exited with {status}: {}", text.trim()),
+            });
         }
-        args.push(id.to_string());
-        let output = self.podman(&args, id).await?;
-        let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
-        text.push_str(&String::from_utf8_lossy(&output.stderr));
         Ok(text)
     }
 
@@ -203,10 +250,7 @@ impl OciEngine for PodmanEngine {
             .args(&args)
             .output()
             .await
-            .map_err(|e| KubeletError::RuntimeUnavailable {
-                endpoint: self.binary.display().to_string(),
-                reason: format!("failed to execute podman exec: {e}"),
-            })?;
+            .map_err(|e| self.unavailable(&e, "exec"))?;
         Ok(ExecResult {
             exit_code: output.status.code().unwrap_or(-1),
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
@@ -251,6 +295,24 @@ pub fn run_arguments(spec: &ContainerSpec) -> Result<Vec<String>, KubeletError> 
     Ok(args)
 }
 
+/// Builds the `podman logs` argument vector.
+pub fn log_arguments(id: &str, options: &LogOptions) -> Vec<String> {
+    let mut args = vec!["logs".to_string()];
+    if let Some(tail) = options.tail_lines {
+        args.push("--tail".to_string());
+        args.push(tail.to_string());
+    }
+    if options.timestamps {
+        args.push("--timestamps".to_string());
+    }
+    if let Some(since) = options.since_seconds {
+        args.push("--since".to_string());
+        args.push(format!("{since}s"));
+    }
+    args.push(id.to_string());
+    args
+}
+
 /// One row of `podman ps --format json`.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
@@ -289,10 +351,15 @@ impl PsEntry {
                 other.to_string()
             }),
         };
+        let image_id = if self.image_id.is_empty() || self.image_id.contains(':') {
+            self.image_id
+        } else {
+            format!("sha256:{}", self.image_id)
+        };
         ContainerSummary {
             id: self.id,
             image: self.image,
-            image_id: self.image_id,
+            image_id,
             labels: self.labels,
             state,
         }
@@ -327,14 +394,14 @@ mod tests {
     #[test]
     fn run_arguments_spell_the_podman_command_line() {
         let spec = ContainerSpec {
-            name: "rubix_default_hello_hello_abc".to_string(),
+            name: "k8s_hello_hello_default_u1_0".to_string(),
             image: "localhost/rubix-hello:latest".to_string(),
             pull: PullPolicy::Never,
             entrypoint: Some(vec!["/rubix-hello".to_string()]),
             args: vec!["600".to_string()],
             env: vec![("GREETING".to_string(), "hi".to_string())],
             working_dir: Some("/work".to_string()),
-            labels: BTreeMap::from([("io.rubix.pod-uid".to_string(), "u1".to_string())]),
+            labels: BTreeMap::from([("io.kubernetes.pod.uid".to_string(), "u1".to_string())]),
         };
         let args = run_arguments(&spec).unwrap();
         assert_eq!(
@@ -343,11 +410,11 @@ mod tests {
                 "run",
                 "--detach",
                 "--name",
-                "rubix_default_hello_hello_abc",
+                "k8s_hello_hello_default_u1_0",
                 "--pull",
                 "never",
                 "--label",
-                "io.rubix.pod-uid=u1",
+                "io.kubernetes.pod.uid=u1",
                 "--env",
                 "GREETING=hi",
                 "--workdir",
@@ -371,25 +438,53 @@ mod tests {
     }
 
     #[test]
+    fn log_arguments_carry_tail_timestamps_and_since() {
+        let options = LogOptions {
+            tail_lines: Some(5),
+            timestamps: true,
+            since_seconds: Some(30),
+        };
+        assert_eq!(
+            log_arguments("abc", &options),
+            [
+                "logs",
+                "--tail",
+                "5",
+                "--timestamps",
+                "--since",
+                "30s",
+                "abc"
+            ]
+        );
+        assert_eq!(
+            log_arguments("abc", &LogOptions::default()),
+            ["logs", "abc"]
+        );
+    }
+
+    #[test]
     fn ps_output_maps_running_and_exited_containers() {
         let stdout = r#"[
-          {"Id":"abc123","Image":"localhost/rubix-hello:latest","ImageID":"e247","Labels":{"io.rubix.container-name":"hello","io.rubix.pod-uid":"u1"},"State":"running","ExitCode":0,"Exited":false,"StartedAt":1791146364,"ExitedAt":-62135596800},
-          {"Id":"def456","Image":"img","ImageID":"i2","Labels":{"io.rubix.container-name":"side"},"State":"exited","ExitCode":3,"Exited":true,"StartedAt":1791146364,"ExitedAt":1791146370},
+          {"Id":"abc123","Image":"localhost/rubix-hello:latest","ImageID":"e247","Labels":{"io.kubernetes.container.name":"hello","io.kubernetes.pod.uid":"u1"},"State":"running","ExitCode":0,"Exited":false,"StartedAt":1791146364,"ExitedAt":-62135596800},
+          {"Id":"def456","Image":"img","ImageID":"sha256:i2","Labels":{"io.kubernetes.container.name":"side"},"State":"exited","ExitCode":3,"Exited":true,"StartedAt":1791146364,"ExitedAt":1791146370},
           {"Id":"ghi789","State":"created"}
         ]"#;
         let entries = parse_ps_output(stdout).unwrap();
         assert_eq!(entries.len(), 3);
         let running = entries[0].clone().into_summary();
         assert_eq!(running.id, "abc123");
-        assert_eq!(running.labels["io.rubix.container-name"], "hello");
+        assert_eq!(running.image_id, "sha256:e247");
+        assert_eq!(running.labels["io.kubernetes.container.name"], "hello");
         assert_eq!(
             running.state,
             ContainerState::Running {
                 started_at: Some(1_791_146_364)
             }
         );
+        let exited = entries[1].clone().into_summary();
+        assert_eq!(exited.image_id, "sha256:i2");
         assert_eq!(
-            entries[1].clone().into_summary().state,
+            exited.state,
             ContainerState::Exited {
                 exit_code: 3,
                 started_at: Some(1_791_146_364),

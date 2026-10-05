@@ -94,21 +94,30 @@ when a `podman` executable is found on `PATH` or in the usual install locations
 uses the `kubelet.kubeconfig` and certificates that startup already generates, keeps
 its state under `<path>/kubelet`, registers the node, and then loops every two seconds:
 it lists all pods, binds unscheduled pods to this node (there is no scheduler), starts
-each container as one detached, labelled engine container, and writes status from what
-the engine reports: `Pending` while nothing runs, `Running` while
-the process is alive, `Succeeded` or `Failed` from the exit code. Deleting the Pod
-object stops and removes its containers on the next pass. `kubectl logs` reads the
-container's stdout and stderr through the apiserver's pod log subresource.
+each container as one detached engine container labelled with the standard
+`io.kubernetes.pod.*` and `io.kubernetes.container.*` keys, and writes status from what
+the engine reports: `Pending` with `ContainerCreating` while nothing runs, `Running`
+while a process is alive or being restarted, `Succeeded` or `Failed` from exit codes under
+`restartPolicy`. `Always` and `OnFailure` restart exited containers as new attempts with
+the kubelet's back-off (10 s doubling to 5 min, `CrashLoopBackOff` while waiting).
+Deleting a pod sets `deletionTimestamp`; the kubelet sends `TERM`, `KILL` at the
+deadline, records the final status, removes the containers and deletes the object.
+Conditions carry `lastTransitionTime` and include `PodReadyToStartContainers`.
+`kubectl logs` reads the container's interleaved stdout and stderr through the
+apiserver's pod log subresource.
 
-The pod semantics live in `rubix_kubelet::oci::OciRuntimeAdapter`, which implements
-`RuntimeProvider` over the `OciEngine` trait (run, list by label, remove, logs, exec).
-`PodmanEngine` is the first engine and owns only the podman command line; docker or
-nerdctl would be further engines, not further providers.
+The pod semantics live in `rubix_kubelet::engine::EngineRuntimeAdapter`, which
+implements `RuntimeProvider` over the `ContainerEngine` trait (run, list by label, signal,
+remove, logs, exec). This is the dockershim shape; `PodmanEngine` is the first engine and
+owns only the podman command line. A CRI runtime such as containerd speaks pods already
+and would implement `RuntimeProvider` directly. Containers of one pod do not share a
+sandbox, so `podIP` is the node IP and pod networking is out of scope.
 
 Without podman the node logs `kubelet_runtime_unavailable` and serves its API with no
 kubelet. This slice deliberately departs from the retained official kubelet and
 containerd boundary; it is a development path, not a qualification. It does not
-implement restarts, probes, volumes, exec, ports, pod networking or init containers.
+implement probes, volumes, exec, ports, pod networking or init containers, and a
+restarted container's previous logs are not kept.
 See [experiments/podman-kubelet](../../experiments/podman-kubelet/README.md) for the
 live macOS evidence.
 

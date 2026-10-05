@@ -1,15 +1,20 @@
 //! Accept loop for the API server HTTPS listener.
 
+use std::collections::BTreeMap;
 use std::convert::Infallible;
 use std::io;
 use std::net::SocketAddr;
+use std::time::Duration;
 
 use bytes::Bytes;
 use http::{Method, Request, Response, StatusCode, header};
+use http_body_util::channel::Channel;
+use http_body_util::combinators::BoxBody;
 use http_body_util::{BodyExt, Full, Limited};
 use hyper::body::Incoming;
 use hyper::service::service_fn;
 use hyper_util::rt::TokioIo;
+use rubix_datastore::{WatchEventType, WatchReceiver};
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
 use tokio::sync::watch;
@@ -21,11 +26,16 @@ use crate::error::ApiserverError;
 use crate::service::ApiserverService;
 
 use super::dispatch::{self, Payload};
-use super::route::{self, Route, wants_aggregated_discovery};
+use super::query;
+use super::route::{self, ResourcePath, Route, wants_aggregated_discovery};
 use super::tls::{self, PeerIdentity};
 
 const MAX_BODY_BYTES: usize = 1024 * 1024;
 const MAX_CONNECTIONS: usize = 256;
+/// Upper bound for a watch without `timeoutSeconds`; kubectl reconnects.
+const DEFAULT_WATCH_TIMEOUT: Duration = Duration::from_mins(30);
+
+type Body = BoxBody<Bytes, Infallible>;
 
 pub(crate) async fn bind_listener(
     config: &crate::config::ApiserverConfig,
@@ -110,22 +120,14 @@ async fn handle(
     request: Request<Incoming>,
     service: &ApiserverService,
     peer: Option<&PeerIdentity>,
-) -> Response<Full<Bytes>> {
+) -> Response<Body> {
     let path = request.uri().path().to_string();
     let route = route::parse(&path);
     if matches!(route, Route::Health) {
         return health(service, &path).await;
     }
     if matches!(route, Route::Version) {
-        return json_response(
-            StatusCode::OK,
-            &json!({
-                "major": "1",
-                "minor": "35",
-                "gitVersion": "v1.35.7",
-                "platform": format!("{}/{}", std::env::consts::OS, std::env::consts::ARCH)
-            }),
-        );
+        return json_response(StatusCode::OK, &version());
     }
 
     let query = request.uri().query().map(str::to_owned);
@@ -187,6 +189,10 @@ async fn handle(
             discovery_result(client.discover_group_resources(&group, &version))
         },
         Route::Resource(path) => {
+            let params = query::parse(query.as_deref());
+            if method == Method::GET && path.name.is_none() && is_watch(&params) {
+                return watch_response(service, &client, &path, &params).await;
+            }
             match dispatch::dispatch(
                 service,
                 &client,
@@ -208,11 +214,294 @@ async fn handle(
     }
 }
 
+fn is_watch(params: &BTreeMap<String, String>) -> bool {
+    params
+        .get("watch")
+        .is_some_and(|value| value == "true" || value == "1")
+}
+
+/// Streams Kubernetes watch events as newline-delimited JSON.
+///
+/// Two client protocols are served. A classic watch sends the current collection
+/// as `ADDED` events newer than `resourceVersion`, then live datastore events.
+/// A watch-list request (`sendInitialEvents=true`, used by kubectl's informers
+/// and its delete waiter) sends the whole collection, then a `BOOKMARK` carrying
+/// the `k8s.io/initial-events-end` annotation, then live events. Either way the
+/// stream ends when `timeoutSeconds` elapses or the client goes away.
+/// `fieldSelector=metadata.name=<name>` is the only selector honoured.
+async fn watch_response(
+    service: &ApiserverService,
+    client: &KubernetesApiClient,
+    path: &ResourcePath,
+    params: &BTreeMap<String, String>,
+) -> Response<Body> {
+    let receiver = match client
+        .watch_resource(&path.group, &path.resource, path.namespace.as_deref())
+        .await
+    {
+        Ok(receiver) => receiver,
+        Err(err) => return error_response(&err),
+    };
+    let initial =
+        match dispatch::dispatch(service, client, &Method::GET, path, None, None, &[]).await {
+            Ok(outcome) => match outcome.body {
+                Payload::Json(body) => body,
+                Payload::Text(_) => Value::Null,
+            },
+            Err(err) => return error_response(&err),
+        };
+    let filter = WatchFilter {
+        name: params
+            .get("fieldSelector")
+            .and_then(|selector| selector.strip_prefix("metadata.name="))
+            .map(str::to_owned),
+        since: params
+            .get("resourceVersion")
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(0),
+        send_initial_events: params
+            .get("sendInitialEvents")
+            .is_some_and(|value| value == "true"),
+        namespaced: path.namespace.is_some() || dispatch_is_namespaced(&path.resource),
+        namespace: path.namespace.clone(),
+        api_version: if path.group.is_empty() {
+            "v1".to_string()
+        } else {
+            format!("{}/v1", path.group)
+        },
+        kind: dispatch::kind_name(&path.resource)
+            .unwrap_or("Object")
+            .to_string(),
+    };
+    let timeout = params
+        .get("timeoutSeconds")
+        .and_then(|value| value.parse().ok())
+        .map_or(DEFAULT_WATCH_TIMEOUT, Duration::from_secs);
+    let (sender, channel) = Channel::<Bytes, Infallible>::new(32);
+    tokio::spawn(stream_watch(sender, receiver, initial, filter, timeout));
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(channel.boxed())
+        .unwrap_or_else(|_| {
+            status_response(StatusCode::INTERNAL_SERVER_ERROR, "InternalError", "watch")
+        })
+}
+
+fn dispatch_is_namespaced(resource: &str) -> bool {
+    !matches!(
+        resource,
+        "namespaces" | "nodes" | "persistentvolumes" | "storageclasses"
+    )
+}
+
+struct WatchFilter {
+    name: Option<String>,
+    since: u64,
+    send_initial_events: bool,
+    namespaced: bool,
+    namespace: Option<String>,
+    api_version: String,
+    kind: String,
+}
+
+impl WatchFilter {
+    /// Minimal typed object for a storage key such as `/registry/pods/default/hello`.
+    fn object_from_key(&self, key: &str) -> Value {
+        let mut segments = key.trim_end_matches('/').rsplit('/');
+        let name = segments.next().unwrap_or_default();
+        let mut metadata = json!({ "name": name });
+        if self.namespaced
+            && let Some(namespace) = segments.next()
+        {
+            metadata["namespace"] = json!(namespace);
+        }
+        json!({ "kind": self.kind, "apiVersion": self.api_version, "metadata": metadata })
+    }
+
+    fn accepts(&self, object: &Value) -> bool {
+        self.name.as_deref().is_none_or(|wanted| {
+            object.pointer("/metadata/name").and_then(Value::as_str) == Some(wanted)
+        })
+    }
+}
+
+async fn stream_watch(
+    mut sender: http_body_util::channel::Sender<Bytes, Infallible>,
+    receiver: WatchReceiver,
+    initial: Value,
+    filter: WatchFilter,
+    timeout: Duration,
+) {
+    let mut sent: BTreeMap<String, u64> = BTreeMap::new();
+    let mut found = false;
+    let list_version = resource_version(&initial);
+    for item in initial
+        .get("items")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        if !filter.accepts(item) {
+            continue;
+        }
+        found = true;
+        let version = resource_version(item);
+        sent.insert(object_key(item), version);
+        let wanted = filter.send_initial_events || version > filter.since;
+        if wanted && send_event(&mut sender, "ADDED", item).await.is_err() {
+            return;
+        }
+    }
+    // Live events start after what the client already has: the list for a
+    // watch-list request, its own resourceVersion for a classic watch.
+    let threshold = if filter.send_initial_events {
+        list_version.max(filter.since)
+    } else {
+        filter.since
+    };
+    if filter.send_initial_events {
+        let bookmark = json!({
+            "kind": filter.kind,
+            "apiVersion": filter.api_version,
+            "metadata": {
+                "resourceVersion": threshold.to_string(),
+                "annotations": { "k8s.io/initial-events-end": "true" }
+            }
+        });
+        if send_event(&mut sender, "BOOKMARK", &bookmark)
+            .await
+            .is_err()
+        {
+            return;
+        }
+    } else if !found
+        && filter.since > 0
+        && let Some(name) = &filter.name
+    {
+        // The named object vanished between the client's GET and this watch.
+        let mut metadata = json!({ "name": name });
+        if let Some(namespace) = &filter.namespace {
+            metadata["namespace"] = json!(namespace);
+        }
+        let gone = json!({
+            "kind": filter.kind,
+            "apiVersion": filter.api_version,
+            "metadata": metadata
+        });
+        let _ = send_event(&mut sender, "DELETED", &gone).await;
+        return;
+    }
+    stream_live_events(sender, receiver, &filter, &mut sent, threshold, timeout).await;
+}
+
+/// Forwards datastore events newer than `threshold` until the timeout or disconnect.
+async fn stream_live_events(
+    mut sender: http_body_util::channel::Sender<Bytes, Infallible>,
+    mut receiver: WatchReceiver,
+    filter: &WatchFilter,
+    sent: &mut BTreeMap<String, u64>,
+    threshold: u64,
+    timeout: Duration,
+) {
+    let deadline = tokio::time::Instant::now() + timeout;
+    loop {
+        let event = tokio::select! {
+            () = tokio::time::sleep_until(deadline) => break,
+            event = receiver.recv() => match event {
+                Ok(event) => event,
+                Err(_) => break,
+            },
+        };
+        let (kind, source) = match event.event_type {
+            WatchEventType::Put if event.prev_kv.is_none() => ("ADDED", Some(&event.kv)),
+            WatchEventType::Put => ("MODIFIED", Some(&event.kv)),
+            WatchEventType::Delete => ("DELETED", event.prev_kv.as_ref()),
+        };
+        // A delete may arrive without the previous value; the key still names the object.
+        let mut object = match source.and_then(|kv| serde_json::from_slice::<Value>(&kv.value).ok())
+        {
+            Some(object) => object,
+            None if kind == "DELETED" => filter.object_from_key(&event.kv.key),
+            None => continue,
+        };
+        if let Some(meta) = object.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(event.kv.mod_revision.to_string()),
+            );
+        }
+        if !filter.accepts(&object) {
+            continue;
+        }
+        let key = object_key(&object);
+        // The datastore reports a delete with the deleted entry's own revision, so
+        // the revision threshold applies only to puts; a delete always moves forward.
+        let stale = kind != "DELETED"
+            && (sent
+                .get(&key)
+                .is_some_and(|last| *last >= event.kv.mod_revision)
+                || event.kv.mod_revision <= threshold);
+        if stale {
+            continue;
+        }
+        if !filter.namespaced && object.pointer("/metadata/namespace").is_some() {
+            continue;
+        }
+        sent.insert(key, event.kv.mod_revision);
+        if send_event(&mut sender, kind, &object).await.is_err() {
+            return;
+        }
+    }
+}
+
+async fn send_event(
+    sender: &mut http_body_util::channel::Sender<Bytes, Infallible>,
+    kind: &str,
+    object: &Value,
+) -> Result<(), http_body_util::channel::SendError> {
+    let mut line = serde_json::to_vec(&json!({ "type": kind, "object": object }))
+        .unwrap_or_else(|_| b"{}".to_vec());
+    line.push(b'\n');
+    sender.send_data(Bytes::from(line)).await
+}
+
+fn resource_version(object: &Value) -> u64 {
+    object
+        .pointer("/metadata/resourceVersion")
+        .and_then(Value::as_str)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0)
+}
+
+fn object_key(object: &Value) -> String {
+    format!(
+        "{}/{}",
+        object
+            .pointer("/metadata/namespace")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        object
+            .pointer("/metadata/name")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+    )
+}
+
+fn version() -> Value {
+    json!({
+        "major": "1",
+        "minor": "35",
+        "gitVersion": "v1.35.7",
+        "platform": format!("{}/{}", std::env::consts::OS, std::env::consts::ARCH)
+    })
+}
+
 /// Serves a static document to any client that may read core discovery.
 fn authenticated_document(
     client: &KubernetesApiClient,
     document: impl FnOnce() -> Value,
-) -> Response<Full<Bytes>> {
+) -> Response<Body> {
     match client.discover_core() {
         Ok(_) => json_response(StatusCode::OK, &document()),
         Err(err) => error_response(&err),
@@ -223,7 +512,7 @@ fn aggregated_or(
     accept: Option<&str>,
     aggregated: impl FnOnce() -> Result<Value, ApiserverError>,
     legacy: impl FnOnce() -> Result<Value, ApiserverError>,
-) -> Response<Full<Bytes>> {
+) -> Response<Body> {
     if wants_aggregated_discovery(accept) {
         discovery_result(aggregated())
     } else {
@@ -231,7 +520,7 @@ fn aggregated_or(
     }
 }
 
-fn discovery_result(result: Result<Value, ApiserverError>) -> Response<Full<Bytes>> {
+fn discovery_result(result: Result<Value, ApiserverError>) -> Response<Body> {
     match result {
         Ok(body) => json_response(StatusCode::OK, &body),
         Err(err) => error_response(&err),
@@ -342,7 +631,7 @@ fn group_item(group: &str, version: &str, resources: &Value) -> Value {
     })
 }
 
-async fn health(service: &ApiserverService, path: &str) -> Response<Full<Bytes>> {
+async fn health(service: &ApiserverService, path: &str) -> Response<Body> {
     if path == "/readyz" {
         match service.check_readiness().await {
             Ok(report) if report.is_healthy => text(StatusCode::OK, "ok"),
@@ -378,7 +667,7 @@ fn bearer_token(request: &Request<Incoming>) -> Option<String> {
     value.strip_prefix("Bearer ").map(str::to_owned)
 }
 
-fn error_response(err: &ApiserverError) -> Response<Full<Bytes>> {
+fn error_response(err: &ApiserverError) -> Response<Body> {
     let (status, reason) = match &err {
         ApiserverError::Unauthenticated { .. } => (StatusCode::UNAUTHORIZED, "Unauthorized"),
         ApiserverError::Unauthorized { .. } | ApiserverError::AdmissionDenied { .. } => {
@@ -394,7 +683,7 @@ fn error_response(err: &ApiserverError) -> Response<Full<Bytes>> {
     status_response(status, reason, &err.to_string())
 }
 
-fn status_response(status: StatusCode, reason: &str, message: &str) -> Response<Full<Bytes>> {
+fn status_response(status: StatusCode, reason: &str, message: &str) -> Response<Body> {
     json_response(
         status,
         &json!({
@@ -409,27 +698,25 @@ fn status_response(status: StatusCode, reason: &str, message: &str) -> Response<
     )
 }
 
-fn json_response(status: StatusCode, body: &Value) -> Response<Full<Bytes>> {
+fn json_response(status: StatusCode, body: &Value) -> Response<Body> {
     let bytes = serde_json::to_vec(body).unwrap_or_else(|_| b"{}".to_vec());
-    Response::builder()
-        .status(status)
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Full::new(Bytes::from(bytes)))
-        .unwrap_or_else(|_| Response::new(Full::new(Bytes::from_static(b"{\"kind\":\"Status\"}"))))
+    response(status, "application/json", Bytes::from(bytes))
 }
 
-fn text_response(status: StatusCode, body: String) -> Response<Full<Bytes>> {
-    Response::builder()
-        .status(status)
-        .header(header::CONTENT_TYPE, "text/plain")
-        .body(Full::new(Bytes::from(body)))
-        .unwrap_or_else(|_| Response::new(Full::new(Bytes::from_static(b"log unavailable"))))
+fn text_response(status: StatusCode, body: String) -> Response<Body> {
+    response(status, "text/plain", Bytes::from(body))
 }
 
-fn text(status: StatusCode, body: &'static str) -> Response<Full<Bytes>> {
+fn text(status: StatusCode, body: &'static str) -> Response<Body> {
+    response(status, "text/plain", Bytes::from_static(body.as_bytes()))
+}
+
+fn response(status: StatusCode, content_type: &'static str, bytes: Bytes) -> Response<Body> {
     Response::builder()
         .status(status)
-        .header(header::CONTENT_TYPE, "text/plain")
-        .body(Full::new(Bytes::from_static(body.as_bytes())))
-        .unwrap_or_else(|_| Response::new(Full::new(Bytes::from_static(body.as_bytes()))))
+        .header(header::CONTENT_TYPE, content_type)
+        .body(Full::new(bytes).boxed())
+        .unwrap_or_else(|_| {
+            Response::new(Full::new(Bytes::from_static(b"{\"kind\":\"Status\"}")).boxed())
+        })
 }

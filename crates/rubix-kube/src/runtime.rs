@@ -26,7 +26,7 @@ use rubix_dns::config::CoreDnsConfig;
 use rubix_dns::service::CoreDnsService;
 use rubix_dns::supervisor::CoreDnsAdapter;
 use rubix_kubelet::{
-    KubeletAdapter, KubeletConfigOptions, KubeletService, OciRuntimeAdapter, PodmanEngine,
+    EngineRuntimeAdapter, KubeletAdapter, KubeletConfigOptions, KubeletService, PodmanEngine,
 };
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_portainer::config::PortainerAgentConfig;
@@ -583,8 +583,8 @@ fn node_identity(config: &ValidatedConfig) -> Result<(IpAddr, String), RuntimeEr
 
 /// Registers the in-process kubelet when a supported container engine is present.
 ///
-/// The kubelet drives pods through the OCI runtime adapter over podman and
-/// serves the pod log subresource via the apiserver. Without podman the node still serves its API, but pods
+/// The kubelet drives pods through the container-engine adapter over podman
+/// and serves the pod log subresource via the apiserver. Without podman the node still serves its API, but pods
 /// stay unscheduled; the warning below is the only signal of that state.
 fn register_kubelet(
     builder: RuntimeBuilder,
@@ -609,7 +609,7 @@ fn register_kubelet(
         node_ip.to_string(),
         &kubelet_dir,
     );
-    let runtime = OciRuntimeAdapter::new(Arc::new(engine));
+    let runtime = EngineRuntimeAdapter::new(Arc::new(engine));
     let service = KubeletService::new(options, apiserver.clone(), Arc::new(runtime));
     apiserver.set_pod_log_reader(Arc::new(service.log_source()));
     builder.register_component(KubeletAdapter::registration(

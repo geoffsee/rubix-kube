@@ -14,7 +14,8 @@ use crate::error::KubeletError;
 use crate::health::KubeletHealthReport;
 use crate::registration::NodeRegistration;
 use crate::workload::{
-    CpuManager, ExecResult, PodReconciler, ReconcileReport, RuntimeProvider, WorkloadRestartReport,
+    CpuManager, ExecResult, LogOptions, PodReconciler, ReconcileReport, RuntimeProvider,
+    WorkloadRestartReport,
 };
 
 /// Kubelet service orchestrating node lifecycle, registration, and workload execution.
@@ -437,25 +438,36 @@ impl PodLogReader for KubeletLogSource {
                 })?
                 .to_string(),
         };
-        let waiting = pod
+        // A container that has never run has no log. One waiting between restart
+        // attempts still has its last attempt's output, as upstream serves it.
+        let status = pod
             .pointer("/status/containerStatuses")
             .and_then(Value::as_array)
             .and_then(|statuses| {
                 statuses
                     .iter()
                     .find(|s| s["name"].as_str() == Some(container.as_str()))
-            })
+            });
+        let waiting = status
             .and_then(|status| status.pointer("/state/waiting/reason"))
             .and_then(Value::as_str);
-        if let Some(reason) = waiting {
+        let has_previous = status
+            .and_then(|status| status.pointer("/lastState/terminated"))
+            .is_some();
+        if let Some(reason) = waiting.filter(|_| !has_previous) {
             return Err(ApiserverError::BadRequest {
                 message: format!(
                     "container \"{container}\" in pod \"{name}\" is waiting to start: {reason}"
                 ),
             });
         }
+        let log_options = LogOptions {
+            tail_lines: options.tail_lines,
+            timestamps: options.timestamps,
+            since_seconds: options.since_seconds,
+        };
         self.runtime
-            .get_container_logs(uid, &container, options.tail_lines)
+            .read_container_logs(uid, &container, &log_options)
             .await
             .map_err(|e| ApiserverError::Internal {
                 reason: format!("kubelet could not read logs for {name}/{container}: {e}"),

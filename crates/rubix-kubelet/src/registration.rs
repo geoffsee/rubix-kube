@@ -209,15 +209,6 @@ pub(crate) fn rfc3339_seconds(unix_secs: u64) -> String {
     format!("{year:04}-{month:02}-{day:02}T{hours:02}:{mins:02}:{s:02}Z")
 }
 
-/// Current wall-clock time as RFC 3339 with second precision.
-pub(crate) fn now_rfc3339_seconds() -> String {
-    let secs = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    rfc3339_seconds(secs)
-}
-
 fn current_rfc3339_micros() -> String {
     let now = std::time::SystemTime::now();
     let dur = now

@@ -267,3 +267,131 @@ async fn pod_log_subresource_and_openapi_serve_kubectl() {
     stop_handle.stop();
     supervisor.await.unwrap();
 }
+
+/// Boots a supervised gateway on an ephemeral port and returns how to reach and stop it.
+async fn spawn_gateway(
+    dir: &TempDir,
+) -> (
+    std::net::SocketAddr,
+    rubix_supervisor::StopHandle,
+    tokio::task::JoinHandle<rubix_supervisor::SupervisorReport>,
+) {
+    let config = setup(dir);
+    let service = ApiserverService::new(config, storage(dir));
+    let registration = ApiserverAdapter::registration(
+        "apiserver",
+        service.clone(),
+        Vec::new(),
+        Duration::from_secs(10),
+    );
+    let supervisor = rubix_supervisor::Supervisor::new(vec![registration]).unwrap();
+    let (stop_handle, stop_receiver) = rubix_supervisor::stop_channel();
+    let supervisor = tokio::spawn(async move { supervisor.run(stop_receiver).await });
+    let addr = tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if let Some(addr) = service.bound_addr() {
+                return addr;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .expect("listener bound");
+    (addr, stop_handle, supervisor)
+}
+
+#[tokio::test]
+async fn watch_streams_events_and_unacknowledged_pods_delete_at_once() {
+    let dir = TempDir::new().unwrap();
+    let (addr, stop_handle, supervisor) = spawn_gateway(&dir).await;
+    let pki = dir.path().join("pki");
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "POST",
+        "/api/v1/namespaces/default/pods",
+        r#"{"apiVersion":"v1","kind":"Pod","metadata":{"name":"hello"},"spec":{"containers":[{"name":"hello","image":"localhost/rubix-hello:latest"}]}}"#,
+    )
+    .await;
+    assert_eq!(status, 201, "{body}");
+
+    // Watch streams the current collection as ADDED events, then live changes,
+    // until timeoutSeconds elapses. kubectl waits for deletions this way.
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods?watch=true&timeoutSeconds=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("transfer-encoding: chunked"), "{body}");
+    assert!(body.contains("\"type\":\"ADDED\""), "{body}");
+    assert!(body.contains("\"name\":\"hello\""), "{body}");
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods?watch=true&timeoutSeconds=1&fieldSelector=metadata.name%3Dgone&resourceVersion=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"type\":\"DELETED\""), "{body}");
+    assert!(!body.contains("\"name\":\"hello\""), "{body}");
+
+    // kubectl's informers ask for the whole collection and a bookmark that
+    // marks the end of the initial events.
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods?watch=true&timeoutSeconds=1&sendInitialEvents=true&resourceVersionMatch=NotOlderThan&allowWatchBookmarks=true&fieldSelector=metadata.name%3Dhello",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let added = body.find("\"type\":\"ADDED\"").expect("ADDED event");
+    let bookmark = body.find("\"type\":\"BOOKMARK\"").expect("BOOKMARK event");
+    assert!(added < bookmark, "{body}");
+    assert!(
+        body.contains("\"k8s.io/initial-events-end\":\"true\""),
+        "{body}"
+    );
+    assert!(
+        body.contains("\"kind\":\"Pod\",\"apiVersion\":\"v1\"")
+            || body.contains("\"apiVersion\":\"v1\",\"kind\":\"Pod\""),
+        "{body}"
+    );
+
+    // A pod no kubelet has acknowledged is deleted at once.
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "DELETE",
+        "/api/v1/namespaces/default/pods/hello",
+        r#"{"kind":"DeleteOptions","apiVersion":"v1","propagationPolicy":"Background"}"#,
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"status\":\"Success\""), "{body}");
+    let (status, _) = request(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods/hello",
+        "",
+    )
+    .await;
+    assert_eq!(status, 404);
+
+    stop_handle.stop();
+    supervisor.await.unwrap();
+}

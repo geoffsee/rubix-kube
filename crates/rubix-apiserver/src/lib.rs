@@ -12,6 +12,7 @@ pub mod rbac;
 pub mod service;
 pub mod storage;
 pub mod supervisor;
+pub mod time;
 pub mod token;
 
 pub use admission::{
