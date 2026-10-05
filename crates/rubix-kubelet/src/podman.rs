@@ -1,10 +1,9 @@
 //! Podman engine for [`EngineRuntimeAdapter`](crate::engine::EngineRuntimeAdapter).
 //!
-//! This module knows only the `podman` command line: how to spell `run`,
-//! `ps`, `kill`, `rm`, `logs` and `exec`, and how to read `podman ps --format
-//! json`. Pod semantics live in [`crate::engine`]. Every invocation goes
-//! through [`PodmanEngine::podman`], and [`run_arguments`] is the single place
-//! that builds the `run` command line.
+//! This module knows only the `podman` command line: pods (`pod create/start/
+//! stop/rm/ps`), containers (`create/start/stop/rm/ps`), images (`image
+//! inspect`, `pull`), `logs` and `exec`, and how to read `--format json`.
+//! Every invocation goes through [`PodmanEngine::podman`].
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -13,12 +12,11 @@ use std::process::Stdio;
 use async_trait::async_trait;
 use serde::Deserialize;
 
-use crate::engine::{ContainerEngine, ContainerSpec, ContainerState, ContainerSummary, PullPolicy};
+use crate::engine::{ContainerEngine, ContainerSpec, ContainerState, ContainerSummary, PodSummary};
 use crate::error::KubeletError;
 use crate::workload::{ExecResult, LogOptions};
 
 const ENGINE_NAME: &str = "podman";
-const STOP_TIMEOUT_SECONDS: &str = "5";
 const SEARCH_LOCATIONS: &[&str] = &[
     "/opt/podman/bin/podman",
     "/opt/homebrew/bin/podman",
@@ -26,7 +24,7 @@ const SEARCH_LOCATIONS: &[&str] = &[
     "/usr/bin/podman",
 ];
 
-/// Drives containers through the `podman` command-line client.
+/// Drives pods and containers through the `podman` command-line client.
 #[derive(Clone, Debug)]
 pub struct PodmanEngine {
     binary: PathBuf,
@@ -108,7 +106,12 @@ impl PodmanEngine {
             return Err(KubeletError::ContainerOperationFailed {
                 container: context.to_string(),
                 reason: format!(
-                    "podman {verb} exited with {}: {}",
+                    "podman {} exited with {}: {}",
+                    args.iter()
+                        .take(2)
+                        .map(String::as_str)
+                        .collect::<Vec<_>>()
+                        .join(" "),
                     output.status,
                     String::from_utf8_lossy(&output.stderr).trim()
                 ),
@@ -119,8 +122,41 @@ impl PodmanEngine {
 
     async fn podman_stdout(&self, args: &[String], context: &str) -> Result<String, KubeletError> {
         let output = self.podman(args, context).await?;
-        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
+
+    async fn ps(
+        &self,
+        label_filters: &[(&str, &str)],
+        pod: Option<&str>,
+        id: Option<&str>,
+    ) -> Result<Vec<ContainerSummary>, KubeletError> {
+        let mut args = vec!["ps".to_string(), "--all".to_string()];
+        for (key, value) in label_filters {
+            args.push("--filter".to_string());
+            args.push(format!("label={key}={value}"));
+        }
+        if let Some(pod) = pod {
+            args.push("--filter".to_string());
+            args.push(format!("pod={pod}"));
+        }
+        if let Some(id) = id {
+            args.push("--filter".to_string());
+            args.push(format!("id={id}"));
+        }
+        args.push("--format".to_string());
+        args.push("json".to_string());
+        let stdout = self.podman_stdout(&args, "ps").await?;
+        Ok(parse_ps_output(&stdout)?
+            .into_iter()
+            .filter(|entry| !entry.is_infra)
+            .map(PsEntry::into_summary)
+            .collect())
+    }
+}
+
+fn strings(parts: &[&str]) -> Vec<String> {
+    parts.iter().map(|s| (*s).to_string()).collect()
 }
 
 #[async_trait]
@@ -135,11 +171,7 @@ impl ContainerEngine for PodmanEngine {
 
     async fn ping(&self) -> Result<(), KubeletError> {
         self.podman(
-            &[
-                "version".to_string(),
-                "--format".to_string(),
-                "{{.Client.Version}}".to_string(),
-            ],
+            &strings(&["version", "--format", "{{.Client.Version}}"]),
             "version",
         )
         .await
@@ -150,55 +182,143 @@ impl ContainerEngine for PodmanEngine {
         })
     }
 
-    async fn run_detached(&self, spec: &ContainerSpec) -> Result<String, KubeletError> {
-        let args = run_arguments(spec)?;
-        let stdout = self.podman_stdout(&args, &spec.name).await?;
-        Ok(stdout.trim().to_string())
+    async fn pod_create(
+        &self,
+        name: &str,
+        labels: &BTreeMap<String, String>,
+    ) -> Result<String, KubeletError> {
+        let mut args = strings(&["pod", "create", "--name", name]);
+        for (key, value) in labels {
+            args.push("--label".to_string());
+            args.push(format!("{key}={value}"));
+        }
+        self.podman_stdout(&args, name).await
     }
 
-    async fn list(
+    async fn pod_start(&self, id: &str) -> Result<(), KubeletError> {
+        self.podman(&strings(&["pod", "start", id]), id)
+            .await
+            .map(drop)
+    }
+
+    async fn pod_stop(&self, id: &str, timeout_secs: i64) -> Result<(), KubeletError> {
+        let timeout = timeout_secs.max(0).to_string();
+        self.podman(&strings(&["pod", "stop", "--time", &timeout, id]), id)
+            .await
+            .map(drop)
+    }
+
+    async fn pod_remove(&self, id: &str) -> Result<(), KubeletError> {
+        self.podman(&strings(&["pod", "rm", "--force", id]), id)
+            .await
+            .map(drop)
+    }
+
+    async fn pod_list(
         &self,
         label_filters: &[(&str, &str)],
-    ) -> Result<Vec<ContainerSummary>, KubeletError> {
-        let mut args = vec!["ps".to_string(), "--all".to_string()];
+    ) -> Result<Vec<PodSummary>, KubeletError> {
+        let mut args = strings(&["pod", "ps"]);
         for (key, value) in label_filters {
             args.push("--filter".to_string());
             args.push(format!("label={key}={value}"));
         }
         args.push("--format".to_string());
         args.push("json".to_string());
-        let stdout = self.podman_stdout(&args, "ps").await?;
-        Ok(parse_ps_output(&stdout)?
+        let stdout = self.podman_stdout(&args, "pod ps").await?;
+        Ok(parse_pod_ps_output(&stdout)?
             .into_iter()
-            .map(PsEntry::into_summary)
+            .map(PodPsEntry::into_summary)
             .collect())
     }
 
-    async fn signal(&self, ids: &[String], signal: &str) -> Result<(), KubeletError> {
-        if ids.is_empty() {
-            return Ok(());
+    /// The infra container holds the pod's network namespace, so its address is the pod IP.
+    async fn pod_ip(&self, id: &str) -> Result<Option<String>, KubeletError> {
+        let infra = self
+            .podman_stdout(
+                &strings(&["pod", "inspect", "--format", "{{.InfraContainerID}}", id]),
+                id,
+            )
+            .await?;
+        if infra.is_empty() {
+            return Ok(None);
         }
-        let mut args = vec![
-            "kill".to_string(),
-            "--signal".to_string(),
-            signal.to_string(),
-        ];
-        args.extend(ids.iter().cloned());
-        self.podman(&args, &ids.join(",")).await.map(drop)
+        let addresses = self
+            .podman_stdout(
+                &strings(&[
+                    "inspect",
+                    "--format",
+                    "{{.NetworkSettings.IPAddress}} {{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}",
+                    &infra,
+                ]),
+                id,
+            )
+            .await?;
+        Ok(addresses
+            .split_whitespace()
+            .find(|ip| !ip.is_empty())
+            .map(str::to_owned))
     }
 
-    async fn remove(&self, ids: &[String]) -> Result<(), KubeletError> {
-        if ids.is_empty() {
-            return Ok(());
+    async fn container_create(&self, spec: &ContainerSpec) -> Result<String, KubeletError> {
+        let args = create_arguments(spec)?;
+        self.podman_stdout(&args, &spec.name).await
+    }
+
+    async fn container_start(&self, id: &str) -> Result<(), KubeletError> {
+        self.podman(&strings(&["start", id]), id).await.map(drop)
+    }
+
+    async fn container_stop(&self, id: &str, timeout_secs: i64) -> Result<(), KubeletError> {
+        let timeout = timeout_secs.max(0).to_string();
+        self.podman(&strings(&["stop", "--time", &timeout, id]), id)
+            .await
+            .map(drop)
+    }
+
+    async fn container_remove(&self, id: &str) -> Result<(), KubeletError> {
+        self.podman(&strings(&["rm", "--force", id]), id)
+            .await
+            .map(drop)
+    }
+
+    async fn container_list(
+        &self,
+        label_filters: &[(&str, &str)],
+        pod: Option<&str>,
+    ) -> Result<Vec<ContainerSummary>, KubeletError> {
+        self.ps(label_filters, pod, None).await
+    }
+
+    async fn container_inspect(&self, id: &str) -> Result<ContainerSummary, KubeletError> {
+        self.ps(&[], None, Some(id))
+            .await?
+            .into_iter()
+            .next()
+            .ok_or_else(|| KubeletError::ContainerOperationFailed {
+                container: id.to_string(),
+                reason: "container not found".to_string(),
+            })
+    }
+
+    async fn image_id(&self, image: &str) -> Result<Option<String>, KubeletError> {
+        let output = tokio::process::Command::new(&self.binary)
+            .args(["image", "inspect", "--format", "{{.Id}}", image])
+            .output()
+            .await
+            .map_err(|e| self.unavailable(&e, "image inspect"))?;
+        if !output.status.success() {
+            return Ok(None);
         }
-        let mut args = vec![
-            "rm".to_string(),
-            "--force".to_string(),
-            "--time".to_string(),
-            STOP_TIMEOUT_SECONDS.to_string(),
-        ];
-        args.extend(ids.iter().cloned());
-        self.podman(&args, &ids.join(",")).await.map(drop)
+        let id = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok((!id.is_empty()).then(|| prefix_sha(&id)))
+    }
+
+    async fn image_pull(&self, image: &str) -> Result<String, KubeletError> {
+        let stdout = self
+            .podman_stdout(&strings(&["pull", "--quiet", image]), image)
+            .await?;
+        Ok(prefix_sha(stdout.lines().last().unwrap_or("").trim()))
     }
 
     /// `podman logs` replays the container's log in time order but writes each
@@ -244,7 +364,7 @@ impl ContainerEngine for PodmanEngine {
     }
 
     async fn exec(&self, id: &str, command: &[String]) -> Result<ExecResult, KubeletError> {
-        let mut args = vec!["exec".to_string(), id.to_string()];
+        let mut args = strings(&["exec", id]);
         args.extend(command.iter().cloned());
         let output = tokio::process::Command::new(&self.binary)
             .args(&args)
@@ -259,21 +379,23 @@ impl ContainerEngine for PodmanEngine {
     }
 }
 
-/// Builds the `podman run` argument vector for one container spec.
-pub fn run_arguments(spec: &ContainerSpec) -> Result<Vec<String>, KubeletError> {
-    let pull = match spec.pull {
-        PullPolicy::Missing => "missing",
-        PullPolicy::Always => "always",
-        PullPolicy::Never => "never",
-    };
-    let mut args = vec![
-        "run".to_string(),
-        "--detach".to_string(),
-        "--name".to_string(),
-        spec.name.clone(),
-        "--pull".to_string(),
-        pull.to_string(),
-    ];
+fn prefix_sha(id: &str) -> String {
+    if id.is_empty() || id.contains(':') {
+        id.to_string()
+    } else {
+        format!("sha256:{id}")
+    }
+}
+
+/// Builds the `podman create` argument vector for one container spec.
+///
+/// The kubelet has already pulled the image, so the engine never pulls here.
+pub fn create_arguments(spec: &ContainerSpec) -> Result<Vec<String>, KubeletError> {
+    let mut args = strings(&["create", "--name", &spec.name, "--pull", "never"]);
+    if let Some(pod) = &spec.pod {
+        args.push("--pod".to_string());
+        args.push(pod.clone());
+    }
     for (key, value) in &spec.labels {
         args.push("--label".to_string());
         args.push(format!("{key}={value}"));
@@ -319,6 +441,13 @@ pub fn log_arguments(id: &str, options: &LogOptions) -> Vec<String> {
 pub struct PsEntry {
     pub id: String,
     #[serde(default)]
+    pub names: Vec<String>,
+    #[serde(default)]
+    pub pod: String,
+    /// Podman copies pod labels onto the infra container; it is not a workload container.
+    #[serde(default, rename = "IsInfra")]
+    pub is_infra: bool,
+    #[serde(default)]
     pub image: String,
     #[serde(default, rename = "ImageID")]
     pub image_id: String,
@@ -332,6 +461,8 @@ pub struct PsEntry {
     pub started_at: i64,
     #[serde(default)]
     pub exited_at: i64,
+    #[serde(default)]
+    pub created: i64,
 }
 
 impl PsEntry {
@@ -351,30 +482,67 @@ impl PsEntry {
                 other.to_string()
             }),
         };
-        let image_id = if self.image_id.is_empty() || self.image_id.contains(':') {
-            self.image_id
-        } else {
-            format!("sha256:{}", self.image_id)
-        };
         ContainerSummary {
             id: self.id,
+            name: self.names.into_iter().next().unwrap_or_default(),
+            pod_id: self.pod,
             image: self.image,
-            image_id,
+            image_id: prefix_sha(&self.image_id),
             labels: self.labels,
             state,
+            created: u64::try_from(self.created).ok().filter(|c| *c > 0),
+        }
+    }
+}
+
+/// One row of `podman pod ps --format json`.
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub struct PodPsEntry {
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub status: String,
+    #[serde(default)]
+    pub labels: BTreeMap<String, String>,
+}
+
+impl PodPsEntry {
+    fn into_summary(self) -> PodSummary {
+        PodSummary {
+            id: self.id,
+            name: self.name,
+            labels: self.labels,
+            // A pod is up while its infra container runs; `Degraded` means some
+            // workload containers exited but the sandbox is still there.
+            running: matches!(self.status.as_str(), "Running" | "Degraded"),
+            created: None,
         }
     }
 }
 
 /// Parses `podman ps --format json`; an empty list prints `[]` or nothing.
 pub fn parse_ps_output(stdout: &str) -> Result<Vec<PsEntry>, KubeletError> {
+    parse_json_list(stdout, "ps")
+}
+
+/// Parses `podman pod ps --format json`.
+pub fn parse_pod_ps_output(stdout: &str) -> Result<Vec<PodPsEntry>, KubeletError> {
+    parse_json_list(stdout, "pod ps")
+}
+
+fn parse_json_list<T: serde::de::DeserializeOwned>(
+    stdout: &str,
+    what: &str,
+) -> Result<Vec<T>, KubeletError> {
     let trimmed = stdout.trim();
     if trimmed.is_empty() {
         return Ok(Vec::new());
     }
     serde_json::from_str(trimmed).map_err(|e| KubeletError::ContainerOperationFailed {
-        container: "ps".to_string(),
-        reason: format!("podman ps output is not JSON: {e}"),
+        container: what.to_string(),
+        reason: format!("podman {what} output is not JSON: {e}"),
     })
 }
 
@@ -392,27 +560,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn run_arguments_spell_the_podman_command_line() {
+    fn create_arguments_spell_the_podman_command_line() {
         let spec = ContainerSpec {
             name: "k8s_hello_hello_default_u1_0".to_string(),
             image: "localhost/rubix-hello:latest".to_string(),
-            pull: PullPolicy::Never,
+            pod: Some("pod1".to_string()),
             entrypoint: Some(vec!["/rubix-hello".to_string()]),
             args: vec!["600".to_string()],
             env: vec![("GREETING".to_string(), "hi".to_string())],
             working_dir: Some("/work".to_string()),
             labels: BTreeMap::from([("io.kubernetes.pod.uid".to_string(), "u1".to_string())]),
         };
-        let args = run_arguments(&spec).unwrap();
         assert_eq!(
-            args,
+            create_arguments(&spec).unwrap(),
             [
-                "run",
-                "--detach",
+                "create",
                 "--name",
                 "k8s_hello_hello_default_u1_0",
                 "--pull",
                 "never",
+                "--pod",
+                "pod1",
                 "--label",
                 "io.kubernetes.pod.uid=u1",
                 "--env",
@@ -425,16 +593,13 @@ mod tests {
                 "600"
             ]
         );
-        let minimal = run_arguments(&ContainerSpec {
+        let minimal = create_arguments(&ContainerSpec {
             name: "n".to_string(),
             image: "img".to_string(),
             ..ContainerSpec::default()
         })
         .unwrap();
-        assert_eq!(
-            minimal,
-            ["run", "--detach", "--name", "n", "--pull", "missing", "img"]
-        );
+        assert_eq!(minimal, ["create", "--name", "n", "--pull", "never", "img"]);
     }
 
     #[test]
@@ -443,6 +608,7 @@ mod tests {
             tail_lines: Some(5),
             timestamps: true,
             since_seconds: Some(30),
+            previous: false,
         };
         assert_eq!(
             log_arguments("abc", &options),
@@ -465,16 +631,20 @@ mod tests {
     #[test]
     fn ps_output_maps_running_and_exited_containers() {
         let stdout = r#"[
-          {"Id":"abc123","Image":"localhost/rubix-hello:latest","ImageID":"e247","Labels":{"io.kubernetes.container.name":"hello","io.kubernetes.pod.uid":"u1"},"State":"running","ExitCode":0,"Exited":false,"StartedAt":1791146364,"ExitedAt":-62135596800},
+          {"Id":"abc123","Names":["k8s_hello_hello_default_u1_0"],"Pod":"pod1","Image":"localhost/rubix-hello:latest","ImageID":"e247","Labels":{"io.kubernetes.container.name":"hello","io.kubernetes.pod.uid":"u1"},"State":"running","ExitCode":0,"Exited":false,"StartedAt":1791146364,"ExitedAt":-62135596800,"Created":1791146360},
           {"Id":"def456","Image":"img","ImageID":"sha256:i2","Labels":{"io.kubernetes.container.name":"side"},"State":"exited","ExitCode":3,"Exited":true,"StartedAt":1791146364,"ExitedAt":1791146370},
-          {"Id":"ghi789","State":"created"}
+          {"Id":"ghi789","State":"created"},
+          {"Id":"infra1","Names":["07c3f46e7825-infra"],"Pod":"pod1","State":"running","IsInfra":true}
         ]"#;
         let entries = parse_ps_output(stdout).unwrap();
-        assert_eq!(entries.len(), 3);
+        assert_eq!(entries.len(), 4);
+        assert!(entries[3].is_infra && !entries[0].is_infra);
         let running = entries[0].clone().into_summary();
         assert_eq!(running.id, "abc123");
+        assert_eq!(running.name, "k8s_hello_hello_default_u1_0");
+        assert_eq!(running.pod_id, "pod1");
         assert_eq!(running.image_id, "sha256:e247");
-        assert_eq!(running.labels["io.kubernetes.container.name"], "hello");
+        assert_eq!(running.created, Some(1_791_146_360));
         assert_eq!(
             running.state,
             ContainerState::Running {
@@ -501,6 +671,25 @@ mod tests {
     }
 
     #[test]
+    fn pod_ps_output_maps_running_and_stopped_pods() {
+        let stdout = r#"[
+          {"Id":"c8c6","Name":"k8s_POD_hello_default_u1_0","Status":"Running","Labels":{"io.kubernetes.pod.uid":"u1"},"InfraId":"1962","Created":"2026-10-05T06:33:28.178518557-04:00","Containers":[]},
+          {"Id":"d9d7","Name":"k8s_POD_old_default_u0_0","Status":"Exited","Labels":{}},
+          {"Id":"e0e8","Name":"degraded","Status":"Degraded","Labels":{}}
+        ]"#;
+        let pods: Vec<PodSummary> = parse_pod_ps_output(stdout)
+            .unwrap()
+            .into_iter()
+            .map(PodPsEntry::into_summary)
+            .collect();
+        assert_eq!(pods.len(), 3);
+        assert!(pods[0].running);
+        assert_eq!(pods[0].labels["io.kubernetes.pod.uid"], "u1");
+        assert!(!pods[1].running);
+        assert!(pods[2].running);
+    }
+
+    #[test]
     fn version_is_parsed_from_podman_output() {
         assert_eq!(
             parse_version("podman version 6.0.2\n").as_deref(),
@@ -516,5 +705,7 @@ mod tests {
             Some("6.0.2")
         );
         assert_eq!(PodmanEngine::new("/x/podman").name(), "podman");
+        assert_eq!(prefix_sha("abc"), "sha256:abc");
+        assert_eq!(prefix_sha("sha256:abc"), "sha256:abc");
     }
 }

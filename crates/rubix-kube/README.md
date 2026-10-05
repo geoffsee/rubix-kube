@@ -86,38 +86,47 @@ fresh output directories. The suite arguments contain only print/version/help
 and deliberate failure paths; do not substitute a normal Go startup invocation
 on the host.
 
-## In-process kubelet and the OCI runtime adapter
+## In-process kubelet and the CRI-shaped runtime
 
 `NodeRuntime::from_config_with_context` registers `rubix-kubelet` after the apiserver
 when a `podman` executable is found on `PATH` or in the usual install locations
 (`/opt/podman/bin`, `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`). The kubelet
 uses the `kubelet.kubeconfig` and certificates that startup already generates, keeps
 its state under `<path>/kubelet`, registers the node, and then loops every two seconds:
-it lists all pods, binds unscheduled pods to this node (there is no scheduler), starts
-each container as one detached engine container labelled with the standard
-`io.kubernetes.pod.*` and `io.kubernetes.container.*` keys, and writes status from what
-the engine reports: `Pending` with `ContainerCreating` while nothing runs, `Running`
+it lists all pods, binds unscheduled pods to this node (there is no scheduler), and drives
+each pod through the CRI operations the upstream kubelet uses: a pod sandbox
+(`RunPodSandbox`), then per container `ImageStatus`/`PullImage` under `imagePullPolicy`,
+`CreateContainer` and `StartContainer`, exec probes, `StopContainer` with the grace
+period, `RemoveContainer` and `RemovePodSandbox`. Sandboxes and containers carry the
+standard `io.kubernetes.pod.*` and `io.kubernetes.container.*` labels. Status is written
+from what the runtime reports: `Pending` with `ContainerCreating` while nothing runs, `Running`
 while a process is alive or being restarted, `Succeeded` or `Failed` from exit codes under
 `restartPolicy`. `Always` and `OnFailure` restart exited containers as new attempts with
 the kubelet's back-off (10 s doubling to 5 min, `CrashLoopBackOff` while waiting).
-Deleting a pod sets `deletionTimestamp`; the kubelet sends `TERM`, `KILL` at the
-deadline, records the final status, removes the containers and deletes the object.
+Deleting a pod sets `deletionTimestamp`; the kubelet issues `StopContainer` with the
+remaining grace (TERM, then KILL), records the final status, removes containers and
+sandbox and deletes the object. The current and previous attempt of each container are
+kept, so `kubectl logs --previous` works.
 Conditions carry `lastTransitionTime` and include `PodReadyToStartContainers`.
 `kubectl logs` reads the container's interleaved stdout and stderr through the
 apiserver's pod log subresource.
 
-The pod semantics live in `rubix_kubelet::engine::EngineRuntimeAdapter`, which
-implements `RuntimeProvider` over the `ContainerEngine` trait (run, list by label, signal,
-remove, logs, exec). This is the dockershim shape; `PodmanEngine` is the first engine and
-owns only the podman command line. A CRI runtime such as containerd speaks pods already
-and would implement `RuntimeProvider` directly. Containers of one pod do not share a
-sandbox, so `podIP` is the node IP and pod networking is out of scope.
+`rubix_kubelet::RuntimeProvider` is CRI-shaped: its methods mirror the CRI v1
+RuntimeService and ImageService subset the kubelet calls, with the generated
+`rubix_cri::runtime::v1` types, so a containerd provider is a thin wrapper over
+`rubix_cri::CriClient` (not yet included). `rubix_kubelet::engine::EngineRuntimeAdapter`
+implements it over the `ContainerEngine` trait for engines driven from a command line;
+`PodmanEngine` is the first engine and owns only the podman spelling. CRI sandboxes map
+onto podman pods, so the containers of one Pod share the pod's network and IPC
+namespaces and `podIP` is the pod's own address from the engine network. The in-memory
+`MockRuntimeProvider` implements the same contract for tests.
 
 Without podman the node logs `kubelet_runtime_unavailable` and serves its API with no
 kubelet. This slice deliberately departs from the retained official kubelet and
 containerd boundary; it is a development path, not a qualification. It does not
-implement probes, volumes, exec, ports, pod networking or init containers, and a
-restarted container's previous logs are not kept.
+mount volumes into containers (they are staged on the host only), translate ports or
+resource limits, run init containers, or implement probes other than exec-emulated ones;
+there is no pod-to-pod networking beyond what the engine network provides.
 See [experiments/podman-kubelet](../../experiments/podman-kubelet/README.md) for the
 live macOS evidence.
 

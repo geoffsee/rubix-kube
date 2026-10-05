@@ -1,61 +1,40 @@
-//! Container-engine adapter.
+//! Container-engine adapter: implements the CRI-shaped [`RuntimeProvider`] over
+//! engines that manage pods and containers from a command line (podman today;
+//! docker or nerdctl would be further engines).
 //!
-//! [`EngineRuntimeAdapter`] implements [`RuntimeProvider`] for any engine that
-//! can run, list, signal, remove, log and exec labelled containers: podman,
-//! docker, nerdctl. It is the dockershim shape. The adapter owns the Kubernetes
-//! semantics: one container per Pod container, correlation back to the Pod
-//! through the `io.kubernetes.*` labels upstream tooling expects, `command` and
-//! `args` mapped onto entrypoint and arguments, restart attempts, and graceful
-//! termination signals. Engines own only their command line.
-//!
-//! A CRI runtime such as containerd already speaks pods and should implement
-//! [`RuntimeProvider`] directly rather than sit beneath this adapter.
-//!
-//! Not covered: pod sandboxes (containers of one pod do not share namespaces,
-//! so `podIP` is the node IP), volumes, probes, ports and init containers.
+//! CRI sandboxes map onto engine pods, so containers of one Pod share the pod's
+//! network and IPC namespaces and the sandbox reports the pod's own IP.
+//! Engines own only their command-line spelling; this module owns the mapping
+//! between CRI messages and engine summaries. Volume mounts, ports and resource
+//! limits are not yet translated.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use serde_json::Value;
 
 use crate::error::KubeletError;
-use crate::registration::rfc3339_seconds;
 use crate::workload::{
-    ContainerRuntimeState, ContainerRuntimeStatus, ExecResult, LogOptions, ManagedPodRef,
-    PodRuntimeStatus, PodSignal, RuntimeProvider,
+    ANNOTATION_RESTART_COUNT, ExecResult, LABEL_CONTAINER_NAME, LABEL_POD_NAME,
+    LABEL_POD_NAMESPACE, LABEL_POD_UID, LogOptions, RuntimeProvider, cri, nanos_from_secs,
 };
 
-/// Marks containers this kubelet created; other `io.kubernetes.*` users are left alone.
-pub const LABEL_MANAGED_BY: &str = "io.rubix.managed-by";
-pub const MANAGED_BY: &str = "rubix-kubelet";
-/// Standard kubelet container labels, as crictl and `podman kube` understand them.
-pub const LABEL_POD_NAME: &str = "io.kubernetes.pod.name";
-pub const LABEL_POD_NAMESPACE: &str = "io.kubernetes.pod.namespace";
-pub const LABEL_POD_UID: &str = "io.kubernetes.pod.uid";
-pub const LABEL_CONTAINER_NAME: &str = "io.kubernetes.container.name";
-pub const LABEL_RESTART_COUNT: &str = "io.kubernetes.container.restartCount";
+/// Engine label recording the sandbox attempt, which CRI carries in metadata.
+pub const LABEL_SANDBOX_ATTEMPT: &str = "io.rubix.sandbox.attempt";
+/// Engine label mirroring the CRI restart-count annotation.
+pub const LABEL_RESTART_COUNT: &str = ANNOTATION_RESTART_COUNT;
+const STOP_TIMEOUT_SECS: i64 = 5;
 
-/// Image pull behaviour, from `imagePullPolicy`.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum PullPolicy {
-    /// Pull only when the image is absent (`IfNotPresent`).
-    #[default]
-    Missing,
-    Always,
-    Never,
-}
-
-/// Engine-neutral description of one container to start.
+/// Engine-neutral description of one container to create inside a pod.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ContainerSpec {
     pub name: String,
     pub image: String,
-    pub pull: PullPolicy,
-    /// Replaces the image entrypoint (Kubernetes `command`).
+    /// Engine pod to join; the CRI sandbox.
+    pub pod: Option<String>,
+    /// Replaces the image entrypoint (CRI `command`).
     pub entrypoint: Option<Vec<String>>,
-    /// Replaces the image command (Kubernetes `args`).
+    /// Replaces the image command (CRI `args`).
     pub args: Vec<String>,
     pub env: Vec<(String, String)>,
     pub working_dir: Option<String>,
@@ -81,20 +60,28 @@ pub enum ContainerState {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ContainerSummary {
     pub id: String,
+    pub name: String,
+    /// Engine pod the container belongs to, if any.
+    pub pod_id: String,
     pub image: String,
     /// Image identity, preferably `sha256:<digest>` or `repo@sha256:<digest>`.
     pub image_id: String,
     pub labels: BTreeMap<String, String>,
     pub state: ContainerState,
+    pub created: Option<u64>,
 }
 
-impl ContainerSummary {
-    fn label(&self, key: &str) -> String {
-        self.labels.get(key).cloned().unwrap_or_default()
-    }
+/// One engine pod. `running` is true while the pod's infrastructure is up.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PodSummary {
+    pub id: String,
+    pub name: String,
+    pub labels: BTreeMap<String, String>,
+    pub running: bool,
+    pub created: Option<u64>,
 }
 
-/// Container-level operations of a container engine.
+/// Pod- and container-level operations of a container engine.
 #[async_trait]
 pub trait ContainerEngine: std::fmt::Debug + Send + Sync {
     /// Short engine name used as the `containerID` scheme, e.g. `podman`.
@@ -106,24 +93,44 @@ pub trait ContainerEngine: std::fmt::Debug + Send + Sync {
     /// Verifies the engine answers.
     async fn ping(&self) -> Result<(), KubeletError>;
 
-    /// Starts a detached container and returns its engine id.
-    async fn run_detached(&self, spec: &ContainerSpec) -> Result<String, KubeletError>;
-
-    /// Lists containers, including stopped ones, carrying every given label.
-    async fn list(
+    /// Creates a pod (sandbox) with labels and returns its id. The pod is not started.
+    async fn pod_create(
+        &self,
+        name: &str,
+        labels: &BTreeMap<String, String>,
+    ) -> Result<String, KubeletError>;
+    async fn pod_start(&self, id: &str) -> Result<(), KubeletError>;
+    async fn pod_stop(&self, id: &str, timeout_secs: i64) -> Result<(), KubeletError>;
+    async fn pod_remove(&self, id: &str) -> Result<(), KubeletError>;
+    /// Lists pods carrying every given label.
+    async fn pod_list(
         &self,
         label_filters: &[(&str, &str)],
+    ) -> Result<Vec<PodSummary>, KubeletError>;
+    /// The pod's network address, if it has one.
+    async fn pod_ip(&self, id: &str) -> Result<Option<String>, KubeletError>;
+
+    /// Creates a container from an image the engine already has; returns its id.
+    async fn container_create(&self, spec: &ContainerSpec) -> Result<String, KubeletError>;
+    async fn container_start(&self, id: &str) -> Result<(), KubeletError>;
+    /// Stops a container: TERM, then KILL after `timeout_secs`.
+    async fn container_stop(&self, id: &str, timeout_secs: i64) -> Result<(), KubeletError>;
+    async fn container_remove(&self, id: &str) -> Result<(), KubeletError>;
+    /// Lists containers, including stopped ones, carrying every label and, if given, in the pod.
+    async fn container_list(
+        &self,
+        label_filters: &[(&str, &str)],
+        pod: Option<&str>,
     ) -> Result<Vec<ContainerSummary>, KubeletError>;
+    async fn container_inspect(&self, id: &str) -> Result<ContainerSummary, KubeletError>;
 
-    /// Sends a signal (`TERM`, `KILL`) to running containers without waiting.
-    async fn signal(&self, ids: &[String], signal: &str) -> Result<(), KubeletError>;
-
-    /// Stops (if needed) and removes containers.
-    async fn remove(&self, ids: &[String]) -> Result<(), KubeletError>;
+    /// Image identity if the engine has the image.
+    async fn image_id(&self, image: &str) -> Result<Option<String>, KubeletError>;
+    /// Pulls an image and returns its identity.
+    async fn image_pull(&self, image: &str) -> Result<String, KubeletError>;
 
     /// Captured stdout and stderr of a container, interleaved in time order.
     async fn logs(&self, id: &str, options: &LogOptions) -> Result<String, KubeletError>;
-
     /// Runs a command inside a running container.
     async fn exec(&self, id: &str, command: &[String]) -> Result<ExecResult, KubeletError>;
 }
@@ -144,74 +151,178 @@ impl EngineRuntimeAdapter {
     pub fn engine(&self) -> &Arc<dyn ContainerEngine> {
         &self.engine
     }
+}
 
-    fn qualified_id(&self, id: &str) -> String {
-        format!("{}://{id}", self.engine.name())
-    }
+fn label_filters(selector: &BTreeMap<String, String>) -> Vec<(&str, &str)> {
+    selector
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect()
+}
 
-    async fn managed(&self, extra: &[(&str, &str)]) -> Result<Vec<ContainerSummary>, KubeletError> {
-        let mut filters = vec![(LABEL_MANAGED_BY, MANAGED_BY)];
-        filters.extend_from_slice(extra);
-        self.engine.list(&filters).await
-    }
+fn label_u32(labels: &BTreeMap<String, String>, key: &str) -> u32 {
+    labels.get(key).and_then(|v| v.parse().ok()).unwrap_or(0)
+}
 
-    /// The newest attempt of one container of a pod.
-    async fn container_of(
-        &self,
-        pod_uid: &str,
-        container_name: &str,
-    ) -> Result<String, KubeletError> {
-        let containers = self
-            .managed(&[
-                (LABEL_POD_UID, pod_uid),
-                (LABEL_CONTAINER_NAME, container_name),
-            ])
-            .await?;
-        containers
-            .into_iter()
-            .max_by_key(restart_count)
-            .map(|container| container.id)
-            .ok_or_else(|| KubeletError::ContainerOperationFailed {
-                container: container_name.to_string(),
-                reason: format!("no {} container for pod {pod_uid}", self.engine.name()),
+fn nanos(secs: Option<u64>) -> i64 {
+    secs.map_or(0, nanos_from_secs)
+}
+
+/// Pod name the kubelet gives an engine pod, as upstream shims did.
+#[must_use]
+pub fn sandbox_name(metadata: &cri::PodSandboxMetadata) -> String {
+    format!(
+        "k8s_POD_{}_{}_{}_{}",
+        metadata.name, metadata.namespace, metadata.uid, metadata.attempt
+    )
+}
+
+/// Container name the kubelet gives an engine container.
+#[must_use]
+pub fn container_name(
+    container: &cri::ContainerMetadata,
+    sandbox: &cri::PodSandboxMetadata,
+) -> String {
+    format!(
+        "k8s_{}_{}_{}_{}_{}",
+        container.name, sandbox.name, sandbox.namespace, sandbox.uid, container.attempt
+    )
+}
+
+/// Translates a CRI container configuration into an engine spec.
+#[must_use]
+pub fn container_spec(
+    pod_id: &str,
+    config: &cri::ContainerConfig,
+    sandbox: &cri::PodSandboxConfig,
+) -> ContainerSpec {
+    let default_meta = cri::ContainerMetadata::default();
+    let default_sandbox = cri::PodSandboxMetadata::default();
+    let meta = config.metadata.as_ref().unwrap_or(&default_meta);
+    let sandbox_meta = sandbox.metadata.as_ref().unwrap_or(&default_sandbox);
+    let mut labels = config.labels.clone();
+    labels.insert(LABEL_RESTART_COUNT.to_string(), meta.attempt.to_string());
+    ContainerSpec {
+        name: container_name(meta, sandbox_meta),
+        image: config
+            .image
+            .as_ref()
+            .map(|i| i.image.clone())
+            .unwrap_or_default(),
+        pod: Some(pod_id.to_string()),
+        entrypoint: (!config.command.is_empty()).then(|| config.command.clone()),
+        args: config.args.clone(),
+        env: config
+            .envs
+            .iter()
+            .map(|kv| {
+                (
+                    kv.key.clone(),
+                    String::from_utf8_lossy(&kv.value).into_owned(),
+                )
             })
-    }
-
-    fn runtime_status(&self, summary: &ContainerSummary) -> ContainerRuntimeStatus {
-        let state = match &summary.state {
-            ContainerState::Idle(word) => ContainerRuntimeState::Waiting {
-                reason: format!("ContainerCreating ({word})"),
-            },
-            ContainerState::Running { started_at } => ContainerRuntimeState::Running {
-                started_at: started_at.map(rfc3339_seconds).unwrap_or_default(),
-            },
-            ContainerState::Exited {
-                exit_code,
-                started_at,
-                finished_at,
-            } => ContainerRuntimeState::Terminated {
-                exit_code: *exit_code,
-                started_at: started_at.map(rfc3339_seconds),
-                finished_at: finished_at.map(rfc3339_seconds).unwrap_or_default(),
-            },
-        };
-        ContainerRuntimeStatus {
-            name: summary.label(LABEL_CONTAINER_NAME),
-            container_id: self.qualified_id(&summary.id),
-            image: summary.image.clone(),
-            image_id: summary.image_id.clone(),
-            restart_count: restart_count(summary),
-            state,
-        }
+            .collect(),
+        working_dir: (!config.working_dir.is_empty()).then(|| config.working_dir.clone()),
+        labels,
     }
 }
 
-fn restart_count(summary: &ContainerSummary) -> u32 {
-    summary
-        .labels
-        .get(LABEL_RESTART_COUNT)
-        .and_then(|value| value.parse().ok())
-        .unwrap_or(0)
+fn sandbox_from_summary(pod: &PodSummary) -> cri::PodSandbox {
+    cri::PodSandbox {
+        id: pod.id.clone(),
+        metadata: Some(cri::PodSandboxMetadata {
+            name: pod.labels.get(LABEL_POD_NAME).cloned().unwrap_or_default(),
+            uid: pod.labels.get(LABEL_POD_UID).cloned().unwrap_or_default(),
+            namespace: pod
+                .labels
+                .get(LABEL_POD_NAMESPACE)
+                .cloned()
+                .unwrap_or_default(),
+            attempt: label_u32(&pod.labels, LABEL_SANDBOX_ATTEMPT),
+        }),
+        state: if pod.running {
+            cri::PodSandboxState::SandboxReady as i32
+        } else {
+            cri::PodSandboxState::SandboxNotready as i32
+        },
+        created_at: nanos(pod.created),
+        labels: pod.labels.clone(),
+        annotations: BTreeMap::new(),
+        runtime_handler: String::new(),
+    }
+}
+
+fn cri_state(state: &ContainerState) -> cri::ContainerState {
+    match state {
+        ContainerState::Idle(word) if word == "created" || word == "configured" => {
+            cri::ContainerState::ContainerCreated
+        },
+        ContainerState::Idle(_) => cri::ContainerState::ContainerUnknown,
+        ContainerState::Running { .. } => cri::ContainerState::ContainerRunning,
+        ContainerState::Exited { .. } => cri::ContainerState::ContainerExited,
+    }
+}
+
+fn container_from_summary(summary: &ContainerSummary) -> cri::Container {
+    cri::Container {
+        id: summary.id.clone(),
+        pod_sandbox_id: summary.pod_id.clone(),
+        metadata: Some(cri::ContainerMetadata {
+            name: summary
+                .labels
+                .get(LABEL_CONTAINER_NAME)
+                .cloned()
+                .unwrap_or_default(),
+            attempt: label_u32(&summary.labels, LABEL_RESTART_COUNT),
+        }),
+        image: Some(cri::ImageSpec {
+            image: summary.image.clone(),
+            ..cri::ImageSpec::default()
+        }),
+        image_ref: summary.image_id.clone(),
+        state: cri_state(&summary.state) as i32,
+        created_at: nanos(summary.created),
+        labels: summary.labels.clone(),
+        annotations: BTreeMap::from([(
+            ANNOTATION_RESTART_COUNT.to_string(),
+            label_u32(&summary.labels, LABEL_RESTART_COUNT).to_string(),
+        )]),
+        image_id: summary.image_id.clone(),
+    }
+}
+
+fn status_from_summary(summary: &ContainerSummary) -> cri::ContainerStatus {
+    let listed = container_from_summary(summary);
+    let (started_at, finished_at, exit_code) = match &summary.state {
+        ContainerState::Running { started_at } => (nanos(*started_at), 0, 0),
+        ContainerState::Exited {
+            exit_code,
+            started_at,
+            finished_at,
+        } => (nanos(*started_at), nanos(*finished_at), *exit_code),
+        ContainerState::Idle(_) => (0, 0, 0),
+    };
+    cri::ContainerStatus {
+        id: listed.id,
+        metadata: listed.metadata,
+        state: listed.state,
+        created_at: listed.created_at,
+        started_at,
+        finished_at,
+        exit_code,
+        image: listed.image,
+        image_ref: listed.image_ref,
+        reason: String::new(),
+        message: String::new(),
+        labels: listed.labels,
+        annotations: listed.annotations,
+        mounts: Vec::new(),
+        log_path: String::new(),
+        resources: None,
+        image_id: listed.image_id,
+        user: None,
+        stop_signal: 0,
+    }
 }
 
 #[async_trait]
@@ -234,457 +345,316 @@ impl RuntimeProvider for EngineRuntimeAdapter {
         self.engine.ping().await
     }
 
-    async fn run_pod(&self, pod: &Value) -> Result<String, KubeletError> {
-        let identity = PodIdentity::from_pod(pod)?;
-        let empty = Vec::new();
-        let containers = pod
-            .pointer("/spec/containers")
-            .and_then(Value::as_array)
-            .unwrap_or(&empty);
-        for container in containers {
-            let spec = container_spec(pod, &identity, container, 0)?;
-            if let Err(e) = self.engine.run_detached(&spec).await {
-                let _ = self.stop_pod(&identity.uid).await;
-                return Err(e);
-            }
-        }
-        Ok(identity.uid)
-    }
-
-    async fn restart_container(
+    async fn run_pod_sandbox(
         &self,
-        pod: &Value,
-        container_name: &str,
-        attempt: u32,
-    ) -> Result<(), KubeletError> {
-        let identity = PodIdentity::from_pod(pod)?;
-        let container = pod
-            .pointer("/spec/containers")
-            .and_then(Value::as_array)
-            .and_then(|containers| {
-                containers
-                    .iter()
-                    .find(|c| c.get("name").and_then(Value::as_str) == Some(container_name))
-            })
-            .ok_or_else(|| KubeletError::ContainerOperationFailed {
-                container: container_name.to_string(),
-                reason: "container is not in the pod spec".to_string(),
-            })?;
-        let previous: Vec<String> = self
-            .managed(&[
-                (LABEL_POD_UID, &identity.uid),
-                (LABEL_CONTAINER_NAME, container_name),
-            ])
-            .await?
-            .into_iter()
-            .map(|c| c.id)
-            .collect();
-        if !previous.is_empty() {
-            self.engine.remove(&previous).await?;
-        }
-        let spec = container_spec(pod, &identity, container, attempt)?;
-        self.engine.run_detached(&spec).await.map(drop)
-    }
-
-    async fn signal_pod(&self, pod_id: &str, signal: PodSignal) -> Result<(), KubeletError> {
-        let running: Vec<String> = self
-            .managed(&[(LABEL_POD_UID, pod_id)])
-            .await?
-            .into_iter()
-            .filter(|c| matches!(c.state, ContainerState::Running { .. }))
-            .map(|c| c.id)
-            .collect();
-        if running.is_empty() {
-            return Ok(());
-        }
-        let name = match signal {
-            PodSignal::Terminate => "TERM",
-            PodSignal::Kill => "KILL",
-        };
-        self.engine.signal(&running, name).await
-    }
-
-    async fn stop_pod(&self, pod_id: &str) -> Result<(), KubeletError> {
-        let ids: Vec<String> = self
-            .managed(&[(LABEL_POD_UID, pod_id)])
-            .await?
-            .into_iter()
-            .map(|container| container.id)
-            .collect();
-        if ids.is_empty() {
-            return Ok(());
-        }
-        self.engine.remove(&ids).await
-    }
-
-    async fn get_pod_status(&self, pod_id: &str) -> Result<String, KubeletError> {
-        let running = self
-            .managed(&[(LABEL_POD_UID, pod_id)])
-            .await?
-            .iter()
-            .any(|c| matches!(c.state, ContainerState::Running { .. }));
-        Ok(if running { "Running" } else { "Stopped" }.to_string())
-    }
-
-    async fn inspect_pod(&self, pod: &Value) -> Result<Option<PodRuntimeStatus>, KubeletError> {
-        let identity = PodIdentity::from_pod(pod)?;
-        let containers = self
-            .managed(&[(LABEL_POD_UID, &identity.uid)])
-            .await?
-            .iter()
-            .map(|summary| self.runtime_status(summary))
-            .collect();
-        Ok(Some(PodRuntimeStatus { containers }))
-    }
-
-    async fn list_managed_pods(&self) -> Result<Vec<ManagedPodRef>, KubeletError> {
-        let mut pods: BTreeMap<String, ManagedPodRef> = BTreeMap::new();
-        for container in self.managed(&[]).await? {
-            let Some(uid) = container.labels.get(LABEL_POD_UID) else {
-                continue;
-            };
-            pods.entry(uid.clone()).or_insert_with(|| ManagedPodRef {
-                pod_id: uid.clone(),
-                namespace: container.label(LABEL_POD_NAMESPACE),
-                name: container.label(LABEL_POD_NAME),
-                uid: uid.clone(),
-            });
-        }
-        Ok(pods.into_values().collect())
-    }
-
-    async fn get_container_logs(
-        &self,
-        pod_id: &str,
-        container_name: &str,
-        tail_lines: Option<usize>,
+        config: &cri::PodSandboxConfig,
     ) -> Result<String, KubeletError> {
-        let options = LogOptions {
-            tail_lines,
-            ..LogOptions::default()
-        };
-        self.read_container_logs(pod_id, container_name, &options)
+        let default_meta = cri::PodSandboxMetadata::default();
+        let meta = config.metadata.as_ref().unwrap_or(&default_meta);
+        let mut labels = config.labels.clone();
+        labels.insert(LABEL_SANDBOX_ATTEMPT.to_string(), meta.attempt.to_string());
+        let id = self.engine.pod_create(&sandbox_name(meta), &labels).await?;
+        if let Err(e) = self.engine.pod_start(&id).await {
+            let _ = self.engine.pod_remove(&id).await;
+            return Err(e);
+        }
+        Ok(id)
+    }
+
+    async fn stop_pod_sandbox(&self, pod_sandbox_id: &str) -> Result<(), KubeletError> {
+        self.engine
+            .pod_stop(pod_sandbox_id, STOP_TIMEOUT_SECS)
             .await
     }
 
-    async fn read_container_logs(
+    async fn remove_pod_sandbox(&self, pod_sandbox_id: &str) -> Result<(), KubeletError> {
+        self.engine.pod_remove(pod_sandbox_id).await
+    }
+
+    async fn list_pod_sandbox(
         &self,
-        pod_id: &str,
-        container_name: &str,
+        filter: Option<&cri::PodSandboxFilter>,
+    ) -> Result<Vec<cri::PodSandbox>, KubeletError> {
+        let empty = BTreeMap::new();
+        let selector = filter.map_or(&empty, |f| &f.label_selector);
+        let wanted_state = filter.and_then(|f| f.state.as_ref()).map(|s| s.state);
+        let wanted_id = filter.map(|f| f.id.as_str()).filter(|id| !id.is_empty());
+        Ok(self
+            .engine
+            .pod_list(&label_filters(selector))
+            .await?
+            .iter()
+            .map(sandbox_from_summary)
+            .filter(|s| wanted_state.is_none_or(|state| state == s.state))
+            .filter(|s| wanted_id.is_none_or(|id| id == s.id))
+            .collect())
+    }
+
+    async fn pod_sandbox_status(
+        &self,
+        pod_sandbox_id: &str,
+    ) -> Result<cri::PodSandboxStatus, KubeletError> {
+        let pods = self.engine.pod_list(&[]).await?;
+        let pod = pods
+            .iter()
+            .find(|p| p.id == pod_sandbox_id || p.id.starts_with(pod_sandbox_id))
+            .ok_or_else(|| KubeletError::ContainerOperationFailed {
+                container: pod_sandbox_id.to_string(),
+                reason: "sandbox not found".to_string(),
+            })?;
+        let sandbox = sandbox_from_summary(pod);
+        let ip = if pod.running {
+            self.engine.pod_ip(&pod.id).await.ok().flatten()
+        } else {
+            None
+        };
+        Ok(cri::PodSandboxStatus {
+            id: sandbox.id,
+            metadata: sandbox.metadata,
+            state: sandbox.state,
+            created_at: sandbox.created_at,
+            network: ip.map(|ip| cri::PodSandboxNetworkStatus {
+                ip,
+                additional_ips: Vec::new(),
+            }),
+            linux: None,
+            labels: sandbox.labels,
+            annotations: sandbox.annotations,
+            runtime_handler: String::new(),
+        })
+    }
+
+    async fn create_container(
+        &self,
+        pod_sandbox_id: &str,
+        config: &cri::ContainerConfig,
+        sandbox_config: &cri::PodSandboxConfig,
+    ) -> Result<String, KubeletError> {
+        let spec = container_spec(pod_sandbox_id, config, sandbox_config);
+        self.engine.container_create(&spec).await
+    }
+
+    async fn start_container(&self, container_id: &str) -> Result<(), KubeletError> {
+        self.engine.container_start(container_id).await
+    }
+
+    async fn stop_container(
+        &self,
+        container_id: &str,
+        timeout_secs: i64,
+    ) -> Result<(), KubeletError> {
+        self.engine.container_stop(container_id, timeout_secs).await
+    }
+
+    async fn remove_container(&self, container_id: &str) -> Result<(), KubeletError> {
+        self.engine.container_remove(container_id).await
+    }
+
+    async fn list_containers(
+        &self,
+        filter: Option<&cri::ContainerFilter>,
+    ) -> Result<Vec<cri::Container>, KubeletError> {
+        let empty = BTreeMap::new();
+        let selector = filter.map_or(&empty, |f| &f.label_selector);
+        let pod = filter
+            .map(|f| f.pod_sandbox_id.as_str())
+            .filter(|id| !id.is_empty());
+        let wanted_state = filter.and_then(|f| f.state.as_ref()).map(|s| s.state);
+        let wanted_id = filter.map(|f| f.id.as_str()).filter(|id| !id.is_empty());
+        Ok(self
+            .engine
+            .container_list(&label_filters(selector), pod)
+            .await?
+            .iter()
+            .map(container_from_summary)
+            .filter(|c| wanted_state.is_none_or(|state| state == c.state))
+            .filter(|c| wanted_id.is_none_or(|id| id == c.id))
+            .collect())
+    }
+
+    async fn container_status(
+        &self,
+        container_id: &str,
+    ) -> Result<cri::ContainerStatus, KubeletError> {
+        let summary = self.engine.container_inspect(container_id).await?;
+        Ok(status_from_summary(&summary))
+    }
+
+    async fn exec_sync(
+        &self,
+        container_id: &str,
+        cmd: &[String],
+        _timeout_secs: i64,
+    ) -> Result<ExecResult, KubeletError> {
+        self.engine.exec(container_id, cmd).await
+    }
+
+    async fn container_logs(
+        &self,
+        container_id: &str,
         options: &LogOptions,
     ) -> Result<String, KubeletError> {
-        let id = self.container_of(pod_id, container_name).await?;
-        self.engine.logs(&id, options).await
+        self.engine.logs(container_id, options).await
     }
 
-    async fn exec_in_container(
+    async fn image_status(
         &self,
-        pod_id: &str,
-        container_name: &str,
-        cmd: &[String],
-    ) -> Result<ExecResult, KubeletError> {
-        let id = self.container_of(pod_id, container_name).await?;
-        self.engine.exec(&id, cmd).await
-    }
-}
-
-/// The Pod fields containers are labelled with.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PodIdentity {
-    pub namespace: String,
-    pub name: String,
-    pub uid: String,
-}
-
-impl PodIdentity {
-    /// Reads identity from a stored Pod object; the uid must already be assigned.
-    pub fn from_pod(pod: &Value) -> Result<Self, KubeletError> {
-        let name = pod
-            .pointer("/metadata/name")
-            .and_then(Value::as_str)
-            .ok_or_else(|| KubeletError::PodReconciliationFailed {
-                pod: "unknown".to_string(),
-                reason: "pod missing metadata.name".to_string(),
-            })?;
-        let uid = pod
-            .pointer("/metadata/uid")
-            .and_then(Value::as_str)
-            .ok_or_else(|| KubeletError::PodReconciliationFailed {
-                pod: name.to_string(),
-                reason: "pod missing metadata.uid".to_string(),
-            })?;
-        Ok(Self {
-            namespace: pod
-                .pointer("/metadata/namespace")
-                .and_then(Value::as_str)
-                .unwrap_or("default")
-                .to_string(),
-            name: name.to_string(),
-            uid: uid.to_string(),
-        })
+        image: &cri::ImageSpec,
+    ) -> Result<Option<cri::Image>, KubeletError> {
+        Ok(self
+            .engine
+            .image_id(&image.image)
+            .await?
+            .map(|id| cri::Image {
+                id,
+                repo_tags: vec![image.image.clone()],
+                spec: Some(image.clone()),
+                ..cri::Image::default()
+            }))
     }
 
-    /// Labels that tie a container attempt back to this pod.
-    #[must_use]
-    pub fn labels(&self, container_name: &str, attempt: u32) -> BTreeMap<String, String> {
-        BTreeMap::from([
-            (LABEL_MANAGED_BY.to_string(), MANAGED_BY.to_string()),
-            (LABEL_POD_UID.to_string(), self.uid.clone()),
-            (LABEL_POD_NAMESPACE.to_string(), self.namespace.clone()),
-            (LABEL_POD_NAME.to_string(), self.name.clone()),
-            (LABEL_CONTAINER_NAME.to_string(), container_name.to_string()),
-            (LABEL_RESTART_COUNT.to_string(), attempt.to_string()),
-        ])
+    async fn pull_image(
+        &self,
+        image: &cri::ImageSpec,
+        _sandbox_config: Option<&cri::PodSandboxConfig>,
+    ) -> Result<String, KubeletError> {
+        self.engine.image_pull(&image.image).await
     }
-}
-
-/// Translates one Pod container into an engine-neutral [`ContainerSpec`].
-///
-/// Follows the kubelet: an absent `imagePullPolicy` means `Always` for `:latest`
-/// or untagged images and `IfNotPresent` otherwise; `env.valueFrom.fieldRef`
-/// resolves pod metadata and status fields; other `valueFrom` sources are
-/// configuration errors.
-pub fn container_spec(
-    pod: &Value,
-    identity: &PodIdentity,
-    container: &Value,
-    attempt: u32,
-) -> Result<ContainerSpec, KubeletError> {
-    let name = container
-        .get("name")
-        .and_then(Value::as_str)
-        .unwrap_or("main");
-    let image = container
-        .get("image")
-        .and_then(Value::as_str)
-        .filter(|image| !image.is_empty())
-        .ok_or_else(|| KubeletError::InvalidConfiguration {
-            field: format!("spec.containers[{name}].image"),
-            reason: "container has no image".to_string(),
-        })?;
-    let pull = match container.get("imagePullPolicy").and_then(Value::as_str) {
-        Some("Never") => PullPolicy::Never,
-        Some("Always") => PullPolicy::Always,
-        None if is_latest(image) => PullPolicy::Always,
-        _ => PullPolicy::Missing,
-    };
-    let strings = |key: &str| -> Option<Vec<String>> {
-        container.get(key).and_then(Value::as_array).map(|items| {
-            items
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::to_owned)
-                .collect()
-        })
-    };
-    let mut env = Vec::new();
-    for entry in container
-        .get("env")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        let Some(key) = entry.get("name").and_then(Value::as_str) else {
-            continue;
-        };
-        let value = resolve_env_value(pod, identity, name, key, entry)?;
-        env.push((key.to_string(), value));
-    }
-    Ok(ContainerSpec {
-        name: format!(
-            "k8s_{name}_{}_{}_{}_{attempt}",
-            identity.name, identity.namespace, identity.uid
-        ),
-        image: image.to_string(),
-        pull,
-        entrypoint: strings("command"),
-        args: strings("args").unwrap_or_default(),
-        env,
-        working_dir: container
-            .get("workingDir")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
-        labels: identity.labels(name, attempt),
-    })
-}
-
-/// `:latest` or no tag at all, without a digest.
-fn is_latest(image: &str) -> bool {
-    if image.contains('@') {
-        return false;
-    }
-    let last = image.rsplit('/').next().unwrap_or(image);
-    match last.rsplit_once(':') {
-        Some((_, tag)) => tag == "latest",
-        None => true,
-    }
-}
-
-fn resolve_env_value(
-    pod: &Value,
-    identity: &PodIdentity,
-    container: &str,
-    key: &str,
-    entry: &Value,
-) -> Result<String, KubeletError> {
-    if let Some(value) = entry.get("value").and_then(Value::as_str) {
-        return Ok(value.to_string());
-    }
-    let Some(source) = entry.get("valueFrom") else {
-        return Ok(String::new());
-    };
-    let Some(field) = source
-        .pointer("/fieldRef/fieldPath")
-        .and_then(Value::as_str)
-    else {
-        let kind = source
-            .as_object()
-            .and_then(|map| map.keys().next().cloned())
-            .unwrap_or_else(|| "valueFrom".to_string());
-        return Err(KubeletError::InvalidConfiguration {
-            field: format!("spec.containers[{container}].env[{key}]"),
-            reason: format!("env source {kind} is not supported by this runtime"),
-        });
-    };
-    let value = match field {
-        "metadata.name" => identity.name.clone(),
-        "metadata.namespace" => identity.namespace.clone(),
-        "metadata.uid" => identity.uid.clone(),
-        "spec.nodeName" | "spec.serviceAccountName" | "status.hostIP" | "status.podIP" => pod
-            .pointer(&format!("/{}", field.replace('.', "/")))
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string(),
-        other => {
-            return Err(KubeletError::InvalidConfiguration {
-                field: format!("spec.containers[{container}].env[{key}]"),
-                reason: format!("fieldRef {other} is not supported"),
-            });
-        },
-    };
-    Ok(value)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use std::sync::Mutex;
 
-    fn identity() -> PodIdentity {
-        PodIdentity {
-            namespace: "default".to_string(),
-            name: "hello".to_string(),
-            uid: "uid-pods-hello-12".to_string(),
+    fn sandbox_config() -> cri::PodSandboxConfig {
+        cri::PodSandboxConfig {
+            metadata: Some(cri::PodSandboxMetadata {
+                name: "hello".to_string(),
+                uid: "uid-1".to_string(),
+                namespace: "default".to_string(),
+                attempt: 0,
+            }),
+            labels: crate::workload::sandbox_labels("default", "hello", "uid-1"),
+            ..cri::PodSandboxConfig::default()
         }
     }
 
-    fn pod() -> Value {
-        json!({
-            "metadata": { "name": "hello", "namespace": "default", "uid": "uid-pods-hello-12" },
-            "spec": {
-                "nodeName": "node-a",
-                "containers": [
-                    { "name": "hello", "image": "localhost/rubix-hello:latest", "imagePullPolicy": "Never", "command": ["/rubix-hello", "600"] },
-                    { "name": "side", "image": "img2:1.0" }
-                ]
-            },
-            "status": { "hostIP": "10.0.0.5" }
-        })
+    fn container_config(attempt: u32) -> cri::ContainerConfig {
+        cri::ContainerConfig {
+            metadata: Some(cri::ContainerMetadata {
+                name: "hello".to_string(),
+                attempt,
+            }),
+            image: Some(cri::ImageSpec {
+                image: "localhost/rubix-hello:latest".to_string(),
+                ..cri::ImageSpec::default()
+            }),
+            command: vec!["/rubix-hello".to_string()],
+            args: vec!["600".to_string()],
+            working_dir: "/work".to_string(),
+            envs: vec![cri::KeyValue {
+                key: "GREETING".to_string(),
+                value: b"hi".to_vec(),
+            }],
+            labels: crate::workload::container_labels("default", "hello", "uid-1", "hello"),
+            ..cri::ContainerConfig::default()
+        }
     }
 
     #[test]
-    fn container_spec_maps_command_args_env_and_labels() {
-        let container = json!({
-            "name": "hello",
-            "image": "localhost/rubix-hello:latest",
-            "imagePullPolicy": "Never",
-            "command": ["/rubix-hello"],
-            "args": ["600"],
-            "env": [
-                {"name": "GREETING", "value": "hi"},
-                {"name": "EMPTY"},
-                {"name": "POD", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}},
-                {"name": "NODE", "valueFrom": {"fieldRef": {"fieldPath": "spec.nodeName"}}},
-                {"name": "HOST", "valueFrom": {"fieldRef": {"fieldPath": "status.hostIP"}}}
-            ],
-            "workingDir": "/work"
-        });
-        let spec = container_spec(&pod(), &identity(), &container, 2).unwrap();
-        assert_eq!(spec.name, "k8s_hello_hello_default_uid-pods-hello-12_2");
-        assert_eq!(spec.pull, PullPolicy::Never);
+    fn container_spec_maps_cri_config_onto_the_engine() {
+        let spec = container_spec("pod1", &container_config(2), &sandbox_config());
+        assert_eq!(spec.name, "k8s_hello_hello_default_uid-1_2");
+        assert_eq!(spec.pod.as_deref(), Some("pod1"));
+        assert_eq!(spec.image, "localhost/rubix-hello:latest");
         assert_eq!(
             spec.entrypoint.as_deref(),
             Some(&["/rubix-hello".to_string()][..])
         );
         assert_eq!(spec.args, ["600"]);
-        assert_eq!(
-            spec.env,
-            [
-                ("GREETING".to_string(), "hi".to_string()),
-                ("EMPTY".to_string(), String::new()),
-                ("POD".to_string(), "hello".to_string()),
-                ("NODE".to_string(), "node-a".to_string()),
-                ("HOST".to_string(), "10.0.0.5".to_string()),
-            ]
-        );
+        assert_eq!(spec.env, [("GREETING".to_string(), "hi".to_string())]);
         assert_eq!(spec.working_dir.as_deref(), Some("/work"));
-        assert_eq!(spec.labels[LABEL_POD_UID], "uid-pods-hello-12");
-        assert_eq!(spec.labels[LABEL_POD_NAME], "hello");
-        assert_eq!(spec.labels[LABEL_POD_NAMESPACE], "default");
-        assert_eq!(spec.labels[LABEL_CONTAINER_NAME], "hello");
         assert_eq!(spec.labels[LABEL_RESTART_COUNT], "2");
-        assert_eq!(spec.labels[LABEL_MANAGED_BY], MANAGED_BY);
+        assert_eq!(spec.labels[LABEL_POD_UID], "uid-1");
+        assert_eq!(
+            sandbox_name(sandbox_config().metadata.as_ref().unwrap()),
+            "k8s_POD_hello_default_uid-1_0"
+        );
     }
 
     #[test]
-    fn pull_policy_defaults_follow_the_kubelet() {
-        let spec = |image: &str| {
-            container_spec(
-                &pod(),
-                &identity(),
-                &json!({"name": "x", "image": image}),
-                0,
-            )
-            .unwrap()
-            .pull
+    fn summaries_map_onto_cri_states_and_nanoseconds() {
+        let mut summary = ContainerSummary {
+            id: "abc".to_string(),
+            name: "k8s_hello_hello_default_uid-1_1".to_string(),
+            pod_id: "pod1".to_string(),
+            image: "img".to_string(),
+            image_id: "sha256:abc".to_string(),
+            labels: {
+                let mut labels =
+                    crate::workload::container_labels("default", "hello", "uid-1", "hello");
+                labels.insert(LABEL_RESTART_COUNT.to_string(), "1".to_string());
+                labels
+            },
+            state: ContainerState::Exited {
+                exit_code: 3,
+                started_at: Some(10),
+                finished_at: Some(15),
+            },
+            created: Some(9),
         };
-        assert_eq!(spec("nginx"), PullPolicy::Always);
-        assert_eq!(spec("nginx:latest"), PullPolicy::Always);
-        assert_eq!(spec("localhost:5000/app"), PullPolicy::Always);
-        assert_eq!(spec("nginx:1.27"), PullPolicy::Missing);
-        assert_eq!(spec("localhost:5000/app:v1"), PullPolicy::Missing);
-        assert_eq!(spec("nginx@sha256:abcd"), PullPolicy::Missing);
+        let status = status_from_summary(&summary);
+        assert_eq!(status.state, cri::ContainerState::ContainerExited as i32);
+        assert_eq!(status.exit_code, 3);
+        assert_eq!(status.started_at, 10_000_000_000);
+        assert_eq!(status.finished_at, 15_000_000_000);
+        assert_eq!(status.created_at, 9_000_000_000);
+        assert_eq!(status.metadata.as_ref().unwrap().attempt, 1);
+        assert_eq!(status.metadata.as_ref().unwrap().name, "hello");
+        summary.state = ContainerState::Idle("created".to_string());
+        assert_eq!(
+            status_from_summary(&summary).state,
+            cri::ContainerState::ContainerCreated as i32
+        );
+        summary.state = ContainerState::Idle("paused".to_string());
+        assert_eq!(
+            status_from_summary(&summary).state,
+            cri::ContainerState::ContainerUnknown as i32
+        );
+        let pod = PodSummary {
+            id: "pod1".to_string(),
+            name: "k8s_POD_hello_default_uid-1_0".to_string(),
+            labels: {
+                let mut labels = crate::workload::sandbox_labels("default", "hello", "uid-1");
+                labels.insert(LABEL_SANDBOX_ATTEMPT.to_string(), "0".to_string());
+                labels
+            },
+            running: true,
+            created: None,
+        };
+        let sandbox = sandbox_from_summary(&pod);
+        assert_eq!(sandbox.state, cri::PodSandboxState::SandboxReady as i32);
+        assert_eq!(sandbox.metadata.as_ref().unwrap().uid, "uid-1");
     }
 
-    #[test]
-    fn container_spec_rejects_missing_image_and_unsupported_env_sources() {
-        let err = container_spec(&pod(), &identity(), &json!({"name": "x"}), 0).unwrap_err();
-        assert!(matches!(err, KubeletError::InvalidConfiguration { .. }));
-        let container = json!({
-            "name": "x", "image": "img:1",
-            "env": [{"name": "S", "valueFrom": {"secretKeyRef": {"name": "s", "key": "k"}}}]
-        });
-        let err = container_spec(&pod(), &identity(), &container, 0).unwrap_err();
-        assert!(err.to_string().contains("secretKeyRef"), "{err}");
-    }
-
-    #[test]
-    fn pod_identity_requires_uid() {
-        let err = PodIdentity::from_pod(&json!({"metadata": {"name": "p"}})).unwrap_err();
-        assert!(matches!(err, KubeletError::PodReconciliationFailed { .. }));
-        let id = PodIdentity::from_pod(&json!({"metadata": {"name": "p", "uid": "u"}})).unwrap();
-        assert_eq!(id.namespace, "default");
-    }
-
-    /// In-memory engine: records every spec it was asked to run.
+    /// In-memory engine with pods.
     #[derive(Debug, Default)]
     struct FakeEngine {
-        next_id: std::sync::atomic::AtomicUsize,
+        pods: Mutex<Vec<PodSummary>>,
         containers: Mutex<Vec<ContainerSummary>>,
-        fail_on: Option<String>,
-        removed: Mutex<Vec<Vec<String>>>,
-        signals: Mutex<Vec<(Vec<String>, String)>>,
+        next: std::sync::atomic::AtomicUsize,
+        images: Mutex<Vec<String>>,
+        stops: Mutex<Vec<(String, i64)>>,
+    }
+
+    impl FakeEngine {
+        fn id(&self, kind: &str) -> String {
+            format!(
+                "{kind}{}",
+                self.next.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1
+            )
+        }
     }
 
     #[async_trait]
@@ -698,40 +668,117 @@ mod tests {
         async fn ping(&self) -> Result<(), KubeletError> {
             Ok(())
         }
-        async fn run_detached(&self, spec: &ContainerSpec) -> Result<String, KubeletError> {
-            if self.fail_on.as_deref() == Some(spec.labels[LABEL_CONTAINER_NAME].as_str()) {
-                return Err(KubeletError::ContainerOperationFailed {
-                    container: spec.name.clone(),
-                    reason: "boom".to_string(),
-                });
-            }
-            let mut containers = self.containers.lock().unwrap();
-            let id = format!(
-                "id{}",
-                self.next_id
-                    .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
-                    + 1
-            );
-            containers.push(ContainerSummary {
+        async fn pod_create(
+            &self,
+            name: &str,
+            labels: &BTreeMap<String, String>,
+        ) -> Result<String, KubeletError> {
+            let id = self.id("pod");
+            self.pods.lock().unwrap().push(PodSummary {
                 id: id.clone(),
-                image: spec.image.clone(),
-                image_id: "sha256:img".to_string(),
-                labels: spec.labels.clone(),
-                state: ContainerState::Running {
-                    started_at: Some(1_791_146_364),
-                },
+                name: name.to_string(),
+                labels: labels.clone(),
+                running: false,
+                created: Some(1),
             });
             Ok(id)
         }
-        async fn list(
+        async fn pod_start(&self, id: &str) -> Result<(), KubeletError> {
+            for pod in self.pods.lock().unwrap().iter_mut() {
+                if pod.id == id {
+                    pod.running = true;
+                }
+            }
+            Ok(())
+        }
+        async fn pod_stop(&self, id: &str, _timeout_secs: i64) -> Result<(), KubeletError> {
+            for pod in self.pods.lock().unwrap().iter_mut() {
+                if pod.id == id {
+                    pod.running = false;
+                }
+            }
+            Ok(())
+        }
+        async fn pod_remove(&self, id: &str) -> Result<(), KubeletError> {
+            self.pods.lock().unwrap().retain(|p| p.id != id);
+            self.containers.lock().unwrap().retain(|c| c.pod_id != id);
+            Ok(())
+        }
+        async fn pod_list(
             &self,
             filters: &[(&str, &str)],
+        ) -> Result<Vec<PodSummary>, KubeletError> {
+            Ok(self
+                .pods
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|p| {
+                    filters
+                        .iter()
+                        .all(|(k, v)| p.labels.get(*k).map(String::as_str) == Some(*v))
+                })
+                .cloned()
+                .collect())
+        }
+        async fn pod_ip(&self, _id: &str) -> Result<Option<String>, KubeletError> {
+            Ok(Some("10.88.0.7".to_string()))
+        }
+        async fn container_create(&self, spec: &ContainerSpec) -> Result<String, KubeletError> {
+            let id = self.id("c");
+            self.containers.lock().unwrap().push(ContainerSummary {
+                id: id.clone(),
+                name: spec.name.clone(),
+                pod_id: spec.pod.clone().unwrap_or_default(),
+                image: spec.image.clone(),
+                image_id: "sha256:img".to_string(),
+                labels: spec.labels.clone(),
+                state: ContainerState::Idle("created".to_string()),
+                created: Some(2),
+            });
+            Ok(id)
+        }
+        async fn container_start(&self, id: &str) -> Result<(), KubeletError> {
+            for c in self.containers.lock().unwrap().iter_mut() {
+                if c.id == id {
+                    c.state = ContainerState::Running {
+                        started_at: Some(3),
+                    };
+                }
+            }
+            Ok(())
+        }
+        async fn container_stop(&self, id: &str, timeout_secs: i64) -> Result<(), KubeletError> {
+            self.stops
+                .lock()
+                .unwrap()
+                .push((id.to_string(), timeout_secs));
+            for c in self.containers.lock().unwrap().iter_mut() {
+                if c.id == id {
+                    c.state = ContainerState::Exited {
+                        exit_code: 143,
+                        started_at: Some(3),
+                        finished_at: Some(4),
+                    };
+                }
+            }
+            Ok(())
+        }
+        async fn container_remove(&self, id: &str) -> Result<(), KubeletError> {
+            self.containers.lock().unwrap().retain(|c| c.id != id);
+            Ok(())
+        }
+        async fn container_list(
+            &self,
+            filters: &[(&str, &str)],
+            pod: Option<&str>,
         ) -> Result<Vec<ContainerSummary>, KubeletError> {
             Ok(self
                 .containers
                 .lock()
                 .unwrap()
                 .iter()
+                .filter(|c| pod.is_none_or(|p| c.pod_id == p))
                 .filter(|c| {
                     filters
                         .iter()
@@ -740,20 +787,29 @@ mod tests {
                 .cloned()
                 .collect())
         }
-        async fn signal(&self, ids: &[String], signal: &str) -> Result<(), KubeletError> {
-            self.signals
-                .lock()
-                .unwrap()
-                .push((ids.to_vec(), signal.to_string()));
-            Ok(())
-        }
-        async fn remove(&self, ids: &[String]) -> Result<(), KubeletError> {
+        async fn container_inspect(&self, id: &str) -> Result<ContainerSummary, KubeletError> {
             self.containers
                 .lock()
                 .unwrap()
-                .retain(|c| !ids.contains(&c.id));
-            self.removed.lock().unwrap().push(ids.to_vec());
-            Ok(())
+                .iter()
+                .find(|c| c.id == id)
+                .cloned()
+                .ok_or_else(|| KubeletError::ContainerOperationFailed {
+                    container: id.to_string(),
+                    reason: "missing".to_string(),
+                })
+        }
+        async fn image_id(&self, image: &str) -> Result<Option<String>, KubeletError> {
+            Ok(self
+                .images
+                .lock()
+                .unwrap()
+                .contains(&image.to_string())
+                .then(|| "sha256:img".to_string()))
+        }
+        async fn image_pull(&self, image: &str) -> Result<String, KubeletError> {
+            self.images.lock().unwrap().push(image.to_string());
+            Ok("sha256:img".to_string())
         }
         async fn logs(&self, id: &str, options: &LogOptions) -> Result<String, KubeletError> {
             Ok(format!(
@@ -771,160 +827,79 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn adapter_runs_labels_inspects_signals_and_removes_pod_containers() {
+    async fn adapter_speaks_cri_over_the_engine() {
         let engine = Arc::new(FakeEngine::default());
         let adapter = EngineRuntimeAdapter::new(engine.clone());
         assert_eq!(adapter.provider_name(), "fake");
         assert_eq!(adapter.runtime_version(), "9.9");
 
-        let sandbox = adapter.run_pod(&pod()).await.unwrap();
-        assert_eq!(sandbox, "uid-pods-hello-12");
-        let observed = adapter.inspect_pod(&pod()).await.unwrap().unwrap();
-        assert_eq!(observed.containers.len(), 2);
-        assert_eq!(observed.containers[0].name, "hello");
-        assert_eq!(observed.containers[0].container_id, "fake://id1");
-        assert_eq!(observed.containers[0].restart_count, 0);
-        assert_eq!(
-            observed.containers[0].state,
-            ContainerRuntimeState::Running {
-                started_at: "2026-10-04T20:39:24Z".to_string()
-            }
-        );
-        assert_eq!(adapter.get_pod_status(&sandbox).await.unwrap(), "Running");
+        let sandbox = sandbox_config();
+        let sandbox_id = adapter.run_pod_sandbox(&sandbox).await.unwrap();
+        assert_eq!(sandbox_id, "pod1");
+        let listed = adapter.list_pod_sandbox(None).await.unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].state, cri::PodSandboxState::SandboxReady as i32);
+        assert_eq!(listed[0].metadata.as_ref().unwrap().name, "hello");
+        let status = adapter.pod_sandbox_status(&sandbox_id).await.unwrap();
+        assert_eq!(status.network.unwrap().ip, "10.88.0.7");
 
-        let managed = adapter.list_managed_pods().await.unwrap();
-        assert_eq!(managed.len(), 1);
-        assert_eq!(
-            (managed[0].namespace.as_str(), managed[0].name.as_str()),
-            ("default", "hello")
-        );
-
-        let options = LogOptions {
-            tail_lines: Some(3),
-            timestamps: true,
-            since_seconds: None,
+        let image = cri::ImageSpec {
+            image: "localhost/rubix-hello:latest".to_string(),
+            ..cri::ImageSpec::default()
         };
+        assert!(adapter.image_status(&image).await.unwrap().is_none());
+        adapter.pull_image(&image, None).await.unwrap();
+        assert_eq!(
+            adapter.image_status(&image).await.unwrap().unwrap().id,
+            "sha256:img"
+        );
+
+        let id = adapter
+            .create_container(&sandbox_id, &container_config(0), &sandbox)
+            .await
+            .unwrap();
+        let created = adapter.container_status(&id).await.unwrap();
+        assert_eq!(created.state, cri::ContainerState::ContainerCreated as i32);
+        adapter.start_container(&id).await.unwrap();
+        let filter = cri::ContainerFilter {
+            pod_sandbox_id: sandbox_id.clone(),
+            ..cri::ContainerFilter::default()
+        };
+        let containers = adapter.list_containers(Some(&filter)).await.unwrap();
+        assert_eq!(containers.len(), 1);
+        assert_eq!(
+            containers[0].state,
+            cri::ContainerState::ContainerRunning as i32
+        );
+        assert_eq!(containers[0].metadata.as_ref().unwrap().name, "hello");
         assert_eq!(
             adapter
-                .read_container_logs(&sandbox, "side", &options)
+                .exec_sync(&id, &["true".to_string()], 5)
+                .await
+                .unwrap()
+                .stdout,
+            "c2 true"
+        );
+        assert_eq!(
+            adapter
+                .container_logs(&id, &LogOptions::default())
                 .await
                 .unwrap(),
-            "logs id2 Some(3) true"
-        );
-        let exec = adapter
-            .exec_in_container(&sandbox, "hello", &["true".to_string()])
-            .await
-            .unwrap();
-        assert_eq!(exec.stdout, "id1 true");
-        let err = adapter
-            .get_container_logs(&sandbox, "missing", None)
-            .await
-            .unwrap_err();
-        assert!(err.to_string().contains("no fake container"), "{err}");
-
-        adapter
-            .signal_pod(&sandbox, PodSignal::Terminate)
-            .await
-            .unwrap();
-        assert_eq!(
-            *engine.signals.lock().unwrap(),
-            vec![(
-                vec!["id1".to_string(), "id2".to_string()],
-                "TERM".to_string()
-            )]
+            "logs c2 None false"
         );
 
-        adapter.stop_pod(&sandbox).await.unwrap();
+        adapter.stop_container(&id, 7).await.unwrap();
+        assert_eq!(*engine.stops.lock().unwrap(), vec![(id.clone(), 7)]);
+        let stopped = adapter.container_status(&id).await.unwrap();
+        assert_eq!(stopped.state, cri::ContainerState::ContainerExited as i32);
+        assert_eq!(stopped.exit_code, 143);
+        adapter.remove_container(&id).await.unwrap();
+        adapter.stop_pod_sandbox(&sandbox_id).await.unwrap();
         assert_eq!(
-            *engine.removed.lock().unwrap(),
-            vec![vec!["id1".to_string(), "id2".to_string()]]
+            adapter.list_pod_sandbox(None).await.unwrap()[0].state,
+            cri::PodSandboxState::SandboxNotready as i32
         );
-        assert!(
-            adapter
-                .inspect_pod(&pod())
-                .await
-                .unwrap()
-                .unwrap()
-                .containers
-                .is_empty()
-        );
-        assert_eq!(adapter.get_pod_status(&sandbox).await.unwrap(), "Stopped");
-        adapter.stop_pod("nope").await.unwrap();
-        assert_eq!(engine.removed.lock().unwrap().len(), 1);
-    }
-
-    #[tokio::test]
-    async fn adapter_restarts_one_container_as_a_new_attempt() {
-        let engine = Arc::new(FakeEngine::default());
-        let adapter = EngineRuntimeAdapter::new(engine.clone());
-        adapter.run_pod(&pod()).await.unwrap();
-        adapter.restart_container(&pod(), "hello", 1).await.unwrap();
-        assert_eq!(
-            *engine.removed.lock().unwrap(),
-            vec![vec!["id1".to_string()]]
-        );
-        let observed = adapter.inspect_pod(&pod()).await.unwrap().unwrap();
-        let hello: Vec<_> = observed
-            .containers
-            .iter()
-            .filter(|c| c.name == "hello")
-            .collect();
-        assert_eq!(hello.len(), 1);
-        assert_eq!(hello[0].restart_count, 1);
-        assert_eq!(hello[0].container_id, "fake://id3");
-        let err = adapter
-            .restart_container(&pod(), "ghost", 1)
-            .await
-            .unwrap_err();
-        assert!(err.to_string().contains("not in the pod spec"), "{err}");
-    }
-
-    #[tokio::test]
-    async fn adapter_rolls_back_started_containers_when_a_later_one_fails() {
-        let engine = Arc::new(FakeEngine {
-            fail_on: Some("side".to_string()),
-            ..FakeEngine::default()
-        });
-        let adapter = EngineRuntimeAdapter::new(engine.clone());
-        let err = adapter.run_pod(&pod()).await.unwrap_err();
-        assert!(err.to_string().contains("boom"), "{err}");
-        assert!(engine.containers.lock().unwrap().is_empty());
-        assert_eq!(
-            *engine.removed.lock().unwrap(),
-            vec![vec!["id1".to_string()]]
-        );
-    }
-
-    #[test]
-    fn exited_and_idle_states_map_to_runtime_states() {
-        let adapter = EngineRuntimeAdapter::new(Arc::new(FakeEngine::default()));
-        let mut summary = ContainerSummary {
-            id: "abc".to_string(),
-            image: "img".to_string(),
-            image_id: "sha256:abc".to_string(),
-            labels: identity().labels("hello", 3),
-            state: ContainerState::Exited {
-                exit_code: 3,
-                started_at: None,
-                finished_at: Some(1_791_146_370),
-            },
-        };
-        let status = adapter.runtime_status(&summary);
-        assert_eq!(status.restart_count, 3);
-        assert_eq!(
-            status.state,
-            ContainerRuntimeState::Terminated {
-                exit_code: 3,
-                started_at: None,
-                finished_at: "2026-10-04T20:39:30Z".to_string(),
-            }
-        );
-        summary.state = ContainerState::Idle("created".to_string());
-        assert_eq!(
-            adapter.runtime_status(&summary).state,
-            ContainerRuntimeState::Waiting {
-                reason: "ContainerCreating (created)".to_string()
-            }
-        );
+        adapter.remove_pod_sandbox(&sandbox_id).await.unwrap();
+        assert!(adapter.list_pod_sandbox(None).await.unwrap().is_empty());
     }
 }

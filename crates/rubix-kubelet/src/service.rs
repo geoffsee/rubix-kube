@@ -12,10 +12,10 @@ use crate::config::KubeletConfigOptions;
 use crate::container::ContainerEnvironment;
 use crate::error::KubeletError;
 use crate::health::KubeletHealthReport;
+use crate::reconciler::{PodReconciler, resolve_container};
 use crate::registration::NodeRegistration;
 use crate::workload::{
-    CpuManager, ExecResult, LogOptions, PodReconciler, ReconcileReport, RuntimeProvider,
-    WorkloadRestartReport,
+    CpuManager, ExecResult, LogOptions, ReconcileReport, RuntimeProvider, WorkloadRestartReport,
 };
 
 /// Kubelet service orchestrating node lifecycle, registration, and workload execution.
@@ -465,9 +465,15 @@ impl PodLogReader for KubeletLogSource {
             tail_lines: options.tail_lines,
             timestamps: options.timestamps,
             since_seconds: options.since_seconds,
+            previous: options.previous,
         };
+        let id = resolve_container(self.runtime.as_ref(), uid, &container, options.previous)
+            .await
+            .map_err(|e| ApiserverError::BadRequest {
+                message: format!("{e}"),
+            })?;
         self.runtime
-            .read_container_logs(uid, &container, &log_options)
+            .container_logs(&id, &log_options)
             .await
             .map_err(|e| ApiserverError::Internal {
                 reason: format!("kubelet could not read logs for {name}/{container}: {e}"),
