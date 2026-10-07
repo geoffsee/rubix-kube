@@ -7,14 +7,15 @@ This consolidates the [compatibility contract](compatibility-contract.md), the
 for detailed behavior, exact hashes and the E01–E30 acceptance inventory; this matrix assigns the
 implementation boundaries and integration/release gates without repeating their acceptance prose.
 
-The selected product is a Rust-owned distribution supervising retained upstream executables.
-It is not a native Rust implementation of Kubernetes, Kine, containerd or addon images. No Go ABI
-or custom Go control bridge is selected. Published resource bindings and explicitly generated
-protocol bindings implement clients/types, not the components behind them. Ordinary Cargo builds
-and node startup never refresh upstream. Component assets and generator inputs have separate locks
-and owners; the accepted [provenance inventory](upstream-inputs.json) governs generation pins.
-It is not a production component artifact lock. E06 still owes verified per-target executable/image
-digests and source/build closure for assets beyond the narrow recorded experiment.
+Under the 2026-10-07 [ADR amendment](../../experiments/component-boundary/ADR.md) ([E31.01](https://github.com/geoffsee/rubix-kube/issues/335)),
+the selected product architecture is Option B: an in-process Rust control plane matching `NodeRuntime`
+(`rubix-datastore`, `rubix-apiserver`, `rubix-controller`), retaining managed/external containerd and runtime
+shims for container execution. Supervised upstream control plane executables (Option A) are superseded.
+Published resource bindings and explicitly generated protocol bindings implement clients/types, not the
+components behind them. Ordinary Cargo builds and node startup never refresh upstream. Component assets and
+generator inputs have separate locks and owners; the accepted [provenance inventory](upstream-inputs.json)
+governs generation pins. It is not a production component artifact lock. E06 still owes verified per-target
+executable/image digests and source/build closure for retained assets.
 
 ## Retained component boundary
 
@@ -30,25 +31,25 @@ Component versions come from its [go.mod][modules], [asset script][assets],
 
 | Retained component | Selected boundary / baseline input | Interface and ownership | Remaining acceptance owner/gate |
 | --- | --- | --- | --- |
-| kube-apiserver | Supervised official Kubernetes v1.35.7 executable; reference Go libraries used K3s v1.35.7-k3s1 | Kubernetes HTTPS/JSON, authenticated component credentials; etcd-compatible datastore client | E11 official-versus-K3s defaults/admission/security parity; E02 independent fixtures |
-| kube-controller-manager | Supervised official Kubernetes v1.35.7 executable | API credentials/configuration from Rust; upstream reconcilers remain Go | E12 controller defaults, complete required reconciliation and lifecycle |
-| kubelet | Supervised official Kubernetes v1.35.7 executable | Kubernetes API and CRI v1; Rust owns config/identity/checkpoint-change policy | E13 host/container CPU/cgroup/probe/volume behavior; E10 CRI driver fallback |
-| kube-proxy | Supervised official Kubernetes v1.35.7 executable | API/EndpointSlices plus privileged host routing; Rust owns options/lifecycle | E16 nftables/iptables/read-only sysctl parity; preserve owned egress rules |
-| Kine | Supervised Kine v0.16.3 executable with SQLite support | etcd-compatible boundary; Rust owns state location/configuration/lifecycle; Kine owns datastore semantics | E08 persistence/watch/resource versions, WAL/integrity/repair and production local transport protection |
-| SQLite engine | Kine's locked dependency/build, not an independently selected Rust database | Kine-owned on-disk state; no direct Rust rewrite of Kubernetes storage | E08/E27 identify linked implementation/license and durability; E30 explicit migration |
-| Managed containerd | Supervised official containerd v2.2.5 executable; reference embedded library replaced by K3s v2.2.5-k3s2 while download script already uses official v2.2.5 | CRI v1; native API module v1.10.0 for justified image/namespace operations; Rust owns managed config/start/stop | E09 fork/plugin/registry/import/restart equivalence; E06 target assets; E02 protocol fixtures |
-| containerd-shim-runc-v2 | Matching containerd v2.2.5 payload | Managed containerd owns shims; registered runtime identifier remains `io.containerd.runc.v2` | E09 PATH lookup, task cleanup, cross-target payload and process accounting |
-| crun | Baseline 1.26; ARMv7 built from source in reference | OCI runtime executable configured by `BinaryName`; host-owned in external-runtime mode | E06/E09 digest/build provenance, cgroups, container lifecycle |
-| CNI bridge, host-local, portmap, loopback | Baseline containernetworking/plugins v1.9.0 | Executables with owned CNI config; external-runtime plugin binaries are host-owned | E06/E15 architecture, MTU, egress, ordering and cleanup |
-| fuse-overlayfs snapshotter and helper | Supervised upstream `containerd-fuse-overlayfs-grpc` v2.1.7 plus host `fuse-overlayfs` executable when available; replaces reference in-process plugin registration | Snapshot RPC over an owned Unix socket through containerd `proxy_plugins."fuse-overlayfs"`; preserve overlay/native/fuse selection | E06 packages separate plugin binary; E09 verifies executable startup, proxy registration, nested/overlay workload and cleanup; host helper version recorded |
-| CoreDNS | `docker.io/coredns/coredns:1.14.4` image | Pod workload; Rust reconciles owned resources/Corefile, readiness and acquisition | E06/E17 digest, online/offline DNS and metadata preservation |
-| Pause sandbox | `docker.io/portainer/pause:latest` actual reference pull/runtime name | CRI sandbox image; reference script's `PAUSE_IMAGE_VERSION=3.10` does not pin the pulled `latest` image | E06/E09 resolve digest and architecture; do not misrepresent unused version variable as content provenance |
-| Local-path provisioner | `docker.io/rancher/local-path-provisioner:v0.0.36` image | Optional workload; Rust owns resources/default Retain class/shared path configuration | E18 PVC/data/reclaim tests; E06 offline payload |
-| Local-path helper pod | Template image `busybox` (implicit mutable tag) | Provisioner launches helper; not part of Rust executable or proof from provisioner image alone | E06/E18 resolve/pin/include required helper payload for egress-denied PVC provisioning; no offline claim from startup alone |
-| Portainer Edge Agent | `docker.io/portainer/agent:lts` or configured custom reference | Optional image; bootstrap-only Rust ownership, existing Portainer objects preserved | E19 credentials/async/custom-image behavior; E06 resolve default digest and architecture |
-| D2K | `docker.io/portainer/d2k:1.2.3` image | Optional Docker-compatible API workload; Rust owns credentials/reconciled resources | E20 actual client-certificate authentication/negative cases and endpoint readiness; E06 image support |
-| External containerd / CRI-O | Host-managed CRI implementations; no invented universal server version | Rust attaches through CRI and never owns host daemon, socket, registry or unrelated workloads | E10 records exact tested versions/configurations; E28 qualification matrix; unsupported protocol/capabilities fail clearly |
-| Host tools and container engine | Init manager, iptables/nft, mount/module helpers, optional fuse helper; Docker-compatible engine for container mode | Host prerequisites remain externally owned; Rust invokes/negotiates only within explicit installation scope | E05/E15/E23/E24 record versions/capabilities and constrained-host fixtures; no blanket host qualification |
+| kube-apiserver | Superseded by in-process `rubix-apiserver` (Option B amendment 2026-10-07); baseline input was official Kubernetes v1.35.7 (reference Go used K3s v1.35.7-k3s1) | In-process HTTPS listener, authenticated credentials, admission webhooks, internal datastore binding (`KubernetesStorage`) | E11/E32 in-process API parity, admission, discovery, streaming watch, and conformance; E02 independent fixtures |
+| kube-controller-manager | Superseded by in-process `rubix-controller` (Option B amendment 2026-10-07); baseline input was official Kubernetes v1.35.7 | In-process reconciliation loops over in-process API server; upstream Go reconcilers superseded | E12/E32 controller parity, complete required reconciliation and lifecycle |
+| kubelet | In-process `rubix-kubelet` adapter pending in `NodeRuntime` (Option B amendment 2026-10-07); baseline input was official Kubernetes v1.35.7 | In-process node adapter watching API server and dispatching CRI v1 to container runtime | E13/E34 Linux host/container CPU/cgroup/probe/volume behavior; E10 CRI driver fallback |
+| kube-proxy | In-process `rubix-proxy` adapter pending in `NodeRuntime` (Option B amendment 2026-10-07); baseline input was official Kubernetes v1.35.7 | In-process packet filtering adapter programming Linux host iptables/nftables from EndpointSlices | E16/E34 nftables/iptables/read-only sysctl parity; preserve owned egress rules |
+| Kine | Superseded by in-process `rubix-datastore` engine (Option B amendment 2026-10-07); baseline input was Kine v0.16.3 with SQLite support | In-process etcd v3-compatible key-value MVCC/WAL engine; non-interchangeable with Kine SQLite | E08/E32 persistence, monotonic 64-bit MVCC revisions, WAL durability, crash consistency, and backup/restore |
+| SQLite engine | Superseded by in-process `rubix-datastore` memory-mapped MVCC index and WAL (Option B amendment 2026-10-07) | In-process datastore state; Kine SQLite on-disk databases require offline migration tooling per D11 | E08/E30/E36 explicit migration tooling and rehearsal; see [BACKUP_COMPATIBILITY.md](../../crates/rubix-datastore/BACKUP_COMPATIBILITY.md) |
+| Managed containerd | Confirmed retained upstream: supervised official containerd v2.2.5 executable | CRI v1; native API module v1.10.0 for justified image/namespace operations; Rust owns managed config/start/stop via `OwnedProcessAdapter` | E09 fork/plugin/registry/import/restart equivalence; E06 target assets; E02 protocol fixtures |
+| containerd-shim-runc-v2 | Confirmed retained upstream: matching containerd v2.2.5 payload | Managed containerd owns shims; registered runtime identifier remains `io.containerd.runc.v2` | E09 PATH lookup, task cleanup, cross-target payload and process accounting |
+| crun | Confirmed retained upstream: baseline 1.26; ARMv7 built from source in reference | OCI runtime executable configured by `BinaryName`; host-owned in external-runtime mode | E06/E09 digest/build provenance, cgroups, container lifecycle |
+| CNI bridge, host-local, portmap, loopback | Confirmed retained upstream: baseline containernetworking/plugins v1.9.0 | Executables with owned CNI config; external-runtime plugin binaries are host-owned | E06/E15 architecture, MTU, egress, ordering and cleanup |
+| fuse-overlayfs snapshotter and helper | Confirmed retained upstream: supervised upstream `containerd-fuse-overlayfs-grpc` v2.1.7 plus host `fuse-overlayfs` executable when available | Snapshot RPC over an owned Unix socket through containerd `proxy_plugins."fuse-overlayfs"`; preserve overlay/native/fuse selection | E06 packages separate plugin binary; E09 verifies executable startup, proxy registration, nested/overlay workload and cleanup; host helper version recorded |
+| CoreDNS | Confirmed retained upstream: `docker.io/coredns/coredns:1.14.4` image | Pod workload; Rust reconciles owned resources/Corefile, readiness and acquisition | E06/E17 digest, online/offline DNS and metadata preservation |
+| Pause sandbox | Confirmed retained upstream: `docker.io/portainer/pause:latest` actual reference pull/runtime name | CRI sandbox image; reference script's `PAUSE_IMAGE_VERSION=3.10` does not pin the pulled `latest` image | E06/E09 resolve digest and architecture; do not misrepresent unused version variable as content provenance |
+| Local-path provisioner | Confirmed retained upstream: `docker.io/rancher/local-path-provisioner:v0.0.36` image | Optional workload; Rust owns resources/default Retain class/shared path configuration | E18 PVC/data/reclaim tests; E06 offline payload |
+| Local-path helper pod | Confirmed retained upstream: template image `busybox` (implicit mutable tag) | Provisioner launches helper; not part of Rust executable or proof from provisioner image alone | E06/E18 resolve/pin/include required helper payload for egress-denied PVC provisioning; no offline claim from startup alone |
+| Portainer Edge Agent | Confirmed retained upstream: `docker.io/portainer/agent:lts` or configured custom reference | Optional image; bootstrap-only Rust ownership, existing Portainer objects preserved | E19 credentials/async/custom-image behavior; E06 resolve default digest and architecture |
+| D2K | Confirmed retained upstream: `docker.io/portainer/d2k:1.2.3` image | Optional Docker-compatible API workload; Rust owns credentials/reconciled resources | E20 actual client-certificate authentication/negative cases and endpoint readiness; E06 image support |
+| External containerd / CRI-O | Confirmed retained upstream: host-managed CRI implementations; no invented universal server version | Rust attaches through CRI and never owns host daemon, socket, registry or unrelated workloads | E10 records exact tested versions/configurations; E28 qualification matrix; unsupported protocol/capabilities fail clearly |
+| Host tools and container engine | Confirmed retained upstream: init manager, iptables/nft, mount/module helpers, optional fuse helper; Docker-compatible engine for container mode | Host prerequisites remain externally owned; Rust invokes/negotiates only within explicit installation scope | E05/E15/E23/E24 record versions/capabilities and constrained-host fixtures; no blanket host qualification |
 
 The selected snapshotter integration uses an existing upstream standalone executable, not a new
 Go bridge. Tag v2.1.7 resolves to commit `da57796c7d0a2b608abf173651cf148706e33337`
@@ -82,9 +83,9 @@ remain in dependency/license closure even when they are not separate processes.
 | Host detection/preflight and permitted preparation | E05 | Capabilities before mutation; disposable-host validation |
 | Asset validation/extraction and variant inventory | E06 | Prepared manifest and content hashes, no implicit upstream refresh |
 | PKI, service accounts and component/client credentials | E07 | Persistent trust roots, private keys, leaf rotation |
-| Datastore adapter and recovery controls | E08 | Supervise/configure Kine, protect endpoint/state; no fabricated storage implementation |
+| Datastore engine, adapter and recovery controls | E08 | In-process MVCC/WAL engine (`rubix-datastore`), WAL durability, snapshot checkpointing and D11 explicit Kine SQLite migration tooling; no fabricated storage implementation |
 | Managed/external runtime adapters | E09/E10 | Managed ownership versus attachment; CRI and native containerd API |
-| Kubernetes component configuration/lifecycle adapters | E11/E12/E13/E16 | Supervised upstream implementations and independently validated defaults |
+| Kubernetes component configuration/lifecycle adapters | E11/E12/E13/E16 | In-process Rust control plane components (`rubix-apiserver`, `rubix-controller`), pending in-process node adapters (`rubix-kubelet`, `rubix-proxy`) in `NodeRuntime`, and independently validated defaults |
 | NodeSetter/LoadBalancer webhook | E14 | Rust admission handling/status updates; no scheduler introduced |
 | Address/resolver/MTU/CNI/owned egress | E15 | Host networking ownership and idempotence |
 | Addon builders and reconciliation | E17/E18/E19/E20 | DNS/storage/Portainer/D2K retain distinct ownership/failure rules |
@@ -149,7 +150,7 @@ local `docs/planning/` mirrors before selecting a slice; those files need not ex
 | --- | --- | --- |
 | Characterization and inputs | E02 fixtures/harness plus explicit preparation/generation from E01 decisions | Independent source/artifact identities, negative fixtures, deterministic regeneration and drift failure |
 | Foundation | E03 typed config; E04 lifecycle interfaces; E05 detection fixtures; E06 asset manifest; E07 PKI | Relevant E02 fixtures and config interfaces; then production shutdown/host/asset/identity tests |
-| Storage and runtime providers | E08 Kine adapter; E09 managed containerd; E10 external CRI; E22 stored-config editing | Supervisor and credentials for datastore; host/assets for managed runtime; host capabilities for external runtime |
+| Storage and runtime providers | E08 in-process datastore (rubix-datastore); E09 managed containerd; E10 external CRI; E22 stored-config editing | WAL persistence, MVCC transactions and snapshot recovery for datastore; host/assets for managed runtime; host capabilities for external runtime |
 | Control plane and networking | E11 API, then E12 controllers; E15 networking after provider/host interfaces | Persistent authenticated API; required controllers; idempotent owned CNI/egress before persisted pods recover |
 | Workload execution and admission | E13 kubelet after E15 networking; E14 NodeSetter; E16 kube-proxy | Manually assigned pod proves initial kubelet without needing NodeSetter; then normal unscheduled workloads through webhook, then routing |
 | Addons and observability | E17–E20 resource builders and E21 probes can use fixture clients early | DNS is required readiness; optional addons isolate failure; real workloads/credentials/networking prove final behavior |
@@ -210,17 +211,17 @@ adds the selected component boundary and measured limitations without claiming a
 | --- | --- | --- |
 | D01/D05 target and bundle corrections | Keep all node targets; reject incorrect target metadata or executable; fix installer routes | E05/E23/E27 |
 | D02 version/capability consistency | Explicit candidate version/capabilities; historical migration gates remain distinct | E23/E26/E27 |
-| D03 supervised processes | Selected by API/Kine experiment; retained processes/assets explicitly attributed and measured | E01/E04/E27/E29 |
+| D03 supervised processes | Option B selected in ADR amendment (2026-10-07); in-process Rust control plane with retained third-party runtime processes (containerd, shims, crun, CNI) and images explicitly attributed and measured | E01/E04/E27/E29/E31 |
 | D04 local storage defaults | Preserve effective runtime enabled default and explicit disabling | E03/E18/E23 |
 | D06 stale commands/tags and mutable images | Actual command tree/version tags; resolve image digests separately from display references | E06/E24/E25/E27 |
 | D07 D2K authentication/readiness | No mTLS claim until actual image positive and negative client-certificate tests; reconciliation is not endpoint readiness | E20 |
 | D08 diagnostics | Rust replacement diagnostics; product metrics retain honest probe meaning | E21 |
 | D09 current defaults | No resurrected low-memory overrides, omitted controllers or non-no-op `--full` | E03/E11/E12/E13/E16/E29 |
 | D10 stored config | Desired document only, restart required, runtime overrides not persisted | E22 |
-| D11 migration | Rehearsed state reuse or explicit export/import/recovery; no automatic datastore interchangeability; see [state transitions](state-transitions.md) | E08/E26/E30 |
-| Official Kubernetes versus K3s | Selected official executables; required fork adaptations/defaults assessed separately against baseline, with changes explicitly documented | E02/E11/E12/E13/E16; E28 integrated parity |
+| D11 migration | Confirmed under Option B (`rubix-datastore`). Rehearsed state reuse or explicit export/import/recovery; no automatic datastore interchangeability; rubix-datastore rejects raw Kine SQLite files; see [state transitions](state-transitions.md) and [BACKUP_COMPATIBILITY.md](../../crates/rubix-datastore/BACKUP_COMPATIBILITY.md) | E08/E26/E30/E36 |
+| Official Kubernetes versus K3s | Control plane superseded by in-process Rust components under Option B; official v1.35.7 remains semantic baseline for API, reconcilers, and CRI contracts; fork adaptations assessed explicitly | E02/E11/E12/E13/E16/E32; E28 integrated parity |
 | Official containerd versus embedded fork/plugins | Runtime API/native image operations plus shim/plugin equivalence; external CRI is a separate mode | E02/E06/E09/E10 |
-| Datastore confidentiality/integrity boundary | Select loopback mTLS with a dedicated datastore CA and API-server client identity; reject absent/untrusted clients. Never reuse the general Kubernetes client CA. The isolated spike's plaintext loopback is not production protection | E07/E08/E11 |
+| Datastore confidentiality/integrity boundary | Option A required loopback mTLS between processes. Under Option B, rubix-apiserver connects in-process to rubix-datastore via internal storage (`KubernetesStorage`), while any external etcd v3 client endpoint requires dedicated datastore CA TLS authentication; never reuse general client CA | E07/E08/E11/E32 |
 | Persistent datastore outage shutdown | Trial r2 required forced API kill after Kine died; preserve diagnostics and implement bounded escalation rather than call it graceful shutdown | E04/E08/E28 |
 | Offline helper image closure | Resolve busybox helper and all enabled transitive workload images, then provision PVC with egress denied | E06/E18/E28 |
 | Architecture-specific assets and external server versions | Resolve and hash all shipped payloads, record actual external CRI/engine versions and capability matrix | E06/E09/E10/E24/E27/E28 |
@@ -235,11 +236,17 @@ reclassify the behavior as unsupported or replace a failed assertion with a stub
 The [arm64 component evidence](../../experiments/component-boundary/evidence/2026-09-27-arm64/README.md)
 proves TLS/client-certificate CRUD, unauthorized rejection, independent SQLite integrity/object
 presence, clean restart and UID/value retention, acknowledged update after datastore SIGKILL,
-existing API recovery, persisted deletion, and cleanup for the selected two-component boundary.
+existing API recovery, persisted deletion, and cleanup for the Option A two-component boundary.
 The run records exact source hashes, two component processes and approximately 294–301 MiB combined
 RSS at readiness snapshots. It excludes the Rust supervisor, other Kubernetes components, runtime,
 shims, addon workloads and steady-state benchmarking. Neither amd64 nor all supported platforms are
 qualified by this run. The retained failed r2 demonstrates an unresolved outage-shutdown condition.
+
+For Option B, [PR #333](https://github.com/geoffsee/rubix-kube/pull/333) provides the only live evidence
+(evaluated on macOS arm64 for the in-process control plane and an experimental podman loop). Live
+qualification of Option B on Linux hosts—covering in-process API server, controller manager, datastore
+crash consistency, containerd daemon supervision, and in-process kubelet/kube-proxy integration—remains
+the gating requirement for Epic #334.
 
 Generation research/probes are described only by their actual scope in [upstream inputs](upstream-inputs.md).
 Their schema/descriptor/translation/compilation results do not prove CRI runtime interoperability or
