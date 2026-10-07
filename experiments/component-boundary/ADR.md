@@ -22,14 +22,16 @@ only kube-apiserver and Kine are exercised here.
 
 The integration uses versioned Kubernetes HTTPS/JSON, CRI/containerd RPCs, and Kine's
 etcd-compatible protocol. The experiment uses authenticated Kubernetes HTTPS and
-loopback-only plaintext Kine within an isolated network namespace. The selected production transport is loopback mTLS with a dedicated datastore CA,
-server IP SAN `127.0.0.1`, and a separate API-server client identity. Kine requires
-client certificates via `--trusted-ca-file`; the API uses `--etcd-cafile`,
-`--etcd-certfile` and `--etcd-keyfile` with an HTTPS endpoint. Do not reuse the general
-Kubernetes client CA: its other clients must not gain direct datastore access.
+loopback-only plaintext Kine within an isolated network namespace. Under the initial Option A candidate, the selected production transport was loopback mTLS with a dedicated datastore CA,
+server IP SAN `127.0.0.1`, and a separate API-server client identity (Kine requiring
+client certificates via `--trusted-ca-file`; the API using `--etcd-cafile`,
+`--etcd-certfile` and `--etcd-keyfile` with an HTTPS endpoint). Under Option B (amended 2026-10-07 below),
+the API server binds directly in-process via `KubernetesStorage` to `rubix-datastore`, eliminating
+the internal loopback gRPC hop, while dedicated datastore CA TLS remains required for external etcd v3 clients.
+Do not reuse the general Kubernetes client CA: its other clients must not gain direct datastore access.
 See the [source-backed transport contract](../../docs/architecture/upstream-inputs.md).
 This intentionally corrects the baseline plaintext trust boundary. The isolated
-spike proves protocol/persistence only; E07/E08/E11 must test production mTLS and
+spike proves protocol/persistence only; E07/E08/E11 must test production transport and
 wrong/no-client-certificate rejection before integration.
 
 Official Kubernetes v1.35.7 owns generation semantics. The pinned KubeSolo source

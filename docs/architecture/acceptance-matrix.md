@@ -83,9 +83,9 @@ remain in dependency/license closure even when they are not separate processes.
 | Host detection/preflight and permitted preparation | E05 | Capabilities before mutation; disposable-host validation |
 | Asset validation/extraction and variant inventory | E06 | Prepared manifest and content hashes, no implicit upstream refresh |
 | PKI, service accounts and component/client credentials | E07 | Persistent trust roots, private keys, leaf rotation |
-| Datastore adapter and recovery controls | E08 | Supervise/configure Kine, protect endpoint/state; no fabricated storage implementation |
+| Datastore engine, adapter and recovery controls | E08 | In-process MVCC/WAL engine (`rubix-datastore`), WAL durability, snapshot checkpointing and D11 explicit Kine SQLite migration tooling; no fabricated storage implementation |
 | Managed/external runtime adapters | E09/E10 | Managed ownership versus attachment; CRI and native containerd API |
-| Kubernetes component configuration/lifecycle adapters | E11/E12/E13/E16 | Supervised upstream implementations and independently validated defaults |
+| Kubernetes component configuration/lifecycle adapters | E11/E12/E13/E16 | In-process Rust control plane components (`rubix-apiserver`, `rubix-controller`), pending in-process node adapters (`rubix-kubelet`, `rubix-proxy`) in `NodeRuntime`, and independently validated defaults |
 | NodeSetter/LoadBalancer webhook | E14 | Rust admission handling/status updates; no scheduler introduced |
 | Address/resolver/MTU/CNI/owned egress | E15 | Host networking ownership and idempotence |
 | Addon builders and reconciliation | E17/E18/E19/E20 | DNS/storage/Portainer/D2K retain distinct ownership/failure rules |
@@ -150,7 +150,7 @@ local `docs/planning/` mirrors before selecting a slice; those files need not ex
 | --- | --- | --- |
 | Characterization and inputs | E02 fixtures/harness plus explicit preparation/generation from E01 decisions | Independent source/artifact identities, negative fixtures, deterministic regeneration and drift failure |
 | Foundation | E03 typed config; E04 lifecycle interfaces; E05 detection fixtures; E06 asset manifest; E07 PKI | Relevant E02 fixtures and config interfaces; then production shutdown/host/asset/identity tests |
-| Storage and runtime providers | E08 Kine adapter; E09 managed containerd; E10 external CRI; E22 stored-config editing | Supervisor and credentials for datastore; host/assets for managed runtime; host capabilities for external runtime |
+| Storage and runtime providers | E08 in-process datastore (rubix-datastore); E09 managed containerd; E10 external CRI; E22 stored-config editing | WAL persistence, MVCC transactions and snapshot recovery for datastore; host/assets for managed runtime; host capabilities for external runtime |
 | Control plane and networking | E11 API, then E12 controllers; E15 networking after provider/host interfaces | Persistent authenticated API; required controllers; idempotent owned CNI/egress before persisted pods recover |
 | Workload execution and admission | E13 kubelet after E15 networking; E14 NodeSetter; E16 kube-proxy | Manually assigned pod proves initial kubelet without needing NodeSetter; then normal unscheduled workloads through webhook, then routing |
 | Addons and observability | E17–E20 resource builders and E21 probes can use fixture clients early | DNS is required readiness; optional addons isolate failure; real workloads/credentials/networking prove final behavior |

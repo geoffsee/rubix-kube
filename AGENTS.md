@@ -9,7 +9,8 @@ KubeSolo compatibility. The baseline is Portainer KubeSolo commit
 - [Compatibility contract](docs/architecture/compatibility-contract.md): observable
   behavior, deliberate deviations, resource ownership and platform obligations.
 - [Component boundary ADR](experiments/component-boundary/ADR.md): selected
-  supervised upstream executables, Rust responsibilities and experiment limits.
+  in-process Rust control plane boundary (Option B, amended 2026-10-07),
+  Rust responsibilities and experiment limits.
 - [Upstream input contract](docs/architecture/upstream-inputs.md) and its
   [inventory](docs/architecture/upstream-inputs.json): authoritative versions,
   source hashes, generation ownership and datastore trust requirements.
@@ -103,8 +104,9 @@ tools retain their own implementations.
   data, credentials and datastore state require their documented retention rules.
   Consult datastore backup compatibility documentation before assuming an on-disk
   format can replace or adopt a Kine SQLite database.
-- The selected production API-server/Kine transport uses loopback mTLS with a
-  dedicated datastore CA and separate client identity. Preserve this trust
+- Under the amended Option B boundary, `rubix-apiserver` binds in-process to
+  `rubix-datastore` via `KubernetesStorage`; external datastore access (when enabled)
+  retains a dedicated datastore CA and separate client identity. Preserve this trust
   boundary and test authentication failures; plaintext spike evidence does not
   qualify production transport.
 - Follow [upstream tooling instructions](tools/upstream/README.md) for generation.
@@ -156,9 +158,8 @@ implementation, design, review, and debugging.
 
 ## Current documentation with Context7
 
-Context7 is available through the global
-[find-docs skill](/Users/meta-g/.agents/skills/find-docs/SKILL.md), with its rule
-in [/Users/meta-g/.codex/AGENTS.md](/Users/meta-g/.codex/AGENTS.md). Read the
+Context7 is available through the global `find-docs` skill (for example in
+`~/.agents/skills/find-docs/SKILL.md` or global agent configuration). Read the
 skill when applying this workflow. Use the global installation directly; a
 project-local copy or global installation of the `ctx7` executable is not
 required because commands use `npx ctx7@latest`.
