@@ -259,6 +259,282 @@ fn structural_linux_arm64_glibc_manifests_validate_both_variants() {
     assert_structural_placeholders(offline_bytes, &offline);
 }
 
+#[test]
+fn structural_linux_amd64_glibc_manifest_validates_online_variant() {
+    let online_bytes = include_bytes!("fixtures/online-amd64.json");
+    let online = Manifest::decode(online_bytes, Limits::default())
+        .expect("valid online manifest")
+        .validate_inventory(
+            request(Architecture::Amd64, Libc::Glibc, Variant::Online),
+            Limits::default(),
+        )
+        .expect("valid online amd64 glibc inventory");
+    assert_eq!(online.assets().len(), 20);
+    assert_eq!(online.bundled_assets().len(), 15);
+    assert_image_contract(&online, Architecture::Amd64, Variant::Online);
+    assert_optional_support(&online, Architecture::Amd64);
+    assert_structural_placeholders(online_bytes, &online);
+}
+
+const EXPECTED_ONLINE_AMD64: &[(AssetId, u64, &str)] = &[
+    (
+        AssetId::KubeApiserver,
+        85_778_616,
+        "0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8",
+    ),
+    (
+        AssetId::KubeControllerManager,
+        71_790_776,
+        "82c0dc57f9d066e4aef869c88386b2e1baacd30d12746dd09e08cf8e41492df8",
+    ),
+    (
+        AssetId::Kubelet,
+        58_089_764,
+        "e48cbb9c62351aa95f455bdae3c9a9e9d7d644027c231ade7a67b868b2be3258",
+    ),
+    (
+        AssetId::KubeProxy,
+        43_204_792,
+        "1c22a8ff41efba86b32d50a24b1d07149e2f8a96a43b914bafd92b984f8f40f0",
+    ),
+    (
+        AssetId::Kine,
+        47_431_544,
+        "1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976",
+    ),
+    (
+        AssetId::Containerd,
+        48_117_256,
+        "0d36f83ad8311019e32e2c15ebe63f9fae841f82d2ffe01b0d54cdc95efe51cb",
+    ),
+    (
+        AssetId::ContainerdShim,
+        2_645_520,
+        "6cfdb015be1d8212a18354d9d11873e9700101866d9b5e4415669b3112dadfd2",
+    ),
+    (
+        AssetId::Crun,
+        1_281_496,
+        "48a16dd40f3aa45cd0dd8a3a62367abd874e16bf356e0daecb8ebfd3276e95b1",
+    ),
+    (
+        AssetId::CniBridge,
+        2_935_354,
+        "e3c56c7d925a520d7c7045105001692da4168302d9cd2ad9f2d3272c22bff035",
+    ),
+    (
+        AssetId::CniHostLocal,
+        2_311_800,
+        "1df67da3b5a6fab15cc99e85436c2ad07ee8857271bda17311b10aa85fa3c9af",
+    ),
+    (
+        AssetId::CniPortmap,
+        2_663_776,
+        "12ada2d3dc71a72d427f16458f003621765b14ac01483f6eeb9f7388ce98ae67",
+    ),
+    (
+        AssetId::CniLoopback,
+        2_281_531,
+        "0aed308e7ca73d9775879faa49b2977973c798d60cf954c51cc3a4015131103c",
+    ),
+    (
+        AssetId::FuseOverlayfsSnapshotter,
+        12_079_288,
+        "e048f9cc616299544fcdcd647cfecba10f60169537721c57e3628ac6c8a0c5c7",
+    ),
+    (
+        AssetId::ImageCoredns,
+        23_563_387,
+        "0d595a7756626ad5446ce4adb5706d4b1927ae48f03ca009ecda54892b84ce49",
+    ),
+    (
+        AssetId::ImagePause,
+        340_417,
+        "a4afc718f83d14fbbdf30d39349451f859fc2b663c302e22bfe80012e4800401",
+    ),
+];
+
+const EXPECTED_ONLINE_ARM64: &[(AssetId, u64, &str)] = &[
+    (
+        AssetId::KubeApiserver,
+        79_888_568,
+        "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1",
+    ),
+    (
+        AssetId::KubeControllerManager,
+        67_043_512,
+        "9125fca53876e58137305cf177bc2c67eab38adc7f2f70cfe1444d124c39d012",
+    ),
+    (
+        AssetId::Kubelet,
+        54_264_100,
+        "0dc3f53fc51f6a6c26c437ec9eded016106ef931db2dd9b3905c656796bed438",
+    ),
+    (
+        AssetId::KubeProxy,
+        40_632_504,
+        "216b76b4ab7f642a1e305f6402a0a466af7cea1287bf89fefb9269396ba04dc2",
+    ),
+    (
+        AssetId::Kine,
+        44_465_296,
+        "ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8",
+    ),
+    (
+        AssetId::Containerd,
+        45_332_336,
+        "b0e4f5a10a8d18e77b276c8cb89638c9d2438579b35286d29ca9fe2521bd2c12",
+    ),
+    (
+        AssetId::ContainerdShim,
+        2_359_700,
+        "a539169644149dc606034a3fc78d4061116ea8b413ac96bc7d1c797244a877bb",
+    ),
+    (
+        AssetId::Crun,
+        1_186_244,
+        "67a4299d7a39b5ed52014092c7c7cf347cccec6716f9083906236ce58006c08c",
+    ),
+    (
+        AssetId::CniBridge,
+        2_696_184,
+        "814c1614ae9e96ae240da32b667f0011d100bec0acdd6835cc83002e58c44d53",
+    ),
+    (
+        AssetId::CniHostLocal,
+        2_132_112,
+        "1c501f73bbeeab9ac680857eed608cc7c6c0653e31a2e0a200a86c70d3bb65ca",
+    ),
+    (
+        AssetId::CniPortmap,
+        2_451_234,
+        "5bccb64a8abbf3c9c86dae0f843b1a72494da4e2858b284a35ad3ca853400eb0",
+    ),
+    (
+        AssetId::CniLoopback,
+        2_106_418,
+        "1005af08976311547fe2b0a41c389c612bfe542622ce2f644e17117c76c8a57f",
+    ),
+    (
+        AssetId::FuseOverlayfsSnapshotter,
+        11_534_520,
+        "eb5e7ace1b1b15ab104f387276d62e1e0405b9925baf99018e0224db3f05cc5e",
+    ),
+    (
+        AssetId::ImageCoredns,
+        21_035_204,
+        "3533745d553d9ada7a5fec2018567473c4c60df3a1646fc129efcdc780708e13",
+    ),
+    (
+        AssetId::ImagePause,
+        277_677,
+        "012543d9e326717065a20db77e054190ae25e6bdfcf68b3e3793d4b55727f0c5",
+    ),
+];
+
+const EXPECTED_OFFLINE_ARM64: &[(AssetId, u64, &str)] = &[
+    (
+        AssetId::KubeApiserver,
+        79_888_568,
+        "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1",
+    ),
+    (
+        AssetId::KubeControllerManager,
+        67_043_512,
+        "9125fca53876e58137305cf177bc2c67eab38adc7f2f70cfe1444d124c39d012",
+    ),
+    (
+        AssetId::Kubelet,
+        54_264_100,
+        "0dc3f53fc51f6a6c26c437ec9eded016106ef931db2dd9b3905c656796bed438",
+    ),
+    (
+        AssetId::KubeProxy,
+        40_632_504,
+        "216b76b4ab7f642a1e305f6402a0a466af7cea1287bf89fefb9269396ba04dc2",
+    ),
+    (
+        AssetId::Kine,
+        44_465_296,
+        "ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8",
+    ),
+    (
+        AssetId::Containerd,
+        45_332_336,
+        "b0e4f5a10a8d18e77b276c8cb89638c9d2438579b35286d29ca9fe2521bd2c12",
+    ),
+    (
+        AssetId::ContainerdShim,
+        2_359_700,
+        "a539169644149dc606034a3fc78d4061116ea8b413ac96bc7d1c797244a877bb",
+    ),
+    (
+        AssetId::Crun,
+        1_186_244,
+        "67a4299d7a39b5ed52014092c7c7cf347cccec6716f9083906236ce58006c08c",
+    ),
+    (
+        AssetId::CniBridge,
+        2_696_184,
+        "814c1614ae9e96ae240da32b667f0011d100bec0acdd6835cc83002e58c44d53",
+    ),
+    (
+        AssetId::CniHostLocal,
+        2_132_112,
+        "1c501f73bbeeab9ac680857eed608cc7c6c0653e31a2e0a200a86c70d3bb65ca",
+    ),
+    (
+        AssetId::CniPortmap,
+        2_451_234,
+        "5bccb64a8abbf3c9c86dae0f843b1a72494da4e2858b284a35ad3ca853400eb0",
+    ),
+    (
+        AssetId::CniLoopback,
+        2_106_418,
+        "1005af08976311547fe2b0a41c389c612bfe542622ce2f644e17117c76c8a57f",
+    ),
+    (
+        AssetId::FuseOverlayfsSnapshotter,
+        11_534_520,
+        "eb5e7ace1b1b15ab104f387276d62e1e0405b9925baf99018e0224db3f05cc5e",
+    ),
+    (
+        AssetId::ImageCoredns,
+        21_035_204,
+        "3533745d553d9ada7a5fec2018567473c4c60df3a1646fc129efcdc780708e13",
+    ),
+    (
+        AssetId::ImagePause,
+        277_677,
+        "012543d9e326717065a20db77e054190ae25e6bdfcf68b3e3793d4b55727f0c5",
+    ),
+    (
+        AssetId::ImageLocalPath,
+        84_212_031,
+        "36f9db385a63293a58c1c8308da6341e59072c78cb3c255766243f002b464373",
+    ),
+    (
+        AssetId::ImageLocalPathHelper,
+        1_912_967,
+        "10d8c9d113fdc1c5fa1cbb2a941dd33f31e0da986e9852c6d5e6024fad052278",
+    ),
+    (
+        AssetId::ImagePortainerAgent,
+        43_659_205,
+        "b138701456bf3e836ca831a7e28cc6581dea14f5f59eb01a8baad6ee4c1de91f",
+    ),
+    (
+        AssetId::ImageD2k,
+        12_129_075,
+        "59aebbc8922ad7ce4b5deb43a1256482d63f9250cf20c85cf9a521453f28a59f",
+    ),
+    (
+        AssetId::ImageKubesolo,
+        85_689_657,
+        "868c6b3b9b563800bbe02b14219f549314138415955d8537d6dc2701c518a678",
+    ),
+];
+
 fn assert_structural_placeholders(raw: &[u8], inventory: &DeclaredInventory) {
     let text = std::str::from_utf8(raw).expect("fixture utf-8");
     for reused in [
@@ -306,16 +582,27 @@ fn assert_structural_placeholders(raw: &[u8], inventory: &DeclaredInventory) {
             "{id:?}"
         );
     }
-    let apiserver = inventory
+    let actual: Vec<(AssetId, u64, &str)> = inventory
         .assets()
-        .find(|(id, _)| *id == AssetId::KubeApiserver);
-    let Some((_, Delivery::Bundled { sha256, .. })) = apiserver else {
-        panic!("kube-apiserver pin missing");
+        .filter_map(|(id, delivery)| match delivery {
+            Delivery::Bundled {
+                encoded_bytes,
+                sha256,
+                ..
+            } => Some((id, *encoded_bytes, sha256.as_str())),
+            _ => None,
+        })
+        .collect();
+    let expected = match (
+        inventory.request().target.architecture,
+        inventory.request().variant,
+    ) {
+        (Architecture::Amd64, Variant::Online) => EXPECTED_ONLINE_AMD64,
+        (Architecture::Arm64, Variant::Online) => EXPECTED_ONLINE_ARM64,
+        (Architecture::Arm64, Variant::Offline) => EXPECTED_OFFLINE_ARM64,
+        other => panic!("unexpected fixture {other:?}"),
     };
-    assert_eq!(
-        sha256,
-        "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"
-    );
+    assert_eq!(actual.as_slice(), expected);
 }
 #[test]
 fn absent_or_truncated_manifest_bytes_fail_before_inventory_validation() {

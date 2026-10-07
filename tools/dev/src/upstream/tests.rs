@@ -387,3 +387,96 @@ fn duplicate_zip_namespace_is_rejected_even_when_archive_hash_is_redeclared() {
     r["files"] = json!([]);
     assert!(archive_members(&raw, &r).is_err());
 }
+#[test]
+fn manifest_validates_payload_binaries() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("inputs.json");
+    let mut valid = json!({
+        "schema_version": 1,
+        "sources": [],
+        "protoc_archives": [],
+        "payload_binaries": [{
+            "id": "my-bin",
+            "platform": "linux-amd64",
+            "url": "https://example.invalid/bin",
+            "bytes": 10,
+            "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        }],
+    });
+    fs::write(&path, serde_json::to_vec(&valid).unwrap()).unwrap();
+    assert!(manifest(&path).is_ok());
+
+    valid["payload_binaries"][0]["url"] = "http://example.invalid/bin".into();
+    fs::write(&path, serde_json::to_vec(&valid).unwrap()).unwrap();
+    assert!(manifest(&path).is_err());
+
+    valid["payload_binaries"][0]["url"] = "https://example.invalid/bin".into();
+    valid["payload_binaries"][0]["id"] = "../evil".into();
+    fs::write(&path, serde_json::to_vec(&valid).unwrap()).unwrap();
+    assert!(manifest(&path).is_err());
+
+    valid["payload_binaries"][0]["id"] = "my-bin".into();
+    valid["payload_binaries"][0]["platform"] = "bad/platform".into();
+    fs::write(&path, serde_json::to_vec(&valid).unwrap()).unwrap();
+    assert!(manifest(&path).is_err());
+}
+#[test]
+fn verify_payloads_is_offline_and_validates_platform_records() {
+    let dir = tempfile::tempdir().unwrap();
+    let bin_data = b"#!/bin/sh\necho payload\n";
+    let mut payload = record(bin_data);
+    payload["id"] = "test-binary".into();
+    payload["platform"] = "linux-amd64".into();
+    payload["url"] = "https://example.invalid/test-binary".into();
+
+    let inputs = json!({
+        "schema_version": 1,
+        "payload_binaries": [payload],
+    });
+
+    let err = verify_payloads(&inputs, dir.path(), "linux-amd64").unwrap_err();
+    assert!(err.to_string().contains("missing prepared payload"));
+
+    atomic_write(
+        dir.path(),
+        "payloads/linux-amd64/test-binary",
+        bin_data,
+        true,
+    )
+    .unwrap();
+    assert!(verify_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
+
+    fs::write(
+        dir.path().join("payloads/linux-amd64/test-binary"),
+        b"corrupted",
+    )
+    .unwrap();
+    let err = verify_payloads(&inputs, dir.path(), "linux-amd64").unwrap_err();
+    assert!(err.to_string().contains("length or SHA-256 mismatch"));
+
+    assert!(verify_payloads(&inputs, dir.path(), "linux-arm64").is_err());
+}
+#[test]
+fn fetch_payloads_with_existing_valid_cache_never_needs_network() {
+    let dir = tempfile::tempdir().unwrap();
+    let bin_data = b"echo test";
+    let mut payload = record(bin_data);
+    payload["id"] = "cached-bin".into();
+    payload["platform"] = "linux-amd64".into();
+    payload["url"] = "https://example.invalid/cached-bin".into();
+
+    let inputs = json!({
+        "schema_version": 1,
+        "payload_binaries": [payload],
+    });
+
+    atomic_write(
+        dir.path(),
+        "payloads/linux-amd64/cached-bin",
+        bin_data,
+        true,
+    )
+    .unwrap();
+    assert!(fetch_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
+    assert!(verify_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
+}

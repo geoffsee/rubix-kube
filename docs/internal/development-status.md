@@ -132,8 +132,8 @@ Outcome: Completed
 Readiness: Complete
 Ownership: Unassigned
 Stack: payload/pin-digests
-Evidence: Pinned deterministic encoded-byte sizes and SHA-256 digests adhering to CATALOG.md G11 encoding rules for all non-Kubernetes rows across online-amd64.json, online-arm64.json, and offline-arm64.json. Pinned official Kubernetes v1.35.7 and Kine v0.16.3 amd64 rows in online-amd64.json. Replaced all synthetic/placeholder digests in asset test fixtures; rubix-assets tests, formatting, lints, and language policy pass cleanly.
-Next step: None; timestamp: 2026-10-07T17:35:00Z
+Evidence: Pinned deterministic encoded-byte sizes and SHA-256 digests adhering to CATALOG.md G11 encoding rules for all non-Kubernetes rows across online-amd64.json, online-arm64.json, and offline-arm64.json. Pinned official Kubernetes v1.35.7 and Kine v0.16.3 amd64 rows in online-amd64.json. Replaced all synthetic/placeholder digests in asset test fixtures with exact tuple assertions. Added upstream sources, SPDX licenses, and image_manifests to docs/architecture/upstream-inputs.json, and payload_binaries with offline verify-payloads and explicit fetch-payloads commands in tools/upstream/inputs.json and rubix-upstream. rubix-assets and rubix-dev tests, formatting, lints, and language policy pass cleanly.
+Next step: None; timestamp: 2026-10-07T19:20:00Z
 
 Work item: E32.02 (https://github.com/geoffsee/rubix-kube/issues/339); Parent criteria 2, 3
 Outcome: Pending

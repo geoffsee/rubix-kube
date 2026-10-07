@@ -160,6 +160,23 @@ pub(crate) fn manifest(path: &Path) -> Result<Value> {
             validate_record(r)?;
         }
     }
+    if let Some(payloads) = v.get("payload_binaries") {
+        for r in payloads.as_array().ok_or("invalid payload_binaries")? {
+            validate_record(r)?;
+            let url = text(r, "url")?;
+            if !url.starts_with("https://") {
+                return fail("payload binary downloads require HTTPS");
+            }
+            let id = text(r, "id")?;
+            if safe_relative(id)?.len() != 1 {
+                return fail("payload binary id must be a direct child");
+            }
+            let platform = text(r, "platform")?;
+            if safe_relative(platform)?.len() != 1 {
+                return fail("payload binary platform must be a direct child");
+            }
+        }
+    }
     Ok(v)
 }
 pub(crate) fn host_platform() -> String {
@@ -470,6 +487,83 @@ pub(crate) fn fetch(inputs: &Value, cache: &Path, selected: &str) -> Result<()> 
     verify(inputs, cache, selected, None)?;
     Ok(())
 }
+pub(crate) fn payload_records<'a>(inputs: &'a Value, selected: &str) -> Result<Vec<&'a Value>> {
+    let records: Vec<&'a Value> = array(inputs, "payload_binaries")?
+        .iter()
+        .filter(|r| r.get("platform").and_then(Value::as_str) == Some(selected))
+        .collect();
+    if records.is_empty() {
+        return fail(format!(
+            "no locked payload binaries for platform {selected}"
+        ));
+    }
+    Ok(records)
+}
+pub(crate) fn verify_payloads(inputs: &Value, cache: &Path, selected: &str) -> Result<()> {
+    for r in payload_records(inputs, selected)? {
+        let id = text(r, "id")?;
+        let name = format!("payloads/{selected}/{id}");
+        let p = owned_path(cache, &name)?;
+        let data = fs::read(&p).map_err(|e| {
+            format!(
+                "missing prepared payload {}; run fetch-payloads explicitly: {e}",
+                p.display()
+            )
+        })?;
+        validate_bytes(&data, r, &format!("payload {id}"))?;
+    }
+    Ok(())
+}
+pub(crate) fn fetch_payloads(inputs: &Value, cache: &Path, selected: &str) -> Result<()> {
+    for r in payload_records(inputs, selected)? {
+        let id = text(r, "id")?;
+        let name = format!("payloads/{selected}/{id}");
+        let p = owned_path(cache, &name)?;
+        if p.exists() {
+            let data = fs::read(&p)?;
+            validate_bytes(&data, r, &format!("payload {id}"))?;
+        } else {
+            let url = text(r, "url")?;
+            if !url.starts_with("https://") {
+                return fail("payload binary downloads require HTTPS");
+            }
+            let temp = tempfile::NamedTempFile::new()?;
+            let download = run(
+                Command::new("curl")
+                    .args([
+                        "--fail",
+                        "--location",
+                        "--proto",
+                        "=https",
+                        "--proto-redir",
+                        "=https",
+                        "--max-time",
+                        "300",
+                        "--max-filesize",
+                        &r["bytes"].to_string(),
+                        "--user-agent",
+                        "rubix-upstream/1",
+                        "--output",
+                    ])
+                    .arg(temp.path())
+                    .arg(url),
+                305,
+            );
+            if let Err(error) = download {
+                if uncertain(&error) {
+                    let (_, path) = temp.keep()?;
+                    eprintln!("retained uncertain download: {}", path.display());
+                }
+                return Err(error);
+            }
+            let data = fs::read(temp.path())?;
+            validate_bytes(&data, r, url)?;
+            atomic_write(cache, &name, &data, true)?;
+        }
+    }
+    verify_payloads(inputs, cache, selected)?;
+    Ok(())
+}
 pub fn cli(args: &[String]) -> Result<()> {
     with_execution(|| cli_inner(args))
 }
@@ -479,7 +573,7 @@ fn cli_inner(args: &[String]) -> Result<()> {
         .any(|arg| matches!(arg.as_str(), "--help" | "-h"))
     {
         println!(
-            "rubix-upstream <fetch|verify|generate-cri|check-cri|generate-containerd|check-containerd|check-kubernetes-bindings>\n  --cache-dir PATH --platform PLATFORM --protoc PATH --generator PATH --output-dir PATH"
+            "rubix-upstream <fetch|verify|fetch-payloads|verify-payloads|generate-cri|check-cri|generate-containerd|check-containerd|check-kubernetes-bindings>\n  --cache-dir PATH --platform PLATFORM --protoc PATH --generator PATH --output-dir PATH"
         );
         return Ok(());
     }
@@ -522,6 +616,14 @@ fn cli_inner(args: &[String]) -> Result<()> {
         "verify" => {
             verify(&inputs, &cache, &platform, alternate)?;
             json!({"status":"verified","platform":platform})
+        },
+        "fetch-payloads" => {
+            fetch_payloads(&inputs, &cache, &platform)?;
+            json!({"status":"payloads-prepared","platform":platform})
+        },
+        "verify-payloads" => {
+            verify_payloads(&inputs, &cache, &platform)?;
+            json!({"status":"payloads-verified","platform":platform})
         },
         "check-kubernetes-bindings" => kubernetes::check(&inputs, &cache, &root)?,
         "generate-cri" | "check-cri" | "generate-containerd" | "check-containerd" => {
