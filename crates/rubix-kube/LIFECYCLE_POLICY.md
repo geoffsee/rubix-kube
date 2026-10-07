@@ -30,7 +30,7 @@ graph deadline, cleanup with a blocked dependent, dependency waiting and oversiz
 deadline rejection. Run:
 
 ```sh
-cargo test -p rubix-kube --locked --test lifecycle_policy
+cargo test -p rubix-kube --locked --test suite lifecycle_policy::
 ```
 
 Concrete component registration and full distribution startup remain separate

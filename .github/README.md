@@ -31,10 +31,13 @@ branch. All PR edits, including title/body edits, run validation with the same r
 names. During rollout, metadata-only skipped suites left native stack merges reporting missing
 checks despite earlier successful runs. Full validation avoids that ambiguity; caches and
 cancellation limit repeated work. Merge-group events are supported if a merge queue is introduced.
-Pull requests run debug tests for all targets and doctests. Commands use the committed lockfile
-and toolchain rather than a moving Rust channel.
+Pull requests run debug tests for all targets with `cargo nextest run --profile ci`, then
+doctests with `cargo test --doc`. Nextest writes `target/nextest/ci/results.xml`, and the test reporter publishes
+that JUnit report as a check. Commands use the committed lockfile and toolchain rather than a
+moving Rust channel.
 
-Release tests, doctests, the `rubix-kube` and `rubixctl` `--profile dist` build, and upstream
+Release tests use the same nextest profile with `--release`, followed by release doctests. The
+`rubix-kube` and `rubixctl` `--profile dist` build and upstream
 input verification run from [landing.yml](workflows/landing.yml) on default-branch pushes and
 merge groups. They are not pull-request checks. Qodana scans run from
 [code_quality.yml](workflows/code_quality.yml) on pushes to `main` only. GitHub applies one required-check list to a

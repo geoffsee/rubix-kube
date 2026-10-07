@@ -12,7 +12,7 @@ fresh output, then point the published-binding Rust tests at that same capture:
 cargo run --locked -p rubix-dev --bin rubix-api-json -- capture --output "$RUNNER_TEMP/api-json-capture"
 cargo run --locked -p rubix-dev --bin rubix-api-json -- check-capture "$RUNNER_TEMP/api-json-capture"
 RUBIX_API_JSON_CAPTURE_DIR="$RUNNER_TEMP/api-json-capture" \
-  cargo test -p rubix-upstream-codegen --test api_json --locked
+  cargo test -p rubix-upstream-codegen --test suite api_json:: --locked
 ```
 
 The capture directory must be new for each execution; do not cache successful evidence

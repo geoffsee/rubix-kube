@@ -170,7 +170,12 @@ fn send(child: &mut OwnedChild, signal: &str) {
 }
 fn run_case(mode: &str, signal: &str, repeated: bool) {
     let child = Command::new(std::env::current_exe().unwrap())
-        .args(["--ignored", "--exact", "signal_child", "--nocapture"])
+        .args([
+            "--ignored",
+            "--exact",
+            "signals::signal_child",
+            "--nocapture",
+        ])
         .env_clear()
         .env("RUBIX_SIGNAL_FIXTURE", mode)
         .env("RUBIX_EXPECT_SIGNAL", signal)

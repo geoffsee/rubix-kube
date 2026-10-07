@@ -51,7 +51,7 @@ reference input, without inventing another architecture or a reference number.
 cargo run --locked -p rubix-dev --bin rubix-perf -- profile \
   --reference tools/perf/fixtures/amd64-reference-go.json \
   --candidate tools/perf/fixtures/amd64-candidate-rust.json
-cargo test --locked -p rubix-dev --test budget_profiling
+cargo test --locked -p rubix-dev --test suite budget_profiling::
 ```
 
 The profile command prints an unqualified input comparison and exits nonzero.

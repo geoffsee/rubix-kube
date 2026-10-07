@@ -16,7 +16,7 @@ use tempfile::{TempDir, tempdir};
 /// Disposable nested-runtime fixture providing isolated directories for cgroups,
 /// mounts, sysctl, PKI, and storage without requiring any host mutations.
 #[derive(Debug)]
-pub struct DisposableNestedRuntimeFixture {
+struct DisposableNestedRuntimeFixture {
     pub dir: TempDir,
     pub pki_dir: PathBuf,
     pub datastore_dir: PathBuf,
@@ -32,7 +32,7 @@ impl Default for DisposableNestedRuntimeFixture {
 }
 
 impl DisposableNestedRuntimeFixture {
-    pub fn new() -> Self {
+    fn new() -> Self {
         let dir = tempdir().expect("failed to create temp dir for nested fixture");
         let root = dir.path();
 
@@ -59,7 +59,7 @@ impl DisposableNestedRuntimeFixture {
     }
 
     /// Configures simulated cgroup v2 environment with specified available controllers.
-    pub fn setup_cgroup_v2(&self, controllers: &[&str]) {
+    fn setup_cgroup_v2(&self, controllers: &[&str]) {
         let controllers_path = self.cgroup_dir.join("cgroup.controllers");
         fs::write(&controllers_path, format!("{}\n", controllers.join(" "))).unwrap();
         let subtree_path = self.cgroup_dir.join("cgroup.subtree_control");
@@ -67,7 +67,7 @@ impl DisposableNestedRuntimeFixture {
     }
 
     /// Configures simulated cgroup v1 environment (no cgroup.controllers).
-    pub fn setup_cgroup_v1(&self) {
+    fn setup_cgroup_v1(&self) {
         let controllers_path = self.cgroup_dir.join("cgroup.controllers");
         if controllers_path.exists() {
             let _ = fs::remove_file(controllers_path);
@@ -75,7 +75,7 @@ impl DisposableNestedRuntimeFixture {
     }
 
     /// Configures simulated IPv6 sysctls.
-    pub fn setup_ipv6_sysctls(&self, initial_value: &str) {
+    fn setup_ipv6_sysctls(&self, initial_value: &str) {
         for target in ["all", "default", "lo"] {
             let target_dir = self.proc_ipv6_dir.join(target);
             fs::create_dir_all(&target_dir).unwrap();
@@ -88,7 +88,7 @@ impl DisposableNestedRuntimeFixture {
     }
 
     /// Returns a simulated `ContainerEnvironment` bound strictly within this disposable fixture.
-    pub fn container_environment(&self) -> ContainerEnvironment {
+    fn container_environment(&self) -> ContainerEnvironment {
         ContainerEnvironment::new_simulated(
             self.dir.path().to_path_buf(),
             self.cgroup_dir.clone(),
@@ -97,7 +97,7 @@ impl DisposableNestedRuntimeFixture {
     }
 
     /// Creates and initializes the API server, PKI, and `KubeletService` in container mode.
-    pub async fn boot_kubelet(
+    async fn boot_kubelet(
         &self,
         node_name: &str,
         node_ip_str: &str,

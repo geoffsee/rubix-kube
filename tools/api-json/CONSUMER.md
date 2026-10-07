@@ -6,8 +6,8 @@ Eight focused tests passed on Rust 1.97.1, along with warnings-denied Clippy and
 No server recapture or generated binding edits were needed for these tests.
 
 ```sh
-cargo test -p rubix-upstream-codegen --test api_json --locked
-cargo clippy -p rubix-upstream-codegen --test api_json --locked -- -D warnings
+cargo test -p rubix-upstream-codegen --test suite api_json:: --locked
+cargo clippy -p rubix-upstream-codegen --test suite --locked -- -D warnings
 cargo fmt-check
 ```
 

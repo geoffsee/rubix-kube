@@ -104,7 +104,7 @@ its captured synthetic secret is absent. An unread capacity-one queue does not
 extend the existing 35-second shutdown deadline. These are cooperative unit tests,
 not Kubernetes API availability qualification.
 
-Run `cargo test -p rubix-kube --locked --test lifecycle_logs` and the corresponding
+Run `cargo test -p rubix-kube --locked --test suite lifecycle_logs::` and the corresponding
 release-mode test, then strict package Clippy. No registry package is added: this
 uses existing serde_json and the already-locked supervisor/Tokio dependencies.
 Caller-owned writer delivery and flush policy now live in `LIFECYCLE_SINK.md`.

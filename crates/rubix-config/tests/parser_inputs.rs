@@ -6,7 +6,11 @@ use std::time::{Duration, Instant};
 #[test]
 fn unicode_inputs_complete_within_deadline() {
     let mut child = Command::new(std::env::current_exe().expect("test executable"))
-        .args(["--exact", "parser_inputs_worker", "--nocapture"])
+        .args([
+            "--exact",
+            "parser_inputs::parser_inputs_worker",
+            "--nocapture",
+        ])
         .env("RUBIX_PARSER_INPUTS_WORKER", "1")
         .stdin(Stdio::null())
         .spawn()

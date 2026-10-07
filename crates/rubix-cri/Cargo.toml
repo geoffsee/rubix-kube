@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+autotests = false
 
 [dependencies]
 hyper-util = { version = "=0.1.21", default-features = false, features = ["tokio"] }
@@ -21,3 +22,7 @@ tokio = { version = "=1.53.1", features = ["test-util"] }
 
 [lints]
 workspace = true
+
+[[test]]
+name = "suite"
+path = "tests/suite.rs"
