@@ -110,3 +110,147 @@ Ownership: Unassigned
 Stack: release/acceptance-ledger
 Evidence: `rubix-qualification --metadata-only` audits declared repository metadata without fetching inputs or observing candidate artifacts. Normal `rubix-qualification` and `run_release_qualification` fail closed because validated current candidate-bound completion receipt verification is unavailable. All 11 Roadmap #263 completion criteria remain pending; synthetic fixtures and document presence do not qualify live behavior or a release.
 Next step: Implement trusted candidate-bound receipt readers and obtain the missing live qualification, operator rehearsal and publication evidence; timestamp: 2026-10-04T15:00:00Z
+
+Work item: E31.01 (https://github.com/geoffsee/rubix-kube/issues/335); Parent criteria 1, 2
+Outcome: Completed
+Readiness: Done
+Ownership: Unassigned
+Stack: docs/adr-amendment
+Evidence: ADR amendment recorded in experiments/component-boundary/ADR.md selecting Option B (in-process Rust control plane matching NodeRuntime with rubix-datastore, rubix-apiserver, rubix-controller and pending rubix-kubelet/rubix-proxy adapters, retaining managed containerd and runtime shims). Compatibility contract, acceptance matrix, and AGENTS.md updated accordingly, merged via PR #361.
+Next step: None; timestamp: 2026-10-07T13:45:00Z
+
+Work item: E31.02 (https://github.com/geoffsee/rubix-kube/issues/336); Parent criteria 3, 4
+Outcome: In progress
+Readiness: Done
+Ownership: Unassigned
+Stack: docs/restore-ledger
+Evidence: docs/internal/development-status.md restored on main and extended with 18 ledger rows covering E31–E37 child issues. Roadmap #263 disposition written and closed with delivered vs pending gates. PR #333 closed with podman-kubelet experiment evidence preserved under experiments/podman-kubelet. Link integrity tests pass.
+Next step: None; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E32.01 (https://github.com/geoffsee/rubix-kube/issues/338); Parent criteria 1
+Outcome: Pending
+Readiness: Ready to start
+Ownership: Unassigned
+Stack: payload/pin-digests
+Evidence: Non-Kubernetes payload rows in upstream-inputs.json and rubix-assets manifests (containerd, shim, crun, CNI, pause, addon images) retain placeholder digests pending verified network pin operations.
+Next step: Pin real content digests, sizes, sources, and licenses for non-Kubernetes payload rows per architecture via tools/upstream conventions; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E32.02 (https://github.com/geoffsee/rubix-kube/issues/339); Parent criteria 2, 3
+Outcome: Pending
+Readiness: Blocked on E32.01
+Ownership: Unassigned
+Stack: build/node-cells
+Evidence: 16 node archive cells and 4 management targets have not yet been built from clean checkout; disposable-host install smoke of arm64/glibc cell pending.
+Next step: Produce clean-checkout builds of all 16 cells and 4 management targets with build receipts and run disposable-host smoke install of arm64/glibc cell; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E33.01 (https://github.com/geoffsee/rubix-kube/issues/341); Parent criteria 1, 2
+Outcome: Pending
+Readiness: Ready to start
+Ownership: Unassigned
+Stack: runtime/datastore-api-boundary
+Evidence: NodeRuntime in-process datastore and API components selected by Option B require startup on disposable Linux arm64 host with loopback mTLS and credential authentication proofs.
+Next step: Start rubix-datastore and rubix-apiserver in NodeRuntime on disposable Linux arm64 host, verify dedicated datastore CA mTLS positive/negative cases, and produce receipt; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E33.02 (https://github.com/geoffsee/rubix-kube/issues/342); Parent criteria 1, 2
+Outcome: Pending
+Readiness: Blocked on E33.01, E32.01
+Ownership: Unassigned
+Stack: runtime/linux-workloads
+Evidence: Workload path (managed containerd, CNI bridge, kubelet, kube-proxy, CoreDNS) not yet brought up on disposable Linux host; pod execution, DNS resolution, and reverse-order shutdown pending.
+Next step: Bring up containerd, CNI, kubelet, proxy, and CoreDNS on Linux arm64 node, verify pod lifecycle and DNS resolution, and record cleanup inventory in receipt; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E33.03 (https://github.com/geoffsee/rubix-kube/issues/343); Parent criteria 2, 3
+Outcome: Pending
+Readiness: Ready to start
+Ownership: Unassigned
+Stack: ci/disposable-linux-job
+Evidence: Disposable Linux node workflow job in .github/workflows/integration.yml on ubuntu-24.04-arm runner not yet added; receipt generation helper pending.
+Next step: Add integration.yml workflow job on ubuntu-24.04-arm runner executing node lifecycle and producing schema-2 integration receipts; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E34.01 (https://github.com/geoffsee/rubix-kube/issues/345); Parent criteria 1, 3
+Outcome: Pending
+Readiness: Ready to start
+Ownership: Unassigned
+Stack: kubelet/cri-provider
+Evidence: RuntimeProvider implementation over rubix_cri::CriClient for containerd not yet implemented in crates/rubix-kubelet; socket-gated reconciler suite and log parsing pending.
+Next step: Implement CriRuntimeProvider in crates/rubix-kubelet forwarding to CriClient over Unix socket, with CRI log parsing and Linux socket-gated tests; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E34.02 (https://github.com/geoffsee/rubix-kube/issues/346); Parent criteria 2, 3
+Outcome: Pending
+Readiness: Ready to start
+Ownership: Unassigned
+Stack: kubelet/workload-gaps
+Evidence: Workload gaps recorded in experiments/podman-kubelet/README.md (volume mounts, container ports, resource limits, init containers, probes, preStop, logs -f, Table responses, default namespaces) remain open in rubix-kubelet and rubix-apiserver.
+Next step: Implement volume mounts, init containers, probes, Table responses, and default namespace bootstrap, recording any deferred items in compatibility contract; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E35.01 (https://github.com/geoffsee/rubix-kube/issues/348); Parent criteria 1, 2
+Outcome: Pending
+Readiness: Ready to start
+Ownership: Unassigned
+Stack: qual/receipt-schema-reader
+Evidence: Candidate-bound receipt schema and trusted reader in tools/dev/src/release_qualification not yet implemented; check_criterion_* functions currently return pending stubs.
+Next step: Implement versioned receipt schema and trusted reader validating candidate digests, binding receipts to the 11 completion criteria; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E35.02 (https://github.com/geoffsee/rubix-kube/issues/349); Parent criteria 2, 3
+Outcome: Pending
+Readiness: Blocked on E35.01
+Ownership: Unassigned
+Stack: release/receipt-report-binding
+Evidence: rubix-release assemble and verify currently consume diagnostic fixtures rather than validated receipts; docs/release reports carry UNQUALIFIED_FIXTURE_ONLY headers.
+Next step: Bind rubix-release assemble/verify to validated receipts from E35.01 and cell inventory from E32.02, regenerating docs/release reports from receipts; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E36.01 (https://github.com/geoffsee/rubix-kube/issues/351); Parent criteria 1, 3
+Outcome: Pending
+Readiness: Blocked on G04, E35.01
+Ownership: Unassigned
+Stack: qual/conformance-suites
+Evidence: Conformance suite subsets and manifest tiers have not been run against the candidate Linux node; receipt generation and candidate digest binding pending.
+Next step: Document conformance suite selection/exclusions, run smoke and manifest tiers against Linux candidate, and generate validated receipts; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E36.02 (https://github.com/geoffsee/rubix-kube/issues/352); Parent criteria 1, 2, 3
+Outcome: Pending
+Readiness: Blocked on G04, E35.01
+Ownership: Unassigned
+Stack: qual/recovery-soak-linux
+Evidence: Live recovery rehearsal and 24-hour soak on Linux candidate not executed; component restart, outage escalation, reboot state preservation, and memory growth bound unverified.
+Next step: Execute rubix-recovery-rehearsal and 24-hour rubix-platform-soak on disposable Linux host with candidate bytes, capturing validated receipts; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E36.03 (https://github.com/geoffsee/rubix-kube/issues/353); Parent criteria 1, 3
+Outcome: Pending
+Readiness: Blocked on G04, E35.01
+Ownership: Unassigned
+Stack: perf/paired-hardware-budgets
+Evidence: Paired live performance captures on matched Linux hardware (boot-to-API, idle PSS, distribution size, shutdown, 24h memory) not yet collected; synthetic candidate fixtures remain in place.
+Next step: Ingest live rubix-perf captures for arm64 and amd64, evaluating rebaseline policy with rubix-perf gate-ci; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E36.04 (https://github.com/geoffsee/rubix-kube/issues/354); Parent criteria 1, 3
+Outcome: Pending
+Readiness: Blocked on G01, G04, E35.01
+Ownership: Unassigned
+Stack: migration/live-rehearsal
+Evidence: Live Go-to-Rust migration rehearsal on Linux not yet performed; Kine SQLite backup, Option B explicit export/import state preservation, rollback, and interrupted-stage recovery pending.
+Next step: Execute live migration and interrupted recovery rehearsal across supported starting versions, measuring downtime and validating receipts; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E36.05 (https://github.com/geoffsee/rubix-kube/issues/355); Parent criteria 1, 3
+Outcome: Pending
+Readiness: Blocked on G04, E32.01, E35.01
+Ownership: Unassigned
+Stack: qual/addons-egress-d2k
+Evidence: Addon execution under denied egress, PVC provisioning with pinned BusyBox helper, Portainer object preservation, and live D2K mTLS authentication checks pending.
+Next step: Verify offline addon image acquisition with egress denied, test D2K client certificate authentication positive/negative cases, and validate receipts; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E37.01 (https://github.com/geoffsee/rubix-kube/issues/357); Parent criteria 1
+Outcome: Pending
+Readiness: Blocked on G06, E32.02, E36.04
+Ownership: Unassigned
+Stack: release/operator-rehearsal
+Evidence: Fresh-operator rehearsal from docs alone on disposable Linux host not yet run; candidate artifact install, workload, metrics, migration, and recovery runbooks unverified by independent operator.
+Next step: Run operator rehearsal following docs/operator on disposable Linux host with candidate artifacts, capturing receipt and resolving any doc divergence; timestamp: 2026-10-07T14:15:00Z
+
+Work item: E37.02 (https://github.com/geoffsee/rubix-kube/issues/358); Parent criteria 2
+Outcome: Pending
+Readiness: Blocked on E37.01, G06, E35.02
+Ownership: Unassigned
+Stack: release/publish-signoff
+Evidence: Release publication workflow release.yml and Gate C17 project signoff remain pending; all 11 roadmap completion criteria require validated receipts bound to published digests.
+Next step: Publish qualified candidate artifacts, verify rubix-qualification zero exit against published digests, and update docs/architecture/project-signoff.md to record Gate C17; timestamp: 2026-10-07T14:15:00Z

@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-short
+  namespace: default
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  containers:
+  - name: hello
+    image: localhost/rubix-hello:latest
+    imagePullPolicy: Never
+    command: ["/rubix-hello", "3"]
+    resources:
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+        ephemeral-storage: "50Mi"
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+        ephemeral-storage: "10Mi"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-fail
+  namespace: default
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  containers:
+  - name: hello
+    image: localhost/rubix-hello:latest
+    imagePullPolicy: Never
+    command: ["/rubix-hello", "fail"]
+    resources:
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+        ephemeral-storage: "50Mi"
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+        ephemeral-storage: "10Mi"
