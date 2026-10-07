@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lint, test, and dependency policy checks before commits leave this clone.
+# Lint, tests, doctests, language policy, and dependency checks before commits leave this clone.
 
 set -euo pipefail
 
@@ -12,4 +12,6 @@ run() {
 
 run cargo lint
 run cargo test-all --locked
+run cargo test --locked --workspace --doc --all-features
+run cargo run --locked -p rubix-dev --bin rubix-language-policy
 run cargo deny check
