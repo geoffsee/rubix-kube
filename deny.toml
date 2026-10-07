@@ -23,7 +23,7 @@ deny = [
     { crate = "native-tls", use-instead = "rustls" },
     { crate = "git2", use-instead = "gix" },
 ]
-skip = [{ name = "base64" }, { name = "syn" }]
+skip = [{ name = "base64" }, { name = "syn" }, { name = "untrusted" }]
 skip-tree = []
 
 [bans.std-replacements]

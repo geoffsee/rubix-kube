@@ -63,6 +63,10 @@ impl ClusterPki {
         let req_ca_key = dir.join("request-header-ca.key");
         ensure_ca(&req_ca_crt, &req_ca_key, "request-header-ca")?;
 
+        let ds_ca_crt = dir.join("datastore-ca.crt");
+        let ds_ca_key = dir.join("datastore-ca.key");
+        ensure_ca(&ds_ca_crt, &ds_ca_key, "datastore-ca")?;
+
         // 2. Service Account Key
         let sa_key = dir.join("service-account.key");
         ensure_service_account_key(&sa_key)?;
@@ -243,6 +247,30 @@ impl ClusterPki {
             &ca_key,
             &[],
             &[],
+        )?;
+
+        // Datastore Server
+        let ds_server_dns = vec!["localhost".to_string()];
+        let ds_server_ips = vec!["127.0.0.1".parse().unwrap()];
+        handle_leaf(
+            "datastore-server",
+            Component::DatastoreServer,
+            &ds_ca_crt,
+            &ds_ca_key,
+            &ds_server_dns,
+            &ds_server_ips,
+        )?;
+
+        // Datastore Client
+        let ds_client_dns = vec!["localhost".to_string()];
+        let ds_client_ips = vec!["127.0.0.1".parse().unwrap()];
+        handle_leaf(
+            "datastore-client",
+            Component::DatastoreClient,
+            &ds_ca_crt,
+            &ds_ca_key,
+            &ds_client_dns,
+            &ds_client_ips,
         )?;
 
         // 4. Kubeconfigs

@@ -243,6 +243,7 @@ impl RbacAuthorizer {
                         "create".to_string(),
                         "update".to_string(),
                         "patch".to_string(),
+                        "delete".to_string(),
                     ],
                     api_groups: vec![String::new()],
                     resources: vec![

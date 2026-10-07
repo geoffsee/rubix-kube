@@ -359,6 +359,7 @@ impl KubernetesApiClient {
                     "singularName": "namespace",
                     "namespaced": false,
                     "kind": "Namespace",
+                    "shortNames": ["ns"],
                     "verbs": ["create", "delete", "get", "list", "watch"]
                 },
                 {
@@ -366,6 +367,7 @@ impl KubernetesApiClient {
                     "singularName": "configmap",
                     "namespaced": true,
                     "kind": "ConfigMap",
+                    "shortNames": ["cm"],
                     "verbs": ["create", "delete", "get", "list", "update", "watch"]
                 },
                 {
@@ -380,6 +382,43 @@ impl KubernetesApiClient {
                     "singularName": "pod",
                     "namespaced": true,
                     "kind": "Pod",
+                    "shortNames": ["po"],
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "services",
+                    "singularName": "service",
+                    "namespaced": true,
+                    "kind": "Service",
+                    "shortNames": ["svc"],
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "serviceaccounts",
+                    "singularName": "serviceaccount",
+                    "namespaced": true,
+                    "kind": "ServiceAccount",
+                    "verbs": ["create", "delete", "get", "list", "watch"]
+                },
+                {
+                    "name": "nodes",
+                    "singularName": "node",
+                    "namespaced": false,
+                    "kind": "Node",
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "persistentvolumeclaims",
+                    "singularName": "persistentvolumeclaim",
+                    "namespaced": true,
+                    "kind": "PersistentVolumeClaim",
+                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
+                },
+                {
+                    "name": "persistentvolumes",
+                    "singularName": "persistentvolume",
+                    "namespaced": false,
+                    "kind": "PersistentVolume",
                     "verbs": ["create", "delete", "get", "list", "update", "watch"]
                 }
             ]
@@ -474,6 +513,24 @@ impl KubernetesApiClient {
         }))
     }
 
+    fn namespaced_resource(name: &str, singular: &str, kind: &str) -> Value {
+        let short_names: &[&str] = match name {
+            "deployments" => &["deploy"],
+            "replicasets" => &["rs"],
+            "statefulsets" => &["sts"],
+            "daemonsets" => &["ds"],
+            _ => &[],
+        };
+        json!({
+            "name": name,
+            "singularName": singular,
+            "namespaced": true,
+            "kind": kind,
+            "shortNames": short_names,
+            "verbs": ["create", "delete", "get", "list", "update", "watch"]
+        })
+    }
+
     pub fn discover_group_resources(
         &self,
         group: &str,
@@ -520,13 +577,14 @@ impl KubernetesApiClient {
                 }));
             },
             ("apps", "v1") => {
-                resources.push(json!({
-                    "name": "deployments",
-                    "singularName": "deployment",
-                    "namespaced": true,
-                    "kind": "Deployment",
-                    "verbs": ["create", "delete", "get", "list", "update", "watch"]
-                }));
+                for (name, singular, kind) in [
+                    ("deployments", "deployment", "Deployment"),
+                    ("replicasets", "replicaset", "ReplicaSet"),
+                    ("statefulsets", "statefulset", "StatefulSet"),
+                    ("daemonsets", "daemonset", "DaemonSet"),
+                ] {
+                    resources.push(Self::namespaced_resource(name, singular, kind));
+                }
             },
             _ => {},
         }
@@ -595,7 +653,7 @@ impl KubernetesApiClient {
             "kind": "Namespace",
             "metadata": {
                 "name": name,
-                "creationTimestamp": "2026-09-30T00:00:00Z"
+                "creationTimestamp": crate::time::now_rfc3339()
             },
             "status": {
                 "phase": "Active"
@@ -689,7 +747,7 @@ impl KubernetesApiClient {
             "metadata": {
                 "name": name,
                 "namespace": namespace,
-                "creationTimestamp": "2026-09-30T00:00:00Z"
+                "creationTimestamp": crate::time::now_rfc3339()
             },
             "data": data
         });
@@ -993,7 +1051,7 @@ impl KubernetesApiClient {
             "metadata": {
                 "name": name,
                 "namespace": namespace,
-                "creationTimestamp": "2026-09-30T00:00:00Z"
+                "creationTimestamp": crate::time::now_rfc3339()
             },
             "type": secret_type.unwrap_or("Opaque"),
             "data": data
@@ -1242,7 +1300,7 @@ impl KubernetesApiClient {
             if !meta.contains_key("creationTimestamp") {
                 meta.insert(
                     "creationTimestamp".to_string(),
-                    json!("2026-09-30T00:00:00Z"),
+                    json!(crate::time::now_rfc3339()),
                 );
             }
             if !meta.contains_key("uid") {
@@ -1344,17 +1402,116 @@ impl KubernetesApiClient {
         }))
     }
 
+    /// Lists pods in every namespace; the kubelet uses this to find work for its node.
+    pub async fn list_all_pods(&self) -> Result<Value, ApiserverError> {
+        self.check_auth_detailed("list", "", "pods", None, None)?;
+        let prefix = format!("{}/pods/", self.storage.prefix());
+        let kvs = self.storage.list(&prefix).await?;
+        let mut items = Vec::new();
+        for kv in kvs {
+            let mut doc: Value = serde_json::from_slice(&kv.value)?;
+            if let Some(meta) = doc.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            items.push(doc);
+        }
+        let cur_rev = self.storage.current_revision().await;
+        Ok(json!({
+            "apiVersion": "v1",
+            "kind": "PodList",
+            "metadata": { "resourceVersion": cur_rev.to_string() },
+            "items": items
+        }))
+    }
+
     pub async fn delete_pod(&self, namespace: &str, name: &str) -> Result<(), ApiserverError> {
+        self.delete_pod_options(namespace, name, None)
+            .await
+            .map(drop)
+    }
+
+    /// Deletes a pod with Kubernetes graceful-deletion semantics.
+    ///
+    /// A pod that a kubelet has acknowledged (bound to a node and reported
+    /// `Pending` or `Running`) is marked with `deletionTimestamp` and
+    /// `deletionGracePeriodSeconds` and returned as `Some`; the kubelet stops its
+    /// containers and then deletes it with a zero grace period. Unscheduled,
+    /// unacknowledged and terminal pods are removed at once, as is any pod when
+    /// `grace_period_seconds` is zero.
+    pub async fn delete_pod_options(
+        &self,
+        namespace: &str,
+        name: &str,
+        grace_period_seconds: Option<i64>,
+    ) -> Result<Option<Value>, ApiserverError> {
         self.check_auth_detailed("delete", "", "pods", Some(namespace), Some(name))?;
         let key = format!("{}/pods/{namespace}/{name}", self.storage.prefix());
-        let res = self.storage.delete(&key, None).await?;
-        if res.is_none() {
-            return Err(ApiserverError::NotFound {
+        let kv = self
+            .storage
+            .get(&key)
+            .await?
+            .ok_or_else(|| ApiserverError::NotFound {
                 resource: "pods".to_string(),
                 name: format!("{namespace}/{name}"),
-            });
+            })?;
+        let mut pod: Value = serde_json::from_slice(&kv.value)?;
+        let scheduled = pod
+            .pointer("/spec/nodeName")
+            .and_then(Value::as_str)
+            .is_some_and(|node| !node.is_empty());
+        let acknowledged = matches!(
+            pod.pointer("/status/phase").and_then(Value::as_str),
+            Some("Pending" | "Running")
+        );
+        if grace_period_seconds == Some(0) || !scheduled || !acknowledged {
+            self.storage.delete(&key, None).await?;
+            return Ok(None);
         }
-        Ok(())
+        let requested = grace_period_seconds
+            .or_else(|| {
+                pod.pointer("/spec/terminationGracePeriodSeconds")
+                    .and_then(Value::as_i64)
+            })
+            .unwrap_or(30)
+            .max(0);
+        let now = crate::time::now_unix();
+        let deadline = now.saturating_add(u64::try_from(requested).unwrap_or(0));
+        let existing_deadline = pod
+            .pointer("/metadata/deletionTimestamp")
+            .and_then(Value::as_str)
+            .and_then(crate::time::parse_rfc3339_seconds);
+        if existing_deadline.is_some_and(|existing| existing <= deadline) {
+            // Already terminating with an earlier or equal deadline; nothing to shorten.
+            if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
+                meta.insert(
+                    "resourceVersion".to_string(),
+                    json!(kv.mod_revision.to_string()),
+                );
+            }
+            return Ok(Some(pod));
+        }
+        if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "deletionTimestamp".to_string(),
+                json!(crate::time::rfc3339_seconds(deadline)),
+            );
+            meta.insert("deletionGracePeriodSeconds".to_string(), json!(requested));
+        }
+        let bytes = serde_json::to_vec(&pod)?;
+        let updated = self
+            .storage
+            .update(&key, bytes, Some(kv.mod_revision))
+            .await?;
+        if let Some(meta) = pod.get_mut("metadata").and_then(Value::as_object_mut) {
+            meta.insert(
+                "resourceVersion".to_string(),
+                json!(updated.mod_revision.to_string()),
+            );
+        }
+        Ok(Some(pod))
     }
 
     pub async fn update_pod(
@@ -1539,7 +1696,7 @@ impl KubernetesApiClient {
             if !meta.contains_key("creationTimestamp") {
                 meta.insert(
                     "creationTimestamp".to_string(),
-                    json!("2026-09-30T00:00:00Z"),
+                    json!(crate::time::now_rfc3339()),
                 );
             }
             if !meta.contains_key("uid") {
@@ -2174,7 +2331,7 @@ impl KubernetesApiClient {
             if !meta.contains_key("creationTimestamp") {
                 meta.insert(
                     "creationTimestamp".to_string(),
-                    json!("2026-09-30T00:00:00Z"),
+                    json!(crate::time::now_rfc3339()),
                 );
             }
             if !meta.contains_key("uid") {
@@ -2326,7 +2483,7 @@ impl KubernetesApiClient {
             if !meta.contains_key("creationTimestamp") {
                 meta.insert(
                     "creationTimestamp".to_string(),
-                    json!("2026-09-30T00:00:00Z"),
+                    json!(crate::time::now_rfc3339()),
                 );
             }
             if !meta.contains_key("uid") {
@@ -2664,7 +2821,7 @@ impl KubernetesApiClient {
             if !meta.contains_key("creationTimestamp") {
                 meta.insert(
                     "creationTimestamp".to_string(),
-                    json!("2026-09-30T00:00:00Z"),
+                    json!(crate::time::now_rfc3339()),
                 );
             }
             if !meta.contains_key("uid") {
@@ -4309,6 +4466,30 @@ impl KubernetesApiClient {
     }
 
     // --- Watch Streaming ---
+
+    /// Subscribes to changes of one resource collection after a `watch` authorization check.
+    ///
+    /// `namespace` of `None` watches a namespaced resource across all namespaces or a
+    /// cluster-scoped resource. Events arrive with the raw storage key and value.
+    pub async fn watch_resource(
+        &self,
+        group: &str,
+        resource: &str,
+        namespace: Option<&str>,
+    ) -> Result<WatchReceiver, ApiserverError> {
+        self.check_auth_detailed("watch", group, resource, namespace, None)?;
+        let group_segment = if group.is_empty() {
+            String::new()
+        } else {
+            format!("/{group}")
+        };
+        let namespace_segment = namespace.map_or_else(String::new, |ns| format!("{ns}/"));
+        let prefix = format!(
+            "{}{group_segment}/{resource}/{namespace_segment}",
+            self.storage.prefix()
+        );
+        Ok(self.storage.watch(&prefix).await)
+    }
 
     pub async fn watch(&self, prefix: &str) -> Result<WatchReceiver, ApiserverError> {
         self.check_auth_detailed("watch", "", prefix, None, None)?;

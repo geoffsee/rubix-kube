@@ -268,6 +268,11 @@
     },
     {
       "name": "getrandom",
+      "version": "0.2.17",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "getrandom",
       "version": "0.4.3",
       "license": "MIT OR Apache-2.0"
     },
@@ -587,6 +592,11 @@
       "license": "MIT OR Apache-2.0"
     },
     {
+      "name": "ring",
+      "version": "0.17.14",
+      "license": "Apache-2.0 AND ISC"
+    },
+    {
       "name": "rubix-apiserver",
       "version": "0.1.0",
       "license": "unrecorded"
@@ -702,9 +712,19 @@
       "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
     },
     {
+      "name": "rustls",
+      "version": "0.23.45",
+      "license": "Apache-2.0 OR ISC OR MIT"
+    },
+    {
       "name": "rustls-pki-types",
       "version": "1.15.1",
       "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "rustls-webpki",
+      "version": "0.103.15",
+      "license": "ISC"
     },
     {
       "name": "saphyr-parser",
@@ -777,6 +797,11 @@
       "license": "Apache-2.0 OR MIT"
     },
     {
+      "name": "subtle",
+      "version": "2.6.1",
+      "license": "BSD-3-Clause"
+    },
+    {
       "name": "syn",
       "version": "2.0.119",
       "license": "MIT OR Apache-2.0"
@@ -840,6 +865,11 @@
       "name": "tokio-macros",
       "version": "2.7.1",
       "license": "MIT"
+    },
+    {
+      "name": "tokio-rustls",
+      "version": "0.26.4",
+      "license": "MIT OR Apache-2.0"
     },
     {
       "name": "tokio-stream",
@@ -952,6 +982,11 @@
       "license": "ISC"
     },
     {
+      "name": "untrusted",
+      "version": "0.9.0",
+      "license": "ISC"
+    },
+    {
       "name": "want",
       "version": "0.3.1",
       "license": "MIT"
@@ -968,7 +1003,57 @@
     },
     {
       "name": "windows-sys",
+      "version": "0.52.0",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows-sys",
       "version": "0.61.2",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows-targets",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_aarch64_msvc",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_i686_gnullvm",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_x86_64_gnu",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.52.6",
       "license": "MIT OR Apache-2.0"
     },
     {

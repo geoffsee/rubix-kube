@@ -41,8 +41,13 @@ impl GarbageCollector {
     /// whose `ownerReferences` point to non-existent parents. Runs recursively until cascading deletes converge.
     pub async fn reconcile(&self, namespace: &str) -> Result<usize, ControllerError> {
         let mut total_deleted = 0;
+        let mut iterations = 0;
 
         loop {
+            if iterations >= 100 {
+                break;
+            }
+            iterations += 1;
             let pass_deleted = self.reconcile_pass(namespace).await?;
             if pass_deleted == 0 {
                 break;
@@ -238,6 +243,14 @@ impl GarbageCollector {
     }
 
     async fn is_eligible_dependent(&self, namespace: &str, resource: &Value) -> bool {
+        if resource
+            .get("metadata")
+            .and_then(|m| m.get("deletionTimestamp"))
+            .is_some()
+        {
+            return false;
+        }
+
         let Some(owner_refs) = resource
             .get("metadata")
             .and_then(|m| m.get("ownerReferences"))

@@ -8,6 +8,8 @@ mod api_crud_watch;
 mod apiserver_startup;
 #[path = "auth_rbac.rs"]
 mod auth_rbac;
+#[path = "https_gateway.rs"]
+mod https_gateway;
 #[path = "service_account_tokens.rs"]
 mod service_account_tokens;
 #[path = "storage_readiness.rs"]

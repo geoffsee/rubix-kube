@@ -4,11 +4,15 @@ pub mod client;
 pub mod config;
 pub mod error;
 pub mod health;
+mod http;
+pub mod logs;
+pub mod openapi;
 pub mod pki;
 pub mod rbac;
 pub mod service;
 pub mod storage;
 pub mod supervisor;
+pub mod time;
 pub mod token;
 
 pub use admission::{
@@ -26,6 +30,7 @@ pub use config::{
 };
 pub use error::ApiserverError;
 pub use health::{HealthReport, check_apiserver_readiness};
+pub use logs::{PodLogOptions, PodLogReader};
 pub use pki::validate_pki_prerequisites;
 pub use rbac::{
     ClusterRole, ClusterRoleBinding, PolicyRule, RbacAuthorizer, Role, RoleBinding, Subject,

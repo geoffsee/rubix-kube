@@ -10,6 +10,8 @@ pub enum Component {
     RequestHeaderClient,
     D2kServer,
     D2kClient,
+    DatastoreServer,
+    DatastoreClient,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -122,6 +124,30 @@ pub fn profile(component: Component) -> CertificateParams {
             params
                 .distinguished_name
                 .push(rcgen::DnType::OrganizationName, "kubesolo");
+            params
+        },
+        Component::DatastoreServer => {
+            let mut params = CertificateParams::new(vec!["datastore-server".to_string()]).unwrap();
+            params.key_usages = vec![
+                KeyUsagePurpose::DigitalSignature,
+                KeyUsagePurpose::KeyEncipherment,
+            ];
+            params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ServerAuth];
+            params
+                .distinguished_name
+                .push(rcgen::DnType::OrganizationName, "rubix");
+            params
+        },
+        Component::DatastoreClient => {
+            let mut params = CertificateParams::new(vec!["datastore-client".to_string()]).unwrap();
+            params.key_usages = vec![
+                KeyUsagePurpose::DigitalSignature,
+                KeyUsagePurpose::KeyEncipherment,
+            ];
+            params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ClientAuth];
+            params
+                .distinguished_name
+                .push(rcgen::DnType::OrganizationName, "rubix");
             params
         },
     }

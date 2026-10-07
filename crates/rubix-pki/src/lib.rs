@@ -56,6 +56,9 @@ pub fn ensure_ca(cert_path: &Path, key_path: &Path, common_name: &str) -> Result
 
     let mut params =
         CertificateParams::new(vec![common_name.to_string()]).map_err(PkiError::Rcgen)?;
+    let mut dn = rcgen::DistinguishedName::new();
+    dn.push(rcgen::DnType::CommonName, common_name.to_string());
+    params.distinguished_name = dn;
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     params.key_usages = vec![
         KeyUsagePurpose::KeyCertSign,
