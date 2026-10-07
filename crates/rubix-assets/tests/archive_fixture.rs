@@ -6,6 +6,7 @@ use rubix_assets::{
 use rubix_platform::{Architecture, Libc, NodeTarget};
 use serde_json::{Value, json};
 use std::{fmt::Write, path::Path};
+#[allow(clippy::duplicate_mod)]
 #[path = "common/archive.rs"]
 mod vectors;
 fn digest_text(bytes: &[u8]) -> String {

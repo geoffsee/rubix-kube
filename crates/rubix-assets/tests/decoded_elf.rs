@@ -7,6 +7,7 @@ use rubix_platform::{Architecture, Libc, NodeTarget};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{convert::Infallible, fmt::Write};
+#[allow(clippy::duplicate_mod)]
 #[path = "common/elf.rs"]
 mod common;
 use common::{executable, put};

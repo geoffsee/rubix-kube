@@ -11,6 +11,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use tokio::sync::watch;
 
+#[allow(clippy::duplicate_mod)]
 #[path = "support/metrics_startup.rs"]
 mod metrics_startup;
 

@@ -4,6 +4,7 @@ use rubix_dev::provenance::{
 };
 use std::fs;
 
+#[allow(clippy::duplicate_mod)]
 #[path = "common/publication.rs"]
 mod publication;
 

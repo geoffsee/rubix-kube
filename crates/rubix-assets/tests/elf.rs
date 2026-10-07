@@ -1,5 +1,6 @@
 use rubix_assets::{ArmFloatAbi, AssetId, ElfError, ElfLimits, LoaderFamily, LoaderRelation};
 use rubix_platform::{Architecture, Libc};
+#[allow(clippy::duplicate_mod)]
 #[path = "common/elf.rs"]
 mod common;
 use common::{executable, inspect, inventory, put};

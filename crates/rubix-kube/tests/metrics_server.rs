@@ -21,6 +21,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::watch;
 
+#[allow(clippy::duplicate_mod)]
 #[path = "support/metrics_startup.rs"]
 mod metrics_startup;
 

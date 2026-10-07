@@ -1,4 +1,5 @@
 //! Explicit read-only qualification; downloaded artifacts are never executed.
+#[allow(clippy::duplicate_mod)]
 #[path = "common/elf.rs"]
 mod common;
 use rubix_assets::{AssetId, ElfLimits};
