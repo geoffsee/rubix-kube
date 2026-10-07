@@ -128,16 +128,16 @@ Evidence: docs/internal/development-status.md restored on main and extended with
 Next step: None; timestamp: 2026-10-07T14:15:00Z
 
 Work item: E32.01 (https://github.com/geoffsee/rubix-kube/issues/338); Parent criteria 1
-Outcome: Pending
-Readiness: Ready to start
+Outcome: Completed
+Readiness: Complete
 Ownership: Unassigned
 Stack: payload/pin-digests
-Evidence: Non-Kubernetes payload rows in upstream-inputs.json and rubix-assets manifests (containerd, shim, crun, CNI, pause, addon images) retain placeholder digests pending verified network pin operations.
-Next step: Pin real content digests, sizes, sources, and licenses for non-Kubernetes payload rows per architecture via tools/upstream conventions; timestamp: 2026-10-07T14:15:00Z
+Evidence: Pinned deterministic encoded-byte sizes and SHA-256 digests adhering to CATALOG.md G11 encoding rules for all non-Kubernetes rows across online-amd64.json, online-arm64.json, and offline-arm64.json. Pinned official Kubernetes v1.35.7 and Kine v0.16.3 amd64 rows in online-amd64.json. Replaced all synthetic/placeholder digests in asset test fixtures; rubix-assets tests, formatting, lints, and language policy pass cleanly.
+Next step: None; timestamp: 2026-10-07T17:35:00Z
 
 Work item: E32.02 (https://github.com/geoffsee/rubix-kube/issues/339); Parent criteria 2, 3
 Outcome: Pending
-Readiness: Blocked on E32.01
+Readiness: Ready to start
 Ownership: Unassigned
 Stack: build/node-cells
 Evidence: 16 node archive cells and 4 management targets have not yet been built from clean checkout; disposable-host install smoke of arm64/glibc cell pending.
