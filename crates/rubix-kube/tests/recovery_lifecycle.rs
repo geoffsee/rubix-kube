@@ -261,7 +261,11 @@ async fn test_crash_reboot_preserves_datastore_pki_and_ownership() {
 
     let mut child = CrashChild(
         Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", "crash_runtime_child", "--ignored"])
+            .args([
+                "--exact",
+                "recovery_lifecycle::crash_runtime_child",
+                "--ignored",
+            ])
             .env("RUBIX_RECOVERY_FIXTURE_ROOT", temp.path())
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -455,7 +459,7 @@ async fn test_owned_term_ignoring_process_is_killed_and_reaped_within_shutdown_b
     let ready = root.path().join("ready");
     let command = ProcessCommand::new(std::env::current_exe().unwrap())
         .arg("--exact")
-        .arg("term_ignoring_child")
+        .arg("recovery_lifecycle::term_ignoring_child")
         .arg("--ignored")
         .env("RUBIX_ESCALATION_FIXTURE_ROOT", root.path());
     let probe = ready.clone();

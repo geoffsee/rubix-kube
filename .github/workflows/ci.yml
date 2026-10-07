@@ -52,6 +52,10 @@ jobs:
     name: Tests (debug)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,10 +63,19 @@ jobs:
       - uses: $/.github/actions/setup-rust
         with:
           cache-key: test-debug
-      - name: Test all targets and doctests
-        run: |
-          cargo test --locked --workspace --all-targets --all-features
-          cargo test --locked --workspace --doc --all-features
+      - uses: taiki-e/install-action@f7e5d7c961414b23f5b25b2da9294395d08513ad # v2.87.26
+        with:
+          tool: cargo-nextest
+      - name: Test all targets
+        run: cargo nextest run --locked --workspace --all-targets --all-features --profile ci
+      - name: Doctests
+        run: cargo test --locked --workspace --doc --all-features
+      - uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5 # v1.9.1
+        if: always()
+        with:
+          name: Tests
+          path: target/nextest/ci/results.xml
+          reporter: java-junit
 
   dependencies:
     name: Dependencies

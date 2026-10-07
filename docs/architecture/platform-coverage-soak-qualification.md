@@ -22,7 +22,7 @@ exact unique identities and canonical metadata/results, with no omitted or extra
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-platform-soak -- fixture --output /tmp/platform-fixture
 cargo run --locked -p rubix-dev --bin rubix-platform-soak -- verify-fixture /tmp/platform-fixture/platform-soak-report.json
-cargo test --locked -p rubix-dev --test platform_soak
+cargo test --locked -p rubix-dev --test suite platform_soak::
 ```
 
 A schema-2 fixture has `evidence_kind= SyntheticFixture`, `overall_qualified=false`

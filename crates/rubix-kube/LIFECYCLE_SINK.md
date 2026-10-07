@@ -30,7 +30,7 @@ and Kubernetes API availability are not established by these tests.
 Run:
 
 ```sh
-cargo test -p rubix-kube --locked --test lifecycle_sink
+cargo test -p rubix-kube --locked --test suite lifecycle_sink::
 ```
 
 This is another bounded slice of issue #44, not its closure.

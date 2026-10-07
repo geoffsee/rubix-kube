@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+autotests = false
 
 [lints]
 workspace = true
@@ -19,3 +20,7 @@ zstd = { version = "=0.13.3", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
 rustix = { version = "=1.1.5", features = ["fs"] }
+
+[[test]]
+name = "suite"
+path = "tests/suite.rs"

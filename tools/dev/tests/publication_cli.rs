@@ -25,6 +25,7 @@ fn matrix_requires_an_independent_expected_version() {
     );
 }
 
+#[allow(clippy::duplicate_mod)]
 #[path = "common/publication.rs"]
 mod publication;
 

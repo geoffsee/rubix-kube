@@ -120,7 +120,7 @@ jobs:
           RUBIX_API_JSON_CAPTURE_DIR: ${{ runner.temp }}/api-json
         run: |
           cargo run --locked -p rubix-dev --bin rubix-api-json -- check-capture "$RUBIX_API_JSON_CAPTURE_DIR"
-          cargo test -p rubix-upstream-codegen --test api_json --locked
+          cargo test -p rubix-upstream-codegen --test suite api_json:: --locked
       - name: Retain public capture and failure diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

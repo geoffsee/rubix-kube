@@ -11,6 +11,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use tokio::sync::watch;
 
+#[allow(clippy::duplicate_mod)]
 #[path = "support/metrics_startup.rs"]
 mod metrics_startup;
 
@@ -599,7 +600,7 @@ fn test_restrictive_umask_socket_permissions() {
     let status = std::process::Command::new("sh")
         .args([
             "-c",
-            "umask 0777; exec \"$1\" --exact restrictive_umask_socket_child --nocapture",
+            "umask 0777; exec \"$1\" --exact config_api::restrictive_umask_socket_child --nocapture",
             "rubix-socket-test",
         ])
         .arg(std::env::current_exe().unwrap())

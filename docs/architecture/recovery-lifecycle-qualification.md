@@ -71,7 +71,7 @@ shared-lock/receipt behavior; these runtime tests do not qualify host deletion.
 ## Reproduction and limits
 
 ```sh
-cargo test --locked -p rubix-kube --test recovery_lifecycle
+cargo test --locked -p rubix-kube --test suite recovery_lifecycle::
 cargo clippy --locked -p rubix-kube --all-targets --all-features -- -D warnings
 ```
 

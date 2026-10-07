@@ -61,7 +61,7 @@ Prometheus integration is included.
 
 ```sh
 cargo test -p rubix-supervisor --locked --lib
-cargo test -p rubix-supervisor --locked --test signals -- --nocapture
+cargo test -p rubix-supervisor --locked --test suite signals:: -- --nocapture
 cargo test -p rubix-supervisor --locked --release
 cargo clippy -p rubix-supervisor --locked --all-targets --all-features -- -D warnings
 cargo run --locked -p rubix-dev --bin rubix-supervisor-fixture -- signals capture /tmp/new-signal-capture

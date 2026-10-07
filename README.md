@@ -76,7 +76,7 @@ Run focused package tests while developing. Workspace checks include:
 ```sh
 cargo fmt-check
 cargo lint
-cargo test --locked --workspace --all-targets --all-features
+cargo nextest run --locked --workspace --all-targets --all-features --profile ci
 cargo test --locked --workspace --doc --all-features
 cargo run --locked -p rubix-dev --bin rubix-language-policy
 ```

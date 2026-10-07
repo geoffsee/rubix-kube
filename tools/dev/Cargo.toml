@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
+autotests = false
 
 [dependencies]
 serde = { version = "=1.0.228", features = ["derive"] }
@@ -35,3 +36,23 @@ rcgen = { version = "0.14.10", default-features = false, features = ["aws_lc_rs"
 
 [lints]
 workspace = true
+
+[[test]]
+name = "suite"
+path = "tests/suite.rs"
+
+[[test]]
+name = "component_internals"
+path = "tests/component_internals.rs"
+
+[[test]]
+name = "constrained_namespace"
+path = "tests/constrained_namespace.rs"
+
+[[test]]
+name = "parity_process"
+path = "tests/parity_process.rs"
+
+[[test]]
+name = "upstream_internals"
+path = "tests/upstream_internals.rs"

@@ -6,6 +6,7 @@ use rubix_assets::{
 use rubix_platform::{Architecture, Libc, NodeTarget};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
+#[allow(clippy::duplicate_mod)]
 #[path = "common/archive.rs"]
 mod vectors;
 use vectors::{archive, config, gzip, hex, manifest};

@@ -69,7 +69,7 @@ contracts rather than assuming running workloads survive a binary swap.
 
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-state-transition
-cargo test --locked -p rubix-dev --test state_transitions
+cargo test --locked -p rubix-dev --test suite state_transitions::
 ```
 
 The command checks static catalogs and synthetic kubeconfig samples and explicitly
@@ -160,6 +160,6 @@ Both formats check synthetic credentials after fixture recovery; no live API acc
 cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal
 
 # Run synthetic filesystem and mocked-service regression tests
-cargo test --locked -p rubix-dev --test recovery_rehearsal
-cargo test --locked -p rubixctl --test upgrade_review
+cargo test --locked -p rubix-dev --test suite recovery_rehearsal::
+cargo test --locked -p rubixctl --test suite upgrade_review::
 ```

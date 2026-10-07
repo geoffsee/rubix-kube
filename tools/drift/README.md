@@ -158,7 +158,7 @@ executing components, accepting a new baseline, or writing evidence.
 `rubix-drift` provides `check`, `extract`, and `report`. Descriptor parsing, duplicate-key JSON
 validation, snapshot bounds, categorized changes, Markdown escaping, and paired resolved-input
 binding execute in Rust. `cargo test -p rubix-dev drift --locked` runs independent mutations;
-`cargo test -p rubix-dev --test upstream_drift_cli --locked` tests CLI exit codes and unchanged input
+`cargo test -p rubix-dev --test suite upstream_drift_cli:: --locked` tests CLI exit codes and unchanged input
 bytes. The prepared-compiler mutation test is explicit:
 
 ```sh

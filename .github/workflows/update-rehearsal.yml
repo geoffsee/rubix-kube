@@ -39,5 +39,5 @@ jobs:
         run: cat update-report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Check independent pinned compatibility fixtures and API observations
         run: |
-          cargo test --locked -p rubix-config --test compatibility --test layers
-          cargo test --locked -p rubix-upstream-codegen --test api_json
+          cargo test --locked -p rubix-config --test suite compatibility:: layers::
+          cargo test --locked -p rubix-upstream-codegen --test suite api_json::

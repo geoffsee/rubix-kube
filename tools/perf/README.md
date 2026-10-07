@@ -33,7 +33,7 @@ Generate synthetic examples (success means fixture generation only):
 
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-perf -- generate-fixtures tools/perf
-cargo test --locked -p rubix-dev --test perf_harness
+cargo test --locked -p rubix-dev --test suite perf_harness::
 ```
 
 These qualification commands intentionally exit nonzero for the committed
