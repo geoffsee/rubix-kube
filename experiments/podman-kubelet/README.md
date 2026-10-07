@@ -14,7 +14,7 @@ the compatibility contract.
 | File | Purpose |
 | --- | --- |
 | `main.go`, `go.mod` | `rubix-hello`: prints `rubix-ok`, stays alive for N seconds (default 60), exits 0; `fail` prints `rubix-fail` to stderr and exits 3. Static Linux arm64 binary built with Go. |
-| `Containerfile` | `FROM scratch`, copies the binary, `ENTRYPOINT ["/rubix-hello"]`. |
+| `Containerfile` | `FROM scratch`, copies the binary, `USER 65534:65534`, `ENTRYPOINT ["/rubix-hello"]`. |
 | `policy.json` | Signature policy for the local image store. |
 | `hello.yaml` | The one-shot pod from the task, `restartPolicy: Never`, kept alive 600 s so the process is observable. |
 | `short.yaml` | `hello-short` (exits 0 after 3 s) and `hello-fail` (exits 3), both `Never`. |

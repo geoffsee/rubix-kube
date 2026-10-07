@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// main executes the rubix-hello command.
 func main() {
 	fmt.Println("rubix-ok")
 	seconds := 60

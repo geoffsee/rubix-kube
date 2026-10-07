@@ -4,8 +4,18 @@ metadata:
   name: crash
   namespace: default
 spec:
+  automountServiceAccountToken: false
   containers:
   - name: hello
     image: localhost/rubix-hello:latest
     imagePullPolicy: Never
     command: ["/rubix-hello", "fail"]
+    resources:
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+        ephemeral-storage: "50Mi"
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+        ephemeral-storage: "10Mi"

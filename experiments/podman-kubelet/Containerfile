@@ -1,3 +1,4 @@
 FROM scratch
 COPY rubix-hello /rubix-hello
+USER 65534:65534
 ENTRYPOINT ["/rubix-hello"]
