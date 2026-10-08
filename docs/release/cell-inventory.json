@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+  "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
   "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-  "host_target": "aarch64-apple-darwin",
+  "host_target": "aarch64-unknown-linux-gnu",
   "node_cells": [
     {
       "cell": 1,
       "target_name": "kubesolo-0.1.0-linux-amd64.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -21,13 +21,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 2,
       "target_name": "kubesolo-0.1.0-linux-amd64-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -40,13 +40,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 3,
       "target_name": "kubesolo-0.1.0-linux-amd64-musl.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -59,13 +59,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-musl`"
     },
     {
       "cell": 4,
       "target_name": "kubesolo-0.1.0-linux-amd64-musl-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -78,13 +78,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-musl`"
     },
     {
       "cell": 5,
       "target_name": "kubesolo-0.1.0-linux-arm64.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -97,19 +97,19 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "cross-compilation succeeded but target cell execution not configured"
     },
     {
       "cell": 6,
       "target_name": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [
         {
           "path": "bin/rubix-kube",
-          "size_bytes": 64,
-          "sha256": "6c86bf9edbe9ca8986850357a936a45855a98b64425cd8f864a896fcd6bacc88"
+          "size_bytes": 34640312,
+          "sha256": "929521d3d7244f86c217c107d9711660435924fa93482b99e03550a928743487"
         },
         {
           "path": "data.txt",
@@ -119,8 +119,8 @@
       ],
       "output": {
         "filename": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
-        "size_bytes": 671,
-        "sha256": "26ab6b53b372bb84d6d34861ffb75373f519314e5d73a625db8a76da8a7a3b5c"
+        "size_bytes": 9282820,
+        "sha256": "bed6710835367484aaeae6ae271313e59571dfe2b460cacbacab177d57e5d1d0"
       },
       "matrix_comparison": {
         "canonical_name": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
@@ -137,7 +137,7 @@
       "cell": 7,
       "target_name": "kubesolo-0.1.0-linux-arm64-musl.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -150,13 +150,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `aarch64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add aarch64-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 8,
       "target_name": "kubesolo-0.1.0-linux-arm64-musl-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -169,13 +169,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `aarch64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add aarch64-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 9,
       "target_name": "kubesolo-0.1.0-linux-arm.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -188,13 +188,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-gnueabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-gnueabihf`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 10,
       "target_name": "kubesolo-0.1.0-linux-arm-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -207,13 +207,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-gnueabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-gnueabihf`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 11,
       "target_name": "kubesolo-0.1.0-linux-arm-musl.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -226,13 +226,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-musleabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-musleabihf`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 12,
       "target_name": "kubesolo-0.1.0-linux-arm-musl-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -245,13 +245,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-musleabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-musleabihf`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 13,
       "target_name": "kubesolo-0.1.0-linux-riscv64.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -264,13 +264,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 14,
       "target_name": "kubesolo-0.1.0-linux-riscv64-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -283,13 +283,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 15,
       "target_name": "kubesolo-0.1.0-linux-riscv64-musl.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -302,13 +302,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": 16,
       "target_name": "kubesolo-0.1.0-linux-riscv64-musl-offline.tar.gz",
       "kind": "node_archive",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -321,7 +321,7 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
     }
   ],
   "management_targets": [
@@ -329,7 +329,7 @@
       "cell": null,
       "target_name": "rubixctl-linux-amd64",
       "kind": "management_binary",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [],
       "output": null,
@@ -342,51 +342,13 @@
         "matches": true
       },
       "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
     },
     {
       "cell": null,
       "target_name": "rubixctl-linux-arm64",
       "kind": "management_binary",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
-      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-      "inputs": [],
-      "output": null,
-      "matrix_comparison": {
-        "canonical_name": "rubixctl-linux-arm64",
-        "cell": null,
-        "architecture": "arm64",
-        "libc": null,
-        "variant": null,
-        "matches": true
-      },
-      "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
-    },
-    {
-      "cell": null,
-      "target_name": "rubixctl-darwin-amd64",
-      "kind": "management_binary",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
-      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
-      "inputs": [],
-      "output": null,
-      "matrix_comparison": {
-        "canonical_name": "rubixctl-darwin-amd64",
-        "cell": null,
-        "architecture": "amd64",
-        "libc": null,
-        "variant": null,
-        "matches": true
-      },
-      "status": "unbuildable_foreign_target",
-      "reason": "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03"
-    },
-    {
-      "cell": null,
-      "target_name": "rubixctl-darwin-arm64",
-      "kind": "management_binary",
-      "source_revision": "207236ecbb83d85971163336f15f9298efdc81f8",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
       "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
       "inputs": [
         {
@@ -401,12 +363,12 @@
         }
       ],
       "output": {
-        "filename": "rubixctl-darwin-arm64",
-        "size_bytes": 12452232,
-        "sha256": "a1c9e1c5181a476138df93e3409053de6736b37c26f945252f007a4074df4646"
+        "filename": "rubixctl-linux-arm64",
+        "size_bytes": 18937568,
+        "sha256": "e412c706cdd512418d45642a0dcc57a8be188c4f3ac561ba94f3f3c60b08c2f3"
       },
       "matrix_comparison": {
-        "canonical_name": "rubixctl-darwin-arm64",
+        "canonical_name": "rubixctl-linux-arm64",
         "cell": null,
         "architecture": "arm64",
         "libc": null,
@@ -415,6 +377,44 @@
       },
       "status": "built",
       "reason": null
+    },
+    {
+      "cell": null,
+      "target_name": "rubixctl-darwin-amd64",
+      "kind": "management_binary",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "rubixctl-darwin-amd64",
+        "cell": null,
+        "architecture": "amd64",
+        "libc": null,
+        "variant": null,
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-apple-darwin` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-apple-darwin`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": null,
+      "target_name": "rubixctl-darwin-arm64",
+      "kind": "management_binary",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "rubixctl-darwin-arm64",
+        "cell": null,
+        "architecture": "arm64",
+        "libc": null,
+        "variant": null,
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `aarch64-apple-darwin` target may not be installed; = help: consider downloading the target with `rustup target add aarch64-apple-darwin`; error[E0463]: can't find crate for `std`"
     }
   ]
 }
