@@ -1,0 +1,17 @@
+{
+  "target_name": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
+  "install_path": "/tmp/.tmpVOLxAh/smoke_install_dest",
+  "verified_files": [
+    "bin/rubix-kube",
+    "bundle.manifest",
+    "data.txt"
+  ],
+  "cleaned_paths": [
+    "bin/rubix-kube",
+    "bin",
+    "bundle.manifest",
+    "data.txt"
+  ],
+  "timestamp": "unix:1791440379",
+  "status": "complete"
+}

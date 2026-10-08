@@ -6,6 +6,9 @@ use crate::{
     provenance::LicenseInventory,
     release::{
         attribution::{AttributionRecord, verify_attribution_completeness},
+        cell_build::{
+            CellInventory, CleanupReceipt, verify_cell_inventory, verify_cleanup_receipt,
+        },
         manifest::{assemble_checksum_manifest, verify_checksum_inventory},
         notes::ReleaseNotes,
     },
@@ -124,6 +127,14 @@ pub async fn assemble_fixture_evidence(root: &Path, target: &Path) -> Result<()>
         ReleaseNotes::build().to_markdown(),
     )?;
     fs::write(target.join("README.md"), FIXTURE_README)?;
+    let inventory_source = root.join("docs/release/cell-inventory.json");
+    if inventory_source.exists() {
+        fs::copy(&inventory_source, target.join("cell-inventory.json"))?;
+    }
+    let cleanup_source = root.join("docs/release/cleanup-receipt.json");
+    if cleanup_source.exists() {
+        fs::copy(&cleanup_source, target.join("cleanup-receipt.json"))?;
+    }
     fs::write(
         target.join("SHA256SUMS"),
         assemble_checksum_manifest(target)?,
@@ -171,12 +182,36 @@ pub fn verify_fixture_evidence(root: &Path, dir: &Path) -> Result<()> {
     if fs::read_to_string(dir.join("README.md"))? != FIXTURE_README {
         return Err("fixture overview must match canonical unqualified disclosures".into());
     }
+    if dir.join("cell-inventory.json").exists() {
+        let cell_inv: CellInventory =
+            serde_json::from_slice(&fs::read(dir.join("cell-inventory.json"))?)?;
+        verify_cell_inventory(&cell_inv)?;
+    }
+    if dir.join("cleanup-receipt.json").exists() {
+        let cleanup: CleanupReceipt =
+            serde_json::from_slice(&fs::read(dir.join("cleanup-receipt.json"))?)?;
+        verify_cleanup_receipt(&cleanup)?;
+    }
     verify_kubeconfig_dual_format_accommodation()
 }
 /// No fixture or self-attested flags can establish production release qualification.
-pub fn verify_release_evidence(_dir: &Path) -> Result<()> {
+pub fn verify_release_evidence(dir: &Path) -> Result<()> {
+    if dir.join("SHA256SUMS").exists() {
+        verify_checksum_inventory(&fs::read_to_string(dir.join("SHA256SUMS"))?, dir)?;
+    }
+    if dir.join("cell-inventory.json").exists() {
+        let cell_inv: CellInventory =
+            serde_json::from_slice(&fs::read(dir.join("cell-inventory.json"))?)?;
+        verify_cell_inventory(&cell_inv)?;
+    }
+    if dir.join("cleanup-receipt.json").exists() {
+        let cleanup: CleanupReceipt =
+            serde_json::from_slice(&fs::read(dir.join("cleanup-receipt.json"))?)?;
+        verify_cleanup_receipt(&cleanup)?;
+    }
     Err("production release qualification unavailable: independent current-source Linux runtime, performance, state-transition and artifact evidence importer is not implemented; C13/C14/C16/C17 remain pending".into())
 }
+
 /// Validate the kubeconfig parser's YAML and JSON accommodation without live claims.
 pub fn verify_kubeconfig_dual_format_accommodation() -> Result<()> {
     let value = serde_json::json!({"apiVersion":"v1","kind":"Config","clusters":[{"name":"rubix","cluster":{"server":"https://127.0.0.1:6443","certificate-authority-data":"Y2E="}}],"users":[{"name":"admin","user":{"client-certificate-data":"Y2VydA==","client-key-data":"a2V5"}}],"contexts":[{"name":"admin","context":{"cluster":"rubix","user":"admin"}}],"current-context":"admin"});

@@ -1,0 +1,420 @@
+{
+  "schema_version": 1,
+  "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "host_target": "aarch64-unknown-linux-gnu",
+  "node_cells": [
+    {
+      "cell": 1,
+      "target_name": "kubesolo-0.1.0-linux-amd64.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-amd64.tar.gz",
+        "cell": 1,
+        "architecture": "amd64",
+        "libc": "glibc",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 2,
+      "target_name": "kubesolo-0.1.0-linux-amd64-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-amd64-offline.tar.gz",
+        "cell": 2,
+        "architecture": "amd64",
+        "libc": "glibc",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 3,
+      "target_name": "kubesolo-0.1.0-linux-amd64-musl.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-amd64-musl.tar.gz",
+        "cell": 3,
+        "architecture": "amd64",
+        "libc": "musl",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-musl`"
+    },
+    {
+      "cell": 4,
+      "target_name": "kubesolo-0.1.0-linux-amd64-musl-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-amd64-musl-offline.tar.gz",
+        "cell": 4,
+        "architecture": "amd64",
+        "libc": "musl",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-musl`"
+    },
+    {
+      "cell": 5,
+      "target_name": "kubesolo-0.1.0-linux-arm64.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm64.tar.gz",
+        "cell": 5,
+        "architecture": "arm64",
+        "libc": "glibc",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "cross-compilation succeeded but target cell execution not configured"
+    },
+    {
+      "cell": 6,
+      "target_name": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [
+        {
+          "path": "bin/rubix-kube",
+          "size_bytes": 34640312,
+          "sha256": "929521d3d7244f86c217c107d9711660435924fa93482b99e03550a928743487"
+        },
+        {
+          "path": "data.txt",
+          "size_bytes": 31,
+          "sha256": "6eab03432efdb55db7b35d11073e9f1ebb9884368ba68f8b22d192038faa18af"
+        }
+      ],
+      "output": {
+        "filename": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
+        "size_bytes": 9282820,
+        "sha256": "bed6710835367484aaeae6ae271313e59571dfe2b460cacbacab177d57e5d1d0"
+      },
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm64-offline.tar.gz",
+        "cell": 6,
+        "architecture": "arm64",
+        "libc": "glibc",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "built",
+      "reason": null
+    },
+    {
+      "cell": 7,
+      "target_name": "kubesolo-0.1.0-linux-arm64-musl.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm64-musl.tar.gz",
+        "cell": 7,
+        "architecture": "arm64",
+        "libc": "musl",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `aarch64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add aarch64-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 8,
+      "target_name": "kubesolo-0.1.0-linux-arm64-musl-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm64-musl-offline.tar.gz",
+        "cell": 8,
+        "architecture": "arm64",
+        "libc": "musl",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `aarch64-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add aarch64-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 9,
+      "target_name": "kubesolo-0.1.0-linux-arm.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm.tar.gz",
+        "cell": 9,
+        "architecture": "armv7",
+        "libc": "glibc",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-gnueabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-gnueabihf`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 10,
+      "target_name": "kubesolo-0.1.0-linux-arm-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm-offline.tar.gz",
+        "cell": 10,
+        "architecture": "armv7",
+        "libc": "glibc",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-gnueabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-gnueabihf`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 11,
+      "target_name": "kubesolo-0.1.0-linux-arm-musl.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm-musl.tar.gz",
+        "cell": 11,
+        "architecture": "armv7",
+        "libc": "musl",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-musleabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-musleabihf`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 12,
+      "target_name": "kubesolo-0.1.0-linux-arm-musl-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-arm-musl-offline.tar.gz",
+        "cell": 12,
+        "architecture": "armv7",
+        "libc": "musl",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `armv7-unknown-linux-musleabihf` target may not be installed; = help: consider downloading the target with `rustup target add armv7-unknown-linux-musleabihf`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 13,
+      "target_name": "kubesolo-0.1.0-linux-riscv64.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-riscv64.tar.gz",
+        "cell": 13,
+        "architecture": "riscv64",
+        "libc": "glibc",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 14,
+      "target_name": "kubesolo-0.1.0-linux-riscv64-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-riscv64-offline.tar.gz",
+        "cell": 14,
+        "architecture": "riscv64",
+        "libc": "glibc",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 15,
+      "target_name": "kubesolo-0.1.0-linux-riscv64-musl.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-riscv64-musl.tar.gz",
+        "cell": 15,
+        "architecture": "riscv64",
+        "libc": "musl",
+        "variant": "online",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": 16,
+      "target_name": "kubesolo-0.1.0-linux-riscv64-musl-offline.tar.gz",
+      "kind": "node_archive",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "kubesolo-0.1.0-linux-riscv64-musl-offline.tar.gz",
+        "cell": 16,
+        "architecture": "riscv64",
+        "libc": "musl",
+        "variant": "offline",
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `riscv64gc-unknown-linux-musl` target may not be installed; = help: consider downloading the target with `rustup target add riscv64gc-unknown-linux-musl`; error[E0463]: can't find crate for `std`"
+    }
+  ],
+  "management_targets": [
+    {
+      "cell": null,
+      "target_name": "rubixctl-linux-amd64",
+      "kind": "management_binary",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "rubixctl-linux-amd64",
+        "cell": null,
+        "architecture": "amd64",
+        "libc": null,
+        "variant": null,
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-unknown-linux-gnu` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-unknown-linux-gnu`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": null,
+      "target_name": "rubixctl-linux-arm64",
+      "kind": "management_binary",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [
+        {
+          "path": "crates/rubixctl/Cargo.toml",
+          "size_bytes": 846,
+          "sha256": "29b609a6601c78765dd42edd832dd934df7a16902281077eb1e4595615ba4173"
+        },
+        {
+          "path": "crates/rubixctl/src/main.rs",
+          "size_bytes": 5185,
+          "sha256": "63ac7d4e737af30216005e46584199f0eb4ae751dc60ab35a0b22d3e3f5aed60"
+        }
+      ],
+      "output": {
+        "filename": "rubixctl-linux-arm64",
+        "size_bytes": 18937568,
+        "sha256": "e412c706cdd512418d45642a0dcc57a8be188c4f3ac561ba94f3f3c60b08c2f3"
+      },
+      "matrix_comparison": {
+        "canonical_name": "rubixctl-linux-arm64",
+        "cell": null,
+        "architecture": "arm64",
+        "libc": null,
+        "variant": null,
+        "matches": true
+      },
+      "status": "built",
+      "reason": null
+    },
+    {
+      "cell": null,
+      "target_name": "rubixctl-darwin-amd64",
+      "kind": "management_binary",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "rubixctl-darwin-amd64",
+        "cell": null,
+        "architecture": "amd64",
+        "libc": null,
+        "variant": null,
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `x86_64-apple-darwin` target may not be installed; = help: consider downloading the target with `rustup target add x86_64-apple-darwin`; error[E0463]: can't find crate for `std`"
+    },
+    {
+      "cell": null,
+      "target_name": "rubixctl-darwin-arm64",
+      "kind": "management_binary",
+      "source_revision": "4d067c2e97297d42bbcae506820e7ad431328aae",
+      "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "inputs": [],
+      "output": null,
+      "matrix_comparison": {
+        "canonical_name": "rubixctl-darwin-arm64",
+        "cell": null,
+        "architecture": "arm64",
+        "libc": null,
+        "variant": null,
+        "matches": true
+      },
+      "status": "unbuildable_foreign_target",
+      "reason": "error[E0463]: can't find crate for `core`; = note: the `aarch64-apple-darwin` target may not be installed; = help: consider downloading the target with `rustup target add aarch64-apple-darwin`; error[E0463]: can't find crate for `std`"
+    }
+  ]
+}
