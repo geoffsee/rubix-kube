@@ -15,7 +15,7 @@ fn test_fresh_reconcile_generates_all() {
     let pki = ClusterPki::new(config);
     let report = pki.reconcile().unwrap();
 
-    assert_eq!(report.rotated.len(), 8);
+    assert_eq!(report.rotated.len(), 10);
     assert_eq!(report.preserved.len(), 0);
 
     // Verify files on disk
@@ -24,6 +24,8 @@ fn test_fresh_reconcile_generates_all() {
         "ca.key",
         "request-header-ca.crt",
         "request-header-ca.key",
+        "datastore-ca.crt",
+        "datastore-ca.key",
         "service-account.key",
         "kube-apiserver.crt",
         "kube-apiserver.key",
@@ -41,6 +43,10 @@ fn test_fresh_reconcile_generates_all() {
         "d2k-server.key",
         "d2k-client.crt",
         "d2k-client.key",
+        "datastore-server.crt",
+        "datastore-server.key",
+        "datastore-client.crt",
+        "datastore-client.key",
         "admin.kubeconfig",
         "kubelet.kubeconfig",
         "kube-controller-manager.kubeconfig",
@@ -66,7 +72,7 @@ fn test_unchanged_restart_preserves_all() {
     // Reconcile again with same config
     let report = pki.reconcile().unwrap();
     assert_eq!(report.rotated.len(), 0);
-    assert_eq!(report.preserved.len(), 8);
+    assert_eq!(report.preserved.len(), 10);
 
     let ca_fp_after = pki.ca_fingerprint().unwrap();
     assert_eq!(ca_fp_before, ca_fp_after);
@@ -103,7 +109,7 @@ fn test_node_ip_change_rotates_affected_leaves() {
     assert!(report.rotated.contains(&"kube-apiserver".to_string()));
     assert!(report.rotated.contains(&"kubelet".to_string()));
 
-    // Admin, webhook, controller-manager, request-header-client, d2k do not have node IP in SANs
+    // Admin, webhook, controller-manager, request-header-client, d2k, datastore do not have node IP in SANs
     assert!(report.preserved.contains(&"admin".to_string()));
     assert!(report.preserved.contains(&"webhook".to_string()));
     assert!(
@@ -116,6 +122,8 @@ fn test_node_ip_change_rotates_affected_leaves() {
             .preserved
             .contains(&"request-header-client".to_string())
     );
+    assert!(report.preserved.contains(&"datastore-server".to_string()));
+    assert!(report.preserved.contains(&"datastore-client".to_string()));
 
     // CA fingerprint and existing admin cert survive
     let ca_fp_after = pki2.ca_fingerprint().unwrap();

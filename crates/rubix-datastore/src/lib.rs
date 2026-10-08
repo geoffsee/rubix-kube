@@ -6,6 +6,7 @@ pub mod error;
 pub mod lock;
 pub mod model;
 pub mod supervisor;
+pub mod tls;
 pub mod wal;
 
 pub use backup::{BACKUP_FORMAT_VERSION, BackupMetadata};

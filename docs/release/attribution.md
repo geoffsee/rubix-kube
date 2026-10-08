@@ -102,6 +102,7 @@ Locked workspace Cargo metadata supplies the following declared dependency licen
 | `futures-sink` | `0.3.34` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `futures-task` | `0.3.34` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `futures-util` | `0.3.34` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `getrandom` | `0.2.17` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `getrandom` | `0.4.3` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `h2` | `0.4.19` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `hashbrown` | `0.15.5` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
@@ -166,6 +167,7 @@ Locked workspace Cargo metadata supplies the following declared dependency licen
 | `regex` | `1.13.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `regex-automata` | `0.4.18` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `regex-syntax` | `0.8.11` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `ring` | `0.17.14` | `Apache-2.0 AND ISC` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `rubix-apiserver` | `0.1.0` | `unrecorded` | `workspace path crate` |
 | `rubix-assets` | `0.1.0` | `unrecorded` | `workspace path crate` |
 | `rubix-config` | `0.1.0` | `unrecorded` | `workspace path crate` |
@@ -189,7 +191,9 @@ Locked workspace Cargo metadata supplies the following declared dependency licen
 | `rubixctl` | `0.1.0` | `unrecorded` | `workspace path crate` |
 | `rusticata-macros` | `4.1.0` | `MIT/Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `rustix` | `1.1.5` | `Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `rustls` | `0.23.45` | `Apache-2.0 OR ISC OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `rustls-pki-types` | `1.15.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `rustls-webpki` | `0.103.15` | `ISC` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `saphyr-parser` | `0.0.11` | `MIT OR Apache-2.0` | `local path dependency` |
 | `serde` | `1.0.228` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `serde_core` | `1.0.228` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
@@ -204,6 +208,7 @@ Locked workspace Cargo metadata supplies the following declared dependency licen
 | `smallvec` | `1.16.2` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `socket2` | `0.6.5` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `spki` | `0.7.3` | `Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `subtle` | `2.6.1` | `BSD-3-Clause` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `syn` | `2.0.119` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `syn` | `3.0.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `sync_wrapper` | `1.0.2` | `Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
@@ -217,6 +222,7 @@ Locked workspace Cargo metadata supplies the following declared dependency licen
 | `time-macros` | `0.2.32` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `tokio` | `1.53.1` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `tokio-macros` | `2.7.1` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `tokio-rustls` | `0.26.4` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `tokio-stream` | `0.1.19` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `tokio-util` | `0.7.19` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `toml` | `0.9.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
@@ -239,10 +245,21 @@ Locked workspace Cargo metadata supplies the following declared dependency licen
 | `unicase` | `2.9.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `unicode-ident` | `1.0.26` | `(MIT OR Apache-2.0) AND Unicode-3.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `untrusted` | `0.7.1` | `ISC` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `untrusted` | `0.9.0` | `ISC` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `want` | `0.3.1` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `wasi` | `0.11.1+wasi-snapshot-preview1` | `Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `windows-link` | `0.2.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows-sys` | `0.52.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `windows-sys` | `0.61.2` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows-targets` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_aarch64_gnullvm` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_aarch64_msvc` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_i686_gnu` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_i686_gnullvm` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_i686_msvc` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_x86_64_gnu` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_x86_64_gnullvm` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
+| `windows_x86_64_msvc` | `0.52.6` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `winnow` | `0.7.15` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `x509-parser` | `0.18.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |
 | `yasna` | `0.6.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` |

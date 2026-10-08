@@ -72,16 +72,22 @@ impl ReplicaSetReconciler {
         let mut owned_pods: Vec<Value> = all_pods
             .into_iter()
             .filter(|p| {
-                p.get("metadata")
-                    .and_then(|m| m.get("ownerReferences"))
-                    .and_then(Value::as_array)
-                    .is_some_and(|owners| {
-                        owners.iter().any(|o| {
-                            o.get("kind").and_then(Value::as_str) == Some("ReplicaSet")
-                                && (o.get("uid").and_then(Value::as_str) == Some(uid)
-                                    || o.get("name").and_then(Value::as_str) == Some(name))
+                let not_terminating = p
+                    .get("metadata")
+                    .and_then(|m| m.get("deletionTimestamp"))
+                    .and_then(Value::as_str)
+                    .is_none();
+                not_terminating
+                    && p.get("metadata")
+                        .and_then(|m| m.get("ownerReferences"))
+                        .and_then(Value::as_array)
+                        .is_some_and(|owners| {
+                            owners.iter().any(|o| {
+                                o.get("kind").and_then(Value::as_str) == Some("ReplicaSet")
+                                    && (o.get("uid").and_then(Value::as_str) == Some(uid)
+                                        || o.get("name").and_then(Value::as_str) == Some(name))
+                            })
                         })
-                    })
             })
             .collect();
 

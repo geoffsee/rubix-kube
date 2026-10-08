@@ -6,9 +6,9 @@
 
 use std::fmt;
 use std::io::{self, Write};
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use rubix_apiserver::ApiserverConfig;
 use rubix_apiserver::client::KubernetesApiClient;
@@ -138,6 +138,7 @@ pub struct RuntimeBuilder {
     apiserver: Option<Arc<ApiserverService>>,
     client: Option<KubernetesApiClient>,
     metrics_registry: Option<Arc<MetricsRegistry>>,
+    datastore_bound_addr: Option<Arc<Mutex<Option<SocketAddr>>>>,
     registrations: Vec<Registration>,
 }
 
@@ -154,6 +155,7 @@ impl RuntimeBuilder {
             apiserver: None,
             client: None,
             metrics_registry: None,
+            datastore_bound_addr: None,
             registrations: Vec::new(),
         }
     }
@@ -272,6 +274,19 @@ impl RuntimeBuilder {
         self.register_component(reg)
     }
 
+    #[must_use]
+    pub fn datastore_bound_addr(&self) -> Option<SocketAddr> {
+        self.datastore_bound_addr
+            .as_ref()
+            .and_then(|a| *a.lock().unwrap())
+    }
+
+    #[must_use]
+    pub fn with_datastore_bound_addr(mut self, bound_addr: Arc<Mutex<Option<SocketAddr>>>) -> Self {
+        self.datastore_bound_addr = Some(bound_addr);
+        self
+    }
+
     /// Builds the supervised node runtime.
     pub fn build(self) -> Result<NodeRuntime, RuntimeError> {
         let (supervisor, observer) = Supervisor::new(self.registrations)?.with_observer();
@@ -282,6 +297,7 @@ impl RuntimeBuilder {
             apiserver: self.apiserver,
             client: self.client,
             metrics_registry: self.metrics_registry,
+            datastore_bound_addr: self.datastore_bound_addr,
             supervisor,
             observer,
         })
@@ -297,6 +313,7 @@ pub struct NodeRuntime {
     apiserver: Option<Arc<ApiserverService>>,
     client: Option<KubernetesApiClient>,
     metrics_registry: Option<Arc<MetricsRegistry>>,
+    datastore_bound_addr: Option<Arc<Mutex<Option<SocketAddr>>>>,
     supervisor: Supervisor,
     observer: LifecycleObserver,
 }
@@ -327,29 +344,15 @@ impl NodeRuntime {
         let state_dir = PathBuf::from(&config.config().path);
         std::fs::create_dir_all(&state_dir)?;
 
-        let node_ip: IpAddr = if config.config().network.node_ip.is_empty() {
-            "127.0.0.1".parse().unwrap()
-        } else {
-            config.config().network.node_ip.parse().map_err(|e| {
-                io::Error::new(io::ErrorKind::InvalidInput, format!("invalid node IP: {e}"))
-            })?
-        };
-
-        let node_name = if config.config().kubernetes.node_name.is_empty() {
-            "rubix-node".to_string()
-        } else {
-            config.config().kubernetes.node_name.clone()
-        };
-
-        let pki_dir = state_dir.join("pki");
-        std::fs::create_dir_all(&pki_dir)?;
-        let pki_config = ClusterPkiConfig::new(pki_dir.clone(), node_name, node_ip);
-        let pki = ClusterPki::new(pki_config);
-        pki.reconcile()?;
+        let (node_ip, pki_dir) = initialize_pki(&state_dir, &config)?;
 
         let datastore_dir = state_dir.join("datastore");
         std::fs::create_dir_all(&datastore_dir)?;
-        let mut datastore_cfg = DatastoreConfig::new(datastore_dir.clone());
+        let mut datastore_cfg = DatastoreConfig::new(datastore_dir.clone()).with_client_tls(
+            pki_dir.join("datastore-ca.crt"),
+            pki_dir.join("datastore-server.crt"),
+            pki_dir.join("datastore-server.key"),
+        );
         if config.config().storage.db_wal_repair {
             datastore_cfg = datastore_cfg.with_wal_repair(true);
         }
@@ -357,7 +360,12 @@ impl NodeRuntime {
         let (engine, _) = DatastoreEngine::open(datastore_cfg.clone())?;
         let storage = KubernetesStorage::new(engine.client(), "/registry");
 
-        let apiserver_cfg = ApiserverConfig::default_for_pki(&pki_dir, node_ip);
+        let mut apiserver_cfg = ApiserverConfig::default_for_pki(&pki_dir, node_ip);
+        apiserver_cfg.etcd_servers = vec!["https://127.0.0.1:2379".to_string()];
+        apiserver_cfg.etcd_ca_file = Some(pki_dir.join("datastore-ca.crt"));
+        apiserver_cfg.etcd_cert_file = Some(pki_dir.join("datastore-client.crt"));
+        apiserver_cfg.etcd_key_file = Some(pki_dir.join("datastore-client.key"));
+
         let apiserver_service = Arc::new(ApiserverService::new(apiserver_cfg, storage));
         let client = apiserver_service.admin_client();
 
@@ -371,12 +379,19 @@ impl NodeRuntime {
         let policy = LifecyclePolicy::from_config(&config);
         let timeout = policy.startup_timeout();
 
+        let datastore_adapter = DatastoreAdapter::from_engine(engine);
+        let datastore_bound_handle = datastore_adapter.bound_addr_handle();
+
         let mut builder = RuntimeBuilder::new(config)
             .with_apiserver(apiserver_service.clone())
-            .with_client(client.clone());
+            .with_client(client.clone())
+            .with_datastore_bound_addr(datastore_bound_handle);
 
-        let datastore_reg =
-            DatastoreAdapter::registration_for_engine(COMPONENT_DATASTORE, engine, timeout);
+        let datastore_reg = DatastoreAdapter::registration_with_adapter(
+            COMPONENT_DATASTORE,
+            datastore_adapter,
+            timeout,
+        );
         let apiserver_reg = ApiserverAdapter::registration(
             COMPONENT_APISERVER,
             (*apiserver_service).clone(),
@@ -422,19 +437,7 @@ impl NodeRuntime {
             builder = builder.register_config_api(server);
         }
 
-        let arch = match std::env::consts::ARCH {
-            "aarch64" => rubix_platform::Architecture::Arm64,
-            "arm" => rubix_platform::Architecture::ArmV7,
-            "riscv64" => rubix_platform::Architecture::Riscv64,
-            _ => rubix_platform::Architecture::Amd64,
-        };
-        let portainer_cfg =
-            PortainerAgentConfig::from_rubix_config(&builder.config().config().portainer, arch);
-        if portainer_cfg.is_enabled() {
-            let portainer_service = PortainerService::new(portainer_cfg, Arc::new(client));
-            builder = builder
-                .register_portainer(portainer_service, vec![COMPONENT_APISERVER.to_string()]);
-        }
+        builder = register_portainer_if_enabled(builder, client);
 
         builder.build()
     }
@@ -478,6 +481,28 @@ impl NodeRuntime {
     #[must_use]
     pub fn apiserver(&self) -> Option<&Arc<ApiserverService>> {
         self.apiserver.as_ref()
+    }
+
+    #[must_use]
+    pub fn datastore_bound_addr(&self) -> Option<SocketAddr> {
+        self.datastore_bound_addr
+            .as_ref()
+            .and_then(|a| *a.lock().unwrap())
+    }
+
+    #[must_use]
+    pub fn datastore_bound_addr_handle(&self) -> Option<Arc<Mutex<Option<SocketAddr>>>> {
+        self.datastore_bound_addr.clone()
+    }
+
+    #[must_use]
+    pub fn apiserver_bound_addr(&self) -> Option<SocketAddr> {
+        self.apiserver.as_ref().and_then(|s| s.bound_addr())
+    }
+
+    #[must_use]
+    pub fn pki_dir(&self) -> PathBuf {
+        PathBuf::from(&self.config.config().path).join("pki")
     }
 
     #[must_use]
@@ -595,6 +620,52 @@ fn register_operational_metrics(
     builder
         .with_metrics_registry(registry)
         .register_component(metrics_reg)
+}
+
+fn initialize_pki(
+    state_dir: &std::path::Path,
+    config: &ValidatedConfig,
+) -> Result<(IpAddr, PathBuf), RuntimeError> {
+    let node_ip: IpAddr = if config.config().network.node_ip.is_empty() {
+        "127.0.0.1".parse().unwrap()
+    } else {
+        config.config().network.node_ip.parse().map_err(|e| {
+            io::Error::new(io::ErrorKind::InvalidInput, format!("invalid node IP: {e}"))
+        })?
+    };
+
+    let node_name = if config.config().kubernetes.node_name.is_empty() {
+        "rubix-node".to_string()
+    } else {
+        config.config().kubernetes.node_name.clone()
+    };
+
+    let pki_dir = state_dir.join("pki");
+    std::fs::create_dir_all(&pki_dir)?;
+    let pki_config = ClusterPkiConfig::new(pki_dir.clone(), node_name, node_ip);
+    let pki = ClusterPki::new(pki_config);
+    pki.reconcile()?;
+    Ok((node_ip, pki_dir))
+}
+
+fn register_portainer_if_enabled(
+    mut builder: RuntimeBuilder,
+    client: KubernetesApiClient,
+) -> RuntimeBuilder {
+    let arch = match std::env::consts::ARCH {
+        "aarch64" => rubix_platform::Architecture::Arm64,
+        "arm" => rubix_platform::Architecture::ArmV7,
+        "riscv64" => rubix_platform::Architecture::Riscv64,
+        _ => rubix_platform::Architecture::Amd64,
+    };
+    let portainer_cfg =
+        PortainerAgentConfig::from_rubix_config(&builder.config().config().portainer, arch);
+    if portainer_cfg.is_enabled() {
+        let portainer_service = PortainerService::new(portainer_cfg, Arc::new(client));
+        builder =
+            builder.register_portainer(portainer_service, vec![COMPONENT_APISERVER.to_string()]);
+    }
+    builder
 }
 
 fn runtime_exit_code(cause: &StopCause) -> u8 {

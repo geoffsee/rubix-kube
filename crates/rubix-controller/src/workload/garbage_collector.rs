@@ -41,8 +41,16 @@ impl GarbageCollector {
     /// whose `ownerReferences` point to non-existent parents. Runs recursively until cascading deletes converge.
     pub async fn reconcile(&self, namespace: &str) -> Result<usize, ControllerError> {
         let mut total_deleted = 0;
+        let mut iterations = 0;
 
         loop {
+            if iterations > 100 {
+                return Err(ControllerError::ReconciliationFailed {
+                    resource: format!("garbage collection in namespace '{namespace}'"),
+                    reason: "cascading deletion did not converge within 100 passes".to_string(),
+                });
+            }
+            iterations += 1;
             let pass_deleted = self.reconcile_pass(namespace).await?;
             if pass_deleted == 0 {
                 break;
@@ -238,6 +246,15 @@ impl GarbageCollector {
     }
 
     async fn is_eligible_dependent(&self, namespace: &str, resource: &Value) -> bool {
+        if resource
+            .get("metadata")
+            .and_then(|m| m.get("deletionTimestamp"))
+            .and_then(Value::as_str)
+            .is_some()
+        {
+            return false;
+        }
+
         let Some(owner_refs) = resource
             .get("metadata")
             .and_then(|m| m.get("ownerReferences"))

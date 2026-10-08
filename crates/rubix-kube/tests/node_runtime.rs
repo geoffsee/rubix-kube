@@ -978,3 +978,419 @@ async fn check_healthz(socket_path: &Path) -> bool {
     let mut resp = Vec::new();
     stream.read_to_end(&mut resp).await.is_ok() && resp.ends_with(b"ok\n")
 }
+
+async fn run_openssl_probe(args: Vec<String>) -> std::io::Result<std::process::Output> {
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        tokio::task::spawn_blocking(move || {
+            use std::io::Write;
+            let mut child = std::process::Command::new("openssl")
+                .args(&args)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()?;
+            if let Some(mut stdin) = child.stdin.take() {
+                let _ = stdin.write_all(b"GET / HTTP/1.0\r\n\r\n");
+                let _ = stdin.flush();
+                std::thread::sleep(Duration::from_millis(150));
+            }
+            child.wait_with_output()
+        }),
+    )
+    .await
+    .expect("openssl command must complete within 5s")
+    .expect("spawn_blocking")
+}
+
+async fn verify_datastore_mtls_matrix(bound_addr: std::net::SocketAddr, pki_dir: &Path) {
+    // Case 1: Unauthenticated client (no cert provided) -> Rejected with handshake failure alert
+    let unauth_args = vec![
+        "s_client".to_string(),
+        "-connect".to_string(),
+        bound_addr.to_string(),
+        "-CAfile".to_string(),
+        pki_dir
+            .join("datastore-ca.crt")
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "-ign_eof".to_string(),
+    ];
+    let out = run_openssl_probe(unauth_args)
+        .await
+        .expect("openssl probe must execute successfully");
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !combined.contains("HTTP/1.1 200 OK")
+            && (combined.to_lowercase().contains("handshake failure")
+                || combined.to_lowercase().contains("certificate required")
+                || !out.status.success()),
+        "Unauthenticated client must be rejected with handshake failure: {combined}"
+    );
+
+    // Case 2: Client using cluster admin certificate signed by Kubernetes cluster CA (ca.crt)
+    let cluster_admin_args = vec![
+        "s_client".to_string(),
+        "-connect".to_string(),
+        bound_addr.to_string(),
+        "-CAfile".to_string(),
+        pki_dir
+            .join("datastore-ca.crt")
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "-cert".to_string(),
+        pki_dir.join("admin.crt").to_str().unwrap().to_string(),
+        "-key".to_string(),
+        pki_dir.join("admin.key").to_str().unwrap().to_string(),
+        "-ign_eof".to_string(),
+    ];
+    let out = run_openssl_probe(cluster_admin_args)
+        .await
+        .expect("openssl probe must execute successfully");
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !combined.contains("HTTP/1.1 200 OK")
+            && (combined.to_lowercase().contains("unknown ca")
+                || combined
+                    .to_lowercase()
+                    .contains("certificate verify failed")
+                || !out.status.success()),
+        "Cluster admin cert must be rejected by datastore as unknown CA: {combined}"
+    );
+
+    // Case 3: Client using dedicated datastore client certificate signed by datastore-ca.crt
+    let datastore_client_args = vec![
+        "s_client".to_string(),
+        "-connect".to_string(),
+        bound_addr.to_string(),
+        "-CAfile".to_string(),
+        pki_dir
+            .join("datastore-ca.crt")
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "-cert".to_string(),
+        pki_dir
+            .join("datastore-client.crt")
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "-key".to_string(),
+        pki_dir
+            .join("datastore-client.key")
+            .to_str()
+            .unwrap()
+            .to_string(),
+    ];
+    let out = run_openssl_probe(datastore_client_args)
+        .await
+        .expect("openssl probe must execute successfully");
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        combined.contains("HTTP/1.1 200 OK")
+            || (out.status.success()
+                && (combined.contains("Verification: OK")
+                    || combined.contains("CONNECTION ESTABLISHED"))),
+        "Datastore client must successfully connect with valid datastore client cert: {combined}"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn test_issue_341_protected_datastore_loopback_mtls_receipt() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (stop_handle, stop_receiver) = stop_channel();
+    let runtime = NodeRuntime::from_config(config).expect("build node runtime");
+    let datastore_bound_handle = runtime
+        .datastore_bound_addr_handle()
+        .expect("datastore bound handle");
+    let pki_dir = runtime.pki_dir();
+
+    let run_handle = tokio::spawn(async move {
+        runtime
+            .run_with_sink(stop_receiver, io::sink(), FlushPolicy::EachFrame)
+            .await
+    });
+
+    // Wait for datastore loopback TLS listener to bind
+    let mut bound_addr = None;
+    for _ in 0..100 {
+        if let Some(addr) = *datastore_bound_handle.lock().unwrap() {
+            bound_addr = Some(addr);
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    let bound_addr = bound_addr.expect("datastore listener must bind");
+
+    verify_datastore_mtls_matrix(bound_addr, &pki_dir).await;
+
+    // Clean shutdown
+    stop_handle.stop();
+    let (report, _, _) = run_handle.await.expect("run to completion");
+    assert_eq!(report.cause, StopCause::Requested);
+}
+
+#[tokio::test]
+async fn test_issue_341_datastore_outage_bounded_escalation_r2_fix() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (_engine, apiserver, _pki, _apicfg) = setup_cluster_infra(temp.path());
+    apiserver.check_prerequisites().await.unwrap();
+
+    let timeout = Duration::from_secs(5);
+    let (outage_tx, mut outage_rx) = tokio::sync::mpsc::channel::<()>(1);
+
+    // Custom datastore adapter that signals ready, then simulates an outage
+    let datastore_reg = Registration::new(
+        ComponentSpec {
+            id: COMPONENT_DATASTORE.to_string(),
+            prerequisites: Vec::new(),
+            kind: ComponentKind::LongRunning,
+            failure_policy: FailurePolicy::Fatal,
+            startup_timeout: timeout,
+        },
+        ClosureAdapter(move |mut context: AdapterContext| async move {
+            context.ready();
+            // Wait for outage trigger
+            let _ = outage_rx.recv().await;
+            // Simulate abnormal datastore failure/outage
+            Err(AdapterError {
+                code: "datastore_wal_io_fault",
+            })
+        }),
+    );
+
+    let apiserver_reg = ApiserverAdapter::registration(
+        COMPONENT_APISERVER,
+        (*apiserver).clone(),
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+
+    let runtime = RuntimeBuilder::new(config)
+        .with_apiserver(apiserver)
+        .register_component(datastore_reg)
+        .register_component(apiserver_reg)
+        .build()
+        .expect("build runtime");
+
+    let probe = LogProbe::default();
+    let (_stop_handle, stop_receiver) = stop_channel();
+
+    let run_handle =
+        tokio::spawn(runtime.run_with_sink(stop_receiver, probe.clone(), FlushPolicy::EachFrame));
+
+    // Wait until both datastore and apiserver are ready
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    // Trigger the datastore outage while apiserver is actively up
+    let outage_instant = std::time::Instant::now();
+    outage_tx.send(()).await.unwrap();
+
+    // Supervisor must complete bounded escalation without hanging or exceeding 30s
+    let (report, _, _) = tokio::time::timeout(Duration::from_secs(5), run_handle)
+        .await
+        .expect("must not exceed 5s timeout; historical 30s hang resolved")
+        .expect("run to completion");
+
+    let escalation_duration = outage_instant.elapsed();
+    assert!(
+        escalation_duration < Duration::from_secs(5),
+        "escalation took {escalation_duration:?}, must be under 5s"
+    );
+
+    match &report.cause {
+        StopCause::Fatal(failure) => {
+            assert_eq!(failure.component, COMPONENT_DATASTORE);
+            assert_eq!(failure.kind, FailureKind::Adapter("datastore_wal_io_fault"));
+        },
+        other => panic!("expected Fatal datastore outage, got: {other:?}"),
+    }
+
+    let logs = probe.text();
+    assert!(logs.contains("\"detail_code\":\"datastore_wal_io_fault\""));
+    assert!(logs.contains("\"event\":\"supervisor_stop\""));
+}
+
+fn run_kubectl_configmap_crud(kubeconfig: &str) {
+    // 4. kubectl create configmap test-cm in test-ns
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "--request-timeout=10s",
+            "create",
+            "configmap",
+            "test-cm",
+            "-n",
+            "test-ns",
+            "--from-literal=hello=world",
+        ])
+        .output()
+        .expect("kubectl create configmap");
+    assert!(out.status.success(), "kubectl create configmap failed");
+
+    // 5. kubectl get configmap test-cm in test-ns
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "--request-timeout=10s",
+            "get",
+            "configmap",
+            "test-cm",
+            "-n",
+            "test-ns",
+            "-o",
+            "jsonpath={.data.hello}",
+        ])
+        .output()
+        .expect("kubectl get configmap");
+    assert!(out.status.success());
+    assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "world");
+
+    // 6. kubectl delete configmap test-cm
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "--request-timeout=10s",
+            "delete",
+            "configmap",
+            "test-cm",
+            "-n",
+            "test-ns",
+        ])
+        .output()
+        .expect("kubectl delete configmap");
+    assert!(out.status.success());
+}
+
+fn run_kubectl_crud_lifecycle(kubeconfig: &str) {
+    // 1. kubectl get namespaces
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "-v=8",
+            "--request-timeout=10s",
+            "get",
+            "namespaces",
+        ])
+        .output()
+        .expect("kubectl get namespaces");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        out.status.success(),
+        "kubectl get namespaces failed:\nstdout: {stdout}\nstderr: {stderr}"
+    );
+    assert!(
+        stdout.contains("default"),
+        "must contain default namespace: stdout='{stdout}'"
+    );
+
+    // 2. kubectl create namespace test-ns
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "--request-timeout=10s",
+            "create",
+            "namespace",
+            "test-ns",
+        ])
+        .output()
+        .expect("kubectl create namespace");
+    assert!(out.status.success(), "kubectl create namespace failed");
+
+    // 3. kubectl get namespace test-ns
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "--request-timeout=10s",
+            "get",
+            "namespace",
+            "test-ns",
+        ])
+        .output()
+        .expect("kubectl get namespace");
+    assert!(out.status.success());
+
+    run_kubectl_configmap_crud(kubeconfig);
+
+    // 7. kubectl delete namespace test-ns
+    let out = std::process::Command::new("kubectl")
+        .args([
+            "--kubeconfig",
+            kubeconfig,
+            "--request-timeout=10s",
+            "delete",
+            "namespace",
+            "test-ns",
+        ])
+        .output()
+        .expect("kubectl delete namespace");
+    assert!(out.status.success());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn test_issue_341_kubectl_admin_crud() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (stop_handle, stop_receiver) = stop_channel();
+    let runtime = NodeRuntime::from_config(config).expect("build node runtime");
+    let apiserver = runtime.apiserver().cloned().expect("apiserver service");
+    let pki_dir = runtime.pki_dir();
+    let kubeconfig_path = pki_dir.join("admin.kubeconfig");
+
+    let run_handle = tokio::spawn(async move {
+        runtime
+            .run_with_sink(stop_receiver, io::sink(), FlushPolicy::EachFrame)
+            .await
+    });
+
+    // Wait for apiserver to be listening and admin.kubeconfig to be updated with bound server URL
+    let mut ready = false;
+    for _ in 0..100 {
+        if apiserver.bound_addr().is_some() && kubeconfig_path.exists() {
+            ready = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert!(ready, "apiserver and admin.kubeconfig must be ready");
+
+    let kubeconfig = kubeconfig_path.to_str().unwrap();
+
+    // Verify kubectl if available
+    let kubectl_available = std::process::Command::new("kubectl")
+        .args(["version", "--client"])
+        .output()
+        .is_ok();
+
+    if kubectl_available {
+        run_kubectl_crud_lifecycle(kubeconfig);
+    }
+
+    // Clean shutdown
+    stop_handle.stop();
+    let (report, _, _) = run_handle.await.expect("run to completion");
+    assert_eq!(report.cause, StopCause::Requested);
+}
