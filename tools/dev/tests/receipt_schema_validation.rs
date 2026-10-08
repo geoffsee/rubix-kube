@@ -369,3 +369,69 @@ fn test_default_repo_checkout_criteria_all_pending() -> Result<()> {
     assert!(err.to_string().contains("RELEASE UNQUALIFIED"));
     Ok(())
 }
+
+#[test]
+fn test_readme_example_receipt_valid() -> Result<()> {
+    let readme_receipt_json = r#"{
+  "schema_version": 1,
+  "criterion": 1,
+  "description": "Sample valid qualification run",
+  "candidate": {
+    "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+    "binary_digests": {
+      "rubix-kube": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "payload_digests": {
+      "bundle.manifest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  },
+  "environment": {
+    "host": "linux-arm64",
+    "kernel": "6.6.137",
+    "runner": "github-hosted-ubuntu-24.04-arm"
+  },
+  "commands": [
+    {
+      "command": [
+        "rubix-kube",
+        "--version"
+      ],
+      "exit_code": 0,
+      "duration_ms": 15
+    }
+  ],
+  "assertions": [
+    {
+      "name": "startup_verified",
+      "passed": true,
+      "detail": "clean startup confirmed"
+    }
+  ],
+  "skips": [
+    {
+      "name": "musl_dynamic",
+      "reason": "glibc host platform"
+    }
+  ],
+  "cleanup": {
+    "cleaned_paths": [
+      "/tmp/test"
+    ],
+    "remaining_containers": [],
+    "remaining_images": [],
+    "status": "complete"
+  },
+  "timestamps": {
+    "started_at": "2026-10-08T12:00:00Z",
+    "completed_at": "2026-10-08T12:01:00Z"
+  },
+  "integrity_hash": "e53e9fe4d16e18734a4f399e7b110f9a164242332a91278254e10e0a58bb5983"
+}"#;
+    let receipt: CandidateReceipt = receipt::parse_receipt_bytes(readme_receipt_json.as_bytes())?;
+    assert_eq!(receipt.schema_version, 1);
+    assert_eq!(receipt.criterion, 1);
+    receipt.verify_integrity()?;
+    let inventory = sample_inventory();
+    receipt::validate_candidate_receipt(&receipt, &inventory, 1)?;
+    Ok(())
+}

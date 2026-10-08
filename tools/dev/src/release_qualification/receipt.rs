@@ -5,7 +5,7 @@
 //! - Rejection of duplicate JSON keys and nonfinite numbers via strict JSON visitor.
 //! - Rejection of file symlinks and oversized streams via `crate::read_bounded`.
 //! - Verification of candidate identity against current candidate inventory.
-//! - Cryptographic integrity binding over the canonical receipt payload.
+//! - Tamper-evident SHA-256 payload integrity hash binding over the canonical receipt payload.
 //! - Verification of command exit codes, assertion statuses, non-empty skip reasons,
 //!   and clean container/image cleanup inventories.
 
@@ -140,7 +140,7 @@ pub struct ReceiptPayload {
     pub timestamps: ReceiptTimestamps,
 }
 
-/// Candidate-bound qualification receipt with cryptographic integrity binding.
+/// Candidate-bound qualification receipt with SHA-256 payload integrity hash binding.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CandidateReceipt {
@@ -209,8 +209,8 @@ impl CandidateReceipt {
         compute_payload_integrity_hash(&self.payload())
     }
 
-    /// Creates a signed `CandidateReceipt` by computing the integrity hash for `payload`.
-    pub fn new_signed(payload: ReceiptPayload) -> Result<Self> {
+    /// Creates a `CandidateReceipt` bound with a SHA-256 integrity hash computed over `payload`.
+    pub fn new_with_integrity_hash(payload: ReceiptPayload) -> Result<Self> {
         let integrity_hash = compute_payload_integrity_hash(&payload)?;
         Ok(Self {
             schema_version: payload.schema_version,
@@ -227,7 +227,12 @@ impl CandidateReceipt {
         })
     }
 
-    /// Verifies the cryptographic integrity binding of this receipt.
+    /// Backwards-compatible alias for [`Self::new_with_integrity_hash`].
+    pub fn new_signed(payload: ReceiptPayload) -> Result<Self> {
+        Self::new_with_integrity_hash(payload)
+    }
+
+    /// Verifies the SHA-256 payload integrity hash binding of this receipt.
     pub fn verify_integrity(&self) -> Result<()> {
         if self.integrity_hash.trim().is_empty() {
             return Err("receipt integrity_hash cannot be empty".into());

@@ -1,7 +1,7 @@
 //! Roadmap #263 completion criteria and candidate-bound qualification evidence.
 //!
 //! Evaluates criteria satisfaction against validated candidate-bound receipts.
-//! Receipts must match current candidate inventory, satisfy cryptographic integrity,
+//! Receipts must match current candidate inventory, satisfy SHA-256 payload integrity,
 //! report exit code 0 for all commands, verify passed assertions, justify all skips,
 //! and confirm complete cleanup with no leaked resources.
 
