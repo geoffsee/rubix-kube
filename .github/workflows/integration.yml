@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
+      - 'crates/**'
       - 'tools/dev/**'
       - 'tools/api-json/**'
       - 'tools/defaults/**'
@@ -18,6 +19,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'crates/**'
       - 'tools/dev/**'
       - 'tools/api-json/**'
       - 'tools/defaults/**'
@@ -127,5 +129,38 @@ jobs:
         with:
           name: api-json-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/api-json/
+          if-no-files-found: warn
+          retention-days: 14
+
+  disposable-node:
+    name: Disposable Linux node scaffold (Linux arm64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-rust
+        with:
+          cache-key: integration-disposable-node-arm64
+      - name: Build candidate binaries
+        run: |
+          cargo build --locked -p rubix-kube -p rubixctl
+      - name: Execute disposable Linux node scaffold capture
+        env:
+          CAPTURE_DIR: ${{ runner.temp }}/disposable-node
+        run: |
+          cargo run --locked -p rubix-dev --bin rubix-disposable-node -- capture --output "$CAPTURE_DIR"
+      - name: Verify schema-2 receipt against contract
+        env:
+          CAPTURE_DIR: ${{ runner.temp }}/disposable-node
+        run: |
+          cargo run --locked -p rubix-dev --bin rubix-disposable-node -- verify "$CAPTURE_DIR"
+      - name: Retain public capture and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: disposable-node-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/disposable-node/
           if-no-files-found: warn
           retention-days: 14
