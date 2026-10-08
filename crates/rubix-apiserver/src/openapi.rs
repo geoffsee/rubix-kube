@@ -38,10 +38,6 @@ pub fn v3_core() -> Value {
     ] {
         let collection = path.trim_end_matches("/{name}");
         paths.insert(collection.to_string(), json!({ "post": operation(kind) }));
-        paths.insert(
-            path.to_string(),
-            json!({ "patch": operation(kind), "put": operation(kind) }),
-        );
     }
     json!({
         "openapi": "3.0.0",
@@ -85,11 +81,11 @@ mod tests {
     }
 
     #[test]
-    fn pod_patch_advertises_field_validation() {
+    fn pod_create_advertises_field_validation() {
         let doc = v3_core();
-        let patch = &doc["paths"]["/api/v1/namespaces/{namespace}/pods/{name}"]["patch"];
-        assert_eq!(patch["x-kubernetes-group-version-kind"]["kind"], "Pod");
-        let names: Vec<&str> = patch["parameters"]
+        let post = &doc["paths"]["/api/v1/namespaces/{namespace}/pods"]["post"];
+        assert_eq!(post["x-kubernetes-group-version-kind"]["kind"], "Pod");
+        let names: Vec<&str> = post["parameters"]
             .as_array()
             .unwrap()
             .iter()

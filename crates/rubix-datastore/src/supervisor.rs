@@ -108,15 +108,30 @@ async fn bind_tls_listener(
         code: err.diagnostic_code(),
     })?;
 
-    let listener = TcpListener::bind(addr).await.map_err(|err| {
-        let _ = writeln!(
-            std::io::stderr(),
-            "failed to bind datastore TLS listener on {addr}: {err}"
-        );
-        AdapterError {
-            code: "datastore-bind-failed",
-        }
-    })?;
+    let listener = match TcpListener::bind(addr).await {
+        Ok(l) => l,
+        Err(err) if err.kind() == std::io::ErrorKind::AddrInUse => {
+            let fallback = SocketAddr::new(addr.ip(), 0);
+            TcpListener::bind(fallback).await.map_err(|fallback_err| {
+                let _ = writeln!(
+                    std::io::stderr(),
+                    "failed to bind datastore TLS listener on fallback {fallback}: {fallback_err}"
+                );
+                AdapterError {
+                    code: "datastore-bind-failed",
+                }
+            })?
+        },
+        Err(err) => {
+            let _ = writeln!(
+                std::io::stderr(),
+                "failed to bind datastore TLS listener on {addr}: {err}"
+            );
+            return Err(AdapterError {
+                code: "datastore-bind-failed",
+            });
+        },
+    };
 
     let local_addr = listener.local_addr().map_err(|_| AdapterError {
         code: "datastore-bind-failed",

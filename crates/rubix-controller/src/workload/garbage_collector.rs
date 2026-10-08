@@ -45,7 +45,10 @@ impl GarbageCollector {
 
         loop {
             if iterations >= 100 {
-                break;
+                return Err(ControllerError::ReconciliationFailed {
+                    resource: format!("garbage collection in namespace '{namespace}'"),
+                    reason: "cascading deletion did not converge within 100 passes".to_string(),
+                });
             }
             iterations += 1;
             let pass_deleted = self.reconcile_pass(namespace).await?;
