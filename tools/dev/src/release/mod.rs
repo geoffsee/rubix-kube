@@ -9,8 +9,7 @@ pub use attribution::{
 };
 pub use cell_build::{
     CellBuildReceipt, CellInventory, CleanupReceipt, MatrixComparisonResult, ReceiptAssetInput,
-    ReceiptAssetOutput, UNBUILDABLE_REASON, build_cell_inventory, verify_cell_inventory,
-    verify_cleanup_receipt,
+    ReceiptAssetOutput, build_cell_inventory, verify_cell_inventory, verify_cleanup_receipt,
 };
 pub use evidence::{
     PerfQualificationDocument, StateEvidence, assemble_fixture_evidence, assemble_release_evidence,

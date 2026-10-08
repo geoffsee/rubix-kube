@@ -5,7 +5,11 @@ use rubix_assets::{
     Architecture, ArtifactNaming, Libc, ManagementArch, ManagementOs, ManagementTarget, Matrix,
     Variant,
 };
-
+use rubix_platform::{
+    DiscoveryRequest, HostEvidence, Observation, PlatformError, ProbeLimits,
+    preflight::PortAvailability,
+    preflight_probe::{SupplementalFacts, collect_supplemental, probe_ports},
+};
 use rubixctl::CheckInputs;
 use rubixctl::bundle::{BUNDLE_PREFIX, BundleInput, BundleSpec, build_offline_bundle};
 use rubixctl::contract::{CommandHandler, DefaultCommandHandler, InstallOptions};
@@ -17,8 +21,6 @@ use std::{
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
-
-pub const UNBUILDABLE_REASON: &str = "foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -84,72 +86,53 @@ pub struct CleanupReceipt {
     pub status: String,
 }
 
-struct MockLinuxArm64;
+struct RealHost;
 
-impl CheckInputs for MockLinuxArm64 {
-    fn discover(
-        &mut self,
-    ) -> std::result::Result<rubix_platform::HostEvidence, rubix_platform::PlatformError> {
-        fn denied<T>() -> rubix_platform::Observation<T> {
-            rubix_platform::Observation::Unknown(rubix_platform::ProbeFailure::PermissionDenied)
-        }
-        Ok(rubix_platform::HostEvidence {
-            executable: rubix_platform::ExecutableAbi {
-                os: "linux".to_string(),
-                architecture: "aarch64".to_string(),
-                environment: "gnu".to_string(),
-            },
-            kernel: denied(),
-            privileges: denied(),
-            hostname: denied(),
-            container_environment_set: false,
-            landmarks: BTreeMap::new(),
-            musl_linkers: rubix_platform::Observation::Present(vec![]),
-            files: BTreeMap::new(),
-            requested_paths: vec![],
-        })
+impl CheckInputs for RealHost {
+    fn discover(&mut self) -> std::result::Result<HostEvidence, PlatformError> {
+        rubix_platform::discover(&DiscoveryRequest::default())
     }
 
-    fn supplemental(
-        &mut self,
-    ) -> std::result::Result<
-        rubix_platform::preflight_probe::SupplementalFacts,
-        rubix_platform::PlatformError,
-    > {
-        Err(rubix_platform::PlatformError::UnsupportedHost)
+    fn supplemental(&mut self) -> std::result::Result<SupplementalFacts, PlatformError> {
+        collect_supplemental(ProbeLimits::default())
     }
 
     fn ports(
         &mut self,
-        _p: bool,
-    ) -> std::result::Result<
-        [rubix_platform::Observation<rubix_platform::preflight::PortAvailability>; 4],
-        rubix_platform::PlatformError,
-    > {
-        Err(rubix_platform::PlatformError::UnsupportedHost)
+        pprof: bool,
+    ) -> std::result::Result<[Observation<PortAvailability>; 4], PlatformError> {
+        probe_ports(pprof)
     }
 
     fn download_file(
         &mut self,
-        _u: &str,
-        _d: &Path,
-        _p: Option<&str>,
-        _t: Option<&Path>,
+        _url: &str,
+        _dest: &Path,
+        _proxy: Option<&str>,
+        _temp_dir: Option<&Path>,
     ) -> io::Result<()> {
-        panic!("network egress attempted");
+        Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "network egress prohibited during cell smoke install",
+        ))
     }
 }
 
-fn arm64_elf() -> Vec<u8> {
-    let mut b = vec![0u8; 64];
-    b[..4].copy_from_slice(b"\x7fELF");
-    b[4] = 2; // 64-bit
-    b[5] = 1; // little-endian
-    b[18..20].copy_from_slice(&183u16.to_le_bytes()); // EM_AARCH64 = 183
-    b
-}
-
 fn source_revision(root: &Path) -> Result<String> {
+    let status_output = Command::new("git")
+        .args(["status", "--porcelain", "--untracked-files=all"])
+        .current_dir(root)
+        .output()?;
+    if !status_output.status.success() {
+        return Err("failed to check git status".into());
+    }
+    if !status_output.stdout.is_empty() {
+        return Err(format!(
+            "working directory has uncommitted changes:\n{}",
+            String::from_utf8_lossy(&status_output.stdout)
+        )
+        .into());
+    }
     let output = Command::new("git")
         .args(["rev-parse", "HEAD"])
         .current_dir(root)
@@ -168,6 +151,135 @@ fn toolchain_version() -> Result<String> {
     Ok(String::from_utf8(output.stdout)?.trim().to_string())
 }
 
+fn host_target() -> Result<String> {
+    let output = Command::new("rustc").arg("-vV").output()?;
+    if !output.status.success() {
+        return Err("failed to determine host target via rustc -vV".into());
+    }
+    let stdout = String::from_utf8(output.stdout)?;
+    for line in stdout.lines() {
+        if let Some(host) = line.strip_prefix("host: ") {
+            return Ok(host.trim().to_string());
+        }
+    }
+    Err("missing 'host:' line in rustc -vV output".into())
+}
+
+fn node_target_triple(arch: Architecture, libc: Libc) -> &'static str {
+    match (arch, libc) {
+        (Architecture::Amd64, Libc::Glibc) => "x86_64-unknown-linux-gnu",
+        (Architecture::Amd64, Libc::Musl) => "x86_64-unknown-linux-musl",
+        (Architecture::Arm64, Libc::Glibc) => "aarch64-unknown-linux-gnu",
+        (Architecture::Arm64, Libc::Musl) => "aarch64-unknown-linux-musl",
+        (Architecture::ArmV7, Libc::Glibc) => "armv7-unknown-linux-gnueabihf",
+        (Architecture::ArmV7, Libc::Musl) => "armv7-unknown-linux-musleabihf",
+        (Architecture::Riscv64, Libc::Glibc) => "riscv64gc-unknown-linux-gnu",
+        (Architecture::Riscv64, Libc::Musl) => "riscv64gc-unknown-linux-musl",
+    }
+}
+
+fn management_target_triple(target: ManagementTarget) -> &'static str {
+    match (target.os, target.architecture) {
+        (ManagementOs::Darwin, ManagementArch::Arm64) => "aarch64-apple-darwin",
+        (ManagementOs::Darwin, ManagementArch::Amd64) => "x86_64-apple-darwin",
+        (ManagementOs::Linux, ManagementArch::Arm64) => "aarch64-unknown-linux-gnu",
+        (ManagementOs::Linux, ManagementArch::Amd64) => "x86_64-unknown-linux-gnu",
+    }
+}
+
+fn extract_probe_reason(stderr: &str) -> String {
+    let mut relevant = Vec::new();
+    for line in stderr.lines() {
+        let trimmed = line.trim();
+        if (trimmed.starts_with("error[E")
+            || trimmed.starts_with("= note:")
+            || trimmed.starts_with("= help:"))
+            && !relevant.contains(&trimmed)
+        {
+            relevant.push(trimmed);
+        }
+    }
+    if relevant.is_empty() {
+        for line in stderr.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("error:")
+                && !trimmed.contains("could not compile")
+                && !relevant.contains(&trimmed)
+            {
+                relevant.push(trimmed);
+            }
+        }
+    }
+    if relevant.is_empty() {
+        stderr
+            .lines()
+            .map(str::trim)
+            .find(|l| !l.is_empty())
+            .unwrap_or("target cross-compilation failed")
+            .to_string()
+    } else {
+        relevant.join("; ")
+    }
+}
+
+fn probe_compile(
+    root: &Path,
+    package: &str,
+    target_triple: &str,
+    cache: &mut BTreeMap<(String, String), std::result::Result<(), String>>,
+) -> std::result::Result<(), String> {
+    let key = (package.to_string(), target_triple.to_string());
+    if let Some(res) = cache.get(&key) {
+        return res.clone();
+    }
+    let output = Command::new("cargo")
+        .args([
+            "build",
+            "--locked",
+            "--release",
+            "--target",
+            target_triple,
+            "-p",
+            package,
+        ])
+        .current_dir(root)
+        .output()
+        .map_err(|e| format!("cargo execution failed: {e}"))?;
+
+    let res = if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(extract_probe_reason(&stderr))
+    };
+    cache.insert(key, res.clone());
+    res
+}
+
+fn verify_linux_arm64_elf(path: &Path) -> Result<()> {
+    let bytes = fs::read(path)?;
+    if bytes.len() < 20 || &bytes[..4] != b"\x7fELF" {
+        return Err(format!("{} is not an ELF executable", path.display()).into());
+    }
+    if bytes[4] != 2 {
+        return Err(format!("{} is not a 64-bit ELF executable", path.display()).into());
+    }
+    let raw = [bytes[18], bytes[19]];
+    let machine = if bytes[5] == 2 {
+        u16::from_be_bytes(raw)
+    } else {
+        u16::from_le_bytes(raw)
+    };
+    if machine != 183 {
+        return Err(format!(
+            "{} is built for machine {machine}, expected 183 (EM_AARCH64)",
+            path.display()
+        )
+        .into());
+    }
+    Ok(())
+}
+
 fn file_sha256(path: &Path) -> Result<String> {
     let bytes = fs::read(path)?;
     Ok(sha256_hex(&bytes))
@@ -179,7 +291,7 @@ fn smoke_install_and_cleanup(
     cell6_inputs: &[ReceiptAssetInput],
     target_name: String,
 ) -> Result<CleanupReceipt> {
-    let mut mock = MockLinuxArm64;
+    let mut host = RealHost;
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
     let exit_code = DefaultCommandHandler.execute_install(
@@ -188,7 +300,7 @@ fn smoke_install_and_cleanup(
             path: install_dest.to_path_buf(),
             ..InstallOptions::default()
         },
-        &mut mock,
+        &mut host,
         &mut stdout,
         &mut stderr,
     )?;
@@ -269,13 +381,13 @@ fn verify_installed_layout(install_dest: &Path, cell6_inputs: &[ReceiptAssetInpu
             )
             .into());
         }
-        let data_mode = fs::metadata(&installed_data)?.permissions().mode() & 0o666;
+        let data_mode = fs::metadata(&installed_data)?.permissions().mode() & 0o777;
         if data_mode != 0o644 {
             return Err(
                 format!("installed data.txt expected mode 0o644, observed {data_mode:o}").into(),
             );
         }
-        let manifest_mode = fs::metadata(&installed_manifest)?.permissions().mode() & 0o666;
+        let manifest_mode = fs::metadata(&installed_manifest)?.permissions().mode() & 0o777;
         if manifest_mode != 0o644 {
             return Err(format!(
                 "installed bundle.manifest expected mode 0o644, observed {manifest_mode:o}"
@@ -288,15 +400,28 @@ fn verify_installed_layout(install_dest: &Path, cell6_inputs: &[ReceiptAssetInpu
 }
 
 fn build_cell6_and_smoke_install(
+    root: &Path,
     staging_dir: &Path,
     source_revision: &str,
     toolchain: &str,
 ) -> Result<(CellBuildReceipt, CleanupReceipt)> {
+    let status = Command::new("cargo")
+        .args(["build", "--locked", "--release", "-p", "rubix-kube"])
+        .current_dir(root)
+        .status()?;
+    if !status.success() {
+        return Err("cargo build --locked --release -p rubix-kube failed".into());
+    }
+
+    let release_bin = root.join("target/release/rubix-kube");
+    verify_linux_arm64_elf(&release_bin)?;
+
     let cell6_src = staging_dir.join("cell6_inputs");
     fs::create_dir_all(&cell6_src)?;
     let kube_bin = cell6_src.join("rubix-kube");
-    let elf_bytes = arm64_elf();
-    fs::write(&kube_bin, &elf_bytes)?;
+    fs::copy(&release_bin, &kube_bin)?;
+    let elf_bytes = fs::read(&kube_bin)?;
+
     let data_file = cell6_src.join("data.txt");
     let data_bytes = b"kubesolo arm64 offline payload\n";
     fs::write(&data_file, data_bytes)?;
@@ -391,6 +516,7 @@ fn unbuildable_node_receipt(
     cell_num: u8,
     source_revision: &str,
     toolchain: &str,
+    reason: String,
 ) -> Result<CellBuildReceipt> {
     let variant =
         Matrix::from_cell(cell_num).map_err(|e| format!("invalid cell {cell_num}: {e}"))?;
@@ -430,19 +556,16 @@ fn unbuildable_node_receipt(
         output: None,
         matrix_comparison,
         status: "unbuildable_foreign_target".to_string(),
-        reason: Some(UNBUILDABLE_REASON.to_string()),
+        reason: Some(reason),
     })
 }
 
-fn build_management_darwin_arm64(
+fn build_native_management(
     root: &Path,
+    target: ManagementTarget,
     source_revision: &str,
     toolchain: &str,
 ) -> Result<CellBuildReceipt> {
-    let target = ManagementTarget {
-        os: ManagementOs::Darwin,
-        architecture: ManagementArch::Arm64,
-    };
     let canonical = target.binary_filename("rubixctl");
     let parsed = ArtifactNaming::parse_management_binary(&canonical)
         .map_err(|e| format!("parse management binary error for {canonical}: {e}"))?;
@@ -455,23 +578,15 @@ fn build_management_darwin_arm64(
         matches: parsed.target == target,
     };
 
-    let debug_binary = root.join("target/debug/rubixctl");
-    let release_binary = root.join("target/release/rubixctl");
-    let binary_path = if release_binary.exists() {
-        release_binary
-    } else if debug_binary.exists() {
-        debug_binary
-    } else {
-        let status = Command::new("cargo")
-            .args(["build", "--locked", "-p", "rubixctl"])
-            .current_dir(root)
-            .status()?;
-        if !status.success() {
-            return Err("cargo build -p rubixctl failed".into());
-        }
-        debug_binary
-    };
+    let status = Command::new("cargo")
+        .args(["build", "--locked", "--release", "-p", "rubixctl"])
+        .current_dir(root)
+        .status()?;
+    if !status.success() {
+        return Err("cargo build --locked --release -p rubixctl failed".into());
+    }
 
+    let binary_path = root.join("target/release/rubixctl");
     let bin_bytes = fs::read(&binary_path)?;
     let output = ReceiptAssetOutput {
         filename: canonical.clone(),
@@ -510,6 +625,7 @@ fn unbuildable_management_receipt(
     target: ManagementTarget,
     source_revision: &str,
     toolchain: &str,
+    reason: String,
 ) -> Result<CellBuildReceipt> {
     let canonical = target.binary_filename("rubixctl");
     let parsed = ArtifactNaming::parse_management_binary(&canonical)
@@ -533,49 +649,74 @@ fn unbuildable_management_receipt(
         output: None,
         matrix_comparison,
         status: "unbuildable_foreign_target".to_string(),
-        reason: Some(UNBUILDABLE_REASON.to_string()),
+        reason: Some(reason),
     })
 }
 
 /// Builds the 16 node archive cells and 4 management targets receipts,
-/// performing smoke-install and layout verification on arm64/glibc cell.
+/// performing smoke-install and layout verification on arm64/glibc cell on Linux arm64.
 pub fn build_cell_inventory(
     root: &Path,
     staging_dir: &Path,
 ) -> Result<(CellInventory, CleanupReceipt)> {
     let source_revision = source_revision(root)?;
     let toolchain = toolchain_version()?;
-    let host_target = "aarch64-apple-darwin".to_string();
+    let host_target = host_target()?;
+
+    if host_target != "aarch64-unknown-linux-gnu" {
+        return Err(format!(
+            "cell build and smoke install requires an aarch64-unknown-linux-gnu host (observed {host_target}); execute inside Linux arm64 environment"
+        ).into());
+    }
 
     let (cell6_receipt, cleanup_receipt) =
-        build_cell6_and_smoke_install(staging_dir, &source_revision, &toolchain)?;
+        build_cell6_and_smoke_install(root, staging_dir, &source_revision, &toolchain)?;
+
+    let mut probe_cache = BTreeMap::new();
 
     let mut node_cells = Vec::with_capacity(16);
     for cell_num in 1..=16 {
         if cell_num == 6 {
             node_cells.push(cell6_receipt.clone());
         } else {
+            let variant =
+                Matrix::from_cell(cell_num).map_err(|e| format!("invalid cell {cell_num}: {e}"))?;
+            let triple = node_target_triple(variant.architecture, variant.libc);
+            let reason = match probe_compile(root, "rubix-kube", triple, &mut probe_cache) {
+                Ok(()) => "cross-compilation succeeded but target cell execution not configured"
+                    .to_string(),
+                Err(e) => e,
+            };
             node_cells.push(unbuildable_node_receipt(
                 cell_num,
                 &source_revision,
                 &toolchain,
+                reason,
             )?);
         }
     }
 
     let mut management_targets = Vec::with_capacity(4);
     for target in Matrix::MANAGEMENT_TARGETS {
-        if target.os == ManagementOs::Darwin && target.architecture == ManagementArch::Arm64 {
-            management_targets.push(build_management_darwin_arm64(
+        let triple = management_target_triple(target);
+        if triple == host_target {
+            management_targets.push(build_native_management(
                 root,
+                target,
                 &source_revision,
                 &toolchain,
             )?);
         } else {
+            let reason = match probe_compile(root, "rubixctl", triple, &mut probe_cache) {
+                Ok(()) => "cross-compilation succeeded but foreign target cannot execute on host"
+                    .to_string(),
+                Err(e) => e,
+            };
             management_targets.push(unbuildable_management_receipt(
                 target,
                 &source_revision,
                 &toolchain,
+                reason,
             )?);
         }
     }
@@ -655,10 +796,47 @@ fn verify_node_cells(inventory: &CellInventory) -> Result<()> {
             );
         }
 
-        if cell_num == 6 {
+        if inventory.host_target == "aarch64-unknown-linux-gnu" && cell_num == 6 {
             verify_cell6_receipt(receipt, &expected_name)?;
+        } else if receipt.status == "built" {
+            verify_built_cell_receipt(receipt, &expected_name)?;
         } else {
             verify_foreign_cell_receipt(receipt, cell_num)?;
+        }
+    }
+    Ok(())
+}
+
+fn verify_built_cell_receipt(receipt: &CellBuildReceipt, expected_name: &str) -> Result<()> {
+    if receipt.status != "built" {
+        return Err(format!("cell status must be 'built', observed {}", receipt.status).into());
+    }
+    if receipt.reason.is_some() {
+        return Err("built cell must not have an unbuildable reason".into());
+    }
+    let output = receipt
+        .output
+        .as_ref()
+        .ok_or("built cell must record output")?;
+    if output.filename != expected_name {
+        return Err(format!(
+            "cell output filename mismatch: expected {expected_name}, got {}",
+            output.filename
+        )
+        .into());
+    }
+    if output.size_bytes == 0 {
+        return Err("cell output size must be non-zero".into());
+    }
+    if output.sha256.len() != 64 || !output.sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("cell output sha256 is invalid".into());
+    }
+    if receipt.inputs.is_empty() {
+        return Err("built cell must record input assets".into());
+    }
+    for inp in &receipt.inputs {
+        if inp.size_bytes == 0 || inp.sha256.len() != 64 {
+            return Err(format!("built cell input {} is invalid", inp.path).into());
         }
     }
     Ok(())
@@ -706,17 +884,16 @@ fn verify_cell6_receipt(receipt: &CellBuildReceipt, expected_name: &str) -> Resu
 fn verify_foreign_cell_receipt(receipt: &CellBuildReceipt, cell_num: u8) -> Result<()> {
     if receipt.status != "unbuildable_foreign_target" {
         return Err(format!(
-            "foreign cell {cell_num} status must be 'unbuildable_foreign_target', observed {}",
+            "cell {cell_num} status must be 'unbuildable_foreign_target', observed {}",
             receipt.status
         )
         .into());
     }
-    if receipt.reason.as_deref() != Some(UNBUILDABLE_REASON) {
-        return Err(format!(
-            "foreign cell {cell_num} reason mismatch: expected '{UNBUILDABLE_REASON}', observed {:?}",
-            receipt.reason
-        )
-        .into());
+    match &receipt.reason {
+        Some(reason) if !reason.trim().is_empty() => {},
+        _ => {
+            return Err(format!("foreign cell {cell_num} must have a non-empty reason").into());
+        },
     }
     if receipt.output.is_some() {
         return Err(format!("unbuildable cell {cell_num} must not have output").into());
@@ -756,7 +933,8 @@ fn verify_management_targets(inventory: &CellInventory) -> Result<()> {
             )
             .into());
         }
-        if target.os == ManagementOs::Darwin && target.architecture == ManagementArch::Arm64 {
+        let triple = management_target_triple(target);
+        if triple == inventory.host_target {
             verify_built_management_receipt(receipt, &expected_name)?;
         } else {
             verify_foreign_management_receipt(receipt, &expected_name)?;
@@ -800,8 +978,14 @@ fn verify_foreign_management_receipt(
             format!("foreign management target {expected_name} must be unbuildable").into(),
         );
     }
-    if receipt.reason.as_deref() != Some(UNBUILDABLE_REASON) {
-        return Err(format!("foreign management target {expected_name} reason mismatch").into());
+    match &receipt.reason {
+        Some(reason) if !reason.trim().is_empty() => {},
+        _ => {
+            return Err(format!(
+                "foreign management target {expected_name} must have a non-empty reason"
+            )
+            .into());
+        },
     }
     if receipt.output.is_some() {
         return Err(
