@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     fs, io,
-    path::Path,
+    path::{Path, PathBuf},
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -399,6 +399,29 @@ fn verify_installed_layout(install_dest: &Path, cell6_inputs: &[ReceiptAssetInpu
     Ok(())
 }
 
+fn effective_target_dir(root: &Path) -> PathBuf {
+    let metadata_target = Command::new("cargo")
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .current_dir(root)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .and_then(|o| serde_json::from_slice::<serde_json::Value>(&o.stdout).ok())
+        .and_then(|v| v.get("target_directory")?.as_str().map(PathBuf::from));
+
+    if let Some(target_dir) = metadata_target {
+        return target_dir;
+    }
+
+    if let Ok(env_dir) = std::env::var("CARGO_TARGET_DIR") {
+        let p = PathBuf::from(env_dir.trim());
+        if !p.as_os_str().is_empty() {
+            return if p.is_relative() { root.join(p) } else { p };
+        }
+    }
+    root.join("target")
+}
+
 fn build_cell6_and_smoke_install(
     root: &Path,
     staging_dir: &Path,
@@ -413,7 +436,7 @@ fn build_cell6_and_smoke_install(
         return Err("cargo build --locked --release -p rubix-kube failed".into());
     }
 
-    let release_bin = root.join("target/release/rubix-kube");
+    let release_bin = effective_target_dir(root).join("release/rubix-kube");
     verify_linux_arm64_elf(&release_bin)?;
 
     let cell6_src = staging_dir.join("cell6_inputs");
@@ -586,7 +609,7 @@ fn build_native_management(
         return Err("cargo build --locked --release -p rubixctl failed".into());
     }
 
-    let binary_path = root.join("target/release/rubixctl");
+    let binary_path = effective_target_dir(root).join("release/rubixctl");
     let bin_bytes = fs::read(&binary_path)?;
     let output = ReceiptAssetOutput {
         filename: canonical.clone(),
