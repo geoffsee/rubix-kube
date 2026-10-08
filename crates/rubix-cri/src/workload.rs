@@ -11,11 +11,13 @@ use crate::readiness::{ReadinessError, check_image_service, check_runtime_versio
 use crate::runtime::v1::image_service_client::ImageServiceClient;
 use crate::runtime::v1::runtime_service_client::RuntimeServiceClient;
 use crate::runtime::v1::{
-    Container, ContainerFilter, ContainerStatus, ContainerStatusRequest, CreateContainerRequest,
-    Image, ImageStatusRequest, ListContainersRequest, ListImagesRequest, ListPodSandboxRequest,
-    PodSandbox, PodSandboxFilter, PodSandboxStatus, PodSandboxStatusRequest, PullImageRequest,
-    RemoveContainerRequest, RemoveImageRequest, RemovePodSandboxRequest, RunPodSandboxRequest,
-    StartContainerRequest, StopContainerRequest, StopPodSandboxRequest,
+    AuthConfig, Container, ContainerFilter, ContainerStatus, ContainerStatusRequest,
+    CreateContainerRequest, ExecSyncRequest, ExecSyncResponse, Image, ImageSpec,
+    ImageStatusRequest, ListContainersRequest, ListImagesRequest, ListPodSandboxRequest,
+    PodSandbox, PodSandboxConfig, PodSandboxFilter, PodSandboxStatus, PodSandboxStatusRequest,
+    PullImageRequest, RemoveContainerRequest, RemoveImageRequest, RemovePodSandboxRequest,
+    RunPodSandboxRequest, StartContainerRequest, StopContainerRequest, StopPodSandboxRequest,
+    VersionRequest, VersionResponse,
 };
 use std::collections::BTreeMap;
 use tonic::transport::Channel;
@@ -29,7 +31,9 @@ pub struct CriClient {
     image: ImageServiceClient<Channel>,
 }
 
-fn image_spec(image: impl Into<String>) -> crate::runtime::v1::ImageSpec {
+/// Helper to construct an [`ImageSpec`] for a given image reference.
+#[must_use]
+pub fn image_spec(image: impl Into<String>) -> crate::runtime::v1::ImageSpec {
     crate::runtime::v1::ImageSpec {
         image: image.into(),
         annotations: BTreeMap::new(),
@@ -262,6 +266,34 @@ impl CriClient {
             .ok_or_else(|| tonic::Status::internal("missing container status in response"))
     }
 
+    /// Queries runtime version information.
+    pub async fn version(
+        &mut self,
+        version: impl Into<String>,
+    ) -> Result<VersionResponse, tonic::Status> {
+        let req = VersionRequest {
+            version: version.into(),
+        };
+        let resp = self.runtime.version(req).await?;
+        Ok(resp.into_inner())
+    }
+
+    /// Executes a command synchronously inside a container.
+    pub async fn exec_sync(
+        &mut self,
+        container_id: impl Into<String>,
+        cmd: Vec<String>,
+        timeout_secs: i64,
+    ) -> Result<ExecSyncResponse, tonic::Status> {
+        let req = ExecSyncRequest {
+            container_id: container_id.into(),
+            cmd,
+            timeout: timeout_secs,
+        };
+        let resp = self.runtime.exec_sync(req).await?;
+        Ok(resp.into_inner())
+    }
+
     // --- Image Service Operations ---
 
     /// Lists images present in the external CRI runtime image store.
@@ -285,12 +317,39 @@ impl CriClient {
         Ok(resp.into_inner().image)
     }
 
+    /// Queries status for a specific image specification.
+    pub async fn image_status_spec(
+        &mut self,
+        image: Option<ImageSpec>,
+        verbose: bool,
+    ) -> Result<Option<Image>, tonic::Status> {
+        let req = ImageStatusRequest { image, verbose };
+        let resp = self.image.image_status(req).await?;
+        Ok(resp.into_inner().image)
+    }
+
     /// Requests the external runtime to pull an image.
     pub async fn pull_image(&mut self, image: impl Into<String>) -> Result<String, tonic::Status> {
         let req = PullImageRequest {
             image: Some(image_spec(image)),
             auth: None,
             sandbox_config: None,
+        };
+        let resp = self.image.pull_image(req).await?;
+        Ok(resp.into_inner().image_ref)
+    }
+
+    /// Requests the external runtime to pull an image with full spec, auth, and sandbox options.
+    pub async fn pull_image_spec(
+        &mut self,
+        image: Option<ImageSpec>,
+        auth: Option<AuthConfig>,
+        sandbox_config: Option<PodSandboxConfig>,
+    ) -> Result<String, tonic::Status> {
+        let req = PullImageRequest {
+            image,
+            auth,
+            sandbox_config,
         };
         let resp = self.image.pull_image(req).await?;
         Ok(resp.into_inner().image_ref)

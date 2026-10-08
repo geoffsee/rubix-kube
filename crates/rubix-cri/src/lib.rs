@@ -30,7 +30,8 @@ pub use readiness::{
     DEFAULT_READINESS_TIMEOUT, DEFAULT_RETRY_INTERVAL, ReadinessError, check_image_service,
     check_runtime_version, probe_cri_readiness,
 };
-pub use workload::CriClient;
+pub use tonic;
+pub use workload::{CriClient, image_spec};
 
 pub mod runtime {
     // Preserve upstream protocol comments/boolean fields and tonic's nested RPC templates.

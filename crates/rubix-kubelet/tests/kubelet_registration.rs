@@ -4,7 +4,7 @@ use tempfile::TempDir;
 
 use rubix_apiserver::{ApiserverConfig, ApiserverService, KubernetesStorage};
 use rubix_datastore::{DatastoreConfig, DatastoreEngine};
-use rubix_kubelet::{KubeletConfigOptions, KubeletService, MockRuntimeProvider};
+use rubix_kubelet::{KubeletConfigOptions, KubeletError, KubeletService, MockRuntimeProvider, cri};
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 
 fn setup_test_environment(dir: &TempDir) -> (ApiserverService, KubeletConfigOptions) {
@@ -178,6 +178,8 @@ async fn test_prerequisite_failures_identify_responsible_component() {
 #[derive(Debug)]
 struct RealCriMock;
 
+/// A socket-backed provider shape: only `check_prerequisites` reaches it in this test,
+/// so every CRI call answers with an empty or trivial result.
 #[async_trait::async_trait]
 impl rubix_kubelet::RuntimeProvider for RealCriMock {
     fn provider_name(&self) -> &'static str {
@@ -186,16 +188,83 @@ impl rubix_kubelet::RuntimeProvider for RealCriMock {
     fn requires_socket(&self) -> bool {
         true
     }
-    async fn run_pod(
-        &self,
-        _pod: &serde_json::Value,
-    ) -> Result<String, rubix_kubelet::KubeletError> {
-        Ok("id".to_string())
+    async fn run_pod_sandbox(&self, _c: &cri::PodSandboxConfig) -> Result<String, KubeletError> {
+        Ok("sandbox".to_string())
     }
-    async fn stop_pod(&self, _id: &str) -> Result<(), rubix_kubelet::KubeletError> {
+    async fn stop_pod_sandbox(&self, _id: &str) -> Result<(), KubeletError> {
         Ok(())
     }
-    async fn get_pod_status(&self, _id: &str) -> Result<String, rubix_kubelet::KubeletError> {
-        Ok("Running".to_string())
+    async fn remove_pod_sandbox(&self, _id: &str) -> Result<(), KubeletError> {
+        Ok(())
+    }
+    async fn list_pod_sandbox(
+        &self,
+        _f: Option<&cri::PodSandboxFilter>,
+    ) -> Result<Vec<cri::PodSandbox>, KubeletError> {
+        Ok(Vec::new())
+    }
+    async fn pod_sandbox_status(&self, id: &str) -> Result<cri::PodSandboxStatus, KubeletError> {
+        Ok(cri::PodSandboxStatus {
+            id: id.to_string(),
+            ..cri::PodSandboxStatus::default()
+        })
+    }
+    async fn create_container(
+        &self,
+        _sandbox: &str,
+        _c: &cri::ContainerConfig,
+        _s: &cri::PodSandboxConfig,
+    ) -> Result<String, KubeletError> {
+        Ok("container".to_string())
+    }
+    async fn start_container(&self, _id: &str) -> Result<(), KubeletError> {
+        Ok(())
+    }
+    async fn stop_container(&self, _id: &str, _timeout: i64) -> Result<(), KubeletError> {
+        Ok(())
+    }
+    async fn remove_container(&self, _id: &str) -> Result<(), KubeletError> {
+        Ok(())
+    }
+    async fn list_containers(
+        &self,
+        _f: Option<&cri::ContainerFilter>,
+    ) -> Result<Vec<cri::Container>, KubeletError> {
+        Ok(Vec::new())
+    }
+    async fn container_status(&self, id: &str) -> Result<cri::ContainerStatus, KubeletError> {
+        Ok(cri::ContainerStatus {
+            id: id.to_string(),
+            ..cri::ContainerStatus::default()
+        })
+    }
+    async fn exec_sync(
+        &self,
+        _id: &str,
+        _cmd: &[String],
+        _timeout: i64,
+    ) -> Result<rubix_kubelet::ExecResult, KubeletError> {
+        Ok(rubix_kubelet::ExecResult {
+            exit_code: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        })
+    }
+    async fn container_logs(
+        &self,
+        _id: &str,
+        _o: &rubix_kubelet::LogOptions,
+    ) -> Result<String, KubeletError> {
+        Ok(String::new())
+    }
+    async fn image_status(&self, _i: &cri::ImageSpec) -> Result<Option<cri::Image>, KubeletError> {
+        Ok(None)
+    }
+    async fn pull_image(
+        &self,
+        image: &cri::ImageSpec,
+        _s: Option<&cri::PodSandboxConfig>,
+    ) -> Result<String, KubeletError> {
+        Ok(image.image.clone())
     }
 }

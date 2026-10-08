@@ -8,6 +8,8 @@ mod kubelet_golden_settings;
 mod kubelet_lifecycle_and_volumes;
 #[path = "kubelet_nested_fixture.rs"]
 mod kubelet_nested_fixture;
+#[path = "kubelet_observed_runtime.rs"]
+mod kubelet_observed_runtime;
 #[path = "kubelet_registration.rs"]
 mod kubelet_registration;
 #[path = "kubelet_supervisor.rs"]

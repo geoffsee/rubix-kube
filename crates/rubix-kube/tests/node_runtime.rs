@@ -22,7 +22,7 @@ use rubix_kube::lifecycle_sink::FlushPolicy;
 use rubix_kube::runtime::{
     COMPONENT_APISERVER, COMPONENT_CONFIG_API, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS,
     COMPONENT_DATASTORE, COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER,
-    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder,
+    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder, select_runtime_provider,
 };
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_platform::Architecture;
@@ -1393,4 +1393,35 @@ async fn test_issue_341_kubectl_admin_crud() {
     stop_handle.stop();
     let (report, _, _) = run_handle.await.expect("run to completion");
     assert_eq!(report.cause, StopCause::Requested);
+}
+
+#[tokio::test]
+async fn test_issue_345_select_runtime_provider_hook() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let builder = RuntimeBuilder::new(config.clone());
+    let runtime = NodeRuntime::from_config(config.clone()).expect("build node runtime");
+
+    // Provider selected from default config
+    let provider = select_runtime_provider(config.config()).expect("provider selected");
+    let provider_from_builder = builder
+        .select_runtime_provider()
+        .expect("provider from builder");
+    let provider_from_runtime = runtime
+        .select_runtime_provider()
+        .expect("provider from runtime");
+
+    assert_eq!(provider.provider_name(), "containerd");
+    assert_eq!(provider_from_builder.provider_name(), "containerd");
+    assert_eq!(provider_from_runtime.provider_name(), "containerd");
+
+    assert!(provider.requires_socket());
+    assert!(!provider.runtime_version().is_empty());
+
+    // Explicit custom endpoint
+    let mut custom_cfg = config.config().clone();
+    custom_cfg.runtime.endpoint = "unix:///var/run/custom-containerd.sock".to_string();
+    let custom_provider = select_runtime_provider(&custom_cfg).expect("custom provider");
+    assert_eq!(custom_provider.provider_name(), "containerd");
+    assert!(custom_provider.requires_socket());
 }

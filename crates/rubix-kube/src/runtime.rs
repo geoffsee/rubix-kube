@@ -25,6 +25,7 @@ use rubix_datastore::supervisor::DatastoreAdapter;
 use rubix_dns::config::CoreDnsConfig;
 use rubix_dns::service::CoreDnsService;
 use rubix_dns::supervisor::CoreDnsAdapter;
+use rubix_kubelet::{CriRuntimeProvider, RuntimeProvider};
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_portainer::config::PortainerAgentConfig;
 use rubix_portainer::service::PortainerService;
@@ -208,6 +209,12 @@ impl RuntimeBuilder {
     pub fn with_metrics_registry(mut self, registry: Arc<MetricsRegistry>) -> Self {
         self.metrics_registry = Some(registry);
         self
+    }
+
+    /// Selects the CRI runtime provider based on node configuration.
+    #[must_use]
+    pub fn select_runtime_provider(&self) -> Option<Arc<dyn RuntimeProvider>> {
+        select_runtime_provider(self.config.config())
     }
 
     /// Registers a component directly with its existing specification.
@@ -510,6 +517,12 @@ impl NodeRuntime {
         self.observer.clone()
     }
 
+    /// Selects the CRI runtime provider based on node configuration.
+    #[must_use]
+    pub fn select_runtime_provider(&self) -> Option<Arc<dyn RuntimeProvider>> {
+        select_runtime_provider(self.config.config())
+    }
+
     /// Runs the supervised runtime until the stop receiver indicates shutdown.
     pub async fn run(self, control: StopReceiver) -> SupervisorReport {
         self.supervisor.run(control).await
@@ -586,6 +599,30 @@ impl NodeRuntime {
 
         Ok(runtime_exit_code(&report.cause))
     }
+}
+
+/// Selects the CRI runtime provider based on node configuration.
+///
+/// When an explicit containerd endpoint is configured in `runtime.endpoint`,
+/// or if default managed socket exists (or fallback host socket exists),
+/// returns a `CriRuntimeProvider` wrapped in an `Arc<dyn RuntimeProvider>`.
+#[must_use]
+pub fn select_runtime_provider(config: &rubix_config::Config) -> Option<Arc<dyn RuntimeProvider>> {
+    let endpoint = config.runtime.endpoint.trim();
+    let socket_path = if endpoint.is_empty() {
+        let managed = PathBuf::from(&config.path).join("containerd/containerd.sock");
+        if managed.exists() {
+            managed
+        } else {
+            let host = PathBuf::from("/run/containerd/containerd.sock");
+            if host.exists() { host } else { managed }
+        }
+    } else {
+        let stripped = endpoint.strip_prefix("unix://").unwrap_or(endpoint);
+        PathBuf::from(stripped)
+    };
+
+    Some(Arc::new(CriRuntimeProvider::new(socket_path)))
 }
 
 fn register_operational_metrics(

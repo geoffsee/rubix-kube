@@ -1287,6 +1287,7 @@ dependencies = [
  "rubix-controller",
  "rubix-datastore",
  "rubix-dns",
+ "rubix-kubelet",
  "rubix-network",
  "rubix-pki",
  "rubix-platform",
