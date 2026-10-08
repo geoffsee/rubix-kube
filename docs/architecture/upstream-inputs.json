@@ -10,6 +10,7 @@
       "tag": "v1.35.7",
       "tag_object": "b317677b30aa81848f87b3dd36980942c4c8d832",
       "commit": "96cb9ab4201d88ce5e549fde047a686171838fdb",
+      "license": "Apache-2.0",
       "files": [
         {
           "path": "go.mod",
@@ -120,6 +121,7 @@
       "tag": "v2.2.5",
       "tag_object": "bafc09e8fb5c3d754f57a77cd0b1fc6b7919834d",
       "commit": "e53c7c1516c3b2bff98eb76f1f4117477e6f4e66",
+      "license": "Apache-2.0",
       "files": [
         {
           "path": "go.mod",
@@ -206,6 +208,7 @@
       "tag": "v0.16.3",
       "tag_object": null,
       "commit": "7414fca1dc92b44d7ec6de82383ba614a86d2994",
+      "license": "Apache-2.0",
       "files": [
         {
           "path": "go.mod",
@@ -256,6 +259,7 @@
       "tag": "api/v1.10.0",
       "tag_object": "91b6e6810ab04a9c7bbf715a18f63a99b9cedea2",
       "commit": "8b34ce391bd114e080892cccfa956ef3807c207c",
+      "license": "Apache-2.0",
       "files": [
         {
           "path": "api/go.mod",
@@ -424,6 +428,7 @@
       "tag": "v36.2",
       "tag_object": "424e1b0a184baa5a3c75061a1febd5f60a0a3707",
       "commit": "2c74169b34066ceb8ddb6b882fcb3fb32d737a55",
+      "license": "BSD-3-Clause",
       "files": [
         {
           "path": "src/google/protobuf/any.proto",
@@ -468,6 +473,7 @@
       "tag": "v3.6.12",
       "tag_object": "f8e5d3f57dcc918ccd5a02980192a3be73adedc3",
       "commit": "90b034a02766ab83e425f9b79262311f508dba4e",
+      "license": "Apache-2.0",
       "role": "Kine-server-TLS-client-auth-evidence-not-Rust-etcd-generation",
       "files": [
         {
@@ -477,6 +483,92 @@
           "bytes": 18646
         }
       ]
+    },
+    {
+      "repository": "https://github.com/containernetworking/plugins",
+      "tag": "v1.9.0",
+      "commit": "dcfc8eeef08c2a4ef69d4cb7ff1839db43d54406",
+      "license": "Apache-2.0",
+      "role": "authoritative-cni-plugins-source"
+    },
+    {
+      "repository": "https://github.com/containers/crun",
+      "tag": "1.26",
+      "commit": "fc715cb00d720c0dc766ea9d9e6ebda147d32c5f",
+      "license": "GPL-2.0-or-later",
+      "role": "authoritative-crun-oci-runtime-source"
+    },
+    {
+      "repository": "https://github.com/containerd/fuse-overlayfs-snapshotter",
+      "tag": "v2.1.7",
+      "commit": "da57796c7d0a2b608abf173651cf148706e33337",
+      "license": "Apache-2.0",
+      "role": "authoritative-fuse-overlayfs-snapshotter-source"
+    }
+  ],
+  "image_manifests": [
+    {
+      "image": "coredns",
+      "reference": "docker.io/coredns/coredns:1.14.4",
+      "license": "Apache-2.0",
+      "manifests": {
+        "amd64": "sha256:4fe5767b07db35be6b4f72db76394bf3c99026a793a38be98d30e52723c348f9",
+        "arm64": "sha256:18f34dc0909c41ffc499684a992898376c58d0ec8460d59ce676a35a0df5ccd0"
+      }
+    },
+    {
+      "image": "pause",
+      "reference": "docker.io/portainer/pause:latest",
+      "license": "Apache-2.0",
+      "manifests": {
+        "amd64": "sha256:6e033db77fa0aab64c05273db0d3aa76c243bc5156a0cf093be895b6a71ab110",
+        "arm64": "sha256:56dfb271d9d9bb73663673cbeee3f6683f1e9487ef03b9dd20b8f726715b7fb5"
+      }
+    },
+    {
+      "image": "local-path-provisioner",
+      "reference": "docker.io/rancher/local-path-provisioner:v0.0.36",
+      "license": "Apache-2.0",
+      "manifests": {
+        "amd64": "sha256:b1d9bf5b3ddbe6154625f49e0a0a5538e1a8848464a4b27c62c3e16eb88d4474",
+        "arm64": "sha256:c22c5483ec73070fbca8673a38ea22998782ee8440801824151744cb5fb1e967"
+      }
+    },
+    {
+      "image": "busybox",
+      "reference": "docker.io/library/busybox:latest",
+      "license": "GPL-2.0-only",
+      "manifests": {
+        "amd64": "sha256:3901b0f555628b0561ddcfb9a073c683b7f59d5b06ed6874411130dcf259cb21",
+        "arm64": "sha256:f526379963e6ffb6a3cf9e30a5198dd9cffc5be6cbcf1d90471b8761fae40707"
+      }
+    },
+    {
+      "image": "portainer-agent",
+      "reference": "docker.io/portainer/agent:lts",
+      "license": "Zlib",
+      "manifests": {
+        "amd64": "sha256:397a61d67e6c4642fb2fcf0897bb674e2d31e9c20a8458760fa0f57636e053db",
+        "arm64": "sha256:94df22920f329ea1e847ae2e8fcbb3205739097e06a3e2a53755cf94d485e94b"
+      }
+    },
+    {
+      "image": "d2k",
+      "reference": "docker.io/portainer/d2k:1.2.3",
+      "license": "Apache-2.0",
+      "manifests": {
+        "amd64": "sha256:1a84c718b532788e2c222ff953f93ce0d268a85f67975ab41b2559a68bcbc439",
+        "arm64": "sha256:56ff56bcfa0488fbece2a373ff25bdf2559e358b5e68ec347c699fa8406ca504"
+      }
+    },
+    {
+      "image": "kubesolo",
+      "reference": "docker.io/portainer/kubesolo:latest",
+      "license": "Apache-2.0",
+      "manifests": {
+        "amd64": "sha256:d82626e2a229a8501170ae0d20ef7ae4e7e60bfa254ff01e82ef62b9f3fe4b3d",
+        "arm64": "sha256:acda29f7d6a5c17983ea2cbb1db539ae84c98c19a97bcffce45cf6b95b8754be"
+      }
     }
   ],
   "failures": [],

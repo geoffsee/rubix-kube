@@ -359,5 +359,259 @@
     "feature": "v1_35",
     "source_commit": "b2c839b8b1828e9035ff8467cdac87756190aa4e",
     "schema_release": "v1.35.6"
-  }
+  },
+  "payload_binaries": [
+    {
+      "id": "kube-apiserver",
+      "platform": "linux-amd64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-apiserver",
+      "bytes": 85778616,
+      "sha256": "0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8"
+    },
+    {
+      "id": "kube-controller-manager",
+      "platform": "linux-amd64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-controller-manager",
+      "bytes": 71790776,
+      "sha256": "82c0dc57f9d066e4aef869c88386b2e1baacd30d12746dd09e08cf8e41492df8"
+    },
+    {
+      "id": "kubelet",
+      "platform": "linux-amd64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kubelet",
+      "bytes": 58089764,
+      "sha256": "e48cbb9c62351aa95f455bdae3c9a9e9d7d644027c231ade7a67b868b2be3258"
+    },
+    {
+      "id": "kube-proxy",
+      "platform": "linux-amd64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/amd64/kube-proxy",
+      "bytes": 43204792,
+      "sha256": "1c22a8ff41efba86b32d50a24b1d07149e2f8a96a43b914bafd92b984f8f40f0"
+    },
+    {
+      "id": "kine",
+      "platform": "linux-amd64",
+      "url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-amd64",
+      "bytes": 47431544,
+      "sha256": "1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976"
+    },
+    {
+      "id": "containerd",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containerd/containerd/releases/download/v2.2.5/containerd-2.2.5-linux-amd64.tar.gz",
+        "bytes": 35407346,
+        "sha256": "d4031557773a8e969d604b4ee809c64ed3c6cd024d38d521d93984fa17d37b89",
+        "path": "bin/containerd"
+      },
+      "bytes": 48117256,
+      "sha256": "0d36f83ad8311019e32e2c15ebe63f9fae841f82d2ffe01b0d54cdc95efe51cb"
+    },
+    {
+      "id": "fuse-overlayfs-snapshotter",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containerd/fuse-overlayfs-snapshotter/releases/download/v2.1.7/containerd-fuse-overlayfs-2.1.7-linux-amd64.tar.gz",
+        "bytes": 4594634,
+        "sha256": "d54148043c22381af89cec2a167431e40668716404a1eb682ca69dfb890376f3",
+        "path": "containerd-fuse-overlayfs-grpc"
+      },
+      "bytes": 12079288,
+      "sha256": "e048f9cc616299544fcdcd647cfecba10f60169537721c57e3628ac6c8a0c5c7"
+    },
+    {
+      "id": "containerd-shim-runc-v2",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containerd/containerd/releases/download/v2.2.5/containerd-2.2.5-linux-amd64.tar.gz",
+        "bytes": 35407346,
+        "sha256": "d4031557773a8e969d604b4ee809c64ed3c6cd024d38d521d93984fa17d37b89",
+        "path": "bin/containerd-shim-runc-v2"
+      },
+      "bytes": 8343736,
+      "sha256": "56b1126a5c2c12d9b7b1c46809902cc18fe5a7083a535e39be295392384fb757"
+    },
+    {
+      "id": "crun",
+      "platform": "linux-amd64",
+      "url": "https://github.com/containers/crun/releases/download/1.26/crun-1.26-linux-amd64",
+      "bytes": 3382848,
+      "sha256": "8b37b0f8bfa170a9c338fa869902a33991101264ce0764e776a997a8d787dc83"
+    },
+    {
+      "id": "cni-bridge",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-amd64-v1.9.0.tgz",
+        "bytes": 55362516,
+        "sha256": "58c03705426e929658f45a851df15a86d06ef680cacbf3f2dc127731ca265c28",
+        "path": "bridge"
+      },
+      "bytes": 5694787,
+      "sha256": "28c7358630a9945891498fdda189a31ca24cd9812388842b729f2a928fb0c753"
+    },
+    {
+      "id": "cni-host-local",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-amd64-v1.9.0.tgz",
+        "bytes": 55362516,
+        "sha256": "58c03705426e929658f45a851df15a86d06ef680cacbf3f2dc127731ca265c28",
+        "path": "host-local"
+      },
+      "bytes": 4350898,
+      "sha256": "839919784092968cbb4ea6a803663b51064673f1be5ad6e933151606cd3892a7"
+    },
+    {
+      "id": "cni-portmap",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-amd64-v1.9.0.tgz",
+        "bytes": 55362516,
+        "sha256": "58c03705426e929658f45a851df15a86d06ef680cacbf3f2dc127731ca265c28",
+        "path": "portmap"
+      },
+      "bytes": 5108286,
+      "sha256": "b567b16ad70225a14a3f88cc94bc4a93be2d015d6654334678a479a8832e0bc2"
+    },
+    {
+      "id": "cni-loopback",
+      "platform": "linux-amd64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-amd64-v1.9.0.tgz",
+        "bytes": 55362516,
+        "sha256": "58c03705426e929658f45a851df15a86d06ef680cacbf3f2dc127731ca265c28",
+        "path": "loopback"
+      },
+      "bytes": 4302030,
+      "sha256": "056e5192ea46fac318c41b479ebf1c818306f9b984e60ed8d375b34e76572c6b"
+    },
+    {
+      "id": "kube-apiserver",
+      "platform": "linux-arm64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-apiserver",
+      "bytes": 79888568,
+      "sha256": "4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1"
+    },
+    {
+      "id": "kube-controller-manager",
+      "platform": "linux-arm64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-controller-manager",
+      "bytes": 67043512,
+      "sha256": "9125fca53876e58137305cf177bc2c67eab38adc7f2f70cfe1444d124c39d012"
+    },
+    {
+      "id": "kubelet",
+      "platform": "linux-arm64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kubelet",
+      "bytes": 54264100,
+      "sha256": "0dc3f53fc51f6a6c26c437ec9eded016106ef931db2dd9b3905c656796bed438"
+    },
+    {
+      "id": "kube-proxy",
+      "platform": "linux-arm64",
+      "url": "https://dl.k8s.io/release/v1.35.7/bin/linux/arm64/kube-proxy",
+      "bytes": 40632504,
+      "sha256": "216b76b4ab7f642a1e305f6402a0a466af7cea1287bf89fefb9269396ba04dc2"
+    },
+    {
+      "id": "kine",
+      "platform": "linux-arm64",
+      "url": "https://github.com/k3s-io/kine/releases/download/v0.16.3/kine-arm64",
+      "bytes": 44465296,
+      "sha256": "ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8"
+    },
+    {
+      "id": "containerd",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containerd/containerd/releases/download/v2.2.5/containerd-2.2.5-linux-arm64.tar.gz",
+        "bytes": 32082683,
+        "sha256": "ad3f7aec168ebbae8d24c412fdd2e8806d96599757f6032e38997d62a108158a",
+        "path": "bin/containerd"
+      },
+      "bytes": 45332336,
+      "sha256": "b0e4f5a10a8d18e77b276c8cb89638c9d2438579b35286d29ca9fe2521bd2c12"
+    },
+    {
+      "id": "fuse-overlayfs-snapshotter",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containerd/fuse-overlayfs-snapshotter/releases/download/v2.1.7/containerd-fuse-overlayfs-2.1.7-linux-arm64.tar.gz",
+        "bytes": 4205517,
+        "sha256": "94ed6c2c3bece42e0c789ea056565b64fe487de4644121ee0dfb8acd8ef9369c",
+        "path": "containerd-fuse-overlayfs-grpc"
+      },
+      "bytes": 11534520,
+      "sha256": "eb5e7ace1b1b15ab104f387276d62e1e0405b9925baf99018e0224db3f05cc5e"
+    },
+    {
+      "id": "containerd-shim-runc-v2",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containerd/containerd/releases/download/v2.2.5/containerd-2.2.5-linux-arm64.tar.gz",
+        "bytes": 32082683,
+        "sha256": "ad3f7aec168ebbae8d24c412fdd2e8806d96599757f6032e38997d62a108158a",
+        "path": "bin/containerd-shim-runc-v2"
+      },
+      "bytes": 7995576,
+      "sha256": "3004c977d671a6382af48c078d6ea079c3d2d895b7ff2e948063aaaaceebb60d"
+    },
+    {
+      "id": "crun",
+      "platform": "linux-arm64",
+      "url": "https://github.com/containers/crun/releases/download/1.26/crun-1.26-linux-arm64",
+      "bytes": 3166864,
+      "sha256": "4fa62f6fadd21a1ea4c1f7a040d4d2df4f7120fed788bf77e9ecfcaa922c417d"
+    },
+    {
+      "id": "cni-bridge",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-arm64-v1.9.0.tgz",
+        "bytes": 51229731,
+        "sha256": "2596ef56329dd1269026f46b8df262f09ba43c92dbfb940e1e69fbccccd30a29",
+        "path": "bridge"
+      },
+      "bytes": 5480185,
+      "sha256": "29bb776cfadf1de079b3632e9973098a10c3339900bacbf3e202c096a051957b"
+    },
+    {
+      "id": "cni-host-local",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-arm64-v1.9.0.tgz",
+        "bytes": 51229731,
+        "sha256": "2596ef56329dd1269026f46b8df262f09ba43c92dbfb940e1e69fbccccd30a29",
+        "path": "host-local"
+      },
+      "bytes": 4264736,
+      "sha256": "2adcd81afe8cb1c1b0b89efa977093ec0e293b004b000dc7dc868ebb13619af9"
+    },
+    {
+      "id": "cni-portmap",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-arm64-v1.9.0.tgz",
+        "bytes": 51229731,
+        "sha256": "2596ef56329dd1269026f46b8df262f09ba43c92dbfb940e1e69fbccccd30a29",
+        "path": "portmap"
+      },
+      "bytes": 4992005,
+      "sha256": "e53d25232e4a9474be39fb124d40f99a9c305fbe6380ec510181e01cf0199a42"
+    },
+    {
+      "id": "cni-loopback",
+      "platform": "linux-arm64",
+      "archive": {
+        "url": "https://github.com/containernetworking/plugins/releases/download/v1.9.0/cni-plugins-linux-arm64-v1.9.0.tgz",
+        "bytes": 51229731,
+        "sha256": "2596ef56329dd1269026f46b8df262f09ba43c92dbfb940e1e69fbccccd30a29",
+        "path": "loopback"
+      },
+      "bytes": 4252903,
+      "sha256": "9a3da4a4a4f7e2e3634b55e4fad3740f88d99dad0bc708a45b2c342f95181eaf"
+    }
+  ]
 }

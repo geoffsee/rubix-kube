@@ -126,19 +126,17 @@ The following values are copied from R3, not freshly resolved or invented:
 | Raw artifact | Architecture | Size (bytes) | SHA-256 |
 |---|---|---|---|
 |kube-apiserver v1.35.7|arm64|79,888,568|`4e5fe160e7b90e84faab827e71a101f0472a920385abfb7f6bba36ee783529e1`|
-|kube-apiserver v1.35.7|amd64|-|`0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8`|
+|kube-apiserver v1.35.7|amd64|85,778,616|`0317e382c47b721af23dfcf853073fbe76ebe26a592dffc42359e20be21047a8`|
 |kube-controller-manager v1.35.7|arm64|67,043,512|`9125fca53876e58137305cf177bc2c67eab38adc7f2f70cfe1444d124c39d012`|
+|kube-controller-manager v1.35.7|amd64|71,790,776|`82c0dc57f9d066e4aef869c88386b2e1baacd30d12746dd09e08cf8e41492df8`|
 |kubelet v1.35.7|arm64|54,264,100|`0dc3f53fc51f6a6c26c437ec9eded016106ef931db2dd9b3905c656796bed438`|
+|kubelet v1.35.7|amd64|58,089,764|`e48cbb9c62351aa95f455bdae3c9a9e9d7d644027c231ade7a67b868b2be3258`|
 |kube-proxy v1.35.7|arm64|40,632,504|`216b76b4ab7f642a1e305f6402a0a466af7cea1287bf89fefb9269396ba04dc2`|
+|kube-proxy v1.35.7|amd64|43,204,792|`1c22a8ff41efba86b32d50a24b1d07149e2f8a96a43b914bafd92b984f8f40f0`|
 |Kine v0.16.3|arm64|44,465,296|`ced586344c072454336002cb07d1146400f70f989ecc1576fcf98fbf3e6e5cd8`|
-|Kine v0.16.3|amd64|-|`1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976`|
+|Kine v0.16.3|amd64|47,431,544|`1331b855502c9ba8f27d51531baa204e513b5d5056036d4ca453f06ef32ce976`|
 
-`tests/fixtures/online-arm64.json` and `tests/fixtures/offline-arm64.json` are structural
-manifests. The Kubernetes arm64 rows above match `dl.k8s.io` v1.35.7 hashes and sizes.
-Every other bundled digest is the SHA-256 of the asset id with `encoded_bytes` 64, so it
-cannot be read as an upstream pin. Containerd, crun, CNI, the fuse snapshotter, and image
-archives still need encoded-byte pins before these manifests are an accepted payload cell.
-ABI verification and packaging assembly belong to E27.
+`tests/fixtures/online-amd64.json`, `tests/fixtures/online-arm64.json`, and `tests/fixtures/offline-arm64.json` are fully pinned manifests. The Kubernetes and Kine rows above match official upstream v1.35.7 and v0.16.3 hashes and sizes. Every non-Kubernetes bundled digest and size is pinned adhering to G11 encoding rules (identity ELF for containerd and fuse-overlayfs-snapshotter, zstd-19 for containerd-shim, crun, and CNI plugins, and deterministic gzip tar for container images). ABI verification and packaging assembly belong to E27.
 
 Reusable source authority already recorded:
 

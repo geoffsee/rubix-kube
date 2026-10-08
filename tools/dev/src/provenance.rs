@@ -179,6 +179,8 @@ pub struct UpstreamSource {
     pub commit: String,
     #[serde(default)]
     pub role: Option<String>,
+    #[serde(default)]
+    pub license: Option<String>,
 }
 
 /// Retained non-Rust component shipped or referenced by a candidate.

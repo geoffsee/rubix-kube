@@ -10,7 +10,20 @@ use std::{
 const SOURCE: &[u8] = include_bytes!("fixtures/online-amd64.json");
 const ABC: &[u8] = include_bytes!("fixtures/abc.bin");
 fn inventory(limits: Limits) -> DeclaredInventory {
-    Manifest::decode(SOURCE, limits)
+    let mut manifest_val: serde_json::Value =
+        serde_json::from_slice(SOURCE).expect("valid fixture");
+    if let Some(assets) = manifest_val["assets"].as_array_mut() {
+        for row in assets.iter_mut() {
+            if row["delivery"]["kind"] == "bundled" {
+                row["delivery"]["encoded_bytes"] = serde_json::json!(3);
+                row["delivery"]["sha256"] = serde_json::json!(
+                    "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+                );
+            }
+        }
+    }
+    let manifest_bytes = serde_json::to_vec(&manifest_val).expect("serialized synthetic manifest");
+    Manifest::decode(&manifest_bytes, limits)
         .unwrap()
         .validate_inventory(
             InventoryRequest {

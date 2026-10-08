@@ -64,8 +64,8 @@
         "kind": "bundled",
         "path": "fixtures/containerd",
         "encoding": "identity",
-        "encoded_bytes": 64,
-        "sha256": "2397d068a8d1552a4c3f9147ba9c94e086bfd66fb2acb5bbaf47197105127d5f"
+        "encoded_bytes": 45332336,
+        "sha256": "b0e4f5a10a8d18e77b276c8cb89638c9d2438579b35286d29ca9fe2521bd2c12"
       }
     },
     {
@@ -74,8 +74,8 @@
         "kind": "bundled",
         "path": "fixtures/fuse-overlayfs-snapshotter",
         "encoding": "identity",
-        "encoded_bytes": 64,
-        "sha256": "3935c8f4bf206670ccecc8126fa81f54dc0248576a1be29153c3b1ea6ed8e6f3"
+        "encoded_bytes": 11534520,
+        "sha256": "eb5e7ace1b1b15ab104f387276d62e1e0405b9925baf99018e0224db3f05cc5e"
       }
     },
     {
@@ -84,8 +84,8 @@
         "kind": "bundled",
         "path": "fixtures/containerd-shim-runc-v2",
         "encoding": "zstd",
-        "encoded_bytes": 64,
-        "sha256": "78bb7ccefd41ab2d1c83ef2f0f5178bd57a4cdb359cb5298961d3d2fef6bd591"
+        "encoded_bytes": 2359700,
+        "sha256": "a539169644149dc606034a3fc78d4061116ea8b413ac96bc7d1c797244a877bb"
       }
     },
     {
@@ -94,8 +94,8 @@
         "kind": "bundled",
         "path": "fixtures/crun",
         "encoding": "zstd",
-        "encoded_bytes": 64,
-        "sha256": "7334035c70464154385408b773496920602ba4012b6a690eb1f635b02dd62c30"
+        "encoded_bytes": 1186244,
+        "sha256": "67a4299d7a39b5ed52014092c7c7cf347cccec6716f9083906236ce58006c08c"
       }
     },
     {
@@ -104,8 +104,8 @@
         "kind": "bundled",
         "path": "fixtures/cni-bridge",
         "encoding": "zstd",
-        "encoded_bytes": 64,
-        "sha256": "adde2235bc72cdd111fe7cef9de85d196eb24d6a24c975b8e43d65491eaa811c"
+        "encoded_bytes": 2696184,
+        "sha256": "814c1614ae9e96ae240da32b667f0011d100bec0acdd6835cc83002e58c44d53"
       }
     },
     {
@@ -114,8 +114,8 @@
         "kind": "bundled",
         "path": "fixtures/cni-host-local",
         "encoding": "zstd",
-        "encoded_bytes": 64,
-        "sha256": "df28e12d46743e1810d54e39fa0288e0285e0d8dae67c755fad6e57c6c5f62c2"
+        "encoded_bytes": 2132112,
+        "sha256": "1c501f73bbeeab9ac680857eed608cc7c6c0653e31a2e0a200a86c70d3bb65ca"
       }
     },
     {
@@ -124,8 +124,8 @@
         "kind": "bundled",
         "path": "fixtures/cni-portmap",
         "encoding": "zstd",
-        "encoded_bytes": 64,
-        "sha256": "2d7720ad0daa2fc1238ee21e305af372b0d0d87c3e4a2754d588fac3172cdeef"
+        "encoded_bytes": 2451234,
+        "sha256": "5bccb64a8abbf3c9c86dae0f843b1a72494da4e2858b284a35ad3ca853400eb0"
       }
     },
     {
@@ -134,8 +134,8 @@
         "kind": "bundled",
         "path": "fixtures/cni-loopback",
         "encoding": "zstd",
-        "encoded_bytes": 64,
-        "sha256": "d10ed367231b7a5637885ae36ccb1b3162fed4a48fe48ee894339caa1c5d024a"
+        "encoded_bytes": 2106418,
+        "sha256": "1005af08976311547fe2b0a41c389c612bfe542622ce2f644e17117c76c8a57f"
       }
     },
     {
@@ -144,8 +144,8 @@
         "kind": "bundled",
         "path": "fixtures/image-coredns",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "dd0e4c5ec09bd5e73f21e4f297acf5355f9b2d924d976090e22d6098089eb1a3"
+        "encoded_bytes": 21035204,
+        "sha256": "3533745d553d9ada7a5fec2018567473c4c60df3a1646fc129efcdc780708e13"
       }
     },
     {
@@ -154,8 +154,8 @@
         "kind": "bundled",
         "path": "fixtures/image-pause",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "c43544793a1810ab5e7149f17d37833c473d85c8279739ee9d42b0274b5c727c"
+        "encoded_bytes": 277677,
+        "sha256": "012543d9e326717065a20db77e054190ae25e6bdfcf68b3e3793d4b55727f0c5"
       }
     },
     {
@@ -164,8 +164,8 @@
         "kind": "bundled",
         "path": "fixtures/image-local-path",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "55ec058998391634e19a91a8e7b7393c3c3ee7a4645df0b5221f64ede22d62fe"
+        "encoded_bytes": 84212031,
+        "sha256": "36f9db385a63293a58c1c8308da6341e59072c78cb3c255766243f002b464373"
       }
     },
     {
@@ -174,8 +174,8 @@
         "kind": "bundled",
         "path": "fixtures/image-local-path-helper",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "a8e722d3f5a1b9e7aa7db1e77cf03efff286664fb1fe811ef83f52e3def79405"
+        "encoded_bytes": 1912967,
+        "sha256": "10d8c9d113fdc1c5fa1cbb2a941dd33f31e0da986e9852c6d5e6024fad052278"
       }
     },
     {
@@ -184,8 +184,8 @@
         "kind": "bundled",
         "path": "fixtures/image-portainer-agent",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "3d92978a213132043410654949cd06ade2b05cbbefe61ac57b6c667f94ee1bda"
+        "encoded_bytes": 43659205,
+        "sha256": "b138701456bf3e836ca831a7e28cc6581dea14f5f59eb01a8baad6ee4c1de91f"
       }
     },
     {
@@ -194,8 +194,8 @@
         "kind": "bundled",
         "path": "fixtures/image-d2k",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
+        "encoded_bytes": 12129075,
+        "sha256": "59aebbc8922ad7ce4b5deb43a1256482d63f9250cf20c85cf9a521453f28a59f"
       }
     },
     {
@@ -204,8 +204,8 @@
         "kind": "bundled",
         "path": "fixtures/image-kubesolo",
         "encoding": "gzip",
-        "encoded_bytes": 64,
-        "sha256": "a9b9a9f9a512e3fe70571c58d4d76862deb09566eca282ea6b1afa2fed287743"
+        "encoded_bytes": 85689657,
+        "sha256": "868c6b3b9b563800bbe02b14219f549314138415955d8537d6dc2701c518a678"
       }
     }
   ]
