@@ -44,7 +44,7 @@ impl GarbageCollector {
         let mut iterations = 0;
 
         loop {
-            if iterations >= 100 {
+            if iterations > 100 {
                 return Err(ControllerError::ReconciliationFailed {
                     resource: format!("garbage collection in namespace '{namespace}'"),
                     reason: "cascading deletion did not converge within 100 passes".to_string(),
