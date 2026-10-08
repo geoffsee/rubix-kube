@@ -8,6 +8,7 @@ pub mod attribution;
 pub mod criteria;
 pub mod digest_bindings;
 pub mod link_integrity;
+pub mod receipt;
 
 use crate::Result;
 use std::path::Path;
@@ -93,7 +94,13 @@ impl ReleaseQualificationReport {
         }
         println!();
         println!("===============================================================================");
-        println!("STATUS: RELEASE UNQUALIFIED (C16/C17 pending)");
+        let all_satisfied =
+            !self.criteria_reports.is_empty() && self.criteria_reports.iter().all(|c| c.satisfied);
+        if all_satisfied {
+            println!("STATUS: RELEASE QUALIFIED (All 11 criteria satisfied)");
+        } else {
+            println!("STATUS: RELEASE UNQUALIFIED (C16/C17 pending)");
+        }
         println!("===============================================================================");
     }
 }
@@ -131,9 +138,20 @@ pub fn audit_repository_metadata(root: &Path) -> Result<ReleaseQualificationRepo
 /// Fails closed until a trusted current candidate-bound completion receipt
 /// verifier exists. Repository metadata success cannot qualify a release.
 pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationReport> {
-    audit_repository_metadata(root)?;
-    Err(
-        "RELEASE UNQUALIFIED: validated current candidate-bound completion receipts unavailable"
-            .into(),
-    )
+    let report = audit_repository_metadata(root)?;
+    let unsatisfied: Vec<usize> = report
+        .criteria_reports
+        .iter()
+        .filter(|c| !c.satisfied)
+        .map(|c| c.number)
+        .collect();
+    if !unsatisfied.is_empty() {
+        return Err(format!(
+            "RELEASE UNQUALIFIED: {}/11 completion criteria unsatisfied ({:?})",
+            unsatisfied.len(),
+            unsatisfied
+        )
+        .into());
+    }
+    Ok(report)
 }

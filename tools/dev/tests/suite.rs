@@ -24,6 +24,8 @@ mod prerequisite_launcher;
 mod provenance;
 #[path = "publication_cli.rs"]
 mod publication_cli;
+#[path = "receipt_schema_validation.rs"]
+mod receipt_schema_validation;
 #[path = "recovery_rehearsal.rs"]
 mod recovery_rehearsal;
 #[path = "release_evidence.rs"]

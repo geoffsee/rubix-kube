@@ -86,3 +86,94 @@ These jobs do not qualify other distribution targets, managed/external runtimes 
 Privileged VM lifecycle checks remain explicit local/manual disposable-environment work; the
 Darwin/HVF VM adapter is not silently replaced with a Linux host test. The existing required
 Format, Clippy, debug/release Tests, Dependencies and Security protections are unchanged.
+
+## Candidate-bound qualification receipt schema
+
+Candidate-bound qualification receipts establish tamper-evident, candidate-bound evidence
+for release qualification criteria (1–11). Qualification verification evaluates candidate
+receipts using `tools/dev/src/release_qualification/receipt.rs` and `criteria.rs`.
+
+### Receipt structure
+
+Receipts are formatted as JSON files named `criterion-<NN>-<slug>.json` (e.g.
+`criterion-01-epic-ledgers.json`) located under `target/release-qualification/` or an explicit
+qualification receipt directory. Each receipt contains the top-level envelope:
+
+```json
+{
+  "schema_version": 1,
+  "criterion": 1,
+  "payload": {
+    "criterion": 1,
+    "candidate": {
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "version": "v1.31.1",
+      "target": "x86_64-unknown-linux-gnu",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "environment": {
+      "runner": "github-actions",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "kernel": "6.8.0-1014-azure"
+    },
+    "commands": [
+      {
+        "name": "run-qualification-suite",
+        "command": "cargo test --locked",
+        "exit_code": 0,
+        "stdout_sha256": "...",
+        "stderr_sha256": "..."
+      }
+    ],
+    "assertions": [
+      {
+        "name": "epic-ledgers-complete",
+        "passed": true,
+        "details": "All epic ledger entries verified"
+      }
+    ],
+    "skips": [
+      {
+        "name": "optional-hardware-acceleration",
+        "reason": "Hardware acceleration is not available on virtualized runner"
+      }
+    ],
+    "cleanup": {
+      "confirmed": true,
+      "remaining_containers": 0,
+      "remaining_images": 0,
+      "details": "Docker pruning removed all temporary resources"
+    },
+    "timestamps": {
+      "started_at": "2026-10-08T12:00:00Z",
+      "completed_at": "2026-10-08T12:05:00Z"
+    }
+  },
+  "payload_sha256": "<64-hex SHA-256 digest of canonicalized payload>"
+}
+```
+
+### Identity and integrity binding
+
+1. **Candidate Identity Binding**: The candidate block must match the cell candidate registered
+   in `docs/release/cell-inventory.json` (or `SHA256SUMS`). The reader validates that `commit`,
+   `version`, and `target` align with the cell inventory and that the artifact hash matches.
+2. **Payload Integrity Binding**: `payload_sha256` must equal the canonical SHA-256 digest of the
+   contained payload object, computed via deterministic sorted-key serialization. If any field
+   inside `payload` is tampered with, integrity verification fails closed.
+3. **Command Verification**: All listed commands must have completed with `exit_code: 0`.
+4. **Assertion Verification**: All assertions must have `passed: true`.
+5. **Skips Verification**: Any skipped step must have a non-empty, justified `reason`.
+6. **Cleanup Verification**: `cleanup.confirmed` must be `true`, and both `remaining_containers`
+   and `remaining_images` must be strictly `0`.
+
+### Trusted reader constraints
+
+The reader enforces fail-closed parsing and resource limits:
+- **Maximum Receipt Size**: Bounded to 8 MiB (`MAX_RECEIPT_BYTES = 8 * 1024 * 1024`). Files exceeding
+  this size are rejected immediately.
+- **Symlink Protection**: Symlinks are rejected on open; receipts must be regular files.
+- **Strict JSON Parsing**: Duplicate JSON keys, unknown fields, and nonfinite numbers (`NaN`, `Infinity`)
+  are rejected.
+- **Schema Version**: `schema_version` must equal 1.
