@@ -1,4 +1,5 @@
 //! Explicit preparation of hash-pinned upstream inputs.
+use flate2::read::GzDecoder;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -9,6 +10,7 @@ use std::{
     process::Command,
     time::Duration,
 };
+use tar::Archive;
 mod generation;
 pub(crate) mod kubernetes;
 pub(crate) type Result<T> = crate::Result<T>;
@@ -163,10 +165,6 @@ pub(crate) fn manifest(path: &Path) -> Result<Value> {
     if let Some(payloads) = v.get("payload_binaries") {
         for r in payloads.as_array().ok_or("invalid payload_binaries")? {
             validate_record(r)?;
-            let url = text(r, "url")?;
-            if !url.starts_with("https://") {
-                return fail("payload binary downloads require HTTPS");
-            }
             let id = text(r, "id")?;
             if safe_relative(id)?.len() != 1 {
                 return fail("payload binary id must be a direct child");
@@ -174,6 +172,23 @@ pub(crate) fn manifest(path: &Path) -> Result<Value> {
             let platform = text(r, "platform")?;
             if safe_relative(platform)?.len() != 1 {
                 return fail("payload binary platform must be a direct child");
+            }
+            if let Some(archive) = r.get("archive") {
+                if r.get("url").is_some() {
+                    return fail("payload binary cannot specify both url and archive");
+                }
+                validate_record(archive)?;
+                let url = text(archive, "url")?;
+                if !url.starts_with("https://") {
+                    return fail("payload archive downloads require HTTPS");
+                }
+                let member_path = text(archive, "path")?;
+                safe_relative(member_path)?;
+            } else {
+                let url = text(r, "url")?;
+                if !url.starts_with("https://") {
+                    return fail("payload binary downloads require HTTPS");
+                }
             }
         }
     }
@@ -425,6 +440,74 @@ pub(crate) fn verify(
     validate_bytes(&fs::read(&p)?, binary, "compiler")?;
     Ok(p)
 }
+pub(crate) fn download_url(url: &str, max_bytes: u64, timeout_secs: u64) -> Result<Vec<u8>> {
+    if !url.starts_with("https://") {
+        return fail("input downloads require HTTPS");
+    }
+    let temp = tempfile::NamedTempFile::new()?;
+    let download = run(
+        Command::new("curl")
+            .args([
+                "--fail",
+                "--location",
+                "--proto",
+                "=https",
+                "--proto-redir",
+                "=https",
+                "--max-time",
+                &timeout_secs.to_string(),
+                "--max-filesize",
+                &max_bytes.to_string(),
+                "--user-agent",
+                "rubix-upstream/1",
+                "--output",
+            ])
+            .arg(temp.path())
+            .arg(url),
+        timeout_secs.saturating_add(5),
+    );
+    if let Err(error) = download {
+        if uncertain(&error) {
+            let (_, path) = temp.keep()?;
+            eprintln!("retained uncertain download: {}", path.display());
+        }
+        return Err(error);
+    }
+    let data = fs::read(temp.path())?;
+    Ok(data)
+}
+pub(crate) fn extract_tar_gz_member(
+    archive_data: &[u8],
+    member_path: &str,
+    max_bytes: u64,
+) -> Result<Vec<u8>> {
+    let decoder = GzDecoder::new(archive_data);
+    let mut tar = Archive::new(decoder);
+    let entries = tar
+        .entries()
+        .map_err(|e| format!("invalid tar archive: {e}"))?;
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("invalid tar entry: {e}"))?;
+        let path = entry
+            .path()
+            .map_err(|e| format!("invalid path in tar: {e}"))?;
+        let path_str = path.to_str().ok_or("non-utf8 path in archive")?;
+        let clean = path_str.strip_prefix("./").unwrap_or(path_str);
+        if clean == member_path {
+            if !entry.header().entry_type().is_file() {
+                return fail(format!(
+                    "archive member {member_path} is not a regular file"
+                ));
+            }
+            let mut content = Vec::new();
+            entry
+                .take(max_bytes.checked_add(1).ok_or("size overflow")?)
+                .read_to_end(&mut content)?;
+            return Ok(content);
+        }
+    }
+    fail(format!("member {member_path} not found in archive"))
+}
 pub(crate) fn fetch(inputs: &Value, cache: &Path, selected: &str) -> Result<()> {
     let compiler = compiler_record(inputs, selected)?;
     for r in array(inputs, "sources")?
@@ -436,39 +519,8 @@ pub(crate) fn fetch(inputs: &Value, cache: &Path, selected: &str) -> Result<()> 
             read_verified(cache, &name, r)?;
         } else {
             let url = text(r, "url")?;
-            if !url.starts_with("https://") {
-                return fail("input downloads require HTTPS");
-            }
-            let temp = tempfile::NamedTempFile::new()?;
-            let download = run(
-                Command::new("curl")
-                    .args([
-                        "--fail",
-                        "--location",
-                        "--proto",
-                        "=https",
-                        "--proto-redir",
-                        "=https",
-                        "--max-time",
-                        "60",
-                        "--max-filesize",
-                        &r["bytes"].to_string(),
-                        "--user-agent",
-                        "rubix-upstream/1",
-                        "--output",
-                    ])
-                    .arg(temp.path())
-                    .arg(url),
-                65,
-            );
-            if let Err(error) = download {
-                if uncertain(&error) {
-                    let (_, path) = temp.keep()?;
-                    eprintln!("retained uncertain download: {}", path.display());
-                }
-                return Err(error);
-            }
-            let data = fs::read(temp.path())?;
+            let max_bytes = r["bytes"].as_u64().ok_or("invalid bytes")?;
+            let data = download_url(url, max_bytes, 60)?;
             validate_bytes(&data, r, url)?;
             atomic_write(cache, &name, &data, false)?;
         }
@@ -522,41 +574,36 @@ pub(crate) fn fetch_payloads(inputs: &Value, cache: &Path, selected: &str) -> Re
         if p.exists() {
             let data = fs::read(&p)?;
             validate_bytes(&data, r, &format!("payload {id}"))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&p, fs::Permissions::from_mode(0o755))?;
+            }
+        } else if let Some(archive) = r.get("archive") {
+            let archive_blob = blob_name(archive)?;
+            let archive_data = if owned_path(cache, &archive_blob)?.exists() {
+                read_verified(cache, &archive_blob, archive)?
+            } else {
+                let url = text(archive, "url")?;
+                let max_bytes = archive["bytes"].as_u64().ok_or("invalid archive size")?;
+                let data = download_url(url, max_bytes, 300)?;
+                validate_bytes(&data, archive, url)?;
+                atomic_write(cache, &archive_blob, &data, false)?;
+                data
+            };
+            let member_path = text(archive, "path")?;
+            let binary_bytes = r["bytes"].as_u64().ok_or("invalid payload bytes")?;
+            let data = extract_tar_gz_member(&archive_data, member_path, binary_bytes)?;
+            validate_bytes(
+                &data,
+                r,
+                &format!("payload {id} from archive {member_path}"),
+            )?;
+            atomic_write(cache, &name, &data, true)?;
         } else {
             let url = text(r, "url")?;
-            if !url.starts_with("https://") {
-                return fail("payload binary downloads require HTTPS");
-            }
-            let temp = tempfile::NamedTempFile::new()?;
-            let download = run(
-                Command::new("curl")
-                    .args([
-                        "--fail",
-                        "--location",
-                        "--proto",
-                        "=https",
-                        "--proto-redir",
-                        "=https",
-                        "--max-time",
-                        "300",
-                        "--max-filesize",
-                        &r["bytes"].to_string(),
-                        "--user-agent",
-                        "rubix-upstream/1",
-                        "--output",
-                    ])
-                    .arg(temp.path())
-                    .arg(url),
-                305,
-            );
-            if let Err(error) = download {
-                if uncertain(&error) {
-                    let (_, path) = temp.keep()?;
-                    eprintln!("retained uncertain download: {}", path.display());
-                }
-                return Err(error);
-            }
-            let data = fs::read(temp.path())?;
+            let max_bytes = r["bytes"].as_u64().ok_or("invalid payload size")?;
+            let data = download_url(url, max_bytes, 300)?;
             validate_bytes(&data, r, url)?;
             atomic_write(cache, &name, &data, true)?;
         }

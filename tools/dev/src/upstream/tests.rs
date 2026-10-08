@@ -13,6 +13,22 @@ fn zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
     }
     z.finish().unwrap().into_inner()
 }
+fn tar_gz(entries: &[(&str, &[u8])]) -> Vec<u8> {
+    let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+    {
+        let mut tar = tar::Builder::new(&mut enc);
+        for (name, data) in entries {
+            let mut header = tar::Header::new_gnu();
+            header.set_size(data.len() as u64);
+            header.set_mode(0o755);
+            header.set_entry_type(tar::EntryType::Regular);
+            header.set_cksum();
+            tar.append_data(&mut header, *name, *data).unwrap();
+        }
+        tar.finish().unwrap();
+    }
+    enc.finish().unwrap()
+}
 struct Fixture {
     dir: tempfile::TempDir,
     inputs: Value,
@@ -419,6 +435,46 @@ fn manifest_validates_payload_binaries() {
     valid["payload_binaries"][0]["platform"] = "bad/platform".into();
     fs::write(&path, serde_json::to_vec(&valid).unwrap()).unwrap();
     assert!(manifest(&path).is_err());
+
+    let mut valid_archive = json!({
+        "schema_version": 1,
+        "sources": [],
+        "protoc_archives": [],
+        "payload_binaries": [{
+            "id": "my-bin",
+            "platform": "linux-amd64",
+            "archive": {
+                "url": "https://example.invalid/bin.tar.gz",
+                "bytes": 20,
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                "path": "bin/my-bin"
+            },
+            "bytes": 10,
+            "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        }],
+    });
+    fs::write(&path, serde_json::to_vec(&valid_archive).unwrap()).unwrap();
+    assert!(manifest(&path).is_ok());
+
+    valid_archive["payload_binaries"][0]["url"] = "https://example.invalid/bin".into();
+    fs::write(&path, serde_json::to_vec(&valid_archive).unwrap()).unwrap();
+    assert!(manifest(&path).is_err());
+
+    valid_archive["payload_binaries"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("url");
+
+    valid_archive["payload_binaries"][0]["archive"]["url"] =
+        "http://example.invalid/bin.tar.gz".into();
+    fs::write(&path, serde_json::to_vec(&valid_archive).unwrap()).unwrap();
+    assert!(manifest(&path).is_err());
+
+    valid_archive["payload_binaries"][0]["archive"]["url"] =
+        "https://example.invalid/bin.tar.gz".into();
+    valid_archive["payload_binaries"][0]["archive"]["path"] = "../bin/my-bin".into();
+    fs::write(&path, serde_json::to_vec(&valid_archive).unwrap()).unwrap();
+    assert!(manifest(&path).is_err());
 }
 #[test]
 fn verify_payloads_is_offline_and_validates_platform_records() {
@@ -470,13 +526,75 @@ fn fetch_payloads_with_existing_valid_cache_never_needs_network() {
         "payload_binaries": [payload],
     });
 
+    let cached_path = dir.path().join("payloads/linux-amd64/cached-bin");
     atomic_write(
         dir.path(),
         "payloads/linux-amd64/cached-bin",
         bin_data,
-        true,
+        false,
     )
     .unwrap();
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            fs::metadata(&cached_path).unwrap().permissions().mode() & 0o777,
+            0o644
+        );
+    }
+
     assert!(fetch_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            fs::metadata(&cached_path).unwrap().permissions().mode() & 0o777,
+            0o755
+        );
+    }
+
+    assert!(verify_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
+}
+#[test]
+fn fetch_payloads_extracts_from_tar_gz_archive_blob() {
+    let dir = tempfile::tempdir().unwrap();
+    let bin_data = b"#!/bin/sh\necho in archive\n";
+    let archive_bytes = tar_gz(&[("./bin/my-tool", bin_data)]);
+    let archive_rec = record(&archive_bytes);
+
+    let mut payload = record(bin_data);
+    payload["id"] = "my-tool".into();
+    payload["platform"] = "linux-amd64".into();
+    payload["archive"] = json!({
+        "url": "https://example.invalid/archive.tar.gz",
+        "bytes": archive_rec["bytes"],
+        "sha256": archive_rec["sha256"],
+        "path": "bin/my-tool"
+    });
+
+    let inputs = json!({
+        "schema_version": 1,
+        "payload_binaries": [payload],
+    });
+
+    let blob_path = format!("blobs/{}", archive_rec["sha256"].as_str().unwrap());
+    atomic_write(dir.path(), &blob_path, &archive_bytes, false).unwrap();
+
+    assert!(fetch_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
+
+    let extracted_path = dir.path().join("payloads/linux-amd64/my-tool");
+    assert_eq!(fs::read(&extracted_path).unwrap(), bin_data);
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            fs::metadata(&extracted_path).unwrap().permissions().mode() & 0o777,
+            0o755
+        );
+    }
+
     assert!(verify_payloads(&inputs, dir.path(), "linux-amd64").is_ok());
 }
