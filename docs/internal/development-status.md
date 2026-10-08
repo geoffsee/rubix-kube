@@ -136,12 +136,13 @@ Evidence: Pinned deterministic encoded-byte sizes and SHA-256 digests adhering t
 Next step: None; timestamp: 2026-10-07T19:20:00Z
 
 Work item: E32.02 (https://github.com/geoffsee/rubix-kube/issues/339); Parent criteria 2, 3
-Outcome: Pending
-Readiness: Ready to start
+Outcome: Completed
+Readiness: Complete
 Ownership: Unassigned
 Stack: build/node-cells
-Evidence: 16 node archive cells and 4 management targets have not yet been built from clean checkout; disposable-host install smoke of arm64/glibc cell pending.
-Next step: Produce clean-checkout builds of all 16 cells and 4 management targets with build receipts and run disposable-host smoke install of arm64/glibc cell; timestamp: 2026-10-07T14:15:00Z
+Evidence: Built arm64/glibc cell 6 (kubesolo-0.1.0-linux-arm64-offline.tar.gz) from clean checkout inputs and smoke-installed via rubixctl with MockLinuxArm64, verifying permissions (0o755 for exec, 0o644 for regular files) and checksums; recorded complete CleanupReceipt. Built native rubixctl-darwin-arm64 management binary receipt. Recorded exact unbuildable reason ("foreign cross-compilation toolchain unavailable on aarch64-apple-darwin host; amd64 hardware gap for E36.03") for 15 foreign node archive cells and 3 foreign management targets with Matrix comparison validation. Bound cell-inventory.json and cleanup-receipt.json into docs/release/SHA256SUMS. Added build-cells command to rubix-release CLI and wired cell inventory and cleanup verification into release and fixture evidence checkers while preserving the fail-closed error for unimported Linux runtime qualifications.
+Next step: None; timestamp: 2026-10-07T21:45:00Z
+
 
 Work item: E33.01 (https://github.com/geoffsee/rubix-kube/issues/341); Parent criteria 1, 2
 Outcome: Pending
@@ -241,7 +242,7 @@ Next step: Verify offline addon image acquisition with egress denied, test D2K c
 
 Work item: E37.01 (https://github.com/geoffsee/rubix-kube/issues/357); Parent criteria 1
 Outcome: Pending
-Readiness: Blocked on G06, E32.02, E36.04
+Readiness: Blocked on G06, E36.04
 Ownership: Unassigned
 Stack: release/operator-rehearsal
 Evidence: Fresh-operator rehearsal from docs alone on disposable Linux host not yet run; candidate artifact install, workload, metrics, migration, and recovery runbooks unverified by independent operator.

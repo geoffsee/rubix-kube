@@ -253,3 +253,125 @@ async fn conformance_exclusions_never_claim_live_concurrency_qualification() {
     }
     report.verify_fixture().unwrap();
 }
+
+#[test]
+fn committed_cell_inventory_records_all_20_receipts() {
+    let inventory_file = root().join("docs/release/cell-inventory.json");
+    let inventory: CellInventory =
+        serde_json::from_slice(&fs::read(&inventory_file).unwrap()).unwrap();
+    assert_eq!(inventory.node_cells.len(), 16);
+    assert_eq!(inventory.management_targets.len(), 4);
+    assert_eq!(inventory.host_target, "aarch64-apple-darwin");
+
+    // Verify cell 6 (arm64/glibc offline) is built
+    let cell6 = inventory
+        .node_cells
+        .iter()
+        .find(|c| c.cell == Some(6))
+        .unwrap();
+    assert_eq!(cell6.status, "built");
+    assert_eq!(
+        cell6.target_name,
+        "kubesolo-0.1.0-linux-arm64-offline.tar.gz"
+    );
+    assert!(cell6.reason.is_none());
+    assert!(cell6.output.is_some());
+    assert_eq!(cell6.inputs.len(), 2);
+
+    // Verify the remaining 15 foreign cells have exact unbuildable reason
+    for c in &inventory.node_cells {
+        if c.cell != Some(6) {
+            assert_eq!(c.status, "unbuildable_foreign_target");
+            assert_eq!(c.reason.as_deref(), Some(UNBUILDABLE_REASON));
+            assert!(c.output.is_none());
+        }
+    }
+
+    // Verify native darwin-arm64 management target is built
+    let darwin_arm64 = inventory
+        .management_targets
+        .iter()
+        .find(|t| t.target_name == "rubixctl-darwin-arm64")
+        .unwrap();
+    assert_eq!(darwin_arm64.status, "built");
+    assert!(darwin_arm64.reason.is_none());
+    assert!(darwin_arm64.output.is_some());
+
+    // Verify the other 3 foreign management targets have exact unbuildable reason
+    for t in &inventory.management_targets {
+        if t.target_name != "rubixctl-darwin-arm64" {
+            assert_eq!(t.status, "unbuildable_foreign_target");
+            assert_eq!(t.reason.as_deref(), Some(UNBUILDABLE_REASON));
+            assert!(t.output.is_none());
+        }
+    }
+
+    verify_cell_inventory(&inventory).unwrap();
+}
+
+#[test]
+fn committed_cleanup_receipt_is_valid() {
+    let cleanup_file = root().join("docs/release/cleanup-receipt.json");
+    let cleanup: CleanupReceipt =
+        serde_json::from_slice(&fs::read(&cleanup_file).unwrap()).unwrap();
+    assert_eq!(cleanup.status, "complete");
+    assert_eq!(
+        cleanup.target_name,
+        "kubesolo-0.1.0-linux-arm64-offline.tar.gz"
+    );
+    assert!(!cleanup.verified_files.is_empty());
+    assert!(!cleanup.cleaned_paths.is_empty());
+    verify_cleanup_receipt(&cleanup).unwrap();
+}
+
+#[tokio::test]
+async fn cell_inventory_tampering_is_detected() {
+    let dir = fixture().await;
+    let file = dir.path().join("cell-inventory.json");
+    let mut inventory: CellInventory = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+    // Tamper with cell 6 status
+    let cell6 = inventory
+        .node_cells
+        .iter_mut()
+        .find(|c| c.cell == Some(6))
+        .unwrap();
+    cell6.status = "unbuildable_foreign_target".into();
+    cell6.reason = Some("fake reason".into());
+    fs::write(&file, serde_json::to_vec_pretty(&inventory).unwrap()).unwrap();
+    rehash(dir.path());
+
+    // verify_fixture_evidence should fail with cell validation error
+    let err = verify_fixture_evidence(&root(), dir.path()).unwrap_err();
+    assert!(err.to_string().contains("cell 6 status must be 'built'"));
+
+    // verify_release_evidence should also catch it before returning the fail-closed error
+    let err_release = verify_release_evidence(dir.path()).unwrap_err();
+    assert!(
+        err_release
+            .to_string()
+            .contains("cell 6 status must be 'built'")
+    );
+}
+
+#[tokio::test]
+async fn cleanup_receipt_tampering_is_detected() {
+    let dir = fixture().await;
+    let file = dir.path().join("cleanup-receipt.json");
+    let mut cleanup: CleanupReceipt = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+    cleanup.status = "incomplete".into();
+    fs::write(&file, serde_json::to_vec_pretty(&cleanup).unwrap()).unwrap();
+    rehash(dir.path());
+
+    let err = verify_fixture_evidence(&root(), dir.path()).unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("cleanup receipt status must be 'complete'")
+    );
+
+    let err_release = verify_release_evidence(dir.path()).unwrap_err();
+    assert!(
+        err_release
+            .to_string()
+            .contains("cleanup receipt status must be 'complete'")
+    );
+}

@@ -1,10 +1,16 @@
 //! Unqualified release fixture diagnostics and observed-byte checksum helpers.
 pub mod attribution;
+pub mod cell_build;
 pub mod evidence;
 pub mod manifest;
 pub mod notes;
 pub use attribution::{
     AttributedComponent, AttributionRecord, ComponentCategory, verify_attribution_completeness,
+};
+pub use cell_build::{
+    CellBuildReceipt, CellInventory, CleanupReceipt, MatrixComparisonResult, ReceiptAssetInput,
+    ReceiptAssetOutput, UNBUILDABLE_REASON, build_cell_inventory, verify_cell_inventory,
+    verify_cleanup_receipt,
 };
 pub use evidence::{
     PerfQualificationDocument, StateEvidence, assemble_fixture_evidence, assemble_release_evidence,
