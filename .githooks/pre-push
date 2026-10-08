@@ -17,7 +17,7 @@ run() {
 }
 
 run cargo lint
-run cargo nextest run --locked --workspace --all-targets --all-features --profile ci
+run cargo nextest run --locked --workspace --all-targets --all-features --profile ci --no-capture
 run cargo test --locked --workspace --doc --all-features
 run cargo run --locked -p rubix-dev --bin rubix-language-policy
 run cargo deny check
