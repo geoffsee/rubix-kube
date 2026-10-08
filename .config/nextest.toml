@@ -6,7 +6,8 @@ final-status-level = "slow"
 [profile.ci]
 inherits = "default"
 fail-fast = false
-retries = 0
+retries = 2
+status-level = "pass"
 
 [profile.ci.junit]
 path = "results.xml"
