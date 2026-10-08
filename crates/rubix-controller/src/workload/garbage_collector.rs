@@ -246,6 +246,7 @@ impl GarbageCollector {
         if resource
             .get("metadata")
             .and_then(|m| m.get("deletionTimestamp"))
+            .and_then(Value::as_str)
             .is_some()
         {
             return false;

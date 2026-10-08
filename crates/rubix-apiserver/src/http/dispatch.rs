@@ -158,6 +158,9 @@ async fn list_all_namespaces(
     group: &str,
     resource: &str,
 ) -> Result<Value, ApiserverError> {
+    if group.is_empty() && resource == "pods" {
+        return client.list_all_pods().await;
+    }
     let namespaces = client.list_namespaces().await?;
     let mut items = Vec::new();
     let mut version = String::new();

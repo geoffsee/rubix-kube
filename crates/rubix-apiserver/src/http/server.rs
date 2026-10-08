@@ -13,7 +13,7 @@ use http_body_util::combinators::BoxBody;
 use http_body_util::{BodyExt, Full, Limited};
 use hyper::body::Incoming;
 use hyper::service::service_fn;
-use hyper_util::rt::TokioIo;
+use hyper_util::rt::{TokioIo, TokioTimer};
 use rubix_datastore::{WatchEventType, WatchReceiver};
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
@@ -83,8 +83,11 @@ pub(crate) async fn serve(
                 };
                 let acceptor = acceptor.clone();
                 let service = service.clone();
+                let shutdown_rx = shutdown.clone();
                 connections.spawn(async move {
-                    let Ok(tls) = acceptor.accept(stream).await else {
+                    let Ok(Ok(tls)) =
+                        tokio::time::timeout(Duration::from_secs(10), acceptor.accept(stream)).await
+                    else {
                         return;
                     };
                     let peer = tls
@@ -94,14 +97,19 @@ pub(crate) async fn serve(
                         .and_then(|chain| chain.first())
                         .and_then(|cert| tls::identity_from_der(cert.as_ref()));
                     let io = TokioIo::new(tls);
-                    let hyper = hyper::server::conn::http1::Builder::new();
+                    let mut hyper = hyper::server::conn::http1::Builder::new();
+                    hyper.timer(TokioTimer::new());
+                    hyper.header_read_timeout(Duration::from_secs(30));
                     let connection = hyper.serve_connection(
                         io,
                         service_fn(move |request| {
                             let service = service.clone();
                             let peer = peer.clone();
+                            let shutdown_rx = shutdown_rx.clone();
                             async move {
-                                Ok::<_, Infallible>(handle(request, &service, peer.as_ref()).await)
+                                Ok::<_, Infallible>(
+                                    handle(request, &service, peer.as_ref(), shutdown_rx).await,
+                                )
                             }
                         }),
                     );
@@ -120,6 +128,7 @@ async fn handle(
     request: Request<Incoming>,
     service: &ApiserverService,
     peer: Option<&PeerIdentity>,
+    shutdown: watch::Receiver<bool>,
 ) -> Response<Body> {
     let path = request.uri().path().to_string();
     let route = route::parse(&path);
@@ -191,7 +200,7 @@ async fn handle(
         Route::Resource(path) => {
             let params = query::parse(query.as_deref());
             if method == Method::GET && path.name.is_none() && is_watch(&params) {
-                return watch_response(service, &client, &path, &params).await;
+                return watch_response(service, &client, &path, &params, shutdown).await;
             }
             match dispatch::dispatch(
                 service,
@@ -234,6 +243,7 @@ async fn watch_response(
     client: &KubernetesApiClient,
     path: &ResourcePath,
     params: &BTreeMap<String, String>,
+    shutdown: watch::Receiver<bool>,
 ) -> Response<Body> {
     let receiver = match client
         .watch_resource(&path.group, &path.resource, path.namespace.as_deref())
@@ -278,7 +288,9 @@ async fn watch_response(
         .and_then(|value| value.parse().ok())
         .map_or(DEFAULT_WATCH_TIMEOUT, Duration::from_secs);
     let (sender, channel) = Channel::<Bytes, Infallible>::new(32);
-    tokio::spawn(stream_watch(sender, receiver, initial, filter, timeout));
+    tokio::spawn(stream_watch(
+        sender, receiver, initial, filter, timeout, shutdown,
+    ));
     Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, "application/json")
@@ -332,7 +344,11 @@ async fn stream_watch(
     initial: Value,
     filter: WatchFilter,
     timeout: Duration,
+    shutdown: watch::Receiver<bool>,
 ) {
+    if *shutdown.borrow() {
+        return;
+    }
     let mut sent: BTreeMap<String, u64> = BTreeMap::new();
     let mut found = false;
     let list_version = resource_version(&initial);
@@ -342,6 +358,9 @@ async fn stream_watch(
         .into_iter()
         .flatten()
     {
+        if *shutdown.borrow() {
+            return;
+        }
         if !filter.accepts(item) {
             continue;
         }
@@ -392,7 +411,10 @@ async fn stream_watch(
         let _ = send_event(&mut sender, "DELETED", &gone).await;
         return;
     }
-    stream_live_events(sender, receiver, &filter, &mut sent, threshold, timeout).await;
+    stream_live_events(
+        sender, receiver, &filter, &mut sent, threshold, timeout, shutdown,
+    )
+    .await;
 }
 
 /// Forwards datastore events newer than `threshold` until the timeout or disconnect.
@@ -403,11 +425,21 @@ async fn stream_live_events(
     sent: &mut BTreeMap<String, u64>,
     threshold: u64,
     timeout: Duration,
+    mut shutdown: watch::Receiver<bool>,
 ) {
     let deadline = tokio::time::Instant::now() + timeout;
     loop {
+        if *shutdown.borrow() {
+            break;
+        }
         let event = tokio::select! {
             () = tokio::time::sleep_until(deadline) => break,
+            changed = shutdown.changed() => {
+                if changed.is_err() || *shutdown.borrow() {
+                    break;
+                }
+                continue;
+            }
             event = receiver.recv() => match event {
                 Ok(event) => event,
                 Err(_) => break,

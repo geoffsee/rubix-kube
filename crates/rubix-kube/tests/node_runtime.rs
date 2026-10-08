@@ -1017,20 +1017,21 @@ async fn verify_datastore_mtls_matrix(bound_addr: std::net::SocketAddr, pki_dir:
             .to_string(),
         "-ign_eof".to_string(),
     ];
-    if let Ok(out) = run_openssl_probe(unauth_args).await {
-        let combined = format!(
-            "{}\n{}",
-            String::from_utf8_lossy(&out.stdout),
-            String::from_utf8_lossy(&out.stderr)
-        );
-        assert!(
-            !combined.contains("HTTP/1.1 200 OK")
-                && (combined.to_lowercase().contains("handshake failure")
-                    || combined.to_lowercase().contains("certificate required")
-                    || !out.status.success()),
-            "Unauthenticated client must be rejected with handshake failure: {combined}"
-        );
-    }
+    let out = run_openssl_probe(unauth_args)
+        .await
+        .expect("openssl probe must execute successfully");
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !combined.contains("HTTP/1.1 200 OK")
+            && (combined.to_lowercase().contains("handshake failure")
+                || combined.to_lowercase().contains("certificate required")
+                || !out.status.success()),
+        "Unauthenticated client must be rejected with handshake failure: {combined}"
+    );
 
     // Case 2: Client using cluster admin certificate signed by Kubernetes cluster CA (ca.crt)
     let cluster_admin_args = vec![
@@ -1049,22 +1050,23 @@ async fn verify_datastore_mtls_matrix(bound_addr: std::net::SocketAddr, pki_dir:
         pki_dir.join("admin.key").to_str().unwrap().to_string(),
         "-ign_eof".to_string(),
     ];
-    if let Ok(out) = run_openssl_probe(cluster_admin_args).await {
-        let combined = format!(
-            "{}\n{}",
-            String::from_utf8_lossy(&out.stdout),
-            String::from_utf8_lossy(&out.stderr)
-        );
-        assert!(
-            !combined.contains("HTTP/1.1 200 OK")
-                && (combined.to_lowercase().contains("unknown ca")
-                    || combined
-                        .to_lowercase()
-                        .contains("certificate verify failed")
-                    || !out.status.success()),
-            "Cluster admin cert must be rejected by datastore as unknown CA: {combined}"
-        );
-    }
+    let out = run_openssl_probe(cluster_admin_args)
+        .await
+        .expect("openssl probe must execute successfully");
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !combined.contains("HTTP/1.1 200 OK")
+            && (combined.to_lowercase().contains("unknown ca")
+                || combined
+                    .to_lowercase()
+                    .contains("certificate verify failed")
+                || !out.status.success()),
+        "Cluster admin cert must be rejected by datastore as unknown CA: {combined}"
+    );
 
     // Case 3: Client using dedicated datastore client certificate signed by datastore-ca.crt
     let datastore_client_args = vec![
@@ -1090,20 +1092,21 @@ async fn verify_datastore_mtls_matrix(bound_addr: std::net::SocketAddr, pki_dir:
             .unwrap()
             .to_string(),
     ];
-    if let Ok(out) = run_openssl_probe(datastore_client_args).await {
-        let combined = format!(
-            "{}\n{}",
-            String::from_utf8_lossy(&out.stdout),
-            String::from_utf8_lossy(&out.stderr)
-        );
-        assert!(
-            out.status.success()
-                || combined.contains("HTTP/1.1 200 OK")
-                || combined.contains("Verification: OK")
-                || combined.contains("CONNECTION ESTABLISHED"),
-            "Datastore client must successfully connect with valid datastore client cert: {combined}"
-        );
-    }
+    let out = run_openssl_probe(datastore_client_args)
+        .await
+        .expect("openssl probe must execute successfully");
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        combined.contains("HTTP/1.1 200 OK")
+            || (out.status.success()
+                && (combined.contains("Verification: OK")
+                    || combined.contains("CONNECTION ESTABLISHED"))),
+        "Datastore client must successfully connect with valid datastore client cert: {combined}"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]

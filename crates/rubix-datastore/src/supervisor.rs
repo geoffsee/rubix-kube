@@ -9,6 +9,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
+use tokio::task::JoinSet;
 use tokio_rustls::TlsAcceptor;
 
 use crate::config::DatastoreConfig;
@@ -107,30 +108,15 @@ async fn bind_tls_listener(
         code: err.diagnostic_code(),
     })?;
 
-    let listener = match TcpListener::bind(addr).await {
-        Ok(l) => l,
-        Err(err) if err.kind() == std::io::ErrorKind::AddrInUse => {
-            let fallback = SocketAddr::new(addr.ip(), 0);
-            TcpListener::bind(fallback).await.map_err(|fallback_err| {
-                let _ = writeln!(
-                    std::io::stderr(),
-                    "failed to bind datastore TLS listener on fallback {fallback}: {fallback_err}"
-                );
-                AdapterError {
-                    code: "datastore-bind-failed",
-                }
-            })?
-        },
-        Err(err) => {
-            let _ = writeln!(
-                std::io::stderr(),
-                "failed to bind datastore TLS listener on {addr}: {err}"
-            );
-            return Err(AdapterError {
-                code: "datastore-bind-failed",
-            });
-        },
-    };
+    let listener = TcpListener::bind(addr).await.map_err(|err| {
+        let _ = writeln!(
+            std::io::stderr(),
+            "failed to bind datastore TLS listener on {addr}: {err}"
+        );
+        AdapterError {
+            code: "datastore-bind-failed",
+        }
+    })?;
 
     let local_addr = listener.local_addr().map_err(|_| AdapterError {
         code: "datastore-bind-failed",
@@ -140,21 +126,25 @@ async fn bind_tls_listener(
 }
 
 async fn handle_tls_connection(stream: TcpStream, acceptor: TlsAcceptor) {
-    if let Ok(mut tls_stream) = acceptor.accept(stream).await {
-        let mut buf = [0u8; 1024];
-        loop {
-            match tls_stream.read(&mut buf).await {
-                Ok(0) | Err(_) => break,
-                Ok(_) => {
-                    let _ = tls_stream
-                        .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
-                        .await;
-                    let _ = tls_stream.flush().await;
-                },
-            }
+    let handshake = tokio::time::timeout(Duration::from_secs(10), acceptor.accept(stream)).await;
+    let Ok(Ok(mut tls_stream)) = handshake else {
+        return;
+    };
+    let mut buf = [0u8; 1024];
+    loop {
+        match tls_stream.read(&mut buf).await {
+            Ok(0) | Err(_) => break,
+            Ok(_) => {
+                let _ = tls_stream
+                    .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
+                    .await;
+                let _ = tls_stream.flush().await;
+            },
         }
     }
 }
+
+const MAX_DATASTORE_CONNECTIONS: usize = 256;
 
 async fn serve_tls(
     listener: TcpListener,
@@ -162,6 +152,8 @@ async fn serve_tls(
     context: &mut AdapterContext,
     engine: &DatastoreEngine,
 ) {
+    let mut connections = JoinSet::new();
+
     loop {
         tokio::select! {
             biased;
@@ -171,14 +163,20 @@ async fn serve_tls(
                     break;
                 }
             }
-            accept_res = listener.accept() => {
+            Some(_) = connections.join_next(), if !connections.is_empty() => {
+                // Connection task finished
+            }
+            accept_res = listener.accept(), if connections.len() < MAX_DATASTORE_CONNECTIONS => {
                 if let Ok((stream, _)) = accept_res {
                     let acc = acceptor.clone();
-                    tokio::spawn(handle_tls_connection(stream, acc));
+                    connections.spawn(handle_tls_connection(stream, acc));
                 }
             }
         }
     }
+
+    connections.abort_all();
+    while connections.join_next().await.is_some() {}
 }
 
 async fn wait_for_stop(context: &mut AdapterContext, engine: &DatastoreEngine) {

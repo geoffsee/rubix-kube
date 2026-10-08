@@ -23,13 +23,14 @@ fn decode(text: &str) -> String {
         match bytes[index] {
             b'+' => out.push(b' '),
             b'%' if index + 2 < bytes.len() => {
-                let hex = &text[index + 1..index + 3];
-                match u8::from_str_radix(hex, 16) {
-                    Ok(byte) => {
-                        out.push(byte);
+                let h1 = bytes[index + 1];
+                let h2 = bytes[index + 2];
+                match (hex_val(h1), hex_val(h2)) {
+                    (Some(v1), Some(v2)) => {
+                        out.push((v1 << 4) | v2);
                         index += 2;
                     },
-                    Err(_) => out.push(b'%'),
+                    _ => out.push(b'%'),
                 }
             },
             byte => out.push(byte),
@@ -37,6 +38,15 @@ fn decode(text: &str) -> String {
         index += 1;
     }
     String::from_utf8_lossy(&out).into_owned()
+}
+
+fn hex_val(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -54,5 +64,12 @@ mod tests {
         assert_eq!(params["x"], "a b");
         assert_eq!(params["bad"], "%zz");
         assert!(parse(None).is_empty());
+    }
+
+    #[test]
+    fn decodes_non_ascii_utf8() {
+        let params = parse(Some("greeting=你好%20世界&emoji=🚀%2B✨"));
+        assert_eq!(params["greeting"], "你好 世界");
+        assert_eq!(params["emoji"], "🚀+✨");
     }
 }
