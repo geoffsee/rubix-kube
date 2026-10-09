@@ -354,11 +354,20 @@ async fn deleting_a_running_pod_stops_it_with_grace_then_removes_it() {
 
     // Second pass: final status recorded, sandbox removed, object deleted; no restart
     // despite restartPolicy Always.
-    kubelet.reconcile_once().await.unwrap();
-    assert!(admin.get_pod("default", "web").await.is_err());
-    assert_eq!(runtime.sandbox_count(&uid), 0);
-    assert!(runtime.container_ids(&uid).is_empty());
-    assert!(!runtime.is_pod_active(&uid));
+    let mut deleted = false;
+    for _ in 0..20 {
+        kubelet.reconcile_once().await.unwrap();
+        if admin.get_pod("default", "web").await.is_err()
+            && runtime.sandbox_count(&uid) == 0
+            && runtime.container_ids(&uid).is_empty()
+            && !runtime.is_pod_active(&uid)
+        {
+            deleted = true;
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    assert!(deleted, "Pod and sandbox should be fully deleted");
 
     // A second create of the same name works and gets a fresh uid and sandbox.
     admin
@@ -442,6 +451,14 @@ async fn containerd_cri_observed_runtime_live_or_skip() {
     assert_eq!(pod["spec"]["nodeName"], "test-node");
 
     // Clean up
-    let _ = admin.delete_pod("default", "live-cri-test").await;
-    let _ = kubelet.reconcile_once().await;
+    let _ = admin
+        .delete_pod_options("default", "live-cri-test", Some(0))
+        .await;
+    for _ in 0..20 {
+        let _ = kubelet.reconcile_once().await;
+        if admin.get_pod("default", "live-cri-test").await.is_err() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
 }

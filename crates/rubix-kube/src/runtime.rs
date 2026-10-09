@@ -610,12 +610,19 @@ impl NodeRuntime {
 pub fn select_runtime_provider(config: &rubix_config::Config) -> Option<Arc<dyn RuntimeProvider>> {
     let endpoint = config.runtime.endpoint.trim();
     let socket_path = if endpoint.is_empty() {
+        if !cfg!(target_os = "linux") {
+            return None;
+        }
         let managed = PathBuf::from(&config.path).join("containerd/containerd.sock");
         if managed.exists() {
             managed
         } else {
             let host = PathBuf::from("/run/containerd/containerd.sock");
-            if host.exists() { host } else { managed }
+            if host.exists() {
+                host
+            } else {
+                return None;
+            }
         }
     } else {
         let stripped = endpoint.strip_prefix("unix://").unwrap_or(endpoint);

@@ -484,9 +484,19 @@ impl RuntimeProvider for EngineRuntimeAdapter {
         &self,
         container_id: &str,
         cmd: &[String],
-        _timeout_secs: i64,
+        timeout_secs: i64,
     ) -> Result<ExecResult, KubeletError> {
-        self.engine.exec(container_id, cmd).await
+        if timeout_secs > 0 {
+            let dur = std::time::Duration::from_secs(timeout_secs.cast_unsigned());
+            tokio::time::timeout(dur, self.engine.exec(container_id, cmd))
+                .await
+                .map_err(|_| KubeletError::ContainerOperationFailed {
+                    container: container_id.to_string(),
+                    reason: format!("exec timed out after {timeout_secs}s"),
+                })?
+        } else {
+            self.engine.exec(container_id, cmd).await
+        }
     }
 
     async fn container_logs(

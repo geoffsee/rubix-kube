@@ -24,10 +24,11 @@ use crate::status::{
 };
 use crate::workload::{
     ANNOTATION_RESTART_COUNT, CpuManager, ExecResult, LABEL_CONTAINER_NAME, LABEL_MANAGED_BY,
-    LABEL_POD_UID, LogOptions, MANAGED_BY, ReconcileReport, RestartPolicy, RuntimeProvider,
-    WorkloadRestartReport, check_pod_restart_need, container_labels, cri, determine_pod_qos,
-    is_container_cpu_pinning_eligible, sandbox_labels, secs_from_nanos, stage_configmap_files,
-    stage_projected_downward_api, stage_projected_sa_token, stage_secret_files,
+    LABEL_POD_NAME, LABEL_POD_NAMESPACE, LABEL_POD_UID, LogOptions, MANAGED_BY, ReconcileReport,
+    RestartPolicy, RuntimeProvider, WorkloadRestartReport, check_pod_restart_need,
+    container_labels, cri, determine_pod_qos, is_container_cpu_pinning_eligible, sandbox_labels,
+    secs_from_nanos, stage_configmap_files, stage_projected_downward_api, stage_projected_sa_token,
+    stage_secret_files,
 };
 
 const RESTART_BACKOFF_INITIAL_SECS: u64 = 10;
@@ -42,6 +43,12 @@ const KEPT_ATTEMPTS: usize = 2;
 struct RestartBackoff {
     delay_secs: u64,
     not_before: u64,
+}
+
+#[derive(Debug, Clone, Default)]
+struct ProbeTracker {
+    last_run_secs: u64,
+    consecutive_failures: u32,
 }
 
 /// Next restart delay: doubles after each quick failure, resets after a long run.
@@ -353,6 +360,7 @@ pub struct PodReconciler {
     apiserver: Option<Arc<ApiserverService>>,
     backoff: Arc<Mutex<BTreeMap<String, RestartBackoff>>>,
     terminating: Arc<Mutex<BTreeSet<String>>>,
+    probe_trackers: Arc<Mutex<BTreeMap<String, ProbeTracker>>>,
 }
 
 impl PodReconciler {
@@ -387,6 +395,7 @@ impl PodReconciler {
             apiserver: None,
             backoff: Arc::new(Mutex::new(BTreeMap::new())),
             terminating: Arc::new(Mutex::new(BTreeSet::new())),
+            probe_trackers: Arc::new(Mutex::new(BTreeMap::new())),
         }
     }
 
@@ -630,13 +639,25 @@ impl PodReconciler {
             ..cri::PodSandboxFilter::default()
         };
         let mut orphaned: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        let mut orphaned_pod_names: BTreeSet<(String, String)> = BTreeSet::new();
         for sandbox in self.runtime.list_pod_sandbox(Some(&filter)).await? {
             let Some(uid) = sandbox.labels.get(LABEL_POD_UID) else {
                 continue;
             };
             if !live_uids.contains(uid) {
+                if let (Some(ns), Some(p_name)) = (
+                    sandbox.labels.get(LABEL_POD_NAMESPACE),
+                    sandbox.labels.get(LABEL_POD_NAME),
+                ) {
+                    orphaned_pod_names.insert((ns.clone(), p_name.clone()));
+                }
                 orphaned.entry(uid.clone()).or_default().push(sandbox.id);
             }
+        }
+        for (ns, p_name) in orphaned_pod_names {
+            let _ = self
+                .cpu_manager
+                .release_pod_cpus(&format!("{ns}/{p_name}/"));
         }
         for (uid, sandbox_ids) in &orphaned {
             for sandbox_id in sandbox_ids {
@@ -769,10 +790,25 @@ impl PodReconciler {
         attempt: u32,
     ) -> Result<String, StartFailure> {
         self.ensure_image(container, sandbox_config).await?;
-        let config = container_config(pod, container, attempt).map_err(|e| StartFailure {
+        let mut config = container_config(pod, container, attempt).map_err(|e| StartFailure {
             reason: "CreateContainerConfigError",
             message: e.to_string(),
         })?;
+        let namespace = pod
+            .pointer("/metadata/namespace")
+            .and_then(Value::as_str)
+            .unwrap_or("default");
+        let name = pod_name(pod);
+        let assignment = self.cpu_assignment(namespace, name, pod, container);
+        if !assignment.cpuset.is_empty() {
+            let linux = config
+                .linux
+                .get_or_insert_with(cri::LinuxContainerConfig::default);
+            let resources = linux
+                .resources
+                .get_or_insert_with(cri::LinuxContainerResources::default);
+            resources.cpuset_cpus = assignment.cpuset;
+        }
         let id = self
             .runtime
             .create_container(sandbox_id, &config, sandbox_config)
@@ -992,8 +1028,9 @@ impl PodReconciler {
                 Ok(None)
             },
             cri::ContainerState::ContainerRunning => {
+                let started_at_secs = secs_from_nanos(latest.started_at).unwrap_or(0);
                 let (live, is_ready) = self
-                    .evaluate_container_probes(&latest.id, container)
+                    .evaluate_container_probes(&latest.id, container, started_at_secs)
                     .await?;
                 if live || policy == RestartPolicy::Never {
                     state.ready.insert(c_name.to_string(), is_ready);
@@ -1053,7 +1090,8 @@ impl PodReconciler {
             let latest = grouped.get(c_name).and_then(|a| a.last());
             let is_ready = match latest {
                 Some(latest) if !state.restarted.contains(c_name) => {
-                    self.evaluate_container_probes(&latest.id, container)
+                    let started_at_secs = secs_from_nanos(latest.started_at).unwrap_or(0);
+                    self.evaluate_container_probes(&latest.id, container, started_at_secs)
                         .await?
                         .1
                 },
@@ -1070,16 +1108,26 @@ impl PodReconciler {
             let stale = attempts.len().saturating_sub(KEPT_ATTEMPTS);
             for old in attempts.iter().take(stale) {
                 let _ = self.runtime.remove_container(&old.id).await;
+                self.probe_trackers
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .retain(|key, _| !key.starts_with(&format!("{}:", old.id)));
             }
         }
     }
 
-    fn spawn_stop(&self, id: String, grace: i64) {
+    fn spawn_stop(&self, id: String, grace: i64, uid: &str) {
         // StopContainer blocks while TERM and then KILL run; keep the loop moving.
         let runtime = self.runtime.clone();
+        let terminating = self.terminating.clone();
+        let uid = uid.to_string();
         tokio::spawn(async move {
             if let Err(e) = runtime.stop_container(&id, grace).await {
                 eprintln!("failed to stop container {id}: {e}");
+                terminating
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .remove(&uid);
             }
         });
     }
@@ -1109,15 +1157,21 @@ impl PodReconciler {
             .map(|s| s.id.clone())
             .collect();
         if !running.is_empty() {
+            let now = now_unix();
+            let overdue = deadline != 0 && now > deadline;
             let first_pass = self
                 .terminating
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .insert(uid.to_string());
-            if first_pass {
-                let grace = i64::try_from(deadline.saturating_sub(now_unix())).unwrap_or(0);
+            if first_pass || overdue {
+                let grace = if overdue {
+                    0
+                } else {
+                    i64::try_from(deadline.saturating_sub(now)).unwrap_or(0)
+                };
                 for id in running {
-                    self.spawn_stop(id, grace);
+                    self.spawn_stop(id, grace, uid);
                 }
             }
             return Ok(());
@@ -1160,6 +1214,15 @@ impl PodReconciler {
         for sandbox in &sandboxes {
             self.remove_sandbox_tree(&sandbox.id).await?;
         }
+        {
+            let mut trackers = self
+                .probe_trackers
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            for s in &statuses {
+                trackers.retain(|k, _| !k.starts_with(&format!("{}:", s.id)));
+            }
+        }
         self.finish_deletion(namespace, name, uid).await
     }
 
@@ -1169,11 +1232,18 @@ impl PodReconciler {
         name: &str,
         uid: &str,
     ) -> Result<(), KubeletError> {
+        let _ = self
+            .cpu_manager
+            .release_pod_cpus(&format!("{namespace}/{name}/"));
         self.terminating
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .remove(uid);
         self.backoff
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retain(|key, _| !key.starts_with(&format!("{uid}/")));
+        self.probe_trackers
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .retain(|key, _| !key.starts_with(&format!("{uid}/")));
@@ -1213,8 +1283,13 @@ impl PodReconciler {
     async fn evaluate_probe(
         &self,
         container_id: &str,
+        container: &Value,
         probe: &Value,
     ) -> Result<bool, KubeletError> {
+        let timeout_secs = probe
+            .get("timeoutSeconds")
+            .and_then(Value::as_i64)
+            .unwrap_or(EXEC_TIMEOUT_SECS);
         let command: Option<Vec<String>> = if let Some(exec) = probe.get("exec") {
             exec.get("command").and_then(Value::as_array).map(|cmd| {
                 cmd.iter()
@@ -1223,14 +1298,46 @@ impl PodReconciler {
                     .collect()
             })
         } else if let Some(http) = probe.get("httpGet") {
-            let path = http.get("path").and_then(Value::as_str).unwrap_or("/");
-            Some(vec!["curl".to_string(), path.to_string()])
+            let Some(port) = resolve_probe_port(container, http.get("port")) else {
+                return Ok(true);
+            };
+            let scheme = http
+                .get("scheme")
+                .and_then(Value::as_str)
+                .unwrap_or("HTTP")
+                .to_lowercase();
+            let host = http
+                .get("host")
+                .and_then(Value::as_str)
+                .unwrap_or("127.0.0.1");
+            let host = if host.is_empty() { "127.0.0.1" } else { host };
+            let raw_path = http.get("path").and_then(Value::as_str).unwrap_or("/");
+            let path = if raw_path.starts_with('/') {
+                raw_path.to_string()
+            } else {
+                format!("/{raw_path}")
+            };
+            let url = format!("{scheme}://{host}:{port}{path}");
+            Some(vec![
+                "curl".to_string(),
+                "-fsk".to_string(),
+                "-o".to_string(),
+                "/dev/null".to_string(),
+                url,
+            ])
         } else if let Some(tcp) = probe.get("tcpSocket") {
-            let port = tcp.get("port").and_then(Value::as_i64).unwrap_or(80);
+            let Some(port) = resolve_probe_port(container, tcp.get("port")) else {
+                return Ok(true);
+            };
+            let host = tcp
+                .get("host")
+                .and_then(Value::as_str)
+                .unwrap_or("127.0.0.1");
+            let host = if host.is_empty() { "127.0.0.1" } else { host };
             Some(vec![
                 "nc".to_string(),
                 "-z".to_string(),
-                "127.0.0.1".to_string(),
+                host.to_string(),
                 port.to_string(),
             ])
         } else {
@@ -1242,7 +1349,7 @@ impl PodReconciler {
         let exec_probe = probe.get("exec").is_some();
         match self
             .runtime
-            .exec_sync(container_id, &command, EXEC_TIMEOUT_SECS)
+            .exec_sync(container_id, &command, timeout_secs)
             .await
         {
             Ok(result) => Ok(result.exit_code == 0),
@@ -1252,20 +1359,100 @@ impl PodReconciler {
         }
     }
 
+    async fn evaluate_single_probe(
+        &self,
+        container_id: &str,
+        container: &Value,
+        probe: &Value,
+        probe_kind: &str,
+        started_at_secs: u64,
+        now: u64,
+    ) -> Result<bool, KubeletError> {
+        let failure_threshold = probe
+            .get("failureThreshold")
+            .and_then(Value::as_u64)
+            .and_then(|v| u32::try_from(v).ok())
+            .unwrap_or(1);
+        let initial_delay_secs = probe
+            .get("initialDelaySeconds")
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
+        let period_secs = probe
+            .get("periodSeconds")
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
+
+        let key = format!("{container_id}:{probe_kind}");
+
+        if started_at_secs > 0 && now < started_at_secs + initial_delay_secs {
+            return Ok(probe_kind == "liveness");
+        }
+
+        {
+            let trackers = self
+                .probe_trackers
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if let Some(tracker) = trackers.get(&key).filter(|tracker| {
+                period_secs > 0
+                    && tracker.last_run_secs > 0
+                    && now < tracker.last_run_secs + period_secs
+            }) {
+                return Ok(tracker.consecutive_failures < failure_threshold);
+            }
+        }
+
+        let success = self.evaluate_probe(container_id, container, probe).await?;
+
+        let mut trackers = self
+            .probe_trackers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let tracker = trackers.entry(key).or_default();
+        tracker.last_run_secs = now;
+        if success {
+            tracker.consecutive_failures = 0;
+            Ok(true)
+        } else {
+            tracker.consecutive_failures += 1;
+            Ok(tracker.consecutive_failures < failure_threshold)
+        }
+    }
+
     async fn evaluate_container_probes(
         &self,
         container_id: &str,
         container: &Value,
+        started_at_secs: u64,
     ) -> Result<(bool, bool), KubeletError> {
+        let now = now_unix();
         let mut liveness_ok = true;
         if let Some(liveness) = container.get("livenessProbe") {
-            liveness_ok = self.evaluate_probe(container_id, liveness).await?;
+            liveness_ok = self
+                .evaluate_single_probe(
+                    container_id,
+                    container,
+                    liveness,
+                    "liveness",
+                    started_at_secs,
+                    now,
+                )
+                .await?;
         }
         let mut readiness_ok = true;
         if !liveness_ok {
             readiness_ok = false;
         } else if let Some(readiness) = container.get("readinessProbe") {
-            readiness_ok = self.evaluate_probe(container_id, readiness).await?;
+            readiness_ok = self
+                .evaluate_single_probe(
+                    container_id,
+                    container,
+                    readiness,
+                    "readiness",
+                    started_at_secs,
+                    now,
+                )
+                .await?;
         }
         Ok((liveness_ok, readiness_ok))
     }
@@ -1413,4 +1600,25 @@ impl PodReconciler {
 
         Ok(())
     }
+}
+
+fn resolve_probe_port(container: &Value, port_val: Option<&Value>) -> Option<u16> {
+    let port_val = port_val?;
+    if let Some(port) = port_val.as_u64() {
+        return u16::try_from(port).ok();
+    }
+    let port_str = port_val.as_str()?;
+    if let Ok(port) = port_str.parse::<u16>() {
+        return Some(port);
+    }
+    let ports = container.get("ports").and_then(Value::as_array)?;
+    for p in ports {
+        if p.get("name").and_then(Value::as_str) == Some(port_str) {
+            return p
+                .get("containerPort")
+                .and_then(Value::as_u64)
+                .and_then(|cp| u16::try_from(cp).ok());
+        }
+    }
+    None
 }

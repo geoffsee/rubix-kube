@@ -1,5 +1,6 @@
+use std::sync::{Arc, RwLock};
+
 use serde_json::{Value, json};
-use std::sync::Arc;
 
 use rubix_apiserver::KubernetesApiClient;
 
@@ -11,7 +12,7 @@ use crate::error::KubeletError;
 pub struct NodeRegistration {
     client: Arc<KubernetesApiClient>,
     options: KubeletConfigOptions,
-    runtime_version: String,
+    runtime_version: Arc<RwLock<String>>,
 }
 
 impl NodeRegistration {
@@ -24,7 +25,13 @@ impl NodeRegistration {
         Self {
             client,
             options,
-            runtime_version: runtime_version.into(),
+            runtime_version: Arc::new(RwLock::new(runtime_version.into())),
+        }
+    }
+
+    pub fn set_runtime_version(&self, version: impl Into<String>) {
+        if let Ok(mut lock) = self.runtime_version.write() {
+            *lock = version.into();
         }
     }
 
@@ -44,6 +51,11 @@ impl NodeRegistration {
         } else {
             std::env::consts::ARCH
         };
+
+        let runtime_version = self
+            .runtime_version
+            .read()
+            .map_or_else(|_| "unknown".to_string(), |v| v.clone());
 
         json!({
             "apiVersion": "v1",
@@ -106,7 +118,7 @@ impl NodeRegistration {
                 },
                 "nodeInfo": {
                     "kubeletVersion": "v1.35.7",
-                    "containerRuntimeVersion": self.runtime_version,
+                    "containerRuntimeVersion": runtime_version,
                     "operatingSystem": "linux",
                     "architecture": arch,
                     "osImage": "Linux"

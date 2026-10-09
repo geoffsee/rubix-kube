@@ -690,6 +690,35 @@ impl CpuManager {
         Ok(())
     }
 
+    /// Releases all CPU allocations whose keys start with `prefix`.
+    pub fn release_pod_cpus(&self, prefix: &str) -> Result<(), KubeletError> {
+        if self.policy != "static" {
+            return Ok(());
+        }
+
+        let mut map =
+            self.allocations
+                .lock()
+                .map_err(|e| KubeletError::PodReconciliationFailed {
+                    pod: prefix.to_string(),
+                    reason: format!("CPU manager lock poisoned: {e}"),
+                })?;
+
+        let keys_to_remove: Vec<String> = map
+            .keys()
+            .filter(|k| k.starts_with(prefix))
+            .cloned()
+            .collect();
+
+        if !keys_to_remove.is_empty() {
+            for k in keys_to_remove {
+                map.remove(&k);
+            }
+            self.persist_checkpoint_locked(&map)?;
+        }
+        Ok(())
+    }
+
     fn persist_checkpoint_locked(
         &self,
         map: &BTreeMap<String, BTreeSet<usize>>,

@@ -89,6 +89,12 @@ impl PodmanEngine {
         }
     }
 
+    fn command(&self) -> tokio::process::Command {
+        let mut cmd = tokio::process::Command::new(&self.binary);
+        cmd.kill_on_drop(true);
+        cmd
+    }
+
     /// Runs one podman command and returns its output. Spawn failures mean the
     /// engine is unavailable; nonzero exits carry stderr.
     async fn podman(
@@ -97,7 +103,8 @@ impl PodmanEngine {
         context: &str,
     ) -> Result<std::process::Output, KubeletError> {
         let verb = args.first().map_or("", String::as_str);
-        let output = tokio::process::Command::new(&self.binary)
+        let output = self
+            .command()
             .args(args)
             .output()
             .await
@@ -302,7 +309,8 @@ impl ContainerEngine for PodmanEngine {
     }
 
     async fn image_id(&self, image: &str) -> Result<Option<String>, KubeletError> {
-        let output = tokio::process::Command::new(&self.binary)
+        let output = self
+            .command()
             .args(["image", "inspect", "--format", "{{.Id}}", image])
             .output()
             .await
@@ -330,7 +338,8 @@ impl ContainerEngine for PodmanEngine {
         let stderr_writer = writer
             .try_clone()
             .map_err(|e| self.unavailable(&e, "logs"))?;
-        let mut child = tokio::process::Command::new(&self.binary)
+        let mut child = self
+            .command()
             .args(&args)
             .stdin(Stdio::null())
             .stdout(Stdio::from(writer))
@@ -366,7 +375,8 @@ impl ContainerEngine for PodmanEngine {
     async fn exec(&self, id: &str, command: &[String]) -> Result<ExecResult, KubeletError> {
         let mut args = strings(&["exec", id]);
         args.extend(command.iter().cloned());
-        let output = tokio::process::Command::new(&self.binary)
+        let output = self
+            .command()
             .args(&args)
             .output()
             .await
@@ -435,6 +445,16 @@ pub fn log_arguments(id: &str, options: &LogOptions) -> Vec<String> {
     args
 }
 
+fn deserialize_null_as_empty_map<'de, D>(
+    deserializer: D,
+) -> Result<BTreeMap<String, String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let opt = Option::<BTreeMap<String, String>>::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}
+
 /// One row of `podman ps --format json`.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
@@ -451,7 +471,7 @@ pub struct PsEntry {
     pub image: String,
     #[serde(default, rename = "ImageID")]
     pub image_id: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_as_empty_map")]
     pub labels: BTreeMap<String, String>,
     #[serde(default)]
     pub state: String,
@@ -504,7 +524,7 @@ pub struct PodPsEntry {
     pub name: String,
     #[serde(default)]
     pub status: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_as_empty_map")]
     pub labels: BTreeMap<String, String>,
 }
 
@@ -707,5 +727,18 @@ mod tests {
         assert_eq!(PodmanEngine::new("/x/podman").name(), "podman");
         assert_eq!(prefix_sha("abc"), "sha256:abc");
         assert_eq!(prefix_sha("sha256:abc"), "sha256:abc");
+    }
+
+    #[test]
+    fn null_labels_deserialized_as_empty_map() {
+        let ps_stdout = r#"[{"Id":"c1","Labels":null}]"#;
+        let entries = parse_ps_output(ps_stdout).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert!(entries[0].labels.is_empty());
+
+        let pod_ps_stdout = r#"[{"Id":"p1","Labels":null}]"#;
+        let pods = parse_pod_ps_output(pod_ps_stdout).unwrap();
+        assert_eq!(pods.len(), 1);
+        assert!(pods[0].labels.is_empty());
     }
 }

@@ -6,10 +6,12 @@
 //! retrieved from the CRI log file recorded at `ContainerStatus.log_path` and parsed
 //! according to the CRI log format (`<timestamp> <stream> <tag> <content>`).
 
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
+use tokio::io::AsyncBufReadExt;
 use tokio::sync::Mutex;
 
 use rubix_cri::endpoint::RuntimeEndpoints;
@@ -20,6 +22,8 @@ use rubix_cri::workload::CriClient;
 
 use crate::error::KubeletError;
 use crate::workload::{ExecResult, LogOptions, RuntimeProvider};
+
+const MAX_LOG_BYTES_UNCONSTRAINED: usize = 10 * 1024 * 1024;
 
 /// Runtime provider adapting [`rubix_cri::CriClient`] to [`RuntimeProvider`].
 #[derive(Clone, Debug)]
@@ -36,7 +40,7 @@ impl CriRuntimeProvider {
         Self {
             socket_path: socket_path.into(),
             client: Arc::new(Mutex::new(None)),
-            version: Arc::new(RwLock::new("containerd".to_string())),
+            version: Arc::new(RwLock::new("unknown".to_string())),
         }
     }
 
@@ -46,7 +50,7 @@ impl CriRuntimeProvider {
         Self {
             socket_path: socket_path.into(),
             client: Arc::new(Mutex::new(Some(client))),
-            version: Arc::new(RwLock::new("containerd".to_string())),
+            version: Arc::new(RwLock::new("unknown".to_string())),
         }
     }
 
@@ -78,11 +82,10 @@ impl CriRuntimeProvider {
             }
         })?;
 
-        if let Ok(resp) = client.version("v1").await {
-            let v = format!("{}://{}", resp.runtime_name, resp.runtime_version);
-            if let Ok(mut w) = self.version.write() {
-                *w = v;
-            }
+        if let Ok(resp) = client.version("v1").await
+            && let Ok(mut w) = self.version.write()
+        {
+            *w = resp.runtime_version;
         }
 
         *guard = Some(client.clone());
@@ -106,7 +109,7 @@ impl RuntimeProvider for CriRuntimeProvider {
     fn runtime_version(&self) -> String {
         self.version
             .read()
-            .map_or_else(|_| "containerd".to_string(), |v| v.clone())
+            .map_or_else(|_| "unknown".to_string(), |v| v.clone())
     }
 
     fn requires_socket(&self) -> bool {
@@ -119,13 +122,16 @@ impl RuntimeProvider for CriRuntimeProvider {
 
     async fn check_available(&self) -> Result<(), KubeletError> {
         let mut client = self.client().await?;
-        client
+        let resp = client
             .version("v1")
             .await
             .map_err(|s| KubeletError::RuntimeUnavailable {
                 endpoint: self.socket_path.display().to_string(),
                 reason: s.to_string(),
             })?;
+        if let Ok(mut w) = self.version.write() {
+            *w = resp.runtime_version;
+        }
         Ok(())
     }
 
@@ -277,15 +283,31 @@ impl RuntimeProvider for CriRuntimeProvider {
         if status.log_path.is_empty() {
             return Ok(String::new());
         }
-        let raw = match tokio::fs::read_to_string(&status.log_path).await {
-            Ok(content) => content,
+        let file = match tokio::fs::File::open(&status.log_path).await {
+            Ok(f) => f,
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(String::new()),
             Err(err) => return Err(KubeletError::Io(err)),
         };
         let now_unix = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_secs().cast_signed());
-        Ok(parse_cri_logs(&raw, options, now_unix))
+
+        let mut reader = tokio::io::BufReader::new(file);
+        let mut parser = CriLogStreamParser::new(options, now_unix);
+        let mut line_buf = Vec::new();
+        let mut total_bytes = 0usize;
+
+        while reader.read_until(b'\n', &mut line_buf).await? > 0 {
+            total_bytes += line_buf.len();
+            if let Ok(line_str) = std::str::from_utf8(&line_buf) {
+                parser.process_line(line_str);
+            }
+            line_buf.clear();
+            if options.tail_lines.is_none() && total_bytes >= MAX_LOG_BYTES_UNCONSTRAINED {
+                break;
+            }
+        }
+        Ok(parser.finish())
     }
 
     async fn image_status(
@@ -367,45 +389,63 @@ fn days_from_civil(y: i64, m: u64, d: u64) -> i64 {
     era * 146_097 + doe.cast_signed() - 719_468
 }
 
+#[derive(Debug)]
 struct PartialLog {
     timestamp: String,
     timestamp_unix: Option<i64>,
     content: String,
 }
 
-struct LogEntry {
-    timestamp: String,
-    timestamp_unix: Option<i64>,
-    content: String,
+/// Streaming parser for CRI-formatted log output.
+#[derive(Debug)]
+pub struct CriLogStreamParser<'a> {
+    options: &'a LogOptions,
+    now_unix: i64,
+    stdout_partial: Option<PartialLog>,
+    stderr_partial: Option<PartialLog>,
+    tail_buffer: Option<(usize, VecDeque<String>)>,
+    output: String,
 }
 
-/// Parses CRI-formatted log text (`<timestamp> <stream> <tag> <content>`)
-/// applying [`LogOptions`] filters (`tail_lines`, `timestamps`, `since_seconds`).
-#[must_use]
-pub fn parse_cri_logs(raw: &str, options: &LogOptions, now_unix: i64) -> String {
-    let mut entries = Vec::new();
-    let mut stdout_partial: Option<PartialLog> = None;
-    let mut stderr_partial: Option<PartialLog> = None;
+impl<'a> CriLogStreamParser<'a> {
+    #[must_use]
+    pub fn new(options: &'a LogOptions, now_unix: i64) -> Self {
+        Self {
+            options,
+            now_unix,
+            stdout_partial: None,
+            stderr_partial: None,
+            tail_buffer: options
+                .tail_lines
+                .map(|limit| (limit, VecDeque::with_capacity(limit.min(1024)))),
+            output: String::new(),
+        }
+    }
 
-    for line in raw.lines() {
+    pub fn process_line(&mut self, line: &str) {
         let line = line.trim_end_matches(['\r', '\n']);
         if line.is_empty() {
-            continue;
+            return;
         }
 
-        let parts: Vec<&str> = line.splitn(4, ' ').collect();
-        if parts.len() >= 3
-            && (parts[1] == "stdout" || parts[1] == "stderr")
-            && (parts[2] == "P" || parts[2] == "F")
-        {
-            let ts_str = parts[0];
-            let stream = parts[1];
-            let tag = parts[2];
-            let content = if parts.len() == 4 { parts[3] } else { "" };
+        let Some((ts_str, r1)) = line.split_once(' ') else {
+            self.emit_entry(None, "", line);
+            return;
+        };
+        let Some((stream, r2)) = r1.split_once(' ') else {
+            self.emit_entry(None, "", line);
+            return;
+        };
+        let (tag, content) = match r2.split_once(' ') {
+            Some((tag, content)) => (tag, content),
+            None => (r2, ""),
+        };
+
+        if (stream == "stdout" || stream == "stderr") && (tag == "P" || tag == "F") {
             let partial_slot = if stream == "stdout" {
-                &mut stdout_partial
+                &mut self.stdout_partial
             } else {
-                &mut stderr_partial
+                &mut self.stderr_partial
             };
 
             if tag == "P" {
@@ -420,75 +460,69 @@ pub fn parse_cri_logs(raw: &str, options: &LogOptions, now_unix: i64) -> String 
                 }
             } else if let Some(mut partial) = partial_slot.take() {
                 partial.content.push_str(content);
-                entries.push(LogEntry {
-                    timestamp: partial.timestamp,
-                    timestamp_unix: partial.timestamp_unix,
-                    content: partial.content,
-                });
+                self.emit_entry(partial.timestamp_unix, &partial.timestamp, &partial.content);
             } else {
-                entries.push(LogEntry {
-                    timestamp: ts_str.to_string(),
-                    timestamp_unix: parse_rfc3339_unix_secs(ts_str),
-                    content: content.to_string(),
-                });
+                let ts_unix = parse_rfc3339_unix_secs(ts_str);
+                self.emit_entry(ts_unix, ts_str, content);
             }
         } else {
-            // Graceful fallback for non-CRI text
-            entries.push(LogEntry {
-                timestamp: String::new(),
-                timestamp_unix: None,
-                content: line.to_string(),
-            });
+            self.emit_entry(None, "", line);
         }
     }
 
-    if let Some(partial) = stdout_partial.take() {
-        entries.push(LogEntry {
-            timestamp: partial.timestamp,
-            timestamp_unix: partial.timestamp_unix,
-            content: partial.content,
-        });
-    }
-    if let Some(partial) = stderr_partial.take() {
-        entries.push(LogEntry {
-            timestamp: partial.timestamp,
-            timestamp_unix: partial.timestamp_unix,
-            content: partial.content,
-        });
-    }
-
-    let filtered: Vec<String> = entries
-        .into_iter()
-        .filter(|entry| {
-            if let (Some(since), Some(ts_unix)) = (options.since_seconds, entry.timestamp_unix) {
-                let cutoff = now_unix.saturating_sub(since.cast_signed());
-                if ts_unix < cutoff {
-                    return false;
-                }
+    fn emit_entry(&mut self, timestamp_unix: Option<i64>, timestamp: &str, content: &str) {
+        if let (Some(since), Some(ts_unix)) = (self.options.since_seconds, timestamp_unix) {
+            let cutoff = self.now_unix.saturating_sub(since.cast_signed());
+            if ts_unix < cutoff {
+                return;
             }
-            true
-        })
-        .map(|entry| {
-            if options.timestamps && !entry.timestamp.is_empty() {
-                format!("{} {}\n", entry.timestamp, entry.content)
-            } else {
-                format!("{}\n", entry.content)
+        }
+
+        let formatted = if self.options.timestamps && !timestamp.is_empty() {
+            format!("{timestamp} {content}\n")
+        } else {
+            format!("{content}\n")
+        };
+
+        if let Some((limit, ref mut queue)) = self.tail_buffer {
+            if limit == 0 {
+                return;
             }
-        })
-        .collect();
-
-    let final_lines = if let Some(tail) = options.tail_lines {
-        let start = filtered.len().saturating_sub(tail);
-        &filtered[start..]
-    } else {
-        &filtered[..]
-    };
-
-    let mut result = String::new();
-    for line in final_lines {
-        result.push_str(line);
+            if queue.len() >= limit {
+                queue.pop_front();
+            }
+            queue.push_back(formatted);
+        } else {
+            self.output.push_str(&formatted);
+        }
     }
-    result
+
+    #[must_use]
+    pub fn finish(mut self) -> String {
+        if let Some(partial) = self.stdout_partial.take() {
+            self.emit_entry(partial.timestamp_unix, &partial.timestamp, &partial.content);
+        }
+        if let Some(partial) = self.stderr_partial.take() {
+            self.emit_entry(partial.timestamp_unix, &partial.timestamp, &partial.content);
+        }
+        if let Some((_, queue)) = self.tail_buffer {
+            for line in queue {
+                self.output.push_str(&line);
+            }
+        }
+        self.output
+    }
+}
+
+/// Parses CRI-formatted log text (`<timestamp> <stream> <tag> <content>`)
+/// applying [`LogOptions`] filters (`tail_lines`, `timestamps`, `since_seconds`).
+#[must_use]
+pub fn parse_cri_logs(raw: &str, options: &LogOptions, now_unix: i64) -> String {
+    let mut parser = CriLogStreamParser::new(options, now_unix);
+    for line in raw.lines() {
+        parser.process_line(line);
+    }
+    parser.finish()
 }
 
 #[cfg(test)]
@@ -583,6 +617,7 @@ mod tests {
     fn provider_properties() {
         let provider = CriRuntimeProvider::new("/run/containerd/containerd.sock");
         assert_eq!(provider.provider_name(), "containerd");
+        assert_eq!(provider.runtime_version(), "unknown");
         assert!(provider.requires_socket());
         assert!(provider.is_external());
         assert_eq!(

@@ -201,6 +201,11 @@ impl KubeletService {
         }
 
         self.runtime.check_available().await?;
+        self.registration.set_runtime_version(format!(
+            "{}://{}",
+            self.runtime.provider_name(),
+            self.runtime.runtime_version()
+        ));
 
         // 3. Validate API server communication and node authorization
         let client = self.client();

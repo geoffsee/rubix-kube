@@ -1402,26 +1402,16 @@ async fn test_issue_345_select_runtime_provider_hook() {
     let builder = RuntimeBuilder::new(config.clone());
     let runtime = NodeRuntime::from_config(config.clone()).expect("build node runtime");
 
-    // Provider selected from default config
-    let provider = select_runtime_provider(config.config()).expect("provider selected");
-    let provider_from_builder = builder
-        .select_runtime_provider()
-        .expect("provider from builder");
-    let provider_from_runtime = runtime
-        .select_runtime_provider()
-        .expect("provider from runtime");
-
-    assert_eq!(provider.provider_name(), "containerd");
-    assert_eq!(provider_from_builder.provider_name(), "containerd");
-    assert_eq!(provider_from_runtime.provider_name(), "containerd");
-
-    assert!(provider.requires_socket());
-    assert!(!provider.runtime_version().is_empty());
+    // With default config and no containerd sockets present, select_runtime_provider returns None
+    assert!(select_runtime_provider(config.config()).is_none());
+    assert!(builder.select_runtime_provider().is_none());
+    assert!(runtime.select_runtime_provider().is_none());
 
     // Explicit custom endpoint
     let mut custom_cfg = config.config().clone();
     custom_cfg.runtime.endpoint = "unix:///var/run/custom-containerd.sock".to_string();
     let custom_provider = select_runtime_provider(&custom_cfg).expect("custom provider");
     assert_eq!(custom_provider.provider_name(), "containerd");
+    assert_eq!(custom_provider.runtime_version(), "unknown");
     assert!(custom_provider.requires_socket());
 }

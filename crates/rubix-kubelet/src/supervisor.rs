@@ -95,8 +95,13 @@ impl Adapter for KubeletAdapter {
 
             // 4. Reconcile pods and heartbeat until the supervisor stops us.
             let mut reconcile = tokio::time::interval(self.reconcile_interval);
-            let mut heartbeat = tokio::time::interval(self.heartbeat_interval);
-            heartbeat.reset();
+            reconcile.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+
+            let heartbeat_handle = tokio::spawn(run_heartbeat_loop(
+                self.service.clone(),
+                self.heartbeat_interval,
+            ));
+
             loop {
                 tokio::select! {
                     biased;
@@ -120,16 +125,10 @@ impl Adapter for KubeletAdapter {
                             ),
                         }
                     }
-                    _ = heartbeat.tick() => {
-                        if let Err(err) = self.service.heartbeat().await {
-                            log_event(
-                                "kubelet_heartbeat_failed",
-                                &format!("\"code\":\"{}\"", err.diagnostic_code()),
-                            );
-                        }
-                    }
                 }
             }
+            heartbeat_handle.abort();
+            let _ = heartbeat_handle.await;
             self.service.stop();
             Ok(())
         })
@@ -141,4 +140,19 @@ fn log_event(event: &str, fields: &str) {
         std::io::stderr(),
         "{{\"schema\":1,\"level\":\"info\",\"component\":\"kubelet\",\"event\":\"{event}\",{fields}}}"
     );
+}
+
+async fn run_heartbeat_loop(service: KubeletService, interval: Duration) {
+    let mut heartbeat = tokio::time::interval(interval);
+    heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    heartbeat.reset();
+    loop {
+        heartbeat.tick().await;
+        if let Err(err) = service.heartbeat().await {
+            log_event(
+                "kubelet_heartbeat_failed",
+                &format!("\"code\":\"{}\"", err.diagnostic_code()),
+            );
+        }
+    }
 }
