@@ -1,13 +1,22 @@
+//! Runtime contracts shared by the kubelet reconciler and its runtime providers.
+//!
+//! [`RuntimeProvider`] is the CRI v1 surface the kubelet uses, expressed with the
+//! generated `rubix_cri::runtime::v1` types so a containerd provider is a thin
+//! wrapper over `rubix_cri::CriClient` and the podman engine adapts to the same
+//! contract. The module also carries the `QoS` and CPU-manager helpers and the
+//! host-side volume staging used while preparing a pod.
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 
-use rubix_apiserver::{ApiserverService, KubernetesApiClient};
+use rubix_apiserver::ApiserverService;
+
+pub use rubix_cri::runtime::v1 as cri;
 
 use crate::config::{KubeletConfigOptions, detect_host_cpu_count, format_cpuset, parse_cpuset};
 use crate::error::KubeletError;
@@ -20,11 +29,88 @@ pub struct ExecResult {
     pub stderr: String,
 }
 
-/// Abstract interface for container runtime providers executing workloads.
+/// Log read options forwarded from the pod log subresource.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct LogOptions {
+    pub tail_lines: Option<usize>,
+    pub timestamps: bool,
+    pub since_seconds: Option<u64>,
+    /// Read the previous attempt of the container instead of the current one.
+    pub previous: bool,
+}
+
+/// `spec.restartPolicy`; absent means `Always`, as in Kubernetes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RestartPolicy {
+    Always,
+    OnFailure,
+    Never,
+}
+
+impl RestartPolicy {
+    #[must_use]
+    pub fn of(pod: &Value) -> Self {
+        match pod.pointer("/spec/restartPolicy").and_then(Value::as_str) {
+            Some("Never") => Self::Never,
+            Some("OnFailure") => Self::OnFailure,
+            _ => Self::Always,
+        }
+    }
+
+    /// Whether a container that exited with `exit_code` is restarted.
+    #[must_use]
+    pub fn restarts(self, exit_code: i32) -> bool {
+        match self {
+            Self::Always => true,
+            Self::OnFailure => exit_code != 0,
+            Self::Never => false,
+        }
+    }
+}
+
+/// Summary of one pass over every pod in the cluster.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ReconcileReport {
+    pub bound: usize,
+    pub synced: usize,
+    pub failed: usize,
+    pub orphans_stopped: usize,
+}
+
+/// Standard kubelet labels on sandboxes and containers, as crictl expects them.
+pub const LABEL_POD_NAME: &str = "io.kubernetes.pod.name";
+pub const LABEL_POD_NAMESPACE: &str = "io.kubernetes.pod.namespace";
+pub const LABEL_POD_UID: &str = "io.kubernetes.pod.uid";
+pub const LABEL_CONTAINER_NAME: &str = "io.kubernetes.container.name";
+/// Annotation carrying the container attempt number.
+pub const ANNOTATION_RESTART_COUNT: &str = "io.kubernetes.container.restartCount";
+/// Marks sandboxes and containers this kubelet created; other `io.kubernetes.*` users are left alone.
+pub const LABEL_MANAGED_BY: &str = "io.rubix.managed-by";
+pub const MANAGED_BY: &str = "rubix-kubelet";
+
+fn unsupported(operation: &str) -> KubeletError {
+    KubeletError::ContainerOperationFailed {
+        container: operation.to_string(),
+        reason: format!("{operation} is not supported by this runtime"),
+    }
+}
+
+/// The CRI v1 operations the kubelet drives a runtime with.
+///
+/// Required methods are the ones the reconciler calls; a provider that cannot
+/// perform one must fail loudly at compile time rather than at run time. The
+/// remaining `RuntimeService` and `ImageService` RPCs are present for shape and
+/// default to an error until something needs them. Timestamps in the CRI
+/// types are nanoseconds since the Unix epoch; timeouts are seconds.
 #[async_trait]
 pub trait RuntimeProvider: std::fmt::Debug + Send + Sync {
-    /// Identifier for the runtime provider (e.g. "containerd", "cri-o").
+    /// Runtime name used as the `containerID` scheme, e.g. `containerd`, `podman`.
     fn provider_name(&self) -> &str;
+
+    /// Version string reported in the node's `containerRuntimeVersion`.
+    fn runtime_version(&self) -> String {
+        "v1.35.7".to_string()
+    }
 
     /// Whether this provider requires a live unix domain socket path to exist on the host filesystem.
     fn requires_socket(&self) -> bool {
@@ -36,243 +122,201 @@ pub trait RuntimeProvider: std::fmt::Debug + Send + Sync {
         false
     }
 
-    /// Runs a pod sandbox and starts its containers.
-    async fn run_pod(&self, pod: &Value) -> Result<String, KubeletError>;
-
-    /// Stops a running pod sandbox and its containers.
-    async fn stop_pod(&self, pod_id: &str) -> Result<(), KubeletError>;
-
-    /// Queries the status of an active pod sandbox.
-    async fn get_pod_status(&self, pod_id: &str) -> Result<String, KubeletError>;
-
-    /// Retrieves container logs.
-    async fn get_container_logs(
-        &self,
-        pod_id: &str,
-        container_name: &str,
-        tail_lines: Option<usize>,
-    ) -> Result<String, KubeletError> {
-        let _ = (pod_id, container_name, tail_lines);
-        Ok(String::new())
-    }
-
-    /// Executes a command in a running container.
-    async fn exec_in_container(
-        &self,
-        pod_id: &str,
-        container_name: &str,
-        cmd: &[String],
-    ) -> Result<ExecResult, KubeletError> {
-        let _ = (pod_id, container_name, cmd);
-        Ok(ExecResult {
-            exit_code: 0,
-            stdout: String::new(),
-            stderr: String::new(),
-        })
-    }
-}
-
-#[derive(Debug, Default)]
-struct MockRuntimeState {
-    logs: BTreeMap<String, String>,
-    exec_responses: BTreeMap<String, ExecResult>,
-    probe_results: BTreeMap<String, bool>,
-    active_pods: BTreeSet<String>,
-}
-
-/// Simulated in-memory runtime provider for testing managed and external runtime engines.
-#[derive(Debug)]
-pub struct MockRuntimeProvider {
-    name: String,
-    pod_counter: AtomicUsize,
-    is_external: bool,
-    state: Arc<std::sync::Mutex<MockRuntimeState>>,
-}
-
-impl MockRuntimeProvider {
-    #[must_use]
-    pub fn new(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            pod_counter: AtomicUsize::new(1),
-            is_external: false,
-            state: Arc::new(std::sync::Mutex::new(MockRuntimeState::default())),
-        }
-    }
-
-    #[must_use]
-    pub fn new_external(name: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            pod_counter: AtomicUsize::new(1),
-            is_external: true,
-            state: Arc::new(std::sync::Mutex::new(MockRuntimeState::default())),
-        }
-    }
-
-    pub fn set_external(&mut self, external: bool) {
-        self.is_external = external;
-    }
-
-    pub fn set_container_logs(&self, key: impl Into<String>, logs: impl Into<String>) {
-        if let Ok(mut state) = self.state.lock() {
-            state.logs.insert(key.into(), logs.into());
-        }
-    }
-
-    pub fn set_exec_response(&self, key: impl Into<String>, response: ExecResult) {
-        if let Ok(mut state) = self.state.lock() {
-            state.exec_responses.insert(key.into(), response);
-        }
-    }
-
-    pub fn set_probe_result(&self, key: impl Into<String>, success: bool) {
-        if let Ok(mut state) = self.state.lock() {
-            state.probe_results.insert(key.into(), success);
-        }
-    }
-
-    pub fn is_pod_active(&self, pod_id: &str) -> bool {
-        self.state
-            .lock()
-            .is_ok_and(|s| s.active_pods.contains(pod_id))
-    }
-}
-
-#[async_trait]
-impl RuntimeProvider for MockRuntimeProvider {
-    fn provider_name(&self) -> &str {
-        &self.name
-    }
-
-    fn is_external(&self) -> bool {
-        self.is_external
-    }
-
-    async fn run_pod(&self, pod: &Value) -> Result<String, KubeletError> {
-        let name = pod
-            .get("metadata")
-            .and_then(|m| m.get("name"))
-            .and_then(Value::as_str)
-            .unwrap_or("unnamed");
-
-        let id = self.pod_counter.fetch_add(1, Ordering::SeqCst);
-        let pod_id = format!("{}-{}-{}", self.name, name, id);
-        if let Ok(mut state) = self.state.lock() {
-            state.active_pods.insert(pod_id.clone());
-        }
-        Ok(pod_id)
-    }
-
-    async fn stop_pod(&self, pod_id: &str) -> Result<(), KubeletError> {
-        if let Ok(mut state) = self.state.lock() {
-            state.active_pods.remove(pod_id);
-        }
+    /// Verifies the runtime answers before the node reports Ready.
+    async fn check_available(&self) -> Result<(), KubeletError> {
         Ok(())
     }
 
-    async fn get_pod_status(&self, pod_id: &str) -> Result<String, KubeletError> {
-        let active = self
-            .state
-            .lock()
-            .map_or(true, |s| s.active_pods.contains(pod_id));
-        if active {
-            Ok("Running".to_string())
-        } else {
-            Ok("Stopped".to_string())
-        }
-    }
+    // --- RuntimeService: sandboxes ---
 
-    async fn get_container_logs(
+    /// Creates and starts a pod sandbox; returns its id.
+    async fn run_pod_sandbox(&self, config: &cri::PodSandboxConfig)
+    -> Result<String, KubeletError>;
+
+    /// Stops the sandbox and every container in it.
+    async fn stop_pod_sandbox(&self, pod_sandbox_id: &str) -> Result<(), KubeletError>;
+
+    /// Removes a stopped sandbox and its containers.
+    async fn remove_pod_sandbox(&self, pod_sandbox_id: &str) -> Result<(), KubeletError>;
+
+    async fn list_pod_sandbox(
         &self,
-        pod_id: &str,
-        container_name: &str,
-        tail_lines: Option<usize>,
-    ) -> Result<String, KubeletError> {
-        let state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let key_full = format!("{pod_id}:{container_name}");
-        let raw_logs = state
-            .logs
-            .get(&key_full)
-            .or_else(|| state.logs.get(container_name))
-            .cloned()
-            .unwrap_or_else(|| format!("container {container_name} is running in {pod_id}\n"));
+        filter: Option<&cri::PodSandboxFilter>,
+    ) -> Result<Vec<cri::PodSandbox>, KubeletError>;
 
-        if let Some(n) = tail_lines {
-            let lines: Vec<&str> = raw_logs.lines().collect();
-            let start = lines.len().saturating_sub(n);
-            let tailed = lines[start..].join("\n");
-            if raw_logs.ends_with('\n') && !tailed.is_empty() {
-                Ok(format!("{tailed}\n"))
-            } else {
-                Ok(tailed)
-            }
-        } else {
-            Ok(raw_logs)
-        }
-    }
-
-    async fn exec_in_container(
+    async fn pod_sandbox_status(
         &self,
-        _pod_id: &str,
-        container_name: &str,
+        pod_sandbox_id: &str,
+    ) -> Result<cri::PodSandboxStatus, KubeletError>;
+
+    // --- RuntimeService: containers ---
+
+    /// Creates a container inside a sandbox; returns its id. The container is not started.
+    async fn create_container(
+        &self,
+        pod_sandbox_id: &str,
+        config: &cri::ContainerConfig,
+        sandbox_config: &cri::PodSandboxConfig,
+    ) -> Result<String, KubeletError>;
+
+    async fn start_container(&self, container_id: &str) -> Result<(), KubeletError>;
+
+    /// Stops a container: TERM, then KILL once `timeout_secs` has elapsed.
+    async fn stop_container(
+        &self,
+        container_id: &str,
+        timeout_secs: i64,
+    ) -> Result<(), KubeletError>;
+
+    async fn remove_container(&self, container_id: &str) -> Result<(), KubeletError>;
+
+    async fn list_containers(
+        &self,
+        filter: Option<&cri::ContainerFilter>,
+    ) -> Result<Vec<cri::Container>, KubeletError>;
+
+    async fn container_status(
+        &self,
+        container_id: &str,
+    ) -> Result<cri::ContainerStatus, KubeletError>;
+
+    /// Runs a command in a container and waits for it.
+    async fn exec_sync(
+        &self,
+        container_id: &str,
         cmd: &[String],
-    ) -> Result<ExecResult, KubeletError> {
-        let cmd_str = cmd.join(" ");
-        let state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let key_full = format!("{container_name}:{cmd_str}");
+        timeout_secs: i64,
+    ) -> Result<ExecResult, KubeletError>;
 
-        if let Some(res) = state
-            .exec_responses
-            .get(&key_full)
-            .or_else(|| state.exec_responses.get(&cmd_str))
-            .or_else(|| cmd.first().and_then(|c| state.exec_responses.get(c)))
-        {
-            return Ok(res.clone());
-        }
+    /// Captured stdout and stderr of a container, interleaved in time order.
+    ///
+    /// CRI has no log RPC: the kubelet reads the file at `ContainerStatus.log_path`.
+    /// Engines that keep logs themselves answer here instead.
+    async fn container_logs(
+        &self,
+        container_id: &str,
+        options: &LogOptions,
+    ) -> Result<String, KubeletError>;
 
-        if let Some(&pass) = state
-            .probe_results
-            .get(&key_full)
-            .or_else(|| state.probe_results.get(&cmd_str))
-            .or_else(|| state.probe_results.get(container_name))
-        {
-            return Ok(ExecResult {
-                exit_code: i32::from(!pass),
-                stdout: if pass {
-                    "probe succeeded\n".to_string()
-                } else {
-                    "probe failed\n".to_string()
-                },
-                stderr: if pass {
-                    String::new()
-                } else {
-                    "failure\n".to_string()
-                },
-            });
-        }
+    // --- ImageService ---
 
-        if cmd.first().is_some_and(|c| c == "echo") {
-            let out = cmd[1..].join(" ");
-            return Ok(ExecResult {
-                exit_code: 0,
-                stdout: format!("{out}\n"),
-                stderr: String::new(),
-            });
-        }
+    /// Returns the image if the runtime has it.
+    async fn image_status(
+        &self,
+        image: &cri::ImageSpec,
+    ) -> Result<Option<cri::Image>, KubeletError>;
 
-        Ok(ExecResult {
-            exit_code: 0,
-            stdout: format!("executed: {cmd_str}\n"),
-            stderr: String::new(),
-        })
+    /// Pulls an image; returns its reference (digest or id).
+    async fn pull_image(
+        &self,
+        image: &cri::ImageSpec,
+        sandbox_config: Option<&cri::PodSandboxConfig>,
+    ) -> Result<String, KubeletError>;
+
+    // --- RPCs the reconciler does not use yet ---
+
+    async fn container_stats(
+        &self,
+        container_id: &str,
+    ) -> Result<cri::ContainerStats, KubeletError> {
+        let _ = container_id;
+        Err(unsupported("ContainerStats"))
     }
+
+    async fn list_container_stats(
+        &self,
+        filter: Option<&cri::ContainerStatsFilter>,
+    ) -> Result<Vec<cri::ContainerStats>, KubeletError> {
+        let _ = filter;
+        Err(unsupported("ListContainerStats"))
+    }
+
+    async fn attach(
+        &self,
+        request: &cri::AttachRequest,
+    ) -> Result<cri::AttachResponse, KubeletError> {
+        let _ = request;
+        Err(unsupported("Attach"))
+    }
+
+    async fn port_forward(
+        &self,
+        request: &cri::PortForwardRequest,
+    ) -> Result<cri::PortForwardResponse, KubeletError> {
+        let _ = request;
+        Err(unsupported("PortForward"))
+    }
+
+    async fn update_container_resources(
+        &self,
+        container_id: &str,
+        resources: &cri::ContainerResources,
+    ) -> Result<(), KubeletError> {
+        let _ = (container_id, resources);
+        Err(unsupported("UpdateContainerResources"))
+    }
+
+    async fn reopen_container_log(&self, container_id: &str) -> Result<(), KubeletError> {
+        let _ = container_id;
+        Err(unsupported("ReopenContainerLog"))
+    }
+
+    async fn list_images(
+        &self,
+        filter: Option<&cri::ImageFilter>,
+    ) -> Result<Vec<cri::Image>, KubeletError> {
+        let _ = filter;
+        Err(unsupported("ListImages"))
+    }
+
+    async fn remove_image(&self, image: &cri::ImageSpec) -> Result<(), KubeletError> {
+        let _ = image;
+        Err(unsupported("RemoveImage"))
+    }
+
+    async fn image_fs_info(&self) -> Result<Vec<cri::FilesystemUsage>, KubeletError> {
+        Err(unsupported("ImageFsInfo"))
+    }
+}
+
+/// Container attempt label set, as the kubelet writes it on every container.
+#[must_use]
+pub fn container_labels(
+    namespace: &str,
+    pod_name: &str,
+    pod_uid: &str,
+    container_name: &str,
+) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        (LABEL_MANAGED_BY.to_string(), MANAGED_BY.to_string()),
+        (LABEL_POD_NAME.to_string(), pod_name.to_string()),
+        (LABEL_POD_NAMESPACE.to_string(), namespace.to_string()),
+        (LABEL_POD_UID.to_string(), pod_uid.to_string()),
+        (LABEL_CONTAINER_NAME.to_string(), container_name.to_string()),
+    ])
+}
+
+/// Sandbox label set.
+#[must_use]
+pub fn sandbox_labels(namespace: &str, pod_name: &str, pod_uid: &str) -> BTreeMap<String, String> {
+    BTreeMap::from([
+        (LABEL_MANAGED_BY.to_string(), MANAGED_BY.to_string()),
+        (LABEL_POD_NAME.to_string(), pod_name.to_string()),
+        (LABEL_POD_NAMESPACE.to_string(), namespace.to_string()),
+        (LABEL_POD_UID.to_string(), pod_uid.to_string()),
+    ])
+}
+
+/// Nanoseconds since the epoch for a Unix second count, as CRI reports time.
+#[must_use]
+pub fn nanos_from_secs(secs: u64) -> i64 {
+    i64::try_from(secs.saturating_mul(1_000_000_000)).unwrap_or(i64::MAX)
+}
+
+/// Unix seconds for a CRI nanosecond timestamp; zero and negatives mean unset.
+#[must_use]
+pub fn secs_from_nanos(nanos: i64) -> Option<u64> {
+    (nanos > 0).then(|| u64::try_from(nanos / 1_000_000_000).unwrap_or(0))
 }
 
 /// Kubernetes Quality of Service (`QoS`) classes for pods.
@@ -646,6 +690,35 @@ impl CpuManager {
         Ok(())
     }
 
+    /// Releases all CPU allocations whose keys start with `prefix`.
+    pub fn release_pod_cpus(&self, prefix: &str) -> Result<(), KubeletError> {
+        if self.policy != "static" {
+            return Ok(());
+        }
+
+        let mut map =
+            self.allocations
+                .lock()
+                .map_err(|e| KubeletError::PodReconciliationFailed {
+                    pod: prefix.to_string(),
+                    reason: format!("CPU manager lock poisoned: {e}"),
+                })?;
+
+        let keys_to_remove: Vec<String> = map
+            .keys()
+            .filter(|k| k.starts_with(prefix))
+            .cloned()
+            .collect();
+
+        if !keys_to_remove.is_empty() {
+            for k in keys_to_remove {
+                map.remove(&k);
+            }
+            self.persist_checkpoint_locked(&map)?;
+        }
+        Ok(())
+    }
+
     fn persist_checkpoint_locked(
         &self,
         map: &BTreeMap<String, BTreeSet<usize>>,
@@ -703,656 +776,7 @@ pub struct WorkloadRestartReport {
     pub reason: String,
 }
 
-/// Pod reconciler driving pod lifecycle on the registered node.
-#[derive(Clone, Debug)]
-pub struct PodReconciler {
-    client: Arc<KubernetesApiClient>,
-    runtime: Arc<dyn RuntimeProvider>,
-    node_name: String,
-    node_ip: String,
-    cpu_manager: Arc<CpuManager>,
-    checkpoint_invalidated: Arc<AtomicBool>,
-    root_dir: PathBuf,
-    apiserver: Option<Arc<ApiserverService>>,
-}
-
-impl PodReconciler {
-    #[must_use]
-    pub fn new(
-        client: Arc<KubernetesApiClient>,
-        runtime: Arc<dyn RuntimeProvider>,
-        node_name: impl Into<String>,
-        node_ip: impl Into<String>,
-    ) -> Self {
-        let node_ip_str = node_ip.into();
-        let effective_ip = if node_ip_str.is_empty() {
-            "127.0.0.1".to_string()
-        } else {
-            node_ip_str
-        };
-
-        let dummy_cpu_manager = Arc::new(CpuManager::new(
-            "none",
-            BTreeMap::new(),
-            BTreeSet::new(),
-            detect_host_cpu_count(),
-            PathBuf::from("/tmp/rubix-node/cpu_manager_state"),
-        ));
-
-        Self {
-            client,
-            runtime,
-            node_name: node_name.into(),
-            node_ip: effective_ip,
-            cpu_manager: dummy_cpu_manager,
-            checkpoint_invalidated: Arc::new(AtomicBool::new(false)),
-            root_dir: PathBuf::from("/var/lib/kubelet"),
-            apiserver: None,
-        }
-    }
-
-    #[must_use]
-    pub fn with_cpu_manager(mut self, cpu_manager: Arc<CpuManager>) -> Self {
-        self.cpu_manager = cpu_manager;
-        self
-    }
-
-    #[must_use]
-    pub fn with_root_dir(mut self, root_dir: impl Into<PathBuf>) -> Self {
-        self.root_dir = root_dir.into();
-        self
-    }
-
-    #[must_use]
-    pub fn with_apiserver(mut self, apiserver: Arc<ApiserverService>) -> Self {
-        self.apiserver = Some(apiserver);
-        self
-    }
-
-    #[must_use]
-    pub fn root_dir(&self) -> &Path {
-        &self.root_dir
-    }
-
-    #[must_use]
-    pub fn cpu_manager(&self) -> &CpuManager {
-        &self.cpu_manager
-    }
-
-    pub fn mark_checkpoint_invalidated(&self, invalidated: bool) {
-        self.checkpoint_invalidated
-            .store(invalidated, Ordering::SeqCst);
-    }
-
-    #[must_use]
-    pub fn is_checkpoint_invalidated(&self) -> bool {
-        self.checkpoint_invalidated.load(Ordering::SeqCst)
-    }
-
-    #[must_use]
-    pub fn runtime_provider_name(&self) -> &str {
-        self.runtime.provider_name()
-    }
-
-    #[must_use]
-    pub fn get_pod_volume_dir(
-        &self,
-        pod_uid_or_name: &str,
-        plugin_name: &str,
-        volume_name: &str,
-    ) -> PathBuf {
-        self.root_dir
-            .join("pods")
-            .join(pod_uid_or_name)
-            .join("volumes")
-            .join(plugin_name)
-            .join(volume_name)
-    }
-
-    pub async fn get_container_logs(
-        &self,
-        pod_id: &str,
-        container_name: &str,
-        tail_lines: Option<usize>,
-    ) -> Result<String, KubeletError> {
-        self.runtime
-            .get_container_logs(pod_id, container_name, tail_lines)
-            .await
-    }
-
-    pub async fn exec_in_container(
-        &self,
-        pod_id: &str,
-        container_name: &str,
-        cmd: &[String],
-    ) -> Result<ExecResult, KubeletError> {
-        self.runtime
-            .exec_in_container(pod_id, container_name, cmd)
-            .await
-    }
-
-    /// Reports workload-restart needs for surviving external-runtime containers when
-    /// the CPU manager checkpoint was invalidated.
-    pub async fn report_workload_restart_needs(
-        &self,
-        namespace: &str,
-    ) -> Result<Vec<WorkloadRestartReport>, KubeletError> {
-        let mut reports = Vec::new();
-        if !self.runtime.is_external() || !self.is_checkpoint_invalidated() {
-            return Ok(reports);
-        }
-
-        let pod_list = self
-            .client
-            .list_pods(namespace)
-            .await
-            .map_err(KubeletError::from)?;
-
-        let Some(items) = pod_list.get("items").and_then(Value::as_array) else {
-            return Ok(reports);
-        };
-
-        for pod in items {
-            reports.extend(check_pod_restart_need(
-                pod,
-                &self.node_name,
-                self.runtime.provider_name(),
-                namespace,
-            ));
-        }
-
-        Ok(reports)
-    }
-
-    /// Reconciles all pods in the specified namespace assigned to this node.
-    pub async fn reconcile_namespace(&self, namespace: &str) -> Result<usize, KubeletError> {
-        let pod_list = self
-            .client
-            .list_pods(namespace)
-            .await
-            .map_err(KubeletError::from)?;
-
-        let Some(items) = pod_list.get("items").and_then(Value::as_array) else {
-            return Ok(0);
-        };
-
-        let mut reconciled_count = 0;
-        for pod in items {
-            let Some(assigned_node) = pod
-                .get("spec")
-                .and_then(|s| s.get("nodeName"))
-                .and_then(Value::as_str)
-            else {
-                continue;
-            };
-
-            if assigned_node != self.node_name {
-                continue;
-            }
-
-            if let Err(e) = self.sync_pod(namespace, pod).await {
-                let pod_name = pod
-                    .get("metadata")
-                    .and_then(|m| m.get("name"))
-                    .and_then(Value::as_str)
-                    .unwrap_or("unknown");
-                eprintln!("Failed to sync pod {namespace}/{pod_name}: {e}");
-            } else {
-                reconciled_count += 1;
-            }
-        }
-
-        Ok(reconciled_count)
-    }
-
-    async fn stage_projected_source(
-        &self,
-        vol_dir: &Path,
-        namespace: &str,
-        pod: &Value,
-        source: &Value,
-    ) -> Result<(), KubeletError> {
-        if let Some(sa_tok) = source.get("serviceAccountToken") {
-            stage_projected_sa_token(vol_dir, namespace, pod, sa_tok, self.apiserver.as_ref())?;
-        }
-
-        if let Some(cm) = source.get("configMap") {
-            let cm_name = cm.get("name").and_then(Value::as_str).unwrap_or("");
-            if let Ok(cm_obj) = self.client.get_configmap(namespace, cm_name).await {
-                let _ = stage_configmap_files(vol_dir, cm, &cm_obj);
-            }
-        }
-
-        if let Some(sec) = source.get("secret") {
-            let sec_name = sec.get("name").and_then(Value::as_str).unwrap_or("");
-            if let Ok(sec_obj) = self.client.get_secret(namespace, sec_name).await {
-                let _ = stage_secret_files(vol_dir, sec, &sec_obj);
-            }
-        }
-
-        if let Some(dw) = source.get("downwardAPI")
-            && let Some(items) = dw.get("items").and_then(Value::as_array)
-        {
-            stage_projected_downward_api(vol_dir, namespace, pod, items)?;
-        }
-
-        Ok(())
-    }
-
-    async fn prepare_single_volume(
-        &self,
-        namespace: &str,
-        pod_name: &str,
-        pod_uid: &str,
-        pod: &Value,
-        vol: &Value,
-    ) -> Result<(), KubeletError> {
-        let vol_name = vol.get("name").and_then(Value::as_str).unwrap_or("unnamed");
-
-        if let Some(sec) = vol.get("secret") {
-            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~secret", vol_name);
-            std::fs::create_dir_all(&vol_dir).map_err(|e| {
-                KubeletError::PodReconciliationFailed {
-                    pod: pod_name.to_string(),
-                    reason: format!(
-                        "failed to create volume directory {}: {e}",
-                        vol_dir.display()
-                    ),
-                }
-            })?;
-            let sec_name = sec
-                .get("secretName")
-                .and_then(Value::as_str)
-                .unwrap_or(vol_name);
-            let sec_obj = self
-                .client
-                .get_secret(namespace, sec_name)
-                .await
-                .map_err(|e| KubeletError::PodReconciliationFailed {
-                    pod: pod_name.to_string(),
-                    reason: format!("failed to fetch secret '{sec_name}': {e}"),
-                })?;
-            stage_secret_files(&vol_dir, sec, &sec_obj)?;
-        } else if let Some(cm) = vol.get("configMap") {
-            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~configmap", vol_name);
-            std::fs::create_dir_all(&vol_dir).map_err(|e| {
-                KubeletError::PodReconciliationFailed {
-                    pod: pod_name.to_string(),
-                    reason: format!(
-                        "failed to create volume directory {}: {e}",
-                        vol_dir.display()
-                    ),
-                }
-            })?;
-            let cm_name = cm.get("name").and_then(Value::as_str).unwrap_or(vol_name);
-            let cm_obj = self
-                .client
-                .get_configmap(namespace, cm_name)
-                .await
-                .map_err(|e| KubeletError::PodReconciliationFailed {
-                    pod: pod_name.to_string(),
-                    reason: format!("failed to fetch configmap '{cm_name}': {e}"),
-                })?;
-            stage_configmap_files(&vol_dir, cm, &cm_obj)?;
-        } else if let Some(proj) = vol.get("projected")
-            && let Some(sources) = proj.get("sources").and_then(Value::as_array)
-        {
-            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~projected", vol_name);
-            std::fs::create_dir_all(&vol_dir).map_err(|e| {
-                KubeletError::PodReconciliationFailed {
-                    pod: pod_name.to_string(),
-                    reason: format!(
-                        "failed to create volume directory {}: {e}",
-                        vol_dir.display()
-                    ),
-                }
-            })?;
-            for source in sources {
-                self.stage_projected_source(&vol_dir, namespace, pod, source)
-                    .await?;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Prepares and populates volume mounts (Secrets, `ConfigMaps`, Projected) on the host filesystem.
-    pub async fn prepare_pod_volumes(
-        &self,
-        namespace: &str,
-        pod: &Value,
-    ) -> Result<(), KubeletError> {
-        let name = pod
-            .get("metadata")
-            .and_then(|m| m.get("name"))
-            .and_then(Value::as_str)
-            .unwrap_or("unknown");
-        let pod_uid = pod
-            .get("metadata")
-            .and_then(|m| m.get("uid"))
-            .and_then(Value::as_str)
-            .unwrap_or(name);
-
-        let Some(volumes) = pod
-            .get("spec")
-            .and_then(|s| s.get("volumes"))
-            .and_then(Value::as_array)
-        else {
-            return Ok(());
-        };
-
-        for vol in volumes {
-            self.prepare_single_volume(namespace, name, pod_uid, pod, vol)
-                .await?;
-        }
-
-        Ok(())
-    }
-
-    async fn evaluate_probe(
-        &self,
-        sandbox_id: &str,
-        container_name: &str,
-        probe: &Value,
-    ) -> Result<bool, KubeletError> {
-        if let Some(exec) = probe.get("exec")
-            && let Some(cmd_val) = exec.get("command").and_then(Value::as_array)
-        {
-            let cmd: Vec<String> = cmd_val
-                .iter()
-                .filter_map(Value::as_str)
-                .map(ToString::to_string)
-                .collect();
-            let res = self
-                .runtime
-                .exec_in_container(sandbox_id, container_name, &cmd)
-                .await?;
-            return Ok(res.exit_code == 0);
-        }
-
-        if let Some(http) = probe.get("httpGet") {
-            let path = http.get("path").and_then(Value::as_str).unwrap_or("/");
-            let cmd = vec!["curl".to_string(), path.to_string()];
-            let res = self
-                .runtime
-                .exec_in_container(sandbox_id, container_name, &cmd)
-                .await;
-            if let Ok(r) = res {
-                return Ok(r.exit_code == 0);
-            }
-        }
-
-        if let Some(tcp) = probe.get("tcpSocket") {
-            let port = tcp.get("port").and_then(Value::as_i64).unwrap_or(80);
-            let cmd = vec![
-                "nc".to_string(),
-                "-z".to_string(),
-                "127.0.0.1".to_string(),
-                port.to_string(),
-            ];
-            let res = self
-                .runtime
-                .exec_in_container(sandbox_id, container_name, &cmd)
-                .await;
-            if let Ok(r) = res {
-                return Ok(r.exit_code == 0);
-            }
-        }
-
-        Ok(true)
-    }
-
-    async fn evaluate_container_probes(
-        &self,
-        sandbox_id: &str,
-        c_name: &str,
-        c: &Value,
-    ) -> Result<(bool, bool), KubeletError> {
-        let mut liveness_ok = true;
-        if let Some(liveness) = c.get("livenessProbe") {
-            liveness_ok = self.evaluate_probe(sandbox_id, c_name, liveness).await?;
-        }
-
-        let mut readiness_ok = true;
-        if !liveness_ok {
-            readiness_ok = false;
-        } else if let Some(readiness) = c.get("readinessProbe") {
-            readiness_ok = self.evaluate_probe(sandbox_id, c_name, readiness).await?;
-        }
-
-        Ok((liveness_ok, readiness_ok))
-    }
-
-    fn build_container_statuses(
-        &self,
-        namespace: &str,
-        sandbox_id: &str,
-        pod_name: &str,
-        qos: PodQoSClass,
-        containers: &[Value],
-    ) -> Vec<Value> {
-        let mut container_statuses = Vec::new();
-        for (idx, c) in containers.iter().enumerate() {
-            let c_name = c.get("name").and_then(Value::as_str).unwrap_or("main");
-            let c_image = c.get("image").and_then(Value::as_str).unwrap_or("unknown");
-            let container_key = format!("{namespace}/{pod_name}/{c_name}");
-
-            let (assigned_cpuset, is_exclusive) =
-                if let Some(cores) = is_container_cpu_pinning_eligible(qos, c) {
-                    match self
-                        .cpu_manager
-                        .allocate_exclusive_cpus(&container_key, cores)
-                    {
-                        Ok(cpus) => (format_cpuset(&cpus), true),
-                        Err(e) => {
-                            eprintln!("exclusive CPU allocation failed for {container_key}: {e}");
-                            (format_cpuset(&self.cpu_manager.shared_pool()), false)
-                        },
-                    }
-                } else {
-                    (format_cpuset(&self.cpu_manager.shared_pool()), false)
-                };
-
-            let mut status_obj = json!({
-                "name": c_name,
-                "ready": true,
-                "restartCount": 0,
-                "image": c_image,
-                "imageID": format!("{}-image-{}", self.runtime.provider_name(), c_image),
-                "containerID": format!("{}://{}-c-{}", self.runtime.provider_name(), sandbox_id, idx),
-                "cpuset": assigned_cpuset,
-                "exclusiveCPU": is_exclusive,
-                "state": {
-                    "running": {
-                        "startedAt": "2026-09-30T12:00:00Z"
-                    }
-                }
-            });
-
-            if is_exclusive {
-                status_obj["allocatedResources"] = json!({
-                    "cpu": assigned_cpuset
-                });
-            }
-
-            container_statuses.push(status_obj);
-        }
-        container_statuses
-    }
-
-    async fn sync_running_pod(&self, namespace: &str, pod: &Value) -> Result<(), KubeletError> {
-        let name = pod
-            .get("metadata")
-            .and_then(|m| m.get("name"))
-            .and_then(Value::as_str)
-            .unwrap_or("unknown");
-
-        let empty_containers = Vec::new();
-        let containers = pod
-            .get("spec")
-            .and_then(|s| s.get("containers"))
-            .and_then(Value::as_array)
-            .map_or(&empty_containers[..], |c| &c[..]);
-
-        let empty_statuses = Vec::new();
-        let existing_statuses = pod
-            .get("status")
-            .and_then(|s| s.get("containerStatuses"))
-            .and_then(Value::as_array)
-            .map_or(&empty_statuses[..], |s| &s[..]);
-
-        let sandbox_id = existing_statuses
-            .first()
-            .and_then(|cs| cs.get("containerID").and_then(Value::as_str))
-            .and_then(|cid| {
-                let after_slash = cid.split("://").nth(1)?;
-                let (sb_id, _) = after_slash.rsplit_once("-c-")?;
-                Some(sb_id.to_string())
-            })
-            .unwrap_or_else(|| format!("{}-{}-1", self.runtime.provider_name(), name));
-
-        let restart_policy = pod
-            .get("spec")
-            .and_then(|s| s.get("restartPolicy"))
-            .and_then(Value::as_str)
-            .unwrap_or("Always");
-
-        let mut updated_statuses = Vec::new();
-        let mut all_ready = true;
-
-        for (idx, c) in containers.iter().enumerate() {
-            let c_name = c.get("name").and_then(Value::as_str).unwrap_or("main");
-            let existing_status = existing_statuses
-                .iter()
-                .find(|s| s.get("name").and_then(Value::as_str) == Some(c_name));
-
-            let mut restart_count = existing_status
-                .and_then(|s| s.get("restartCount"))
-                .and_then(Value::as_i64)
-                .unwrap_or(0);
-
-            let (liveness_ok, ready) = self
-                .evaluate_container_probes(&sandbox_id, c_name, c)
-                .await?;
-            if !liveness_ok && restart_policy != "Never" {
-                restart_count += 1;
-                let _ = self.runtime.stop_pod(&sandbox_id).await;
-            }
-
-            if !ready {
-                all_ready = false;
-            }
-
-            let mut st = existing_status.cloned().unwrap_or_else(|| {
-                json!({
-                    "name": c_name,
-                    "image": c.get("image").and_then(Value::as_str).unwrap_or("unknown"),
-                    "containerID": format!("{}://{}-c-{}", self.runtime.provider_name(), sandbox_id, idx),
-                })
-            });
-
-            st["ready"] = json!(ready);
-            st["restartCount"] = json!(restart_count);
-            updated_statuses.push(st);
-        }
-
-        let status = json!({
-            "phase": "Running",
-            "conditions": build_pod_conditions(all_ready),
-            "containerStatuses": updated_statuses
-        });
-
-        self.client
-            .patch_pod_status(namespace, name, status)
-            .await
-            .map_err(|e| KubeletError::PodReconciliationFailed {
-                pod: format!("{namespace}/{name}"),
-                reason: format!("failed to patch pod status: {e}"),
-            })?;
-
-        Ok(())
-    }
-
-    /// Synchronizes an individual pod's runtime state and updates its API status.
-    pub async fn sync_pod(&self, namespace: &str, pod: &Value) -> Result<(), KubeletError> {
-        let name = pod
-            .get("metadata")
-            .and_then(|m| m.get("name"))
-            .and_then(Value::as_str)
-            .ok_or_else(|| KubeletError::PodReconciliationFailed {
-                pod: "unknown".to_string(),
-                reason: "pod missing metadata.name".to_string(),
-            })?;
-
-        // 1. Prepare and stage volumes on host filesystem
-        self.prepare_pod_volumes(namespace, pod).await?;
-
-        // 2. If the pod is already Running, evaluate probes and sync status
-        if let Some(phase) = pod
-            .get("status")
-            .and_then(|s| s.get("phase"))
-            .and_then(Value::as_str)
-            && phase == "Running"
-        {
-            return self.sync_running_pod(namespace, pod).await;
-        }
-
-        // 3. Determine QoS and execute pod on runtime provider
-        let qos = determine_pod_qos(pod);
-        let sandbox_id = self.runtime.run_pod(pod).await?;
-
-        let empty_containers = Vec::new();
-        let containers = pod
-            .get("spec")
-            .and_then(|s| s.get("containers"))
-            .and_then(Value::as_array)
-            .map_or(&empty_containers[..], |c| &c[..]);
-
-        let mut container_statuses =
-            self.build_container_statuses(namespace, &sandbox_id, name, qos, containers);
-
-        // Evaluate initial probes
-        let mut all_ready = true;
-        for (idx, c) in containers.iter().enumerate() {
-            let c_name = c.get("name").and_then(Value::as_str).unwrap_or("main");
-            let (_, ready) = self
-                .evaluate_container_probes(&sandbox_id, c_name, c)
-                .await?;
-            if !ready {
-                all_ready = false;
-                if let Some(st) = container_statuses.get_mut(idx) {
-                    st["ready"] = json!(false);
-                }
-            }
-        }
-
-        let status = json!({
-            "phase": "Running",
-            "qosClass": match qos {
-                PodQoSClass::Guaranteed => "Guaranteed",
-                PodQoSClass::Burstable => "Burstable",
-                PodQoSClass::BestEffort => "BestEffort",
-            },
-            "hostIP": self.node_ip,
-            "podIP": self.node_ip,
-            "startTime": "2026-09-30T12:00:00Z",
-            "conditions": build_pod_conditions(all_ready),
-            "containerStatuses": container_statuses
-        });
-
-        self.client
-            .patch_pod_status(namespace, name, status)
-            .await
-            .map_err(|e| KubeletError::PodReconciliationFailed {
-                pod: format!("{namespace}/{name}"),
-                reason: format!("failed to patch pod status: {e}"),
-            })?;
-
-        Ok(())
-    }
-}
-
-fn safe_volume_path(vol_dir: &Path, rel: &str) -> Result<PathBuf, KubeletError> {
+pub(crate) fn safe_volume_path(vol_dir: &Path, rel: &str) -> Result<PathBuf, KubeletError> {
     let p = Path::new(rel);
     if rel.is_empty()
         || p.is_absolute()
@@ -1367,14 +791,14 @@ fn safe_volume_path(vol_dir: &Path, rel: &str) -> Result<PathBuf, KubeletError> 
     Ok(vol_dir.join(p))
 }
 
-fn write_volume_file(path: &Path, content: &[u8]) -> std::io::Result<()> {
+pub(crate) fn write_volume_file(path: &Path, content: &[u8]) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
     std::fs::write(path, content)
 }
 
-fn stage_secret_files(
+pub(crate) fn stage_secret_files(
     vol_dir: &Path,
     vol_spec: &Value,
     sec_obj: &Value,
@@ -1421,7 +845,7 @@ fn stage_secret_files(
     Ok(())
 }
 
-fn stage_configmap_files(
+pub(crate) fn stage_configmap_files(
     vol_dir: &Path,
     vol_spec: &Value,
     cm_obj: &Value,
@@ -1468,7 +892,7 @@ fn stage_configmap_files(
     Ok(())
 }
 
-fn stage_projected_sa_token(
+pub(crate) fn stage_projected_sa_token(
     vol_dir: &Path,
     namespace: &str,
     pod: &Value,
@@ -1538,7 +962,7 @@ fn stage_projected_sa_token(
     Ok(())
 }
 
-fn stage_projected_downward_api(
+pub(crate) fn stage_projected_downward_api(
     vol_dir: &Path,
     namespace: &str,
     pod: &Value,
@@ -1573,48 +997,7 @@ fn stage_projected_downward_api(
     Ok(())
 }
 
-fn build_pod_conditions(all_ready: bool) -> Vec<Value> {
-    let ready_status_str = if all_ready { "True" } else { "False" };
-    let ready_reason = if all_ready {
-        "PodReady"
-    } else {
-        "ContainersNotReady"
-    };
-    let ready_msg = if all_ready {
-        "pod is ready"
-    } else {
-        "containers not ready"
-    };
-
-    vec![
-        json!({
-            "type": "PodScheduled",
-            "status": "True",
-            "reason": "PodScheduled",
-            "message": "pod assigned to node"
-        }),
-        json!({
-            "type": "Initialized",
-            "status": "True",
-            "reason": "PodInitialized",
-            "message": "all init containers completed"
-        }),
-        json!({
-            "type": "ContainersReady",
-            "status": ready_status_str,
-            "reason": ready_reason,
-            "message": ready_msg
-        }),
-        json!({
-            "type": "Ready",
-            "status": ready_status_str,
-            "reason": ready_reason,
-            "message": ready_msg
-        }),
-    ]
-}
-
-fn check_pod_restart_need(
+pub(crate) fn check_pod_restart_need(
     pod: &Value,
     node_name: &str,
     provider_name: &str,

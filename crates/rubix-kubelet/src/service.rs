@@ -2,15 +2,20 @@ use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use rubix_apiserver::{ApiserverService, KubernetesApiClient};
+use async_trait::async_trait;
+use rubix_apiserver::{
+    ApiserverError, ApiserverService, KubernetesApiClient, PodLogOptions, PodLogReader,
+};
+use serde_json::Value;
 
 use crate::config::KubeletConfigOptions;
 use crate::container::ContainerEnvironment;
 use crate::error::KubeletError;
 use crate::health::KubeletHealthReport;
+use crate::reconciler::{PodReconciler, resolve_container};
 use crate::registration::NodeRegistration;
 use crate::workload::{
-    CpuManager, ExecResult, PodReconciler, RuntimeProvider, WorkloadRestartReport,
+    CpuManager, ExecResult, LogOptions, ReconcileReport, RuntimeProvider, WorkloadRestartReport,
 };
 
 /// Kubelet service orchestrating node lifecycle, registration, and workload execution.
@@ -35,7 +40,11 @@ impl KubeletService {
         let registration = NodeRegistration::new(
             client.clone(),
             options.clone(),
-            format!("{}://v1.35.7", runtime.provider_name()),
+            format!(
+                "{}://{}",
+                runtime.provider_name(),
+                runtime.runtime_version()
+            ),
         );
         let cpu_manager = Arc::new(CpuManager::from_options(&options));
         let reconciler = PodReconciler::new(
@@ -191,6 +200,13 @@ impl KubeletService {
             });
         }
 
+        self.runtime.check_available().await?;
+        self.registration.set_runtime_version(format!(
+            "{}://{}",
+            self.runtime.provider_name(),
+            self.runtime.runtime_version()
+        ));
+
         // 3. Validate API server communication and node authorization
         let client = self.client();
         client
@@ -227,6 +243,27 @@ impl KubeletService {
         self.registration.register_or_update().await?;
         self.registration.update_lease().await?;
         self.running.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// Log reader for the apiserver's pod log subresource.
+    #[must_use]
+    pub fn log_source(&self) -> KubeletLogSource {
+        KubeletLogSource {
+            node_name: self.options.node_name.clone(),
+            runtime: self.runtime.clone(),
+        }
+    }
+
+    /// One pass of the kubelet loop: bind, sync and clean up every pod in the cluster.
+    pub async fn reconcile_once(&self) -> Result<ReconcileReport, KubeletError> {
+        self.reconciler.reconcile_all().await
+    }
+
+    /// Renews the node lease and re-asserts node status.
+    pub async fn heartbeat(&self) -> Result<(), KubeletError> {
+        self.registration.register_or_update().await?;
+        self.registration.update_lease().await?;
         Ok(())
     }
 
@@ -359,5 +396,92 @@ impl KubeletService {
     /// Stops the Kubelet service.
     pub fn stop(&self) {
         self.running.store(false, Ordering::SeqCst);
+    }
+}
+
+/// Serves the pod log subresource for pods this kubelet runs.
+///
+/// It holds only the runtime provider and node name, never the apiserver, so
+/// registering it with [`ApiserverService::set_pod_log_reader`] cannot create
+/// a reference cycle that would keep the datastore lock alive after shutdown.
+#[derive(Clone, Debug)]
+pub struct KubeletLogSource {
+    node_name: String,
+    runtime: Arc<dyn RuntimeProvider>,
+}
+
+#[async_trait]
+impl PodLogReader for KubeletLogSource {
+    async fn read_pod_log(
+        &self,
+        pod: &Value,
+        options: &PodLogOptions,
+    ) -> Result<String, ApiserverError> {
+        let name = pod
+            .pointer("/metadata/name")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown");
+        let assigned = pod.pointer("/spec/nodeName").and_then(Value::as_str);
+        if assigned != Some(self.node_name.as_str()) {
+            return Err(ApiserverError::BadRequest {
+                message: format!("pod {name} is not assigned to node {}", self.node_name),
+            });
+        }
+        let uid = pod
+            .pointer("/metadata/uid")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ApiserverError::BadRequest {
+                message: format!("pod {name} has no uid"),
+            })?;
+        let container = match &options.container {
+            Some(container) => container.clone(),
+            None => pod
+                .pointer("/spec/containers/0/name")
+                .and_then(Value::as_str)
+                .ok_or_else(|| ApiserverError::BadRequest {
+                    message: format!("pod {name} has no containers"),
+                })?
+                .to_string(),
+        };
+        // A container that has never run has no log. One waiting between restart
+        // attempts still has its last attempt's output, as upstream serves it.
+        let status = pod
+            .pointer("/status/containerStatuses")
+            .and_then(Value::as_array)
+            .and_then(|statuses| {
+                statuses
+                    .iter()
+                    .find(|s| s["name"].as_str() == Some(container.as_str()))
+            });
+        let waiting = status
+            .and_then(|status| status.pointer("/state/waiting/reason"))
+            .and_then(Value::as_str);
+        let has_previous = status
+            .and_then(|status| status.pointer("/lastState/terminated"))
+            .is_some();
+        if let Some(reason) = waiting.filter(|_| !has_previous) {
+            return Err(ApiserverError::BadRequest {
+                message: format!(
+                    "container \"{container}\" in pod \"{name}\" is waiting to start: {reason}"
+                ),
+            });
+        }
+        let log_options = LogOptions {
+            tail_lines: options.tail_lines,
+            timestamps: options.timestamps,
+            since_seconds: options.since_seconds,
+            previous: options.previous,
+        };
+        let id = resolve_container(self.runtime.as_ref(), uid, &container, options.previous)
+            .await
+            .map_err(|e| ApiserverError::BadRequest {
+                message: format!("{e}"),
+            })?;
+        self.runtime
+            .container_logs(&id, &log_options)
+            .await
+            .map_err(|e| ApiserverError::Internal {
+                reason: format!("kubelet could not read logs for {name}/{container}: {e}"),
+            })
     }
 }

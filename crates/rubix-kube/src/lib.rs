@@ -203,5 +203,5 @@ pub mod runtime;
 pub use runtime::{
     COMPONENT_APISERVER, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS, COMPONENT_DATASTORE,
     COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_METRICS, COMPONENT_PORTAINER,
-    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder, RuntimeError,
+    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder, RuntimeError, select_runtime_provider,
 };

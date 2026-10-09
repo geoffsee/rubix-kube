@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::time::Duration;
 
 use rubix_supervisor::{
@@ -9,16 +10,38 @@ use crate::service::KubeletService;
 
 pub const COMPONENT_KUBELET: &str = "kubelet";
 pub const DEFAULT_STARTUP_TIMEOUT: Duration = Duration::from_mins(1);
+/// How often the kubelet lists pods and compares them with the runtime.
+pub const DEFAULT_RECONCILE_INTERVAL: Duration = Duration::from_secs(2);
+/// How often the node lease is renewed.
+pub const DEFAULT_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug)]
 pub struct KubeletAdapter {
     service: KubeletService,
+    reconcile_interval: Duration,
+    heartbeat_interval: Duration,
 }
 
 impl KubeletAdapter {
     #[must_use]
     pub fn new(service: KubeletService) -> Self {
-        Self { service }
+        Self {
+            service,
+            reconcile_interval: DEFAULT_RECONCILE_INTERVAL,
+            heartbeat_interval: DEFAULT_HEARTBEAT_INTERVAL,
+        }
+    }
+
+    #[must_use]
+    pub fn with_reconcile_interval(mut self, interval: Duration) -> Self {
+        self.reconcile_interval = interval;
+        self
+    }
+
+    #[must_use]
+    pub fn with_heartbeat_interval(mut self, interval: Duration) -> Self {
+        self.heartbeat_interval = interval;
+        self
     }
 
     pub fn registration(
@@ -48,7 +71,7 @@ impl Adapter for KubeletAdapter {
                 });
             }
 
-            // 3. Check readiness
+            // 2. Check readiness
             match self.service.check_readiness().await {
                 Ok(report) if report.is_healthy && report.node_ready => {},
                 Ok(_) => {
@@ -63,25 +86,73 @@ impl Adapter for KubeletAdapter {
                 },
             }
 
-            // 4. Signal readiness to supervisor coordinator
+            // 3. Signal readiness to supervisor coordinator
             if !context.ready() {
                 return Err(AdapterError {
                     code: "kubelet-readiness-rejected",
                 });
             }
 
-            // 5. Await supervisor stop phase
+            // 4. Reconcile pods and heartbeat until the supervisor stops us.
+            let mut reconcile = tokio::time::interval(self.reconcile_interval);
+            reconcile.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+
+            let heartbeat_handle = tokio::spawn(run_heartbeat_loop(
+                self.service.clone(),
+                self.heartbeat_interval,
+            ));
+
             loop {
-                match context.changed().await {
-                    StopPhase::Running => {},
-                    StopPhase::Graceful | StopPhase::Force => {
-                        self.service.stop();
-                        break;
-                    },
+                tokio::select! {
+                    biased;
+                    phase = context.changed() => {
+                        if matches!(phase, StopPhase::Graceful | StopPhase::Force) {
+                            break;
+                        }
+                    }
+                    _ = reconcile.tick() => {
+                        match self.service.reconcile_once().await {
+                            Ok(report) if report.bound + report.failed + report.orphans_stopped > 0 => {
+                                log_event("kubelet_reconcile", &format!(
+                                    "\"bound\":{},\"synced\":{},\"failed\":{},\"orphans_stopped\":{}",
+                                    report.bound, report.synced, report.failed, report.orphans_stopped
+                                ));
+                            }
+                            Ok(_) => {}
+                            Err(err) => log_event(
+                                "kubelet_reconcile_failed",
+                                &format!("\"code\":\"{}\"", err.diagnostic_code()),
+                            ),
+                        }
+                    }
                 }
             }
-
+            heartbeat_handle.abort();
+            let _ = heartbeat_handle.await;
+            self.service.stop();
             Ok(())
         })
+    }
+}
+
+fn log_event(event: &str, fields: &str) {
+    let _ = writeln!(
+        std::io::stderr(),
+        "{{\"schema\":1,\"level\":\"info\",\"component\":\"kubelet\",\"event\":\"{event}\",{fields}}}"
+    );
+}
+
+async fn run_heartbeat_loop(service: KubeletService, interval: Duration) {
+    let mut heartbeat = tokio::time::interval(interval);
+    heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    heartbeat.reset();
+    loop {
+        heartbeat.tick().await;
+        if let Err(err) = service.heartbeat().await {
+            log_event(
+                "kubelet_heartbeat_failed",
+                &format!("\"code\":\"{}\"", err.diagnostic_code()),
+            );
+        }
     }
 }
