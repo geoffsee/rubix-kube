@@ -146,10 +146,14 @@ pub fn export_kine_to_rubix_datastore(
 
 /// Asserts that a raw `SQLite` database is rejected by `rubix-datastore`.
 pub fn assert_raw_sqlite_rejected(sqlite_path: &Path) -> bool {
-    let Some(parent) = sqlite_path.parent() else {
+    let Ok(temp_dir) = tempfile::tempdir() else {
         return false;
     };
-    let config = DatastoreConfig::new(parent);
+    let dest = temp_dir.path().join("snapshot.db");
+    if fs::copy(sqlite_path, &dest).is_err() {
+        return false;
+    }
+    let config = DatastoreConfig::new(temp_dir.path());
     match DatastoreEngine::open(config) {
         Err(DatastoreError::Fatal(msg)) => msg.contains("invalid snapshot magic header"),
         _ => false,
