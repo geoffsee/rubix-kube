@@ -1,7 +1,8 @@
 //! Integration tests for candidate-bound receipt schema and trusted reader (Issue #348).
 
 use rubix_dev::release_qualification::criteria::{
-    self, check_criterion_1_epic_ledgers, verify_all_criteria,
+    self, check_criterion_1_epic_ledgers, check_criterion_7_performance_budgets,
+    verify_all_criteria,
 };
 use rubix_dev::release_qualification::receipt::{
     self, CandidateIdentity, CandidateInventory, CandidateReceipt, CleanupInventory,
@@ -433,5 +434,217 @@ fn test_readme_example_receipt_valid() -> Result<()> {
     receipt.verify_integrity()?;
     let inventory = sample_inventory();
     receipt::validate_candidate_receipt(&receipt, &inventory, 1)?;
+    Ok(())
+}
+
+fn criterion_7_sample_payload() -> ReceiptPayload {
+    let mut payload = sample_payload(7);
+    payload.description = "Criterion 7 Performance & Memory Budgets live qualification run".into();
+    payload.environment = EnvironmentInfo {
+        host: "linux-arm64".into(),
+        kernel: "6.6.137".into(),
+        runner: "aws-c7g.2xlarge-disposable-runner".into(),
+    };
+    payload.commands = vec![
+        CommandExecution {
+            command: vec!["rubix-perf".into(), "gate-ci".into(), "tools/perf".into()],
+            exit_code: 0,
+            stdout_sha256: None,
+            stderr_sha256: None,
+            duration_ms: Some(150),
+        },
+        CommandExecution {
+            command: vec![
+                "rubix-perf".into(),
+                "check-rebaseline-policy".into(),
+                "tools/perf".into(),
+            ],
+            exit_code: 0,
+            stdout_sha256: None,
+            stderr_sha256: None,
+            duration_ms: Some(85),
+        },
+    ];
+    let mut assertions = Vec::new();
+    for role in rubix_dev::perf::REQUIRED_RETAINED_PROCESSES {
+        assertions.push(receipt::AssertionRecord {
+            name: format!("retained_process_{role}_measured"),
+            passed: true,
+            detail: Some(format!(
+                "process role '{role}' idle PSS measured under cgroup v2"
+            )),
+        });
+    }
+    assertions.extend([
+        receipt::AssertionRecord {
+            name: "idle_settled_pss_budget".into(),
+            passed: true,
+            detail: Some("settled idle PSS meets E01 budget allocation".into()),
+        },
+        receipt::AssertionRecord {
+            name: "soak_24h_growth_bounded".into(),
+            passed: true,
+            detail: Some("24h memory growth ratio <= 1.05x with 0 OOM kills and 0 crashes".into()),
+        },
+        receipt::AssertionRecord {
+            name: "shutdown_process_cleanup_zero_survivors".into(),
+            passed: true,
+            detail: Some("graceful shutdown p95 <= 30s with 0 surviving owned processes".into()),
+        },
+        receipt::AssertionRecord {
+            name: "no_unbacked_sub_200mb_claims".into(),
+            passed: true,
+            detail: Some("idle PSS backed by concrete 8-process sum exceeding 200MB".into()),
+        },
+    ]);
+    payload.assertions = assertions;
+    payload.skips = vec![receipt::SkipRecord {
+        name: "amd64_live_capture".into(),
+        reason: "hardware gap: matched amd64 host unavailable during arm64 disposable qualification run; recorded in accordance with acceptance matrix E29 hardware gap rules".into(),
+    }];
+    payload.cleanup = CleanupInventory {
+        cleaned_paths: vec!["/tmp/rubix-perf-run".into()],
+        remaining_containers: vec![],
+        remaining_images: vec![],
+        status: "complete".into(),
+    };
+    payload
+}
+
+#[test]
+fn test_criterion_7_performance_budgets_receipt_validation() -> Result<()> {
+    let payload = criterion_7_sample_payload();
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    assert_eq!(receipt.schema_version, 1);
+    assert_eq!(receipt.criterion, 7);
+    receipt.verify_integrity()?;
+
+    let inventory = sample_inventory();
+    receipt::validate_candidate_receipt(&receipt, &inventory, 7)?;
+
+    // Verify all 8 canonical process roles are accounted for in assertions
+    for role in rubix_dev::perf::REQUIRED_RETAINED_PROCESSES {
+        let expected_assertion = format!("retained_process_{role}_measured");
+        assert!(
+            receipt
+                .assertions
+                .iter()
+                .any(|a| a.name == expected_assertion && a.passed),
+            "missing required assertion for canonical role '{role}'"
+        );
+    }
+
+    // Verify hardware gap skip documentation
+    let amd64_skip = receipt
+        .skips
+        .iter()
+        .find(|s| s.name == "amd64_live_capture");
+    assert!(
+        amd64_skip.is_some(),
+        "expected amd64_live_capture skip record"
+    );
+    assert!(
+        !amd64_skip.unwrap().reason.trim().is_empty(),
+        "hardware gap skip reason cannot be empty"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_criterion_7_performance_budgets_evaluation_satisfied_when_valid() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let receipts_dir = temp.path().join("docs/release/receipts");
+    fs::create_dir_all(&receipts_dir)?;
+    let receipt_path = receipts_dir.join("criterion-07-performance-budgets.json");
+
+    let payload = criterion_7_sample_payload();
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&receipt)?)?;
+
+    let release_dir = temp.path().join("docs/release");
+    fs::create_dir_all(&release_dir)?;
+    let cell_inventory = serde_json::json!({
+        "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+        "node_cells": [{
+            "output": {
+                "filename": "rubix-kube",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "inputs": [{
+                "path": "bundle.manifest",
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            }]
+        }]
+    });
+    fs::write(
+        release_dir.join("cell-inventory.json"),
+        serde_json::to_vec(&cell_inventory)?,
+    )?;
+
+    let status = check_criterion_7_performance_budgets(temp.path())?;
+    assert!(status.satisfied);
+    assert!(status.summary.contains(
+        "Satisfied: validated candidate-bound receipt 'criterion-07-performance-budgets.json'"
+    ));
+    Ok(())
+}
+
+#[test]
+fn test_criterion_7_performance_budgets_evaluation_pending_when_unqualified() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let receipts_dir = temp.path().join("docs/release/receipts");
+    fs::create_dir_all(&receipts_dir)?;
+    let receipt_path = receipts_dir.join("criterion-07-performance-budgets.json");
+
+    let mut payload = criterion_7_sample_payload();
+    // Simulate failing one of the 8 canonical process role assertions
+    payload.assertions[0].passed = false;
+    payload.assertions[0].detail = Some("kine PSS exceeded memory limit".into());
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&receipt)?)?;
+
+    let release_dir = temp.path().join("docs/release");
+    fs::create_dir_all(&release_dir)?;
+    let cell_inventory = serde_json::json!({
+        "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+        "node_cells": [{
+            "output": {
+                "filename": "rubix-kube",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "inputs": [{
+                "path": "bundle.manifest",
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            }]
+        }]
+    });
+    fs::write(
+        release_dir.join("cell-inventory.json"),
+        serde_json::to_vec(&cell_inventory)?,
+    )?;
+
+    let status = check_criterion_7_performance_budgets(temp.path())?;
+    assert!(!status.satisfied);
+    assert!(
+        status
+            .summary
+            .contains("Pending: unqualified receipt 'criterion-07-performance-budgets.json'")
+    );
+    assert!(status.summary.contains("kine PSS exceeded memory limit"));
+    Ok(())
+}
+
+#[test]
+fn test_criterion_7_performance_budgets_rejection_when_skip_reason_empty() -> Result<()> {
+    let mut payload = criterion_7_sample_payload();
+    payload.skips[0].reason = "   ".into();
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    let inventory = sample_inventory();
+    let err = receipt::validate_candidate_receipt(&receipt, &inventory, 7).unwrap_err();
+    assert!(
+        err.to_string().contains("missing reason"),
+        "expected missing reason error: {err}"
+    );
     Ok(())
 }
