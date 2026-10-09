@@ -27,33 +27,50 @@ while strictly preserving loopback and cluster-internal CIDRs (`10.42.0.0/16` fo
 
 ### 1.1 Firewall Rules Installation
 
-Apply iptables egress and forwarding drop rules:
+Apply iptables egress and forwarding drop rules using a dedicated chain with explicitly controlled ordering at position 1:
 
 ```sh
+# Create custom filter chain with controlled ordering
+iptables -N RUBIX_EGRESS_BLOCK 2>/dev/null || iptables -F RUBIX_EGRESS_BLOCK
+
 # 1. Allow established and related connections
-iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
 # 2. Allow loopback traffic on host
-iptables -A OUTPUT -o lo -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -o lo -j ACCEPT
 
 # 3. Allow cluster-internal communication (Pod CIDR 10.42.0.0/16 and Service CIDR 10.43.0.0/16)
-iptables -A OUTPUT -d 10.42.0.0/16 -j ACCEPT
-iptables -A OUTPUT -d 10.43.0.0/16 -j ACCEPT
-iptables -A FORWARD -s 10.42.0.0/16 -d 10.42.0.0/16 -j ACCEPT
-iptables -A FORWARD -s 10.42.0.0/16 -d 10.43.0.0/16 -j ACCEPT
-iptables -A FORWARD -d 10.42.0.0/16 -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -d 10.42.0.0/16 -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -d 10.43.0.0/16 -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -s 10.42.0.0/16 -d 10.42.0.0/16 -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -s 10.42.0.0/16 -d 10.43.0.0/16 -j ACCEPT
+iptables -A RUBIX_EGRESS_BLOCK -d 10.42.0.0/16 -j ACCEPT
 
-# 4. Drop all external outbound traffic from host (including root, containerd, and kubelet)
-iptables -A OUTPUT -d 0.0.0.0/0 -j DROP
+# 4. Drop all other outbound and forwarded traffic
+iptables -A RUBIX_EGRESS_BLOCK -j DROP
 
-# 5. Drop all external forwarded pod traffic (traversing cni0 towards external interfaces)
-iptables -A FORWARD -i cni0 ! -o cni0 -j DROP
-iptables -A FORWARD -j DROP
+# Insert RUBIX_EGRESS_BLOCK at rule position 1 in OUTPUT and FORWARD to ensure no earlier rules bypass it
+iptables -D OUTPUT -j RUBIX_EGRESS_BLOCK 2>/dev/null || true
+iptables -I OUTPUT 1 -j RUBIX_EGRESS_BLOCK
 
-# 6. Enforce IPv6 disabled mode or drop all IPv6 outbound/forwarded traffic
-ip6tables -P OUTPUT DROP 2>/dev/null || true
-ip6tables -P FORWARD DROP 2>/dev/null || true
+iptables -D FORWARD -j RUBIX_EGRESS_BLOCK 2>/dev/null || true
+iptables -I FORWARD 1 -j RUBIX_EGRESS_BLOCK
+
+# 5. Enforce IPv6 fail-closed policy
+if command -v ip6tables >/dev/null 2>&1; then
+  ip6tables -P OUTPUT DROP && \
+    ip6tables -P FORWARD DROP && \
+    ip6tables -S OUTPUT | grep -Fqx -- '-P OUTPUT DROP' && \
+    ip6tables -S FORWARD | grep -Fqx -- '-P FORWARD DROP' || {
+      echo "ERROR: IPv6 firewall policies were not applied" >&2
+      exit 1
+    }
+elif [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" = "1" ]; then
+  echo "IPv6 is disabled"
+else
+  echo "ERROR: IPv6 is neither disabled nor firewalled" >&2
+  exit 1
+fi
 ```
 
 ### 1.2 Firewall Verification Probes
@@ -61,10 +78,16 @@ ip6tables -P FORWARD DROP 2>/dev/null || true
 Verify both host-level and pod-level isolation:
 
 1. **Host-Level External Probe (Root UID 0)**:
-   Verify root outbound WAN traffic is dropped:
+   Verify root outbound WAN traffic is dropped using a transport-independent TCP probe:
    ```sh
-   # Curl must fail with exit code 28 (timeout) or 7 (failed to connect)
-   curl --connect-timeout 2 --silent https://1.1.1.1 && exit 1 || echo "Host root egress denied"
+   # Direct TCP probe to external WAN IP (1.1.1.1:80).
+   # Connection must fail due to packet drop / timeout.
+   if nc -z -w 2 1.1.1.1 80 2>/dev/null; then
+     echo "ERROR: Host external TCP connection succeeded; egress drop failed" >&2
+     exit 1
+   else
+     echo "Host root TCP egress denied as expected"
+   fi
    ```
 
 2. **Host-Level Cluster Loopback Probe**:
@@ -74,11 +97,38 @@ Verify both host-level and pod-level isolation:
    ```
 
 3. **Pod-Level External Probe**:
-   Verify pods cannot egress to public IPs or external DNS:
+   Verify pods cannot egress to public IPs or external DNS, asserting probe readiness and execution separately:
    ```sh
-   kubectl run egress-probe --rm -i --restart=Never \
-     --image=rancher/mirrored-library-busybox:1.37.0@sha256:498a000f370d8c37927118ed80afe8a86594149023036a7124611005648257d1 \
-     -- nc -z -w 2 1.1.1.1 53 && exit 1 || echo "Pod egress denied"
+   # Deploy probe pod and wait for readiness
+   cat <<EOF | kubectl apply -f -
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: egress-probe
+     namespace: default
+   spec:
+     restartPolicy: Never
+     containers:
+       - name: probe
+         image: rancher/mirrored-library-busybox:1.37.0@sha256:498a000f370d8c37927118ed80afe8a86594149023036a7124611005648257d1
+         command: ["sh", "-c", "sleep 3600"]
+   EOF
+   kubectl wait --for=condition=Ready pod/egress-probe --timeout=60s
+
+   # Verify internal connectivity succeeds
+   kubectl exec pod/egress-probe -- nc -z -w 2 10.43.0.1 443 || {
+     echo "ERROR: Cluster internal probe failed; check pod network" >&2
+     exit 1
+   }
+
+   # Verify external connectivity fails
+   if kubectl exec pod/egress-probe -- nc -z -w 2 1.1.1.1 53; then
+     echo "ERROR: Pod was able to reach external IP; egress drop failed" >&2
+     exit 1
+   else
+     echo "Pod egress denied as expected"
+   fi
+   kubectl delete pod egress-probe
    ```
 
 ---
@@ -105,26 +155,33 @@ digests are:
 
 ### 2.2 Offline Payload Import & Verification
 
-1. Inspect the offline archive manifest to confirm all required images and tags are present:
+1. Record qualification start timestamp prior to starting node services to establish the audit interval:
+
+   ```sh
+   QUALIFICATION_START_TIME=$(date -u +"%Y-%m-%d %H:%M:%S")
+   echo "Qualification start recorded: $QUALIFICATION_START_TIME"
+   ```
+
+2. Inspect the offline archive manifest to confirm all required images and tags are present:
 
    ```sh
    tar -tzf /opt/rubix-offline/kubesolo-0.1.0-linux-arm64-offline.tar.gz
    ```
 
-2. Import the offline archive directly into containerd under the `k8s.io` namespace:
+3. Import the offline archive directly into containerd under the `k8s.io` namespace:
 
    ```sh
    ctr -n k8s.io images import /opt/rubix-offline/kubesolo-0.1.0-linux-arm64-offline.tar.gz
    ```
 
-3. Confirm that all required images are present with matching digests:
+4. Confirm that all required images are present with matching digests:
 
    ```sh
    ctr -n k8s.io images list
    rubix-kube --config /etc/kubesolo/config.yaml --run-mode service --check-images
    ```
 
-4. Rigorously verify zero remote network image pulls:
+5. Rigorously verify zero remote network image pulls across the entire qualification interval:
 
    Do not rely on negative grep matches over unverified log streams. Establish zero network pulls by:
    - Confirming containerd logging is active and accessible:
@@ -143,15 +200,15 @@ digests are:
        grep -F "$img" /tmp/imported-images.txt || { echo "ERROR: Missing image $img"; exit 1; }
      done
      ```
-   - Verifying containerd logs contain zero remote fetch operations:
+   - Verifying containerd logs contain zero remote fetch operations since qualification started:
      ```sh
-     PULLS=$(journalctl -u containerd --since "30 minutes ago" | grep -iE 'pulling image|downloading layer|fetching' || true)
+     PULLS=$(journalctl -u containerd --since "$QUALIFICATION_START_TIME" | grep -iE 'pulling image|downloading layer|fetching' || true)
      if [ -n "$PULLS" ]; then
-       echo "ERROR: Remote pull events detected:"
+       echo "ERROR: Remote pull events detected since qualification start ($QUALIFICATION_START_TIME):"
        echo "$PULLS"
        exit 1
      fi
-     echo "Zero remote pulls confirmed across containerd journal"
+     echo "Zero remote pulls confirmed across containerd journal since $QUALIFICATION_START_TIME"
      ```
    - Inspecting firewall drop counters to confirm no outbound traffic escaped:
      ```sh
@@ -219,7 +276,9 @@ kubectl wait --for=condition=Ready pod -l app=local-path-provisioner -n local-pa
          persistentVolumeClaim:
            claimName: local-path-pvc-test
    EOF
-   kubectl wait --for=condition=Ready pod/pvc-writer-pod --timeout=60s
+   kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/pvc-writer-pod --timeout=60s
+   EXIT_CODE=$(kubectl get pod pvc-writer-pod -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}')
+   test "$EXIT_CODE" = "0" || { echo "ERROR: Writer pod failed with exit code $EXIT_CODE"; exit 1; }
    ```
 
 3. Delete `pvc-writer-pod`:
@@ -282,10 +341,24 @@ The Local Path Provisioner supports both `Delete` and `Retain` reclaim policies.
    kubectl delete pvc local-path-pvc-test
    ```
 
-3. Verify provisioner cleanup helper pod purges the directory contents, ensuring zero residual disk leak:
+3. Verify provisioner cleanup helper pod purges the directory contents, polling with a timeout to accommodate asynchronous helper pod execution:
 
    ```sh
-   test ! -d "$HOST_PATH" && echo "Backing host path purged on Delete reclaim policy"
+   CLEANED=0
+   for i in $(seq 1 30); do
+     if [ ! -d "$HOST_PATH" ]; then
+       CLEANED=1
+       break
+     fi
+     sleep 2
+   done
+
+   if [ "$CLEANED" -eq 1 ]; then
+     echo "Backing host path purged on Delete reclaim policy"
+   else
+     echo "ERROR: Host directory $HOST_PATH was not purged within timeout" >&2
+     exit 1
+   fi
    ```
 
 #### 3.3.2 Retain Reclaim Policy Verification
@@ -319,7 +392,7 @@ The Local Path Provisioner supports both `Delete` and `Retain` reclaim policies.
    EOF
    ```
 
-2. Write data to volume via a temporary pod:
+2. Write data to volume via a temporary pod and wait for Succeeded completion:
 
    ```sh
    cat <<EOF | kubectl apply -f -
@@ -342,7 +415,9 @@ The Local Path Provisioner supports both `Delete` and `Retain` reclaim policies.
          persistentVolumeClaim:
            claimName: local-path-retain-pvc
    EOF
-   kubectl wait --for=condition=Ready pod/retain-writer --timeout=60s
+   kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/retain-writer --timeout=60s
+   EXIT_CODE=$(kubectl get pod retain-writer -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}')
+   test "$EXIT_CODE" = "0" || { echo "ERROR: Retain writer pod failed with exit code $EXIT_CODE"; exit 1; }
    kubectl delete pod retain-writer
    ```
 
@@ -416,7 +491,13 @@ kubectl exec pod/dns-test-pod -- nslookup kubernetes.default.svc.cluster.local
   without causing CoreDNS service crashes or lookup hanging:
 
   ```sh
-  kubectl exec pod/dns-test-pod -- nslookup google.com && exit 1 || echo "External DNS blocked as expected"
+  DNS_OUT=$(kubectl exec pod/dns-test-pod -- nslookup google.com 2>&1 || true)
+  if echo "$DNS_OUT" | grep -iE 'connection timed out|no servers could be reached|can.t resolve|server can.t find'; then
+    echo "External DNS blocked as expected"
+  else
+    echo "ERROR: Unexpected external DNS response or probe failure: $DNS_OUT" >&2
+    exit 1
+  fi
   ```
 
 Clean up probe pod:
@@ -442,12 +523,25 @@ and persistent volume mounts).
    kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=portainer -n portainer --timeout=90s
    ```
 
-2. Record the resource UIDs and creation timestamps of all Portainer-owned objects:
+2. Record normalized resource snapshots (including spec, data, UID, and creation timestamp, excluding server-generated runtime fields) of all Portainer-owned objects:
 
    ```sh
-   kubectl get deployment,svc,sa,pvc,configmap,secret -n portainer \
-     -o jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{": uid="}{.metadata.uid}{" created="}{.metadata.creationTimestamp}{"\n"}{end}' \
-     | sort > /tmp/portainer-resources-before.txt
+   snapshot_portainer_resources() {
+     local target_file="$1"
+     kubectl get deployment,svc,sa,pvc,configmap,secret -n portainer -o json | jq '
+       .items |= sort_by(.kind, .metadata.name) |
+       .items[] | {
+         kind: .kind,
+         name: .metadata.name,
+         uid: .metadata.uid,
+         creationTimestamp: .metadata.creationTimestamp,
+         spec: .spec,
+         data: .data
+       }
+     ' > "$target_file"
+   }
+
+   snapshot_portainer_resources /tmp/portainer-resources-before.json
    ```
 
 3. Trigger a second bootstrap execution (e.g., node restart, reconciler re-evaluation, or
@@ -457,15 +551,13 @@ and persistent volume mounts).
    kubectl apply -f /var/lib/kubesolo/manifests/portainer.yaml
    ```
 
-4. Capture resources after second bootstrap and assert zero mutation:
+4. Capture resources after second bootstrap and assert zero mutation across specs, data, and identities:
 
    ```sh
-   kubectl get deployment,svc,sa,pvc,configmap,secret -n portainer \
-     -o jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{": uid="}{.metadata.uid}{" created="}{.metadata.creationTimestamp}{"\n"}{end}' \
-     | sort > /tmp/portainer-resources-after.txt
+   snapshot_portainer_resources /tmp/portainer-resources-after.json
 
-   diff -u /tmp/portainer-resources-before.txt /tmp/portainer-resources-after.txt || {
-     echo "ERROR: Portainer resources mutated across bootstrap executions"
+   diff -u /tmp/portainer-resources-before.json /tmp/portainer-resources-after.json || {
+     echo "ERROR: Portainer resources mutated across bootstrap executions" >&2
      exit 1
    }
    echo "Zero Portainer resource mutation verified across idempotent bootstrap"
@@ -495,14 +587,21 @@ D2K utilizes a dedicated CA independent of the cluster API server CA:
 
 ### 6.2 Positive Verification: Authenticated Request
 
-Execute an HTTPS request presenting the authorized client certificate:
+Execute an HTTPS request presenting the authorized client certificate and explicitly asserting HTTP 200 OK:
 
 ```sh
-curl --cacert /var/lib/kubesolo/pki/d2k-ca.crt \
+HTTP_STATUS=$(curl --cacert /var/lib/kubesolo/pki/d2k-ca.crt \
      --cert /var/lib/kubesolo/pki/d2k-client.crt \
      --key /var/lib/kubesolo/pki/d2k-client.key \
-     --fail-with-body \
-     https://127.0.0.1:9443/version
+     --silent --output /tmp/d2k-version.json \
+     --write-out "%{http_code}" \
+     https://127.0.0.1:9443/version)
+
+if [ "$HTTP_STATUS" != "200" ]; then
+  echo "ERROR: Expected HTTP 200 OK from D2K, received: $HTTP_STATUS" >&2
+  exit 1
+fi
+echo "D2K authenticated request succeeded with HTTP 200 OK"
 ```
 
 **Expected Result**: TLS handshake succeeds; endpoint returns `HTTP 200 OK` with daemon version metadata.
