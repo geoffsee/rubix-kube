@@ -221,8 +221,8 @@ Outcome: Pending
 Readiness: Blocked on G04, E35.01
 Ownership: Unassigned
 Stack: perf/paired-hardware-budgets
-Evidence: Paired live performance captures on matched Linux hardware (boot-to-API, idle PSS, distribution size, shutdown, 24h memory) not yet collected; synthetic candidate fixtures remain in place.
-Next step: Ingest live rubix-perf captures for arm64 and amd64, evaluating rebaseline policy with rubix-perf gate-ci; timestamp: 2026-10-07T14:15:00Z
+Evidence: Performance budget qualification tooling, operator runbook (docs/operator/performance-budget-qualification-runbook.md), and fail-closed candidate-bound receipt schema validators for Criterion 7 delivered. Paired live performance captures on matched Linux hardware (boot-to-API, idle PSS, distribution size, shutdown, 24h memory) pending execution on disposable Linux infrastructure; synthetic candidate fixtures remain in place until live qualification.
+Next step: Ingest live rubix-perf captures for arm64 and amd64 on disposable Linux hosts, evaluating rebaseline policy with rubix-perf gate-ci; timestamp: 2026-10-09T14:30:00Z
 
 Work item: E36.04 (https://github.com/geoffsee/rubix-kube/issues/354); Parent criteria 1, 3
 Outcome: Pending
