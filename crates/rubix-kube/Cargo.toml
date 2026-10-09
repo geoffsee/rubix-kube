@@ -23,7 +23,9 @@ hyper-util = { version = "=0.1.21", features = ["tokio", "server", "http1"] }
 tokio = { version = "=1.53.1", features = ["rt", "rt-multi-thread", "sync", "time", "macros", "signal", "net", "io-util", "fs"] }
 
 rubix-apiserver = { version = "=0.1.0", path = "../rubix-apiserver" }
+rubix-containerd = { version = "=0.1.0", path = "../rubix-containerd" }
 rubix-controller = { version = "=0.1.0", path = "../rubix-controller" }
+rubix-cri = { version = "=0.1.0", path = "../rubix-cri" }
 rubix-datastore = { version = "=0.1.0", path = "../rubix-datastore" }
 rubix-dns = { version = "=0.1.0", path = "../rubix-dns" }
 rubix-kubelet = { version = "=0.1.0", path = "../rubix-kubelet" }

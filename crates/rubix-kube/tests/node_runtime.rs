@@ -20,9 +20,10 @@ use rubix_kube::config_api::ConfigApiServer;
 use rubix_kube::lifecycle_logs::LogLevel;
 use rubix_kube::lifecycle_sink::FlushPolicy;
 use rubix_kube::runtime::{
-    COMPONENT_APISERVER, COMPONENT_CONFIG_API, COMPONENT_CONTROLLER_MANAGER, COMPONENT_COREDNS,
-    COMPONENT_DATASTORE, COMPONENT_KUBELET, COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER,
-    COMPONENT_PROXY, NodeRuntime, RuntimeBuilder, select_runtime_provider,
+    COMPONENT_APISERVER, COMPONENT_CONFIG_API, COMPONENT_CONTAINERD, COMPONENT_CONTROLLER_MANAGER,
+    COMPONENT_COREDNS, COMPONENT_DATASTORE, COMPONENT_EXTERNAL_CRI, COMPONENT_KUBELET,
+    COMPONENT_LOCAL_PATH, COMPONENT_PORTAINER, COMPONENT_PROXY, NodeRuntime, RuntimeBuilder,
+    RuntimeError, select_runtime_provider,
 };
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_platform::Architecture;
@@ -1447,4 +1448,308 @@ async fn test_issue_345_select_runtime_provider_hook() {
     assert_eq!(custom_provider.provider_name(), "containerd");
     assert_eq!(custom_provider.runtime_version(), "unknown");
     assert!(custom_provider.requires_socket());
+}
+
+fn assert_managed_workload_registrations(builder: &RuntimeBuilder) {
+    let regs = builder.registrations();
+    let find_reg = |id: &str| {
+        regs.iter()
+            .find(|r| r.spec.id == id)
+            .expect("registration exists")
+    };
+
+    let reg_ctrd = find_reg(COMPONENT_CONTAINERD);
+    assert_eq!(reg_ctrd.spec.prerequisites, Vec::<String>::new());
+    assert_eq!(reg_ctrd.spec.failure_policy, FailurePolicy::Fatal);
+
+    let reg_datastore = find_reg(COMPONENT_DATASTORE);
+    assert_eq!(reg_datastore.spec.prerequisites, Vec::<String>::new());
+    assert_eq!(reg_datastore.spec.failure_policy, FailurePolicy::Fatal);
+
+    let reg_api = find_reg(COMPONENT_APISERVER);
+    assert_eq!(
+        reg_api.spec.prerequisites,
+        vec![COMPONENT_DATASTORE.to_string()]
+    );
+    assert_eq!(reg_api.spec.failure_policy, FailurePolicy::Fatal);
+
+    let reg_proxy = find_reg(COMPONENT_PROXY);
+    assert_eq!(
+        reg_proxy.spec.prerequisites,
+        vec![COMPONENT_APISERVER.to_string()]
+    );
+    assert_eq!(reg_proxy.spec.failure_policy, FailurePolicy::Fatal);
+
+    let reg_kubelet = find_reg(COMPONENT_KUBELET);
+    assert_eq!(
+        reg_kubelet.spec.prerequisites,
+        vec![
+            COMPONENT_APISERVER.to_string(),
+            COMPONENT_CONTAINERD.to_string()
+        ]
+    );
+    assert_eq!(reg_kubelet.spec.failure_policy, FailurePolicy::Fatal);
+
+    let reg_coredns = find_reg(COMPONENT_COREDNS);
+    assert_eq!(
+        reg_coredns.spec.prerequisites,
+        vec![
+            COMPONENT_APISERVER.to_string(),
+            COMPONENT_KUBELET.to_string()
+        ]
+    );
+    assert_eq!(reg_coredns.spec.failure_policy, FailurePolicy::Degrade);
+}
+
+#[tokio::test]
+async fn test_linux_workload_path_managed_containerd_wiring_and_dag() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (engine, apiserver, _pki, _apicfg) = setup_cluster_infra(temp.path());
+
+    let containerd_paths =
+        rubix_containerd::ContainerdPaths::from_base(temp.path().join("containerd"));
+    let containerd_opts = rubix_containerd::ContainerdServiceOptions::new(
+        containerd_paths.clone(),
+        rubix_containerd::ImageImportConfig::new(containerd_paths.images_dir.clone()),
+    );
+    let containerd_svc = rubix_containerd::ContainerdService::new(containerd_opts);
+
+    let proxy_opts = rubix_proxy::KubeProxyOptions::new(
+        temp.path().join("pki/kube-proxy.kubeconfig"),
+        false,
+        rubix_proxy::ProxyMode::IpTables,
+    );
+    let proxy_svc = rubix_proxy::ProxyService::new(proxy_opts);
+
+    let kubelet_dir = temp.path().join("kubelet");
+    std::fs::create_dir_all(&kubelet_dir).unwrap();
+    let kubelet_opts = rubix_kubelet::KubeletConfigOptions::default_for_pki(
+        &temp.path().join("pki"),
+        "test-node".to_string(),
+        "127.0.0.1".to_string(),
+        &kubelet_dir,
+    );
+    let provider: Arc<dyn rubix_kubelet::RuntimeProvider> = Arc::new(
+        rubix_kubelet::CriRuntimeProvider::new(containerd_paths.socket_path.clone()),
+    );
+    let kubelet_svc = rubix_kubelet::KubeletService::new(kubelet_opts, apiserver.clone(), provider);
+
+    let client = apiserver.admin_client();
+    let dns_svc = rubix_dns::service::CoreDnsService::new(
+        rubix_dns::config::CoreDnsConfig::new(),
+        Arc::new(client.clone()),
+    );
+
+    let timeout = std::time::Duration::from_secs(30);
+    let datastore_adapter = DatastoreAdapter::from_engine(engine);
+    let datastore_bound_handle = datastore_adapter.bound_addr_handle();
+    let datastore_reg = DatastoreAdapter::registration_with_adapter(
+        COMPONENT_DATASTORE,
+        datastore_adapter,
+        timeout,
+    );
+    let apiserver_reg = ApiserverAdapter::registration(
+        COMPONENT_APISERVER,
+        (*apiserver).clone(),
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+
+    let mut builder = RuntimeBuilder::new(config)
+        .with_apiserver(apiserver.clone())
+        .with_client(client)
+        .with_datastore_bound_addr(datastore_bound_handle)
+        .register_component(datastore_reg)
+        .register_component(apiserver_reg);
+
+    builder = builder.register_containerd(containerd_svc);
+    builder = builder.register_proxy(proxy_svc);
+    builder = builder.register_kubelet(kubelet_svc, COMPONENT_CONTAINERD);
+    builder = builder.register_coredns(
+        dns_svc,
+        vec![
+            COMPONENT_APISERVER.to_string(),
+            COMPONENT_KUBELET.to_string(),
+        ],
+    );
+
+    // Verify registrations
+    assert_managed_workload_registrations(&builder);
+
+    // Verify log reader wiring to apiserver
+    assert!(apiserver.pod_log_reader().is_some());
+
+    // Verify build succeeds and component_ids contains components
+    let runtime = builder.build().expect("build runtime");
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_CONTAINERD.to_string())
+    );
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_DATASTORE.to_string())
+    );
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_APISERVER.to_string())
+    );
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_PROXY.to_string())
+    );
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_KUBELET.to_string())
+    );
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_COREDNS.to_string())
+    );
+}
+
+#[tokio::test]
+async fn test_linux_workload_path_external_cri_wiring_and_dag() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let (engine, apiserver, _pki, _apicfg) = setup_cluster_infra(temp.path());
+
+    let socket_path = temp.path().join("external-cri.sock");
+    let endpoint_str = format!("unix://{}", socket_path.display());
+    let endpoints = rubix_cri::RuntimeEndpoints::parse(&endpoint_str, None).unwrap();
+    let cri_opts = rubix_cri::ExternalRuntimeOptions::new(endpoints);
+    let cri_svc = rubix_cri::ExternalRuntimeService::new(cri_opts);
+
+    let proxy_opts = rubix_proxy::KubeProxyOptions::new(
+        temp.path().join("pki/kube-proxy.kubeconfig"),
+        false,
+        rubix_proxy::ProxyMode::IpTables,
+    );
+    let proxy_svc = rubix_proxy::ProxyService::new(proxy_opts);
+
+    let kubelet_dir = temp.path().join("kubelet");
+    std::fs::create_dir_all(&kubelet_dir).unwrap();
+    let kubelet_opts = rubix_kubelet::KubeletConfigOptions::default_for_pki(
+        &temp.path().join("pki"),
+        "test-node".to_string(),
+        "127.0.0.1".to_string(),
+        &kubelet_dir,
+    );
+    let provider: Arc<dyn rubix_kubelet::RuntimeProvider> =
+        Arc::new(rubix_kubelet::CriRuntimeProvider::new(socket_path.clone()));
+    let kubelet_svc = rubix_kubelet::KubeletService::new(kubelet_opts, apiserver.clone(), provider);
+
+    let client = apiserver.admin_client();
+    let dns_svc = rubix_dns::service::CoreDnsService::new(
+        rubix_dns::config::CoreDnsConfig::new(),
+        Arc::new(client.clone()),
+    );
+
+    let timeout = std::time::Duration::from_secs(30);
+    let datastore_adapter = DatastoreAdapter::from_engine(engine);
+    let datastore_bound_handle = datastore_adapter.bound_addr_handle();
+    let datastore_reg = DatastoreAdapter::registration_with_adapter(
+        COMPONENT_DATASTORE,
+        datastore_adapter,
+        timeout,
+    );
+    let apiserver_reg = ApiserverAdapter::registration(
+        COMPONENT_APISERVER,
+        (*apiserver).clone(),
+        vec![COMPONENT_DATASTORE.to_string()],
+        timeout,
+    );
+
+    let mut builder = RuntimeBuilder::new(config)
+        .with_apiserver(apiserver.clone())
+        .with_client(client)
+        .with_datastore_bound_addr(datastore_bound_handle)
+        .register_component(datastore_reg)
+        .register_component(apiserver_reg);
+
+    builder = builder.register_external_cri(cri_svc);
+    builder = builder.register_proxy(proxy_svc);
+    builder = builder.register_kubelet(kubelet_svc, COMPONENT_EXTERNAL_CRI);
+    builder = builder.register_coredns(
+        dns_svc,
+        vec![
+            COMPONENT_APISERVER.to_string(),
+            COMPONENT_KUBELET.to_string(),
+        ],
+    );
+
+    // Verify registrations
+    let regs = builder.registrations();
+    let find_reg = |id: &str| {
+        regs.iter()
+            .find(|r| r.spec.id == id)
+            .expect("registration exists")
+    };
+
+    let reg_cri = find_reg(COMPONENT_EXTERNAL_CRI);
+    assert_eq!(reg_cri.spec.prerequisites, Vec::<String>::new());
+    assert_eq!(reg_cri.spec.failure_policy, FailurePolicy::Fatal);
+
+    let reg_kubelet = find_reg(COMPONENT_KUBELET);
+    assert_eq!(
+        reg_kubelet.spec.prerequisites,
+        vec![
+            COMPONENT_APISERVER.to_string(),
+            COMPONENT_EXTERNAL_CRI.to_string()
+        ]
+    );
+    assert_eq!(reg_kubelet.spec.failure_policy, FailurePolicy::Fatal);
+
+    // Verify log reader wiring to apiserver
+    assert!(apiserver.pod_log_reader().is_some());
+
+    // Verify build succeeds
+    let runtime = builder.build().expect("build runtime");
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_EXTERNAL_CRI.to_string())
+    );
+    assert!(
+        runtime
+            .component_ids()
+            .contains(&COMPONENT_KUBELET.to_string())
+    );
+}
+
+#[test]
+fn test_synthetic_mode_fallback_when_no_runtime() {
+    let temp = TempDir::new().unwrap();
+    let config = test_config(temp.path(), false, false);
+    let runtime = NodeRuntime::from_config(config).expect("build node runtime");
+    let ids = runtime.component_ids();
+
+    assert!(ids.contains(&COMPONENT_DATASTORE.to_string()));
+    assert!(ids.contains(&COMPONENT_APISERVER.to_string()));
+    assert!(ids.contains(&COMPONENT_CONTROLLER_MANAGER.to_string()));
+    assert!(ids.contains(&COMPONENT_COREDNS.to_string()));
+
+    // When running in synthetic mode (no containerd binary/socket), workload components are omitted
+    assert!(!ids.contains(&COMPONENT_CONTAINERD.to_string()));
+    assert!(!ids.contains(&COMPONENT_EXTERNAL_CRI.to_string()));
+    assert!(!ids.contains(&COMPONENT_KUBELET.to_string()));
+    assert!(!ids.contains(&COMPONENT_PROXY.to_string()));
+}
+
+#[test]
+fn test_runtime_error_network_diagnostic_code() {
+    let err = RuntimeError::Network(rubix_network::NetworkError::CniError {
+        reason: "failed to write config".to_string(),
+    });
+    assert_eq!(err.diagnostic_code(), "network_failure");
+    assert!(
+        err.to_string()
+            .contains("network initialization failure: cni configuration error")
+    );
 }
