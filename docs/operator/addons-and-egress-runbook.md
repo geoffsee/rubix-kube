@@ -56,6 +56,13 @@ iptables -I OUTPUT 1 -j RUBIX_EGRESS_BLOCK
 iptables -D FORWARD -j RUBIX_EGRESS_BLOCK 2>/dev/null || true
 iptables -I FORWARD 1 -j RUBIX_EGRESS_BLOCK
 
+# Verify RUBIX_EGRESS_BLOCK jumps are active at rule position 1
+iptables -C OUTPUT -j RUBIX_EGRESS_BLOCK 2>/dev/null && \
+  iptables -C FORWARD -j RUBIX_EGRESS_BLOCK 2>/dev/null || {
+    echo "ERROR: RUBIX_EGRESS_BLOCK jump rules failed to install" >&2
+    exit 1
+  }
+
 # 5. Enforce IPv6 fail-closed policy
 if command -v ip6tables >/dev/null 2>&1; then
   ip6tables -P OUTPUT DROP && \
@@ -155,23 +162,21 @@ digests are:
 
 ### 2.2 Offline Payload Import & Verification
 
-1. Record qualification start timestamp prior to starting node services to establish the audit interval:
+1. Record qualification start timestamp prior to starting node services to establish the audit interval (including explicit UTC timezone suffix):
 
    ```sh
-   QUALIFICATION_START_TIME=$(date -u +"%Y-%m-%d %H:%M:%S")
+   QUALIFICATION_START_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
    echo "Qualification start recorded: $QUALIFICATION_START_TIME"
    ```
 
-2. Inspect the offline archive manifest to confirm all required images and tags are present:
+2. Parameterize archive path by target architecture, inspect manifest, and import into containerd:
 
    ```sh
-   tar -tzf /opt/rubix-offline/kubesolo-0.1.0-linux-arm64-offline.tar.gz
-   ```
+   ARCH=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
+   ARCHIVE_PATH="/opt/rubix-offline/kubesolo-0.1.0-linux-${ARCH}-offline.tar.gz"
 
-3. Import the offline archive directly into containerd under the `k8s.io` namespace:
-
-   ```sh
-   ctr -n k8s.io images import /opt/rubix-offline/kubesolo-0.1.0-linux-arm64-offline.tar.gz
+   tar -tzf "$ARCHIVE_PATH"
+   ctr -n k8s.io images import "$ARCHIVE_PATH"
    ```
 
 4. Confirm that all required images are present with matching digests:
@@ -528,7 +533,14 @@ and persistent volume mounts).
    ```sh
    snapshot_portainer_resources() {
      local target_file="$1"
-     kubectl get deployment,svc,sa,pvc,configmap,secret -n portainer -o json | jq '
+     local raw_json
+     raw_json=$(kubectl get deployment,svc,sa,pvc,configmap,secret -n portainer -o json) || {
+       echo "ERROR: Failed to retrieve Portainer resources via kubectl" >&2
+       return 1
+     }
+
+     local normalized
+     normalized=$(echo "$raw_json" | jq -e '
        .items |= sort_by(.kind, .metadata.name) |
        .items[] | {
          kind: .kind,
@@ -538,17 +550,29 @@ and persistent volume mounts).
          spec: .spec,
          data: .data
        }
-     ' > "$target_file"
+     ') || {
+       echo "ERROR: Failed to normalize Portainer resources with jq" >&2
+       return 1
+     }
+
+     if [ -z "$normalized" ]; then
+       echo "ERROR: Snapshot output is empty" >&2
+       return 1
+     fi
+
+     echo "$normalized" > "$target_file"
    }
 
    snapshot_portainer_resources /tmp/portainer-resources-before.json
    ```
 
 3. Trigger a second bootstrap execution (e.g., node restart, reconciler re-evaluation, or
-   re-applying the bootstrap manifest):
+   re-applying the bootstrap manifest) and wait for reconciliation:
 
    ```sh
    kubectl apply -f /var/lib/kubesolo/manifests/portainer.yaml
+   kubectl rollout status deployment/portainer -n portainer --timeout=90s
+   kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=portainer -n portainer --timeout=90s
    ```
 
 4. Capture resources after second bootstrap and assert zero mutation across specs, data, and identities:
