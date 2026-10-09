@@ -7,14 +7,23 @@
 //! 4. Refusal and diagnostic retention on missing or corrupted pre-upgrade backups.
 //! 5. Version-specific known limitations and operator runbook procedures.
 
+use std::collections::BTreeMap;
 use std::fs;
+use std::path::Path;
 
-use rubix_dev::state_transition::KubeconfigFormat;
+use rubix_dev::release_qualification::receipt::{
+    CandidateInventory, CandidateReceipt, validate_candidate_receipt,
+};
+use rubix_dev::repository_root;
 use rubix_dev::state_transition::recovery::{
     BackupCondition, RehearsalScenario, TransitionStage, run_rehearsal,
     version_recovery_limitations,
 };
 use rubix_dev::state_transition::versions::SupportedStartingVersion;
+use rubix_dev::state_transition::{
+    KubeconfigFormat, OPTION_B_SCOPE_MARKER, assert_raw_sqlite_rejected,
+    build_criterion_8_receipt_payload_with_inventory, run_live_migration_rehearsal,
+};
 use rubixctl::upgrade::{
     BackupIntegrityError, ReceiptKind, parse_receipt_file, validate_backup_integrity,
 };
@@ -342,5 +351,150 @@ fn test_parse_receipt_file_extracts_all_fields() {
     assert_eq!(
         receipt.backup.to_str().unwrap(),
         "/var/lib/kubesolo/backups/test"
+    );
+}
+
+#[test]
+fn test_option_b_scope_marker_and_sqlite_rejection() {
+    assert_eq!(
+        OPTION_B_SCOPE_MARKER,
+        "E36.04:scope: Option B in-process control plane selected (ADR amended 2026-10-07); raw SQLite non-interchangeable; explicit export/import required"
+    );
+
+    let tmp = tempfile::tempdir().unwrap();
+    let sqlite_file = tmp.path().join("state.db");
+    fs::write(&sqlite_file, b"SQLite format 3\0corrupted-state").unwrap();
+    assert!(assert_raw_sqlite_rejected(&sqlite_file));
+
+    let non_sqlite_file = tmp.path().join("native.db");
+    fs::write(&non_sqlite_file, b"RUBXSNP1valid-header").unwrap();
+    assert!(!assert_raw_sqlite_rejected(&non_sqlite_file));
+}
+
+#[tokio::test]
+async fn test_live_migration_matrix_all_12_combinations() {
+    let mut total_downtime_ms = 0;
+
+    for ver in SupportedStartingVersion::ALL {
+        for format in [KubeconfigFormat::Yaml, KubeconfigFormat::Json] {
+            let res = run_live_migration_rehearsal(ver, format)
+                .await
+                .expect("live migration rehearsal must succeed");
+
+            assert!(
+                res.overall_success,
+                "overall success failed for {ver} ({format})"
+            );
+            assert_eq!(res.starting_version, ver);
+            assert_eq!(res.kubeconfig_format, format);
+            assert!(res.raw_sqlite_rejected);
+            assert_eq!(res.export_format, "RUBXSNP1");
+            assert!(res.revisions_monotonic);
+            assert!(res.restored_revision >= res.source_max_revision);
+            assert!(res.keys_identical);
+            assert_eq!(res.source_records_count, 10);
+            assert_eq!(res.active_keys_count, 8);
+            assert!(!res.ca_fingerprint_sha256.is_empty());
+            assert!(res.admin_identity_verified);
+            assert!(res.static_manifests_preserved);
+            assert!(res.pv_storage_preserved);
+            assert!(res.downtime_ms < 60_000);
+
+            total_downtime_ms += res.downtime_ms;
+        }
+    }
+
+    println!("Total measured downtime across 12 live migration runs: {total_downtime_ms}ms");
+}
+
+#[tokio::test]
+async fn test_criterion_8_receipt_generation_and_validation() {
+    let result =
+        run_live_migration_rehearsal(SupportedStartingVersion::V1_3_0, KubeconfigFormat::Yaml)
+            .await
+            .expect("live migration rehearsal must succeed");
+
+    let inventory = CandidateInventory {
+        source_revision: "2ef1c4787989f11f868f81bb84ae2afd4a49a81d".into(),
+        binary_digests: BTreeMap::from([(
+            "rubix-kube".into(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".into(),
+        )]),
+        payload_digests: BTreeMap::from([(
+            "bundle.manifest".into(),
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".into(),
+        )]),
+    };
+
+    let payload = build_criterion_8_receipt_payload_with_inventory(&inventory, &[result]);
+    assert_eq!(payload.criterion, 8);
+    assert_eq!(payload.schema_version, 1);
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "option_b_scope_marker_verified"
+                && a.detail.as_deref() == Some(OPTION_B_SCOPE_MARKER))
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_raw_sqlite_rejected" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_datastore_monotonic_revisions" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_keys_identical" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_ca_fingerprint_verified" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_admin_identity_verified" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_static_manifests_preserved" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_pv_storage_preserved" && a.passed)
+    );
+    assert!(
+        payload
+            .assertions
+            .iter()
+            .any(|a| a.name == "v1.3.0_YAML_downtime_measured" && a.passed)
+    );
+
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).unwrap();
+    receipt.verify_integrity().unwrap();
+    validate_candidate_receipt(&receipt, &inventory, 8).unwrap();
+
+    // Verify repository checkout integrity: receipt must NOT be committed to docs/release/receipts/
+    let root = repository_root(Path::new(env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let uncommitted_receipt_path =
+        root.join("docs/release/receipts/criterion-08-state-migration.json");
+    assert!(
+        !uncommitted_receipt_path.exists(),
+        "Criterion 8 receipt must NOT be committed to repository checkout before live Linux execution"
     );
 }

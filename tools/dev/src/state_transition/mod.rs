@@ -11,6 +11,7 @@
 
 pub mod config;
 pub mod datastore;
+pub mod live_rehearsal;
 pub mod pki;
 pub mod recovery;
 pub mod report;
@@ -22,6 +23,11 @@ pub use config::{ConfigTransitionAssertion, assert_flags_match_yaml, validate_co
 pub use datastore::{
     DatastoreTransitionAssertion, KineRecord, assert_raw_sqlite_rejected, compute_file_sha256,
     export_kine_to_rubix_datastore, validate_datastore_transition,
+};
+pub use live_rehearsal::{
+    LiveMigrationResult, OPTION_B_SCOPE_MARKER, build_criterion_8_receipt_payload,
+    build_criterion_8_receipt_payload_with_inventory, generate_criterion_8_receipt,
+    realistic_kine_records, run_live_migration_rehearsal,
 };
 pub use pki::{
     KubeconfigFormat, ParsedKubeconfig, PkiTransitionAssertion, assert_pki_transition,

@@ -1,17 +1,61 @@
-//! CLI verification tool for migration failure rehearsal and operator recovery (Epic E30 / Issue #125).
+//! CLI verification tool for migration failure rehearsal, operator recovery, and live migration qualification (Epic E30 / Issue #125 / Epic E36 / Issue #354).
 //!
-//! Rehearses migration failures across supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1-v1.3.3)
-//! and interrupted transition stages on disposable installations.
-//! Verifies operator recovery/rollback, state restoration, client access, and refusal on missing/corrupted backups.
+//! Rehearses:
+//! 1. Operator recovery and rollback across supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1-v1.3.3)
+//!    and interrupted transition stages on disposable installations.
+//! 2. Live Go-to-Rust Kine `SQLite` migration across all 6 supported starting versions and both kubeconfig formats.
+//! 3. Proves Option B in-process control plane boundary per ADR (amended 2026-10-07):
+//!    raw `SQLite` rejection, explicit export/import into native RUBXSNP1 format, monotonic revisions.
+//! 4. Preservation of PKI CA fingerprint, admin x509 chain, static manifests, and PV storage.
+//! 5. Downtime measurement in milliseconds across the quiesce-to-start window.
+//! 6. Optional generation of Criterion 8 candidate qualification receipt.
 
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use rubix_dev::state_transition::KubeconfigFormat;
 use rubix_dev::state_transition::recovery::{
     BackupCondition, RehearsalScenario, TransitionStage, run_rehearsal,
     version_recovery_limitations,
 };
 use rubix_dev::state_transition::versions::SupportedStartingVersion;
+use rubix_dev::state_transition::{
+    KubeconfigFormat, LiveMigrationResult, OPTION_B_SCOPE_MARKER, generate_criterion_8_receipt,
+    run_live_migration_rehearsal,
+};
+
+struct Args {
+    generate_receipt: Option<PathBuf>,
+    show_help: bool,
+}
+
+fn parse_args() -> Result<Args, String> {
+    let mut args = std::env::args().skip(1);
+    let mut generate_receipt = None;
+    let mut show_help = false;
+
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--generate-receipt" => {
+                let path = args
+                    .next()
+                    .ok_or_else(|| "--generate-receipt requires a path argument".to_string())?;
+                generate_receipt = Some(PathBuf::from(path));
+            },
+            "--rehearse-live-migration" => {
+                // Explicit flag supported for symmetry with receipt command execution record
+            },
+            "-h" | "--help" => {
+                show_help = true;
+            },
+            other => return Err(format!("unknown argument: {other}")),
+        }
+    }
+
+    Ok(Args {
+        generate_receipt,
+        show_help,
+    })
+}
 
 fn rehearse_supported_versions() -> Result<(), String> {
     println!("--- Rehearsing Operator Recovery Across Starting Versions ---");
@@ -132,24 +176,97 @@ fn rehearse_unavailable_backup_refusal() -> Result<(), String> {
     Ok(())
 }
 
-fn run() -> Result<(), String> {
+async fn rehearse_live_migrations() -> Result<Vec<LiveMigrationResult>, String> {
+    println!("--- Rehearsing Live Go-to-Rust Migration Matrix (Issue #354) ---");
+    let mut results = Vec::new();
+
+    for ver in SupportedStartingVersion::ALL {
+        for format in [KubeconfigFormat::Yaml, KubeconfigFormat::Json] {
+            let result = run_live_migration_rehearsal(ver, format)
+                .await
+                .map_err(|e| {
+                    format!("live migration rehearsal failed for {ver} ({format}): {e}")
+                })?;
+
+            if !result.overall_success {
+                return Err(format!("overall success false for {ver} ({format})"));
+            }
+
+            println!(
+                "  [ok] Version={:<6} Format={:<4} -> Raw SQLite rejected={}, Monotonic revs={}/{}, Keys match={}, PKI CA sha256={}..., Admin cert verified={}, Static manifests={}, PV storage={}, Downtime={}ms",
+                result.starting_version.as_str(),
+                result.kubeconfig_format,
+                result.raw_sqlite_rejected,
+                result.restored_revision,
+                result.source_max_revision,
+                result.keys_identical,
+                &result.ca_fingerprint_sha256[..12],
+                result.admin_identity_verified,
+                result.static_manifests_preserved,
+                result.pv_storage_preserved,
+                result.downtime_ms,
+            );
+
+            results.push(result);
+        }
+    }
+
+    println!();
+    Ok(results)
+}
+
+async fn run() -> Result<(), String> {
+    let args = parse_args()?;
+    if args.show_help {
+        println!(
+            "Usage: rubix-recovery-rehearsal [--rehearse-live-migration] [--generate-receipt <PATH>]"
+        );
+        return Ok(());
+    }
+
     println!(
-        "=== Rubix Migration Failure & Operator Recovery Rehearsal (Issue #125 / Gate C14) ===\n"
+        "=== Rubix Migration Failure, Operator Recovery & Live Rehearsal (Issues #125, #354) ===\n"
     );
+    println!("{OPTION_B_SCOPE_MARKER}\n");
 
     rehearse_supported_versions()?;
     rehearse_interrupted_stages()?;
     rehearse_unavailable_backup_refusal()?;
+    let live_results = rehearse_live_migrations().await?;
 
-    println!("All migration failure rehearsal and operator recovery checks passed successfully.");
+    if let Some(receipt_path) = args.generate_receipt {
+        println!("--- Generating Candidate-Bound Criterion 8 Qualification Receipt ---");
+        let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))
+            .map_err(|e| format!("failed to find repository root: {e}"))?;
+        let receipt = generate_criterion_8_receipt(&root, &live_results)
+            .map_err(|e| format!("failed to generate criterion 8 receipt: {e}"))?;
+        let receipt_json = serde_json::to_string_pretty(&receipt)
+            .map_err(|e| format!("failed to serialize receipt: {e}"))?;
+        if let Some(parent) = receipt_path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("failed to create directory {}: {e}", parent.display()))?;
+        }
+        std::fs::write(&receipt_path, receipt_json)
+            .map_err(|e| format!("failed to write receipt to {}: {e}", receipt_path.display()))?;
+        println!("  [ok] Receipt written to {}", receipt_path.display());
+        println!(
+            "  NOTICE: Candidate qualification receipt generated for operator review; release checkout remains uncommitted per qualification policy."
+        );
+        println!();
+    }
+
+    println!("All live migration and operator recovery rehearsal checks passed successfully.");
     println!(
-        "Synthetic filesystem and mocked-service checks passed; production migration remains unqualified."
+        "Synthetic and in-process checks passed; candidate qualification receipt remains pending live Linux infrastructure execution."
     );
     Ok(())
 }
 
-fn main() -> ExitCode {
-    match run() {
+#[tokio::main]
+async fn main() -> ExitCode {
+    match run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Error: {err}");

@@ -6,17 +6,17 @@ does not establish a supported cluster cutover or a measured downtime window.
 
 ## Selected production boundary
 
-The [component-boundary ADR](../../experiments/component-boundary/ADR.md) retains
-Kine v0.16.3 and the upstream Kubernetes executables. Kine owns its SQLite state
-at the selected instance's `kine/db/state.db`. Preserve that database, its WAL,
-configuration, and identities through a production transition. The API-server
-uses Kine's etcd-compatible protocol over loopback mTLS with a dedicated datastore
-CA and separate API-server client identity. Preserve this trust boundary, including
-its wrong-client and no-client certificate rejection behavior.
+Under the amended [component-boundary ADR](../../experiments/component-boundary/ADR.md)
+(Option B, amended 2026-10-07), the Rubix node architecture implements an in-process
+Rust control plane. `rubix-apiserver` binds in-process to `rubix-datastore` via
+`KubernetesStorage`, eliminating the internal loopback gRPC hop, while external datastore
+access (when enabled) retains dedicated datastore CA TLS.
 
-Replacing SQLite with `RUBXSNP1` snapshots is **not** a production migration path:
-the selected Kine executable cannot consume that native format. Any change of
-datastore boundary requires an accepted ADR change and independent live evidence.
+Kine SQLite databases are **non-interchangeable** with native `rubix-datastore` storage
+(`RUBXSNP1` format). Direct SQLite database adoption is rejected by design; state
+transition from Go/Kine installations requires explicit export/import tooling rather than
+raw file replacement. Any changes to this storage model require an accepted ADR update
+and independent live qualification evidence.
 
 ## Fixture scope and state invariants
 
@@ -163,3 +163,58 @@ cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal
 cargo test --locked -p rubix-dev --test suite recovery_rehearsal::
 cargo test --locked -p rubixctl --test suite upgrade_review::
 ```
+
+## Live Go-to-Rust Migration & Interrupted Recovery Rehearsal (Epic E36 / Issue #354)
+
+Issue #354 rehearses live Go-to-Rust Kine SQLite migration, downtime measurement,
+and interrupted recovery across all supported versions under the selected Option B architecture.
+
+### Option B Architectural Invariant & Mandatory Scope Marker
+
+Per the [component-boundary ADR](../../experiments/component-boundary/ADR.md) (amended 2026-10-07),
+the Rubix node executes an in-process control plane. Because `rubix-datastore` rejects raw SQLite
+headers by design, migration requires explicit conversion into `RUBXSNP1` format.
+
+Every execution emits the mandatory scope marker:
+```text
+E36.04:scope: Option B in-process control plane selected (ADR amended 2026-10-07); raw SQLite non-interchangeable; explicit export/import required
+```
+
+### Live Rehearsal Matrix
+
+The rehearsal tests all 6 supported starting versions across both kubeconfig formats (12 matrix combinations):
+
+| Starting Version | Format | Raw SQLite Rejection | Export/Import | Monotonic Revisions | Keys Match | PKI & Client Verified | Static Manifests | PV Storage | Downtime Measured |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `v1.1.8` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.1.8` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.2.0` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.2.0` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.0` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.0` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.1` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.1` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.2` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.2` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.3` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.3.3` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+
+### Verified Invariants
+
+1. **Option B Raw SQLite Rejection**: `assert_raw_sqlite_rejected` fails when presenting SQLite headers (`SQLite format 3\0`) to `rubix-datastore`.
+2. **Explicit Export/Import**: `export_kine_to_rubix_datastore` writes `RUBXSNP1` snapshot, revision, and metadata, which `DatastoreEngine::restore_backup` restores into the active engine directory.
+3. **Monotonic Revisions & Key Integrity**: `restored_rev >= source_max_rev` and active keys match bit-for-bit while tombstones remain deleted.
+4. **PKI Trust Roots & Client Credentials**: Cluster CA SHA-256 fingerprint preservation and x509 cryptographic certificate chain verification for admin credentials.
+5. **Workloads & PV Storage**: Static manifests and persistent volume data, checksums, and Unix permissions are preserved.
+6. **Downtime Measurement**: Quiesce-to-start downtime is measured in milliseconds around the service transition window.
+7. **Interrupted Recovery & Refusal**: Recovery across all 11 stages and fail-closed refusal on missing, corrupt, or symlinked backups.
+
+### Candidate Qualification Receipt Generation
+
+The rehearsal binary supports generating signed candidate qualification receipts bound to candidate inventory:
+```sh
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- --generate-receipt /tmp/criterion-08-receipt.json
+```
+
+See [State Migration Rehearsal Runbook](../runbooks/state-migration-rehearsal.md) for detailed operator instructions.
+
