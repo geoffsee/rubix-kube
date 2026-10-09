@@ -12,7 +12,7 @@ Consult the authoritative contracts before applying this runbook:
 - [Upstream inputs and image inventory](../architecture/upstream-inputs.md)
 - [Networking and storage reference](networking-and-storage.md)
 - [Fresh installation reference](fresh-installs.md)
-- [Criterion 4 qualification receipt](../release/receipts/criterion-04-addons-and-egress.json)
+- [Acceptance matrix](../architecture/acceptance-matrix.md)
 
 ---
 
@@ -283,18 +283,19 @@ kubectl get endpoints -n portainer d2k -o jsonpath='{.subsets[0].addresses[*].ip
 
 ## 7. Qualification Receipt Validation
 
-The qualification results for Criterion 4 are captured in a tamper-evident, candidate-bound receipt:
-[`docs/release/receipts/criterion-04-addons-and-egress.json`](../release/receipts/criterion-04-addons-and-egress.json).
+Live qualification evidence for Criterion 4 must be captured in a candidate-bound receipt adhering to `schema_version: 1` (`criterion-04-addons-and-egress.json` under `docs/release/receipts/`). Until authentic live Linux qualification is executed on disposable infrastructure, live qualification remains pending and not established.
 
-To validate the receipt and evaluate Criterion 4 against candidate inventory:
+To evaluate Criterion 4 against candidate inventory and verify fail-closed behavior:
 
 ```sh
-cargo test -p rubix-dev --test suite -- test_generate_and_validate_criterion_4_receipt
+cargo test -p rubix-dev --test suite -- test_criterion_4_fails_closed_when_receipt_absent
+cargo test -p rubix-dev --test suite -- test_criterion_4_receipt_validation_and_tamper_rejection
 cargo run -p rubix-dev --bin rubix-qualification
 ```
 
 The receipt validator verifies:
 1. Candidate source revision and artifact digests match `cell-inventory.json` and `SHA256SUMS`.
-2. All 15 qualification assertions passed.
-3. Cleanup status is `complete` with 0 leaked containers and 0 leaked images.
-4. Canonical SHA-256 payload integrity hash matches the receipt.
+2. All qualification commands exited with code 0.
+3. All qualification assertions passed.
+4. Cleanup status is `complete` with 0 leaked containers and 0 leaked images.
+5. Canonical SHA-256 payload integrity hash matches the receipt.

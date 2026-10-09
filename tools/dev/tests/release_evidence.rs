@@ -375,3 +375,17 @@ async fn cleanup_receipt_tampering_is_detected() {
             .contains("cleanup receipt status must be 'complete'")
     );
 }
+
+#[test]
+fn receipts_directory_is_covered_by_checksum_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::create_dir_all(dir.path().join("receipts")).unwrap();
+    let receipt = dir.path().join("receipts/criterion-01-epic-ledgers.json");
+    fs::write(&receipt, "receipt payload bytes").unwrap();
+    let checksums = assemble_checksum_manifest(dir.path()).unwrap();
+    assert!(checksums.contains("receipts/criterion-01-epic-ledgers.json"));
+    verify_checksum_inventory(&checksums, dir.path()).unwrap();
+    fs::write(&receipt, "tampered receipt payload bytes").unwrap();
+    let err = verify_checksum_inventory(&checksums, dir.path()).unwrap_err();
+    assert!(err.to_string().contains("checksum mismatch"));
+}

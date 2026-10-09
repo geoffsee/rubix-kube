@@ -31,19 +31,11 @@ fn test_full_release_qualification_suite() -> Result<()> {
     assert_eq!(report.criteria_reports.len(), 11);
 
     for criterion in &report.criteria_reports {
-        if criterion.number == 4 {
-            assert!(
-                criterion.satisfied,
-                "Criterion {} ({}) should be satisfied",
-                criterion.number, criterion.name
-            );
-        } else {
-            assert!(
-                !criterion.satisfied,
-                "Criterion {} ({}) should be pending",
-                criterion.number, criterion.name
-            );
-        }
+        assert!(
+            !criterion.satisfied,
+            "Criterion {} ({}) not satisfied",
+            criterion.number, criterion.name
+        );
     }
 
     Ok(())
@@ -118,19 +110,11 @@ fn test_all_11_roadmap_criteria() -> Result<()> {
 
     assert_eq!(results.len(), 11, "must verify all 11 criteria");
     for res in results {
-        if res.number == 4 {
-            assert!(
-                res.satisfied,
-                "Criterion {} ({}) should be satisfied: {}",
-                res.number, res.name, res.summary
-            );
-        } else {
-            assert!(
-                !res.satisfied,
-                "Criterion {} ({}) should be pending: {}",
-                res.number, res.name, res.summary
-            );
-        }
+        assert!(
+            !res.satisfied,
+            "Criterion {} ({}) failed: {}",
+            res.number, res.name, res.summary
+        );
     }
 
     Ok(())

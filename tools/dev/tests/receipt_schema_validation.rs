@@ -100,25 +100,65 @@ fn test_receipt_acceptance_valid_file() -> Result<()> {
 }
 
 #[test]
-fn test_validate_criterion_4_receipt() -> Result<()> {
+fn test_criterion_4_fails_closed_when_receipt_absent() -> Result<()> {
     let root = root_dir()?;
-    let receipt_path = root.join("docs/release/receipts/criterion-04-addons-and-egress.json");
+    let status = criteria::check_criterion_4_addons_and_egress(&root)?;
     assert!(
-        receipt_path.is_file(),
-        "criterion 4 receipt must exist on disk"
+        !status.satisfied,
+        "criterion 4 must fail closed and remain pending without authentic live receipt"
     );
+    assert!(
+        status
+            .summary
+            .contains("Pending: missing receipt 'criterion-04-addons-and-egress.json'")
+    );
+    assert!(
+        status
+            .summary
+            .contains("validated current candidate-bound receipts unavailable")
+    );
+    Ok(())
+}
 
-    let loaded = receipt::load_and_validate_receipt(&receipt_path, &root, 4)?;
+#[test]
+fn test_criterion_4_receipt_validation_and_tamper_rejection() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let receipt_path = temp.path().join("criterion-04-addons-and-egress.json");
+    let payload = sample_payload(4);
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    let json_bytes = serde_json::to_vec_pretty(&receipt)?;
+    fs::write(&receipt_path, &json_bytes)?;
+
+    let inventory = sample_inventory();
+    let loaded = receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4)?;
     assert_eq!(loaded.criterion, 4);
     assert_eq!(loaded.schema_version, 1);
     assert!(loaded.verify_integrity().is_ok());
 
-    let status = criteria::check_criterion_4_addons_and_egress(&root)?;
-    assert!(status.satisfied);
+    // Tampered payload fails closed
+    let mut tampered = receipt.clone();
+    tampered.integrity_hash = "0".repeat(64);
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&tampered)?)?;
     assert!(
-        status
-            .summary
-            .contains("Satisfied: validated candidate-bound receipt")
+        receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4).is_err()
+    );
+
+    // Nonzero exit code fails closed
+    let mut failed_payload = sample_payload(4);
+    failed_payload.commands[0].exit_code = 1;
+    let failed_receipt = CandidateReceipt::new_signed(failed_payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&failed_receipt)?)?;
+    assert!(
+        receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4).is_err()
+    );
+
+    // Incomplete cleanup fails closed
+    let mut leaked_payload = sample_payload(4);
+    leaked_payload.cleanup.remaining_containers = vec!["leaked-pod".into()];
+    let leaked_receipt = CandidateReceipt::new_signed(leaked_payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&leaked_receipt)?)?;
+    assert!(
+        receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4).is_err()
     );
 
     Ok(())
@@ -366,55 +406,35 @@ fn test_criterion_evaluation_satisfied_when_valid() -> Result<()> {
 }
 
 #[test]
-fn test_default_repo_checkout_criteria_statuses() -> Result<()> {
+fn test_default_repo_checkout_criteria_all_pending() -> Result<()> {
     let root = root_dir()?;
     let all = verify_all_criteria(&root)?;
     assert_eq!(all.len(), 11);
     for status in all {
-        if status.number == 4 {
-            assert!(status.satisfied, "criterion 4 must be satisfied");
-            assert!(status.summary.contains(
-                "Satisfied: validated candidate-bound receipt 'criterion-04-addons-and-egress.json'"
-            ));
-        } else {
-            assert!(
-                !status.satisfied,
-                "criterion {} must be pending",
-                status.number
-            );
-            assert!(
-                status
-                    .summary
-                    .contains("Pending: missing receipt 'criterion-")
-            );
-            assert!(
-                status
-                    .summary
-                    .contains("validated current candidate-bound receipts unavailable")
-            );
-        }
+        assert!(
+            !status.satisfied,
+            "criterion {} must be pending",
+            status.number
+        );
+        assert!(
+            status
+                .summary
+                .contains("Pending: missing receipt 'criterion-")
+        );
+        assert!(
+            status
+                .summary
+                .contains("validated current candidate-bound receipts unavailable")
+        );
     }
     let report = audit_repository_metadata(&root)?;
     assert_eq!(report.criteria_reports.len(), 11);
-    assert_eq!(
-        report
-            .criteria_reports
-            .iter()
-            .filter(|c| c.satisfied)
-            .count(),
-        1
-    );
-    assert!(
-        report
-            .criteria_reports
-            .iter()
-            .any(|c| c.number == 4 && c.satisfied)
-    );
+    assert!(report.criteria_reports.iter().all(|c| !c.satisfied));
 
     let err = run_release_qualification(&root).unwrap_err();
     assert!(
         err.to_string()
-            .contains("RELEASE UNQUALIFIED: 10/11 completion criteria unsatisfied")
+            .contains("RELEASE UNQUALIFIED: 11/11 completion criteria unsatisfied")
     );
     Ok(())
 }
