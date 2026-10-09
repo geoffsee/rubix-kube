@@ -837,14 +837,42 @@ struct WorkloadContext<'a> {
     dns_service: CoreDnsService,
 }
 
+static PROBE_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn is_dir_writable(dir: &Path) -> bool {
+    if !dir.exists() && std::fs::create_dir_all(dir).is_err() {
+        return false;
+    }
+    let count = PROBE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let probe_file = dir.join(format!(
+        ".rubix_write_probe_{}_{}",
+        std::process::id(),
+        count
+    ));
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe_file)
+    {
+        Ok(file) => {
+            drop(file);
+            let _ = std::fs::remove_file(&probe_file);
+            true
+        },
+        Err(_) => false,
+    }
+}
+
 fn detect_workload_runtime(
     config: &rubix_config::Config,
     state_dir: &Path,
 ) -> Option<(&'static str, PathBuf, bool)> {
+    if !cfg!(target_os = "linux") {
+        return None;
+    }
     let containerd_paths = ContainerdPaths::from_base(state_dir);
     let endpoint_configured = !config.runtime.endpoint.trim().is_empty();
     let managed_binary_exists = containerd_paths.binary_path.exists();
-    let host_socket_exists = Path::new("/run/containerd/containerd.sock").exists();
 
     if endpoint_configured {
         let ep = config.runtime.endpoint.trim();
@@ -852,12 +880,6 @@ fn detect_workload_runtime(
         Some((COMPONENT_EXTERNAL_CRI, PathBuf::from(socket), false))
     } else if managed_binary_exists {
         Some((COMPONENT_CONTAINERD, containerd_paths.socket_path, true))
-    } else if host_socket_exists {
-        Some((
-            COMPONENT_EXTERNAL_CRI,
-            PathBuf::from("/run/containerd/containerd.sock"),
-            false,
-        ))
     } else {
         None
     }
@@ -872,10 +894,9 @@ fn register_container_runtime(
     pod_cidr: Option<&str>,
 ) -> Result<RuntimeBuilder, RuntimeError> {
     let containerd_paths = ContainerdPaths::from_base(state_dir);
+    let etc_cni = Path::new("/etc/cni/net.d");
     if is_managed {
-        let standard_target = if Path::new("/etc/cni/net.d").exists()
-            || std::fs::create_dir_all("/etc/cni/net.d").is_ok()
-        {
+        let standard_target = if is_dir_writable(etc_cni) {
             None
         } else {
             Some(containerd_paths.cni_conf_dir.as_path())
@@ -888,10 +909,8 @@ fn register_container_runtime(
         let containerd_service = ContainerdService::new(containerd_options);
         Ok(builder.register_containerd(containerd_service))
     } else {
-        let conf_target = if Path::new("/etc/cni/net.d").exists()
-            || std::fs::create_dir_all("/etc/cni/net.d").is_ok()
-        {
-            Path::new("/etc/cni/net.d")
+        let conf_target = if is_dir_writable(etc_cni) {
+            etc_cni
         } else {
             containerd_paths.cni_conf_dir.as_path()
         };
