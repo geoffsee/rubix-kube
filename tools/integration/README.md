@@ -74,7 +74,7 @@ real isolated API/Kine pair, validates its fresh output and feeds it to Rust as 
 A cold cache follows the same verification path. The defaults archive cache and Rust cache
 save only after successful main-push execution; captures themselves are never cached.
 
-Both jobs upload their public capture directories even on failure, retain artifacts for 14 days,
+All jobs upload their public capture directories even on failure, retain artifacts for 14 days,
 and use read-only repository permissions and commit-pinned actions. Generated keys and SQLite
 state remain inside the removed API container; the upload paths contain only public JSON,
 inspection metadata and component logs. The default extractor exports no key material.
@@ -194,3 +194,71 @@ The reader enforces fail-closed parsing and resource limits:
 - **Strict JSON Parsing**: Duplicate JSON keys, unknown fields (`#[serde(deny_unknown_fields)]`), and
   nonfinite numbers (`NaN`, `Infinity`) are rejected.
 - **Schema Version**: `schema_version` must equal 1.
+
+## Disposable Linux node scaffold (schema-2 receipts)
+
+The `disposable-node` job in `.github/workflows/integration.yml` exercises the disposable
+Linux node scaffold on hosted `ubuntu-24.04-arm` runners. It captures schema-2 integration
+receipts recording candidate binary digests, source revision, host environment facts,
+executed scaffold commands, assertions, explicit skips, and cleanup confirmation.
+
+### Running the scaffold locally or in CI
+
+Execute the scaffold capture against candidate binaries, then verify the resulting receipt
+against the schema-2 contract:
+
+```sh
+# Build candidate binaries
+cargo build --locked -p rubix-kube -p rubixctl
+
+# Execute scaffold capture to a fresh temporary directory
+CAPTURE_DIR="$(mktemp -d "${RUNNER_TEMP:-/tmp}/disposable-node.XXXXXX")"
+cargo run --locked -p rubix-dev --bin rubix-disposable-node -- capture --output "$CAPTURE_DIR"
+
+# Verify receipt and logs against schema-2 contract
+cargo run --locked -p rubix-dev --bin rubix-disposable-node -- verify "$CAPTURE_DIR"
+```
+
+The capture directory must be fresh for each execution; caching or reusing evidence is
+strictly prohibited.
+
+### Schema-2 receipt format
+
+The capture produces `$CAPTURE_DIR/receipt.json` adhering to `schema_version: 2`:
+
+- `schema_version`: Must be `2`.
+- `status`: `"passed"` or `"failed"`.
+- `qualified`: Boolean flag. Must be `false` during the initial scaffold phase (E33.02 pending).
+  Attempts to claim `qualified: true` during scaffold execution are strictly rejected by `verify`.
+- `qualification_reason`: Explains why the run does or does not establish live qualification.
+- `timestamps`: RFC 3339 UTC `started_at` and `completed_at` in `YYYY-MM-DDTHH:MM:SSZ` form, plus elapsed `duration_ms`.
+- `candidate`:
+  - `source_revision`: 40-character lowercase hexadecimal Git commit SHA.
+  - `source_tree_hash`: 40-character lowercase hexadecimal Git tree hash.
+  - `binaries`: Map of candidate binaries (`rubix-kube`, `rubixctl`) to SHA-256 digests and file sizes in bytes.
+- `environment`: Host facts including `os`, `arch`, `kernel`, `cpu_count`, `runner`, and `hostname`.
+- `component_versions`: Component package versions (`rubix_kube`, `rubixctl`, `rustc`, `cargo`).
+- `commands`: Array of executed scaffold steps, including `name`, `command`, `exit_code`,
+  `duration_ms`, `stdout_log` path, and `stderr_log` path. Raw standard output and error are
+  written to disk under `logs/`.
+- `assertions`: Array of assertions checked during execution (`candidate_binaries_digested`,
+  `print_config_succeeded`, `rubixctl_version_succeeded`, `state_directory_cleaned`,
+  `zero_owned_leftovers`), each with boolean `passed` and diagnostic `details`.
+- `skips`: Explicitly documented skips for unintegrated slices, e.g. `e33_02_workload_lifecycle`
+  while containerd/kubelet/CNI workload execution is pending merge.
+- `cleanup`: Confirmation of teardown, recording `state_directory_removed`, `owned_directories_removed`,
+  `owned_processes_terminated`, and `leftover_owned_resources` (must be empty).
+
+### Validation and parsing rules
+
+`rubix-disposable-node verify <DIR_OR_FILE>` validates the following rules:
+
+1. Receipt size is bounded to 8 MiB (`MAX_RECEIPT_BYTES`).
+2. JSON parsing rejects duplicate keys, non-finite numbers, and trailing tokens via `crate::json::parse`.
+3. Schema version must equal 2.
+4. Timestamps must be valid RFC 3339 UTC timestamps in fixed-width `YYYY-MM-DDTHH:MM:SSZ` format, with `completed_at >= started_at`.
+5. Candidate git hashes must be valid 40-character hex strings; binary digests must be valid 64-character lowercase hex SHA-256 hashes.
+6. All commands must exit with 0, and referenced stdout/stderr log files must exist on disk.
+7. All assertions must have `passed: true`.
+8. Residual owned resources (`leftover_owned_resources`) must be empty.
+9. Scaffold runs must have `qualified: false`. Any receipt claiming qualification without the full E33.02 workload suite is rejected.

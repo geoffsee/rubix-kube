@@ -6,6 +6,8 @@ mod budget_profiling;
 mod conformance_review;
 #[path = "defaults_cli.rs"]
 mod defaults_cli;
+#[path = "disposable_node_cli.rs"]
+mod disposable_node_cli;
 #[path = "fixture_cli.rs"]
 mod fixture_cli;
 #[path = "install_smoke.rs"]
