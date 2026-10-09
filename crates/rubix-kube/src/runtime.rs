@@ -7,29 +7,36 @@
 use std::fmt;
 use std::io::{self, Write};
 use std::net::{IpAddr, SocketAddr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use rubix_apiserver::ApiserverConfig;
 use rubix_apiserver::client::KubernetesApiClient;
 use rubix_apiserver::service::ApiserverService;
 use rubix_apiserver::storage::KubernetesStorage;
 use rubix_apiserver::supervisor::ApiserverAdapter;
+use rubix_apiserver::{ApiserverConfig, PodLogReader};
 use rubix_config::ValidatedConfig;
+use rubix_containerd::{
+    ContainerdPaths, ContainerdService, ContainerdServiceOptions, ImageImportConfig,
+};
 use rubix_controller::ControllerManagerConfig;
 use rubix_controller::service::ControllerManagerService;
 use rubix_controller::supervisor::ControllerManagerAdapter;
+use rubix_cri::{ExternalRuntimeOptions, ExternalRuntimeService, RuntimeEndpoints};
 use rubix_datastore::config::DatastoreConfig;
 use rubix_datastore::engine::DatastoreEngine;
 use rubix_datastore::supervisor::DatastoreAdapter;
 use rubix_dns::config::CoreDnsConfig;
 use rubix_dns::service::CoreDnsService;
 use rubix_dns::supervisor::CoreDnsAdapter;
-use rubix_kubelet::{CriRuntimeProvider, RuntimeProvider};
+use rubix_kubelet::{
+    CriRuntimeProvider, KubeletAdapter, KubeletConfigOptions, KubeletService, RuntimeProvider,
+};
 use rubix_pki::cluster::{ClusterPki, ClusterPkiConfig};
 use rubix_portainer::config::PortainerAgentConfig;
 use rubix_portainer::service::PortainerService;
 use rubix_portainer::supervisor::PortainerAdapter;
+use rubix_proxy::{KubeProxyOptions, ProxyAdapter, ProxyMode, ProxyService};
 use rubix_storage::config::LocalPathConfig;
 use rubix_storage::service::LocalPathService;
 use rubix_storage::supervisor::LocalPathAdapter;
@@ -44,6 +51,8 @@ use crate::lifecycle_logs::{
 use crate::lifecycle_policy::LifecyclePolicy;
 use crate::lifecycle_sink::{FlushPolicy, SinkReport, configured_log_level, deliver_logs};
 
+pub const COMPONENT_CONTAINERD: &str = rubix_containerd::COMPONENT_CONTAINERD;
+pub const COMPONENT_EXTERNAL_CRI: &str = rubix_cri::COMPONENT_EXTERNAL_CRI;
 pub const COMPONENT_DATASTORE: &str = "datastore";
 pub const COMPONENT_APISERVER: &str = "apiserver";
 pub const COMPONENT_CONTROLLER_MANAGER: &str = "controller-manager";
@@ -62,6 +71,7 @@ pub enum RuntimeError {
     Datastore(rubix_datastore::DatastoreError),
     Apiserver(rubix_apiserver::ApiserverError),
     Supervisor(GraphError),
+    Network(rubix_network::NetworkError),
     Io(io::Error),
     ChannelCapacity,
 }
@@ -74,6 +84,7 @@ impl RuntimeError {
             Self::Datastore(_) => "datastore_failure",
             Self::Apiserver(_) => "apiserver_failure",
             Self::Supervisor(_) => "supervisor_failure",
+            Self::Network(_) => "network_failure",
             Self::Io(_) => "io_failure",
             Self::ChannelCapacity => "channel_capacity_error",
         }
@@ -87,6 +98,7 @@ impl fmt::Display for RuntimeError {
             Self::Datastore(e) => write!(f, "datastore initialization failure: {e}"),
             Self::Apiserver(e) => write!(f, "apiserver initialization failure: {e}"),
             Self::Supervisor(e) => write!(f, "supervisor configuration error: {e}"),
+            Self::Network(e) => write!(f, "network initialization failure: {e}"),
             Self::Io(e) => write!(f, "I/O failure during runtime assembly: {e}"),
             Self::ChannelCapacity => write!(f, "invalid log channel capacity"),
         }
@@ -119,6 +131,12 @@ impl From<GraphError> for RuntimeError {
     }
 }
 
+impl From<rubix_network::NetworkError> for RuntimeError {
+    fn from(e: rubix_network::NetworkError) -> Self {
+        Self::Network(e)
+    }
+}
+
 impl From<io::Error> for RuntimeError {
     fn from(e: io::Error) -> Self {
         Self::Io(e)
@@ -140,6 +158,7 @@ pub struct RuntimeBuilder {
     client: Option<KubernetesApiClient>,
     metrics_registry: Option<Arc<MetricsRegistry>>,
     datastore_bound_addr: Option<Arc<Mutex<Option<SocketAddr>>>>,
+    kubelet_log_reader: Option<Arc<dyn PodLogReader>>,
     registrations: Vec<Registration>,
 }
 
@@ -157,6 +176,7 @@ impl RuntimeBuilder {
             client: None,
             metrics_registry: None,
             datastore_bound_addr: None,
+            kubelet_log_reader: None,
             registrations: Vec::new(),
         }
     }
@@ -176,6 +196,12 @@ impl RuntimeBuilder {
         self.log_level
     }
 
+    /// Exposes registered component specifications.
+    #[must_use]
+    pub fn registrations(&self) -> &[Registration] {
+        &self.registrations
+    }
+
     /// Exposes the production client if an apiserver has been associated with the builder.
     #[must_use]
     pub fn client(&self) -> Option<&KubernetesApiClient> {
@@ -189,6 +215,9 @@ impl RuntimeBuilder {
 
     #[must_use]
     pub fn with_apiserver(mut self, apiserver: Arc<ApiserverService>) -> Self {
+        if let Some(reader) = &self.kubelet_log_reader {
+            apiserver.set_pod_log_reader(reader.clone());
+        }
         self.client = Some(apiserver.admin_client());
         self.apiserver = Some(apiserver);
         self
@@ -281,6 +310,73 @@ impl RuntimeBuilder {
         self.register_component(reg)
     }
 
+    /// Registers the managed containerd runtime component under supervision.
+    #[must_use]
+    pub fn register_containerd(self, service: ContainerdService) -> Self {
+        let timeout = self.policy.startup_timeout();
+        let spec = self
+            .policy
+            .apply(ContainerdService::component_spec(timeout));
+        self.register_component(Registration::new(spec, service))
+    }
+
+    /// Registers the external CRI runtime component under supervision.
+    #[must_use]
+    pub fn register_external_cri(self, service: ExternalRuntimeService) -> Self {
+        let timeout = self.policy.startup_timeout();
+        let spec = self
+            .policy
+            .apply(ExternalRuntimeService::component_spec(timeout));
+        self.register_component(Registration::new(spec, service))
+    }
+
+    /// Registers the kube-proxy component under supervision.
+    #[must_use]
+    pub fn register_proxy(self, proxy: ProxyService) -> Self {
+        let timeout = self.policy.startup_timeout();
+        let reg = ProxyAdapter::registration(
+            COMPONENT_PROXY,
+            proxy,
+            vec![COMPONENT_APISERVER.to_string()],
+            timeout,
+        );
+        self.register_component(reg)
+    }
+
+    /// Registers the in-process kubelet component under supervision and connects
+    /// its log reader to the API server so `kubectl logs` resolves without cyclic references.
+    #[must_use]
+    pub fn register_kubelet(
+        mut self,
+        kubelet: KubeletService,
+        runtime_component: impl Into<String>,
+    ) -> Self {
+        let log_reader: Arc<dyn PodLogReader> = Arc::new(kubelet.log_source());
+        if let Some(apiserver) = &self.apiserver {
+            apiserver.set_pod_log_reader(log_reader.clone());
+        }
+        self.kubelet_log_reader = Some(log_reader);
+
+        let timeout = self.policy.startup_timeout();
+        let reg = KubeletAdapter::registration(
+            COMPONENT_KUBELET,
+            kubelet,
+            vec![COMPONENT_APISERVER.to_string(), runtime_component.into()],
+            timeout,
+        );
+        self.register_component(reg)
+    }
+
+    /// Registers the `CoreDNS` component under supervision with the specified prerequisites.
+    #[must_use]
+    pub fn register_coredns(self, service: CoreDnsService, prerequisites: Vec<String>) -> Self {
+        self.register_optional(
+            COMPONENT_COREDNS,
+            prerequisites,
+            CoreDnsAdapter::new(service),
+        )
+    }
+
     #[must_use]
     pub fn datastore_bound_addr(&self) -> Option<SocketAddr> {
         self.datastore_bound_addr
@@ -296,6 +392,11 @@ impl RuntimeBuilder {
 
     /// Builds the supervised node runtime.
     pub fn build(self) -> Result<NodeRuntime, RuntimeError> {
+        let component_ids: Vec<String> = self
+            .registrations
+            .iter()
+            .map(|r| r.spec.id.clone())
+            .collect();
         let (supervisor, observer) = Supervisor::new(self.registrations)?.with_observer();
         Ok(NodeRuntime {
             config: self.config,
@@ -305,6 +406,7 @@ impl RuntimeBuilder {
             client: self.client,
             metrics_registry: self.metrics_registry,
             datastore_bound_addr: self.datastore_bound_addr,
+            component_ids,
             supervisor,
             observer,
         })
@@ -321,11 +423,18 @@ pub struct NodeRuntime {
     client: Option<KubernetesApiClient>,
     metrics_registry: Option<Arc<MetricsRegistry>>,
     datastore_bound_addr: Option<Arc<Mutex<Option<SocketAddr>>>>,
+    component_ids: Vec<String>,
     supervisor: Supervisor,
     observer: LifecycleObserver,
 }
 
 impl NodeRuntime {
+    /// Returns the registered component identifiers in supervision registration order.
+    #[must_use]
+    pub fn component_ids(&self) -> &[String] {
+        &self.component_ids
+    }
+
     /// Constructs a builder for customized runtime assembly.
     #[must_use]
     pub fn builder(config: ValidatedConfig) -> RuntimeBuilder {
@@ -351,7 +460,7 @@ impl NodeRuntime {
         let state_dir = PathBuf::from(&config.config().path);
         std::fs::create_dir_all(&state_dir)?;
 
-        let (node_ip, pki_dir) = initialize_pki(&state_dir, &config)?;
+        let (node_ip, pki_dir, node_name) = initialize_pki(&state_dir, &config)?;
 
         let datastore_dir = state_dir.join("datastore");
         std::fs::create_dir_all(&datastore_dir)?;
@@ -414,12 +523,18 @@ impl NodeRuntime {
         builder = builder
             .register_component(datastore_reg)
             .register_component(apiserver_reg)
-            .register_component(controller_reg)
-            .register_optional(
-                COMPONENT_COREDNS,
-                vec![COMPONENT_APISERVER.to_string()],
-                CoreDnsAdapter::new(dns_service),
-            );
+            .register_component(controller_reg);
+
+        let workload_ctx = WorkloadContext {
+            state_dir: &state_dir,
+            pki_dir: &pki_dir,
+            node_name: &node_name,
+            node_ip,
+            host: &host,
+            apiserver_service: &apiserver_service,
+            dns_service,
+        };
+        builder = register_workload_path(builder, workload_ctx)?;
 
         if builder.config().config().storage.local_path.enabled {
             let storage_config = LocalPathConfig::new().with_enabled(true);
@@ -669,7 +784,7 @@ fn register_operational_metrics(
 fn initialize_pki(
     state_dir: &std::path::Path,
     config: &ValidatedConfig,
-) -> Result<(IpAddr, PathBuf), RuntimeError> {
+) -> Result<(IpAddr, PathBuf, String), RuntimeError> {
     let node_ip: IpAddr = if config.config().network.node_ip.is_empty() {
         "127.0.0.1".parse().unwrap()
     } else {
@@ -686,10 +801,10 @@ fn initialize_pki(
 
     let pki_dir = state_dir.join("pki");
     std::fs::create_dir_all(&pki_dir)?;
-    let pki_config = ClusterPkiConfig::new(pki_dir.clone(), node_name, node_ip);
+    let pki_config = ClusterPkiConfig::new(pki_dir.clone(), node_name.clone(), node_ip);
     let pki = ClusterPki::new(pki_config);
     pki.reconcile()?;
-    Ok((node_ip, pki_dir))
+    Ok((node_ip, pki_dir, node_name))
 }
 
 fn register_portainer_if_enabled(
@@ -710,6 +825,178 @@ fn register_portainer_if_enabled(
             builder.register_portainer(portainer_service, vec![COMPONENT_APISERVER.to_string()]);
     }
     builder
+}
+
+struct WorkloadContext<'a> {
+    state_dir: &'a Path,
+    pki_dir: &'a Path,
+    node_name: &'a str,
+    node_ip: IpAddr,
+    host: &'a rubix_config::HostContext,
+    apiserver_service: &'a Arc<ApiserverService>,
+    dns_service: CoreDnsService,
+}
+
+static PROBE_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn is_dir_writable(dir: &Path) -> bool {
+    if !dir.exists() && std::fs::create_dir_all(dir).is_err() {
+        return false;
+    }
+    let count = PROBE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let probe_file = dir.join(format!(
+        ".rubix_write_probe_{}_{}",
+        std::process::id(),
+        count
+    ));
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe_file)
+    {
+        Ok(file) => {
+            drop(file);
+            let _ = std::fs::remove_file(&probe_file);
+            true
+        },
+        Err(_) => false,
+    }
+}
+
+fn detect_workload_runtime(
+    config: &rubix_config::Config,
+    state_dir: &Path,
+) -> Option<(&'static str, PathBuf, bool)> {
+    if !cfg!(target_os = "linux") {
+        return None;
+    }
+    let containerd_paths = ContainerdPaths::from_base(state_dir);
+    let endpoint_configured = !config.runtime.endpoint.trim().is_empty();
+    let managed_binary_exists = containerd_paths.binary_path.exists();
+
+    if endpoint_configured {
+        let ep = config.runtime.endpoint.trim();
+        let socket = ep.strip_prefix("unix://").unwrap_or(ep);
+        Some((COMPONENT_EXTERNAL_CRI, PathBuf::from(socket), false))
+    } else if managed_binary_exists {
+        Some((COMPONENT_CONTAINERD, containerd_paths.socket_path, true))
+    } else {
+        None
+    }
+}
+
+fn register_container_runtime(
+    builder: RuntimeBuilder,
+    state_dir: &Path,
+    socket_path: &Path,
+    is_managed: bool,
+    mtu: u32,
+    pod_cidr: Option<&str>,
+) -> Result<RuntimeBuilder, RuntimeError> {
+    let containerd_paths = ContainerdPaths::from_base(state_dir);
+    let etc_cni = Path::new("/etc/cni/net.d");
+    if is_managed {
+        rubix_network::write_managed_cni_config(
+            state_dir,
+            mtu,
+            pod_cidr,
+            Some(containerd_paths.cni_conf_dir.as_path()),
+        )?;
+        if is_dir_writable(etc_cni) {
+            rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, None)?;
+        }
+
+        let image_config =
+            ImageImportConfig::from_config(builder.config().config(), &containerd_paths.images_dir);
+        let containerd_options = ContainerdServiceOptions::new(containerd_paths, image_config);
+        let containerd_service = ContainerdService::new(containerd_options);
+        Ok(builder.register_containerd(containerd_service))
+    } else {
+        let conf_target = if is_dir_writable(etc_cni) {
+            etc_cni
+        } else {
+            containerd_paths.cni_conf_dir.as_path()
+        };
+        rubix_network::write_external_cni_config(conf_target, mtu, pod_cidr)?;
+
+        let endpoint_str = format!("unix://{}", socket_path.display());
+        let endpoints = RuntimeEndpoints::parse(&endpoint_str, None).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("invalid CRI endpoint: {e}"),
+            )
+        })?;
+        let cri_options = ExternalRuntimeOptions::new(endpoints);
+        let cri_service = ExternalRuntimeService::new(cri_options);
+        Ok(builder.register_external_cri(cri_service))
+    }
+}
+
+fn register_workload_path(
+    mut builder: RuntimeBuilder,
+    ctx: WorkloadContext<'_>,
+) -> Result<RuntimeBuilder, RuntimeError> {
+    let detected_runtime = detect_workload_runtime(builder.config().config(), ctx.state_dir);
+
+    if let Some((runtime_id, socket_path, is_managed)) = detected_runtime {
+        let mtu = u32::try_from(builder.config().config().network.mtu)
+            .ok()
+            .filter(|&m| m > 0)
+            .unwrap_or(rubix_network::DEFAULT_MTU);
+        let pod_cidr = Some(rubix_network::DEFAULT_POD_CIDR);
+
+        builder = register_container_runtime(
+            builder,
+            ctx.state_dir,
+            &socket_path,
+            is_managed,
+            mtu,
+            pod_cidr,
+        )?;
+
+        let proxy_kubeconfig = ctx.pki_dir.join("kube-proxy.kubeconfig");
+        let is_container = builder
+            .config()
+            .config()
+            .runtime
+            .container_mode
+            .unwrap_or(ctx.host.detected_container_mode);
+        let executor = rubix_network::SystemCommandExecutor;
+        let proxy_mode =
+            rubix_proxy::detect_proxy_backend(None, &executor).unwrap_or(ProxyMode::IpTables);
+        let proxy_opts = KubeProxyOptions::new(proxy_kubeconfig, is_container, proxy_mode);
+        let proxy_service = ProxyService::new(proxy_opts);
+        builder = builder.register_proxy(proxy_service);
+
+        let kubelet_dir = ctx.state_dir.join("kubelet");
+        std::fs::create_dir_all(&kubelet_dir)?;
+        let mut kubelet_opts = KubeletConfigOptions::default_for_pki(
+            ctx.pki_dir,
+            ctx.node_name.to_string(),
+            ctx.node_ip.to_string(),
+            &kubelet_dir,
+        );
+        kubelet_opts.runtime_endpoint = format!("unix://{}", socket_path.display());
+        kubelet_opts.container_mode = is_container;
+        let runtime_provider: Arc<dyn RuntimeProvider> =
+            Arc::new(CriRuntimeProvider::new(socket_path));
+        let kubelet_service = KubeletService::new(
+            kubelet_opts,
+            ctx.apiserver_service.clone(),
+            runtime_provider,
+        );
+        builder = builder.register_kubelet(kubelet_service, runtime_id);
+
+        Ok(builder.register_coredns(
+            ctx.dns_service,
+            vec![
+                COMPONENT_APISERVER.to_string(),
+                COMPONENT_KUBELET.to_string(),
+            ],
+        ))
+    } else {
+        Ok(builder.register_coredns(ctx.dns_service, vec![COMPONENT_APISERVER.to_string()]))
+    }
 }
 
 fn runtime_exit_code(cause: &StopCause) -> u8 {

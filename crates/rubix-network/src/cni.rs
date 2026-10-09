@@ -179,10 +179,9 @@ pub fn write_managed_cni_config(
     let target_dir = standard_conf_dir.unwrap_or_else(|| Path::new(DEFAULT_STANDARD_CNI_CONF_DIR));
     fs::create_dir_all(target_dir)?;
 
-    let symlink_path = target_dir.join(DEFAULT_CNI_CONFIG_NAME);
-
     #[cfg(unix)]
-    {
+    if target_dir != managed_conf_dir {
+        let symlink_path = target_dir.join(DEFAULT_CNI_CONFIG_NAME);
         let symlink_target = fs::canonicalize(&managed_config_file)?;
         let temp_symlink_name = format!(
             ".{DEFAULT_CNI_CONFIG_NAME}.symlink-tmp-{}-{}-{}",
