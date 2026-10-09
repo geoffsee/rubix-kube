@@ -212,10 +212,11 @@ against the schema-2 contract:
 cargo build --locked -p rubix-kube -p rubixctl
 
 # Execute scaffold capture to a fresh temporary directory
-cargo run --locked -p rubix-dev --bin rubix-disposable-node -- capture --output "$RUNNER_TEMP/disposable-node"
+CAPTURE_DIR="$(mktemp -d "${RUNNER_TEMP:-/tmp}/disposable-node.XXXXXX")"
+cargo run --locked -p rubix-dev --bin rubix-disposable-node -- capture --output "$CAPTURE_DIR"
 
 # Verify receipt and logs against schema-2 contract
-cargo run --locked -p rubix-dev --bin rubix-disposable-node -- verify "$RUNNER_TEMP/disposable-node"
+cargo run --locked -p rubix-dev --bin rubix-disposable-node -- verify "$CAPTURE_DIR"
 ```
 
 The capture directory must be fresh for each execution; caching or reusing evidence is
@@ -230,7 +231,7 @@ The capture produces `$CAPTURE_DIR/receipt.json` adhering to `schema_version: 2`
 - `qualified`: Boolean flag. Must be `false` during the initial scaffold phase (E33.02 pending).
   Attempts to claim `qualified: true` during scaffold execution are strictly rejected by `verify`.
 - `qualification_reason`: Explains why the run does or does not establish live qualification.
-- `timestamps`: RFC 3339 `started_at` and `completed_at`, plus elapsed `duration_ms`.
+- `timestamps`: RFC 3339 UTC `started_at` and `completed_at` in `YYYY-MM-DDTHH:MM:SSZ` form, plus elapsed `duration_ms`.
 - `candidate`:
   - `source_revision`: 40-character lowercase hexadecimal Git commit SHA.
   - `source_tree_hash`: 40-character lowercase hexadecimal Git tree hash.
@@ -255,7 +256,7 @@ The capture produces `$CAPTURE_DIR/receipt.json` adhering to `schema_version: 2`
 1. Receipt size is bounded to 8 MiB (`MAX_RECEIPT_BYTES`).
 2. JSON parsing rejects duplicate keys, non-finite numbers, and trailing tokens via `crate::json::parse`.
 3. Schema version must equal 2.
-4. Timestamps must be valid RFC 3339 timestamps, with `completed_at >= started_at`.
+4. Timestamps must be valid RFC 3339 UTC timestamps in fixed-width `YYYY-MM-DDTHH:MM:SSZ` format, with `completed_at >= started_at`.
 5. Candidate git hashes must be valid 40-character hex strings; binary digests must be valid 64-character lowercase hex SHA-256 hashes.
 6. All commands must exit with 0, and referenced stdout/stderr log files must exist on disk.
 7. All assertions must have `passed: true`.
