@@ -903,7 +903,7 @@ fn register_container_runtime(
             Some(containerd_paths.cni_conf_dir.as_path()),
         )?;
         if is_dir_writable(etc_cni) {
-            let _ = rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, None);
+            rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, None)?;
         }
 
         let image_config =
