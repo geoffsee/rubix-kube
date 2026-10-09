@@ -67,9 +67,18 @@ impl PlatformSoakReport {
     /// Validate the qualification report fail-closed against all contractual requirements.
     pub fn validate(&self, expected_version: Option<&str>) -> Result<(), PlatformSoakError> {
         self.validate_fixture(expected_version)?;
-        if self.receipt_id.is_some()
+        let is_bound = (self.evidence_kind == "CandidateReceiptBound"
+            || self.evidence_kind == "candidate_receipt_bound")
+            && self.receipt_id.is_some()
             && self.receipt_integrity_hash.is_some()
-            && self.overall_qualified
+            && self.overall_qualified;
+        if is_bound
+            && !self.soak_results.is_empty()
+            && self.soak_results.iter().all(|r| r.passed)
+            && !self.restart_results.is_empty()
+            && self.restart_results.iter().all(|r| r.passed)
+            && !self.historical_regressions.is_empty()
+            && !self.epic_regressions.is_empty()
         {
             return Ok(());
         }
@@ -122,6 +131,12 @@ impl PlatformSoakReport {
             self.candidate_verification
                 .validate_unobserved_fixture()
                 .map_err(PlatformSoakError::CandidateDigestMismatch)?;
+        } else if !self.candidate_verification.all_matched
+            || self.candidate_verification.mismatched_artifacts != 0
+        {
+            return Err(PlatformSoakError::CandidateDigestMismatch(
+                "candidate digests do not all match in bound soak report".into(),
+            ));
         }
 
         // 4. Soak bounds: independent recomputation of ratios, durations, cycles, positive memory, and complete architecture set

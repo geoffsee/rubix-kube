@@ -306,17 +306,8 @@ fn extract_inputs(record: &serde_json::Value) -> Vec<(String, String)> {
     results
 }
 
-/// Loads the current candidate inventory from repository metadata.
-pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
-    if let Some(explicit_path) = std::env::var_os("RUBIX_CANDIDATE_INVENTORY_PATH") {
-        let explicit = PathBuf::from(explicit_path);
-        let bytes = read_bounded(&explicit, MAX_RECEIPT_BYTES)?;
-        let value = json::parse(&bytes)?;
-        let inventory: CandidateInventory = serde_json::from_value(value)
-            .map_err(|e| format!("invalid candidate inventory at {}: {e}", explicit.display()))?;
-        return Ok(inventory);
-    }
-
+/// Loads candidate inventory directly from a release directory without checking environment overrides.
+pub fn load_candidate_inventory_from_release_dir(root: &Path) -> Result<CandidateInventory> {
     let cell_inventory_path = if root.join("cell-inventory.json").is_file() {
         root.join("cell-inventory.json")
     } else {
@@ -407,6 +398,20 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
         binary_digests,
         payload_digests,
     })
+}
+
+/// Loads the current candidate inventory from repository metadata.
+pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
+    if let Some(explicit_path) = std::env::var_os("RUBIX_CANDIDATE_INVENTORY_PATH") {
+        let explicit = PathBuf::from(explicit_path);
+        let bytes = read_bounded(&explicit, MAX_RECEIPT_BYTES)?;
+        let value = json::parse(&bytes)?;
+        let inventory: CandidateInventory = serde_json::from_value(value)
+            .map_err(|e| format!("invalid candidate inventory at {}: {e}", explicit.display()))?;
+        return Ok(inventory);
+    }
+
+    load_candidate_inventory_from_release_dir(root)
 }
 
 fn validate_metadata_and_env(receipt: &CandidateReceipt, expected_criterion: usize) -> Result<()> {

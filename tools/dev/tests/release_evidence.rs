@@ -515,14 +515,129 @@ async fn unbuildable_foreign_cell_artifacts_are_rejected() {
     );
 }
 
-#[tokio::test]
-async fn roundtrip_regenerate_and_verify_release_evidence() {
-    let dir = fixture().await;
+#[allow(clippy::too_many_lines)]
+fn setup_qualified_candidate(dir: &Path) {
+    // 1. Prepare dummy candidate files with known hashes
+    let n1_bytes = b"candidate node archive kubesolo-0.1.0-linux-arm64-offline.tar.gz";
+    let n1_hash = rubix_dev::release::sha256_hex(n1_bytes);
+    fs::write(
+        dir.join("kubesolo-0.1.0-linux-arm64-offline.tar.gz"),
+        n1_bytes,
+    )
+    .unwrap();
+
+    let m1_bytes = b"candidate management binary rubixctl-linux-arm64";
+    let m1_hash = rubix_dev::release::sha256_hex(m1_bytes);
+    fs::write(dir.join("rubixctl-linux-arm64"), m1_bytes).unwrap();
+
+    fs::create_dir_all(dir.join("bin")).unwrap();
+    let in1_bytes = b"bin/rubix-kube dummy";
+    let in1_hash = rubix_dev::release::sha256_hex(in1_bytes);
+    fs::write(dir.join("bin/rubix-kube"), in1_bytes).unwrap();
+
+    let in2_bytes = b"data.txt dummy";
+    let in2_hash = rubix_dev::release::sha256_hex(in2_bytes);
+    fs::write(dir.join("data.txt"), in2_bytes).unwrap();
+
+    fs::create_dir_all(dir.join("crates/rubixctl/src")).unwrap();
+    let in3_bytes = b"Cargo.toml dummy";
+    let in3_hash = rubix_dev::release::sha256_hex(in3_bytes);
+    fs::write(dir.join("crates/rubixctl/Cargo.toml"), in3_bytes).unwrap();
+
+    let in4_bytes = b"main.rs dummy";
+    let in4_hash = rubix_dev::release::sha256_hex(in4_bytes);
+    fs::write(dir.join("crates/rubixctl/src/main.rs"), in4_bytes).unwrap();
+
+    // 2. Update cell-inventory.json to declare these exact hashes
+    let mut cell_inv: serde_json::Value =
+        serde_json::from_slice(&fs::read(dir.join("cell-inventory.json")).unwrap()).unwrap();
+    if let Some(cells) = cell_inv["node_cells"].as_array_mut() {
+        for cell in cells {
+            if cell.get("cell") == Some(&serde_json::json!(6)) {
+                cell["output"]["sha256"] = serde_json::json!(n1_hash);
+                cell["inputs"][0]["sha256"] = serde_json::json!(in1_hash);
+                cell["inputs"][1]["sha256"] = serde_json::json!(in2_hash);
+            }
+        }
+    }
+    if let Some(targets) = cell_inv["management_targets"].as_array_mut() {
+        for target in targets {
+            if target.get("target_name") == Some(&serde_json::json!("rubixctl-linux-arm64")) {
+                target["output"]["sha256"] = serde_json::json!(m1_hash);
+                target["inputs"][0]["sha256"] = serde_json::json!(in3_hash);
+                target["inputs"][1]["sha256"] = serde_json::json!(in4_hash);
+            }
+        }
+    }
+    fs::write(
+        dir.join("cell-inventory.json"),
+        serde_json::to_vec_pretty(&cell_inv).unwrap(),
+    )
+    .unwrap();
+
+    // 3. Mark backing reports as qualified candidate_receipt_bound
+    let mut conf: rubix_dev::conformance::QualificationReport = serde_json::from_slice(
+        &fs::read(dir.join("conformance-qualification-report.json")).unwrap(),
+    )
+    .unwrap();
+    conf.evidence_kind = "candidate_receipt_bound".into();
+    fs::write(
+        dir.join("conformance-qualification-report.json"),
+        conf.to_json().unwrap(),
+    )
+    .unwrap();
+
+    let mut soak = rubix_dev::platform_soak::PlatformSoakRunner::new()
+        .run_fixture("0.1.0")
+        .unwrap();
+    soak.evidence_kind = "CandidateReceiptBound".into();
+    soak.overall_qualified = true;
+    soak.candidate_verification.all_matched = true;
+    soak.candidate_verification.mismatched_artifacts = 0;
+    fs::write(
+        dir.join("platform-soak-report.json"),
+        serde_json::to_vec_pretty(&soak).unwrap(),
+    )
+    .unwrap();
+
+    let mut perf: PerfQualificationDocument = serde_json::from_slice(
+        &fs::read(dir.join("performance-qualification-report.json")).unwrap(),
+    )
+    .unwrap();
+    perf.status = "CANDIDATE_RECEIPT_BOUND".into();
+    fs::write(
+        dir.join("performance-qualification-report.json"),
+        serde_json::to_vec_pretty(&perf).unwrap(),
+    )
+    .unwrap();
+
+    let state = StateEvidence {
+        schema_version: 2,
+        status: "CANDIDATE_RECEIPT_BOUND".into(),
+        receipt_id: None,
+        receipt_integrity_hash: None,
+        observed_transitions: vec![
+            "v0.1.0-alpha.1 -> v0.1.0-alpha.2 live SQLite MVCC state transition verified".into(),
+        ],
+        qualified: true,
+        note: "Production Go-to-Rust state migration qualified.".into(),
+    };
+    fs::write(
+        dir.join("state-transition-qualification-report.json"),
+        serde_json::to_vec_pretty(&state).unwrap(),
+    )
+    .unwrap();
+
+    // 4. Update SHA256SUMS for modified artifacts before creating receipts
+    rehash(dir);
+
+    // 5. Create receipts
     let inventory =
-        rubix_dev::release_qualification::receipt::load_candidate_inventory(dir.path()).unwrap();
+        rubix_dev::release_qualification::receipt::load_candidate_inventory_from_release_dir(dir)
+            .unwrap();
     let candidate = inventory.to_candidate_identity();
 
-    let receipts_dir = dir.path().join("receipts");
+    let receipts_dir = dir.join("receipts");
     fs::create_dir_all(&receipts_dir).unwrap();
     for (criterion, slug) in [
         (6, "conformance-and-soak"),
@@ -532,6 +647,14 @@ async fn roundtrip_regenerate_and_verify_release_evidence() {
     ] {
         let mut payload = sample_payload(criterion);
         payload.candidate = candidate.clone();
+        if criterion == 8 {
+            payload.assertions = vec![AssertionRecord {
+                name: "v0.1.0-alpha.1 -> v0.1.0-alpha.2 live SQLite MVCC state transition verified"
+                    .into(),
+                passed: true,
+                detail: Some("sqlite state transition ok".into()),
+            }];
+        }
         let receipt = CandidateReceipt::new_signed(payload).unwrap();
         let filename =
             rubix_dev::release_qualification::criteria::receipt_filename(criterion, slug);
@@ -541,6 +664,12 @@ async fn roundtrip_regenerate_and_verify_release_evidence() {
         )
         .unwrap();
     }
+}
+
+#[tokio::test]
+async fn roundtrip_regenerate_and_verify_release_evidence() {
+    let dir = fixture().await;
+    setup_qualified_candidate(dir.path());
 
     // Regenerate qualification reports bound to the candidate receipts
     regenerate_release_reports(&root(), dir.path())
@@ -552,4 +681,167 @@ async fn roundtrip_regenerate_and_verify_release_evidence() {
 
     // verify_release_evidence must succeed!
     verify_release_evidence(dir.path()).unwrap();
+}
+
+#[tokio::test]
+async fn regenerate_refuses_to_fabricate() {
+    let dir = fixture().await;
+    // Calling regenerate_release_reports directly on unqualified fixture fails
+    assert!(
+        regenerate_release_reports(&root(), dir.path())
+            .await
+            .is_err()
+    );
+
+    // Even if receipts are present, synthetic reports must be rejected:
+    let receipts_dir = dir.path().join("receipts");
+    fs::create_dir_all(&receipts_dir).unwrap();
+    let inventory =
+        rubix_dev::release_qualification::receipt::load_candidate_inventory_from_release_dir(
+            dir.path(),
+        )
+        .unwrap();
+    for (criterion, slug) in [
+        (6, "conformance-and-soak"),
+        (7, "performance-budgets"),
+        (8, "state-migration"),
+        (10, "artifact-digest-bindings"),
+    ] {
+        let mut payload = sample_payload(criterion);
+        payload.candidate = inventory.to_candidate_identity();
+        let receipt = CandidateReceipt::new_signed(payload).unwrap();
+        let filename =
+            rubix_dev::release_qualification::criteria::receipt_filename(criterion, slug);
+        fs::write(
+            receipts_dir.join(filename),
+            serde_json::to_vec_pretty(&receipt).unwrap(),
+        )
+        .unwrap();
+    }
+
+    let err = regenerate_release_reports(&root(), dir.path())
+        .await
+        .unwrap_err();
+    assert!(
+        err.to_string().contains("not found in release directory")
+            || err.to_string().contains("synthetic fixture evidence")
+            || err.to_string().contains("absent")
+    );
+}
+
+#[tokio::test]
+async fn missing_candidate_artifact_fails_verification() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut payload = sample_payload(6);
+    payload
+        .candidate
+        .binary_digests
+        .insert("missing-artifact-binary".into(), "0".repeat(64));
+    let receipt = CandidateReceipt::new_signed(payload).unwrap();
+
+    let err = verify_report_candidate_digests("conformance", &receipt, dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "candidate artifact 'missing-artifact-binary' bound in conformance receipt not found in release directory"
+    );
+}
+
+#[tokio::test]
+async fn absent_perf_sources_fail_verification() {
+    let dir = fixture().await;
+    setup_qualified_candidate(dir.path());
+    regenerate_release_reports(&root(), dir.path())
+        .await
+        .unwrap();
+    rehash(dir.path());
+    verify_release_evidence(dir.path()).unwrap();
+
+    // Now remove one of the SOURCES
+    fs::remove_file(dir.path().join("amd64-reference-go.json")).unwrap();
+    rehash(dir.path());
+
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "missing performance evaluation source input 'amd64-reference-go.json' in release directory"
+    );
+}
+
+#[tokio::test]
+async fn nested_and_case_varied_foreign_targets_are_rejected() {
+    let dir = fixture().await;
+    let foreign_target = "rubixctl-linux-amd64";
+
+    // 1. Nested subdirectory in release directory
+    let nested_dir = dir.path().join("bin").join("subdir");
+    fs::create_dir_all(&nested_dir).unwrap();
+    let nested_file = nested_dir.join(foreign_target);
+    fs::write(&nested_file, "foreign target binary").unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "unbuildable foreign target '{foreign_target}' must not exist in release directory"
+        )
+    );
+    fs::remove_file(&nested_file).unwrap();
+
+    // 2. Case variation in release directory
+    let case_varied_file = dir.path().join("Rubixctl-Linux-Amd64");
+    fs::write(&case_varied_file, "foreign target binary").unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "unbuildable foreign target '{foreign_target}' must not exist in release directory"
+        )
+    );
+    fs::remove_file(&case_varied_file).unwrap();
+
+    // 3. Nested case variation in release directory
+    let nested_case_varied_file = nested_dir.join("RUBIXCTL-LINUX-AMD64");
+    fs::write(&nested_case_varied_file, "foreign target binary").unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "unbuildable foreign target '{foreign_target}' must not exist in release directory"
+        )
+    );
+    fs::remove_file(&nested_case_varied_file).unwrap();
+
+    // 4. Nested path in SHA256SUMS
+    let sums_file = dir.path().join("SHA256SUMS");
+    let sums = fs::read_to_string(&sums_file).unwrap();
+    let nested_sums = format!(
+        "{sums}0000000000000000000000000000000000000000000000000000000000000000  bin/subdir/{foreign_target}\n"
+    );
+    fs::write(&sums_file, nested_sums).unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!("unbuildable foreign target '{foreign_target}' must not appear in SHA256SUMS")
+    );
+
+    // 5. Case variation in SHA256SUMS
+    let case_sums = format!(
+        "{sums}0000000000000000000000000000000000000000000000000000000000000000  Rubixctl-Linux-Amd64\n"
+    );
+    fs::write(&sums_file, case_sums).unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!("unbuildable foreign target '{foreign_target}' must not appear in SHA256SUMS")
+    );
+
+    // 6. Nested case variation in SHA256SUMS
+    let nested_case_sums = format!(
+        "{sums}0000000000000000000000000000000000000000000000000000000000000000  bin/subdir/RUBIXCTL-LINUX-AMD64\n"
+    );
+    fs::write(&sums_file, nested_case_sums).unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!("unbuildable foreign target '{foreign_target}' must not appear in SHA256SUMS")
+    );
 }

@@ -3,7 +3,7 @@ use crate::{
     Result,
     conformance::{QualificationReport, QualificationRunner},
     perf::{GateEvaluationReport, PerformanceReport, load_report},
-    platform_soak::{PlatformSoakReport, PlatformSoakRunner},
+    platform_soak::PlatformSoakReport,
     provenance::LicenseInventory,
     release::{
         attribution::{AttributionRecord, verify_attribution_completeness},
@@ -154,6 +154,13 @@ pub fn find_receipt_path(dir: &Path, number: usize, slug: &str) -> Option<PathBu
     candidates.into_iter().find(|p| p.is_file())
 }
 
+/// Discovers candidate receipt path for release verification, restricted strictly to `dir/receipts` without environment overrides.
+pub fn find_verification_receipt_path(dir: &Path, number: usize, slug: &str) -> Option<PathBuf> {
+    let filename = crate::release_qualification::criteria::receipt_filename(number, slug);
+    let path = dir.join("receipts").join(filename);
+    if path.is_file() { Some(path) } else { None }
+}
+
 /// Verifies that candidate artifacts present on disk match candidate digest bindings in the receipt.
 pub fn verify_report_candidate_digests(
     report_name: &str,
@@ -166,15 +173,18 @@ pub fn verify_report_candidate_digests(
         .iter()
         .chain(receipt.candidate.payload_digests.iter())
     {
-        if let Some(path) = resolve_artifact_path(dir, name) {
-            let bytes = fs::read(&path)?;
-            let observed = sha256_hex(&bytes);
-            if &observed != expected_digest {
-                return Err(format!(
-                    "digest mismatch in {report_name} for '{name}': expected '{expected_digest}', observed '{observed}'"
-                )
-                .into());
-            }
+        let path = resolve_artifact_path(dir, name).ok_or_else(|| {
+            format!(
+                "candidate artifact '{name}' bound in {report_name} receipt not found in release directory"
+            )
+        })?;
+        let bytes = fs::read(&path)?;
+        let observed = sha256_hex(&bytes);
+        if &observed != expected_digest {
+            return Err(format!(
+                "digest mismatch in {report_name} for '{name}': expected '{expected_digest}', observed '{observed}'"
+            )
+            .into());
         }
     }
     Ok(())
@@ -227,19 +237,28 @@ pub async fn regenerate_release_reports(root: &Path, dir: &Path) -> Result<()> {
     }
 
     // 1. Conformance
-    let mut conformance = if dir.join("conformance-qualification-report.json").exists() {
-        serde_json::from_slice::<QualificationReport>(&fs::read(
-            dir.join("conformance-qualification-report.json"),
-        )?)?
-    } else {
-        QualificationRunner::new().run_fixture().await?
-    };
-    conformance.evidence_kind = "candidate_receipt_bound".into();
+    let conf_path = dir.join("conformance-qualification-report.json");
+    if !conf_path.is_file() {
+        return Err(
+            "cannot regenerate release reports: backing conformance qualification report is absent"
+                .into(),
+        );
+    }
+    let mut conformance: QualificationReport = serde_json::from_slice(&fs::read(&conf_path)?)?;
+    if conformance.evidence_kind == "synthetic_fixture" {
+        return Err("cannot regenerate release reports: backing conformance report is synthetic fixture evidence".into());
+    }
+    if conformance.evidence_kind != "candidate_receipt_bound" {
+        return Err("cannot regenerate release reports: backing conformance report is not candidate_receipt_bound".into());
+    }
     conformance.receipt_id = Some(crate::release_qualification::criteria::receipt_filename(
         6,
         "conformance-and-soak",
     ));
     conformance.receipt_integrity_hash = Some(r6.integrity_hash.clone());
+    conformance
+        .verify_qualification()
+        .map_err(|e| format!("conformance qualification verification failed: {e}"))?;
     fs::write(
         dir.join("conformance-qualification-report.json"),
         conformance.to_json()?,
@@ -250,22 +269,28 @@ pub async fn regenerate_release_reports(root: &Path, dir: &Path) -> Result<()> {
     )?;
 
     // 2. Platform Soak
-    let mut soak = if dir.join("platform-soak-report.json").exists() {
-        serde_json::from_slice::<PlatformSoakReport>(&fs::read(
-            dir.join("platform-soak-report.json"),
-        )?)?
-    } else {
-        PlatformSoakRunner::new()
-            .run_fixture("0.1.0")
-            .map_err(|e| format!("{e}"))?
-    };
-    soak.evidence_kind = "CandidateReceiptBound".into();
-    soak.overall_qualified = true;
+    let soak_path = dir.join("platform-soak-report.json");
+    if !soak_path.is_file() {
+        return Err(
+            "cannot regenerate release reports: backing platform soak report is absent".into(),
+        );
+    }
+    let mut soak: PlatformSoakReport = serde_json::from_slice(&fs::read(&soak_path)?)?;
+    if soak.evidence_kind == "SyntheticFixture" || !soak.overall_qualified {
+        return Err("cannot regenerate release reports: backing platform soak report is synthetic fixture evidence".into());
+    }
+    if soak.evidence_kind != "CandidateReceiptBound"
+        && soak.evidence_kind != "candidate_receipt_bound"
+    {
+        return Err("cannot regenerate release reports: backing platform soak report is not CandidateReceiptBound".into());
+    }
     soak.receipt_id = Some(crate::release_qualification::criteria::receipt_filename(
         6,
         "conformance-and-soak",
     ));
     soak.receipt_integrity_hash = Some(r6.integrity_hash.clone());
+    soak.validate(None)
+        .map_err(|e| format!("platform soak report validation failed: {e}"))?;
     fs::write(
         dir.join("platform-soak-report.json"),
         serde_json::to_vec_pretty(&soak)?,
@@ -274,12 +299,20 @@ pub async fn regenerate_release_reports(root: &Path, dir: &Path) -> Result<()> {
 
     // 3. Performance
     for name in SOURCES {
-        if !dir.join(name).exists() {
-            let fixture_src = root.join("tools/perf/fixtures").join(name);
-            if fixture_src.exists() {
-                fs::copy(fixture_src, dir.join(name))?;
-            }
+        if !dir.join(name).is_file() {
+            return Err(format!("cannot regenerate release reports: performance observation source report '{name}' is absent").into());
         }
+    }
+    let perf_path = dir.join("performance-qualification-report.json");
+    if !perf_path.is_file() {
+        return Err(
+            "cannot regenerate release reports: backing performance qualification report is absent"
+                .into(),
+        );
+    }
+    let existing_perf: PerfQualificationDocument = serde_json::from_slice(&fs::read(&perf_path)?)?;
+    if existing_perf.status == STATUS {
+        return Err("cannot regenerate release reports: backing performance report is synthetic fixture evidence".into());
     }
     let mut perf = performance(dir)?;
     perf.status = "CANDIDATE_RECEIPT_BOUND".into();
@@ -288,12 +321,26 @@ pub async fn regenerate_release_reports(root: &Path, dir: &Path) -> Result<()> {
         "performance-budgets",
     ));
     perf.receipt_integrity_hash = Some(r7.integrity_hash.clone());
-    fs::write(
-        dir.join("performance-qualification-report.json"),
-        serde_json::to_vec_pretty(&perf)?,
-    )?;
+    fs::write(perf_path, serde_json::to_vec_pretty(&perf)?)?;
 
     // 4. State Transition
+    let state_path = dir.join("state-transition-qualification-report.json");
+    if !state_path.is_file() {
+        return Err("cannot regenerate release reports: backing state transition qualification report is absent".into());
+    }
+    let existing_state: StateEvidence = serde_json::from_slice(&fs::read(&state_path)?)?;
+    if existing_state.status == STATUS || !existing_state.qualified {
+        return Err("cannot regenerate release reports: backing state transition report is synthetic fixture evidence".into());
+    }
+    let observed_transitions: Vec<String> = r8
+        .assertions
+        .iter()
+        .filter(|a| a.passed)
+        .map(|a| a.name.clone())
+        .collect();
+    if observed_transitions.is_empty() || !r8.assertions.iter().all(|a| a.passed) {
+        return Err("cannot regenerate state transition report: criterion 8 receipt assertions do not qualify".into());
+    }
     let state = StateEvidence {
         schema_version: 2,
         status: "CANDIDATE_RECEIPT_BOUND".into(),
@@ -302,19 +349,19 @@ pub async fn regenerate_release_reports(root: &Path, dir: &Path) -> Result<()> {
             "state-migration",
         )),
         receipt_integrity_hash: Some(r8.integrity_hash.clone()),
-        observed_transitions: vec![
-            "v0.1.0-alpha.1 -> v0.1.0-alpha.2 live SQLite MVCC state transition verified".into(),
-            "interrupted recovery WAL replay verified".into(),
-        ],
+        observed_transitions,
         qualified: true,
         note: "Production Go-to-Rust state migration, Kine transition and interrupted recovery qualified via candidate receipt.".into(),
     };
-    fs::write(
-        dir.join("state-transition-qualification-report.json"),
-        serde_json::to_vec_pretty(&state)?,
-    )?;
+    fs::write(state_path, serde_json::to_vec_pretty(&state)?)?;
 
     // 5. Attribution
+    let licenses_path = dir.join("licenses.json");
+    if !licenses_path.is_file() {
+        return Err(
+            "cannot regenerate release reports: backing licenses inventory is absent".into(),
+        );
+    }
     let mut attribution = AttributionRecord::build(&metadata(root)?)?;
     verify_attribution_completeness(&attribution)?;
     attribution.receipt_id = Some(crate::release_qualification::criteria::receipt_filename(
@@ -323,7 +370,7 @@ pub async fn regenerate_release_reports(root: &Path, dir: &Path) -> Result<()> {
     ));
     attribution.receipt_integrity_hash = Some(r10.integrity_hash.clone());
     fs::write(
-        dir.join("licenses.json"),
+        licenses_path,
         serde_json::to_vec_pretty(&attribution.to_license_inventory())?,
     )?;
     fs::write(dir.join("attribution.md"), attribution.to_markdown())?;
@@ -495,44 +542,120 @@ pub fn verify_fixture_evidence(root: &Path, dir: &Path) -> Result<()> {
     }
     verify_kubeconfig_dual_format_accommodation()
 }
-fn verify_foreign_cell_targets(dir: &Path, cell_inv: &CellInventory) -> Result<()> {
-    for target in cell_inv
-        .node_cells
-        .iter()
-        .chain(cell_inv.management_targets.iter())
-    {
-        if target.status != "unbuildable_foreign_target" {
-            continue;
-        }
-        if dir.join(&target.target_name).exists()
-            || dir.join("bin").join(&target.target_name).exists()
-        {
+fn check_file_path_for_foreign_targets(
+    path: &Path,
+    dir: &Path,
+    foreign_targets: &[String],
+) -> Result<()> {
+    let Ok(rel_path) = path.strip_prefix(dir) else {
+        return Ok(());
+    };
+    let file_name_lower = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+
+    for target in foreign_targets {
+        let target_lower = target.to_ascii_lowercase();
+        if file_name_lower == target_lower {
             return Err(format!(
-                "unbuildable foreign target '{}' must not exist in release directory",
-                target.target_name
+                "unbuildable foreign target '{target}' must not exist in release directory"
             )
             .into());
         }
-        if let Ok(sums_text) = fs::read_to_string(dir.join("SHA256SUMS")) {
-            for line in sums_text.lines() {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() != 2 {
-                    continue;
-                }
-                let path = parts[1];
-                if path == target.target_name
-                    || path.strip_prefix("./") == Some(&target.target_name)
-                    || path.ends_with(&format!("/{}", target.target_name))
-                {
-                    return Err(format!(
-                        "unbuildable foreign target '{}' must not appear in SHA256SUMS",
-                        target.target_name
-                    )
-                    .into());
-                }
+        let comp_matched = rel_path
+            .components()
+            .any(|comp| comp.as_os_str().to_string_lossy().to_ascii_lowercase() == target_lower);
+        if comp_matched {
+            return Err(format!(
+                "unbuildable foreign target '{target}' must not exist in release directory"
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+
+fn check_sums_line_for_foreign_targets(line: &str, foreign_targets: &[String]) -> Result<()> {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+    let entry_path = if trimmed.len() > 66
+        && (trimmed.as_bytes()[64] == b' ' || trimmed.as_bytes()[64] == b'*')
+    {
+        trimmed[65..].trim_start()
+    } else {
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        if parts.len() < 2 {
+            return Ok(());
+        }
+        parts[1]
+    };
+
+    let normalized = entry_path.replace('\\', "/");
+    let clean_path = normalized.strip_prefix("./").unwrap_or(&normalized);
+
+    for target in foreign_targets {
+        let target_lower = target.to_ascii_lowercase();
+        if clean_path.to_ascii_lowercase() == target_lower {
+            return Err(format!(
+                "unbuildable foreign target '{target}' must not appear in SHA256SUMS"
+            )
+            .into());
+        }
+        let comp_matched = clean_path
+            .split('/')
+            .any(|comp| comp.trim().to_ascii_lowercase() == target_lower);
+        if comp_matched {
+            return Err(format!(
+                "unbuildable foreign target '{target}' must not appear in SHA256SUMS"
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+
+fn verify_foreign_cell_targets(dir: &Path, cell_inv: &CellInventory) -> Result<()> {
+    let foreign_targets: Vec<String> = cell_inv
+        .node_cells
+        .iter()
+        .chain(cell_inv.management_targets.iter())
+        .filter(|t| t.status == "unbuildable_foreign_target")
+        .map(|t| t.target_name.clone())
+        .collect();
+
+    if foreign_targets.is_empty() {
+        return Ok(());
+    }
+
+    // 1. Walk entire release directory recursively (symlink-safe, do NOT follow symlinks)
+    let mut dirs_to_visit = vec![dir.to_path_buf()];
+    while let Some(current_dir) = dirs_to_visit.pop() {
+        for entry in fs::read_dir(&current_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            let file_type = entry.file_type()?;
+
+            check_file_path_for_foreign_targets(&path, dir, &foreign_targets)?;
+
+            // Recurse into directories (but do NOT follow symlinks)
+            if file_type.is_dir() && !file_type.is_symlink() {
+                dirs_to_visit.push(path);
             }
         }
     }
+
+    // 2. Parse SHA256SUMS entries properly (normalized path components, not .ends_with string matching)
+    let sums_path = dir.join("SHA256SUMS");
+    if sums_path.is_file() {
+        let sums_text = fs::read_to_string(&sums_path)?;
+        for line in sums_text.lines() {
+            check_sums_line_for_foreign_targets(line, &foreign_targets)?;
+        }
+    }
+
     Ok(())
 }
 
@@ -555,21 +678,31 @@ pub fn verify_release_evidence(dir: &Path) -> Result<()> {
     }
     verify_kubeconfig_dual_format_accommodation()?;
 
-    let r6_path = find_receipt_path(dir, 6, "conformance-and-soak");
-    let r7_path = find_receipt_path(dir, 7, "performance-budgets");
-    let r8_path = find_receipt_path(dir, 8, "state-migration");
-    let r10_path = find_receipt_path(dir, 10, "artifact-digest-bindings");
-
-    if r6_path.is_none() || r7_path.is_none() || r8_path.is_none() || r10_path.is_none() {
-        return Err("production release qualification unavailable: candidate qualification receipts for criteria 6, 7, 8, and 10 not found; C13/C14/C16/C17 remain pending".into());
+    for name in SOURCES {
+        if !dir.join(name).is_file() {
+            return Err(format!(
+                "missing performance evaluation source input '{name}' in release directory"
+            )
+            .into());
+        }
     }
 
-    let r6 = crate::release_qualification::receipt::load_receipt_from_path(&r6_path.unwrap())?;
-    let r7 = crate::release_qualification::receipt::load_receipt_from_path(&r7_path.unwrap())?;
-    let r8 = crate::release_qualification::receipt::load_receipt_from_path(&r8_path.unwrap())?;
-    let r10 = crate::release_qualification::receipt::load_receipt_from_path(&r10_path.unwrap())?;
+    let r6_path = find_verification_receipt_path(dir, 6, "conformance-and-soak")
+        .ok_or("production release qualification unavailable: candidate qualification receipts for criteria 6, 7, 8, and 10 not found; C13/C14/C16/C17 remain pending")?;
+    let r7_path = find_verification_receipt_path(dir, 7, "performance-budgets")
+        .ok_or("production release qualification unavailable: candidate qualification receipts for criteria 6, 7, 8, and 10 not found; C13/C14/C16/C17 remain pending")?;
+    let r8_path = find_verification_receipt_path(dir, 8, "state-migration")
+        .ok_or("production release qualification unavailable: candidate qualification receipts for criteria 6, 7, 8, and 10 not found; C13/C14/C16/C17 remain pending")?;
+    let r10_path = find_verification_receipt_path(dir, 10, "artifact-digest-bindings")
+        .ok_or("production release qualification unavailable: candidate qualification receipts for criteria 6, 7, 8, and 10 not found; C13/C14/C16/C17 remain pending")?;
 
-    let inventory = crate::release_qualification::receipt::load_candidate_inventory(dir)?;
+    let r6 = crate::release_qualification::receipt::load_receipt_from_path(&r6_path)?;
+    let r7 = crate::release_qualification::receipt::load_receipt_from_path(&r7_path)?;
+    let r8 = crate::release_qualification::receipt::load_receipt_from_path(&r8_path)?;
+    let r10 = crate::release_qualification::receipt::load_receipt_from_path(&r10_path)?;
+
+    let inventory =
+        crate::release_qualification::receipt::load_candidate_inventory_from_release_dir(dir)?;
 
     crate::release_qualification::receipt::validate_candidate_receipt(&r6, &inventory, 6)?;
     crate::release_qualification::receipt::validate_candidate_receipt(&r7, &inventory, 7)?;
@@ -670,15 +803,13 @@ pub fn verify_release_evidence(dir: &Path) -> Result<()> {
     {
         return Err("performance report evaluation gates did not pass".into());
     }
-    if SOURCES.iter().all(|name| dir.join(name).is_file()) {
-        let expected_raw = performance(dir)?;
-        let expected_amd64: GateEvaluationReport =
-            serde_json::from_slice(&serde_json::to_vec(&expected_raw.amd64_evaluation)?)?;
-        let expected_arm64: GateEvaluationReport =
-            serde_json::from_slice(&serde_json::to_vec(&expected_raw.arm64_evaluation)?)?;
-        if perf.amd64_evaluation != expected_amd64 || perf.arm64_evaluation != expected_arm64 {
-            return Err("performance evaluations disagree with recomputed source reports".into());
-        }
+    let expected_raw = performance(dir)?;
+    let expected_amd64: GateEvaluationReport =
+        serde_json::from_slice(&serde_json::to_vec(&expected_raw.amd64_evaluation)?)?;
+    let expected_arm64: GateEvaluationReport =
+        serde_json::from_slice(&serde_json::to_vec(&expected_raw.arm64_evaluation)?)?;
+    if perf.amd64_evaluation != expected_amd64 || perf.arm64_evaluation != expected_arm64 {
+        return Err("performance evaluations disagree with recomputed source reports".into());
     }
 
     // 4. State transition report
