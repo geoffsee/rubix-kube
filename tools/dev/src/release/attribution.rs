@@ -57,6 +57,10 @@ pub struct AttributionRecord {
     pub schema_version: u32,
     pub distribution_version: String,
     pub distribution_license: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_integrity_hash: Option<String>,
     pub components: Vec<AttributedComponent>,
     pub license_texts: BTreeMap<String, String>,
 }
@@ -349,6 +353,8 @@ impl AttributionRecord {
             schema_version: 1,
             distribution_version: "0.1.0".into(),
             distribution_license: "ISC".into(),
+            receipt_id: None,
+            receipt_integrity_hash: None,
             components,
             license_texts,
         })
@@ -367,12 +373,20 @@ impl AttributionRecord {
             "**Rubix Kubernetes Distribution Version**: `{}`  \n**Primary Distribution License**: `{}`\n",
             self.distribution_version, self.distribution_license
         );
-        out.push_str(
-            "UNQUALIFIED_FIXTURE_ONLY. This draft inventories declared upstream components and \
-             locked workspace dependency metadata. It does not attest the contents of built release \
-             binaries or OCI images, provide complete upstream license texts, or certify legal \
-             license compliance. Gate C16/C17 remain pending.\n\n"
-        );
+        if let (Some(receipt_id), Some(hash)) = (&self.receipt_id, &self.receipt_integrity_hash) {
+            let _ = writeln!(out, "- **Receipt ID**: `{receipt_id}`");
+            let _ = writeln!(out, "- **Receipt Integrity Hash**: `{hash}`\n");
+            out.push_str(
+                "CANDIDATE_RECEIPT_BOUND. This document binds upstream license attribution and third-party notices to validated candidate qualification receipts.\n\n"
+            );
+        } else {
+            out.push_str(
+                "UNQUALIFIED_FIXTURE_ONLY. This draft inventories declared upstream components and \
+                 locked workspace dependency metadata. It does not attest the contents of built release \
+                 binaries or OCI images, provide complete upstream license texts, or certify legal \
+                 license compliance. Gate C16/C17 remain pending.\n\n"
+            );
+        }
 
         let categories = [
             ComponentCategory::KubernetesCore,
@@ -463,6 +477,8 @@ impl AttributionRecord {
 
         LicenseInventory {
             schema_version: 1,
+            receipt_id: self.receipt_id.clone(),
+            receipt_integrity_hash: self.receipt_integrity_hash.clone(),
             rust_dependencies,
             retained_components,
         }

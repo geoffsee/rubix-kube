@@ -310,6 +310,10 @@ pub struct LicenseEntry {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LicenseInventory {
     pub schema_version: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_integrity_hash: Option<String>,
     pub rust_dependencies: Vec<LicenseEntry>,
     /// Retained non-Rust components; licenses are not resolved by this tool.
     pub retained_components: Vec<LicenseEntry>,
@@ -350,6 +354,8 @@ pub fn generate_license_inventory(cargo_metadata_json: &str) -> Result<LicenseIn
         .collect();
     Ok(LicenseInventory {
         schema_version: 1,
+        receipt_id: None,
+        receipt_integrity_hash: None,
         rust_dependencies,
         retained_components,
     })

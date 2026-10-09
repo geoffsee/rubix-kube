@@ -180,6 +180,17 @@ pub struct CandidateInventory {
     pub payload_digests: BTreeMap<String, String>,
 }
 
+impl CandidateInventory {
+    /// Constructs a `CandidateIdentity` from this candidate inventory.
+    pub fn to_candidate_identity(&self) -> CandidateIdentity {
+        CandidateIdentity {
+            source_revision: self.source_revision.clone(),
+            binary_digests: self.binary_digests.clone(),
+            payload_digests: self.payload_digests.clone(),
+        }
+    }
+}
+
 /// Computes the SHA-256 integrity hash for a receipt payload using canonical JSON serialization.
 pub fn compute_payload_integrity_hash(payload: &ReceiptPayload) -> Result<String> {
     let bytes = serde_json::to_vec(payload)
@@ -306,7 +317,11 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
         return Ok(inventory);
     }
 
-    let cell_inventory_path = root.join("docs/release/cell-inventory.json");
+    let cell_inventory_path = if root.join("cell-inventory.json").is_file() {
+        root.join("cell-inventory.json")
+    } else {
+        root.join("docs/release/cell-inventory.json")
+    };
     if !cell_inventory_path.is_file() {
         return Err(format!(
             "candidate inventory unavailable: {} not found",
@@ -353,7 +368,11 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
     }
 
     // Incorporate SHA256SUMS items as well if present
-    let sums_path = root.join("docs/release/SHA256SUMS");
+    let sums_path = if root.join("SHA256SUMS").is_file() {
+        root.join("SHA256SUMS")
+    } else {
+        root.join("docs/release/SHA256SUMS")
+    };
     if sums_path.is_file() {
         let sums_bytes = read_bounded(&sums_path, 1024 * 1024)?;
         let sums_text =
@@ -363,6 +382,19 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
             if parts.len() == 2 && digest_bindings::is_valid_sha256_hex(parts[0]) {
                 let digest = parts[0].to_string();
                 let filename = parts[1].to_string();
+                // Filter out self-referencing / report / receipt files to avoid circular hash dependency
+                if filename == "SHA256SUMS"
+                    || filename == "licenses.json"
+                    || filename == "attribution.md"
+                    || filename.starts_with("receipts/")
+                    || filename.starts_with("criterion-")
+                    || filename.starts_with("conformance-qualification-report")
+                    || filename.starts_with("performance-qualification-report")
+                    || filename.starts_with("state-transition-qualification-report")
+                    || filename.starts_with("platform-soak-report")
+                {
+                    continue;
+                }
                 if !binary_digests.contains_key(&filename) {
                     payload_digests.insert(filename, digest);
                 }

@@ -27,6 +27,8 @@ pub fn receipt_filename(number: usize, slug: &str) -> String {
 pub fn receipts_dir(root: &Path) -> PathBuf {
     if let Some(dir) = std::env::var_os("RUBIX_RECEIPTS_DIR") {
         PathBuf::from(dir)
+    } else if root.join("receipts").is_dir() {
+        root.join("receipts")
     } else {
         root.join(DEFAULT_RECEIPTS_DIR)
     }

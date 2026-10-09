@@ -237,6 +237,8 @@ impl PlatformSoakRunner {
                     .map_err(|e| PlatformSoakError::Serialization(e.to_string()))?
                     .as_secs()
             ),
+            receipt_id: None,
+            receipt_integrity_hash: None,
             environments: EnvironmentMapping::canonical_matrix(),
             candidate_verification: CandidateVerificationSummary::unobserved(),
             soak_results: SustainedSoakSummary::canonical_soak_records(),

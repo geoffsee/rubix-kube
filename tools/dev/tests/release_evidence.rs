@@ -389,3 +389,167 @@ fn receipts_directory_is_covered_by_checksum_manifest() {
     let err = verify_checksum_inventory(&checksums, dir.path()).unwrap_err();
     assert!(err.to_string().contains("checksum mismatch"));
 }
+
+use rubix_dev::release_qualification::receipt::{
+    AssertionRecord, CandidateIdentity, CandidateReceipt, CleanupInventory, CommandExecution,
+    EnvironmentInfo, ReceiptPayload, ReceiptTimestamps,
+};
+
+fn sample_payload(criterion: usize) -> ReceiptPayload {
+    ReceiptPayload {
+        schema_version: 1,
+        criterion,
+        description: format!("Qualification run for criterion {criterion}"),
+        candidate: CandidateIdentity {
+            source_revision: "4d067c2e97297d42bbcae506820e7ad431328aae".into(),
+            binary_digests: std::collections::BTreeMap::new(),
+            payload_digests: std::collections::BTreeMap::new(),
+        },
+        environment: EnvironmentInfo {
+            host: "linux-arm64".into(),
+            kernel: "6.6.137".into(),
+            runner: "github-hosted-ubuntu-24.04-arm".into(),
+        },
+        commands: vec![CommandExecution {
+            command: vec!["rubix-kube".into(), "--check".into()],
+            exit_code: 0,
+            stdout_sha256: None,
+            stderr_sha256: None,
+            duration_ms: Some(25),
+        }],
+        assertions: vec![AssertionRecord {
+            name: "service_healthy".into(),
+            passed: true,
+            detail: Some("verified response 200 OK".into()),
+        }],
+        skips: vec![],
+        cleanup: CleanupInventory {
+            cleaned_paths: vec!["/tmp/rubix-test".into()],
+            remaining_containers: vec![],
+            remaining_images: vec![],
+            status: "complete".into(),
+        },
+        timestamps: ReceiptTimestamps {
+            started_at: "2026-10-08T14:00:00Z".into(),
+            completed_at: "2026-10-08T14:02:00Z".into(),
+        },
+    }
+}
+
+#[tokio::test]
+async fn candidate_byte_tampering_is_detected_across_all_reports() {
+    let dir = tempfile::tempdir().unwrap();
+    let artifact_name = "rubixctl-linux-arm64";
+    let artifact_path = dir.path().join(artifact_name);
+    let original_bytes = b"original binary bytes";
+    fs::write(&artifact_path, original_bytes).unwrap();
+    let observed_digest = rubix_dev::release::sha256_hex(original_bytes);
+    let expected_digest = "0000000000000000000000000000000000000000000000000000000000000000";
+
+    let mut payload = sample_payload(6);
+    payload
+        .candidate
+        .binary_digests
+        .insert(artifact_name.into(), expected_digest.into());
+    let receipt = CandidateReceipt::new_signed(payload).unwrap();
+
+    let reports = [
+        "conformance",
+        "performance",
+        "state transition",
+        "soak",
+        "attribution",
+    ];
+
+    for report_name in reports {
+        let err = verify_report_candidate_digests(report_name, &receipt, dir.path()).unwrap_err();
+        let expected_msg = format!(
+            "digest mismatch in {report_name} for '{artifact_name}': expected '{expected_digest}', observed '{observed_digest}'"
+        );
+        assert_eq!(err.to_string(), expected_msg);
+    }
+}
+
+#[tokio::test]
+async fn unbuildable_foreign_cell_artifacts_are_rejected() {
+    let dir = fixture().await;
+    let foreign_target = "rubixctl-linux-amd64";
+
+    // 1. Artifact must not exist as a file in the release directory
+    let foreign_file = dir.path().join(foreign_target);
+    fs::write(&foreign_file, "foreign target binary").unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "unbuildable foreign target '{foreign_target}' must not exist in release directory"
+        )
+    );
+    fs::remove_file(&foreign_file).unwrap();
+
+    // 2. Artifact must not exist under bin/ either
+    let bin_dir = dir.path().join("bin");
+    fs::create_dir_all(&bin_dir).unwrap();
+    let bin_foreign_file = bin_dir.join(foreign_target);
+    fs::write(&bin_foreign_file, "foreign target binary").unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "unbuildable foreign target '{foreign_target}' must not exist in release directory"
+        )
+    );
+    fs::remove_file(&bin_foreign_file).unwrap();
+
+    // 3. Artifact must not appear in SHA256SUMS
+    let sums_file = dir.path().join("SHA256SUMS");
+    let sums = fs::read_to_string(&sums_file).unwrap();
+    let sums = format!(
+        "{sums}0000000000000000000000000000000000000000000000000000000000000000  {foreign_target}\n"
+    );
+    fs::write(&sums_file, sums).unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!("unbuildable foreign target '{foreign_target}' must not appear in SHA256SUMS")
+    );
+}
+
+#[tokio::test]
+async fn roundtrip_regenerate_and_verify_release_evidence() {
+    let dir = fixture().await;
+    let inventory =
+        rubix_dev::release_qualification::receipt::load_candidate_inventory(dir.path()).unwrap();
+    let candidate = inventory.to_candidate_identity();
+
+    let receipts_dir = dir.path().join("receipts");
+    fs::create_dir_all(&receipts_dir).unwrap();
+    for (criterion, slug) in [
+        (6, "conformance-and-soak"),
+        (7, "performance-budgets"),
+        (8, "state-migration"),
+        (10, "artifact-digest-bindings"),
+    ] {
+        let mut payload = sample_payload(criterion);
+        payload.candidate = candidate.clone();
+        let receipt = CandidateReceipt::new_signed(payload).unwrap();
+        let filename =
+            rubix_dev::release_qualification::criteria::receipt_filename(criterion, slug);
+        fs::write(
+            receipts_dir.join(filename),
+            serde_json::to_vec_pretty(&receipt).unwrap(),
+        )
+        .unwrap();
+    }
+
+    // Regenerate qualification reports bound to the candidate receipts
+    regenerate_release_reports(&root(), dir.path())
+        .await
+        .unwrap();
+
+    // Rehash SHA256SUMS to cover regenerated reports and receipts
+    rehash(dir.path());
+
+    // verify_release_evidence must succeed!
+    verify_release_evidence(dir.path()).unwrap();
+}
