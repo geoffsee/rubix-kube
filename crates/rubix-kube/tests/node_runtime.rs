@@ -1402,10 +1402,43 @@ async fn test_issue_345_select_runtime_provider_hook() {
     let builder = RuntimeBuilder::new(config.clone());
     let runtime = NodeRuntime::from_config(config.clone()).expect("build node runtime");
 
-    // With default config and no containerd sockets present, select_runtime_provider returns None
-    assert!(select_runtime_provider(config.config()).is_none());
-    assert!(builder.select_runtime_provider().is_none());
-    assert!(runtime.select_runtime_provider().is_none());
+    // With default config without managed socket, provider selection depends on whether
+    // the host containerd socket /run/containerd/containerd.sock exists on Linux.
+    let host_socket = std::path::Path::new("/run/containerd/containerd.sock");
+    if cfg!(target_os = "linux") && host_socket.exists() {
+        let provider =
+            select_runtime_provider(config.config()).expect("provider selected from host socket");
+        assert_eq!(provider.provider_name(), "containerd");
+        assert_eq!(
+            builder
+                .select_runtime_provider()
+                .expect("builder provider")
+                .provider_name(),
+            "containerd"
+        );
+        assert_eq!(
+            runtime
+                .select_runtime_provider()
+                .expect("runtime provider")
+                .provider_name(),
+            "containerd"
+        );
+    } else {
+        assert!(select_runtime_provider(config.config()).is_none());
+        assert!(builder.select_runtime_provider().is_none());
+        assert!(runtime.select_runtime_provider().is_none());
+    }
+
+    // When managed socket exists in state path on Linux, select_runtime_provider returns it
+    let managed_sock_dir = temp.path().join("containerd");
+    std::fs::create_dir_all(&managed_sock_dir).expect("create containerd dir");
+    let managed_sock = managed_sock_dir.join("containerd.sock");
+    std::fs::write(&managed_sock, b"").expect("create fake managed socket");
+    if cfg!(target_os = "linux") {
+        let managed_provider = select_runtime_provider(config.config())
+            .expect("provider selected from managed socket");
+        assert_eq!(managed_provider.provider_name(), "containerd");
+    }
 
     // Explicit custom endpoint
     let mut custom_cfg = config.config().clone();
