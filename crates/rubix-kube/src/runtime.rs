@@ -880,7 +880,7 @@ fn register_container_runtime(
         } else {
             Some(containerd_paths.cni_conf_dir.as_path())
         };
-        let _ = rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, standard_target);
+        rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, standard_target)?;
 
         let image_config =
             ImageImportConfig::from_config(builder.config().config(), &containerd_paths.images_dir);
@@ -895,7 +895,7 @@ fn register_container_runtime(
         } else {
             containerd_paths.cni_conf_dir.as_path()
         };
-        let _ = rubix_network::write_external_cni_config(conf_target, mtu, pod_cidr);
+        rubix_network::write_external_cni_config(conf_target, mtu, pod_cidr)?;
 
         let endpoint_str = format!("unix://{}", socket_path.display());
         let endpoints = RuntimeEndpoints::parse(&endpoint_str, None).map_err(|e| {
