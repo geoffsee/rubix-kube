@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -181,6 +181,69 @@ fn current_rfc3339() -> String {
     format_rfc3339(secs)
 }
 
+/// Validate that a string matches the fixed-width RFC 3339 UTC format emitted by `format_rfc3339`.
+pub fn is_rfc3339_utc(v: &str) -> bool {
+    let b = v.as_bytes();
+    if b.len() != 20 {
+        return false;
+    }
+    let valid_structure = b.iter().enumerate().all(|(i, c)| match i {
+        4 | 7 => *c == b'-',
+        10 => *c == b'T',
+        13 | 16 => *c == b':',
+        19 => *c == b'Z',
+        _ => c.is_ascii_digit(),
+    });
+    if !valid_structure {
+        return false;
+    }
+    let month: u32 = match v[5..7].parse() {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+    let day: u32 = match v[8..10].parse() {
+        Ok(d) => d,
+        Err(_) => return false,
+    };
+    let hour: u32 = match v[11..13].parse() {
+        Ok(h) => h,
+        Err(_) => return false,
+    };
+    let min: u32 = match v[14..16].parse() {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+    let sec: u32 = match v[17..19].parse() {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    if !(1..=12).contains(&month)
+        || !(1..=31).contains(&day)
+        || hour >= 24
+        || min >= 60
+        || sec >= 60
+    {
+        return false;
+    }
+    true
+}
+
+/// Validate that a path string is a relative path containing only Normal components.
+pub fn is_safe_relative_path(path_str: &str) -> bool {
+    let p = Path::new(path_str);
+    if p.as_os_str().is_empty() {
+        return false;
+    }
+    let mut count = 0;
+    for comp in p.components() {
+        match comp {
+            Component::Normal(_) => count += 1,
+            _ => return false,
+        }
+    }
+    count > 0
+}
+
 fn git_rev_parse(repo_root: &Path, arg: &str) -> Option<String> {
     let output = Command::new("git")
         .current_dir(repo_root)
@@ -291,7 +354,7 @@ fn discover_candidate(
 
     let source_tree_hash = git_rev_parse(root, "HEAD^{tree}")
         .filter(|s| is_valid_git_commit_hex(s))
-        .unwrap_or_else(|| source_revision.clone());
+        .ok_or("failed to determine valid 40-character candidate source tree hash")?;
 
     let candidate = CandidateIdentity {
         source_revision,
@@ -610,14 +673,18 @@ pub fn capture(
 /// Verify a schema-2 receipt file or capture directory against the contract.
 pub fn verify(receipt_or_dir: &Path) -> Result<DisposableNodeReceipt> {
     let (receipt_path, base_dir) = if receipt_or_dir.is_dir() {
-        (receipt_or_dir.join("receipt.json"), Some(receipt_or_dir))
-    } else {
         (
+            receipt_or_dir.join("receipt.json"),
             receipt_or_dir.to_path_buf(),
-            receipt_or_dir
-                .parent()
-                .filter(|p| !p.as_os_str().is_empty()),
         )
+    } else {
+        let parent = receipt_or_dir.parent().unwrap_or_else(|| Path::new("."));
+        let base = if parent.as_os_str().is_empty() {
+            Path::new(".")
+        } else {
+            parent
+        };
+        (receipt_or_dir.to_path_buf(), base.to_path_buf())
     };
 
     let raw_bytes = read_bounded(&receipt_path, MAX_RECEIPT_BYTES)?;
@@ -631,7 +698,7 @@ pub fn verify(receipt_or_dir: &Path) -> Result<DisposableNodeReceipt> {
         )
     })?;
 
-    verify_receipt(&receipt, base_dir)?;
+    verify_receipt(&receipt, &base_dir)?;
     Ok(receipt)
 }
 
@@ -704,7 +771,7 @@ fn verify_component_versions(vers: &ComponentVersions) -> Result<()> {
     Ok(())
 }
 
-fn verify_commands(commands: &[CommandRecord], base_dir: Option<&Path>) -> Result<()> {
+fn verify_commands(commands: &[CommandRecord], base_dir: &Path) -> Result<()> {
     if commands.is_empty() {
         return Err("receipt contains no executed commands".into());
     }
@@ -722,23 +789,35 @@ fn verify_commands(commands: &[CommandRecord], base_dir: Option<&Path>) -> Resul
         if cmd.stdout_log.trim().is_empty() || cmd.stderr_log.trim().is_empty() {
             return Err(format!("command {:?} has empty log path", cmd.name).into());
         }
-        if let Some(dir) = base_dir {
-            let out_log = dir.join(&cmd.stdout_log);
-            let err_log = dir.join(&cmd.stderr_log);
-            if !out_log.is_file() {
-                return Err(format!(
-                    "referenced stdout log file does not exist: {}",
-                    out_log.display()
-                )
-                .into());
-            }
-            if !err_log.is_file() {
-                return Err(format!(
-                    "referenced stderr log file does not exist: {}",
-                    err_log.display()
-                )
-                .into());
-            }
+        if !is_safe_relative_path(&cmd.stdout_log) {
+            return Err(format!(
+                "command {:?} stdout_log is not a valid relative path: {:?}",
+                cmd.name, cmd.stdout_log
+            )
+            .into());
+        }
+        if !is_safe_relative_path(&cmd.stderr_log) {
+            return Err(format!(
+                "command {:?} stderr_log is not a valid relative path: {:?}",
+                cmd.name, cmd.stderr_log
+            )
+            .into());
+        }
+        let out_log = base_dir.join(&cmd.stdout_log);
+        let err_log = base_dir.join(&cmd.stderr_log);
+        if !out_log.is_file() {
+            return Err(format!(
+                "referenced stdout log file does not exist: {}",
+                out_log.display()
+            )
+            .into());
+        }
+        if !err_log.is_file() {
+            return Err(format!(
+                "referenced stderr log file does not exist: {}",
+                err_log.display()
+            )
+            .into());
         }
     }
     Ok(())
@@ -787,7 +866,7 @@ fn verify_cleanup(cleanup: &CleanupInventory) -> Result<()> {
 }
 
 /// Verify the semantic rules of a schema-2 receipt.
-pub fn verify_receipt(receipt: &DisposableNodeReceipt, base_dir: Option<&Path>) -> Result<()> {
+pub fn verify_receipt(receipt: &DisposableNodeReceipt, base_dir: &Path) -> Result<()> {
     if receipt.schema_version != SCHEMA_VERSION {
         return Err(format!(
             "unsupported schema_version {}, expected {SCHEMA_VERSION}",
@@ -814,10 +893,12 @@ pub fn verify_receipt(receipt: &DisposableNodeReceipt, base_dir: Option<&Path>) 
     verify_skips(&receipt.skips)?;
     verify_cleanup(&receipt.cleanup)?;
 
-    if receipt.timestamps.started_at.trim().is_empty()
-        || receipt.timestamps.completed_at.trim().is_empty()
-    {
-        return Err("timestamps cannot be empty".into());
+    let ts = &receipt.timestamps;
+    if !is_rfc3339_utc(&ts.started_at) || !is_rfc3339_utc(&ts.completed_at) {
+        return Err("timestamps must be RFC 3339 UTC (YYYY-MM-DDTHH:MM:SSZ)".into());
+    }
+    if ts.completed_at < ts.started_at {
+        return Err("timestamps.completed_at precedes started_at".into());
     }
 
     Ok(())
@@ -901,17 +982,40 @@ mod tests {
         }
     }
 
+    fn create_test_dir_with_logs(receipt: &DisposableNodeReceipt) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("tempdir");
+        for cmd in &receipt.commands {
+            if is_safe_relative_path(&cmd.stdout_log) {
+                let p = dir.path().join(&cmd.stdout_log);
+                if let Some(parent) = p.parent() {
+                    let _ = fs::create_dir_all(parent);
+                }
+                let _ = fs::write(&p, b"stdout log");
+            }
+            if is_safe_relative_path(&cmd.stderr_log) {
+                let p = dir.path().join(&cmd.stderr_log);
+                if let Some(parent) = p.parent() {
+                    let _ = fs::create_dir_all(parent);
+                }
+                let _ = fs::write(&p, b"stderr log");
+            }
+        }
+        dir
+    }
+
     #[test]
     fn valid_receipt_passes_verification() {
         let receipt = valid_sample_receipt();
-        assert!(verify_receipt(&receipt, None).is_ok());
+        let dir = create_test_dir_with_logs(&receipt);
+        assert!(verify_receipt(&receipt, dir.path()).is_ok());
     }
 
     #[test]
     fn wrong_schema_version_rejected() {
         let mut receipt = valid_sample_receipt();
         receipt.schema_version = 1;
-        let err = verify_receipt(&receipt, None).unwrap_err();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
         assert!(err.to_string().contains("unsupported schema_version 1"));
     }
 
@@ -919,7 +1023,8 @@ mod tests {
     fn failed_status_rejected() {
         let mut receipt = valid_sample_receipt();
         receipt.status = "failed".to_string();
-        let err = verify_receipt(&receipt, None).unwrap_err();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
         assert!(err.to_string().contains("expected 'passed'"));
     }
 
@@ -927,7 +1032,8 @@ mod tests {
     fn premature_qualification_claim_rejected() {
         let mut receipt = valid_sample_receipt();
         receipt.qualified = true;
-        let err = verify_receipt(&receipt, None).unwrap_err();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
         assert!(err.to_string().contains("scaffold run cannot qualify"));
     }
 
@@ -935,7 +1041,8 @@ mod tests {
     fn invalid_candidate_digests_rejected() {
         let mut receipt = valid_sample_receipt();
         receipt.candidate.source_revision = "short".to_string();
-        assert!(verify_receipt(&receipt, None).is_err());
+        let dir = create_test_dir_with_logs(&receipt);
+        assert!(verify_receipt(&receipt, dir.path()).is_err());
 
         let mut receipt2 = valid_sample_receipt();
         receipt2
@@ -944,14 +1051,16 @@ mod tests {
             .get_mut("rubix-kube")
             .unwrap()
             .sha256 = "INVALID_UPPERCASE".to_string();
-        assert!(verify_receipt(&receipt2, None).is_err());
+        let dir2 = create_test_dir_with_logs(&receipt2);
+        assert!(verify_receipt(&receipt2, dir2.path()).is_err());
     }
 
     #[test]
     fn nonzero_command_exit_code_rejected() {
         let mut receipt = valid_sample_receipt();
         receipt.commands[0].exit_code = 1;
-        let err = verify_receipt(&receipt, None).unwrap_err();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
         assert!(err.to_string().contains("exited with nonzero code 1"));
     }
 
@@ -960,7 +1069,8 @@ mod tests {
         let mut receipt = valid_sample_receipt();
         receipt.assertions[0].passed = false;
         receipt.assertions[0].details = "something broke".to_string();
-        let err = verify_receipt(&receipt, None).unwrap_err();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
         assert!(
             err.to_string()
                 .contains("assertion \"test_assertion\" failed")
@@ -971,11 +1081,80 @@ mod tests {
     fn leftover_resources_rejected() {
         let mut receipt = valid_sample_receipt();
         receipt.cleanup.leftover_owned_resources = vec!["/var/lib/kubesolo/residual".to_string()];
-        let err = verify_receipt(&receipt, None).unwrap_err();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
         assert!(
             err.to_string()
                 .contains("leftover owned resources detected")
         );
+    }
+
+    #[test]
+    fn invalid_timestamps_rejected() {
+        let mut receipt = valid_sample_receipt();
+        receipt.timestamps.started_at = "2026-10-08".to_string();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
+        assert!(err.to_string().contains("RFC 3339 UTC"));
+
+        // completed_at preceding started_at
+        let mut receipt_inverted = valid_sample_receipt();
+        receipt_inverted.timestamps.started_at = "2026-10-08T20:00:10Z".to_string();
+        receipt_inverted.timestamps.completed_at = "2026-10-08T20:00:05Z".to_string();
+        let dir_inv = create_test_dir_with_logs(&receipt_inverted);
+        let err_inv = verify_receipt(&receipt_inverted, dir_inv.path()).unwrap_err();
+        assert!(
+            err_inv
+                .to_string()
+                .contains("completed_at precedes started_at")
+        );
+    }
+
+    #[test]
+    fn unsafe_log_paths_rejected() {
+        let mut receipt = valid_sample_receipt();
+        receipt.commands[0].stdout_log = "../escape.log".to_string();
+        let dir = create_test_dir_with_logs(&receipt);
+        let err = verify_receipt(&receipt, dir.path()).unwrap_err();
+        assert!(err.to_string().contains("not a valid relative path"));
+
+        let mut receipt_abs = valid_sample_receipt();
+        receipt_abs.commands[0].stderr_log = "/tmp/abs.log".to_string();
+        let dir_abs = create_test_dir_with_logs(&receipt_abs);
+        let err_abs = verify_receipt(&receipt_abs, dir_abs.path()).unwrap_err();
+        assert!(err_abs.to_string().contains("not a valid relative path"));
+    }
+
+    #[test]
+    fn missing_log_file_rejected() {
+        let receipt = valid_sample_receipt();
+        let empty_dir = tempfile::tempdir().expect("tempdir");
+        let err = verify_receipt(&receipt, empty_dir.path()).unwrap_err();
+        assert!(err.to_string().contains("does not exist"));
+    }
+
+    #[test]
+    fn rfc3339_validation_rules() {
+        assert!(is_rfc3339_utc("2026-10-08T20:00:00Z"));
+        assert!(is_rfc3339_utc("1970-01-01T00:00:00Z"));
+        assert!(!is_rfc3339_utc("2026-10-08"));
+        assert!(!is_rfc3339_utc("2026-10-08T20:00:00+00:00"));
+        assert!(!is_rfc3339_utc("2026-13-08T20:00:00Z")); // invalid month
+        assert!(!is_rfc3339_utc("2026-10-32T20:00:00Z")); // invalid day
+        assert!(!is_rfc3339_utc("2026-10-08T24:00:00Z")); // invalid hour
+        assert!(!is_rfc3339_utc("2026-10-08T20:60:00Z")); // invalid minute
+        assert!(!is_rfc3339_utc("2026-10-08T20:00:60Z")); // invalid second
+    }
+
+    #[test]
+    fn safe_relative_path_rules() {
+        assert!(is_safe_relative_path("logs/test.stdout.log"));
+        assert!(is_safe_relative_path("foo.log"));
+        assert!(!is_safe_relative_path(""));
+        assert!(!is_safe_relative_path("/logs/test.log"));
+        assert!(!is_safe_relative_path("../test.log"));
+        assert!(!is_safe_relative_path("logs/../../test.log"));
+        assert!(!is_safe_relative_path("./test.log"));
     }
 
     #[test]
