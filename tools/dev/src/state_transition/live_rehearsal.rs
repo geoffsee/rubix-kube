@@ -438,12 +438,13 @@ fn kernel_release() -> String {
 pub fn build_criterion_8_receipt_payload_with_inventory(
     inventory: &CandidateInventory,
     live_results: &[LiveMigrationResult],
+    started_at_secs: u64,
 ) -> ReceiptPayload {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let started_at = format_rfc3339(now.saturating_sub(60));
+    let started_at = format_rfc3339(started_at_secs.min(now));
     let completed_at = format_rfc3339(now);
 
     let host = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
@@ -556,11 +557,13 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
 pub fn build_criterion_8_receipt_payload(
     root: &Path,
     live_results: &[LiveMigrationResult],
+    started_at_secs: u64,
 ) -> crate::Result<ReceiptPayload> {
     let inventory = load_candidate_inventory(root)?;
     Ok(build_criterion_8_receipt_payload_with_inventory(
         &inventory,
         live_results,
+        started_at_secs,
     ))
 }
 
@@ -568,7 +571,8 @@ pub fn build_criterion_8_receipt_payload(
 pub fn generate_criterion_8_receipt(
     root: &Path,
     live_results: &[LiveMigrationResult],
+    started_at_secs: u64,
 ) -> crate::Result<CandidateReceipt> {
-    let payload = build_criterion_8_receipt_payload(root, live_results)?;
+    let payload = build_criterion_8_receipt_payload(root, live_results, started_at_secs)?;
     CandidateReceipt::new_with_integrity_hash(payload)
 }

@@ -10,6 +10,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rubix_dev::release_qualification::receipt::{
     CandidateInventory, CandidateReceipt, validate_candidate_receipt,
@@ -429,7 +430,12 @@ async fn test_criterion_8_receipt_generation_and_validation() {
         )]),
     };
 
-    let payload = build_criterion_8_receipt_payload_with_inventory(&inventory, &[result]);
+    let started_at_secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let payload =
+        build_criterion_8_receipt_payload_with_inventory(&inventory, &[result], started_at_secs);
     assert_eq!(payload.criterion, 8);
     assert_eq!(payload.schema_version, 1);
     assert!(

@@ -17,6 +17,7 @@
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use rubix_dev::release_qualification::receipt::{CandidateReceipt, load_candidate_inventory};
 use rubix_dev::state_transition::recovery::{
@@ -239,6 +240,11 @@ async fn run() -> Result<(), String> {
     );
     println!("{OPTION_B_SCOPE_MARKER}\n");
 
+    let started_at_secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
     rehearse_supported_versions()?;
     rehearse_interrupted_stages()?;
     rehearse_unavailable_backup_refusal()?;
@@ -255,8 +261,11 @@ async fn run() -> Result<(), String> {
             load_candidate_inventory(&root)
                 .map_err(|e| format!("failed to load candidate inventory: {e}"))?
         };
-        let payload =
-            build_criterion_8_receipt_payload_with_inventory(&inventory, &synthetic_results);
+        let payload = build_criterion_8_receipt_payload_with_inventory(
+            &inventory,
+            &synthetic_results,
+            started_at_secs,
+        );
         let receipt = CandidateReceipt::new_with_integrity_hash(payload)
             .map_err(|e| format!("failed to generate criterion 8 receipt: {e}"))?;
         let receipt_json = serde_json::to_string_pretty(&receipt)
