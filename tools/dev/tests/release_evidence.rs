@@ -684,6 +684,20 @@ async fn roundtrip_regenerate_and_verify_release_evidence() {
 }
 
 #[tokio::test]
+async fn roundtrip_assemble_and_verify_release_evidence() {
+    let dir = fixture().await;
+    setup_qualified_candidate(dir.path());
+
+    // assemble_release_evidence assembles receipts, metadata, reports, manifest and verifies
+    assemble_release_evidence(&root(), dir.path())
+        .await
+        .unwrap();
+
+    // verify_release_evidence must succeed!
+    verify_release_evidence(dir.path()).unwrap();
+}
+
+#[tokio::test]
 async fn regenerate_refuses_to_fabricate() {
     let dir = fixture().await;
     // Calling regenerate_release_reports directly on unqualified fixture fails

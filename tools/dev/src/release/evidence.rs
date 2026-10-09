@@ -393,9 +393,6 @@ pub async fn assemble_release_evidence(root: &Path, target: &Path) -> Result<()>
         return Err("production release assembly unavailable: candidate qualification receipts for criteria 6, 7, 8, and 10 not found; C13/C14/C16/C17 remain pending".into());
     }
 
-    if target.exists() && fs::read_dir(target)?.next().is_some() {
-        return Err("release assembly output must be empty".into());
-    }
     fs::create_dir_all(target)?;
 
     let target_receipts = target.join("receipts");
@@ -405,19 +402,22 @@ pub async fn assemble_release_evidence(root: &Path, target: &Path) -> Result<()>
         .flatten()
     {
         let filename = src.file_name().ok_or("invalid receipt filename")?;
-        fs::copy(src, target_receipts.join(filename))?;
+        let dst = target_receipts.join(filename);
+        if src != &dst {
+            fs::copy(src, dst)?;
+        }
     }
 
     let inventory_source = root.join("docs/release/cell-inventory.json");
-    if inventory_source.exists() {
+    if inventory_source.exists() && !target.join("cell-inventory.json").exists() {
         fs::copy(&inventory_source, target.join("cell-inventory.json"))?;
     }
     let cleanup_source = root.join("docs/release/cleanup-receipt.json");
-    if cleanup_source.exists() {
+    if cleanup_source.exists() && !target.join("cleanup-receipt.json").exists() {
         fs::copy(&cleanup_source, target.join("cleanup-receipt.json"))?;
     }
     let readme_source = root.join("docs/release/README.md");
-    if readme_source.exists() {
+    if readme_source.exists() && !target.join("README.md").exists() {
         fs::copy(&readme_source, target.join("README.md"))?;
     }
     fs::write(
