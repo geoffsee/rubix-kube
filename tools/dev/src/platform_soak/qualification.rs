@@ -1,15 +1,15 @@
-//! Platform soak qualification and Criterion 6 candidate receipt generation (Issue #352 / E36.02).
+//! In-process platform soak rehearsal harness and Criterion 6 receipt verification (Issue #352 / E36.02).
 //!
-//! Qualifies:
-//! - Settled memory growth bound (<= 1.10x initial)
-//! - Zero OOM events
-//! - Zero process/component crashes
-//! - Zero unexplained probe failures
+//! Rehearses:
+//! - Settled memory growth bound (<= 1.05x initial; marked non-qualifying when run in-process)
+//! - OOM events tracking
+//! - Process/component crash tracking
+//! - Probe failure tracking
 //! - Workload cycles completed (> 0)
 //! - Partial run handling (< 86,400s) documenting `sustained_24h_soak_completion` skip
 //!
-//! Generates candidate-bound receipt `criterion-06-conformance-and-soak.json`, `soak-report.json`,
-//! and `soak-report.md`.
+//! Generates candidate-bound rehearsal receipt `criterion-06-conformance-and-soak.json`, `soak-report.json`,
+//! and `soak-report.md`. Live 24-hour Linux soak qualification remains pending execution on disposable Linux infrastructure.
 
 use std::collections::BTreeMap;
 use std::fmt::Write;
@@ -51,8 +51,9 @@ pub const REPORT_MD_FILENAME: &str = "soak-report.md";
 /// Standard duration in seconds for full 24-hour soak qualification.
 pub const FULL_SOAK_DURATION_SECS: u64 = 86_400;
 
-/// Maximum allowable memory growth ratio between final and initial settled RSS.
-pub const SOAK_MAX_GROWTH_RATIO: f64 = 1.10;
+/// Maximum allowable memory growth ratio between final and initial settled RSS (1.05x).
+/// Conforms to acceptance matrix, budget-profiling-analysis, and performance-budget-qualification-runbook.
+pub const SOAK_MAX_GROWTH_RATIO: f64 = 1.05;
 
 /// Structured JSON report for platform soak qualification.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -74,21 +75,32 @@ pub struct PlatformSoakQualificationReport {
     pub summary: String,
 }
 
-fn sample_settled_rss() -> u64 {
+/// Samples settled RSS memory for a target process.
+///
+/// In-process execution cannot isolate target node/distribution processes from the test harness,
+/// so calling with `None` returns `Ok(None)`, indicating non-qualifying measurement.
+/// For live qualification, `target_pid` must reference the target process on Linux.
+pub fn sample_settled_rss(target_pid: Option<u32>) -> Result<Option<u64>> {
+    let Some(pid) = target_pid else {
+        return Ok(None);
+    };
     #[cfg(target_os = "linux")]
     {
-        let pid = std::process::id();
-        let bytes = std::fs::read_to_string(format!("/proc/{pid}/status"))
-            .ok()
-            .as_deref()
-            .and_then(crate::perf::harness::parse_vm_rss_bytes)
-            .unwrap_or(0);
-        if bytes > 0 {
-            return bytes;
+        let status_path = format!("/proc/{pid}/status");
+        let content = std::fs::read_to_string(&status_path)
+            .map_err(|e| format!("failed to read {status_path}: {e}"))?;
+        let rss = crate::perf::harness::parse_vm_rss_bytes(&content)
+            .ok_or_else(|| format!("failed to parse VmRSS from {status_path}"))?;
+        if rss > 0 {
+            Ok(Some(rss))
+        } else {
+            Err(format!("VmRSS for process {pid} was zero").into())
         }
     }
-    // Baseline settled idle footprint for non-Linux or fallback
-    64 * 1024 * 1024
+    #[cfg(not(target_os = "linux"))]
+    {
+        Err(format!("target process RSS sampling requires Linux /proc (pid {pid})").into())
+    }
 }
 
 fn test_config(dir: &Path, node_ip: &str) -> Result<ValidatedConfig> {
@@ -144,11 +156,11 @@ fn generate_markdown_report(report: &PlatformSoakQualificationReport) -> String 
     let partial_str = if report.partial {
         "partial rehearsal run"
     } else {
-        "full 24-hour qualification"
+        "full 24-hour rehearsal"
     };
     let _ = writeln!(
         out,
-        "# Platform Soak & Conformance Qualification Report (Criterion 6)\n"
+        "# Platform Soak & Conformance Rehearsal Report (Criterion 6)\n"
     );
     let _ = writeln!(out, "- **Timestamp:** {}", report.timestamp);
     let _ = writeln!(out, "- **Criterion:** {}", report.criterion);
@@ -174,8 +186,8 @@ fn generate_markdown_report(report: &PlatformSoakQualificationReport) -> String 
     );
     let _ = writeln!(
         out,
-        "- **Memory Growth Ratio:** {:.3}x (contract bound <= 1.10x)",
-        report.memory_growth_ratio
+        "- **Memory Growth Ratio:** {:.3}x (contract bound <= {:.2}x)",
+        report.memory_growth_ratio, SOAK_MAX_GROWTH_RATIO
     );
     let _ = writeln!(out, "- **OOM Events:** {}", report.oom_events);
     let _ = writeln!(out, "- **Crashes:** {}", report.crashes);
@@ -242,24 +254,27 @@ pub async fn capture_soak(
         tokio::time::sleep(Duration::from_millis(5)).await;
     }
 
-    let initial_rss = sample_settled_rss();
+    let initial_rss_opt = sample_settled_rss(None)?;
     let mut probe_failures = 0u32;
-    let oom_events = 0u32;
+    let mut completed_cycles = 0u32;
     let mut crashes = 0u32;
 
-    for _ in 0..cycles {
+    let soak_start = Instant::now();
+    let target_duration = Duration::from_secs(duration_secs);
+    while (completed_cycles + probe_failures) < cycles || soak_start.elapsed() < target_duration {
         match client.list_namespaces().await {
-            Ok(_) => {},
+            Ok(_) => {
+                completed_cycles = completed_cycles.saturating_add(1);
+            },
             Err(_) => {
-                probe_failures += 1;
+                probe_failures = probe_failures.saturating_add(1);
             },
         }
-        if duration_secs > 0 && duration_secs <= 10 {
-            tokio::time::sleep(Duration::from_millis(20)).await;
-        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
     }
+    let observed_secs = soak_start.elapsed().as_secs();
 
-    let final_rss = sample_settled_rss();
+    let final_rss_opt = sample_settled_rss(None)?;
 
     if runtime_handle.is_finished() {
         crashes += 1;
@@ -268,47 +283,70 @@ pub async fn capture_soak(
     stop_tx.stop();
     let _ = runtime_handle.await;
 
-    let growth_ratio = (final_rss as f64) / (initial_rss as f64);
-    let bound_passed = u128::from(final_rss) * 10 <= u128::from(initial_rss) * 11;
+    let (initial_rss, final_rss, growth_ratio, bound_passed, growth_detail) =
+        match (initial_rss_opt, final_rss_opt) {
+            (Some(init), Some(fin)) if init > 0 => {
+                let ratio = (fin as f64) / (init as f64);
+                let passed = u128::from(fin) * 100 <= u128::from(init) * 105;
+                (
+                    init,
+                    fin,
+                    ratio,
+                    passed,
+                    format!(
+                        "initial_rss_bytes: {init}, final_rss_bytes: {fin}, growth_ratio: {ratio:.3} (bound <= {SOAK_MAX_GROWTH_RATIO:.2}x)"
+                    ),
+                )
+            },
+            _ => (
+                0u64,
+                0u64,
+                0.0f64,
+                true,
+                "non-qualifying: in-process rehearsal measures harness process, not isolated target node distribution processes; live Linux sampling required".to_string(),
+            ),
+        };
 
+    let oom_events = 0u32;
     let completed_at = current_rfc3339();
     let total_duration_ms = u64::try_from(start_instant.elapsed().as_millis()).unwrap_or(0);
 
-    let host = std::env::var("HOSTNAME")
-        .or_else(|_| std::env::var("HOST"))
-        .unwrap_or_else(|_| "localhost".into());
+    let host = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
     let kernel = kernel_release();
     let runner = "rubix-platform-soak".to_string();
 
-    let is_partial = duration_secs < FULL_SOAK_DURATION_SECS;
+    let is_partial = observed_secs < FULL_SOAK_DURATION_SECS;
 
     let assertions = vec![
         ReceiptAssertionRecord {
             name: "soak_memory_growth_bound".into(),
             passed: bound_passed,
-            detail: Some(format!(
-                "initial_rss_bytes: {initial_rss}, final_rss_bytes: {final_rss}, growth_ratio: {growth_ratio:.3}"
-            )),
+            detail: Some(growth_detail),
         },
         ReceiptAssertionRecord {
             name: "soak_zero_oom_events".into(),
             passed: oom_events == 0,
-            detail: Some("0 OOM events detected".into()),
+            detail: Some(format!("{oom_events} OOM events detected")),
         },
         ReceiptAssertionRecord {
             name: "soak_zero_crashes".into(),
             passed: crashes == 0,
-            detail: Some("0 crashes observed across all cycles".into()),
+            detail: Some(format!("{crashes} crashes observed across all cycles")),
         },
         ReceiptAssertionRecord {
             name: "soak_zero_unexplained_probe_failures".into(),
             passed: probe_failures == 0,
-            detail: Some("0 probe failures observed across all cycles".into()),
+            detail: Some(format!(
+                "{probe_failures} probe failures observed across all cycles"
+            )),
         },
         ReceiptAssertionRecord {
             name: "soak_workload_cycles_positive".into(),
-            passed: cycles > 0,
-            detail: Some(format!("{cycles} workload cycles completed successfully")),
+            passed: completed_cycles > 0,
+            detail: Some(format!(
+                "{completed_cycles} workload cycles completed successfully (attempted: {}, probe failures: {probe_failures})",
+                completed_cycles + probe_failures
+            )),
         },
     ];
 
@@ -316,14 +354,23 @@ pub async fn capture_soak(
     if is_partial {
         skips.push(SkipRecord {
             name: "sustained_24h_soak_completion".into(),
-            reason: "Observed duration < 86400s; recorded as partial rehearsal run".into(),
+            reason: format!(
+                "Observed duration {observed_secs}s < {FULL_SOAK_DURATION_SECS}s; recorded as partial rehearsal run"
+            ),
+        });
+    }
+
+    if initial_rss_opt.is_none() {
+        skips.push(SkipRecord {
+            name: "isolated_node_rss_sampling".into(),
+            reason: "in-process rehearsal runs inside test process; isolated target node RSS sampling requires live Linux execution".into(),
         });
     }
 
     if !cfg!(target_os = "linux") {
         skips.push(SkipRecord {
             name: "linux_cgroup_memory_tracking".into(),
-            reason: "non-Linux environment does not qualify Linux cgroup v2 memory accounting; verified via process RSS fallback".into(),
+            reason: "non-Linux environment does not qualify Linux cgroup v2 memory accounting; in-process rehearsal run".into(),
         });
     }
 
@@ -338,6 +385,10 @@ pub async fn capture_soak(
         host,
         kernel,
         runner,
+        os: Some(std::env::consts::OS.into()),
+        arch: Some(std::env::consts::ARCH.into()),
+        execution_mode: Some("in_process".into()),
+        duration_seconds: Some(observed_secs),
     };
 
     let commands = vec![CommandExecution {
@@ -372,7 +423,7 @@ pub async fn capture_soak(
     let payload = ReceiptPayload {
         schema_version: CURRENT_SCHEMA_VERSION,
         criterion: CRITERION_NUMBER,
-        description: "Platform Soak & Conformance Qualification (Criterion 6)".into(),
+        description: "Platform Soak & Conformance Rehearsal (Criterion 6)".into(),
         candidate,
         environment,
         commands,
@@ -395,8 +446,8 @@ pub async fn capture_soak(
         schema_version: CURRENT_SCHEMA_VERSION,
         criterion: CRITERION_NUMBER,
         timestamp: started_at,
-        duration_seconds: duration_secs,
-        cycles_completed: cycles,
+        duration_seconds: observed_secs,
+        cycles_completed: completed_cycles,
         partial: is_partial,
         initial_rss_bytes: initial_rss,
         final_rss_bytes: final_rss,
@@ -407,7 +458,7 @@ pub async fn capture_soak(
         assertions,
         skips,
         summary: format!(
-            "Soak qualification run: duration={duration_secs}s, cycles={cycles}, growth_ratio={growth_ratio:.3}x, partial={is_partial}"
+            "In-process soak rehearsal run: duration={observed_secs}s, cycles={completed_cycles}, growth_ratio={growth_ratio:.3}x, partial={is_partial}"
         ),
     };
 
@@ -428,6 +479,9 @@ pub async fn capture_soak(
 }
 
 /// Verifies a platform soak candidate receipt from a file or directory path against the repository root.
+///
+/// Fails closed: rejects non-Linux hosts, in-process/mock executions, runs with duration < 86,400s
+/// or `partial: true`, and unpermitted skips. Live 24-hour Linux qualification required.
 pub fn verify_soak_receipt(receipt_or_dir: &Path, root: &Path) -> Result<CandidateReceipt> {
     let receipt_path = if receipt_or_dir.is_dir() {
         let standard = receipt_or_dir.join(RECEIPT_FILENAME);
@@ -442,7 +496,57 @@ pub fn verify_soak_receipt(receipt_or_dir: &Path, root: &Path) -> Result<Candida
 
     let receipt = load_and_validate_receipt(&receipt_path, root, CRITERION_NUMBER)?;
 
-    // Verify all 5 required assertions are present and passed
+    // 1. Fail closed on non-Linux execution environment
+    let is_linux_host = receipt.environment.host.to_lowercase().contains("linux");
+    let is_linux_os = receipt
+        .environment
+        .os
+        .as_deref()
+        .map(str::to_lowercase)
+        .as_deref()
+        == Some("linux");
+    if !is_linux_host && !is_linux_os {
+        return Err(format!(
+            "Criterion 6 qualification rejected: non-Linux execution environment (host: '{}')",
+            receipt.environment.host
+        )
+        .into());
+    }
+
+    // 2. Fail closed on in-process or mock execution mode
+    let is_live_mode = receipt.environment.execution_mode.as_deref() == Some("live_node");
+    if !is_live_mode {
+        let mode = receipt
+            .environment
+            .execution_mode
+            .as_deref()
+            .unwrap_or("unspecified");
+        return Err(format!(
+            "Criterion 6 qualification rejected: execution mode '{mode}' does not qualify; live_node required"
+        )
+        .into());
+    }
+
+    // 3. Fail closed on duration < 86,400s or partial run
+    let duration = receipt.environment.duration_seconds.unwrap_or(0);
+    if duration < FULL_SOAK_DURATION_SECS {
+        return Err(format!(
+            "Criterion 6 qualification rejected: soak duration {duration}s < {FULL_SOAK_DURATION_SECS}s; full 24-hour soak required"
+        )
+        .into());
+    }
+
+    // 4. Fail closed on unpermitted documented skips:
+    // Criterion 6 requires full sustained 24-hour soak on Linux; no skips are permitted by contract
+    if !receipt.skips.is_empty() {
+        let skip_names: Vec<_> = receipt.skips.iter().map(|s| s.name.as_str()).collect();
+        return Err(format!(
+            "Criterion 6 qualification rejected: documented skips {skip_names:?} are not permitted for live qualification; criterion stays Pending"
+        )
+        .into());
+    }
+
+    // 5. Verify all 5 required assertions are present and passed
     let required_assertions = [
         "soak_memory_growth_bound",
         "soak_zero_oom_events",
@@ -460,12 +564,13 @@ pub fn verify_soak_receipt(receipt_or_dir: &Path, root: &Path) -> Result<Candida
         if !assertion.passed {
             return Err(format!("required assertion '{req}' failed").into());
         }
-    }
-
-    // Verify all documented skips have non-empty reasons
-    for skip in &receipt.skips {
-        if skip.reason.trim().is_empty() {
-            return Err(format!("documented skip '{}' has empty reason", skip.name).into());
+        if let Some(detail) = &assertion.detail
+            && detail.to_lowercase().contains("non-qualifying")
+        {
+            return Err(format!(
+                "required assertion '{req}' contains non-qualifying measurement: {detail}"
+            )
+            .into());
         }
     }
 

@@ -82,35 +82,38 @@ still needs exact candidate/artifact hashes, current Linux environment/variant,
 durable commands and raw logs, independent before/after cluster identities and PV
 assertions, failures/skips, and the selected executable recovery evidence above.
 
-## Live qualification harness and Criterion 5 receipt capture
+## In-process recovery rehearsal harness and Criterion 5 candidate receipt capture
 
-Issue #352 (E36.02) provides executable qualification capture and receipt validation
-for Criterion 5 (`criterion-05-lifecycle-and-storage.json`):
+Issue #352 (E36.02) provides an in-process recovery rehearsal harness and candidate-bound receipt
+generation for Criterion 5 (`criterion-05-lifecycle-and-storage.json`).
+Live recovery qualification on disposable Linux infrastructure with retained upstream executables
+and external processes remains pending.
 
 ```sh
-# Run candidate-bound lifecycle and recovery qualification
-cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- capture --output /tmp/recovery-qualification
+# Run in-process candidate-bound lifecycle and recovery rehearsal
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- capture --output /tmp/recovery-rehearsal
 
-# Verify generated receipt against canonical schema and Criterion 5 rules
-cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- verify /tmp/recovery-qualification
+# Verify candidate-bound receipt against canonical schema and Criterion 5 rules
+# (Fails closed on in-process rehearsal receipts; live_node execution on Linux required for qualification)
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- verify /tmp/recovery-rehearsal
 ```
 
 ### Assertions evaluated
 
-The rehearsal executes seven required assertions against live in-process nodes and storage:
+The rehearsal executes seven required assertions against in-process runtime instances:
 
-1. `crash_restart_state_retention`: verifies state, UID, `resourceVersion`, and PKI preservation after abrupt SIGKILL of an active cluster.
-2. `bounded_escalation_and_cleanup`: verifies fatal adapter failure triggers non-graceful escalation, cleans up state, and permits subsequent clean re-entry within budget.
-3. `datastore_outage_blocking_r2`: proves datastore failure is handled as a blocking fatal failure (`StopCause::Fatal`), explicitly preventing silent graceful degraded operation (resolving historical r2 outage behavior).
-4. `reboot_state_retention`: validates state directory re-entry across complete runtime restart, ensuring zero unowned files.
+1. `crash_restart_state_retention`: verifies state, namespace records, `resourceVersion`, and PKI preservation across runtime restart. (Abrupt SIGKILL qualification on live subprocesses remains pending.)
+2. `bounded_escalation_and_cleanup`: verifies simulated daemon failure in `MockAdapter` triggers `StopCause::Fatal`, completes escalation within the shutdown budget, and permits subsequent clean re-entry. (Real process-group signal escalation remains pending.)
+3. `datastore_outage_blocking_r2`: proves simulated datastore outage triggers immediate non-graceful `StopCause::Fatal` on the supervisor, preventing degraded execution and recovering cleanly upon restart.
+4. `reboot_state_retention`: validates state retention across simulated cold re-initialization of runtime from disk. (Physical bare-metal host reboot skipped; live qualification pending.)
 5. `wal_torn_write_fails_closed`: proves torn native WAL frames fail closed with diagnostic code `datastore_failure`, and recover cleanly when `dbWalRepair: true`.
-6. `startup_interruption_safe_reentry`: verifies early SIGINT/shutdown during node startup cleanly releases file locks and allows immediate restart.
-7. `ownership_cleanup_isolation`: verifies teardown strictly removes owned directories while leaving foreign host resources untouched.
+6. `startup_interruption_safe_reentry`: verifies cooperative early stop during node startup cleanly releases file locks and allows immediate restart.
+7. `ownership_cleanup_isolation`: verifies `rubixctl` cleanup plan logic removes owned runtime state (`kine/db`) while leaving foreign host files inside and outside the data directory untouched.
 
 ### Skips and platform bounds
 
-- `physical_host_reboot`: Skipped in disposable test runners lacking bare-metal reboot capabilities; tested via simulated reboot and process restart.
-- `linux_process_group_escalation`: Evaluated on Linux hosts; skipped on macOS/BSD environments where cgroup process tracking is unavailable.
+- `physical_host_reboot`: Skipped in disposable test runners lacking bare-metal reboot capabilities; tested via simulated reboot and in-process restart.
+- `linux_process_group_escalation`: Skipped in in-process rehearsal on all platforms because in-process execution with `MockAdapter` does not exercise Linux cgroup/process-group signaling; live qualification on Linux required.
 
 Existing migration failure rehearsal continues to run when `rubix-recovery-rehearsal` is invoked with no arguments or with `migration` or `rehearse` subcommands.
 

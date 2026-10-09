@@ -5,17 +5,90 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use rubix_dev::platform_soak::qualification::{
-    CRITERION_NUMBER, RECEIPT_FILENAME, REPORT_JSON_FILENAME, REPORT_MD_FILENAME, capture_soak,
-    verify_soak_receipt,
+    CRITERION_NUMBER, FULL_SOAK_DURATION_SECS, RECEIPT_FILENAME, REPORT_JSON_FILENAME,
+    REPORT_MD_FILENAME, capture_soak, verify_soak_receipt,
 };
-use rubix_dev::release_qualification::receipt::CandidateReceipt;
+use rubix_dev::release_qualification::receipt::AssertionRecord as ReceiptAssertionRecord;
+use rubix_dev::release_qualification::receipt::{
+    CURRENT_SCHEMA_VERSION, CandidateIdentity, CandidateReceipt, CleanupInventory,
+    CommandExecution, EnvironmentInfo, ReceiptPayload, ReceiptTimestamps, SkipRecord,
+    load_and_validate_receipt, load_candidate_inventory,
+};
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn qualifying_sample_payload(root: &Path) -> ReceiptPayload {
+    let inventory = load_candidate_inventory(root).expect("load candidate inventory");
+    ReceiptPayload {
+        schema_version: CURRENT_SCHEMA_VERSION,
+        criterion: CRITERION_NUMBER,
+        description: "Platform Soak & Conformance Qualification (Criterion 6)".into(),
+        candidate: CandidateIdentity {
+            source_revision: inventory.source_revision,
+            binary_digests: inventory.binary_digests,
+            payload_digests: inventory.payload_digests,
+        },
+        environment: EnvironmentInfo {
+            host: "linux-x86_64".into(),
+            kernel: "6.6.137".into(),
+            runner: "linux-baremetal".into(),
+            os: Some("linux".into()),
+            arch: Some("x86_64".into()),
+            execution_mode: Some("live_node".into()),
+            duration_seconds: Some(FULL_SOAK_DURATION_SECS),
+        },
+        commands: vec![CommandExecution {
+            command: vec!["rubix-platform-soak".into(), "capture".into()],
+            exit_code: 0,
+            stdout_sha256: None,
+            stderr_sha256: None,
+            duration_ms: Some(FULL_SOAK_DURATION_SECS * 1000),
+        }],
+        assertions: vec![
+            ReceiptAssertionRecord {
+                name: "soak_memory_growth_bound".into(),
+                passed: true,
+                detail: Some("initial_rss_bytes: 100000000, final_rss_bytes: 102000000, growth_ratio: 1.020".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "soak_zero_oom_events".into(),
+                passed: true,
+                detail: Some("0 OOM events detected".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "soak_zero_crashes".into(),
+                passed: true,
+                detail: Some("0 crashes observed across all cycles".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "soak_zero_unexplained_probe_failures".into(),
+                passed: true,
+                detail: Some("0 probe failures observed across all cycles".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "soak_workload_cycles_positive".into(),
+                passed: true,
+                detail: Some("1000 workload cycles completed successfully (attempted: 1000, probe failures: 0)".into()),
+            },
+        ],
+        skips: vec![],
+        cleanup: CleanupInventory {
+            cleaned_paths: vec!["/tmp/rubix-test".into()],
+            remaining_containers: vec![],
+            remaining_images: vec![],
+            status: "complete".into(),
+        },
+        timestamps: ReceiptTimestamps {
+            started_at: "2026-10-08T00:00:00Z".into(),
+            completed_at: "2026-10-09T00:00:00Z".into(),
+        },
+    }
+}
+
 #[tokio::test]
-async fn test_platform_soak_capture_and_verify_programmatic() {
+async fn test_platform_soak_capture_and_rehearsal_fail_closed() {
     let root = repo_root();
     let temp_dir = tempfile::tempdir().expect("create temp dir");
     let out_dir = temp_dir.path().join("soak_out");
@@ -46,38 +119,167 @@ async fn test_platform_soak_capture_and_verify_programmatic() {
         serde_json::from_str(&report_content).expect("parse report json");
     assert_eq!(report_json["criterion"], CRITERION_NUMBER);
     assert_eq!(report_json["partial"], true);
-    assert_eq!(report_json["cycles_completed"], 3);
+    assert!(report_json["cycles_completed"].as_u64().unwrap() > 0);
     assert_eq!(report_json["assertions"].as_array().unwrap().len(), 5);
 
     // Verify report markdown contents
     let md_content = fs::read_to_string(&report_md_path).expect("read md report");
-    assert!(md_content.contains("Platform Soak & Conformance Qualification Report"));
+    assert!(md_content.contains("Platform Soak & Conformance Rehearsal Report"));
     assert!(md_content.contains("soak_memory_growth_bound"));
     assert!(md_content.contains("sustained_24h_soak_completion"));
 
-    // Verify receipt using verification function (file path)
-    let receipt = verify_soak_receipt(&receipt_path, &root).expect("verify receipt by file");
-    assert_eq!(receipt.criterion, CRITERION_NUMBER);
-    assert_eq!(receipt.assertions.len(), 5);
-    for a in &receipt.assertions {
-        assert!(a.passed, "assertion '{}' must pass", a.name);
-    }
+    // Schema validation passes for candidate-bound rehearsal receipt
+    let loaded = load_and_validate_receipt(&receipt_path, &root, CRITERION_NUMBER)
+        .expect("schema and candidate digest validation");
+    assert_eq!(loaded.criterion, CRITERION_NUMBER);
+    assert_eq!(loaded.assertions.len(), 5);
 
-    // Verify receipt using directory path
-    let receipt_dir = verify_soak_receipt(&out_dir, &root).expect("verify receipt by directory");
-    assert_eq!(receipt_dir.criterion, CRITERION_NUMBER);
+    // Qualification verification MUST FAIL CLOSED on in-process rehearsal receipt
+    let verify_err = verify_soak_receipt(&receipt_path, &root)
+        .expect_err("rehearsal receipt must fail closed for qualification");
+    assert!(
+        verify_err.to_string().contains("qualification rejected"),
+        "error must explain qualification rejection: {verify_err}"
+    );
 
-    // Check required assertions are present
-    let names: Vec<_> = receipt.assertions.iter().map(|a| a.name.as_str()).collect();
-    assert!(names.contains(&"soak_memory_growth_bound"));
-    assert!(names.contains(&"soak_zero_oom_events"));
-    assert!(names.contains(&"soak_zero_crashes"));
-    assert!(names.contains(&"soak_zero_unexplained_probe_failures"));
-    assert!(names.contains(&"soak_workload_cycles_positive"));
+    // Verification via directory path must also fail closed
+    let dir_err = verify_soak_receipt(&out_dir, &root)
+        .expect_err("rehearsal dir must fail closed for qualification");
+    assert!(dir_err.to_string().contains("qualification rejected"));
+}
 
-    // Check documented skips
-    let skip_names: Vec<_> = receipt.skips.iter().map(|s| s.name.as_str()).collect();
-    assert!(skip_names.contains(&"sustained_24h_soak_completion"));
+#[test]
+fn test_platform_soak_qualifying_receipt_passes_verification() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join(RECEIPT_FILENAME);
+
+    let payload = qualifying_sample_payload(&root);
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write receipt");
+
+    let verified = verify_soak_receipt(&receipt_path, &root).expect("verify qualifying receipt");
+    assert_eq!(verified.criterion, CRITERION_NUMBER);
+    assert_eq!(verified.assertions.len(), 5);
+    assert!(verified.skips.is_empty());
+}
+
+#[test]
+fn test_platform_soak_rejection_non_linux() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("non_linux_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.environment.host = "darwin-arm64".into();
+    payload.environment.os = Some("macos".into());
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_soak_receipt(&receipt_path, &root).expect_err("must reject non-Linux");
+    assert!(
+        err.to_string().contains("non-Linux execution environment"),
+        "error: {err}"
+    );
+}
+
+#[test]
+fn test_platform_soak_rejection_in_process_mode() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("in_process_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.environment.execution_mode = Some("in_process".into());
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_soak_receipt(&receipt_path, &root).expect_err("must reject in-process");
+    assert!(
+        err.to_string()
+            .contains("execution mode 'in_process' does not qualify"),
+        "error: {err}"
+    );
+}
+
+#[test]
+fn test_platform_soak_rejection_duration_short() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("short_soak_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.environment.duration_seconds = Some(3600);
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_soak_receipt(&receipt_path, &root).expect_err("must reject short soak");
+    assert!(
+        err.to_string().contains("full 24-hour soak required"),
+        "error: {err}"
+    );
+}
+
+#[test]
+fn test_platform_soak_rejection_unpermitted_skips() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("skipped_soak_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.skips.push(SkipRecord {
+        name: "sustained_24h_soak_completion".into(),
+        reason: "short run".into(),
+    });
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_soak_receipt(&receipt_path, &root).expect_err("must reject unpermitted skips");
+    assert!(err.to_string().contains("documented skips"), "error: {err}");
+}
+
+#[test]
+fn test_platform_soak_rejection_non_qualifying_detail() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("non_qualifying_detail_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.assertions[0].detail =
+        Some("measured memory growth: 1.01x (non-qualifying in-process rehearsal)".into());
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_soak_receipt(&receipt_path, &root)
+        .expect_err("must reject non-qualifying measurement");
+    assert!(
+        err.to_string().contains("non-qualifying measurement"),
+        "error: {err}"
+    );
 }
 
 #[tokio::test]
@@ -133,28 +335,39 @@ fn test_platform_soak_cli_execution() {
     let receipt_path = out_dir.join(RECEIPT_FILENAME);
     assert!(receipt_path.is_file(), "receipt must be generated by CLI");
 
-    // Test verify-receipt CLI with file
-    let verify_status = Command::new(env!("CARGO_BIN_EXE_rubix-platform-soak"))
+    // Test verify-receipt CLI fails closed on rehearsal receipt
+    let verify_rehearsal_status = Command::new(env!("CARGO_BIN_EXE_rubix-platform-soak"))
         .arg("verify-receipt")
         .arg(&receipt_path)
         .current_dir(&root)
         .status()
         .expect("execute verify-receipt command");
     assert!(
-        verify_status.success(),
-        "verify-receipt command must succeed"
+        !verify_rehearsal_status.success(),
+        "verify-receipt command must fail closed on rehearsal receipt"
     );
 
-    // Test verify-receipt CLI with directory
-    let verify_dir_status = Command::new(env!("CARGO_BIN_EXE_rubix-platform-soak"))
+    // Test verify-receipt CLI succeeds on qualifying receipt
+    let qual_dir = temp_dir.path().join("cli_qual");
+    fs::create_dir_all(&qual_dir).expect("create qual dir");
+    let qual_receipt_path = qual_dir.join(RECEIPT_FILENAME);
+    let payload = qualifying_sample_payload(&root);
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &qual_receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let verify_qual_status = Command::new(env!("CARGO_BIN_EXE_rubix-platform-soak"))
         .arg("verify-receipt")
-        .arg(&out_dir)
+        .arg(&qual_receipt_path)
         .current_dir(&root)
         .status()
-        .expect("execute verify-receipt directory command");
+        .expect("execute verify-receipt command on qual receipt");
     assert!(
-        verify_dir_status.success(),
-        "verify-receipt directory command must succeed"
+        verify_qual_status.success(),
+        "verify-receipt command must succeed on qualifying receipt"
     );
 
     // Test matrix subcommand preservation

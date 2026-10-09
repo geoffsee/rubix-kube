@@ -31,7 +31,8 @@ pub use matrix::{
 pub use qualification::{
     CRITERION_NUMBER, FULL_SOAK_DURATION_SECS, PlatformSoakQualificationReport,
     RECEIPT_FILENAME as SOAK_RECEIPT_FILENAME, REPORT_JSON_FILENAME as SOAK_REPORT_JSON_FILENAME,
-    REPORT_MD_FILENAME as SOAK_REPORT_MD_FILENAME, capture_soak, verify_soak_receipt,
+    REPORT_MD_FILENAME as SOAK_REPORT_MD_FILENAME, SOAK_MAX_GROWTH_RATIO, capture_soak,
+    sample_settled_rss, verify_soak_receipt,
 };
 pub use regressions::{EpicRegressionRecord, HistoricalRegression, RegressionSuite};
 pub use report::{PlatformSoakError, PlatformSoakReport};

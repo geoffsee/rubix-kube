@@ -8,14 +8,97 @@ use rubix_dev::recovery_rehearsal::{
     CRITERION_NUMBER, RECEIPT_FILENAME, REPORT_FILENAME, capture_recovery_qualification,
     verify_recovery_receipt,
 };
-use rubix_dev::release_qualification::receipt::CandidateReceipt;
+use rubix_dev::release_qualification::receipt::AssertionRecord as ReceiptAssertionRecord;
+use rubix_dev::release_qualification::receipt::{
+    CURRENT_SCHEMA_VERSION, CandidateIdentity, CandidateReceipt, CleanupInventory,
+    CommandExecution, EnvironmentInfo, ReceiptPayload, ReceiptTimestamps, SkipRecord,
+    load_and_validate_receipt, load_candidate_inventory,
+};
 
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn qualifying_sample_payload(root: &Path) -> ReceiptPayload {
+    let inventory = load_candidate_inventory(root).expect("load candidate inventory");
+    ReceiptPayload {
+        schema_version: CURRENT_SCHEMA_VERSION,
+        criterion: CRITERION_NUMBER,
+        description: "Lifecycle & State Retention Qualification (Criterion 5)".into(),
+        candidate: CandidateIdentity {
+            source_revision: inventory.source_revision,
+            binary_digests: inventory.binary_digests,
+            payload_digests: inventory.payload_digests,
+        },
+        environment: EnvironmentInfo {
+            host: "linux-x86_64".into(),
+            kernel: "6.6.137".into(),
+            runner: "linux-baremetal".into(),
+            os: Some("linux".into()),
+            arch: Some("x86_64".into()),
+            execution_mode: Some("live_node".into()),
+            duration_seconds: Some(120),
+        },
+        commands: vec![CommandExecution {
+            command: vec!["rubix-recovery-rehearsal".into(), "capture".into()],
+            exit_code: 0,
+            stdout_sha256: None,
+            stderr_sha256: None,
+            duration_ms: Some(120_000),
+        }],
+        assertions: vec![
+            ReceiptAssertionRecord {
+                name: "crash_restart_state_retention".into(),
+                passed: true,
+                detail: Some("SIGKILL restart verified on live subprocesses".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "bounded_escalation_and_cleanup".into(),
+                passed: true,
+                detail: Some("escalation completed within 5s".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "datastore_outage_blocking_r2".into(),
+                passed: true,
+                detail: Some("datastore outage blocked degraded execution".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "reboot_state_retention".into(),
+                passed: true,
+                detail: Some("reboot state retention verified".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "wal_torn_write_fails_closed".into(),
+                passed: true,
+                detail: Some("wal torn write failed closed".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "startup_interruption_safe_reentry".into(),
+                passed: true,
+                detail: Some("interrupted startup safe re-entry".into()),
+            },
+            ReceiptAssertionRecord {
+                name: "ownership_cleanup_isolation".into(),
+                passed: true,
+                detail: Some("ownership cleanup isolated".into()),
+            },
+        ],
+        skips: vec![],
+        cleanup: CleanupInventory {
+            cleaned_paths: vec!["/tmp/rubix-test".into()],
+            remaining_containers: vec![],
+            remaining_images: vec![],
+            status: "complete".into(),
+        },
+        timestamps: ReceiptTimestamps {
+            started_at: "2026-10-08T00:00:00Z".into(),
+            completed_at: "2026-10-08T00:02:00Z".into(),
+        },
+    }
+}
+
 #[test]
-fn test_recovery_rehearsal_capture_and_verify_programmatic() {
+fn test_recovery_rehearsal_capture_and_rehearsal_fail_closed() {
     let root = repo_root();
     let temp_dir = tempfile::tempdir().expect("create temp dir");
     let out_dir = temp_dir.path().join("rec_out");
@@ -41,32 +124,137 @@ fn test_recovery_rehearsal_capture_and_verify_programmatic() {
     assert_eq!(report_json["criterion"], CRITERION_NUMBER);
     assert_eq!(report_json["assertions"].as_array().unwrap().len(), 7);
 
-    // Verify receipt using verification function (file path)
-    let receipt = verify_recovery_receipt(&receipt_path, &root).expect("verify receipt by file");
-    assert_eq!(receipt.criterion, CRITERION_NUMBER);
-    assert_eq!(receipt.assertions.len(), 7);
-    for a in &receipt.assertions {
-        assert!(a.passed, "assertion '{}' must pass", a.name);
-    }
+    // Schema and candidate inventory validation succeeds for rehearsal receipt
+    let loaded = load_and_validate_receipt(&receipt_path, &root, CRITERION_NUMBER)
+        .expect("schema and candidate digest validation");
+    assert_eq!(loaded.criterion, CRITERION_NUMBER);
+    assert_eq!(loaded.assertions.len(), 7);
 
-    // Verify receipt using directory path
-    let receipt_dir =
-        verify_recovery_receipt(&out_dir, &root).expect("verify receipt by directory");
-    assert_eq!(receipt_dir.criterion, CRITERION_NUMBER);
+    // Qualification verification MUST FAIL CLOSED on in-process rehearsal receipt
+    let verify_err = verify_recovery_receipt(&receipt_path, &root)
+        .expect_err("rehearsal receipt must fail closed for qualification");
+    assert!(
+        verify_err.to_string().contains("qualification rejected"),
+        "error must explain qualification rejection: {verify_err}"
+    );
 
-    // Check required assertions are present
-    let names: Vec<_> = receipt.assertions.iter().map(|a| a.name.as_str()).collect();
-    assert!(names.contains(&"crash_restart_state_retention"));
-    assert!(names.contains(&"bounded_escalation_and_cleanup"));
-    assert!(names.contains(&"datastore_outage_blocking_r2"));
-    assert!(names.contains(&"reboot_state_retention"));
-    assert!(names.contains(&"wal_torn_write_fails_closed"));
-    assert!(names.contains(&"startup_interruption_safe_reentry"));
-    assert!(names.contains(&"ownership_cleanup_isolation"));
+    // Verification via directory path must also fail closed
+    let dir_err = verify_recovery_receipt(&out_dir, &root)
+        .expect_err("rehearsal dir must fail closed for qualification");
+    assert!(dir_err.to_string().contains("qualification rejected"));
+}
 
-    // Check documented skips
-    let skip_names: Vec<_> = receipt.skips.iter().map(|s| s.name.as_str()).collect();
-    assert!(skip_names.contains(&"physical_host_reboot"));
+#[test]
+fn test_recovery_rehearsal_qualifying_receipt_passes_verification() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join(RECEIPT_FILENAME);
+
+    let payload = qualifying_sample_payload(&root);
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write receipt");
+
+    let verified =
+        verify_recovery_receipt(&receipt_path, &root).expect("verify qualifying receipt");
+    assert_eq!(verified.criterion, CRITERION_NUMBER);
+    assert_eq!(verified.assertions.len(), 7);
+    assert!(verified.skips.is_empty());
+}
+
+#[test]
+fn test_recovery_rehearsal_rejection_non_linux() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("non_linux_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.environment.host = "darwin-arm64".into();
+    payload.environment.os = Some("macos".into());
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_recovery_receipt(&receipt_path, &root).expect_err("must reject non-Linux");
+    assert!(
+        err.to_string().contains("non-Linux execution environment"),
+        "error: {err}"
+    );
+}
+
+#[test]
+fn test_recovery_rehearsal_rejection_in_process_mode() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("in_process_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.environment.execution_mode = Some("in_process".into());
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_recovery_receipt(&receipt_path, &root).expect_err("must reject in-process");
+    assert!(
+        err.to_string()
+            .contains("execution mode 'in_process' does not qualify"),
+        "error: {err}"
+    );
+}
+
+#[test]
+fn test_recovery_rehearsal_rejection_unpermitted_skips() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("skipped_recovery_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.skips.push(SkipRecord {
+        name: "physical_host_reboot".into(),
+        reason: "skipped".into(),
+    });
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err =
+        verify_recovery_receipt(&receipt_path, &root).expect_err("must reject unpermitted skips");
+    assert!(err.to_string().contains("documented skips"), "error: {err}");
+}
+
+#[test]
+fn test_recovery_rehearsal_rejection_non_qualifying_detail() {
+    let root = repo_root();
+    let temp_dir = tempfile::tempdir().expect("create temp dir");
+    let receipt_path = temp_dir.path().join("non_qualifying_detail_receipt.json");
+
+    let mut payload = qualifying_sample_payload(&root);
+    payload.assertions[0].detail = Some("non-qualifying in-process rehearsal".into());
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let err = verify_recovery_receipt(&receipt_path, &root)
+        .expect_err("must reject non-qualifying measurement");
+    assert!(
+        err.to_string().contains("non-qualifying measurement"),
+        "error: {err}"
+    );
 }
 
 #[test]
@@ -117,25 +305,39 @@ fn test_recovery_rehearsal_cli_execution() {
     let receipt_path = out_dir.join(RECEIPT_FILENAME);
     assert!(receipt_path.is_file(), "receipt must be generated by CLI");
 
-    // Test verify CLI with file
-    let verify_status = Command::new(env!("CARGO_BIN_EXE_rubix-recovery-rehearsal"))
+    // Test verify CLI fails closed on rehearsal receipt
+    let verify_rehearsal_status = Command::new(env!("CARGO_BIN_EXE_rubix-recovery-rehearsal"))
         .arg("verify")
         .arg(&receipt_path)
         .current_dir(&root)
         .status()
         .expect("execute verify command");
-    assert!(verify_status.success(), "verify command must succeed");
+    assert!(
+        !verify_rehearsal_status.success(),
+        "verify command must fail closed on rehearsal receipt"
+    );
 
-    // Test verify CLI with directory
-    let verify_dir_status = Command::new(env!("CARGO_BIN_EXE_rubix-recovery-rehearsal"))
+    // Test verify CLI succeeds on qualifying receipt
+    let qual_dir = temp_dir.path().join("cli_qual");
+    fs::create_dir_all(&qual_dir).expect("create qual dir");
+    let qual_receipt_path = qual_dir.join(RECEIPT_FILENAME);
+    let payload = qualifying_sample_payload(&root);
+    let receipt = CandidateReceipt::new_with_integrity_hash(payload).expect("sign receipt");
+    fs::write(
+        &qual_receipt_path,
+        serde_json::to_vec_pretty(&receipt).expect("serialize"),
+    )
+    .expect("write");
+
+    let verify_qual_status = Command::new(env!("CARGO_BIN_EXE_rubix-recovery-rehearsal"))
         .arg("verify")
-        .arg(&out_dir)
+        .arg(&qual_receipt_path)
         .current_dir(&root)
         .status()
-        .expect("execute verify directory command");
+        .expect("execute verify command on qual receipt");
     assert!(
-        verify_dir_status.success(),
-        "verify directory command must succeed"
+        verify_qual_status.success(),
+        "verify command must succeed on qualifying receipt"
     );
 
     // Test migration command fallback

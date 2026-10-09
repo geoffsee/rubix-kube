@@ -43,15 +43,17 @@ fn parse_migration_args(args: &[String]) -> Result<MigrationArgs, String> {
 
     while let Some(arg) = iter.next() {
         match arg.as_str() {
-            "migration" | "rehearse" => {},
+            "migration"
+            | "rehearse"
+            | "--rehearse-synthetic-migration"
+            | "--rehearse-live-migration" => {
+                // Explicit flag supported for symmetry with receipt command execution record
+            },
             "--generate-receipt" => {
                 let path = iter
                     .next()
                     .ok_or_else(|| "--generate-receipt requires a path argument".to_string())?;
                 generate_receipt = Some(PathBuf::from(path));
-            },
-            "--rehearse-synthetic-migration" | "--rehearse-live-migration" => {
-                // Explicit flag supported for symmetry with receipt command execution record
             },
             "-h" | "--help" => {
                 show_help = true;
@@ -298,9 +300,9 @@ fn print_usage() {
         "Usage: rubix-recovery-rehearsal [COMMAND] [OPTIONS]\n\n\
          Commands:\n  \
            capture [--output <DIR>]\n      \
-             Execute recovery qualification checks and write criterion-05 receipt and report\n  \
+             Execute in-process recovery rehearsal checks and write candidate-bound receipt and report\n  \
            verify <RECEIPT_OR_DIR>\n      \
-             Verify a candidate-bound criterion-05 recovery receipt\n  \
+             Verify a candidate-bound criterion-05 recovery qualification receipt (fails closed on rehearsal/non-qualifying runs)\n  \
            migration [--rehearse-synthetic-migration] [--generate-receipt <PATH>]\n      \
              Rehearse migration failure, operator recovery, and in-process synthetic migration (default)\n  \
            help\n      \
@@ -327,14 +329,15 @@ fn handle_capture(args: &[String]) -> Result<(), String> {
         }
         i += 1;
     }
-    let output_dir =
-        output_dir.unwrap_or_else(|| PathBuf::from("target/recovery-qualification"));
+    let output_dir = output_dir.unwrap_or_else(|| PathBuf::from("target/recovery-qualification"));
     let root = rubix_dev::repository_root(&std::env::current_dir().map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
     let (receipt_path, report_path) =
         rubix_dev::recovery_rehearsal::capture_recovery_qualification(&output_dir, &root)
             .map_err(|e| e.to_string())?;
-    println!("Recovery qualification capture completed successfully:");
+    println!(
+        "Recovery rehearsal capture completed successfully (in-process rehearsal; live qualification pending):"
+    );
     println!("  Receipt: {}", receipt_path.display());
     println!("  Report:  {}", report_path.display());
     Ok(())
@@ -348,9 +351,8 @@ fn handle_verify(args: &[String]) -> Result<(), String> {
     };
     let root = rubix_dev::repository_root(&std::env::current_dir().map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
-    let receipt =
-        rubix_dev::recovery_rehearsal::verify_recovery_receipt(Path::new(path), &root)
-            .map_err(|e| e.to_string())?;
+    let receipt = rubix_dev::recovery_rehearsal::verify_recovery_receipt(Path::new(path), &root)
+        .map_err(|e| e.to_string())?;
     println!(
         "Recovery receipt verified successfully:\n\
          - Criterion: {}\n\
@@ -366,11 +368,19 @@ fn handle_verify(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-async fn execute(args: &[String]) -> Result<(), String> {
+fn run_migration_rehearsal_blocking(args: MigrationArgs) -> Result<(), String> {
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| e.to_string())?;
+    rt.block_on(run_migration_rehearsal(args))
+}
+
+fn execute(args: &[String]) -> Result<(), String> {
     match args.first().map(String::as_str) {
         None => {
             let m_args = parse_migration_args(&[])?;
-            run_migration_rehearsal(m_args).await
+            run_migration_rehearsal_blocking(m_args)
         },
         Some("capture") => handle_capture(&args[1..]),
         Some("verify") => handle_verify(&args[1..]),
@@ -380,11 +390,11 @@ async fn execute(args: &[String]) -> Result<(), String> {
         },
         Some("migration" | "rehearse") => {
             let m_args = parse_migration_args(args)?;
-            run_migration_rehearsal(m_args).await
+            run_migration_rehearsal_blocking(m_args)
         },
         Some(first) if first.starts_with('-') => {
             let m_args = parse_migration_args(args)?;
-            run_migration_rehearsal(m_args).await
+            run_migration_rehearsal_blocking(m_args)
         },
         Some(unknown) => {
             print_usage();
@@ -393,10 +403,9 @@ async fn execute(args: &[String]) -> Result<(), String> {
     }
 }
 
-#[tokio::main]
-async fn main() -> ExitCode {
+fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    match execute(&args).await {
+    match execute(&args) {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
             eprintln!("Error: {err}");

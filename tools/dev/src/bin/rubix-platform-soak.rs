@@ -82,7 +82,9 @@ fn handle_capture(args: &[String]) -> Result<(), String> {
         ))
         .map_err(|e| e.to_string())?;
 
-    println!("Platform soak qualification capture completed successfully:");
+    println!(
+        "Platform soak rehearsal capture completed successfully (in-process rehearsal; live 24h qualification pending):"
+    );
     println!("  Receipt:     {}", receipt_path.display());
     println!("  Report JSON: {}", report_json_path.display());
     println!("  Report MD:   {}", report_md_path.display());
@@ -120,9 +122,9 @@ fn execute(args: &[String]) -> Result<(), String> {
         [] => return execute(&["help".into()]),
         [s] if s == "help" || s == "--help" || s == "-h" => {
             println!(
-                "rubix-platform-soak: Platform coverage, soak and Criterion 6 qualification\n\
-                 capture [--output DIR] [--duration SECS] [--cycles N] (Criterion 6 qualification)\n\
-                 verify-receipt RECEIPT_OR_DIR (Criterion 6 verification)\n\
+                "rubix-platform-soak: Platform coverage, soak and Criterion 6 qualification rehearsal\n\
+                 capture [--output DIR] [--duration SECS] [--cycles N] (Criterion 6 rehearsal capture)\n\
+                 verify-receipt RECEIPT_OR_DIR (Criterion 6 verification; fails closed on rehearsal/non-qualifying runs)\n\
                  run [--version VERSION] (unavailable)\n\
                  verify REPORT [--expected-version VERSION] (unavailable)\n\
                  fixture [--version VERSION] [--output DIR]\n\

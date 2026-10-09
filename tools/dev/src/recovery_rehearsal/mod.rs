@@ -1,15 +1,17 @@
-//! Recovery qualification rehearsal and candidate-bound receipt generation (E36.02 / Issue #352).
+//! Recovery rehearsal harness and Criterion 5 candidate-bound receipt verification (E36.02 / Issue #352).
 //!
-//! Qualifies:
-//! - Crash restart state retention and ownership invariants
-//! - Bounded escalation and cleanup within shutdown budgets
-//! - Datastore outage blocking behavior (condition r2 explicitly verified as blocking, never graceful)
-//! - Reboot state retention across cold re-initialization
+//! Rehearses:
+//! - Simulated crash restart state retention and ownership invariants across in-process runtime restart
+//! - Bounded escalation and cleanup within shutdown budgets using `MockAdapter`
+//! - Simulated datastore outage blocking behavior (condition r2 on supervisor, blocking fatal failure)
+//! - Simulated reboot state retention across cold re-initialization
 //! - WAL torn-write failing closed (`datastore_failure` diagnostic) unless `dbWalRepair: true`
 //! - Startup interruption handling and safe re-entry
-//! - Ownership cleanup isolation preserving unmanaged external resources
+//! - Directory cleanup boundary isolation
 //!
-//! Produces candidate-bound receipt `criterion-05-lifecycle-and-storage.json` and `recovery-report.json`.
+//! Produces candidate-bound rehearsal receipt `criterion-05-lifecycle-and-storage.json` and `recovery-report.json`.
+//! Live Linux recovery qualification remains pending execution on disposable Linux infrastructure with
+//! retained upstream executables and external processes.
 
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
@@ -277,7 +279,7 @@ async fn capture_recovery_qualification_async(
     cleaned_paths.push(crash_state.display().to_string());
     drop(crash_temp);
 
-    let crash_detail = "Crash restart preserved namespace records, exact resourceVersion, PKI root certificates, and strict ownership invariants".to_string();
+    let crash_detail = "In-process restart preserved namespace records, exact resourceVersion, PKI root certificates, and strict ownership invariants across runtime restart (live SIGKILL qualification pending)".to_string();
 
     // -------------------------------------------------------------------------
     // 2. Bounded escalation and cleanup
@@ -359,7 +361,7 @@ async fn capture_recovery_qualification_async(
     drop(esc_temp);
 
     let esc_detail = format!(
-        "Bounded escalation completed within {:.2}s; stop cause observed: {:?}; post-escalation re-entry succeeded",
+        "In-process bounded escalation completed within {:.2}s using MockAdapter; stop cause observed: {:?}; post-escalation re-entry succeeded (live process-group escalation pending)",
         esc_duration.as_secs_f64(),
         esc_report.cause
     );
@@ -432,7 +434,7 @@ async fn capture_recovery_qualification_async(
     cleaned_paths.push(ds_outage_state.display().to_string());
     drop(ds_outage_temp);
 
-    let r2_detail = "Condition r2 verified: datastore outage triggered immediate non-graceful StopCause::Fatal on supervisor, blocking degraded execution and recovering cleanly upon restart".to_string();
+    let r2_detail = "Condition r2 verified in-process: simulated datastore outage triggered immediate non-graceful StopCause::Fatal on supervisor, blocking degraded execution and recovering cleanly upon restart".to_string();
 
     // -------------------------------------------------------------------------
     // 4. Reboot state retention
@@ -487,7 +489,7 @@ async fn capture_recovery_qualification_async(
     cleaned_paths.push(reboot_state.display().to_string());
     drop(reboot_temp);
 
-    let reboot_detail = "Simulated node reboot preserved all persisted datastore namespaces and certificates across cold re-initialization".to_string();
+    let reboot_detail = "Simulated node reboot preserved all persisted datastore namespaces and certificates across cold re-initialization (bare-metal reboot skipped; live qualification pending)".to_string();
 
     // -------------------------------------------------------------------------
     // 5. WAL torn write fails closed
@@ -598,27 +600,54 @@ async fn capture_recovery_qualification_async(
     let unowned_file = iso_parent.join("unowned-host-resource.txt");
     fs::write(&unowned_file, b"foreign host data").map_err(|e| format!("write unowned: {e}"))?;
 
-    let owned_dir = iso_parent.join("owned-rubix-state");
-    fs::create_dir_all(&owned_dir).map_err(|e| format!("mkdir owned: {e}"))?;
-    fs::write(owned_dir.join("owned.db"), b"cluster data")
-        .map_err(|e| format!("write owned: {e}"))?;
+    let owned_data = iso_parent.join("owned-rubix-state");
+    fs::create_dir_all(owned_data.join("kine")).map_err(|e| format!("mkdir kine: {e}"))?;
+    fs::write(owned_data.join("kine/db"), b"cluster data").map_err(|e| format!("write db: {e}"))?;
+    let foreign_in_data = owned_data.join("foreign-host-file.txt");
+    fs::write(&foreign_in_data, b"foreign host data in data root")
+        .map_err(|e| format!("write foreign in data: {e}"))?;
 
-    // Cleanup owned state
-    fs::remove_dir_all(&owned_dir).map_err(|e| format!("remove owned: {e}"))?;
+    // Plan cleanup using rubixctl cleanup logic
+    let plan = rubixctl::cleanup::plan_cleanup(rubixctl::cleanup::CleanupKind::Reset, &owned_data);
+    if !plan.remove.iter().any(|p| p.ends_with("kine/db")) {
+        return Err("cleanup plan did not select kine/db for removal".into());
+    }
+    if plan
+        .remove
+        .iter()
+        .any(|p| p.ends_with("foreign-host-file.txt"))
+    {
+        return Err("cleanup plan mistakenly selected foreign host file for removal".into());
+    }
+
+    // Execute planned removal
+    for path in &plan.remove {
+        if path.is_dir() {
+            fs::remove_dir_all(path).map_err(|e| format!("remove dir: {e}"))?;
+        } else if path.is_file() {
+            fs::remove_file(path).map_err(|e| format!("remove file: {e}"))?;
+        }
+    }
 
     if !unowned_file.is_file() {
         return Err(
             "ownership isolation violation: unowned external file was modified or deleted".into(),
         );
     }
-    if owned_dir.exists() {
-        return Err("owned directory was not cleaned".into());
+    if !foreign_in_data.is_file() {
+        return Err(
+            "ownership isolation violation: foreign file inside data root was modified or deleted"
+                .into(),
+        );
+    }
+    if owned_data.join("kine/db").exists() {
+        return Err("owned kine/db was not cleaned".into());
     }
 
-    cleaned_paths.push(owned_dir.display().to_string());
+    cleaned_paths.push(owned_data.join("kine/db").display().to_string());
     drop(iso_temp);
 
-    let iso_detail = "Cleanup verified strict boundary: owned directories were removed without modifying unmanaged host files".to_string();
+    let iso_detail = "Cleanup verified strict ownership boundary via rubixctl plan_cleanup: owned runtime state was removed without modifying unmanaged host files inside or outside data root".to_string();
 
     // -------------------------------------------------------------------------
     // Build receipt and report
@@ -664,19 +693,16 @@ async fn capture_recovery_qualification_async(
         },
     ];
 
-    let mut skips = vec![
+    let skips = vec![
         SkipRecord {
             name: "physical_host_reboot".into(),
-            reason: "disposable test environment lacks bare-metal reboot capability; tested via simulated reboot and process restart".into(),
+            reason: "disposable test environment lacks bare-metal reboot capability; tested via simulated reboot and in-process restart".into(),
+        },
+        SkipRecord {
+            name: "linux_process_group_escalation".into(),
+            reason: "in-process rehearsal with MockAdapter does not exercise Linux cgroup/process-group signaling or escalation; live qualification pending".into(),
         },
     ];
-
-    if !cfg!(target_os = "linux") {
-        skips.push(SkipRecord {
-            name: "linux_process_group_escalation".into(),
-            reason: "non-Linux environment does not qualify Linux cgroup/process-group tracking; verified via cross-platform fallback".into(),
-        });
-    }
 
     let candidate_inventory = load_candidate_inventory(root)?;
     let candidate = CandidateIdentity {
@@ -689,6 +715,10 @@ async fn capture_recovery_qualification_async(
         host: host.clone(),
         kernel: kernel.clone(),
         runner: runner.clone(),
+        os: Some(std::env::consts::OS.into()),
+        arch: Some(std::env::consts::ARCH.into()),
+        execution_mode: Some("in_process".into()),
+        duration_seconds: Some(total_duration_ms / 1000),
     };
 
     let commands = vec![CommandExecution {
@@ -719,7 +749,7 @@ async fn capture_recovery_qualification_async(
     let payload = ReceiptPayload {
         schema_version: CURRENT_SCHEMA_VERSION,
         criterion: CRITERION_NUMBER,
-        description: "Lifecycle & State Retention Qualification (Criterion 5)".into(),
+        description: "Lifecycle & State Retention Rehearsal (Criterion 5)".into(),
         candidate,
         environment,
         commands,
@@ -772,6 +802,9 @@ async fn capture_recovery_qualification_async(
 }
 
 /// Verifies a recovery candidate receipt from a file or directory path against the repository root.
+///
+/// Fails closed: rejects non-Linux hosts, in-process/mock executions, and unpermitted skips.
+/// Live Linux recovery qualification required.
 pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<CandidateReceipt> {
     let receipt_path = if receipt_or_dir.is_dir() {
         let standard = receipt_or_dir.join(RECEIPT_FILENAME);
@@ -786,7 +819,48 @@ pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<Can
 
     let receipt = load_and_validate_receipt(&receipt_path, root, CRITERION_NUMBER)?;
 
-    // Verify all 7 required assertions are present and passed
+    // 1. Fail closed on non-Linux execution environment
+    let is_linux_host = receipt.environment.host.to_lowercase().contains("linux");
+    let is_linux_os = receipt
+        .environment
+        .os
+        .as_deref()
+        .map(str::to_lowercase)
+        .as_deref()
+        == Some("linux");
+    if !is_linux_host && !is_linux_os {
+        return Err(format!(
+            "Criterion 5 qualification rejected: non-Linux execution environment (host: '{}')",
+            receipt.environment.host
+        )
+        .into());
+    }
+
+    // 2. Fail closed on in-process or mock execution mode
+    let is_live_mode = receipt.environment.execution_mode.as_deref() == Some("live_node");
+    if !is_live_mode {
+        let mode = receipt
+            .environment
+            .execution_mode
+            .as_deref()
+            .unwrap_or("unspecified");
+        return Err(format!(
+            "Criterion 5 qualification rejected: execution mode '{mode}' does not qualify; live_node required"
+        )
+        .into());
+    }
+
+    // 3. Fail closed on unpermitted documented skips:
+    // Criterion 5 requires live recovery qualification; rehearsal skips (physical reboot, process group escalation) are not permitted for qualification
+    if !receipt.skips.is_empty() {
+        let skip_names: Vec<_> = receipt.skips.iter().map(|s| s.name.as_str()).collect();
+        return Err(format!(
+            "Criterion 5 qualification rejected: documented skips {skip_names:?} are not permitted for live qualification; criterion stays Pending"
+        )
+        .into());
+    }
+
+    // 4. Verify all 7 required assertions are present and passed
     let required_assertions = [
         "crash_restart_state_retention",
         "bounded_escalation_and_cleanup",
@@ -806,15 +880,14 @@ pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<Can
         if !assertion.passed {
             return Err(format!("required assertion '{req}' failed").into());
         }
-    }
-
-    // Verify physical host reboot skip is documented
-    let has_reboot_skip = receipt
-        .skips
-        .iter()
-        .any(|s| s.name == "physical_host_reboot" && !s.reason.trim().is_empty());
-    if !has_reboot_skip {
-        return Err("missing required skip documentation for 'physical_host_reboot'".into());
+        if let Some(detail) = &assertion.detail
+            && detail.to_lowercase().contains("non-qualifying")
+        {
+            return Err(format!(
+                "required assertion '{req}' contains non-qualifying measurement: {detail}"
+            )
+            .into());
+        }
     }
 
     Ok(receipt)
