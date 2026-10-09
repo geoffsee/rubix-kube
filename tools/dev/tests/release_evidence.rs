@@ -693,40 +693,55 @@ async fn regenerate_refuses_to_fabricate() {
             .is_err()
     );
 
-    // Even if receipts are present, synthetic reports must be rejected:
-    let receipts_dir = dir.path().join("receipts");
-    fs::create_dir_all(&receipts_dir).unwrap();
-    let inventory =
-        rubix_dev::release_qualification::receipt::load_candidate_inventory_from_release_dir(
-            dir.path(),
-        )
-        .unwrap();
-    for (criterion, slug) in [
-        (6, "conformance-and-soak"),
-        (7, "performance-budgets"),
-        (8, "state-migration"),
-        (10, "artifact-digest-bindings"),
-    ] {
-        let mut payload = sample_payload(criterion);
-        payload.candidate = inventory.to_candidate_identity();
-        let receipt = CandidateReceipt::new_signed(payload).unwrap();
-        let filename =
-            rubix_dev::release_qualification::criteria::receipt_filename(criterion, slug);
-        fs::write(
-            receipts_dir.join(filename),
-            serde_json::to_vec_pretty(&receipt).unwrap(),
-        )
-        .unwrap();
-    }
+    // Set up a candidate with valid files and receipts
+    setup_qualified_candidate(dir.path());
+
+    // Tamper backing report back to synthetic fixture
+    let mut conf: rubix_dev::conformance::QualificationReport = serde_json::from_slice(
+        &fs::read(dir.path().join("conformance-qualification-report.json")).unwrap(),
+    )
+    .unwrap();
+    conf.evidence_kind = "synthetic_fixture".into();
+    fs::write(
+        dir.path().join("conformance-qualification-report.json"),
+        conf.to_json().unwrap(),
+    )
+    .unwrap();
 
     let err = regenerate_release_reports(&root(), dir.path())
         .await
         .unwrap_err();
     assert!(
-        err.to_string().contains("not found in release directory")
-            || err.to_string().contains("synthetic fixture evidence")
-            || err.to_string().contains("absent")
+        err.to_string().contains("synthetic fixture evidence"),
+        "expected error to reject synthetic fixture evidence, got: {err}"
     );
+}
+
+#[tokio::test]
+async fn missing_cell_inventory_or_sha256sums_fails_verification() {
+    let dir = fixture().await;
+    setup_qualified_candidate(dir.path());
+    regenerate_release_reports(&root(), dir.path())
+        .await
+        .unwrap();
+    rehash(dir.path());
+    verify_release_evidence(dir.path()).unwrap();
+
+    let cell_inv_backup = fs::read(dir.path().join("cell-inventory.json")).unwrap();
+
+    // 1. Remove cell-inventory.json
+    fs::remove_file(dir.path().join("cell-inventory.json")).unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "missing cell-inventory.json in release directory"
+    );
+
+    // 2. Restore cell-inventory.json, remove SHA256SUMS
+    fs::write(dir.path().join("cell-inventory.json"), cell_inv_backup).unwrap();
+    fs::remove_file(dir.path().join("SHA256SUMS")).unwrap();
+    let err = verify_release_evidence(dir.path()).unwrap_err();
+    assert_eq!(err.to_string(), "missing SHA256SUMS in release directory");
 }
 
 #[tokio::test]

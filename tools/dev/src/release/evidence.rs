@@ -662,20 +662,24 @@ fn verify_foreign_cell_targets(dir: &Path, cell_inv: &CellInventory) -> Result<(
 /// Release evidence verification fails closed unless bound to validated candidate receipts.
 #[allow(clippy::too_many_lines)]
 pub fn verify_release_evidence(dir: &Path) -> Result<()> {
-    if dir.join("cell-inventory.json").exists() {
-        let cell_inv: CellInventory =
-            serde_json::from_slice(&fs::read(dir.join("cell-inventory.json"))?)?;
-        verify_cell_inventory(&cell_inv)?;
-        verify_foreign_cell_targets(dir, &cell_inv)?;
+    if !dir.join("cell-inventory.json").is_file() {
+        return Err("missing cell-inventory.json in release directory".into());
     }
+    let cell_inv: CellInventory =
+        serde_json::from_slice(&fs::read(dir.join("cell-inventory.json"))?)?;
+    verify_cell_inventory(&cell_inv)?;
+    verify_foreign_cell_targets(dir, &cell_inv)?;
+
     if dir.join("cleanup-receipt.json").exists() {
         let cleanup: CleanupReceipt =
             serde_json::from_slice(&fs::read(dir.join("cleanup-receipt.json"))?)?;
         verify_cleanup_receipt(&cleanup)?;
     }
-    if dir.join("SHA256SUMS").exists() {
-        verify_checksum_inventory(&fs::read_to_string(dir.join("SHA256SUMS"))?, dir)?;
+
+    if !dir.join("SHA256SUMS").is_file() {
+        return Err("missing SHA256SUMS in release directory".into());
     }
+    verify_checksum_inventory(&fs::read_to_string(dir.join("SHA256SUMS"))?, dir)?;
     verify_kubeconfig_dual_format_accommodation()?;
 
     for name in SOURCES {

@@ -308,11 +308,7 @@ fn extract_inputs(record: &serde_json::Value) -> Vec<(String, String)> {
 
 /// Loads candidate inventory directly from a release directory without checking environment overrides.
 pub fn load_candidate_inventory_from_release_dir(root: &Path) -> Result<CandidateInventory> {
-    let cell_inventory_path = if root.join("cell-inventory.json").is_file() {
-        root.join("cell-inventory.json")
-    } else {
-        root.join("docs/release/cell-inventory.json")
-    };
+    let cell_inventory_path = root.join("cell-inventory.json");
     if !cell_inventory_path.is_file() {
         return Err(format!(
             "candidate inventory unavailable: {} not found",
@@ -359,11 +355,7 @@ pub fn load_candidate_inventory_from_release_dir(root: &Path) -> Result<Candidat
     }
 
     // Incorporate SHA256SUMS items as well if present
-    let sums_path = if root.join("SHA256SUMS").is_file() {
-        root.join("SHA256SUMS")
-    } else {
-        root.join("docs/release/SHA256SUMS")
-    };
+    let sums_path = root.join("SHA256SUMS");
     if sums_path.is_file() {
         let sums_bytes = read_bounded(&sums_path, 1024 * 1024)?;
         let sums_text =
@@ -411,7 +403,13 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
         return Ok(inventory);
     }
 
-    load_candidate_inventory_from_release_dir(root)
+    if root.join("cell-inventory.json").is_file() {
+        load_candidate_inventory_from_release_dir(root)
+    } else if root.join("docs/release/cell-inventory.json").is_file() {
+        load_candidate_inventory_from_release_dir(&root.join("docs/release"))
+    } else {
+        load_candidate_inventory_from_release_dir(root)
+    }
 }
 
 fn validate_metadata_and_env(receipt: &CandidateReceipt, expected_criterion: usize) -> Result<()> {
