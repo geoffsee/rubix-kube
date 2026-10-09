@@ -28,14 +28,111 @@ fn version_args(
     Ok((version, directory))
 }
 
+fn handle_capture(args: &[String]) -> Result<(), String> {
+    let mut output_dir: Option<PathBuf> = None;
+    let mut duration_secs: u64 = 10;
+    let mut cycles: u32 = 10;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--output" | "-o" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err("--output requires a directory path".into());
+                }
+                output_dir = Some(PathBuf::from(&args[i]));
+            },
+            "--duration" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err("--duration requires a number of seconds".into());
+                }
+                duration_secs = args[i]
+                    .parse::<u64>()
+                    .map_err(|e| format!("invalid --duration: {e}"))?;
+            },
+            "--cycles" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err("--cycles requires a number of cycles".into());
+                }
+                cycles = args[i]
+                    .parse::<u32>()
+                    .map_err(|e| format!("invalid --cycles: {e}"))?;
+            },
+            other if !other.starts_with('-') && output_dir.is_none() => {
+                output_dir = Some(PathBuf::from(other));
+            },
+            other => return Err(format!("unexpected argument for capture: {other}")),
+        }
+        i += 1;
+    }
+    let output_dir =
+        output_dir.unwrap_or_else(|| PathBuf::from("target/platform-soak-qualification"));
+    let root = rubix_dev::repository_root(&std::env::current_dir().map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())?;
+
+    let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+    let (receipt_path, report_json_path, report_md_path) = rt
+        .block_on(rubix_dev::platform_soak::capture_soak(
+            &output_dir,
+            duration_secs,
+            cycles,
+            &root,
+        ))
+        .map_err(|e| e.to_string())?;
+
+    println!("Platform soak qualification capture completed successfully:");
+    println!("  Receipt:     {}", receipt_path.display());
+    println!("  Report JSON: {}", report_json_path.display());
+    println!("  Report MD:   {}", report_md_path.display());
+    Ok(())
+}
+
+fn handle_verify_receipt(args: &[String]) -> Result<(), String> {
+    let path = match args {
+        [p] => p,
+        [flag, p] if flag == "--input" || flag == "-i" => p,
+        _ => return Err("verify-receipt requires a receipt file or directory path".into()),
+    };
+    let root = rubix_dev::repository_root(&std::env::current_dir().map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())?;
+    let receipt = rubix_dev::platform_soak::verify_soak_receipt(std::path::Path::new(path), &root)
+        .map_err(|e| e.to_string())?;
+    println!(
+        "Platform soak receipt verified successfully:\n\
+         - Criterion: {}\n\
+         - Status: qualified\n\
+         - Candidate revision: {}\n\
+         - Assertions passed: {}\n\
+         - Skips documented: {}",
+        receipt.criterion,
+        receipt.candidate.source_revision,
+        receipt.assertions.len(),
+        receipt.skips.len()
+    );
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
 fn execute(args: &[String]) -> Result<(), String> {
     match args {
         [] => return execute(&["help".into()]),
         [s] if s == "help" || s == "--help" || s == "-h" => {
             println!(
-                "rubix-platform-soak: C14 NOT QUALIFIED\nrun [--version VERSION] (unavailable)\nverify REPORT [--expected-version VERSION] (unavailable)\nfixture [--version VERSION] [--output DIR]\nverify-fixture REPORT [--expected-version VERSION]\nverify-candidate MANIFEST ARTIFACT_DIR --expected-version VERSION\nmatrix | soak | restarts | regressions (synthetic inventories)"
+                "rubix-platform-soak: Platform coverage, soak and Criterion 6 qualification\n\
+                 capture [--output DIR] [--duration SECS] [--cycles N] (Criterion 6 qualification)\n\
+                 verify-receipt RECEIPT_OR_DIR (Criterion 6 verification)\n\
+                 run [--version VERSION] (unavailable)\n\
+                 verify REPORT [--expected-version VERSION] (unavailable)\n\
+                 fixture [--version VERSION] [--output DIR]\n\
+                 verify-fixture REPORT [--expected-version VERSION]\n\
+                 verify-candidate MANIFEST ARTIFACT_DIR --expected-version VERSION\n\
+                 matrix | soak | restarts | regressions (synthetic inventories)"
             );
         },
+        [command, rest @ ..] if command == "capture" => handle_capture(rest)?,
+        [command, rest @ ..] if command == "verify-receipt" => handle_verify_receipt(rest)?,
         [command, rest @ ..] if command == "run" || command == "fixture" => {
             let (version, directory) = version_args(rest, command == "fixture")?;
             let runner = PlatformSoakRunner::new();

@@ -81,3 +81,36 @@ Passing tests provide fixture behavior at their tested revision. Qualification
 still needs exact candidate/artifact hashes, current Linux environment/variant,
 durable commands and raw logs, independent before/after cluster identities and PV
 assertions, failures/skips, and the selected executable recovery evidence above.
+
+## Live qualification harness and Criterion 5 receipt capture
+
+Issue #352 (E36.02) provides executable qualification capture and receipt validation
+for Criterion 5 (`criterion-05-lifecycle-and-storage.json`):
+
+```sh
+# Run candidate-bound lifecycle and recovery qualification
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- capture --output /tmp/recovery-qualification
+
+# Verify generated receipt against canonical schema and Criterion 5 rules
+cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- verify /tmp/recovery-qualification
+```
+
+### Assertions evaluated
+
+The rehearsal executes seven required assertions against live in-process nodes and storage:
+
+1. `crash_restart_state_retention`: verifies state, UID, `resourceVersion`, and PKI preservation after abrupt SIGKILL of an active cluster.
+2. `bounded_escalation_and_cleanup`: verifies fatal adapter failure triggers non-graceful escalation, cleans up state, and permits subsequent clean re-entry within budget.
+3. `datastore_outage_blocking_r2`: proves datastore failure is handled as a blocking fatal failure (`StopCause::Fatal`), explicitly preventing silent graceful degraded operation (resolving historical r2 outage behavior).
+4. `reboot_state_retention`: validates state directory re-entry across complete runtime restart, ensuring zero unowned files.
+5. `wal_torn_write_fails_closed`: proves torn native WAL frames fail closed with diagnostic code `datastore_failure`, and recover cleanly when `dbWalRepair: true`.
+6. `startup_interruption_safe_reentry`: verifies early SIGINT/shutdown during node startup cleanly releases file locks and allows immediate restart.
+7. `ownership_cleanup_isolation`: verifies teardown strictly removes owned directories while leaving foreign host resources untouched.
+
+### Skips and platform bounds
+
+- `physical_host_reboot`: Skipped in disposable test runners lacking bare-metal reboot capabilities; tested via simulated reboot and process restart.
+- `linux_process_group_escalation`: Evaluated on Linux hosts; skipped on macOS/BSD environments where cgroup process tracking is unavailable.
+
+Existing migration failure rehearsal continues to run when `rubix-recovery-rehearsal` is invoked with no arguments or with `migration` or `rehearse` subcommands.
+

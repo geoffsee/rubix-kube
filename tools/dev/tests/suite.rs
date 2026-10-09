@@ -20,6 +20,8 @@ mod perf_harness;
 mod platform_management_cli;
 #[path = "platform_soak.rs"]
 mod platform_soak;
+#[path = "platform_soak_cli.rs"]
+mod platform_soak_cli;
 #[path = "prerequisite_launcher.rs"]
 mod prerequisite_launcher;
 #[path = "provenance.rs"]
@@ -30,6 +32,8 @@ mod publication_cli;
 mod receipt_schema_validation;
 #[path = "recovery_rehearsal.rs"]
 mod recovery_rehearsal;
+#[path = "recovery_rehearsal_cli.rs"]
+mod recovery_rehearsal_cli;
 #[path = "release_evidence.rs"]
 mod release_evidence;
 #[path = "release_qualification.rs"]

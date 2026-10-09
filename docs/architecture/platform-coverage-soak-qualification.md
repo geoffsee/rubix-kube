@@ -65,3 +65,36 @@ are not accepted as evidence by `verify` or by synthetic fixture reports.
 C14 remains blocked pending current-source disposable Linux receipts for all promised
 environments, real 24-hour workloads and settled-memory samples, retained-executable
 restart/recovery and independent state preservation, and historical/per-epic gates.
+
+## Live qualification harness and Criterion 6 receipt capture
+
+Issue #352 (E36.02) provides executable qualification capture and receipt validation
+for Criterion 6 (`criterion-06-conformance-and-soak.json`):
+
+```sh
+# Run candidate-bound soak and platform qualification (supports custom duration/cycles for rehearsal)
+cargo run --locked -p rubix-dev --bin rubix-platform-soak -- capture --output /tmp/soak-qualification --duration 30 --cycles 5
+
+# Full 24-hour soak run (86,400 seconds)
+cargo run --locked -p rubix-dev --bin rubix-platform-soak -- capture --output /tmp/soak-24h --duration 86400
+
+# Verify generated receipt against canonical schema and Criterion 6 rules
+cargo run --locked -p rubix-dev --bin rubix-platform-soak -- verify-receipt /tmp/soak-qualification
+```
+
+### Assertions evaluated
+
+The soak qualification captures live memory samples across repeated workload cycles, validating five core assertions:
+
+1. `soak_memory_growth_bound`: verifies final RSS does not exceed initial RSS by more than 10% (ratio <= 1.10).
+2. `soak_zero_oom_events`: verifies zero out-of-memory terminations occurred during execution.
+3. `soak_zero_crashes`: verifies zero unhandled panics or supervisor aborts.
+4. `soak_zero_unexplained_probe_failures`: verifies readiness probes succeed consistently throughout execution.
+5. `soak_workload_cycles_positive`: verifies at least one workload cycle was executed and verified against the API.
+
+### Partial rehearsal runs
+
+When executed with `--duration < 86400`, the harness records `partial: true` in `soak-report.json` and records a skip for `sustained_24h_soak_completion` ("Observed duration < 86400s; recorded as partial rehearsal run"), ensuring that short rehearsal runs can validate harness mechanics without incorrectly asserting 24-hour qualification. Full 24-hour qualification requires running the full 86,400s duration on a disposable Linux environment.
+
+Existing matrix inspection (`matrix`), synthetic fixture generation (`fixture`), candidate byte verification (`verify-candidate`), and regression checking commands remain supported and unchanged.
+
