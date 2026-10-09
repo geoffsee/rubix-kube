@@ -896,12 +896,15 @@ fn register_container_runtime(
     let containerd_paths = ContainerdPaths::from_base(state_dir);
     let etc_cni = Path::new("/etc/cni/net.d");
     if is_managed {
-        let standard_target = if is_dir_writable(etc_cni) {
-            None
-        } else {
-            Some(containerd_paths.cni_conf_dir.as_path())
-        };
-        rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, standard_target)?;
+        rubix_network::write_managed_cni_config(
+            state_dir,
+            mtu,
+            pod_cidr,
+            Some(containerd_paths.cni_conf_dir.as_path()),
+        )?;
+        if is_dir_writable(etc_cni) {
+            let _ = rubix_network::write_managed_cni_config(state_dir, mtu, pod_cidr, None);
+        }
 
         let image_config =
             ImageImportConfig::from_config(builder.config().config(), &containerd_paths.images_dir);
