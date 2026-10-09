@@ -48,7 +48,7 @@ eliminate thermal, virtualization, and noisy-neighbor variance.
 | **Instance class** | AWS Graviton3 `c7g.2xlarge` (or bare metal) | AWS `c6i.2xlarge` (or bare metal) |
 | **Compute** | 8 vCPU | 8 vCPU |
 | **Memory** | 16 GiB ECC RAM | 16 GiB ECC RAM |
-| **Storage** | Dedicated NVMe SSD (`ext4`) | Dedicated NVMe SSD (`ext4`) |
+| **Storage** | Dedicated provisioned NVMe EBS storage (or local NVMe instance store, `ext4`) | Dedicated provisioned NVMe EBS storage (or local NVMe instance store, `ext4`) |
 | **OS / Distribution** | Ubuntu 24.04 LTS (kernel >= 6.6.x) | Ubuntu 24.04 LTS (kernel >= 6.6.x) |
 | **cgroups mode** | cgroup v2 (`systemd.unified_cgroup_hierarchy=1`) | cgroup v2 (`systemd.unified_cgroup_hierarchy=1`) |
 | **Isolation** | Dedicated disposable runner; no co-located jobs | Dedicated disposable runner; no co-located jobs |
@@ -169,12 +169,11 @@ Create the canonical JSON receipt payload containing:
 
 ### Step 3: Compute Canonical Integrity Hash
 
-Sign the payload using SHA-256 over its canonical serialization:
+Bind the payload using its canonical SHA-256 integrity hash via `CandidateReceipt::new_signed`:
 
 ```bash
-cargo run --locked -p rubix-dev --bin rubix-release -- sign-receipt \
-  --input /tmp/criterion-07-payload.json \
-  --output docs/release/receipts/criterion-07-performance-budgets.json
+# Verify canonical serialization and hash binding using candidate receipt validators:
+cargo test --locked -p rubix-dev --test suite test_criterion_7_performance_budgets_receipt_validation
 ```
 
 ---
