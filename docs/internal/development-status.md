@@ -233,12 +233,12 @@ Evidence: In-process synthetic rehearsal harness implemented covering Option B e
 Next step: Collect genuine upstream Kine SQLite fixtures per tools/parity and execute live Linux migration rehearsal across supported versions on disposable infrastructure; timestamp: 2026-10-09T19:30:00Z
 
 Work item: E36.05 (https://github.com/geoffsee/rubix-kube/issues/355); Parent criteria 1, 3
-Outcome: Pending
-Readiness: Blocked on G04, E32.01, E35.01
+Outcome: Completed
+Readiness: Complete
 Ownership: Unassigned
 Stack: qual/addons-egress-d2k
-Evidence: Addon execution under denied egress, PVC provisioning with pinned BusyBox helper, Portainer object preservation, and live D2K mTLS authentication checks pending.
-Next step: Verify offline addon image acquisition with egress denied, test D2K client certificate authentication positive/negative cases, and validate receipts; timestamp: 2026-10-07T14:15:00Z
+Evidence: Offline addon acquisition, denied egress isolation, LocalPath PVC lifecycle/reclaim, CoreDNS internal resolution, Portainer idempotence, and live D2K mTLS positive/negative authentication verified under candidate-bound receipt docs/release/receipts/criterion-04-addons-and-egress.json and runbook docs/operator/addons-and-egress-runbook.md.
+Next step: None; timestamp: 2026-10-09T17:15:00Z
 
 Work item: E37.01 (https://github.com/geoffsee/rubix-kube/issues/357); Parent criteria 1
 Outcome: Pending

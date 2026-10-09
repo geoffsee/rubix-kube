@@ -100,6 +100,31 @@ fn test_receipt_acceptance_valid_file() -> Result<()> {
 }
 
 #[test]
+fn test_validate_criterion_4_receipt() -> Result<()> {
+    let root = root_dir()?;
+    let receipt_path = root.join("docs/release/receipts/criterion-04-addons-and-egress.json");
+    assert!(
+        receipt_path.is_file(),
+        "criterion 4 receipt must exist on disk"
+    );
+
+    let loaded = receipt::load_and_validate_receipt(&receipt_path, &root, 4)?;
+    assert_eq!(loaded.criterion, 4);
+    assert_eq!(loaded.schema_version, 1);
+    assert!(loaded.verify_integrity().is_ok());
+
+    let status = criteria::check_criterion_4_addons_and_egress(&root)?;
+    assert!(status.satisfied);
+    assert!(
+        status
+            .summary
+            .contains("Satisfied: validated candidate-bound receipt")
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_compute_payload_integrity_hash_deterministic() -> Result<()> {
     let payload = sample_payload(1);
     let hash1 = compute_payload_integrity_hash(&payload)?;
@@ -341,33 +366,56 @@ fn test_criterion_evaluation_satisfied_when_valid() -> Result<()> {
 }
 
 #[test]
-fn test_default_repo_checkout_criteria_all_pending() -> Result<()> {
+fn test_default_repo_checkout_criteria_statuses() -> Result<()> {
     let root = root_dir()?;
     let all = verify_all_criteria(&root)?;
     assert_eq!(all.len(), 11);
     for status in all {
-        assert!(
-            !status.satisfied,
-            "criterion {} must be pending",
-            status.number
-        );
-        assert!(
-            status
-                .summary
-                .contains("Pending: missing receipt 'criterion-")
-        );
-        assert!(
-            status
-                .summary
-                .contains("validated current candidate-bound receipts unavailable")
-        );
+        if status.number == 4 {
+            assert!(status.satisfied, "criterion 4 must be satisfied");
+            assert!(status.summary.contains(
+                "Satisfied: validated candidate-bound receipt 'criterion-04-addons-and-egress.json'"
+            ));
+        } else {
+            assert!(
+                !status.satisfied,
+                "criterion {} must be pending",
+                status.number
+            );
+            assert!(
+                status
+                    .summary
+                    .contains("Pending: missing receipt 'criterion-")
+            );
+            assert!(
+                status
+                    .summary
+                    .contains("validated current candidate-bound receipts unavailable")
+            );
+        }
     }
     let report = audit_repository_metadata(&root)?;
     assert_eq!(report.criteria_reports.len(), 11);
-    assert!(report.criteria_reports.iter().all(|c| !c.satisfied));
+    assert_eq!(
+        report
+            .criteria_reports
+            .iter()
+            .filter(|c| c.satisfied)
+            .count(),
+        1
+    );
+    assert!(
+        report
+            .criteria_reports
+            .iter()
+            .any(|c| c.number == 4 && c.satisfied)
+    );
 
     let err = run_release_qualification(&root).unwrap_err();
-    assert!(err.to_string().contains("RELEASE UNQUALIFIED"));
+    assert!(
+        err.to_string()
+            .contains("RELEASE UNQUALIFIED: 10/11 completion criteria unsatisfied")
+    );
     Ok(())
 }
 

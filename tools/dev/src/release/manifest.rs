@@ -44,6 +44,9 @@ fn regular_files(dir: &Path) -> Result<BTreeSet<String>> {
             let path = entry.path();
             let kind = std::fs::symlink_metadata(&path)?.file_type();
             if kind.is_dir() {
+                if path.file_name().and_then(|n| n.to_str()) == Some("receipts") {
+                    continue;
+                }
                 walk(root, &path, out)?;
             } else if kind.is_file() {
                 let name = path

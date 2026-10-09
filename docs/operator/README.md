@@ -14,6 +14,7 @@ or synthetic fixture tests is not that evidence.
 | [Air-gap delivery](air-gap-deployment.md) | Sixteen declared archive cells, complete asset inventories and separate host/Docker import boundaries. |
 | [External runtimes](external-container-runtime.md) | Local CRI endpoints, cgroup-driver resolution and host ownership. |
 | [Networking and storage](networking-and-storage.md) | Owned CNI/egress identities and LocalPath behavior. |
+| [Addons and egress](addons-and-egress-runbook.md) | Offline addon image acquisition, denied egress isolation, LocalPath PVC lifecycle, and D2K client-certificate mTLS authentication. |
 | [Metrics and CPU management](metrics-and-cpu-management.md) | Metrics listener scope, series and CPU manager configuration. |
 | [Migration and recovery](migration-and-recovery.md) | Unqualified production cutover, actual receipt recovery, backup integrity and remaining evidence. |
 | [Performance budget qualification](performance-budget-qualification-runbook.md) | Matched arm64/amd64 live performance budgets, 24-hour soak, 8 retained processes, and candidate receipt generation. |
