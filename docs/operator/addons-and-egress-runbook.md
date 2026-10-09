@@ -528,9 +528,12 @@ and persistent volume mounts).
    kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=portainer -n portainer --timeout=90s
    ```
 
-2. Record normalized resource snapshots (including spec, data, UID, and creation timestamp, excluding server-generated runtime fields) of all Portainer-owned objects:
+2. Record normalized resource snapshots (including spec, data, UID, and creation timestamp, excluding server-generated runtime fields) of all Portainer-owned objects in a private temporary directory with restrictive permissions:
 
    ```sh
+   umask 077
+   SNAPSHOT_DIR=$(mktemp -d /tmp/portainer-snapshots-XXXXXX)
+
    snapshot_portainer_resources() {
      local target_file="$1"
      local raw_json
@@ -563,7 +566,7 @@ and persistent volume mounts).
      echo "$normalized" > "$target_file"
    }
 
-   snapshot_portainer_resources /tmp/portainer-resources-before.json
+   snapshot_portainer_resources "$SNAPSHOT_DIR/portainer-resources-before.json"
    ```
 
 3. Trigger a second bootstrap execution (e.g., node restart, reconciler re-evaluation, or
@@ -578,12 +581,14 @@ and persistent volume mounts).
 4. Capture resources after second bootstrap and assert zero mutation across specs, data, and identities:
 
    ```sh
-   snapshot_portainer_resources /tmp/portainer-resources-after.json
+   snapshot_portainer_resources "$SNAPSHOT_DIR/portainer-resources-after.json"
 
-   diff -u /tmp/portainer-resources-before.json /tmp/portainer-resources-after.json || {
+   diff -u "$SNAPSHOT_DIR/portainer-resources-before.json" "$SNAPSHOT_DIR/portainer-resources-after.json" || {
      echo "ERROR: Portainer resources mutated across bootstrap executions" >&2
+     rm -rf "$SNAPSHOT_DIR"
      exit 1
    }
+   rm -rf "$SNAPSHOT_DIR"
    echo "Zero Portainer resource mutation verified across idempotent bootstrap"
    ```
 
