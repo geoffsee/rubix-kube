@@ -100,6 +100,71 @@ fn test_receipt_acceptance_valid_file() -> Result<()> {
 }
 
 #[test]
+fn test_criterion_4_fails_closed_when_receipt_absent() -> Result<()> {
+    let root = root_dir()?;
+    let status = criteria::check_criterion_4_addons_and_egress(&root)?;
+    assert!(
+        !status.satisfied,
+        "criterion 4 must fail closed and remain pending without authentic live receipt"
+    );
+    assert!(
+        status
+            .summary
+            .contains("Pending: missing receipt 'criterion-04-addons-and-egress.json'")
+    );
+    assert!(
+        status
+            .summary
+            .contains("validated current candidate-bound receipts unavailable")
+    );
+    Ok(())
+}
+
+#[test]
+fn test_criterion_4_receipt_validation_and_tamper_rejection() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let receipt_path = temp.path().join("criterion-04-addons-and-egress.json");
+    let payload = sample_payload(4);
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    let json_bytes = serde_json::to_vec_pretty(&receipt)?;
+    fs::write(&receipt_path, &json_bytes)?;
+
+    let inventory = sample_inventory();
+    let loaded = receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4)?;
+    assert_eq!(loaded.criterion, 4);
+    assert_eq!(loaded.schema_version, 1);
+    assert!(loaded.verify_integrity().is_ok());
+
+    // Tampered payload fails closed
+    let mut tampered = receipt.clone();
+    tampered.integrity_hash = "0".repeat(64);
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&tampered)?)?;
+    assert!(
+        receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4).is_err()
+    );
+
+    // Nonzero exit code fails closed
+    let mut failed_payload = sample_payload(4);
+    failed_payload.commands[0].exit_code = 1;
+    let failed_receipt = CandidateReceipt::new_signed(failed_payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&failed_receipt)?)?;
+    assert!(
+        receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4).is_err()
+    );
+
+    // Incomplete cleanup fails closed
+    let mut leaked_payload = sample_payload(4);
+    leaked_payload.cleanup.remaining_containers = vec!["leaked-pod".into()];
+    let leaked_receipt = CandidateReceipt::new_signed(leaked_payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&leaked_receipt)?)?;
+    assert!(
+        receipt::load_and_validate_receipt_with_inventory(&receipt_path, &inventory, 4).is_err()
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_compute_payload_integrity_hash_deterministic() -> Result<()> {
     let payload = sample_payload(1);
     let hash1 = compute_payload_integrity_hash(&payload)?;
@@ -367,7 +432,10 @@ fn test_default_repo_checkout_criteria_all_pending() -> Result<()> {
     assert!(report.criteria_reports.iter().all(|c| !c.satisfied));
 
     let err = run_release_qualification(&root).unwrap_err();
-    assert!(err.to_string().contains("RELEASE UNQUALIFIED"));
+    assert!(
+        err.to_string()
+            .contains("RELEASE UNQUALIFIED: 11/11 completion criteria unsatisfied")
+    );
     Ok(())
 }
 

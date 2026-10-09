@@ -234,11 +234,11 @@ Next step: Collect genuine upstream Kine SQLite fixtures per tools/parity and ex
 
 Work item: E36.05 (https://github.com/geoffsee/rubix-kube/issues/355); Parent criteria 1, 3
 Outcome: Pending
-Readiness: Blocked on G04, E32.01, E35.01
+Readiness: In Progress
 Ownership: Unassigned
 Stack: qual/addons-egress-d2k
-Evidence: Addon execution under denied egress, PVC provisioning with pinned BusyBox helper, Portainer object preservation, and live D2K mTLS authentication checks pending.
-Next step: Verify offline addon image acquisition with egress denied, test D2K client certificate authentication positive/negative cases, and validate receipts; timestamp: 2026-10-07T14:15:00Z
+Evidence: Operator runbook docs/operator/addons-and-egress-runbook.md authored covering offline addon acquisition, denied egress isolation, LocalPath PVC lifecycle/reclaim, CoreDNS internal resolution, Portainer idempotence, and live D2K mTLS positive/negative authentication; live Linux qualification and candidate-bound receipt pending and not established. Synthetic receipts are rejected and macOS runs do not qualify Linux behavior; release qualification tests fail closed.
+Next step: Execute live Linux qualification on disposable infrastructure with denied egress and D2K client certificate authentication, capture genuine candidate-bound receipt, and bind to candidate digests; timestamp: 2026-10-09T18:30:00Z
 
 Work item: E37.01 (https://github.com/geoffsee/rubix-kube/issues/357); Parent criteria 1
 Outcome: Pending
