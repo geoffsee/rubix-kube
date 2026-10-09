@@ -1,18 +1,23 @@
-//! Live migration rehearsal and interrupted recovery verification (Epic E36 / Issue #354).
+//! In-process synthetic migration rehearsal harness and interrupted recovery verification (Epic E36 / Issue #354).
 //!
 //! Validates:
-//! 1. Rehearsal across all 6 supported starting versions (`v1.1.8`, `v1.2.0`, `v1.3.0`, `v1.3.1`,
+//! 1. In-process synthetic rehearsal across all 6 supported starting versions (`v1.1.8`, `v1.2.0`, `v1.3.0`, `v1.3.1`,
 //!    `v1.3.2`, `v1.3.3`) and both kubeconfig formats (`Yaml` and `Json`) (12 combinations).
-//! 2. Preservation of PKI trust roots (CA fingerprint SHA-256), client credentials (`verify_cert_chain`),
+//! 2. Preservation of PKI trust roots (CA fingerprint SHA-256 against baseline), client credentials (`verify_cert_chain`),
 //!    static pod manifests, and PV storage data and permissions.
-//! 3. Measured downtime in milliseconds around the quiesce-to-start window.
+//! 3. Measured in-process conversion elapsed time in milliseconds around the conversion window
+//!    (does NOT represent live cluster downtime).
 //! 4. Option B in-process control plane alignment per `experiments/component-boundary/ADR.md`
-//!    (amended 2026-10-07): proof of raw `SQLite` non-interchangeability (`assert_raw_sqlite_rejected`)
+//!    (amended 2026-10-07): assert raw `SQLite` non-interchangeability (`assert_raw_sqlite_rejected`)
 //!    and explicit export/import into native `RUBXSNP1` format via `export_kine_to_rubix_datastore`.
 //! 5. Emits mandatory scope marker:
 //!    `E36.04:scope: Option B in-process control plane selected (ADR amended 2026-10-07); raw SQLite non-interchangeable; explicit export/import required`
 //! 6. Capability to build and generate candidate-bound Criterion 8 qualification receipts without
 //!    tampering with repository release integrity or committing unexecuted receipts to `docs/release/receipts/`.
+//!
+//! NOTE: The generated Kine records are synthetic test fixtures that do NOT satisfy `tools/parity`'s
+//! requirement for genuine pinned upstream Kine `SQLite` fixtures. Live Linux rehearsal with genuine
+//! upstream databases from the 6 `KubeSolo` versions remains pending.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -42,7 +47,11 @@ use crate::state_transition::workloads::assert_static_manifests_preserved;
 /// Mandatory scope marker for Option B control plane migration under E36.04.
 pub const OPTION_B_SCOPE_MARKER: &str = "E36.04:scope: Option B in-process control plane selected (ADR amended 2026-10-07); raw SQLite non-interchangeable; explicit export/import required";
 
-/// Generates realistic Kine records for a starting version, including active and tombstoned keys.
+/// Generates synthetic Kine records for a starting version, including active and tombstoned keys.
+///
+/// NOTE: These records are synthetic test fixtures and do NOT satisfy `tools/parity`'s
+/// requirement for genuine pinned upstream Kine `SQLite` fixtures. Live Linux rehearsal with
+/// genuine upstream databases from the 6 `KubeSolo` versions remains pending.
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn realistic_kine_records(version: SupportedStartingVersion) -> Vec<KineRecord> {
@@ -242,7 +251,7 @@ pub fn realistic_kine_records(version: SupportedStartingVersion) -> Vec<KineReco
     ]
 }
 
-/// Comprehensive outcome of a single live migration rehearsal run.
+/// Comprehensive outcome of a single in-process synthetic migration rehearsal run.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct LiveMigrationResult {
@@ -257,14 +266,19 @@ pub struct LiveMigrationResult {
     pub revisions_monotonic: bool,
     pub keys_identical: bool,
     pub ca_fingerprint_sha256: String,
+    pub ca_fingerprint_preserved: bool,
     pub admin_identity_verified: bool,
     pub static_manifests_preserved: bool,
     pub pv_storage_preserved: bool,
+    pub conversion_elapsed_ms: u64,
+    /// Deprecated alias for `conversion_elapsed_ms`. Does NOT represent live cluster downtime.
     pub downtime_ms: u64,
     pub overall_success: bool,
 }
 
-/// Executes a live Go-to-Rust migration rehearsal on a disposable installation.
+pub type SyntheticMigrationResult = LiveMigrationResult;
+
+/// Executes an in-process synthetic Go-to-Rust migration rehearsal on a disposable installation.
 pub async fn run_live_migration_rehearsal(
     version: SupportedStartingVersion,
     kcfg_format: KubeconfigFormat,
@@ -281,7 +295,7 @@ pub async fn run_live_migration_rehearsal(
         }
     }
 
-    // 2. Prepare realistic Kine SQLite records
+    // 2. Prepare synthetic Kine SQLite records
     let source_records = realistic_kine_records(version);
     let mut active_before = BTreeMap::new();
     let mut source_max_revision: u64 = 0;
@@ -296,14 +310,14 @@ pub async fn run_live_migration_rehearsal(
         }
     }
 
-    // 3. Setup raw SQLite database to prove Option B non-interchangeability
+    // 3. Setup raw SQLite database to verify Option B rejection by design
     let raw_sqlite_dir = install.dir.path().join("raw-sqlite-test");
     fs::create_dir_all(&raw_sqlite_dir)?;
     let raw_sqlite_file = raw_sqlite_dir.join("snapshot.db");
     fs::write(&raw_sqlite_file, b"SQLite format 3\0fake-kine-sqlite-state")?;
 
-    // 4. Measure downtime around quiesce-to-start window
-    let quiesce_instant = Instant::now();
+    // 4. Measure in-process conversion elapsed time around conversion window
+    let conversion_instant = Instant::now();
 
     // 4a. Assert raw SQLite is rejected by rubix-datastore
     let raw_sqlite_rejected = assert_raw_sqlite_rejected(&raw_sqlite_file);
@@ -336,12 +350,15 @@ pub async fn run_live_migration_rehearsal(
         }
     }
 
-    // 4e. Quiesce-to-start window ends (new service ready)
-    let downtime_ms = u64::try_from(quiesce_instant.elapsed().as_millis()).unwrap_or(u64::MAX);
+    // 4e. Conversion and store verification completes (in-process timing; not live cluster downtime)
+    let conversion_elapsed_ms =
+        u64::try_from(conversion_instant.elapsed().as_millis()).unwrap_or(u64::MAX);
 
     // 5. PKI Verification: Cluster CA fingerprint & admin client identity
     let ca_path = install.data_path.join("pki/ca.crt");
     let ca_fingerprint_sha256 = compute_file_sha256(&ca_path)?;
+    let baseline_ca_sha256 = crate::sha256(install.baseline_ca_cert_pem.as_bytes());
+    let ca_fingerprint_preserved = baseline_ca_sha256 == ca_fingerprint_sha256;
     let ca_pem = fs::read(&ca_path)?;
 
     let kubeconfig_bytes = fs::read(&install.kubeconfig_path)?;
@@ -358,12 +375,15 @@ pub async fn run_live_migration_rehearsal(
     let pv_storage_preserved =
         assert_pv_storage_preserved(&install.storage_baseline_dir, &install.storage_dir).is_ok();
 
+    let conversion_elapsed_bounded = conversion_elapsed_ms < 60_000;
     let overall_success = raw_sqlite_rejected
         && revisions_monotonic
         && keys_identical
+        && ca_fingerprint_preserved
         && admin_identity_verified
         && static_manifests_preserved
-        && pv_storage_preserved;
+        && pv_storage_preserved
+        && conversion_elapsed_bounded;
 
     Ok(LiveMigrationResult {
         starting_version: version,
@@ -377,12 +397,39 @@ pub async fn run_live_migration_rehearsal(
         revisions_monotonic,
         keys_identical,
         ca_fingerprint_sha256,
+        ca_fingerprint_preserved,
         admin_identity_verified,
         static_manifests_preserved,
         pv_storage_preserved,
-        downtime_ms,
+        conversion_elapsed_ms,
+        downtime_ms: conversion_elapsed_ms,
         overall_success,
     })
+}
+
+pub use run_live_migration_rehearsal as run_synthetic_migration_rehearsal;
+
+fn kernel_release() -> String {
+    if let Ok(content) = fs::read_to_string("/proc/sys/kernel/osrelease") {
+        let trimmed = content.trim();
+        if !trimmed.is_empty() {
+            return trimmed.to_string();
+        }
+    }
+    std::process::Command::new("uname")
+        .arg("-r")
+        .output()
+        .ok()
+        .and_then(|out| {
+            if out.status.success() {
+                let trimmed = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if !trimmed.is_empty() {
+                    return Some(trimmed);
+                }
+            }
+            None
+        })
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 /// Builds an unsigned Criterion 8 qualification receipt payload bound to a candidate inventory.
@@ -402,7 +449,7 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
     let host = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
     let environment = EnvironmentInfo {
         host,
-        kernel: "linux-kernel-verified".into(),
+        kernel: kernel_release(),
         runner: "rubix-recovery-rehearsal".into(),
     };
 
@@ -412,16 +459,15 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
         payload_digests: inventory.payload_digests.clone(),
     };
 
-    let total_duration_ms: u64 = live_results.iter().map(|r| r.downtime_ms).sum();
     let commands = vec![CommandExecution {
         command: vec![
             "rubix-recovery-rehearsal".into(),
-            "--rehearse-live-migration".into(),
+            "--rehearse-synthetic-migration".into(),
         ],
         exit_code: 0,
         stdout_sha256: None,
         stderr_sha256: None,
-        duration_ms: Some(total_duration_ms),
+        duration_ms: None,
     }];
 
     let mut assertions = Vec::new();
@@ -455,7 +501,7 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
         });
         assertions.push(AssertionRecord {
             name: format!("{prefix}_ca_fingerprint_verified"),
-            passed: true,
+            passed: r.ca_fingerprint_preserved,
             detail: Some(r.ca_fingerprint_sha256.clone()),
         });
         assertions.push(AssertionRecord {
@@ -475,13 +521,13 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
         });
         assertions.push(AssertionRecord {
             name: format!("{prefix}_downtime_measured"),
-            passed: true,
-            detail: Some(format!("downtime_ms={}", r.downtime_ms)),
+            passed: r.conversion_elapsed_ms < 60_000,
+            detail: Some(format!("conversion_elapsed_ms={}", r.conversion_elapsed_ms)),
         });
     }
 
     let cleanup = CleanupInventory {
-        cleaned_paths: vec!["/var/lib/kubesolo/backups".into()],
+        cleaned_paths: vec![],
         remaining_containers: vec![],
         remaining_images: vec![],
         status: "complete".into(),
@@ -495,7 +541,7 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
     ReceiptPayload {
         schema_version: CURRENT_SCHEMA_VERSION,
         criterion: 8,
-        description: "Rehearse the live Go-to-Rust Kine SQLite migration and interrupted recovery across supported versions (Issue #354)".into(),
+        description: "Rehearse in-process synthetic Go-to-Rust Kine SQLite migration and interrupted recovery across supported versions (Issue #354)".into(),
         candidate,
         environment,
         commands,

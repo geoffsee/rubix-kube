@@ -229,8 +229,8 @@ Outcome: Pending
 Readiness: Blocked on G01, G04, E35.01
 Ownership: Unassigned
 Stack: migration/live-rehearsal
-Evidence: Live Go-to-Rust migration rehearsal on Linux not yet performed; Kine SQLite backup, Option B explicit export/import state preservation, rollback, and interrupted-stage recovery pending.
-Next step: Execute live migration and interrupted recovery rehearsal across supported starting versions, measuring downtime and validating receipts; timestamp: 2026-10-07T14:15:00Z
+Evidence: In-process synthetic rehearsal harness implemented covering Option B explicit export/import and interrupted recovery; genuine pinned upstream Kine SQLite fixtures and live Linux migration rehearsal across 6 KubeSolo starting versions remain pending.
+Next step: Collect genuine upstream Kine SQLite fixtures per tools/parity and execute live Linux migration rehearsal across supported versions on disposable infrastructure; timestamp: 2026-10-09T19:30:00Z
 
 Work item: E36.05 (https://github.com/geoffsee/rubix-kube/issues/355); Parent criteria 1, 3
 Outcome: Pending

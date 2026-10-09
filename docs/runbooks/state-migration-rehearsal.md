@@ -1,7 +1,14 @@
 # State Migration & Recovery Rehearsal Runbook
 
-This runbook guides operators through running the live Go-to-Rust Kine SQLite migration
-and interrupted recovery rehearsals under Epic E36 / Issue #354.
+This runbook guides operators and developers through running the in-process synthetic Go-to-Rust Kine SQLite migration
+and interrupted recovery rehearsal harness under Epic E36 / Issue #354.
+
+> [!NOTE]
+> **Synthetic Rehearsal Boundary**: The current harness executes in-process using generated synthetic Kine records
+> (`realistic_kine_records()`). These generated records are synthetic fixtures and do **not** satisfy `tools/parity`'s
+> requirement for genuine pinned upstream Kine SQLite fixtures. Live Linux rehearsal with authentic upstream Kine
+> SQLite databases across the 6 supported KubeSolo versions remains pending. In-process conversion timing (~5–30ms in memory)
+> is measured around the in-memory harness conversion window and must **not** be cited as live cluster downtime.
 
 ## Overview & Architecture Boundary
 
@@ -21,7 +28,7 @@ E36.04:scope: Option B in-process control plane selected (ADR amended 2026-10-07
 
 See [State Transitions Architecture](../architecture/state-transitions.md) for background and contracts.
 
-## Rehearsal Matrix
+## In-Process Synthetic Rehearsal Matrix
 
 The rehearsal exercises all 6 supported starting versions across both kubeconfig formats (12 matrix runs):
 
@@ -37,13 +44,13 @@ The rehearsal exercises all 6 supported starting versions across both kubeconfig
 ## Verified Invariants
 
 For every matrix combination, the rehearsal verifies:
-1. **Option B Raw SQLite Rejection**: Verifies `assert_raw_sqlite_rejected` fails when presented with a raw SQLite database header.
+1. **Option B Raw SQLite Rejection**: Verifies `assert_raw_sqlite_rejected` rejects a raw SQLite database header by design.
 2. **Native Snapshot Conversion**: Converts Kine records into `RUBXSNP1` format and restores into `DatastoreEngine`.
 3. **Revision Monotonicity & Key Integrity**: Verifies `restored_rev >= source_max_rev` and all active keys match expected payloads.
-4. **PKI Trust Roots**: Verifies cluster CA SHA-256 fingerprint preservation and cryptographic x509 chain verification for client credentials.
+4. **PKI Trust Roots**: Verifies cluster CA SHA-256 fingerprint preservation against baseline and cryptographic x509 chain verification for client credentials.
 5. **Static Manifests**: Bit-for-bit retention of static pod manifests.
 6. **Persistent Volume Storage**: Preserves PV file trees, byte checksums, and Unix permissions.
-7. **Downtime Measurement**: Measures duration in milliseconds (`Instant::now()`) around the quiesce-to-start window.
+7. **In-Process Conversion Timing**: Measures in-memory conversion elapsed time in milliseconds (`Instant::now()`) around the transition window (does not represent live cluster downtime).
 
 In addition, interrupted recovery is rehearsed across all 11 lifecycle stages, and fail-closed refusal is verified for missing, corrupted, and symlinked backups.
 
@@ -51,7 +58,7 @@ In addition, interrupted recovery is rehearsed across all 11 lifecycle stages, a
 
 ### 1. Verification Run
 
-To run the complete failure rehearsal and live migration matrix:
+To run the complete failure rehearsal and in-process synthetic migration matrix:
 
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal
@@ -59,14 +66,14 @@ cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal
 
 ### 2. Candidate Qualification Receipt Generation
 
-On disposable Linux test infrastructure, operators can generate a signed Criterion 8 candidate qualification receipt:
+On disposable Linux test infrastructure, operators can generate a tamper-evident Criterion 8 candidate qualification receipt with a SHA-256 payload integrity hash:
 
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- --generate-receipt /tmp/criterion-08-receipt.json
 ```
 
 > [!IMPORTANT]
-> In accordance with repository release qualification policy, candidate qualification receipts must NOT be committed to `docs/release/receipts/` in the repository checkout. Criterion 8 must remain `satisfied: false` until formal release qualification on qualified infrastructure.
+> In accordance with repository release qualification policy, candidate qualification receipts must NOT be committed to `docs/release/receipts/` in the repository checkout. Criterion 8 must remain `Pending` (`satisfied: false`) until formal release qualification on authentic disposable Linux infrastructure with genuine upstream Kine SQLite databases.
 
 ## Operator Recovery Procedure
 

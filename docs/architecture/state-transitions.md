@@ -164,10 +164,19 @@ cargo test --locked -p rubix-dev --test suite recovery_rehearsal::
 cargo test --locked -p rubixctl --test suite upgrade_review::
 ```
 
-## Live Go-to-Rust Migration & Interrupted Recovery Rehearsal (Epic E36 / Issue #354)
+## In-Process Synthetic Go-to-Rust Migration & Interrupted Recovery Rehearsal (Epic E36 / Issue #354)
 
-Issue #354 rehearses live Go-to-Rust Kine SQLite migration, downtime measurement,
-and interrupted recovery across all supported versions under the selected Option B architecture.
+Issue #354 implements an in-process synthetic rehearsal harness for Go-to-Rust Kine SQLite migration
+logic, conversion elapsed timing, and interrupted recovery across all supported versions under the
+selected Option B architecture.
+
+> [!NOTE]
+> **Synthetic Rehearsal Boundary**: The migration tests execute in-process using generated synthetic
+> records (`realistic_kine_records()`). These generated records are synthetic fixtures and do **not**
+> satisfy `tools/parity`'s requirement for genuine pinned upstream Kine SQLite databases from historical
+> KubeSolo installations. Live Linux rehearsal with authentic upstream Kine SQLite databases across
+> the 6 supported KubeSolo versions remains pending, and in-process conversion timing (~5–30ms in memory)
+> must **not** be cited as live cluster downtime.
 
 ### Option B Architectural Invariant & Mandatory Scope Marker
 
@@ -180,41 +189,43 @@ Every execution emits the mandatory scope marker:
 E36.04:scope: Option B in-process control plane selected (ADR amended 2026-10-07); raw SQLite non-interchangeable; explicit export/import required
 ```
 
-### Live Rehearsal Matrix
+### In-Process Synthetic Rehearsal Matrix
 
-The rehearsal tests all 6 supported starting versions across both kubeconfig formats (12 matrix combinations):
+The in-process synthetic rehearsal tests all 6 supported starting versions across both kubeconfig formats (12 matrix combinations):
 
-| Starting Version | Format | Raw SQLite Rejection | Export/Import | Monotonic Revisions | Keys Match | PKI & Client Verified | Static Manifests | PV Storage | Downtime Measured |
+| Starting Version | Format | Raw SQLite Rejection | Export/Import | Monotonic Revisions | Keys Match | PKI & Client Verified | Static Manifests | PV Storage | In-Process Elapsed (ms) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `v1.1.8` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.1.8` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.2.0` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.2.0` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.0` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.0` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.1` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.1` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.2` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.2` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.3` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
-| `v1.3.3` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | `Instant::now()` ms |
+| `v1.1.8` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.1.8` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.2.0` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.2.0` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.0` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.0` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.1` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.1` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.2` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.2` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.3` | YAML | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
+| `v1.3.3` | JSON | Verified | `RUBXSNP1` | Verified | Verified | Verified | Preserved | Preserved | In-process timing |
 
 ### Verified Invariants
 
-1. **Option B Raw SQLite Rejection**: `assert_raw_sqlite_rejected` fails when presenting SQLite headers (`SQLite format 3\0`) to `rubix-datastore`.
+1. **Option B Raw SQLite Rejection**: `assert_raw_sqlite_rejected` verifies that presenting raw SQLite headers (`SQLite format 3\0`) to `rubix-datastore` is rejected by design.
 2. **Explicit Export/Import**: `export_kine_to_rubix_datastore` writes `RUBXSNP1` snapshot, revision, and metadata, which `DatastoreEngine::restore_backup` restores into the active engine directory.
 3. **Monotonic Revisions & Key Integrity**: `restored_rev >= source_max_rev` and active keys match bit-for-bit while tombstones remain deleted.
 4. **PKI Trust Roots & Client Credentials**: Cluster CA SHA-256 fingerprint preservation and x509 cryptographic certificate chain verification for admin credentials.
 5. **Workloads & PV Storage**: Static manifests and persistent volume data, checksums, and Unix permissions are preserved.
-6. **Downtime Measurement**: Quiesce-to-start downtime is measured in milliseconds around the service transition window.
+6. **In-Process Transition Timing**: In-process conversion elapsed time is measured in milliseconds around the in-memory conversion window (does not represent measured live cluster downtime).
 7. **Interrupted Recovery & Refusal**: Recovery across all 11 stages and fail-closed refusal on missing, corrupt, or symlinked backups.
 
 ### Candidate Qualification Receipt Generation
 
-The rehearsal binary supports generating signed candidate qualification receipts bound to candidate inventory:
+The rehearsal binary supports generating candidate qualification receipts with a SHA-256 payload integrity hash bound to candidate inventory for disposable Linux test execution:
 ```sh
 cargo run --locked -p rubix-dev --bin rubix-recovery-rehearsal -- --generate-receipt /tmp/criterion-08-receipt.json
 ```
 
-See [State Migration Rehearsal Runbook](../runbooks/state-migration-rehearsal.md) for detailed operator instructions.
+Criterion 8 remains `Pending` and fail-closed: receipts generated by the in-process synthetic harness are for verification and dry-run validation only and must NOT be committed to `docs/release/receipts/`. Live qualification requires execution on disposable Linux infrastructure with genuine upstream Kine SQLite fixtures.
+
+See [State Migration Rehearsal Runbook](../runbooks/state-migration-rehearsal.md) for operator and developer instructions.
 

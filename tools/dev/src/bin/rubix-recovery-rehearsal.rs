@@ -1,26 +1,32 @@
-//! CLI verification tool for migration failure rehearsal, operator recovery, and live migration qualification (Epic E30 / Issue #125 / Epic E36 / Issue #354).
+//! CLI verification tool for migration failure rehearsal, operator recovery, and in-process synthetic migration rehearsal (Epic E30 / Issue #125 / Epic E36 / Issue #354).
 //!
 //! Rehearses:
 //! 1. Operator recovery and rollback across supported starting versions (v1.1.8, v1.2.0, v1.3.0, v1.3.1-v1.3.3)
 //!    and interrupted transition stages on disposable installations.
-//! 2. Live Go-to-Rust Kine `SQLite` migration across all 6 supported starting versions and both kubeconfig formats.
-//! 3. Proves Option B in-process control plane boundary per ADR (amended 2026-10-07):
+//! 2. In-process synthetic Go-to-Rust Kine `SQLite` migration across all 6 supported starting versions and both kubeconfig formats.
+//! 3. Option B in-process control plane boundary per ADR (amended 2026-10-07):
 //!    raw `SQLite` rejection, explicit export/import into native RUBXSNP1 format, monotonic revisions.
 //! 4. Preservation of PKI CA fingerprint, admin x509 chain, static manifests, and PV storage.
-//! 5. Downtime measurement in milliseconds across the quiesce-to-start window.
-//! 6. Optional generation of Criterion 8 candidate qualification receipt.
+//! 5. In-process conversion elapsed time measurement in milliseconds across the conversion window
+//!    (does NOT represent live cluster downtime).
+//! 6. Optional generation of Criterion 8 candidate qualification receipt (fails closed in checkout).
+//!
+//! NOTE: Generated Kine records are synthetic test fixtures and do NOT satisfy `tools/parity`'s requirement
+//! for genuine pinned upstream Kine `SQLite` fixtures. Live Linux rehearsal with genuine upstream databases
+//! from the 6 `KubeSolo` versions remains pending.
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use rubix_dev::release_qualification::receipt::{CandidateReceipt, load_candidate_inventory};
 use rubix_dev::state_transition::recovery::{
     BackupCondition, RehearsalScenario, TransitionStage, run_rehearsal,
     version_recovery_limitations,
 };
 use rubix_dev::state_transition::versions::SupportedStartingVersion;
 use rubix_dev::state_transition::{
-    KubeconfigFormat, LiveMigrationResult, OPTION_B_SCOPE_MARKER, generate_criterion_8_receipt,
-    run_live_migration_rehearsal,
+    KubeconfigFormat, OPTION_B_SCOPE_MARKER, SyntheticMigrationResult,
+    build_criterion_8_receipt_payload_with_inventory, run_synthetic_migration_rehearsal,
 };
 
 struct Args {
@@ -41,7 +47,7 @@ fn parse_args() -> Result<Args, String> {
                     .ok_or_else(|| "--generate-receipt requires a path argument".to_string())?;
                 generate_receipt = Some(PathBuf::from(path));
             },
-            "--rehearse-live-migration" => {
+            "--rehearse-synthetic-migration" | "--rehearse-live-migration" => {
                 // Explicit flag supported for symmetry with receipt command execution record
             },
             "-h" | "--help" => {
@@ -176,16 +182,19 @@ fn rehearse_unavailable_backup_refusal() -> Result<(), String> {
     Ok(())
 }
 
-async fn rehearse_live_migrations() -> Result<Vec<LiveMigrationResult>, String> {
-    println!("--- Rehearsing Live Go-to-Rust Migration Matrix (Issue #354) ---");
+async fn rehearse_synthetic_migrations() -> Result<Vec<SyntheticMigrationResult>, String> {
+    println!("--- Rehearsing In-Process Synthetic Go-to-Rust Migration Matrix (Issue #354) ---");
+    println!(
+        "  NOTE: Generated records are synthetic fixtures; live Linux rehearsal with genuine upstream Kine SQLite databases remains pending."
+    );
     let mut results = Vec::new();
 
     for ver in SupportedStartingVersion::ALL {
         for format in [KubeconfigFormat::Yaml, KubeconfigFormat::Json] {
-            let result = run_live_migration_rehearsal(ver, format)
+            let result = run_synthetic_migration_rehearsal(ver, format)
                 .await
                 .map_err(|e| {
-                    format!("live migration rehearsal failed for {ver} ({format}): {e}")
+                    format!("synthetic migration rehearsal failed for {ver} ({format}): {e}")
                 })?;
 
             if !result.overall_success {
@@ -193,7 +202,7 @@ async fn rehearse_live_migrations() -> Result<Vec<LiveMigrationResult>, String> 
             }
 
             println!(
-                "  [ok] Version={:<6} Format={:<4} -> Raw SQLite rejected={}, Monotonic revs={}/{}, Keys match={}, PKI CA sha256={}..., Admin cert verified={}, Static manifests={}, PV storage={}, Downtime={}ms",
+                "  [ok] Version={:<6} Format={:<4} -> Raw SQLite rejected={}, Monotonic revs={}/{}, Keys match={}, PKI CA sha256={}..., CA preserved={}, Admin cert verified={}, Static manifests={}, PV storage={}, Elapsed={}ms",
                 result.starting_version.as_str(),
                 result.kubeconfig_format,
                 result.raw_sqlite_rejected,
@@ -201,10 +210,11 @@ async fn rehearse_live_migrations() -> Result<Vec<LiveMigrationResult>, String> 
                 result.source_max_revision,
                 result.keys_identical,
                 &result.ca_fingerprint_sha256[..12],
+                result.ca_fingerprint_preserved,
                 result.admin_identity_verified,
                 result.static_manifests_preserved,
                 result.pv_storage_preserved,
-                result.downtime_ms,
+                result.conversion_elapsed_ms,
             );
 
             results.push(result);
@@ -219,26 +229,35 @@ async fn run() -> Result<(), String> {
     let args = parse_args()?;
     if args.show_help {
         println!(
-            "Usage: rubix-recovery-rehearsal [--rehearse-live-migration] [--generate-receipt <PATH>]"
+            "Usage: rubix-recovery-rehearsal [--rehearse-synthetic-migration] [--generate-receipt <PATH>]"
         );
         return Ok(());
     }
 
     println!(
-        "=== Rubix Migration Failure, Operator Recovery & Live Rehearsal (Issues #125, #354) ===\n"
+        "=== Rubix Migration Failure, Operator Recovery & In-Process Synthetic Rehearsal (Issues #125, #354) ===\n"
     );
     println!("{OPTION_B_SCOPE_MARKER}\n");
 
     rehearse_supported_versions()?;
     rehearse_interrupted_stages()?;
     rehearse_unavailable_backup_refusal()?;
-    let live_results = rehearse_live_migrations().await?;
+    let synthetic_results = rehearse_synthetic_migrations().await?;
 
     if let Some(receipt_path) = args.generate_receipt {
         println!("--- Generating Candidate-Bound Criterion 8 Qualification Receipt ---");
-        let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))
-            .map_err(|e| format!("failed to find repository root: {e}"))?;
-        let receipt = generate_criterion_8_receipt(&root, &live_results)
+        let inventory = if std::env::var_os("RUBIX_CANDIDATE_INVENTORY_PATH").is_some() {
+            load_candidate_inventory(Path::new(""))
+                .map_err(|e| format!("failed to load candidate inventory from environment: {e}"))?
+        } else {
+            let root = rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))
+                .map_err(|e| format!("failed to find repository root: {e}"))?;
+            load_candidate_inventory(&root)
+                .map_err(|e| format!("failed to load candidate inventory: {e}"))?
+        };
+        let payload =
+            build_criterion_8_receipt_payload_with_inventory(&inventory, &synthetic_results);
+        let receipt = CandidateReceipt::new_with_integrity_hash(payload)
             .map_err(|e| format!("failed to generate criterion 8 receipt: {e}"))?;
         let receipt_json = serde_json::to_string_pretty(&receipt)
             .map_err(|e| format!("failed to serialize receipt: {e}"))?;
@@ -257,7 +276,9 @@ async fn run() -> Result<(), String> {
         println!();
     }
 
-    println!("All live migration and operator recovery rehearsal checks passed successfully.");
+    println!(
+        "All in-process synthetic migration and operator recovery rehearsal checks passed successfully."
+    );
     println!(
         "Synthetic and in-process checks passed; candidate qualification receipt remains pending live Linux infrastructure execution."
     );

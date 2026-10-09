@@ -372,14 +372,14 @@ fn test_option_b_scope_marker_and_sqlite_rejection() {
 }
 
 #[tokio::test]
-async fn test_live_migration_matrix_all_12_combinations() {
-    let mut total_downtime_ms = 0;
+async fn test_synthetic_migration_matrix_all_12_combinations() {
+    let mut total_elapsed_ms = 0;
 
     for ver in SupportedStartingVersion::ALL {
         for format in [KubeconfigFormat::Yaml, KubeconfigFormat::Json] {
             let res = run_live_migration_rehearsal(ver, format)
                 .await
-                .expect("live migration rehearsal must succeed");
+                .expect("synthetic migration rehearsal must succeed");
 
             assert!(
                 res.overall_success,
@@ -395,16 +395,19 @@ async fn test_live_migration_matrix_all_12_combinations() {
             assert_eq!(res.source_records_count, 10);
             assert_eq!(res.active_keys_count, 8);
             assert!(!res.ca_fingerprint_sha256.is_empty());
+            assert!(res.ca_fingerprint_preserved);
             assert!(res.admin_identity_verified);
             assert!(res.static_manifests_preserved);
             assert!(res.pv_storage_preserved);
-            assert!(res.downtime_ms < 60_000);
+            assert!(res.conversion_elapsed_ms < 60_000);
 
-            total_downtime_ms += res.downtime_ms;
+            total_elapsed_ms += res.conversion_elapsed_ms;
         }
     }
 
-    println!("Total measured downtime across 12 live migration runs: {total_downtime_ms}ms");
+    println!(
+        "Total measured conversion elapsed time across 12 synthetic migration runs: {total_elapsed_ms}ms (in-memory; does not represent live cluster downtime)"
+    );
 }
 
 #[tokio::test]
