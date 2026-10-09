@@ -94,7 +94,12 @@ where
     }
 }
 
-fn test_config(dir: &Path, node_ip: &str, debug: bool, wal_repair: bool) -> ValidatedConfig {
+fn test_config(
+    dir: &Path,
+    node_ip: &str,
+    debug: bool,
+    wal_repair: bool,
+) -> Result<ValidatedConfig> {
     let yaml = format!(
         r#"
 path: "{}"
@@ -118,15 +123,16 @@ metrics:
         debug,
         wal_repair
     );
-    resolve_layers(
-        Some(decode(&yaml).expect("decode")),
+    let decoded = decode(&yaml).map_err(|e| format!("decode config: {e}"))?;
+    let resolved = resolve_layers(
+        Some(decoded),
         &BTreeMap::new(),
         &ExplicitFlags::default(),
         EnvironmentMode::Include,
         &HostContext::detect(),
     )
-    .expect("resolve layers")
-    .validated
+    .map_err(|e| format!("resolve config layers: {e}"))?;
+    Ok(resolved.validated)
 }
 
 async fn wait_for_api_serving(client: &KubernetesApiClient, timeout: Duration) -> Result<()> {
@@ -199,7 +205,7 @@ async fn capture_recovery_qualification_async(
     let crash_state = crash_temp.path().join("crash-state");
     fs::create_dir_all(&crash_state).map_err(|e| format!("mkdir: {e}"))?;
 
-    let config1 = test_config(&crash_state, "127.0.0.1", false, false);
+    let config1 = test_config(&crash_state, "127.0.0.1", false, false)?;
     let runtime1 = NodeRuntime::from_config(config1.clone())
         .map_err(|e| format!("NodeRuntime initial assembly: {e}"))?;
     let client1 = runtime1
@@ -280,7 +286,7 @@ async fn capture_recovery_qualification_async(
     let esc_state = esc_temp.path().join("esc-state");
     fs::create_dir_all(&esc_state).map_err(|e| format!("mkdir: {e}"))?;
 
-    let esc_config = test_config(&esc_state, "127.0.0.1", false, false);
+    let esc_config = test_config(&esc_state, "127.0.0.1", false, false)?;
     let (esc_kill_tx, esc_kill_rx) = tokio::sync::oneshot::channel::<()>();
     let (started_tx, started_rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -365,7 +371,7 @@ async fn capture_recovery_qualification_async(
     let ds_outage_state = ds_outage_temp.path().join("outage-state");
     fs::create_dir_all(&ds_outage_state).map_err(|e| format!("mkdir: {e}"))?;
 
-    let ds_outage_cfg = test_config(&ds_outage_state, "127.0.0.1", false, false);
+    let ds_outage_cfg = test_config(&ds_outage_state, "127.0.0.1", false, false)?;
     let (kill_trigger_tx, kill_trigger_rx) = tokio::sync::oneshot::channel::<()>();
     let (ds_started_tx, ds_started_rx) = tokio::sync::oneshot::channel::<()>();
 
@@ -435,7 +441,7 @@ async fn capture_recovery_qualification_async(
     let reboot_state = reboot_temp.path().join("reboot-state");
     fs::create_dir_all(&reboot_state).map_err(|e| format!("mkdir: {e}"))?;
 
-    let reboot_cfg = test_config(&reboot_state, "127.0.0.1", false, false);
+    let reboot_cfg = test_config(&reboot_state, "127.0.0.1", false, false)?;
     let reboot_rt1 =
         NodeRuntime::from_config(reboot_cfg.clone()).map_err(|e| format!("reboot rt1: {e}"))?;
     let reboot_client1 = reboot_rt1
@@ -490,7 +496,7 @@ async fn capture_recovery_qualification_async(
     let wal_state = wal_temp.path().join("wal-state");
     fs::create_dir_all(&wal_state).map_err(|e| format!("mkdir: {e}"))?;
 
-    let wal_cfg_no_repair = test_config(&wal_state, "127.0.0.1", false, false);
+    let wal_cfg_no_repair = test_config(&wal_state, "127.0.0.1", false, false)?;
     let ds_cfg = DatastoreConfig::new(wal_state.join("datastore"));
     {
         let (engine, _) =
@@ -532,7 +538,7 @@ async fn capture_recovery_qualification_async(
     }
 
     // Startup with opt-in repair MUST recover
-    let wal_cfg_with_repair = test_config(&wal_state, "127.0.0.1", false, true);
+    let wal_cfg_with_repair = test_config(&wal_state, "127.0.0.1", false, true)?;
     let repair_res = NodeRuntime::from_config(wal_cfg_with_repair);
     if let Err(e) = repair_res {
         return Err(format!("expected recovery when dbWalRepair is true, got error: {e}").into());
@@ -550,7 +556,7 @@ async fn capture_recovery_qualification_async(
     let int_state = int_temp.path().join("int-state");
     fs::create_dir_all(&int_state).map_err(|e| format!("mkdir: {e}"))?;
 
-    let int_cfg = test_config(&int_state, "127.0.0.1", false, false);
+    let int_cfg = test_config(&int_state, "127.0.0.1", false, false)?;
     let (int_stop1, int_recv1) = stop_channel();
     let int_rt1 = NodeRuntime::from_config(int_cfg.clone()).map_err(|e| format!("int rt1: {e}"))?;
     let int_h1 = tokio::spawn(int_rt1.run(int_recv1));

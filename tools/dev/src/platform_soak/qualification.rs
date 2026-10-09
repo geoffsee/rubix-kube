@@ -91,7 +91,7 @@ fn sample_settled_rss() -> u64 {
     64 * 1024 * 1024
 }
 
-fn test_config(dir: &Path, node_ip: &str) -> ValidatedConfig {
+fn test_config(dir: &Path, node_ip: &str) -> Result<ValidatedConfig> {
     let yaml = format!(
         r#"
 path: "{}"
@@ -113,15 +113,16 @@ metrics:
         dir.display(),
         node_ip
     );
-    resolve_layers(
-        Some(decode(&yaml).expect("decode")),
+    let decoded = decode(&yaml).map_err(|e| format!("decode config: {e}"))?;
+    let resolved = resolve_layers(
+        Some(decoded),
         &BTreeMap::new(),
         &ExplicitFlags::default(),
         EnvironmentMode::Include,
         &HostContext::detect(),
     )
-    .expect("resolve layers")
-    .validated
+    .map_err(|e| format!("resolve config layers: {e}"))?;
+    Ok(resolved.validated)
 }
 
 async fn wait_for_api_serving(client: &KubernetesApiClient, timeout: Duration) -> Result<()> {
@@ -221,7 +222,7 @@ pub async fn capture_soak(
     let cleaned_paths = vec![data_dir.display().to_string()];
 
     let node_ip = "127.0.0.1";
-    let config = test_config(&data_dir, node_ip);
+    let config = test_config(&data_dir, node_ip)?;
 
     let (stop_tx, stop_rx) = stop_channel();
     let runtime =
