@@ -363,11 +363,11 @@ impl ConformanceInventory {
     }
 
     /// Validate that a given test name matches the focus filter and does not match any skip filter.
-    pub fn is_selected(test_name: &str) -> bool {
-        let focus_re = Regex::new(CONFORMANCE_FOCUS_REGEX).expect("valid focus regex");
-        let skip_re = Regex::new(CONFORMANCE_SKIP_REGEX).expect("valid skip regex");
+    pub fn is_selected(test_name: &str) -> Result<bool, regex::Error> {
+        let focus_re = Regex::new(CONFORMANCE_FOCUS_REGEX)?;
+        let skip_re = Regex::new(CONFORMANCE_SKIP_REGEX)?;
 
-        focus_re.is_match(test_name) && !skip_re.is_match(test_name)
+        Ok(focus_re.is_match(test_name) && !skip_re.is_match(test_name))
     }
 }
 
@@ -376,25 +376,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_selected_inventory_matches_focus_regex() {
+    fn test_selected_inventory_matches_focus_regex() -> Result<(), regex::Error> {
         let tests = ConformanceInventory::selected_tests();
         assert_eq!(tests.len(), 24);
 
         for t in &tests {
             assert!(
-                ConformanceInventory::is_selected(&t.name),
+                ConformanceInventory::is_selected(&t.name)?,
                 "Test '{}' must be selected by focus regex",
                 t.name
             );
         }
+
+        Ok(())
     }
 
     #[test]
-    fn test_exclusions_are_all_rejected_by_skip_regex() {
+    fn test_exclusions_are_all_rejected_by_skip_regex() -> Result<(), regex::Error> {
         let exclusions = ConformanceInventory::explicit_exclusions();
         assert_eq!(exclusions.len(), 7);
 
-        let skip_re = Regex::new(CONFORMANCE_SKIP_REGEX).unwrap();
+        let skip_re = Regex::new(CONFORMANCE_SKIP_REGEX)?;
         for ex in &exclusions {
             assert!(
                 skip_re.is_match(&ex.pattern),
@@ -402,6 +404,8 @@ mod tests {
                 ex.pattern
             );
         }
+
+        Ok(())
     }
 
     #[test]

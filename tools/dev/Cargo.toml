@@ -28,6 +28,7 @@ rubix-config = { version = "=0.1.0", path = "../../crates/rubix-config" }
 rubix-controller = { version = "=0.1.0", path = "../../crates/rubix-controller" }
 rubix-datastore = { version = "=0.1.0", path = "../../crates/rubix-datastore" }
 rubix-dns = { version = "=0.1.0", path = "../../crates/rubix-dns" }
+rubix-network = { version = "=0.1.0", path = "../../crates/rubix-network" }
 rubix-pki = { version = "=0.1.0", path = "../../crates/rubix-pki" }
 rubix-storage = { version = "=0.1.0", path = "../../crates/rubix-storage" }
 rubix-supervisor = { version = "=0.1.0", path = "../../crates/rubix-supervisor" }
