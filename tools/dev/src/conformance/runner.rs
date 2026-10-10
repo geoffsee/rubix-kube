@@ -1,7 +1,7 @@
 //! Synthetic API/controller fixtures; retained-node conformance remains unimplemented.
 
 use std::collections::BTreeMap;
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
@@ -325,7 +325,7 @@ impl QualificationRunner {
     pub fn new() -> Self {
         Self {
             node_name: "rubix-node-qual".to_string(),
-            node_ip: "192.0.2.10".parse().expect("valid IP"),
+            node_ip: std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 0, 2, 10)),
             lb_ip: "192.0.2.10".to_string(),
         }
     }
@@ -548,7 +548,7 @@ impl QualificationRunner {
     async fn run_smoke_dns(&self, client: &KubernetesApiClient) -> Result<SmokeReport, String> {
         let start = Instant::now();
         // Setup kubernetes.default Service in default namespace
-        let svc_ip: Ipv4Addr = "10.43.0.1".parse().unwrap();
+        let svc_ip = std::net::Ipv4Addr::new(10, 43, 0, 1);
         let k8s_svc = json!({
             "apiVersion": "v1",
             "kind": "Service",
@@ -1370,7 +1370,7 @@ impl QualificationRunner {
             .map_err(|e| e.to_string())?;
 
         // 1. In tier5-a: Deployment web, Service web (ClusterIP), Service web-lb (LoadBalancer)
-        let svc_ip: Ipv4Addr = "10.43.50.10".parse().unwrap();
+        let svc_ip = std::net::Ipv4Addr::new(10, 43, 50, 10);
         let svc_clusterip = json!({
             "apiVersion": "v1",
             "kind": "Service",
@@ -2149,7 +2149,7 @@ impl QualificationRunner {
                 Ok(fetched["spec"]["replicas"] == 1)
             },
             "k8s-conf-dns-01" => {
-                let svc_ip: Ipv4Addr = "10.43.0.123".parse().unwrap();
+                let svc_ip = std::net::Ipv4Addr::new(10, 43, 0, 123);
                 let svc = json!({
                     "apiVersion": "v1",
                     "kind": "Service",
@@ -2760,6 +2760,10 @@ impl QualificationRunner {
             host: detect_host(),
             kernel: detect_kernel(),
             runner: detect_runner(),
+            os: None,
+            arch: None,
+            execution_mode: None,
+            duration_seconds: None,
         };
 
         let timestamps = ReceiptTimestamps {

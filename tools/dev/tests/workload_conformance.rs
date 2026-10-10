@@ -227,7 +227,7 @@ fn test_conformance_inventory_and_exclusion_audit() {
     // Verify focus filter matches all selected tests
     for test in &inventory {
         assert!(
-            ConformanceInventory::is_selected(&test.name),
+            ConformanceInventory::is_selected(&test.name).unwrap(),
             "Test {} should be selected by regex",
             test.id
         );
@@ -247,12 +247,12 @@ fn test_conformance_inventory_and_exclusion_audit() {
     // Verify hidden skips detection
     let invalid_test_name = "Test with hidden skip [Conformance]";
     // Without focus keyword it should not be selected
-    assert!(!ConformanceInventory::is_selected(invalid_test_name));
+    assert!(!ConformanceInventory::is_selected(invalid_test_name).unwrap());
 
     let valid_name = "[sig-api-machinery] ConfigMap should be created [Conformance]";
-    assert!(ConformanceInventory::is_selected(valid_name));
+    assert!(ConformanceInventory::is_selected(valid_name).unwrap());
 
     // But if test name contains [Disruptive], it should NOT be selected
     let disruptive_name = "[sig-api-machinery] ConfigMap [Disruptive] [Conformance]";
-    assert!(!ConformanceInventory::is_selected(disruptive_name));
+    assert!(!ConformanceInventory::is_selected(disruptive_name).unwrap());
 }
