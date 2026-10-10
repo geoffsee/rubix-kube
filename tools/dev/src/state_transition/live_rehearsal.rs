@@ -452,6 +452,10 @@ pub fn build_criterion_8_receipt_payload_with_inventory(
         host,
         kernel: kernel_release(),
         runner: "rubix-recovery-rehearsal".into(),
+        os: Some(std::env::consts::OS.to_string()),
+        arch: Some(std::env::consts::ARCH.to_string()),
+        execution_mode: Some("synthetic_rehearsal".into()),
+        duration_seconds: Some(now.saturating_sub(started_at_secs)),
     };
 
     let candidate = CandidateIdentity {

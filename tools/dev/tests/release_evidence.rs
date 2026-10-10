@@ -409,6 +409,10 @@ fn sample_payload(criterion: usize) -> ReceiptPayload {
             host: "linux-arm64".into(),
             kernel: "6.6.137".into(),
             runner: "github-hosted-ubuntu-24.04-arm".into(),
+            os: Some("linux".into()),
+            arch: Some("arm64".into()),
+            execution_mode: Some("live_node".into()),
+            duration_seconds: Some(60),
         },
         commands: vec![CommandExecution {
             command: vec!["rubix-kube".into(), "--check".into()],
