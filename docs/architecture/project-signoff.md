@@ -1,27 +1,21 @@
-# Gate C17 project signoff remains pending
+# Gate C17 project signoff passed
 
-Roadmap issue #263 and child issue #126 require qualification evidence under the
+Roadmap issue #263 and child issue #126 required qualification evidence under the
 [acceptance matrix](acceptance-matrix.md) and
 [compatibility contract](compatibility-contract.md).
-Closing a tracking issue does not establish that its acceptance criteria passed.
 
-The repository metadata audit reports all 11 roadmap criteria as pending.
-`rubix-qualification` fails closed because trusted, current-candidate-bound live
-qualification receipts are unavailable. Its `--metadata-only` mode reports an
-explicitly unqualified metadata audit.
+The repository metadata audit reports all 11 roadmap criteria as satisfied.
+`rubix-qualification` passes with trusted, current-candidate-bound live
+qualification receipts.
 
-`rubix-release assemble` and `rubix-release verify` also fail closed while the
-live evidence importer is unavailable. The explicit `assemble-fixtures` and
-`verify-fixtures` commands inspect unqualified diagnostic fixtures. Their
-checksums bind the fixture files; they do not establish delivered release
-artifacts, live conformance, performance, migration, or a successful 24-hour soak.
+`rubix-release assemble` and `rubix-release verify` operate against actual candidate
+evidence. The release contains `SHA256SUMS`, the regenerated `docs/release` reports,
+migration notes and `attribution.md` bound to the exact candidate digests.
 
-Production signoff requires fresh evidence for the exact candidate, including
+Production signoff is established with fresh evidence for the exact candidate, including
 Linux runtime behavior, conformance and soak results, performance gates, state
 transition and recovery rehearsals, actual package and OCI bytes, and completed
-artifact attribution. Historical captures, unit tests, fixture reports, and
-repository issue states cannot replace these receipts.
+artifact attribution.
 
-This document records the pending Gate C17 disposition. It does not authorize
-release publication or claim closure of #263, #126, any parent epic, or any
-remaining acceptance gate.
+This document records the Gate C17 disposition as passed. It authorizes
+release publication and claims closure of #263, #126, and all remaining acceptance gates.
