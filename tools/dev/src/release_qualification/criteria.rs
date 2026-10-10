@@ -401,15 +401,15 @@ pub fn check_criterion_10_artifact_digest_bindings_with_candidate(
 }
 
 /// Evaluates cryptographic artifact digest bindings and provenance qualification evidence.
-pub fn check_criterion_10_artifact_digest_bindings(root: &std::path::Path) -> anyhow::Result<CriterionStatus> {
+pub fn check_criterion_10_artifact_digest_bindings(root: &Path) -> Result<CriterionStatus> {
     check_criterion_10_artifact_digest_bindings_with_candidate(root, None)
 }
 
 /// Evaluates operator handoff rehearsal and release publication qualification evidence with optional candidate directory.
 pub fn check_criterion_11_operator_handoff_with_candidate(
-    root: &std::path::Path,
-    candidate_dir: Option<&std::path::Path>,
-) -> anyhow::Result<CriterionStatus> {
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
     let slug = "operator-handoff";
     let receipt_path = resolve_receipt_path_with_candidate(root, candidate_dir, 11, slug);
     let filename = receipt_path
@@ -446,13 +446,6 @@ pub fn check_criterion_11_operator_handoff_with_candidate(
             summary: format!("Rejected: {filename} failed candidate verification ({})", e),
         }),
     }
-}
-
-/// Evaluates operator handoff rehearsal and release publication qualification evidence.
-pub fn check_criterion_11_operator_handoff(root: &std::path::Path) -> anyhow::Result<CriterionStatus> {
-    check_criterion_11_operator_handoff_with_candidate(root, None)
-}
-)
 }
 
 /// Evaluates operator handoff rehearsal and release publication qualification evidence.
