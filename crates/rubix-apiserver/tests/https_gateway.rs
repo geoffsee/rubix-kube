@@ -486,3 +486,261 @@ async fn watch_streams_events_and_unacknowledged_pods_delete_at_once() {
     stop_handle.stop();
     supervisor.await.unwrap();
 }
+
+#[tokio::test]
+#[allow(clippy::too_many_lines)]
+async fn table_accept_formatting_for_all_supported_resources() {
+    let dir = TempDir::new().unwrap();
+    let (addr, stop_handle, supervisor) = spawn_gateway(&dir).await;
+    let pki = dir.path().join("pki");
+
+    // 1. Namespaces (meta.k8s.io;v=1)
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces",
+        "application/json;as=Table;g=meta.k8s.io;v=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;g=meta.k8s.io;v=1"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"apiVersion\":\"meta.k8s.io/v1\""), "{body}");
+    assert!(body.contains("\"name\":\"Name\""), "{body}");
+    assert!(body.contains("\"name\":\"Status\""), "{body}");
+    assert!(body.contains("\"name\":\"Age\""), "{body}");
+    assert!(body.contains("\"cells\":[\"default\",\"Active\""), "{body}");
+
+    // Single namespace (v=v1;g=meta.k8s.io)
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default",
+        "application/json;as=Table;v=v1;g=meta.k8s.io",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;v=v1;g=meta.k8s.io"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"cells\":[\"default\",\"Active\""), "{body}");
+
+    // 2. Services
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "POST",
+        "/api/v1/namespaces/default/services",
+        r#"{"apiVersion":"v1","kind":"Service","metadata":{"name":"web"},"spec":{"type":"ClusterIP","clusterIP":"10.43.0.1","ports":[{"port":80,"protocol":"TCP"}]}}"#,
+    )
+    .await;
+    assert_eq!(status, 201, "{body}");
+
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/services",
+        "application/json;as=Table;g=meta.k8s.io;v=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;g=meta.k8s.io;v=1"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"name\":\"Name\""), "{body}");
+    assert!(body.contains("\"name\":\"Type\""), "{body}");
+    assert!(body.contains("\"name\":\"Cluster-IP\""), "{body}");
+    assert!(body.contains("\"name\":\"External-IP\""), "{body}");
+    assert!(body.contains("\"name\":\"Port(s)\""), "{body}");
+    assert!(body.contains("\"name\":\"Age\""), "{body}");
+    assert!(
+        body.contains("\"cells\":[\"web\",\"ClusterIP\",\"10.43.0.1\",\"<none>\",\"80/TCP\""),
+        "{body}"
+    );
+
+    // Single service (v=v1;g=meta.k8s.io)
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/services/web",
+        "application/json;as=Table;v=v1;g=meta.k8s.io",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(
+        body.contains("\"cells\":[\"web\",\"ClusterIP\",\"10.43.0.1\",\"<none>\",\"80/TCP\""),
+        "{body}"
+    );
+
+    // 3. ConfigMaps
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "POST",
+        "/api/v1/namespaces/default/configmaps",
+        r#"{"apiVersion":"v1","kind":"ConfigMap","metadata":{"name":"app-config"},"data":{"key1":"val1","key2":"val2"}}"#,
+    )
+    .await;
+    assert_eq!(status, 201, "{body}");
+
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/configmaps",
+        "application/json;as=Table;g=meta.k8s.io;v=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;g=meta.k8s.io;v=1"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"name\":\"Name\""), "{body}");
+    assert!(body.contains("\"name\":\"Data\""), "{body}");
+    assert!(body.contains("\"name\":\"Age\""), "{body}");
+    assert!(body.contains("\"cells\":[\"app-config\",\"2\""), "{body}");
+
+    // Single configmap
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/configmaps/app-config",
+        "application/json;as=Table;v=v1;g=meta.k8s.io",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"cells\":[\"app-config\",\"2\""), "{body}");
+
+    // 4. Secrets
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "POST",
+        "/api/v1/namespaces/default/secrets",
+        r#"{"apiVersion":"v1","kind":"Secret","metadata":{"name":"app-secret"},"type":"Opaque","data":{"token":"YWRtaW4="}}"#,
+    )
+    .await;
+    assert_eq!(status, 201, "{body}");
+
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/secrets",
+        "application/json;as=Table;g=meta.k8s.io;v=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;g=meta.k8s.io;v=1"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"name\":\"Name\""), "{body}");
+    assert!(body.contains("\"name\":\"Type\""), "{body}");
+    assert!(body.contains("\"name\":\"Data\""), "{body}");
+    assert!(body.contains("\"name\":\"Age\""), "{body}");
+    assert!(
+        body.contains("\"cells\":[\"app-secret\",\"Opaque\",\"1\""),
+        "{body}"
+    );
+
+    // Single secret
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/secrets/app-secret",
+        "application/json;as=Table;v=v1;g=meta.k8s.io",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(
+        body.contains("\"cells\":[\"app-secret\",\"Opaque\",\"1\""),
+        "{body}"
+    );
+
+    // 5. Pods (with g=meta.k8s.io;v=1)
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "POST",
+        "/api/v1/namespaces/default/pods",
+        r#"{"apiVersion":"v1","kind":"Pod","metadata":{"name":"table-pod"},"spec":{"containers":[{"name":"c1","image":"localhost/hello:latest"}]}}"#,
+    )
+    .await;
+    assert_eq!(status, 201, "{body}");
+
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods",
+        "application/json;as=Table;g=meta.k8s.io;v=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;g=meta.k8s.io;v=1"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"cells\":[\"table-pod\""), "{body}");
+
+    // Single pod
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods/table-pod",
+        "application/json;as=Table;g=meta.k8s.io;v=1",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"cells\":[\"table-pod\""), "{body}");
+
+    stop_handle.stop();
+    supervisor.await.unwrap();
+}

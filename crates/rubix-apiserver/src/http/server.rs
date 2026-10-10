@@ -227,11 +227,16 @@ fn outcome_to_response(
 ) -> Response<Body> {
     match outcome.body {
         Payload::Json(body) => {
-            if path.resource == "pods" && accept.is_some_and(|a| a.contains("as=Table")) {
+            if outcome.status.is_success()
+                && is_table_request(accept)
+                && supports_table(path)
+                && body.get("kind").and_then(Value::as_str) != Some("Status")
+            {
+                let content_type = table_content_type(accept);
                 json_response_with_type(
                     outcome.status,
-                    "application/json;as=Table;v=v1;g=meta.k8s.io",
-                    &pod_to_table(&body),
+                    content_type,
+                    &resource_to_table(&path.resource, &body),
                 )
             } else {
                 json_response(outcome.status, &body)
@@ -789,6 +794,16 @@ fn format_age(created: u64, now: u64) -> String {
     }
 }
 
+fn item_age(item: &Value, now: u64) -> String {
+    item.pointer("/metadata/creationTimestamp")
+        .and_then(Value::as_str)
+        .and_then(crate::time::parse_rfc3339_seconds)
+        .map_or_else(
+            || "<unknown>".to_string(),
+            |created| format_age(created, now),
+        )
+}
+
 fn pod_row(pod: &Value, now: u64) -> Value {
     let name = pod
         .pointer("/metadata/name")
@@ -836,14 +851,7 @@ fn pod_row(pod: &Value, now: u64) -> Value {
                 .sum()
         });
 
-    let age = pod
-        .pointer("/metadata/creationTimestamp")
-        .and_then(Value::as_str)
-        .and_then(crate::time::parse_rfc3339_seconds)
-        .map_or_else(
-            || "<unknown>".to_string(),
-            |created| format_age(created, now),
-        );
+    let age = item_age(pod, now);
 
     json!({
         "cells": [name, ready_str, status_str, restarts.to_string(), age],
@@ -851,9 +859,231 @@ fn pod_row(pod: &Value, now: u64) -> Value {
     })
 }
 
-fn pod_to_table(value: &Value) -> Value {
-    let now = crate::time::now_unix();
-    let (metadata, pods) = if value.get("kind").and_then(Value::as_str) == Some("PodList") {
+fn namespace_row(namespace: &Value, now: u64) -> Value {
+    let name = namespace
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let status = namespace
+        .pointer("/status/phase")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Active");
+    let age = item_age(namespace, now);
+
+    json!({
+        "cells": [name, status, age],
+        "object": namespace
+    })
+}
+
+fn service_row(service: &Value, now: u64) -> Value {
+    let name = service
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let svc_type = service
+        .pointer("/spec/type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("ClusterIP");
+    let cluster_ip = service
+        .pointer("/spec/clusterIP")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("<none>");
+    let external_ip = if svc_type == "ExternalName" {
+        service
+            .pointer("/spec/externalName")
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("<none>")
+            .to_string()
+    } else if let Some(ips) = service
+        .pointer("/spec/externalIPs")
+        .and_then(Value::as_array)
+        .filter(|a| !a.is_empty())
+    {
+        let ip_strs: Vec<&str> = ips.iter().filter_map(Value::as_str).collect();
+        if ip_strs.is_empty() {
+            "<none>".to_string()
+        } else {
+            ip_strs.join(",")
+        }
+    } else if let Some(ing) = service
+        .pointer("/status/loadBalancer/ingress")
+        .and_then(Value::as_array)
+        .filter(|a| !a.is_empty())
+    {
+        let list: Vec<&str> = ing
+            .iter()
+            .filter_map(|i| {
+                i.get("ip")
+                    .and_then(Value::as_str)
+                    .or_else(|| i.get("hostname").and_then(Value::as_str))
+            })
+            .collect();
+        if list.is_empty() {
+            "<none>".to_string()
+        } else {
+            list.join(",")
+        }
+    } else {
+        "<none>".to_string()
+    };
+
+    let ports = service
+        .pointer("/spec/ports")
+        .and_then(Value::as_array)
+        .map_or_else(
+            || "<none>".to_string(),
+            |ports| {
+                if ports.is_empty() {
+                    "<none>".to_string()
+                } else {
+                    ports
+                        .iter()
+                        .map(|p| {
+                            let port = p.get("port").and_then(Value::as_i64).unwrap_or(0);
+                            let proto = p.get("protocol").and_then(Value::as_str).unwrap_or("TCP");
+                            if let Some(node_port) = p
+                                .get("nodePort")
+                                .and_then(Value::as_i64)
+                                .filter(|&np| np > 0)
+                            {
+                                format!("{port}:{node_port}/{proto}")
+                            } else {
+                                format!("{port}/{proto}")
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",")
+                }
+            },
+        );
+
+    let age = item_age(service, now);
+
+    json!({
+        "cells": [name, svc_type, cluster_ip, external_ip, ports, age],
+        "object": service
+    })
+}
+
+fn configmap_row(cm: &Value, now: u64) -> Value {
+    let name = cm
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let data_count = cm
+        .get("data")
+        .and_then(Value::as_object)
+        .map_or(0, serde_json::Map::len)
+        + cm.get("binaryData")
+            .and_then(Value::as_object)
+            .map_or(0, serde_json::Map::len);
+    let age = item_age(cm, now);
+
+    json!({
+        "cells": [name, data_count.to_string(), age],
+        "object": cm
+    })
+}
+
+fn secret_row(secret: &Value, now: u64) -> Value {
+    let name = secret
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let secret_type = secret
+        .get("type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Opaque");
+    let data_count = secret
+        .get("data")
+        .and_then(Value::as_object)
+        .map_or(0, serde_json::Map::len)
+        + secret
+            .get("stringData")
+            .and_then(Value::as_object)
+            .map_or(0, serde_json::Map::len);
+    let age = item_age(secret, now);
+
+    json!({
+        "cells": [name, secret_type, data_count.to_string(), age],
+        "object": secret
+    })
+}
+
+fn col(
+    name: &'static str,
+    col_type: &'static str,
+    format: &'static str,
+    desc: &'static str,
+) -> Value {
+    json!({
+        "name": name,
+        "type": col_type,
+        "format": format,
+        "description": desc,
+        "priority": 0
+    })
+}
+
+fn resource_column_definitions(resource: &str) -> Vec<Value> {
+    match resource {
+        "namespaces" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Status", "string", "", "Namespace status"),
+            col("Age", "string", "", "Namespace age"),
+        ],
+        "services" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Type", "string", "", "Service type"),
+            col("Cluster-IP", "string", "", "Cluster IP"),
+            col("External-IP", "string", "", "External IP"),
+            col("Port(s)", "string", "", "Service ports"),
+            col("Age", "string", "", "Service age"),
+        ],
+        "configmaps" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Data", "string", "", "ConfigMap data"),
+            col("Age", "string", "", "ConfigMap age"),
+        ],
+        "secrets" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Type", "string", "", "Secret type"),
+            col("Data", "string", "", "Secret data"),
+            col("Age", "string", "", "Secret age"),
+        ],
+        _ => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Ready", "string", "", "Readiness of containers"),
+            col("Status", "string", "", "Pod status"),
+            col("Restarts", "string", "", "Number of restarts"),
+            col("Age", "string", "", "Pod age"),
+        ],
+    }
+}
+
+fn resource_row(resource: &str, item: &Value, now: u64) -> Value {
+    match resource {
+        "namespaces" => namespace_row(item, now),
+        "services" => service_row(item, now),
+        "configmaps" => configmap_row(item, now),
+        "secrets" => secret_row(item, now),
+        _ => pod_row(item, now),
+    }
+}
+
+fn extract_table_items(value: &Value) -> (Value, Vec<Value>) {
+    let is_list = value
+        .get("kind")
+        .and_then(Value::as_str)
+        .is_some_and(|k| k.ends_with("List"))
+        || value.get("items").and_then(Value::as_array).is_some();
+    if is_list {
         (
             value.get("metadata").cloned().unwrap_or_else(|| json!({})),
             value
@@ -869,53 +1099,46 @@ fn pod_to_table(value: &Value) -> Value {
             }),
             vec![value.clone()],
         )
-    };
+    }
+}
 
-    let rows: Vec<Value> = pods.iter().map(|pod| pod_row(pod, now)).collect();
+fn resource_to_table(resource: &str, value: &Value) -> Value {
+    let now = crate::time::now_unix();
+    let (metadata, items) = extract_table_items(value);
+    let rows: Vec<Value> = items
+        .iter()
+        .map(|item| resource_row(resource, item, now))
+        .collect();
 
     json!({
         "kind": "Table",
         "apiVersion": "meta.k8s.io/v1",
         "metadata": metadata,
-        "columnDefinitions": [
-            {
-                "name": "Name",
-                "type": "string",
-                "format": "name",
-                "description": "Resource name",
-                "priority": 0
-            },
-            {
-                "name": "Ready",
-                "type": "string",
-                "format": "",
-                "description": "Readiness of containers",
-                "priority": 0
-            },
-            {
-                "name": "Status",
-                "type": "string",
-                "format": "",
-                "description": "Pod status",
-                "priority": 0
-            },
-            {
-                "name": "Restarts",
-                "type": "string",
-                "format": "",
-                "description": "Number of restarts",
-                "priority": 0
-            },
-            {
-                "name": "Age",
-                "type": "string",
-                "format": "",
-                "description": "Pod age",
-                "priority": 0
-            }
-        ],
+        "columnDefinitions": resource_column_definitions(resource),
         "rows": rows
     })
+}
+
+fn is_table_request(accept: Option<&str>) -> bool {
+    accept.is_some_and(|a| a.to_ascii_lowercase().contains("as=table"))
+}
+
+fn table_content_type(accept: Option<&str>) -> &'static str {
+    if let Some(accept) = accept {
+        let lower = accept.to_ascii_lowercase();
+        if lower.contains("g=meta.k8s.io;v=1") || lower.contains("v=1;g=meta.k8s.io") {
+            return "application/json;as=Table;g=meta.k8s.io;v=1";
+        }
+    }
+    "application/json;as=Table;v=v1;g=meta.k8s.io"
+}
+
+fn supports_table(path: &ResourcePath) -> bool {
+    path.subresource.is_none()
+        && matches!(
+            path.resource.as_str(),
+            "pods" | "namespaces" | "services" | "configmaps" | "secrets"
+        )
 }
 
 fn text_response(status: StatusCode, body: String) -> Response<Body> {
