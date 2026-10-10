@@ -443,7 +443,7 @@ pub fn check_criterion_11_operator_handoff_with_candidate(
             number: 11,
             name: "Operator Documentation & Release Qualification",
             satisfied: false,
-            summary: format!("Rejected: {filename} failed candidate verification ({})", e),
+            summary: format!("Rejected: {filename} failed candidate verification ({e})"),
         }),
     }
 }
