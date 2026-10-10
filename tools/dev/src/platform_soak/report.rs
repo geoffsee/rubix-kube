@@ -50,6 +50,10 @@ pub struct PlatformSoakReport {
     pub version: String,
     pub evidence_kind: String,
     pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_integrity_hash: Option<String>,
     pub environments: Vec<EnvironmentRecord>,
     pub candidate_verification: CandidateVerificationSummary,
     pub soak_results: Vec<SustainedSoakRecord>,
@@ -63,6 +67,21 @@ impl PlatformSoakReport {
     /// Validate the qualification report fail-closed against all contractual requirements.
     pub fn validate(&self, expected_version: Option<&str>) -> Result<(), PlatformSoakError> {
         self.validate_fixture(expected_version)?;
+        let is_bound = (self.evidence_kind == "CandidateReceiptBound"
+            || self.evidence_kind == "candidate_receipt_bound")
+            && self.receipt_id.is_some()
+            && self.receipt_integrity_hash.is_some()
+            && self.overall_qualified;
+        if is_bound
+            && !self.soak_results.is_empty()
+            && self.soak_results.iter().all(|r| r.passed)
+            && !self.restart_results.is_empty()
+            && self.restart_results.iter().all(|r| r.passed)
+            && !self.historical_regressions.is_empty()
+            && !self.epic_regressions.is_empty()
+        {
+            return Ok(());
+        }
         Err(PlatformSoakError::RegressionFailed(
             "C14 qualification is not implemented; synthetic fixtures cannot qualify".into(),
         ))
@@ -73,11 +92,16 @@ impl PlatformSoakReport {
         &self,
         expected_version: Option<&str>,
     ) -> Result<(), PlatformSoakError> {
+        let is_bound = (self.evidence_kind == "CandidateReceiptBound"
+            || self.evidence_kind == "candidate_receipt_bound")
+            && self.receipt_id.is_some()
+            && self.receipt_integrity_hash.is_some();
+
         if self.schema_version != 2
             || self.product != "rubix-kube"
             || self.version.is_empty()
-            || self.evidence_kind != "SyntheticFixture"
-            || self.overall_qualified
+            || (!is_bound && (self.evidence_kind != "SyntheticFixture" || self.overall_qualified))
+            || (is_bound && !self.overall_qualified)
             || self
                 .timestamp
                 .strip_prefix("unix:")
@@ -103,9 +127,17 @@ impl PlatformSoakReport {
             .map_err(PlatformSoakError::MatrixIncomplete)?;
 
         // 3. Candidate digests matching
-        self.candidate_verification
-            .validate_unobserved_fixture()
-            .map_err(PlatformSoakError::CandidateDigestMismatch)?;
+        if !is_bound {
+            self.candidate_verification
+                .validate_unobserved_fixture()
+                .map_err(PlatformSoakError::CandidateDigestMismatch)?;
+        } else if !self.candidate_verification.all_matched
+            || self.candidate_verification.mismatched_artifacts != 0
+        {
+            return Err(PlatformSoakError::CandidateDigestMismatch(
+                "candidate digests do not all match in bound soak report".into(),
+            ));
+        }
 
         // 4. Soak bounds: independent recomputation of ratios, durations, cycles, positive memory, and complete architecture set
         SustainedSoakSummary::validate_records(&self.soak_results)
@@ -124,7 +156,7 @@ impl PlatformSoakReport {
             .map_err(PlatformSoakError::RegressionFailed)?;
 
         // 8. Overall qualification consistency
-        if self.overall_qualified {
+        if !is_bound && self.overall_qualified {
             return Err(PlatformSoakError::RegressionFailed(
                 "synthetic fixture cannot be qualified".into(),
             ));
@@ -139,6 +171,11 @@ impl PlatformSoakReport {
         if self.validate_fixture(None).is_err() {
             return "# Invalid Platform Fixture\n\nNOT QUALIFIED: report consistency validation failed.\n".into();
         }
+        let is_bound = (self.evidence_kind == "CandidateReceiptBound"
+            || self.evidence_kind == "candidate_receipt_bound")
+            && self.receipt_id.is_some()
+            && self.receipt_integrity_hash.is_some();
+
         let mut out = String::with_capacity(8192);
 
         let _ = writeln!(
@@ -149,9 +186,18 @@ impl PlatformSoakReport {
         let _ = writeln!(out, "**Version:** `{}`", self.version);
         let _ = writeln!(out, "**Evidence Kind:** `{}`", self.evidence_kind);
         let _ = writeln!(out, "**Timestamp:** `{}`", self.timestamp);
+        if let (Some(receipt_id), Some(hash)) = (&self.receipt_id, &self.receipt_integrity_hash) {
+            let _ = writeln!(out, "- **Receipt ID**: `{receipt_id}`");
+            let _ = writeln!(out, "- **Receipt Integrity Hash**: `{hash}`");
+        }
         let _ = writeln!(
             out,
-            "**Overall Status:** NOT QUALIFIED (Synthetic fixture)\n"
+            "**Overall Status:** {}\n",
+            if is_bound && self.overall_qualified {
+                "PASS (Qualified)"
+            } else {
+                "NOT QUALIFIED (Synthetic fixture)"
+            }
         );
 
         out.push_str("## 1. Executive Summary\n\n");

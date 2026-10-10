@@ -180,6 +180,17 @@ pub struct CandidateInventory {
     pub payload_digests: BTreeMap<String, String>,
 }
 
+impl CandidateInventory {
+    /// Constructs a `CandidateIdentity` from this candidate inventory.
+    pub fn to_candidate_identity(&self) -> CandidateIdentity {
+        CandidateIdentity {
+            source_revision: self.source_revision.clone(),
+            binary_digests: self.binary_digests.clone(),
+            payload_digests: self.payload_digests.clone(),
+        }
+    }
+}
+
 /// Computes the SHA-256 integrity hash for a receipt payload using canonical JSON serialization.
 pub fn compute_payload_integrity_hash(payload: &ReceiptPayload) -> Result<String> {
     let bytes = serde_json::to_vec(payload)
@@ -295,18 +306,9 @@ fn extract_inputs(record: &serde_json::Value) -> Vec<(String, String)> {
     results
 }
 
-/// Loads the current candidate inventory from repository metadata.
-pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
-    if let Some(explicit_path) = std::env::var_os("RUBIX_CANDIDATE_INVENTORY_PATH") {
-        let explicit = PathBuf::from(explicit_path);
-        let bytes = read_bounded(&explicit, MAX_RECEIPT_BYTES)?;
-        let value = json::parse(&bytes)?;
-        let inventory: CandidateInventory = serde_json::from_value(value)
-            .map_err(|e| format!("invalid candidate inventory at {}: {e}", explicit.display()))?;
-        return Ok(inventory);
-    }
-
-    let cell_inventory_path = root.join("docs/release/cell-inventory.json");
+/// Loads candidate inventory directly from a release directory without checking environment overrides.
+pub fn load_candidate_inventory_from_release_dir(root: &Path) -> Result<CandidateInventory> {
+    let cell_inventory_path = root.join("cell-inventory.json");
     if !cell_inventory_path.is_file() {
         return Err(format!(
             "candidate inventory unavailable: {} not found",
@@ -353,7 +355,7 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
     }
 
     // Incorporate SHA256SUMS items as well if present
-    let sums_path = root.join("docs/release/SHA256SUMS");
+    let sums_path = root.join("SHA256SUMS");
     if sums_path.is_file() {
         let sums_bytes = read_bounded(&sums_path, 1024 * 1024)?;
         let sums_text =
@@ -363,6 +365,19 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
             if parts.len() == 2 && digest_bindings::is_valid_sha256_hex(parts[0]) {
                 let digest = parts[0].to_string();
                 let filename = parts[1].to_string();
+                // Filter out self-referencing / report / receipt files to avoid circular hash dependency
+                if filename == "SHA256SUMS"
+                    || filename == "licenses.json"
+                    || filename == "attribution.md"
+                    || filename.starts_with("receipts/")
+                    || filename.starts_with("criterion-")
+                    || filename.starts_with("conformance-qualification-report")
+                    || filename.starts_with("performance-qualification-report")
+                    || filename.starts_with("state-transition-qualification-report")
+                    || filename.starts_with("platform-soak-report")
+                {
+                    continue;
+                }
                 if !binary_digests.contains_key(&filename) {
                     payload_digests.insert(filename, digest);
                 }
@@ -375,6 +390,26 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
         binary_digests,
         payload_digests,
     })
+}
+
+/// Loads the current candidate inventory from repository metadata.
+pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
+    if let Some(explicit_path) = std::env::var_os("RUBIX_CANDIDATE_INVENTORY_PATH") {
+        let explicit = PathBuf::from(explicit_path);
+        let bytes = read_bounded(&explicit, MAX_RECEIPT_BYTES)?;
+        let value = json::parse(&bytes)?;
+        let inventory: CandidateInventory = serde_json::from_value(value)
+            .map_err(|e| format!("invalid candidate inventory at {}: {e}", explicit.display()))?;
+        return Ok(inventory);
+    }
+
+    if root.join("cell-inventory.json").is_file() {
+        load_candidate_inventory_from_release_dir(root)
+    } else if root.join("docs/release/cell-inventory.json").is_file() {
+        load_candidate_inventory_from_release_dir(&root.join("docs/release"))
+    } else {
+        load_candidate_inventory_from_release_dir(root)
+    }
 }
 
 fn validate_metadata_and_env(receipt: &CandidateReceipt, expected_criterion: usize) -> Result<()> {

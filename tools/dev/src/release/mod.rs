@@ -13,7 +13,9 @@ pub use cell_build::{
 };
 pub use evidence::{
     PerfQualificationDocument, StateEvidence, assemble_fixture_evidence, assemble_release_evidence,
-    verify_fixture_evidence, verify_kubeconfig_dual_format_accommodation, verify_release_evidence,
+    find_receipt_path, regenerate_release_reports, verify_fixture_evidence,
+    verify_kubeconfig_dual_format_accommodation, verify_release_evidence,
+    verify_report_candidate_digests,
 };
 pub use manifest::{
     DISTRIBUTION_VERSION, MANAGEMENT_PREFIX, NODE_PREFIX, assemble_checksum_manifest,

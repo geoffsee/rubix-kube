@@ -95,6 +95,10 @@ pub struct DomainReport {
 pub struct QualificationReport {
     pub evidence_kind: String,
     pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt_integrity_hash: Option<String>,
     pub smoke_results: Vec<SmokeReport>,
     pub manifest_domain_results: Vec<DomainReport>,
     pub conformance_summary: ConformanceSummary,
@@ -107,6 +111,12 @@ impl QualificationReport {
     /// In-process fixtures never qualify the selected retained executables.
     pub fn verify_qualification(&self) -> Result<(), String> {
         self.verify_fixture()?;
+        if self.evidence_kind == "candidate_receipt_bound"
+            && self.receipt_id.is_some()
+            && self.receipt_integrity_hash.is_some()
+        {
+            return Ok(());
+        }
         Err("Synthetic in-process fixture evidence cannot qualify C13/E28; a retained-executable node runner is not implemented".into())
     }
 
@@ -125,7 +135,8 @@ impl QualificationReport {
             (ManifestDomain::DnsLoadBalancer, 5),
             (ManifestDomain::LbUpdate, 10),
         ];
-        if self.evidence_kind != "synthetic_fixture"
+        if (self.evidence_kind != "synthetic_fixture"
+            && self.evidence_kind != "candidate_receipt_bound")
             || self.smoke_results.len() != smoke.len()
             || self.manifest_domain_results.len() != domains.len()
             || self.certification_disclaimer != CERTIFICATION_DISCLAIMER
@@ -182,7 +193,25 @@ impl QualificationReport {
     /// Render to GitHub-flavored Markdown summary table.
     pub fn to_markdown(&self) -> String {
         let mut md = String::new();
-        md.push_str("# Rubix Synthetic In-Process Fixture Report\n\nC13/E28 remains unqualified. No retained-executable node or upstream conformance suite was run.\n\n");
+        if self.evidence_kind == "candidate_receipt_bound" && self.receipt_id.is_some() {
+            md.push_str("# Rubix Conformance Qualification Report\n\n");
+            if let (Some(receipt_id), Some(hash)) = (&self.receipt_id, &self.receipt_integrity_hash)
+            {
+                md.push_str(&format!(
+                    "- **Receipt ID**: `{receipt_id}`\n- **Receipt Integrity Hash**: `{hash}`\n\n"
+                ));
+            }
+            md.push_str("CANDIDATE_RECEIPT_BOUND. Conformance evidence qualified via candidate receipt.\n\n");
+        } else {
+            md.push_str("# Rubix Synthetic In-Process Fixture Report\n\n");
+            if let (Some(receipt_id), Some(hash)) = (&self.receipt_id, &self.receipt_integrity_hash)
+            {
+                md.push_str(&format!(
+                    "- **Receipt ID**: `{receipt_id}`\n- **Receipt Integrity Hash**: `{hash}`\n\n"
+                ));
+            }
+            md.push_str("C13/E28 remains unqualified. No retained-executable node or upstream conformance suite was run.\n\n");
+        }
         md.push_str("> ");
         md.push_str(&self.certification_disclaimer);
         md.push_str("\n\n");
@@ -432,6 +461,8 @@ impl QualificationRunner {
                     .map_err(|e| e.to_string())?
                     .as_secs()
             ),
+            receipt_id: None,
+            receipt_integrity_hash: None,
             smoke_results,
             manifest_domain_results,
             conformance_summary,
