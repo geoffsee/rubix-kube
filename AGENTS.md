@@ -72,19 +72,17 @@ For workspace-wide changes, use its validation commands:
 ```sh
 cargo fmt-check
 cargo lint
-CI=1 cargo nextest run --locked --workspace --all-targets --all-features --profile ci --no-capture
+cargo test-ci
 cargo test --locked --workspace --doc --all-features
 cargo run --locked -p rubix-dev --bin rubix-language-policy
 ```
 
 Pull-request CI runs debug tests with cargo-nextest, doctests with `cargo test --doc`, and
 `cargo deny --locked --all-features check`. In headless or agent execution environments,
-prefix `cargo nextest` with `CI=1` (or export `NEXTEST_HIDE_PROGRESS_BAR=1 NEXTEST_SHOW_PROGRESS=none NEXTEST_NO_INPUT_HANDLER=1`)
-and pass `--no-capture` so Nextest suppresses interactive terminal progress bars, pager pagination,
-keyboard input listeners, and prevents output capturing deadlocks. Default-branch pushes and merge-group
+use the `cargo test-ci` alias defined in `.cargo/config.toml`, which passes `--no-capture` so Nextest suppresses interactive terminal progress bars, pager pagination, keyboard input listeners, and prevents output capturing deadlocks. Default-branch pushes and merge-group
 runs also run release tests through the same nextest profile, release doctests, the
 `rubix-kube` and `rubixctl` `--profile dist` build, and upstream input verification. `.cargo/config.toml` defines the
-`lint`, `fmt-check`, `test-all` and `doc-all` aliases; `test-all` does not include
+`lint`, `fmt-check`, `test-ci`, `test-all` and `doc-all` aliases; `test-all` does not include
 the separate doctest pass. Run checks appropriate to the change and report any
 unavailable environment or unexecuted qualification instead of implying a pass.
 
