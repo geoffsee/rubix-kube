@@ -442,6 +442,11 @@ pub fn load_candidate_inventory_with_candidate(
         {
             return load_candidate_inventory_from_release_dir(&candidate_path.join("docs/release"));
         }
+        return Err(format!(
+            "candidate inventory unavailable: no cell-inventory.json or inventory file at {}",
+            candidate_path.display()
+        )
+        .into());
     }
 
     if root.join("cell-inventory.json").is_file() {
@@ -1068,5 +1073,13 @@ mod tests {
                 .unwrap_err();
         assert!(err5.to_string().contains("remaining images not empty"));
         Ok(())
+    }
+
+    #[test]
+    fn candidate_dir_lookup_fails_closed_when_inventory_absent() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let err = load_candidate_inventory_with_candidate(Path::new("."), Some(temp_dir.path()))
+            .unwrap_err();
+        assert!(err.to_string().contains("candidate inventory unavailable"));
     }
 }
