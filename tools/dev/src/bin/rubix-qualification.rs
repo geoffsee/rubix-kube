@@ -1,16 +1,28 @@
-//! Repository metadata audit; release qualification fails closed until trusted
-//! current candidate-bound completion receipt verification is implemented.
+//! Repository metadata audit and candidate-bound release qualification.
+//! Actively loads and validates candidate-bound receipts against candidate inventory.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    let args: Vec<_> = std::env::args_os().skip(1).collect();
-    let metadata_only = args.as_slice() == [std::ffi::OsString::from("--metadata-only")];
-    if !args.is_empty() && !metadata_only {
-        eprintln!("usage: rubix-qualification [--metadata-only]");
-        return ExitCode::from(2);
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let mut metadata_only = false;
+    let mut candidate_dir: Option<PathBuf> = None;
+
+    for arg in &args {
+        if arg == "--metadata-only" {
+            metadata_only = true;
+        } else if arg.starts_with('-') {
+            eprintln!("usage: rubix-qualification [directory] [--metadata-only]");
+            return ExitCode::from(2);
+        } else if candidate_dir.is_none() {
+            candidate_dir = Some(PathBuf::from(arg));
+        } else {
+            eprintln!("usage: rubix-qualification [directory] [--metadata-only]");
+            return ExitCode::from(2);
+        }
     }
+
     let root = match rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR"))) {
         Ok(path) => path,
         Err(err) => {
@@ -18,8 +30,14 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         },
     };
+
+    let candidate_ref = candidate_dir.as_deref();
+
     if !metadata_only {
-        return match rubix_dev::release_qualification::run_release_qualification(&root) {
+        return match rubix_dev::release_qualification::run_release_qualification_with_candidate(
+            &root,
+            candidate_ref,
+        ) {
             Ok(_) => ExitCode::SUCCESS,
             Err(error) => {
                 eprintln!("{error}");
@@ -27,7 +45,11 @@ fn main() -> ExitCode {
             },
         };
     }
-    match rubix_dev::release_qualification::audit_repository_metadata(&root) {
+
+    match rubix_dev::release_qualification::audit_repository_metadata_with_candidate(
+        &root,
+        candidate_ref,
+    ) {
         Ok(report) => {
             report.print_summary();
             println!("METADATA AUDIT PASSED; RELEASE REMAINS UNQUALIFIED");

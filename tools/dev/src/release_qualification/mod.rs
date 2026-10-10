@@ -1,8 +1,8 @@
-//! Repository metadata audit and pending release qualification (Issue #126).
+//! Repository metadata audit and candidate-bound release qualification.
 //!
 //! Input digest syntax, declared attribution and local document links are checked.
-//! No actual prepared inputs, candidate artifacts or live completion receipts are
-//! consumed by this entrypoint; C16/C17 and every completion criterion remain pending.
+//! Validates candidate-bound qualification receipts for all 11 Roadmap #263 completion
+//! criteria against candidate inventory and cryptographic digest bindings.
 
 pub mod attribution;
 pub mod criteria;
@@ -105,9 +105,12 @@ impl ReleaseQualificationReport {
     }
 }
 
-/// Audits repository metadata and reports all completion criteria as pending.
-/// A successful Result means the metadata audit ran, never that a release qualified.
-pub fn audit_repository_metadata(root: &Path) -> Result<ReleaseQualificationReport> {
+/// Audits repository metadata and evaluates all 11 completion criteria against
+/// candidate-bound receipts (if present), returning the resulting qualification report.
+pub fn audit_repository_metadata_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<ReleaseQualificationReport> {
     // 1. Cryptographic Digest Bindings
     let upstream_input_metadata_checked = digest_bindings::check_upstream_input_metadata(root)?;
     let upstream_source_metadata_checked =
@@ -122,7 +125,7 @@ pub fn audit_repository_metadata(root: &Path) -> Result<ReleaseQualificationRepo
     let documentation_summary = link_integrity::verify_documentation_links(root)?;
 
     // 4. Roadmap #263 Completion Criteria (1–11)
-    let criteria_reports = criteria::verify_all_criteria(root)?;
+    let criteria_reports = criteria::verify_all_criteria_with_candidate(root, candidate_dir)?;
 
     Ok(ReleaseQualificationReport {
         upstream_input_metadata_checked,
@@ -135,10 +138,18 @@ pub fn audit_repository_metadata(root: &Path) -> Result<ReleaseQualificationRepo
     })
 }
 
-/// Fails closed until a trusted current candidate-bound completion receipt
-/// verifier exists. Repository metadata success cannot qualify a release.
-pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationReport> {
-    let report = audit_repository_metadata(root)?;
+/// Audits repository metadata and evaluates all 11 completion criteria against receipts.
+pub fn audit_repository_metadata(root: &Path) -> Result<ReleaseQualificationReport> {
+    audit_repository_metadata_with_candidate(root, None)
+}
+
+/// Runs full release qualification, actively loading and verifying candidate-bound
+/// completion receipts for all 11 criteria. Fails closed if any criterion remains unsatisfied.
+pub fn run_release_qualification_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<ReleaseQualificationReport> {
+    let report = audit_repository_metadata_with_candidate(root, candidate_dir)?;
     let unsatisfied: Vec<usize> = report
         .criteria_reports
         .iter()
@@ -154,4 +165,9 @@ pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationRepo
         .into());
     }
     Ok(report)
+}
+
+/// Runs full release qualification against repository root.
+pub fn run_release_qualification(root: &Path) -> Result<ReleaseQualificationReport> {
+    run_release_qualification_with_candidate(root, None)
 }

@@ -57,10 +57,15 @@ jobs:
       - name: Verify the complete prepared publication before generating metadata
         env:
           VERSION: ${{ inputs.version }}
+          RUBIX_CANDIDATE_INVENTORY_PATH: candidate/dist/cell-inventory.json
+          RUBIX_RECEIPTS_DIR: candidate/dist/receipts
         run: |
           # Missing artifacts, incomplete target matrices and invalid inventories fail closed.
           cargo run --locked -p rubix-dev --bin rubix-provenance -- candidate/dist "$VERSION" . candidate/inventories
           cargo run --locked -p rubix-dev --bin rubix-matrix -- verify-manifest candidate/dist/release-manifest.json --expected-version "$VERSION"
+          # Regenerate candidate-bound reports and verify all 11 criteria
+          cargo run --locked -p rubix-dev --bin rubix-release -- regenerate-reports candidate/dist
+          cargo run --locked -p rubix-dev --bin rubix-qualification -- candidate/dist
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

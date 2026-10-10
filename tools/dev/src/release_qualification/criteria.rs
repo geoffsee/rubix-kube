@@ -23,10 +23,21 @@ pub fn receipt_filename(number: usize, slug: &str) -> String {
     format!("criterion-{number:02}-{slug}.json")
 }
 
-/// Resolves the qualification receipts directory.
-pub fn receipts_dir(root: &Path) -> PathBuf {
+/// Resolves the qualification receipts directory with optional candidate directory.
+pub fn receipts_dir_with_candidate(root: &Path, candidate_dir: Option<&Path>) -> PathBuf {
     if let Some(dir) = std::env::var_os("RUBIX_RECEIPTS_DIR") {
         PathBuf::from(dir)
+    } else if let Some(candidate) = candidate_dir {
+        let candidate_path = if candidate.is_absolute() || candidate.exists() {
+            candidate.to_path_buf()
+        } else {
+            root.join(candidate)
+        };
+        if candidate_path.join("receipts").is_dir() {
+            candidate_path.join("receipts")
+        } else {
+            candidate_path
+        }
     } else if root.join("receipts").is_dir() {
         root.join("receipts")
     } else {
@@ -34,24 +45,40 @@ pub fn receipts_dir(root: &Path) -> PathBuf {
     }
 }
 
-/// Resolves the candidate receipt path for a specific criterion.
-pub fn resolve_receipt_path(root: &Path, number: usize, slug: &str) -> PathBuf {
+/// Resolves the qualification receipts directory.
+pub fn receipts_dir(root: &Path) -> PathBuf {
+    receipts_dir_with_candidate(root, None)
+}
+
+/// Resolves the candidate receipt path for a specific criterion with optional candidate directory.
+pub fn resolve_receipt_path_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+    number: usize,
+    slug: &str,
+) -> PathBuf {
     if let Some(path) = std::env::var_os(format!("RUBIX_RECEIPT_PATH_{number}")) {
         PathBuf::from(path)
     } else {
-        receipts_dir(root).join(receipt_filename(number, slug))
+        receipts_dir_with_candidate(root, candidate_dir).join(receipt_filename(number, slug))
     }
 }
 
-/// Evaluates a completion criterion against its candidate-bound qualification receipt.
-pub fn evaluate_criterion(
+/// Resolves the candidate receipt path for a specific criterion.
+pub fn resolve_receipt_path(root: &Path, number: usize, slug: &str) -> PathBuf {
+    resolve_receipt_path_with_candidate(root, None, number, slug)
+}
+
+/// Evaluates a completion criterion against its candidate-bound qualification receipt with optional candidate directory.
+pub fn evaluate_criterion_with_candidate(
     root: &Path,
+    candidate_dir: Option<&Path>,
     number: usize,
     name: &'static str,
     slug: &'static str,
     fallback_evidence: &'static str,
 ) -> Result<CriterionStatus> {
-    let receipt_path = resolve_receipt_path(root, number, slug);
+    let receipt_path = resolve_receipt_path_with_candidate(root, candidate_dir, number, slug);
     let filename = receipt_path
         .file_name()
         .and_then(|n| n.to_str())
@@ -69,7 +96,12 @@ pub fn evaluate_criterion(
         });
     }
 
-    match receipt::load_and_validate_receipt(&receipt_path, root, number) {
+    match receipt::load_and_validate_receipt_with_candidate(
+        &receipt_path,
+        root,
+        candidate_dir,
+        number,
+    ) {
         Ok(valid_receipt) => Ok(CriterionStatus {
             number,
             name,
@@ -91,10 +123,25 @@ pub fn evaluate_criterion(
     }
 }
 
-/// Evaluates Epic Ledgers Audit (E01–E30).
-pub fn check_criterion_1_epic_ledgers(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates a completion criterion against its candidate-bound qualification receipt.
+pub fn evaluate_criterion(
+    root: &Path,
+    number: usize,
+    name: &'static str,
+    slug: &'static str,
+    fallback_evidence: &'static str,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(root, None, number, name, slug, fallback_evidence)
+}
+
+/// Evaluates Epic Ledgers Audit (E01–E30) with optional candidate directory.
+pub fn check_criterion_1_epic_ledgers_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         1,
         "Epic Ledgers Audit (E01–E30)",
         "epic-ledgers",
@@ -102,10 +149,19 @@ pub fn check_criterion_1_epic_ledgers(root: &Path) -> Result<CriterionStatus> {
     )
 }
 
-/// Evaluates production component-boundary and datastore mTLS qualification evidence.
-pub fn check_criterion_2_supervised_boundary(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates Epic Ledgers Audit (E01–E30).
+pub fn check_criterion_1_epic_ledgers(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_1_epic_ledgers_with_candidate(root, None)
+}
+
+/// Evaluates production component-boundary and datastore mTLS qualification evidence with optional candidate directory.
+pub fn check_criterion_2_supervised_boundary_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         2,
         "Supervised Boundary & Datastore mTLS",
         "supervised-boundary",
@@ -113,10 +169,19 @@ pub fn check_criterion_2_supervised_boundary(root: &Path) -> Result<CriterionSta
     )
 }
 
-/// Evaluates target architecture matrix qualification evidence.
-pub fn check_criterion_3_target_matrix(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates production component-boundary and datastore mTLS qualification evidence.
+pub fn check_criterion_2_supervised_boundary(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_2_supervised_boundary_with_candidate(root, None)
+}
+
+/// Evaluates target architecture matrix qualification evidence with optional candidate directory.
+pub fn check_criterion_3_target_matrix_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         3,
         "Target Architecture Matrix",
         "target-matrix",
@@ -124,10 +189,19 @@ pub fn check_criterion_3_target_matrix(root: &Path) -> Result<CriterionStatus> {
     )
 }
 
-/// Evaluates live addon, egress and authentication qualification evidence.
-pub fn check_criterion_4_addons_and_egress(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates target architecture matrix qualification evidence.
+pub fn check_criterion_3_target_matrix(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_3_target_matrix_with_candidate(root, None)
+}
+
+/// Evaluates live addon, egress and authentication qualification evidence with optional candidate directory.
+pub fn check_criterion_4_addons_and_egress_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         4,
         "Addons, Egress & D2K Authentication",
         "addons-and-egress",
@@ -135,10 +209,18 @@ pub fn check_criterion_4_addons_and_egress(root: &Path) -> Result<CriterionStatu
     )
 }
 
-/// Evaluates host/container lifecycle and state retention qualification evidence.
-pub fn check_criterion_5_lifecycle_and_storage(root: &Path) -> Result<CriterionStatus> {
+/// Evaluates live addon, egress and authentication qualification evidence.
+pub fn check_criterion_4_addons_and_egress(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_4_addons_and_egress_with_candidate(root, None)
+}
+
+/// Evaluates host/container lifecycle and state retention qualification evidence with optional candidate directory.
+pub fn check_criterion_5_lifecycle_and_storage_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
     let slug = "lifecycle-and-storage";
-    let receipt_path = resolve_receipt_path(root, 5, slug);
+    let receipt_path = resolve_receipt_path_with_candidate(root, candidate_dir, 5, slug);
     let filename = receipt_path
         .file_name()
         .and_then(|n| n.to_str())
@@ -156,7 +238,11 @@ pub fn check_criterion_5_lifecycle_and_storage(root: &Path) -> Result<CriterionS
         });
     }
 
-    match crate::recovery_rehearsal::verify_recovery_receipt(&receipt_path, root) {
+    match crate::recovery_rehearsal::verify_recovery_receipt_with_candidate(
+        &receipt_path,
+        root,
+        candidate_dir,
+    ) {
         Ok(valid_receipt) => Ok(CriterionStatus {
             number: 5,
             name: "Lifecycle & State Retention",
@@ -178,10 +264,18 @@ pub fn check_criterion_5_lifecycle_and_storage(root: &Path) -> Result<CriterionS
     }
 }
 
-/// Evaluates live conformance, recovery and soak qualification evidence.
-pub fn check_criterion_6_conformance_and_soak(root: &Path) -> Result<CriterionStatus> {
+/// Evaluates host/container lifecycle and state retention qualification evidence.
+pub fn check_criterion_5_lifecycle_and_storage(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_5_lifecycle_and_storage_with_candidate(root, None)
+}
+
+/// Evaluates live conformance, recovery and soak qualification evidence with optional candidate directory.
+pub fn check_criterion_6_conformance_and_soak_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
     let slug = "conformance-and-soak";
-    let receipt_path = resolve_receipt_path(root, 6, slug);
+    let receipt_path = resolve_receipt_path_with_candidate(root, candidate_dir, 6, slug);
     let filename = receipt_path
         .file_name()
         .and_then(|n| n.to_str())
@@ -199,7 +293,11 @@ pub fn check_criterion_6_conformance_and_soak(root: &Path) -> Result<CriterionSt
         });
     }
 
-    match crate::platform_soak::verify_soak_receipt(&receipt_path, root) {
+    match crate::platform_soak::verify_soak_receipt_with_candidate(
+        &receipt_path,
+        root,
+        candidate_dir,
+    ) {
         Ok(valid_receipt) => Ok(CriterionStatus {
             number: 6,
             name: "Conformance & Recovery Qualification",
@@ -221,10 +319,19 @@ pub fn check_criterion_6_conformance_and_soak(root: &Path) -> Result<CriterionSt
     }
 }
 
-/// Evaluates live performance and memory budgets qualification evidence.
-pub fn check_criterion_7_performance_budgets(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates live conformance, recovery and soak qualification evidence.
+pub fn check_criterion_6_conformance_and_soak(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_6_conformance_and_soak_with_candidate(root, None)
+}
+
+/// Evaluates live performance and memory budgets qualification evidence with optional candidate directory.
+pub fn check_criterion_7_performance_budgets_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         7,
         "Performance & Memory Budgets",
         "performance-budgets",
@@ -232,10 +339,19 @@ pub fn check_criterion_7_performance_budgets(root: &Path) -> Result<CriterionSta
     )
 }
 
-/// Evaluates Go-to-Rust state migration and recovery rehearsal qualification evidence.
-pub fn check_criterion_8_state_migration(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates live performance and memory budgets qualification evidence.
+pub fn check_criterion_7_performance_budgets(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_7_performance_budgets_with_candidate(root, None)
+}
+
+/// Evaluates Go-to-Rust state migration and recovery rehearsal qualification evidence with optional candidate directory.
+pub fn check_criterion_8_state_migration_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         8,
         "Go-to-Rust Migration & Recovery Rehearsal",
         "state-migration",
@@ -243,10 +359,19 @@ pub fn check_criterion_8_state_migration(root: &Path) -> Result<CriterionStatus>
     )
 }
 
-/// Evaluates language policy and final CI toolchain compliance qualification evidence.
-pub fn check_criterion_9_language_and_policy(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates Go-to-Rust state migration and recovery rehearsal qualification evidence.
+pub fn check_criterion_8_state_migration(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_8_state_migration_with_candidate(root, None)
+}
+
+/// Evaluates language policy and final CI toolchain compliance qualification evidence with optional candidate directory.
+pub fn check_criterion_9_language_and_policy_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         9,
         "Language Policy & Toolchain Compliance",
         "language-and-policy",
@@ -254,10 +379,19 @@ pub fn check_criterion_9_language_and_policy(root: &Path) -> Result<CriterionSta
     )
 }
 
-/// Evaluates cryptographic artifact digest bindings and provenance qualification evidence.
-pub fn check_criterion_10_artifact_digest_bindings(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates language policy and final CI toolchain compliance qualification evidence.
+pub fn check_criterion_9_language_and_policy(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_9_language_and_policy_with_candidate(root, None)
+}
+
+/// Evaluates cryptographic artifact digest bindings and provenance qualification evidence with optional candidate directory.
+pub fn check_criterion_10_artifact_digest_bindings_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         10,
         "Cryptographic Digest Bindings & Provenance",
         "artifact-digest-bindings",
@@ -266,10 +400,19 @@ pub fn check_criterion_10_artifact_digest_bindings(root: &Path) -> Result<Criter
     )
 }
 
-/// Evaluates operator handoff rehearsal and release publication qualification evidence.
-pub fn check_criterion_11_operator_handoff(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
+/// Evaluates cryptographic artifact digest bindings and provenance qualification evidence.
+pub fn check_criterion_10_artifact_digest_bindings(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_10_artifact_digest_bindings_with_candidate(root, None)
+}
+
+/// Evaluates operator handoff rehearsal and release publication qualification evidence with optional candidate directory.
+pub fn check_criterion_11_operator_handoff_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CriterionStatus> {
+    evaluate_criterion_with_candidate(
         root,
+        candidate_dir,
         11,
         "Operator Documentation & Release Qualification",
         "operator-handoff",
@@ -277,19 +420,32 @@ pub fn check_criterion_11_operator_handoff(root: &Path) -> Result<CriterionStatu
     )
 }
 
+/// Evaluates operator handoff rehearsal and release publication qualification evidence.
+pub fn check_criterion_11_operator_handoff(root: &Path) -> Result<CriterionStatus> {
+    check_criterion_11_operator_handoff_with_candidate(root, None)
+}
+
+/// Reports all 11 criteria evaluated against candidate-bound receipts with optional candidate directory.
+pub fn verify_all_criteria_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<Vec<CriterionStatus>> {
+    Ok(vec![
+        check_criterion_1_epic_ledgers_with_candidate(root, candidate_dir)?,
+        check_criterion_2_supervised_boundary_with_candidate(root, candidate_dir)?,
+        check_criterion_3_target_matrix_with_candidate(root, candidate_dir)?,
+        check_criterion_4_addons_and_egress_with_candidate(root, candidate_dir)?,
+        check_criterion_5_lifecycle_and_storage_with_candidate(root, candidate_dir)?,
+        check_criterion_6_conformance_and_soak_with_candidate(root, candidate_dir)?,
+        check_criterion_7_performance_budgets_with_candidate(root, candidate_dir)?,
+        check_criterion_8_state_migration_with_candidate(root, candidate_dir)?,
+        check_criterion_9_language_and_policy_with_candidate(root, candidate_dir)?,
+        check_criterion_10_artifact_digest_bindings_with_candidate(root, candidate_dir)?,
+        check_criterion_11_operator_handoff_with_candidate(root, candidate_dir)?,
+    ])
+}
+
 /// Reports all 11 criteria evaluated against candidate-bound receipts.
 pub fn verify_all_criteria(root: &Path) -> Result<Vec<CriterionStatus>> {
-    Ok(vec![
-        check_criterion_1_epic_ledgers(root)?,
-        check_criterion_2_supervised_boundary(root)?,
-        check_criterion_3_target_matrix(root)?,
-        check_criterion_4_addons_and_egress(root)?,
-        check_criterion_5_lifecycle_and_storage(root)?,
-        check_criterion_6_conformance_and_soak(root)?,
-        check_criterion_7_performance_budgets(root)?,
-        check_criterion_8_state_migration(root)?,
-        check_criterion_9_language_and_policy(root)?,
-        check_criterion_10_artifact_digest_bindings(root)?,
-        check_criterion_11_operator_handoff(root)?,
-    ])
+    verify_all_criteria_with_candidate(root, None)
 }
