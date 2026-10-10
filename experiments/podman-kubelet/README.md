@@ -217,11 +217,12 @@ node exited; 6443 free
   waiting through the watch stream; second create works; `kubectl get ns` and
   `kubectl create configmap` still work; `cargo test --locked -p rubix-apiserver
   --test https_gateway` passes.
-- Not implemented: volume mounts into containers (staged on the host only), ports,
-  resource limits, init containers, probes other than exec-emulated ones, preStop
-  hooks, `kubectl logs --follow`, OpenAPI schemas, CRI log files (engine logs are
-  read instead). `kubectl get pods` prints only NAME and AGE because the server does
-  not return Table responses. The `default`, `kube-system` and `kube-node-lease`
-  namespaces are not created by startup (pre-existing).
+- Implemented in [E34.02]: volume mounts into containers (secret, configMap,
+  projected, emptyDir, hostPath via CRI Mounts), container port mappings, Linux
+  container resource requests and limits, sequential init container lifecycle and
+  status reporting, HTTP and TCP readiness/liveness probes, preStop lifecycle hooks,
+  apiserver Table responses for `as=Table`, `kubectl logs --follow` chunked streaming,
+  and bootstrap creation of `default`, `kube-system`, and `kube-node-lease` namespaces.
+- Not implemented: OpenAPI schemas, CRI log files (engine logs are read instead).
 - Unqualified: the official kubelet/containerd boundary, Linux hosts, anything in
   the compatibility contract. Historical captures elsewhere are unaffected.

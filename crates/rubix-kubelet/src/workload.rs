@@ -37,6 +37,8 @@ pub struct LogOptions {
     pub since_seconds: Option<u64>,
     /// Read the previous attempt of the container instead of the current one.
     pub previous: bool,
+    /// Stream logs as they arrive.
+    pub follow: bool,
 }
 
 /// `spec.restartPolicy`; absent means `Always`, as in Kubernetes.

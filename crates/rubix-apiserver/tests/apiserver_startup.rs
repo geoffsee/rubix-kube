@@ -172,3 +172,27 @@ async fn plain_restart_retains_persistent_state_and_client_access() {
         service.stop();
     }
 }
+
+#[tokio::test]
+async fn default_namespaces_bootstrapped_on_startup() {
+    let temp = TempDir::new().unwrap();
+    let node_ip: IpAddr = "192.0.2.30".parse().unwrap();
+    let config = setup_fixture_pki(&temp, node_ip);
+    let (_engine, storage) = setup_fixture_datastore(&temp);
+
+    let service = ApiserverService::new(config, storage);
+    service.check_prerequisites().await.unwrap();
+    service.start().unwrap();
+    let client = service.admin_client();
+
+    for ns_name in &["default", "kube-system", "kube-node-lease"] {
+        let ns = client
+            .get_namespace(ns_name)
+            .await
+            .unwrap_or_else(|e| panic!("expected namespace {ns_name} to exist: {e:?}"));
+        assert_eq!(ns["metadata"]["name"], *ns_name);
+        assert_eq!(ns["status"]["phase"], "Active");
+    }
+
+    service.stop();
+}

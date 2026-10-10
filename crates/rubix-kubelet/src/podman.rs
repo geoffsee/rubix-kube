@@ -12,7 +12,9 @@ use std::process::Stdio;
 use async_trait::async_trait;
 use serde::Deserialize;
 
-use crate::engine::{ContainerEngine, ContainerSpec, ContainerState, ContainerSummary, PodSummary};
+use crate::engine::{
+    ContainerEngine, ContainerSpec, ContainerState, ContainerSummary, PodSummary, PortMappingSpec,
+};
 use crate::error::KubeletError;
 use crate::workload::{ExecResult, LogOptions};
 
@@ -193,12 +195,9 @@ impl ContainerEngine for PodmanEngine {
         &self,
         name: &str,
         labels: &BTreeMap<String, String>,
+        ports: &[PortMappingSpec],
     ) -> Result<String, KubeletError> {
-        let mut args = strings(&["pod", "create", "--name", name]);
-        for (key, value) in labels {
-            args.push("--label".to_string());
-            args.push(format!("{key}={value}"));
-        }
+        let args = pod_create_arguments(name, labels, ports);
         self.podman_stdout(&args, name).await
     }
 
@@ -397,6 +396,24 @@ fn prefix_sha(id: &str) -> String {
     }
 }
 
+/// Builds the `podman pod create` argument vector.
+pub fn pod_create_arguments(
+    name: &str,
+    labels: &BTreeMap<String, String>,
+    ports: &[PortMappingSpec],
+) -> Vec<String> {
+    let mut args = strings(&["pod", "create", "--name", name]);
+    for port in ports {
+        args.push("-p".to_string());
+        args.push(port.to_argument());
+    }
+    for (key, value) in labels {
+        args.push("--label".to_string());
+        args.push(format!("{key}={value}"));
+    }
+    args
+}
+
 /// Builds the `podman create` argument vector for one container spec.
 ///
 /// The kubelet has already pulled the image, so the engine never pulls here.
@@ -422,6 +439,33 @@ pub fn create_arguments(spec: &ContainerSpec) -> Result<Vec<String>, KubeletErro
         args.push("--entrypoint".to_string());
         args.push(serde_json::to_string(entrypoint)?);
     }
+    for mount in &spec.mounts {
+        args.push("-v".to_string());
+        let ro = if mount.readonly { ":ro" } else { "" };
+        args.push(format!("{}:{}{ro}", mount.host_path, mount.container_path));
+    }
+    if let Some(res) = &spec.resources {
+        if let Some(shares) = res.cpu_shares {
+            args.push("--cpu-shares".to_string());
+            args.push(shares.to_string());
+        }
+        if let Some(quota) = res.cpu_quota {
+            args.push("--cpu-quota".to_string());
+            args.push(quota.to_string());
+        }
+        if let Some(period) = res.cpu_period {
+            args.push("--cpu-period".to_string());
+            args.push(period.to_string());
+        }
+        if let Some(cpus) = &res.cpuset_cpus {
+            args.push("--cpuset-cpus".to_string());
+            args.push(cpus.clone());
+        }
+        if let Some(mem) = res.memory_limit_in_bytes {
+            args.push("--memory".to_string());
+            args.push(mem.to_string());
+        }
+    }
     args.push(spec.image.clone());
     args.extend(spec.args.iter().cloned());
     Ok(args)
@@ -430,6 +474,9 @@ pub fn create_arguments(spec: &ContainerSpec) -> Result<Vec<String>, KubeletErro
 /// Builds the `podman logs` argument vector.
 pub fn log_arguments(id: &str, options: &LogOptions) -> Vec<String> {
     let mut args = vec!["logs".to_string()];
+    if options.follow {
+        args.push("--follow".to_string());
+    }
     if let Some(tail) = options.tail_lines {
         args.push("--tail".to_string());
         args.push(tail.to_string());
@@ -578,6 +625,7 @@ fn parse_version(stdout: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::{MountSpec, ResourceSpec};
 
     #[test]
     fn create_arguments_spell_the_podman_command_line() {
@@ -590,6 +638,7 @@ mod tests {
             env: vec![("GREETING".to_string(), "hi".to_string())],
             working_dir: Some("/work".to_string()),
             labels: BTreeMap::from([("io.kubernetes.pod.uid".to_string(), "u1".to_string())]),
+            ..ContainerSpec::default()
         };
         assert_eq!(
             create_arguments(&spec).unwrap(),
@@ -620,11 +669,97 @@ mod tests {
         })
         .unwrap();
         assert_eq!(minimal, ["create", "--name", "n", "--pull", "never", "img"]);
+
+        let spec_with_mounts_and_res = ContainerSpec {
+            name: "full".to_string(),
+            image: "img".to_string(),
+            mounts: vec![
+                MountSpec {
+                    container_path: "/data".to_string(),
+                    host_path: "/var/data".to_string(),
+                    readonly: false,
+                },
+                MountSpec {
+                    container_path: "/etc/config".to_string(),
+                    host_path: "/var/config".to_string(),
+                    readonly: true,
+                },
+            ],
+            resources: Some(ResourceSpec {
+                cpu_shares: Some(512),
+                cpu_quota: Some(25_000),
+                cpu_period: Some(100_000),
+                cpuset_cpus: Some("0-1".to_string()),
+                memory_limit_in_bytes: Some(104_857_600),
+            }),
+            ..ContainerSpec::default()
+        };
+        assert_eq!(
+            create_arguments(&spec_with_mounts_and_res).unwrap(),
+            [
+                "create",
+                "--name",
+                "full",
+                "--pull",
+                "never",
+                "-v",
+                "/var/data:/data",
+                "-v",
+                "/var/config:/etc/config:ro",
+                "--cpu-shares",
+                "512",
+                "--cpu-quota",
+                "25000",
+                "--cpu-period",
+                "100000",
+                "--cpuset-cpus",
+                "0-1",
+                "--memory",
+                "104857600",
+                "img"
+            ]
+        );
+    }
+
+    #[test]
+    fn pod_create_arguments_carries_ports_and_labels() {
+        let ports = vec![
+            PortMappingSpec {
+                protocol: "tcp".to_string(),
+                container_port: 80,
+                host_port: 8080,
+                host_ip: Some("127.0.0.1".to_string()),
+            },
+            PortMappingSpec {
+                protocol: "udp".to_string(),
+                container_port: 53,
+                host_port: 0,
+                host_ip: None,
+            },
+        ];
+        let labels = BTreeMap::from([("io.kubernetes.pod.name".to_string(), "p1".to_string())]);
+        let args = pod_create_arguments("pod-1", &labels, &ports);
+        assert_eq!(
+            args,
+            [
+                "pod",
+                "create",
+                "--name",
+                "pod-1",
+                "-p",
+                "127.0.0.1:8080:80/tcp",
+                "-p",
+                "53/udp",
+                "--label",
+                "io.kubernetes.pod.name=p1"
+            ]
+        );
     }
 
     #[test]
     fn log_arguments_carry_tail_timestamps_and_since() {
         let options = LogOptions {
+            follow: true,
             tail_lines: Some(5),
             timestamps: true,
             since_seconds: Some(30),
@@ -634,6 +769,7 @@ mod tests {
             log_arguments("abc", &options),
             [
                 "logs",
+                "--follow",
                 "--tail",
                 "5",
                 "--timestamps",

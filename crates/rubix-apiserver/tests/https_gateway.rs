@@ -56,6 +56,18 @@ async fn request(
     path: &str,
     body: &str,
 ) -> (u16, String) {
+    request_with_accept(addr, pki, admin, method, path, "application/json", body).await
+}
+
+async fn request_with_accept(
+    addr: std::net::SocketAddr,
+    pki: &std::path::Path,
+    admin: bool,
+    method: &str,
+    path: &str,
+    accept: &str,
+    body: &str,
+) -> (u16, String) {
     let mut roots = RootCertStore::empty();
     for cert in load_certs(&pki.join("ca.crt")) {
         roots.add(cert).unwrap();
@@ -76,7 +88,7 @@ async fn request(
     let server_name = ServerName::try_from("127.0.0.1").unwrap();
     let mut tls = connector.connect(server_name, tcp).await.unwrap();
     let request = format!(
-        "{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nAccept: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        "{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nAccept: {accept}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
         body.len()
     );
     tls.write_all(request.as_bytes()).await.unwrap();
@@ -240,6 +252,7 @@ async fn pod_log_subresource_and_openapi_serve_kubectl() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("content-type: text/plain"), "{body}");
     assert!(body.ends_with("hello/hello tail=Some(5)\n"), "{body}");
+
     let (status, body) = request(
         addr,
         &pki,
@@ -263,6 +276,84 @@ async fn pod_log_subresource_and_openapi_serve_kubectl() {
     assert!(body.contains("\"kind\":\"Pod\""), "{body}");
     let (status, _) = request(addr, &pki, true, "GET", "/api/v1/pods", "").await;
     assert_eq!(status, 200);
+
+    stop_handle.stop();
+    supervisor.await.unwrap();
+}
+
+#[tokio::test]
+async fn pod_log_follow_and_table_accept_format() {
+    let dir = TempDir::new().unwrap();
+    let config = setup(&dir);
+    let service = ApiserverService::new(config, storage(&dir));
+    service.set_pod_log_reader(Arc::new(StaticLogReader));
+    let registration = ApiserverAdapter::registration(
+        "apiserver",
+        service.clone(),
+        Vec::new(),
+        Duration::from_secs(10),
+    );
+    let supervisor = rubix_supervisor::Supervisor::new(vec![registration]).unwrap();
+    let (stop_handle, stop_receiver) = rubix_supervisor::stop_channel();
+    let supervisor = tokio::spawn(async move { supervisor.run(stop_receiver).await });
+    let addr = tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if let Some(addr) = service.bound_addr() {
+                return addr;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .expect("listener bound");
+    let pki = dir.path().join("pki");
+
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "POST",
+        "/api/v1/namespaces/default/pods",
+        r#"{"apiVersion":"v1","kind":"Pod","metadata":{"name":"hello"},"spec":{"containers":[{"name":"hello","image":"localhost/rubix-hello:latest"}]}}"#,
+    )
+    .await;
+    assert_eq!(status, 201, "{body}");
+
+    let (status, body) = request(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods/hello/log?follow=true",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("transfer-encoding: chunked"), "{body}");
+    assert!(body.contains("hello/- tail=None"), "{body}");
+
+    let (status, body) = request_with_accept(
+        addr,
+        &pki,
+        true,
+        "GET",
+        "/api/v1/namespaces/default/pods",
+        "application/json;as=Table;v=v1;g=meta.k8s.io",
+        "",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("content-type: application/json;as=Table;v=v1;g=meta.k8s.io"),
+        "{body}"
+    );
+    assert!(body.contains("\"kind\":\"Table\""), "{body}");
+    assert!(body.contains("\"name\":\"Name\""), "{body}");
+    assert!(body.contains("\"name\":\"Ready\""), "{body}");
+    assert!(body.contains("\"name\":\"Status\""), "{body}");
+    assert!(body.contains("\"name\":\"Restarts\""), "{body}");
+    assert!(body.contains("\"name\":\"Age\""), "{body}");
+    assert!(body.contains("\"cells\":[\"hello\""), "{body}");
 
     stop_handle.stop();
     supervisor.await.unwrap();

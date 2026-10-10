@@ -213,13 +213,32 @@ async fn handle(
             )
             .await
             {
-                Ok(outcome) => match outcome.body {
-                    Payload::Json(body) => json_response(outcome.status, &body),
-                    Payload::Text(body) => text_response(outcome.status, body),
-                },
+                Ok(outcome) => outcome_to_response(outcome, &path, accept.as_deref()),
                 Err(err) => error_response(&err),
             }
         },
+    }
+}
+
+fn outcome_to_response(
+    outcome: dispatch::Outcome,
+    path: &ResourcePath,
+    accept: Option<&str>,
+) -> Response<Body> {
+    match outcome.body {
+        Payload::Json(body) => {
+            if path.resource == "pods" && accept.is_some_and(|a| a.contains("as=Table")) {
+                json_response_with_type(
+                    outcome.status,
+                    "application/json;as=Table;v=v1;g=meta.k8s.io",
+                    &pod_to_table(&body),
+                )
+            } else {
+                json_response(outcome.status, &body)
+            }
+        },
+        Payload::Text(body) => text_response(outcome.status, body),
+        Payload::ChunkedText(body) => chunked_text_response(outcome.status, body),
     }
 }
 
@@ -256,7 +275,7 @@ async fn watch_response(
         match dispatch::dispatch(service, client, &Method::GET, path, None, None, &[]).await {
             Ok(outcome) => match outcome.body {
                 Payload::Json(body) => body,
-                Payload::Text(_) => Value::Null,
+                Payload::Text(_) | Payload::ChunkedText(_) => Value::Null,
             },
             Err(err) => return error_response(&err),
         };
@@ -731,8 +750,172 @@ fn status_response(status: StatusCode, reason: &str, message: &str) -> Response<
 }
 
 fn json_response(status: StatusCode, body: &Value) -> Response<Body> {
+    json_response_with_type(status, "application/json", body)
+}
+
+fn json_response_with_type(
+    status: StatusCode,
+    content_type: &'static str,
+    body: &Value,
+) -> Response<Body> {
     let bytes = serde_json::to_vec(body).unwrap_or_else(|_| b"{}".to_vec());
-    response(status, "application/json", Bytes::from(bytes))
+    response(status, content_type, Bytes::from(bytes))
+}
+
+fn chunked_text_response(status: StatusCode, body: String) -> Response<Body> {
+    let (mut sender, channel) = Channel::<Bytes, Infallible>::new(1);
+    tokio::spawn(async move {
+        if !body.is_empty() {
+            let _ = sender.send_data(Bytes::from(body)).await;
+        }
+    });
+    Response::builder()
+        .status(status)
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(channel.boxed())
+        .unwrap_or_else(|_| Response::new(Full::new(Bytes::from_static(b"")).boxed()))
+}
+
+fn format_age(created: u64, now: u64) -> String {
+    let secs = now.saturating_sub(created);
+    if secs < 120 {
+        format!("{secs}s")
+    } else if secs < 7_200 {
+        format!("{}m", secs / 60)
+    } else if secs < 172_800 {
+        format!("{}h", secs / 3_600)
+    } else {
+        format!("{}d", secs / 86_400)
+    }
+}
+
+fn pod_row(pod: &Value, now: u64) -> Value {
+    let name = pod
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let total = pod
+        .pointer("/spec/containers")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    let ready = pod
+        .pointer("/status/containerStatuses")
+        .and_then(Value::as_array)
+        .map_or(0, |statuses| {
+            statuses
+                .iter()
+                .filter(|s| s.get("ready").and_then(Value::as_bool).unwrap_or(false))
+                .count()
+        });
+    let ready_str = format!("{ready}/{total}");
+
+    let phase = pod
+        .pointer("/status/phase")
+        .and_then(Value::as_str)
+        .unwrap_or("Unknown");
+    let mut status_str = phase.to_string();
+    if let Some(statuses) = pod
+        .pointer("/status/containerStatuses")
+        .and_then(Value::as_array)
+    {
+        for cs in statuses {
+            if let Some(reason) = cs.pointer("/state/waiting/reason").and_then(Value::as_str) {
+                status_str = reason.to_string();
+                break;
+            }
+        }
+    }
+
+    let restarts: i64 = pod
+        .pointer("/status/containerStatuses")
+        .and_then(Value::as_array)
+        .map_or(0, |statuses| {
+            statuses
+                .iter()
+                .filter_map(|s| s.get("restartCount").and_then(Value::as_i64))
+                .sum()
+        });
+
+    let age = pod
+        .pointer("/metadata/creationTimestamp")
+        .and_then(Value::as_str)
+        .and_then(crate::time::parse_rfc3339_seconds)
+        .map_or_else(
+            || "<unknown>".to_string(),
+            |created| format_age(created, now),
+        );
+
+    json!({
+        "cells": [name, ready_str, status_str, restarts.to_string(), age],
+        "object": pod
+    })
+}
+
+fn pod_to_table(value: &Value) -> Value {
+    let now = crate::time::now_unix();
+    let (metadata, pods) = if value.get("kind").and_then(Value::as_str) == Some("PodList") {
+        (
+            value.get("metadata").cloned().unwrap_or_else(|| json!({})),
+            value
+                .get("items")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default(),
+        )
+    } else {
+        (
+            json!({
+                "resourceVersion": value.pointer("/metadata/resourceVersion").unwrap_or(&Value::Null)
+            }),
+            vec![value.clone()],
+        )
+    };
+
+    let rows: Vec<Value> = pods.iter().map(|pod| pod_row(pod, now)).collect();
+
+    json!({
+        "kind": "Table",
+        "apiVersion": "meta.k8s.io/v1",
+        "metadata": metadata,
+        "columnDefinitions": [
+            {
+                "name": "Name",
+                "type": "string",
+                "format": "name",
+                "description": "Resource name",
+                "priority": 0
+            },
+            {
+                "name": "Ready",
+                "type": "string",
+                "format": "",
+                "description": "Readiness of containers",
+                "priority": 0
+            },
+            {
+                "name": "Status",
+                "type": "string",
+                "format": "",
+                "description": "Pod status",
+                "priority": 0
+            },
+            {
+                "name": "Restarts",
+                "type": "string",
+                "format": "",
+                "description": "Number of restarts",
+                "priority": 0
+            },
+            {
+                "name": "Age",
+                "type": "string",
+                "format": "",
+                "description": "Pod age",
+                "priority": 0
+            }
+        ],
+        "rows": rows
+    })
 }
 
 fn text_response(status: StatusCode, body: String) -> Response<Body> {

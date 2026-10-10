@@ -14,6 +14,7 @@ use super::route::ResourcePath;
 pub(crate) enum Payload {
     Json(Value),
     Text(String),
+    ChunkedText(String),
 }
 
 pub(crate) struct Outcome {
@@ -734,12 +735,17 @@ async fn subresource_read(
                     reason: "no kubelet is registered to serve pod logs".to_string(),
                 });
             };
-            let text = reader
-                .read_pod_log(&pod, &PodLogOptions::from_params(&query::parse(query)))
-                .await?;
+            let options = PodLogOptions::from_params(&query::parse(query));
+            let follow = options.follow;
+            let text = reader.read_pod_log(&pod, &options).await?;
+            let body = if follow {
+                Payload::ChunkedText(text)
+            } else {
+                Payload::Text(text)
+            };
             Ok(Outcome {
                 status: http::StatusCode::OK,
-                body: Payload::Text(text),
+                body,
             })
         },
         _ => Err(ApiserverError::NotFound {

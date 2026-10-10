@@ -11,8 +11,7 @@ use serde_json::Value;
 
 use crate::error::ApiserverError;
 
-/// Query options accepted by the pod log subresource. `follow` is accepted but
-/// not honoured: the response is the log captured so far.
+/// Query options accepted by the pod log subresource.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PodLogOptions {
     /// Container to read; the first spec container when absent.
@@ -25,6 +24,8 @@ pub struct PodLogOptions {
     pub since_seconds: Option<u64>,
     /// Read the previous attempt of the container.
     pub previous: bool,
+    /// Stream logs as they arrive.
+    pub follow: bool,
 }
 
 impl PodLogOptions {
@@ -40,6 +41,9 @@ impl PodLogOptions {
             since_seconds: params.get("sinceSeconds").and_then(|v| v.parse().ok()),
             previous: params
                 .get("previous")
+                .is_some_and(|v| v == "true" || v == "1"),
+            follow: params
+                .get("follow")
                 .is_some_and(|v| v == "true" || v == "1"),
         }
     }
@@ -80,6 +84,7 @@ mod tests {
         assert!(options.timestamps);
         assert_eq!(options.since_seconds, Some(30));
         assert!(options.previous);
+        assert!(!options.follow);
         assert_eq!(
             PodLogOptions::from_params(&BTreeMap::new()),
             PodLogOptions::default()

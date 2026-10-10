@@ -32,16 +32,19 @@ pub use container::{
 pub use cri::{CriRuntimeProvider, parse_cri_logs, parse_rfc3339_unix_secs};
 pub use engine::{
     ContainerEngine, ContainerSpec, ContainerState, ContainerSummary, EngineRuntimeAdapter,
-    PodSummary,
+    MountSpec, PodSummary, PortMappingSpec, ResourceSpec,
 };
 pub use error::KubeletError;
 pub use health::KubeletHealthReport;
 pub use mock::MockRuntimeProvider;
-pub use podman::PodmanEngine;
-pub use reconciler::{PodReconciler, PullPolicy, StartFailure, container_config, sandbox_config};
-pub use registration::NodeRegistration;
+pub use reconciler::{
+    PodReconciler, PullPolicy, StartFailure, container_config, container_config_with_root,
+    sandbox_config,
+};
 pub use service::{KubeletLogSource, KubeletService};
-pub use status::{ContainerView, CpuAssignment, observed_conditions, observed_phase, pod_status};
+pub use status::{
+    ContainerView, CpuAssignment, PodViews, observed_conditions, observed_phase, pod_status,
+};
 pub use supervisor::{COMPONENT_KUBELET, DEFAULT_STARTUP_TIMEOUT, KubeletAdapter};
 pub use workload::{
     CpuManager, CpuManagerState, ExecResult, LogOptions, PodQoSClass, ReconcileReport,

@@ -38,6 +38,13 @@ fn nanos_to_rfc3339(nanos: i64) -> Value {
     secs_from_nanos(nanos).map_or(Value::Null, |secs| json!(rfc3339_seconds(secs)))
 }
 
+/// Spec and attempt views for regular and init containers of a pod.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PodViews<'a> {
+    pub containers: &'a [ContainerView<'a>],
+    pub init_containers: &'a [ContainerView<'a>],
+}
+
 /// Builds a Pod status from the latest container attempts.
 #[must_use]
 pub fn pod_status(
@@ -47,21 +54,73 @@ pub fn pod_status(
     pod_ip: Option<&str>,
     sandbox_ready: bool,
     policy: RestartPolicy,
-    views: &[ContainerView<'_>],
+    views: PodViews<'_>,
 ) -> Value {
-    let container_statuses: Vec<Value> = views
+    let init_views = views.init_containers;
+    let regular_views = views.containers;
+    let init_complete = init_views.is_empty()
+        || init_views.iter().all(|v| {
+            v.latest.is_some_and(|s| {
+                state_of(s) == cri::ContainerState::ContainerExited && s.exit_code == 0
+            })
+        });
+
+    let init_failed = init_views.iter().any(|v| {
+        v.latest.is_some_and(|s| {
+            state_of(s) == cri::ContainerState::ContainerExited
+                && s.exit_code != 0
+                && !policy.restarts(s.exit_code)
+        })
+    });
+
+    let unready_init: Vec<&str> = init_views
         .iter()
-        .map(|view| container_status_json(provider, view))
+        .filter(|v| {
+            !v.latest.is_some_and(|s| {
+                state_of(s) == cri::ContainerState::ContainerExited && s.exit_code == 0
+            })
+        })
+        .filter_map(|v| v.spec.get("name").and_then(Value::as_str))
         .collect();
-    let attempts: Vec<Option<&cri::ContainerStatus>> = views.iter().map(|v| v.latest).collect();
-    let restarting = views.iter().any(|v| v.backoff.is_some());
-    let phase = observed_phase(&attempts, policy, restarting);
+
+    let init_container_statuses: Vec<Value> = init_views
+        .iter()
+        .map(|view| container_status_json(provider, view, false))
+        .collect();
+
+    let container_statuses: Vec<Value> = regular_views
+        .iter()
+        .map(|view| container_status_json(provider, view, !init_complete))
+        .collect();
+
+    let attempts: Vec<Option<&cri::ContainerStatus>> =
+        regular_views.iter().map(|v| v.latest).collect();
+    let restarting = regular_views.iter().any(|v| v.backoff.is_some())
+        || init_views.iter().any(|v| v.backoff.is_some());
+
+    let phase = if init_complete {
+        observed_phase(&attempts, policy, restarting)
+    } else if init_failed {
+        "Failed"
+    } else {
+        "Pending"
+    };
+
     let unready: Vec<&str> = container_statuses
         .iter()
         .filter(|s| s["ready"].as_bool() != Some(true))
         .filter_map(|s| s["name"].as_str())
         .collect();
-    let conditions = observed_conditions(pod, phase, &unready, sandbox_ready);
+
+    let conditions = observed_conditions(
+        pod,
+        phase,
+        &unready,
+        sandbox_ready,
+        init_complete,
+        &unready_init,
+    );
+
     let start_time = pod
         .pointer("/status/startTime")
         .cloned()
@@ -72,7 +131,7 @@ pub fn pod_status(
         PodQoSClass::BestEffort => "BestEffort",
     };
     let pod_ip = pod_ip.filter(|ip| !ip.is_empty()).unwrap_or(node_ip);
-    json!({
+    let mut status = json!({
         "phase": phase,
         "qosClass": qos,
         "hostIP": node_ip,
@@ -81,7 +140,15 @@ pub fn pod_status(
         "startTime": start_time,
         "conditions": conditions,
         "containerStatuses": container_statuses
-    })
+    });
+    let has_spec_inits = pod
+        .pointer("/spec/initContainers")
+        .and_then(Value::as_array)
+        .is_some_and(|a| !a.is_empty());
+    if has_spec_inits || !init_container_statuses.is_empty() {
+        status["initContainerStatuses"] = json!(init_container_statuses);
+    }
+    status
 }
 
 /// Maps the latest container attempts onto a Pod phase under `policy`.
@@ -137,7 +204,11 @@ fn terminated_state(provider: &str, status: &cri::ContainerStatus) -> Value {
     })
 }
 
-fn container_status_json(provider: &str, view: &ContainerView<'_>) -> Value {
+fn container_status_json(
+    provider: &str,
+    view: &ContainerView<'_>,
+    pod_initializing: bool,
+) -> Value {
     let name = view
         .spec
         .get("name")
@@ -187,6 +258,8 @@ fn container_status_json(provider: &str, view: &ContainerView<'_>) -> Value {
         {
             status["lastState"] = terminated_state(provider, previous);
         }
+    } else if pod_initializing {
+        status["state"] = json!({ "waiting": { "reason": "PodInitializing" } });
     } else {
         status["state"] = json!({ "waiting": { "reason": "ContainerCreating" } });
     }
@@ -208,6 +281,8 @@ pub fn observed_conditions(
     phase: &str,
     unready: &[&str],
     sandbox_ready: bool,
+    init_complete: bool,
+    unready_init: &[&str],
 ) -> Vec<Value> {
     let empty = Vec::new();
     let existing = pod
@@ -218,6 +293,13 @@ pub fn observed_conditions(
     let terminal = matches!(phase, "Succeeded" | "Failed");
     let (ready_status, ready_reason, ready_message) = if terminal {
         ("False", "PodCompleted", String::new())
+    } else if !init_complete {
+        let msg = if unready.is_empty() {
+            String::new()
+        } else {
+            format!("containers with unready status: [{}]", unready.join(" "))
+        };
+        ("False", "ContainersNotReady", msg)
     } else if unready.is_empty() {
         ("True", "", String::new())
     } else {
@@ -226,6 +308,19 @@ pub fn observed_conditions(
             "ContainersNotReady",
             format!("containers with unready status: [{}]", unready.join(" ")),
         )
+    };
+    let (init_status, init_reason, init_message) = if init_complete {
+        ("True", "", String::new())
+    } else {
+        let msg = if unready_init.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "containers with incomplete status: [{}]",
+                unready_init.join(" ")
+            )
+        };
+        ("False", "ContainersNotInitialized", msg)
     };
     let condition = |kind: &str, status: &str, reason: &str, message: &str| {
         let transition = existing
@@ -255,7 +350,7 @@ pub fn observed_conditions(
             "",
             "",
         ),
-        condition("Initialized", "True", "", ""),
+        condition("Initialized", init_status, init_reason, &init_message),
         condition("Ready", ready_status, ready_reason, &ready_message),
         condition(
             "ContainersReady",
@@ -272,6 +367,32 @@ pub fn observed_conditions(
 #[must_use]
 pub fn pending_status(pod: &Value, node_ip: &str, reason: &str, message: Option<&str>) -> Value {
     let empty = Vec::new();
+    let init_containers = pod
+        .pointer("/spec/initContainers")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty);
+    let has_inits = !init_containers.is_empty();
+
+    let init_statuses: Vec<Value> = init_containers
+        .iter()
+        .map(|c| {
+            let mut waiting = json!({ "reason": reason });
+            if let Some(message) = message {
+                waiting["message"] = json!(message);
+            }
+            json!({
+                "name": c.get("name").and_then(Value::as_str).unwrap_or("init"),
+                "image": c.get("image").and_then(Value::as_str).unwrap_or("unknown"),
+                "imageID": "",
+                "ready": false,
+                "started": false,
+                "restartCount": 0,
+                "state": { "waiting": waiting }
+            })
+        })
+        .collect();
+
+    let app_reason = if has_inits { "PodInitializing" } else { reason };
     let containers = pod
         .pointer("/spec/containers")
         .and_then(Value::as_array)
@@ -279,8 +400,8 @@ pub fn pending_status(pod: &Value, node_ip: &str, reason: &str, message: Option<
     let statuses: Vec<Value> = containers
         .iter()
         .map(|c| {
-            let mut waiting = json!({ "reason": reason });
-            if let Some(message) = message {
+            let mut waiting = json!({ "reason": app_reason });
+            if !has_inits && let Some(message) = message {
                 waiting["message"] = json!(message);
             }
             json!({
@@ -295,19 +416,27 @@ pub fn pending_status(pod: &Value, node_ip: &str, reason: &str, message: Option<
         })
         .collect();
     let unready: Vec<&str> = statuses.iter().filter_map(|s| s["name"].as_str()).collect();
+    let unready_inits: Vec<&str> = init_statuses
+        .iter()
+        .filter_map(|s| s["name"].as_str())
+        .collect();
     let qos = match determine_pod_qos(pod) {
         PodQoSClass::Guaranteed => "Guaranteed",
         PodQoSClass::Burstable => "Burstable",
         PodQoSClass::BestEffort => "BestEffort",
     };
-    json!({
+    let mut status = json!({
         "phase": "Pending",
         "qosClass": qos,
         "hostIP": node_ip,
         "startTime": pod.pointer("/status/startTime").cloned().unwrap_or_else(|| json!(now_rfc3339())),
-        "conditions": observed_conditions(pod, "Pending", &unready, false),
+        "conditions": observed_conditions(pod, "Pending", &unready, false, !has_inits, &unready_inits),
         "containerStatuses": statuses
-    })
+    });
+    if has_inits {
+        status["initContainerStatuses"] = json!(init_statuses);
+    }
+    status
 }
 
 /// Container-level labels and annotations present in a CRI status, as a map for

@@ -471,6 +471,7 @@ impl PodLogReader for KubeletLogSource {
             timestamps: options.timestamps,
             since_seconds: options.since_seconds,
             previous: options.previous,
+            follow: options.follow,
         };
         let id = resolve_container(self.runtime.as_ref(), uid, &container, options.previous)
             .await
