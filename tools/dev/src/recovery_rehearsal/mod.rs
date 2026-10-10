@@ -40,7 +40,7 @@ use crate::release_qualification::receipt::AssertionRecord as ReceiptAssertionRe
 use crate::release_qualification::receipt::{
     CURRENT_SCHEMA_VERSION, CandidateIdentity, CandidateReceipt, CleanupInventory,
     CommandExecution, EnvironmentInfo, ReceiptPayload, ReceiptTimestamps, SkipRecord,
-    load_and_validate_receipt, load_candidate_inventory,
+    load_and_validate_receipt, load_and_validate_receipt_with_candidate, load_candidate_inventory,
 };
 
 /// Standard criterion number for lifecycle and storage qualification.
@@ -801,11 +801,15 @@ async fn capture_recovery_qualification_async(
     Ok((receipt_path, report_path))
 }
 
-/// Verifies a recovery candidate receipt from a file or directory path against the repository root.
+/// Verifies a recovery candidate receipt from a file or directory path against the repository root and optional candidate directory.
 ///
 /// Fails closed: rejects non-Linux hosts, in-process/mock executions, and unpermitted skips.
 /// Live Linux recovery qualification required.
-pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<CandidateReceipt> {
+pub fn verify_recovery_receipt_with_candidate(
+    receipt_or_dir: &Path,
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CandidateReceipt> {
     let receipt_path = if receipt_or_dir.is_dir() {
         let standard = receipt_or_dir.join(RECEIPT_FILENAME);
         if standard.is_file() {
@@ -817,7 +821,12 @@ pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<Can
         receipt_or_dir.to_path_buf()
     };
 
-    let receipt = load_and_validate_receipt(&receipt_path, root, CRITERION_NUMBER)?;
+    let receipt = load_and_validate_receipt_with_candidate(
+        &receipt_path,
+        root,
+        candidate_dir,
+        CRITERION_NUMBER,
+    )?;
 
     // 1. Fail closed on non-Linux execution environment
     let is_linux_host = receipt.environment.host.to_lowercase().contains("linux");
@@ -891,4 +900,12 @@ pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<Can
     }
 
     Ok(receipt)
+}
+
+/// Verifies a recovery candidate receipt from a file or directory path against the repository root.
+///
+/// Fails closed: rejects non-Linux hosts, in-process/mock executions, and unpermitted skips.
+/// Live Linux recovery qualification required.
+pub fn verify_recovery_receipt(receipt_or_dir: &Path, root: &Path) -> Result<CandidateReceipt> {
+    verify_recovery_receipt_with_candidate(receipt_or_dir, root, None)
 }

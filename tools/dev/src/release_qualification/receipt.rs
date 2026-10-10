@@ -404,8 +404,11 @@ pub fn load_candidate_inventory_from_release_dir(root: &Path) -> Result<Candidat
     })
 }
 
-/// Loads the current candidate inventory from repository metadata.
-pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
+/// Loads the current candidate inventory from repository metadata or an optional candidate directory.
+pub fn load_candidate_inventory_with_candidate(
+    root: &Path,
+    candidate_dir: Option<&Path>,
+) -> Result<CandidateInventory> {
     if let Some(explicit_path) = std::env::var_os("RUBIX_CANDIDATE_INVENTORY_PATH") {
         let explicit = PathBuf::from(explicit_path);
         let bytes = read_bounded(&explicit, MAX_RECEIPT_BYTES)?;
@@ -415,6 +418,32 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
         return Ok(inventory);
     }
 
+    if let Some(candidate) = candidate_dir {
+        let candidate_path = if candidate.is_absolute() || candidate.exists() {
+            candidate.to_path_buf()
+        } else {
+            root.join(candidate)
+        };
+        if candidate_path.join("cell-inventory.json").is_file() {
+            return load_candidate_inventory_from_release_dir(&candidate_path);
+        } else if candidate_path.is_file() {
+            let bytes = read_bounded(&candidate_path, MAX_RECEIPT_BYTES)?;
+            let value = json::parse(&bytes)?;
+            let inventory: CandidateInventory = serde_json::from_value(value).map_err(|e| {
+                format!(
+                    "invalid candidate inventory at {}: {e}",
+                    candidate_path.display()
+                )
+            })?;
+            return Ok(inventory);
+        } else if candidate_path
+            .join("docs/release/cell-inventory.json")
+            .is_file()
+        {
+            return load_candidate_inventory_from_release_dir(&candidate_path.join("docs/release"));
+        }
+    }
+
     if root.join("cell-inventory.json").is_file() {
         load_candidate_inventory_from_release_dir(root)
     } else if root.join("docs/release/cell-inventory.json").is_file() {
@@ -422,6 +451,11 @@ pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
     } else {
         load_candidate_inventory_from_release_dir(root)
     }
+}
+
+/// Loads the current candidate inventory from repository metadata.
+pub fn load_candidate_inventory(root: &Path) -> Result<CandidateInventory> {
+    load_candidate_inventory_with_candidate(root, None)
 }
 
 fn validate_metadata_and_env(receipt: &CandidateReceipt, expected_criterion: usize) -> Result<()> {
@@ -634,14 +668,24 @@ pub fn validate_candidate_receipt(
     Ok(())
 }
 
+/// Loads and validates a receipt file against a repository root and optional candidate directory.
+pub fn load_and_validate_receipt_with_candidate(
+    receipt_path: &Path,
+    root: &Path,
+    candidate_dir: Option<&Path>,
+    expected_criterion: usize,
+) -> Result<CandidateReceipt> {
+    let inventory = load_candidate_inventory_with_candidate(root, candidate_dir)?;
+    load_and_validate_receipt_with_inventory(receipt_path, &inventory, expected_criterion)
+}
+
 /// Loads and validates a receipt file against a repository root.
 pub fn load_and_validate_receipt(
     receipt_path: &Path,
     root: &Path,
     expected_criterion: usize,
 ) -> Result<CandidateReceipt> {
-    let inventory = load_candidate_inventory(root)?;
-    load_and_validate_receipt_with_inventory(receipt_path, &inventory, expected_criterion)
+    load_and_validate_receipt_with_candidate(receipt_path, root, None, expected_criterion)
 }
 
 /// Loads and validates a receipt file against an explicit candidate inventory.
