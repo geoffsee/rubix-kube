@@ -79,7 +79,7 @@ cargo run --locked -p rubix-dev --bin rubix-language-policy
 
 Pull-request CI runs debug tests with cargo-nextest, doctests with `cargo test --doc`, and
 `cargo deny --locked --all-features check`. In headless or agent execution environments,
-use the `cargo test-ci` alias defined in `.cargo/config.toml`, which passes `--no-capture` so Nextest suppresses interactive terminal progress bars, pager pagination, keyboard input listeners, and prevents output capturing deadlocks. Default-branch pushes and merge-group
+use the `cargo test-ci` alias defined in `.cargo/config.toml`. The alias passes `--no-capture` (which runs tests serially and disables output capture to prevent deadlocks), and separately configures flags to suppress interactive terminal progress bars and keyboard input listeners. Default-branch pushes and merge-group
 runs also run release tests through the same nextest profile, release doctests, the
 `rubix-kube` and `rubixctl` `--profile dist` build, and upstream input verification. `.cargo/config.toml` defines the
 `lint`, `fmt-check`, `test-ci`, `test-all` and `doc-all` aliases; `test-all` does not include

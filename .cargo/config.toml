@@ -2,17 +2,10 @@
 lint = "clippy --locked --workspace --all-targets --all-features -- -D warnings"
 fmt-check = "fmt --all -- --check"
 test-all = "test --workspace --all-targets --all-features"
-test-ci = "nextest run --locked --workspace --all-targets --all-features --profile ci --no-capture"
+test-ci = "nextest run --locked --workspace --all-targets --all-features --profile ci --no-capture --hide-progress-bar --no-input-handler --no-pager"
 doc-all = "doc --workspace --all-features --no-deps"
 
 [net]
 git-fetch-with-cli = true
 retry = 10
-
-[env]
-# Disable nextest progress bar and TTY input handler to prevent hanging in headless agent executions
-NEXTEST_HIDE_PROGRESS_BAR = "1"
-NEXTEST_NO_INPUT_HANDLER = "1"
-NEXTEST_SHOW_PROGRESS = "none"
-NEXTEST_PAGER = "cat"
 
