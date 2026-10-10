@@ -410,14 +410,42 @@ pub fn check_criterion_11_operator_handoff_with_candidate(
     root: &Path,
     candidate_dir: Option<&Path>,
 ) -> Result<CriterionStatus> {
-    evaluate_criterion_with_candidate(
-        root,
-        candidate_dir,
-        11,
-        "Operator Documentation & Release Qualification",
-        "operator-handoff",
-        "fresh operator rehearsal, exact artifacts and trusted publication",
-    )
+    let slug = "operator-handoff";
+    let receipt_path = resolve_receipt_path_with_candidate(root, candidate_dir, 11, slug);
+    let filename = receipt_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map_or_else(|| receipt_filename(11, slug), String::from);
+
+    if !receipt_path.exists() {
+        return Ok(CriterionStatus {
+            number: 11,
+            name: "Operator Documentation & Release Qualification",
+            satisfied: false,
+            summary: format!(
+                "Pending: missing receipt '{filename}'; fresh operator rehearsal, exact artifacts and trusted publication; \
+                 validated current candidate-bound receipts unavailable"
+            ),
+        });
+    }
+
+    match crate::operator_rehearsal::verify_operator_rehearsal_receipt(&receipt_path, root) {
+        Ok(valid_receipt) => Ok(CriterionStatus {
+            number: 11,
+            name: "Operator Documentation & Release Qualification",
+            satisfied: true,
+            summary: format!(
+                "Satisfied: validated candidate-bound receipt '{filename}' ({})",
+                valid_receipt.description
+            ),
+        }),
+        Err(e) => Ok(CriterionStatus {
+            number: 11,
+            name: "Operator Documentation & Release Qualification",
+            satisfied: false,
+            summary: format!("Rejected: {filename} failed candidate verification ({e})"),
+        }),
+    }
 }
 
 /// Evaluates operator handoff rehearsal and release publication qualification evidence.

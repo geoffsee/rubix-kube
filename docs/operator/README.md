@@ -18,6 +18,7 @@ or synthetic fixture tests is not that evidence.
 | [Metrics and CPU management](metrics-and-cpu-management.md) | Metrics listener scope, series and CPU manager configuration. |
 | [Migration and recovery](migration-and-recovery.md) | Unqualified production cutover, actual receipt recovery, backup integrity and remaining evidence. |
 | [Performance budget qualification](performance-budget-qualification-runbook.md) | Matched arm64/amd64 live performance budgets, 24-hour soak, 8 retained processes, and candidate receipt generation. |
+| [Operator handoff rehearsal](operator-handoff-rehearsal.md) | Candidate-bound 5-phase operator rehearsal, 18-command qualification capture, fail-closed receipt verification, and publication gates. |
 
 Read the [compatibility contract](../architecture/compatibility-contract.md),
 [acceptance matrix](../architecture/acceptance-matrix.md),

@@ -12,6 +12,8 @@ mod disposable_node_cli;
 mod fixture_cli;
 #[path = "install_smoke.rs"]
 mod install_smoke;
+#[path = "operator_handoff_review.rs"]
+mod operator_handoff_review;
 #[path = "operator_runbooks.rs"]
 mod operator_runbooks;
 #[path = "perf_harness.rs"]
