@@ -176,6 +176,10 @@ jobs:
           CONFORMANCE_DIR: ${{ runner.temp }}/conformance-qualification
         run: |
           cargo run --locked -p rubix-dev --bin rubix-conformance -- verify-receipt "$CONFORMANCE_DIR/receipt.json"
+      - name: Rehearse operator handoff and verify Criterion 11 receipt
+        run: |
+          cargo run --locked -p rubix-dev --bin rubix-operator-rehearsal -- capture --output "${{ runner.temp }}/operator-handoff-rehearsal"
+          cargo run --locked -p rubix-dev --bin rubix-operator-rehearsal -- verify-receipt "${{ runner.temp }}/operator-handoff-rehearsal/criterion-11-operator-handoff.json"
       - name: Retain public capture and failure diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -184,6 +188,7 @@ jobs:
           path: |
             ${{ runner.temp }}/disposable-node/
             ${{ runner.temp }}/conformance-qualification/
+            ${{ runner.temp }}/operator-handoff-rehearsal/
           if-no-files-found: warn
           retention-days: 14
 

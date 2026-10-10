@@ -118,6 +118,7 @@ pub mod api_json;
 pub mod component_boundary;
 pub mod conformance;
 pub mod disposable_node;
+pub mod operator_rehearsal;
 pub mod perf;
 pub mod platform_management;
 pub mod platform_soak;
