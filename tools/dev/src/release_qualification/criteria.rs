@@ -137,24 +137,88 @@ pub fn check_criterion_4_addons_and_egress(root: &Path) -> Result<CriterionStatu
 
 /// Evaluates host/container lifecycle and state retention qualification evidence.
 pub fn check_criterion_5_lifecycle_and_storage(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
-        root,
-        5,
-        "Lifecycle & State Retention",
-        "lifecycle-and-storage",
-        "install, reboot, recreate, interruption and retention matrices",
-    )
+    let slug = "lifecycle-and-storage";
+    let receipt_path = resolve_receipt_path(root, 5, slug);
+    let filename = receipt_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map_or_else(|| receipt_filename(5, slug), String::from);
+
+    if !receipt_path.exists() {
+        return Ok(CriterionStatus {
+            number: 5,
+            name: "Lifecycle & State Retention",
+            satisfied: false,
+            summary: format!(
+                "Pending: missing receipt '{filename}'; install, reboot, recreate, interruption and retention matrices; \
+                 validated current candidate-bound receipts unavailable"
+            ),
+        });
+    }
+
+    match crate::recovery_rehearsal::verify_recovery_receipt(&receipt_path, root) {
+        Ok(valid_receipt) => Ok(CriterionStatus {
+            number: 5,
+            name: "Lifecycle & State Retention",
+            satisfied: true,
+            summary: format!(
+                "Satisfied: validated candidate-bound receipt '{filename}' ({})",
+                valid_receipt.description
+            ),
+        }),
+        Err(err) => Ok(CriterionStatus {
+            number: 5,
+            name: "Lifecycle & State Retention",
+            satisfied: false,
+            summary: format!(
+                "Pending: unqualified receipt '{filename}': {err}; \
+                 validated current candidate-bound receipts unavailable"
+            ),
+        }),
+    }
 }
 
 /// Evaluates live conformance, recovery and soak qualification evidence.
 pub fn check_criterion_6_conformance_and_soak(root: &Path) -> Result<CriterionStatus> {
-    evaluate_criterion(
-        root,
-        6,
-        "Conformance & Recovery Qualification",
-        "conformance-and-soak",
-        "fresh live conformance, restart and platform soak results",
-    )
+    let slug = "conformance-and-soak";
+    let receipt_path = resolve_receipt_path(root, 6, slug);
+    let filename = receipt_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map_or_else(|| receipt_filename(6, slug), String::from);
+
+    if !receipt_path.exists() {
+        return Ok(CriterionStatus {
+            number: 6,
+            name: "Conformance & Recovery Qualification",
+            satisfied: false,
+            summary: format!(
+                "Pending: missing receipt '{filename}'; fresh live conformance, restart and platform soak results; \
+                 validated current candidate-bound receipts unavailable"
+            ),
+        });
+    }
+
+    match crate::platform_soak::verify_soak_receipt(&receipt_path, root) {
+        Ok(valid_receipt) => Ok(CriterionStatus {
+            number: 6,
+            name: "Conformance & Recovery Qualification",
+            satisfied: true,
+            summary: format!(
+                "Satisfied: validated candidate-bound receipt '{filename}' ({})",
+                valid_receipt.description
+            ),
+        }),
+        Err(err) => Ok(CriterionStatus {
+            number: 6,
+            name: "Conformance & Recovery Qualification",
+            satisfied: false,
+            summary: format!(
+                "Pending: unqualified receipt '{filename}': {err}; \
+                 validated current candidate-bound receipts unavailable"
+            ),
+        }),
+    }
 }
 
 /// Evaluates live performance and memory budgets qualification evidence.

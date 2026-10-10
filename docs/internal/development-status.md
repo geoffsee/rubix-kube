@@ -209,12 +209,12 @@ Evidence: Conformance suite subsets and manifest tiers have not been run against
 Next step: Document conformance suite selection/exclusions, run smoke and manifest tiers against Linux candidate, and generate validated receipts; timestamp: 2026-10-07T14:15:00Z
 
 Work item: E36.02 (https://github.com/geoffsee/rubix-kube/issues/352); Parent criteria 1, 2, 3
-Outcome: Pending
-Readiness: Blocked on G04, E35.01
+Outcome: In Progress
+Readiness: In Progress
 Ownership: Unassigned
 Stack: qual/recovery-soak-linux
-Evidence: Live recovery rehearsal and 24-hour soak on Linux candidate not executed; component restart, outage escalation, reboot state preservation, and memory growth bound unverified.
-Next step: Execute rubix-recovery-rehearsal and 24-hour rubix-platform-soak on disposable Linux host with candidate bytes, capturing validated receipts; timestamp: 2026-10-07T14:15:00Z
+Evidence: In-process recovery rehearsal and platform soak rehearsal harnesses delivered with fail-closed candidate-bound receipt generation and verification for Criteria 5 and 6. Paired live recovery qualification and sustained 24-hour soak on disposable Linux candidate pending execution on disposable Linux infrastructure; receipts fail closed on rehearsal runs.
+Next step: Execute rubix-recovery-rehearsal and 24-hour rubix-platform-soak on disposable Linux host with candidate bytes, capturing validated live receipts; timestamp: 2026-10-09T17:00:00Z
 
 Work item: E36.03 (https://github.com/geoffsee/rubix-kube/issues/353); Parent criteria 1, 3
 Outcome: Pending

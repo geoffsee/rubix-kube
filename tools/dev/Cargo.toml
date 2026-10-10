@@ -30,6 +30,8 @@ rubix-datastore = { version = "=0.1.0", path = "../../crates/rubix-datastore" }
 rubix-dns = { version = "=0.1.0", path = "../../crates/rubix-dns" }
 rubix-pki = { version = "=0.1.0", path = "../../crates/rubix-pki" }
 rubix-storage = { version = "=0.1.0", path = "../../crates/rubix-storage" }
+rubix-supervisor = { version = "=0.1.0", path = "../../crates/rubix-supervisor" }
+rubix-kube = { version = "=0.1.0", path = "../../crates/rubix-kube" }
 rubixctl = { version = "=0.1.0", path = "../../crates/rubixctl" }
 x509-parser = "0.18.1"
 rcgen = { version = "0.14.10", default-features = false, features = ["aws_lc_rs", "pem", "x509-parser"] }

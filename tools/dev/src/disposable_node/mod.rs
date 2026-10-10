@@ -173,7 +173,7 @@ pub fn format_rfc3339(secs: u64) -> String {
     format!("{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z")
 }
 
-fn current_rfc3339() -> String {
+pub fn current_rfc3339() -> String {
     let secs = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -274,7 +274,7 @@ fn command_version(program: &str) -> String {
         .unwrap_or_else(|| "unknown".to_string())
 }
 
-fn kernel_release() -> String {
+pub fn kernel_release() -> String {
     if let Ok(content) = fs::read_to_string("/proc/sys/kernel/osrelease") {
         let trimmed = content.trim();
         if !trimmed.is_empty() {

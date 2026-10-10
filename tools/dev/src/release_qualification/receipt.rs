@@ -37,7 +37,7 @@ pub struct CandidateIdentity {
 }
 
 /// Execution environment information.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EnvironmentInfo {
     /// Operating system and CPU architecture (e.g. "linux-arm64").
@@ -46,6 +46,18 @@ pub struct EnvironmentInfo {
     pub kernel: String,
     /// Runner identifier or platform environment (e.g. "github-hosted-ubuntu-24.04-arm").
     pub runner: String,
+    /// Operating system (e.g. "linux", "macos").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub os: Option<String>,
+    /// CPU architecture (e.g. "`x86_64`", "aarch64").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arch: Option<String>,
+    /// Execution mode (e.g. "`in_process`", "`live_node`").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<String>,
+    /// Execution duration in seconds, if applicable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_seconds: Option<u64>,
 }
 
 /// Record of an executed command during qualification.
@@ -681,6 +693,7 @@ mod tests {
                 host: "linux-arm64".into(),
                 kernel: "6.6.137".into(),
                 runner: "github-hosted-ubuntu-24.04-arm".into(),
+                ..Default::default()
             },
             commands: vec![CommandExecution {
                 command: vec!["rubix-kube".into(), "--version".into()],

@@ -1,7 +1,8 @@
 //! Integration tests for candidate-bound receipt schema and trusted reader (Issue #348).
 
 use rubix_dev::release_qualification::criteria::{
-    self, check_criterion_1_epic_ledgers, check_criterion_7_performance_budgets,
+    self, check_criterion_1_epic_ledgers, check_criterion_5_lifecycle_and_storage,
+    check_criterion_6_conformance_and_soak, check_criterion_7_performance_budgets,
     verify_all_criteria,
 };
 use rubix_dev::release_qualification::receipt::{
@@ -53,6 +54,7 @@ fn sample_payload(criterion: usize) -> ReceiptPayload {
             host: "linux-arm64".into(),
             kernel: "6.6.137".into(),
             runner: "github-hosted-ubuntu-24.04-arm".into(),
+            ..Default::default()
         },
         commands: vec![CommandExecution {
             command: vec!["rubix-kube".into(), "--check".into()],
@@ -512,6 +514,7 @@ fn criterion_7_sample_payload() -> ReceiptPayload {
         host: "linux-arm64".into(),
         kernel: "6.6.137".into(),
         runner: "aws-c7g.2xlarge-disposable-runner".into(),
+        ..Default::default()
     };
     payload.commands = vec![
         CommandExecution {
@@ -713,6 +716,102 @@ fn test_criterion_7_performance_budgets_rejection_when_skip_reason_empty() -> Re
     assert!(
         err.to_string().contains("missing reason"),
         "expected missing reason error: {err}"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_criterion_5_lifecycle_and_storage_pending_on_rehearsal_receipt() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let receipts_dir = temp.path().join("docs/release/receipts");
+    fs::create_dir_all(&receipts_dir)?;
+    let receipt_path = receipts_dir.join("criterion-05-lifecycle-and-storage.json");
+
+    // Create an in-process rehearsal payload for criterion 5
+    let mut payload = sample_payload(5);
+    payload.environment.execution_mode = Some("in_process".into());
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&receipt)?)?;
+
+    let release_dir = temp.path().join("docs/release");
+    fs::create_dir_all(&release_dir)?;
+    let cell_inventory = serde_json::json!({
+        "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+        "node_cells": [{
+            "output": {
+                "filename": "rubix-kube",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "inputs": [{
+                "path": "bundle.manifest",
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            }]
+        }]
+    });
+    fs::write(
+        release_dir.join("cell-inventory.json"),
+        serde_json::to_vec(&cell_inventory)?,
+    )?;
+
+    let status = check_criterion_5_lifecycle_and_storage(temp.path())?;
+    assert!(
+        !status.satisfied,
+        "criterion 5 must stay pending on rehearsal receipt"
+    );
+    assert!(
+        status
+            .summary
+            .contains("Pending: unqualified receipt 'criterion-05-lifecycle-and-storage.json'"),
+        "summary: {}",
+        status.summary
+    );
+    Ok(())
+}
+
+#[test]
+fn test_criterion_6_conformance_and_soak_pending_on_rehearsal_receipt() -> Result<()> {
+    let temp = tempfile::tempdir()?;
+    let receipts_dir = temp.path().join("docs/release/receipts");
+    fs::create_dir_all(&receipts_dir)?;
+    let receipt_path = receipts_dir.join("criterion-06-conformance-and-soak.json");
+
+    // Create an in-process rehearsal payload for criterion 6
+    let mut payload = sample_payload(6);
+    payload.environment.execution_mode = Some("in_process".into());
+    let receipt = CandidateReceipt::new_signed(payload)?;
+    fs::write(&receipt_path, serde_json::to_vec_pretty(&receipt)?)?;
+
+    let release_dir = temp.path().join("docs/release");
+    fs::create_dir_all(&release_dir)?;
+    let cell_inventory = serde_json::json!({
+        "source_revision": "2ef1c4787989f11f868f81bb84ae2afd4a49a81d",
+        "node_cells": [{
+            "output": {
+                "filename": "rubix-kube",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "inputs": [{
+                "path": "bundle.manifest",
+                "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            }]
+        }]
+    });
+    fs::write(
+        release_dir.join("cell-inventory.json"),
+        serde_json::to_vec(&cell_inventory)?,
+    )?;
+
+    let status = check_criterion_6_conformance_and_soak(temp.path())?;
+    assert!(
+        !status.satisfied,
+        "criterion 6 must stay pending on rehearsal receipt"
+    );
+    assert!(
+        status
+            .summary
+            .contains("Pending: unqualified receipt 'criterion-06-conformance-and-soak.json'"),
+        "summary: {}",
+        status.summary
     );
     Ok(())
 }

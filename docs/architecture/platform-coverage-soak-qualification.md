@@ -65,3 +65,39 @@ are not accepted as evidence by `verify` or by synthetic fixture reports.
 C14 remains blocked pending current-source disposable Linux receipts for all promised
 environments, real 24-hour workloads and settled-memory samples, retained-executable
 restart/recovery and independent state preservation, and historical/per-epic gates.
+
+## In-process platform soak rehearsal harness and Criterion 6 candidate receipt capture
+
+Issue #352 (E36.02) provides an in-process platform soak rehearsal harness and candidate-bound receipt
+generation for Criterion 6 (`criterion-06-conformance-and-soak.json`).
+Full 24-hour live qualification on disposable Linux infrastructure with retained upstream executables
+and managed container runtimes remains pending.
+
+```sh
+# Run candidate-bound in-process soak rehearsal (supports custom duration/cycles for rehearsal)
+cargo run --locked -p rubix-dev --bin rubix-platform-soak -- capture --output /tmp/soak-rehearsal --duration 30 --cycles 5
+
+# Full 24-hour soak qualification command (86,400 seconds; live Linux execution required)
+cargo run --locked -p rubix-dev --bin rubix-platform-soak -- capture --output /tmp/soak-24h --duration 86400
+
+# Verify generated receipt against canonical schema and Criterion 6 rules
+# (Fails closed on in-process rehearsal receipts, short duration, or unpermitted skips; live 24h Linux execution required)
+cargo run --locked -p rubix-dev --bin rubix-platform-soak -- verify-receipt /tmp/soak-rehearsal
+```
+
+### Assertions evaluated
+
+The in-process soak rehearsal captures process RSS measurements across workload cycles, validating five core assertions:
+
+1. `soak_memory_growth_bound`: verifies final RSS does not exceed initial RSS by more than 5% (ratio <= 1.05x, matching the performance budget contract bound). For in-process rehearsal runs, growth is marked non-qualifying as harness memory cannot qualify node process consumption.
+2. `soak_zero_oom_events`: verifies measured zero out-of-memory terminations occurred during execution.
+3. `soak_zero_crashes`: verifies measured zero unhandled panics or supervisor aborts across all cycles.
+4. `soak_zero_unexplained_probe_failures`: verifies readiness probes succeed consistently throughout execution.
+5. `soak_workload_cycles_positive`: verifies at least one workload cycle completed successfully against the API (reporting successful cycles and probe failures).
+
+### Partial rehearsal runs and fail-closed verification
+
+When executed with `--duration < 86400`, the harness records `partial: true` in `platform-soak-report.json` and records a skip for `sustained_24h_soak_completion` ("Observed duration < 86400s; recorded as partial rehearsal run"), ensuring short rehearsal runs cannot claim 24-hour qualification. In addition, `verify_soak_receipt` fails closed, rejecting in-process receipts, duration < 86,400s, non-Linux execution, or unpermitted skips. Full 24-hour qualification requires running the full 86,400s duration on a disposable Linux environment with live node processes.
+
+Existing matrix inspection (`matrix`), synthetic fixture generation (`fixture`), candidate byte verification (`verify-candidate`), and regression checking commands remain supported and unchanged.
+
