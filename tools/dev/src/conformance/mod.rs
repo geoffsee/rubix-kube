@@ -12,7 +12,8 @@ pub mod selected_conformance;
 
 pub use kubeconfig::{Kubeconfig, KubeconfigError};
 pub use runner::{
-    DomainReport, ManifestDomain, QualificationReport, QualificationRunner, SmokeCheck, SmokeReport,
+    CONF_NAMESPACE, DomainReport, ManifestDomain, QualificationReport, QualificationRunner,
+    SmokeCheck, SmokeReport, generate_suite_selection_markdown,
 };
 pub use selected_conformance::{
     CERTIFICATION_DISCLAIMER, CONFORMANCE_FOCUS_REGEX, CONFORMANCE_SKIP_REGEX,

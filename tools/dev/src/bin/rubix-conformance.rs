@@ -12,7 +12,8 @@ fn print_help() {
         r"rubix-conformance: Gate C13 workload and conformance qualification
 
 Usage:
-  rubix-conformance run
+  rubix-conformance run [--output <dir>] [--root <dir>]
+  rubix-conformance verify-receipt <path> [--root <dir>]
   rubix-conformance fixture [--output <dir>]
   rubix-conformance verify <report-json>
   rubix-conformance verify-fixture <report-json>
@@ -20,12 +21,25 @@ Usage:
   rubix-conformance --help
 
 Commands:
-  run                Unavailable: retained-executable node qualification is not implemented
+  run                Run candidate qualification (requires --output <dir>)
+  verify-receipt     Verify candidate qualification receipt against inventory rules
   fixture            Execute synthetic in-process fixtures; does not qualify C13/E28
   verify             Validate an existing qualification report with zero hidden skips
   check-kubeconfig   Verify dual-format accommodation (YAML and JSON) of a kubeconfig file
 "
     );
+}
+
+fn resolve_repo_root(custom_root: Option<&Path>) -> rubix_dev::Result<PathBuf> {
+    if let Some(r) = custom_root {
+        return Ok(r.to_path_buf());
+    }
+    if let Ok(cur) = std::env::current_dir()
+        && let Ok(root) = rubix_dev::repository_root(&cur)
+    {
+        return Ok(root);
+    }
+    rubix_dev::repository_root(Path::new(env!("CARGO_MANIFEST_DIR")))
 }
 
 #[tokio::main]
@@ -39,10 +53,114 @@ async fn main() -> ExitCode {
 
     match args[0].as_str() {
         "run" => {
-            eprintln!(
-                "error: retained-executable C13/E28 node qualification is not implemented; use fixture for synthetic evidence"
-            );
-            ExitCode::FAILURE
+            let mut output_dir: Option<PathBuf> = None;
+            let mut root_dir: Option<PathBuf> = None;
+            let mut i = 1;
+            while i < args.len() {
+                if args[i] == "--output" || args[i] == "-o" {
+                    if i + 1 >= args.len() {
+                        eprintln!("error: --output requires a directory path");
+                        return ExitCode::FAILURE;
+                    }
+                    output_dir = Some(PathBuf::from(&args[i + 1]));
+                    i += 2;
+                } else if args[i] == "--root" {
+                    if i + 1 >= args.len() {
+                        eprintln!("error: --root requires a directory path");
+                        return ExitCode::FAILURE;
+                    }
+                    root_dir = Some(PathBuf::from(&args[i + 1]));
+                    i += 2;
+                } else {
+                    eprintln!("error: unrecognized argument: {}", args[i]);
+                    return ExitCode::FAILURE;
+                }
+            }
+
+            let Some(output) = output_dir else {
+                eprintln!(
+                    "error: retained-executable C13/E28 node qualification is not implemented; use fixture for synthetic evidence"
+                );
+                return ExitCode::FAILURE;
+            };
+
+            let root = match resolve_repo_root(root_dir.as_deref()) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("error: cannot resolve repository root: {e}");
+                    return ExitCode::FAILURE;
+                },
+            };
+
+            println!("Running candidate qualification for Criterion 6...");
+            let runner = QualificationRunner::new();
+            match runner
+                .run_candidate_qualification(&output, Some(&root))
+                .await
+            {
+                Ok(receipt) => {
+                    println!(
+                        "Qualification passed! Receipt written to {}/receipt.json",
+                        output.display()
+                    );
+                    println!("Receipt integrity hash: {}", receipt.integrity_hash);
+                    ExitCode::SUCCESS
+                },
+                Err(err) => {
+                    eprintln!("error: candidate qualification failed: {err}");
+                    ExitCode::FAILURE
+                },
+            }
+        },
+        "verify-receipt" => {
+            let mut receipt_path: Option<PathBuf> = None;
+            let mut root_dir: Option<PathBuf> = None;
+            let mut i = 1;
+            while i < args.len() {
+                if args[i] == "--root" {
+                    if i + 1 >= args.len() {
+                        eprintln!("error: --root requires a directory path");
+                        return ExitCode::FAILURE;
+                    }
+                    root_dir = Some(PathBuf::from(&args[i + 1]));
+                    i += 2;
+                } else if !args[i].starts_with('-') && receipt_path.is_none() {
+                    receipt_path = Some(PathBuf::from(&args[i]));
+                    i += 1;
+                } else {
+                    eprintln!("error: unrecognized argument: {}", args[i]);
+                    return ExitCode::FAILURE;
+                }
+            }
+
+            let Some(path) = receipt_path else {
+                eprintln!("error: verify-receipt requires a receipt JSON file path");
+                return ExitCode::FAILURE;
+            };
+
+            let root = match resolve_repo_root(root_dir.as_deref()) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("error: cannot resolve repository root: {e}");
+                    return ExitCode::FAILURE;
+                },
+            };
+
+            match rubix_dev::release_qualification::receipt::load_and_validate_receipt(
+                &path, &root, 6,
+            ) {
+                Ok(receipt) => {
+                    println!(
+                        "Receipt verification passed: schema_version={}, criterion={}, integrity_hash={}",
+                        receipt.schema_version, receipt.criterion, receipt.integrity_hash
+                    );
+                    ExitCode::SUCCESS
+                },
+                Err(e) => {
+                    eprintln!("error: receipt verification failed: {e}");
+                    ExitCode::FAILURE
+                },
+            }
         },
         "fixture" => {
             let mut output_dir: Option<PathBuf> = None;

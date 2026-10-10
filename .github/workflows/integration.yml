@@ -156,11 +156,24 @@ jobs:
           CAPTURE_DIR: ${{ runner.temp }}/disposable-node
         run: |
           cargo run --locked -p rubix-dev --bin rubix-disposable-node -- verify "$CAPTURE_DIR"
+      - name: Execute Linux candidate conformance qualification (Criterion 6)
+        env:
+          CONFORMANCE_DIR: ${{ runner.temp }}/conformance-qualification
+        run: |
+          cargo run --locked -p rubix-dev --bin rubix-conformance -- run --output "$CONFORMANCE_DIR"
+      - name: Verify Criterion 6 candidate qualification receipt
+        env:
+          CONFORMANCE_DIR: ${{ runner.temp }}/conformance-qualification
+        run: |
+          cargo run --locked -p rubix-dev --bin rubix-conformance -- verify-receipt "$CONFORMANCE_DIR/receipt.json"
       - name: Retain public capture and failure diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: disposable-node-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/disposable-node/
+          path: |
+            ${{ runner.temp }}/disposable-node/
+            ${{ runner.temp }}/conformance-qualification/
           if-no-files-found: warn
           retention-days: 14
+
