@@ -20,14 +20,16 @@ use rubix_apiserver::{ApiserverError, ApiserverService, KubernetesApiClient};
 use crate::config::{detect_host_cpu_count, format_cpuset};
 use crate::error::KubeletError;
 use crate::status::{
-    ContainerView, CpuAssignment, attempt_of, attempts_by_name, pending_status, pod_status,
+    ContainerView, CpuAssignment, PodViews, attempt_of, attempts_by_name, pending_status,
+    pod_status,
 };
 use crate::workload::{
     ANNOTATION_RESTART_COUNT, CpuManager, ExecResult, LABEL_CONTAINER_NAME, LABEL_MANAGED_BY,
     LABEL_POD_NAME, LABEL_POD_NAMESPACE, LABEL_POD_UID, LogOptions, MANAGED_BY, ReconcileReport,
     RestartPolicy, RuntimeProvider, WorkloadRestartReport, check_pod_restart_need,
-    container_labels, cri, determine_pod_qos, is_container_cpu_pinning_eligible, sandbox_labels,
-    secs_from_nanos, stage_configmap_files, stage_projected_downward_api, stage_projected_sa_token,
+    container_labels, cri, determine_pod_qos, is_container_cpu_pinning_eligible,
+    parse_cpu_quantity_milli, parse_memory_quantity_bytes, sandbox_labels, secs_from_nanos,
+    stage_configmap_files, stage_projected_downward_api, stage_projected_sa_token,
     stage_secret_files,
 };
 
@@ -77,6 +79,13 @@ struct SyncState {
     waiting: BTreeMap<String, (&'static str, String)>,
     started_now: BTreeSet<String>,
     restarted: BTreeSet<String>,
+}
+
+struct SyncContext<'a> {
+    namespace: &'a str,
+    pod: &'a Value,
+    sandbox_id: &'a str,
+    sandbox_config: &'a cri::PodSandboxConfig,
 }
 
 fn container_name_of(container: &Value) -> &str {
@@ -134,6 +143,52 @@ pub fn sandbox_config(pod: &Value, attempt: u32) -> cri::PodSandboxConfig {
         .pointer("/metadata/uid")
         .and_then(Value::as_str)
         .unwrap_or("");
+    let mut port_mappings = Vec::new();
+    let containers = pod.pointer("/spec/containers").and_then(Value::as_array);
+    let init_containers = pod
+        .pointer("/spec/initContainers")
+        .and_then(Value::as_array);
+    for c in containers
+        .into_iter()
+        .flatten()
+        .chain(init_containers.into_iter().flatten())
+    {
+        if let Some(ports) = c.get("ports").and_then(Value::as_array) {
+            for port in ports {
+                let container_port = port
+                    .get("containerPort")
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0);
+                let container_port = i32::try_from(container_port).unwrap_or(0);
+                if container_port <= 0 {
+                    continue;
+                }
+                let host_port = port.get("hostPort").and_then(Value::as_i64).unwrap_or(0);
+                let host_port = i32::try_from(host_port).unwrap_or(0);
+                let proto_str = port
+                    .get("protocol")
+                    .and_then(Value::as_str)
+                    .unwrap_or("TCP");
+                let protocol = match proto_str.to_uppercase().as_str() {
+                    "UDP" => cri::Protocol::Udp as i32,
+                    "SCTP" => cri::Protocol::Sctp as i32,
+                    _ => cri::Protocol::Tcp as i32,
+                };
+                let host_ip = port
+                    .get("hostIP")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .to_string();
+                port_mappings.push(cri::PortMapping {
+                    protocol,
+                    container_port,
+                    host_port,
+                    host_ip,
+                });
+            }
+        }
+    }
+
     cri::PodSandboxConfig {
         metadata: Some(cri::PodSandboxMetadata {
             name: name.to_string(),
@@ -148,19 +203,18 @@ pub fn sandbox_config(pod: &Value, attempt: u32) -> cri::PodSandboxConfig {
             .to_string(),
         log_directory: format!("/var/log/pods/{namespace}_{name}_{uid}"),
         labels: sandbox_labels(namespace, name, uid),
+        port_mappings,
         ..cri::PodSandboxConfig::default()
     }
 }
 
-/// Builds the CRI container configuration for one attempt of a spec container.
-///
-/// Follows the kubelet: `command` and `args` map onto the CRI fields of the same
-/// name, `env.valueFrom.fieldRef` resolves pod metadata and status fields, and
-/// other `valueFrom` sources are configuration errors.
-pub fn container_config(
+/// Builds the CRI container configuration for one attempt of a spec container,
+/// optionally resolving volume mounts against the given root directory.
+pub fn container_config_with_root(
     pod: &Value,
     container: &Value,
     attempt: u32,
+    root_dir: Option<&Path>,
 ) -> Result<cri::ContainerConfig, KubeletError> {
     let name = container
         .get("name")
@@ -210,6 +264,20 @@ pub fn container_config(
         .pointer("/metadata/uid")
         .and_then(Value::as_str)
         .unwrap_or("");
+
+    let empty_vec = Vec::new();
+    let spec_volumes = pod
+        .pointer("/spec/volumes")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty_vec);
+    let default_root = Path::new("/var/lib/kubelet");
+    let root = root_dir.unwrap_or(default_root);
+    let mounts = build_container_mounts(container, spec_volumes, root, uid);
+    let linux = build_container_resources(container).map(|resources| cri::LinuxContainerConfig {
+        resources: Some(resources),
+        ..cri::LinuxContainerConfig::default()
+    });
+
     Ok(cri::ContainerConfig {
         metadata: Some(cri::ContainerMetadata {
             name: name.to_string(),
@@ -228,11 +296,149 @@ pub fn container_config(
             .unwrap_or("")
             .to_string(),
         envs,
+        mounts,
         labels: container_labels(namespace, pod_name(pod), uid, name),
         annotations: BTreeMap::from([(ANNOTATION_RESTART_COUNT.to_string(), attempt.to_string())]),
         log_path: format!("{name}/{attempt}.log"),
+        linux,
         ..cri::ContainerConfig::default()
     })
+}
+
+fn resolve_volume_host_path(
+    root: &Path,
+    uid: &str,
+    vol: &Value,
+    vol_name: &str,
+    sub_path: &str,
+) -> Option<PathBuf> {
+    let mut base = if vol.get("secret").is_some() {
+        root.join("pods")
+            .join(uid)
+            .join("volumes")
+            .join("kubernetes.io~secret")
+            .join(vol_name)
+    } else if vol.get("configMap").is_some() {
+        root.join("pods")
+            .join(uid)
+            .join("volumes")
+            .join("kubernetes.io~configmap")
+            .join(vol_name)
+    } else if vol.get("projected").is_some() {
+        root.join("pods")
+            .join(uid)
+            .join("volumes")
+            .join("kubernetes.io~projected")
+            .join(vol_name)
+    } else if vol.get("emptyDir").is_some() {
+        root.join("pods")
+            .join(uid)
+            .join("volumes")
+            .join("kubernetes.io~empty-dir")
+            .join(vol_name)
+    } else {
+        let hp = vol.get("hostPath")?;
+        PathBuf::from(hp.get("path")?.as_str()?)
+    };
+    if !sub_path.is_empty() {
+        base.push(sub_path);
+    }
+    Some(base)
+}
+
+fn build_container_mounts(
+    container: &Value,
+    spec_volumes: &[Value],
+    root: &Path,
+    uid: &str,
+) -> Vec<cri::Mount> {
+    let mut mounts = Vec::new();
+    let Some(vol_mounts) = container.get("volumeMounts").and_then(Value::as_array) else {
+        return mounts;
+    };
+    for vm in vol_mounts {
+        let Some(mount_path) = vm.get("mountPath").and_then(Value::as_str) else {
+            continue;
+        };
+        let Some(vol_name) = vm.get("name").and_then(Value::as_str) else {
+            continue;
+        };
+        let readonly = vm.get("readOnly").and_then(Value::as_bool).unwrap_or(false);
+        let sub_path = vm.get("subPath").and_then(Value::as_str).unwrap_or("");
+
+        let Some(vol) = spec_volumes
+            .iter()
+            .find(|v| v.get("name").and_then(Value::as_str) == Some(vol_name))
+        else {
+            continue;
+        };
+
+        if let Some(host_path) = resolve_volume_host_path(root, uid, vol, vol_name, sub_path) {
+            mounts.push(cri::Mount {
+                container_path: mount_path.to_string(),
+                host_path: host_path.to_string_lossy().to_string(),
+                readonly,
+                ..cri::Mount::default()
+            });
+        }
+    }
+    mounts
+}
+
+fn build_container_resources(container: &Value) -> Option<cri::LinuxContainerResources> {
+    let res = container.get("resources")?;
+    let mut resources = cri::LinuxContainerResources::default();
+    let mut has_resources = false;
+
+    if let Some(limits) = res.get("limits") {
+        if let Some(cpu) = limits.get("cpu").and_then(Value::as_str)
+            && let Some(milli) = parse_cpu_quantity_milli(cpu)
+        {
+            let quota = i64::try_from(milli.saturating_mul(100)).unwrap_or(i64::MAX);
+            resources.cpu_quota = quota;
+            resources.cpu_period = 100_000;
+            has_resources = true;
+        }
+        if let Some(mem) = limits.get("memory").and_then(Value::as_str)
+            && let Some(bytes) = parse_memory_quantity_bytes(mem)
+        {
+            resources.memory_limit_in_bytes = i64::try_from(bytes).unwrap_or(i64::MAX);
+            has_resources = true;
+        }
+    }
+    let cpu_req = res
+        .get("requests")
+        .and_then(|r| r.get("cpu"))
+        .and_then(Value::as_str)
+        .or_else(|| {
+            res.get("limits")
+                .and_then(|l| l.get("cpu"))
+                .and_then(Value::as_str)
+        });
+    if let Some(cpu) = cpu_req
+        && let Some(milli) = parse_cpu_quantity_milli(cpu)
+    {
+        let shares = i64::try_from(milli.saturating_mul(1024) / 1000)
+            .unwrap_or(i64::MAX)
+            .max(2);
+        resources.cpu_shares = shares;
+        has_resources = true;
+    }
+
+    if has_resources { Some(resources) } else { None }
+}
+
+/// Builds the CRI container configuration for one attempt of a spec container.
+///
+/// Follows the kubelet: `command` and `args` map onto the CRI fields of the same
+/// name, `env.valueFrom.fieldRef` resolves pod metadata and status fields, and
+/// other `valueFrom` sources are configuration errors.
+pub fn container_config(
+    pod: &Value,
+    container: &Value,
+    attempt: u32,
+) -> Result<cri::ContainerConfig, KubeletError> {
+    container_config_with_root(pod, container, attempt, None)
 }
 
 fn resolve_env_value(
@@ -546,7 +752,12 @@ impl PodReconciler {
             if pod.pointer("/spec/nodeName").and_then(Value::as_str) != Some(&self.node_name) {
                 continue;
             }
-            match self.sync_pod(namespace, pod).await {
+            let outcome = if pod.pointer("/metadata/deletionTimestamp").is_some() {
+                self.terminate_pod(namespace, pod).await
+            } else {
+                self.sync_pod(namespace, pod).await
+            };
+            match outcome {
                 Ok(()) => reconciled += 1,
                 Err(e) => eprintln!("Failed to sync pod {namespace}/{}: {e}", pod_name(pod)),
             }
@@ -780,6 +991,26 @@ impl PodReconciler {
         Ok(())
     }
 
+    /// Executes a container's preStop hook command synchronously if configured.
+    async fn execute_pre_stop_hook(&self, container_id: &str, container: &Value) {
+        if let Some(cmd) = container
+            .pointer("/lifecycle/preStop/exec/command")
+            .and_then(Value::as_array)
+        {
+            let command: Vec<String> = cmd
+                .iter()
+                .filter_map(Value::as_str)
+                .map(ToString::to_string)
+                .collect();
+            if !command.is_empty() {
+                let _ = self
+                    .runtime
+                    .exec_sync(container_id, &command, EXEC_TIMEOUT_SECS)
+                    .await;
+            }
+        }
+    }
+
     /// Pulls, creates and starts one attempt of a spec container.
     async fn start_attempt(
         &self,
@@ -790,10 +1021,11 @@ impl PodReconciler {
         attempt: u32,
     ) -> Result<String, StartFailure> {
         self.ensure_image(container, sandbox_config).await?;
-        let mut config = container_config(pod, container, attempt).map_err(|e| StartFailure {
-            reason: "CreateContainerConfigError",
-            message: e.to_string(),
-        })?;
+        let mut config = container_config_with_root(pod, container, attempt, Some(&self.root_dir))
+            .map_err(|e| StartFailure {
+                reason: "CreateContainerConfigError",
+                message: e.to_string(),
+            })?;
         let namespace = pod
             .pointer("/metadata/namespace")
             .and_then(Value::as_str)
@@ -914,6 +1146,10 @@ impl PodReconciler {
             },
         };
         let empty = Vec::new();
+        let spec_init_containers = pod
+            .pointer("/spec/initContainers")
+            .and_then(Value::as_array)
+            .unwrap_or(&empty);
         let spec_containers = pod
             .pointer("/spec/containers")
             .and_then(Value::as_array)
@@ -921,38 +1157,33 @@ impl PodReconciler {
 
         let mut statuses = self.container_statuses(&sandbox_id).await?;
         let mut state = SyncState::default();
-        for container in spec_containers {
-            let c_name = container_name_of(container);
-            let latest = attempts_by_name(&statuses)
-                .get(c_name)
-                .and_then(|attempts| attempts.last().copied());
-            let Some(attempt) = self
-                .next_attempt(namespace, pod, container, latest, &mut state)
-                .await?
-            else {
-                continue;
-            };
-            match self
-                .start_attempt(&sandbox_id, &sandbox_config, pod, container, attempt)
-                .await
-            {
-                Ok(_) => {
-                    state.started_now.insert(c_name.to_string());
-                },
-                Err(failure) => {
-                    state
-                        .waiting
-                        .insert(c_name.to_string(), (failure.reason, failure.message));
-                },
-            }
+
+        let ctx = SyncContext {
+            namespace,
+            pod,
+            sandbox_id: &sandbox_id,
+            sandbox_config: &sandbox_config,
+        };
+
+        let all_inits_complete = self
+            .reconcile_init_containers(&ctx, spec_init_containers, &statuses, &mut state)
+            .await?;
+
+        if all_inits_complete {
+            self.reconcile_app_containers(&ctx, spec_containers, &statuses, &mut state)
+                .await?;
         }
+
         if !state.started_now.is_empty() {
             statuses = self.container_statuses(&sandbox_id).await?;
+            self.probe_started(spec_init_containers, &statuses, &mut state)
+                .await?;
             self.probe_started(spec_containers, &statuses, &mut state)
                 .await?;
         }
         self.prune_attempts(&statuses).await;
         let views = self.build_views(namespace, pod, spec_containers, &statuses, &state);
+        let init_views = self.build_views(namespace, pod, spec_init_containers, &statuses, &state);
         let pod_ip = self
             .runtime
             .pod_sandbox_status(&sandbox_id)
@@ -967,10 +1198,102 @@ impl PodReconciler {
             pod_ip.as_deref(),
             true,
             RestartPolicy::of(pod),
-            &views,
+            PodViews {
+                containers: &views,
+                init_containers: &init_views,
+            },
         );
         self.patch_status_if_changed(namespace, name, pod, status)
             .await
+    }
+
+    async fn reconcile_init_containers(
+        &self,
+        ctx: &SyncContext<'_>,
+        spec_init_containers: &[Value],
+        statuses: &[cri::ContainerStatus],
+        state: &mut SyncState,
+    ) -> Result<bool, KubeletError> {
+        for init_container in spec_init_containers {
+            let c_name = container_name_of(init_container);
+            let latest = attempts_by_name(statuses)
+                .get(c_name)
+                .and_then(|attempts| attempts.last().copied());
+            let is_complete = latest.is_some_and(|s| {
+                state_of(s) == cri::ContainerState::ContainerExited && s.exit_code == 0
+            });
+            if is_complete {
+                continue;
+            }
+            let Some(attempt) = self
+                .next_attempt(ctx.namespace, ctx.pod, init_container, latest, state)
+                .await?
+            else {
+                return Ok(false);
+            };
+            match self
+                .start_attempt(
+                    ctx.sandbox_id,
+                    ctx.sandbox_config,
+                    ctx.pod,
+                    init_container,
+                    attempt,
+                )
+                .await
+            {
+                Ok(_) => {
+                    state.started_now.insert(c_name.to_string());
+                },
+                Err(failure) => {
+                    state
+                        .waiting
+                        .insert(c_name.to_string(), (failure.reason, failure.message));
+                },
+            }
+            return Ok(false);
+        }
+        Ok(true)
+    }
+
+    async fn reconcile_app_containers(
+        &self,
+        ctx: &SyncContext<'_>,
+        spec_containers: &[Value],
+        statuses: &[cri::ContainerStatus],
+        state: &mut SyncState,
+    ) -> Result<(), KubeletError> {
+        for container in spec_containers {
+            let c_name = container_name_of(container);
+            let latest = attempts_by_name(statuses)
+                .get(c_name)
+                .and_then(|attempts| attempts.last().copied());
+            let Some(attempt) = self
+                .next_attempt(ctx.namespace, ctx.pod, container, latest, state)
+                .await?
+            else {
+                continue;
+            };
+            match self
+                .start_attempt(
+                    ctx.sandbox_id,
+                    ctx.sandbox_config,
+                    ctx.pod,
+                    container,
+                    attempt,
+                )
+                .await
+            {
+                Ok(_) => {
+                    state.started_now.insert(c_name.to_string());
+                },
+                Err(failure) => {
+                    state
+                        .waiting
+                        .insert(c_name.to_string(), (failure.reason, failure.message));
+                },
+            }
+        }
+        Ok(())
     }
 
     /// Status inputs for every spec container after this pass.
@@ -1036,6 +1359,7 @@ impl PodReconciler {
                     state.ready.insert(c_name.to_string(), is_ready);
                     return Ok(None);
                 }
+                self.execute_pre_stop_hook(&latest.id, container).await;
                 self.runtime.stop_container(&latest.id, 0).await?;
                 state.restarted.insert(c_name.to_string());
                 Ok(self.schedule_restart(namespace, pod, c_name, latest, state))
@@ -1151,10 +1475,27 @@ impl PodReconciler {
         for sandbox in &sandboxes {
             statuses.extend(self.container_statuses(&sandbox.id).await?);
         }
-        let running: Vec<String> = statuses
+        let running: Vec<(String, Value)> = statuses
             .iter()
             .filter(|s| state_of(s) == cri::ContainerState::ContainerRunning)
-            .map(|s| s.id.clone())
+            .map(|s| {
+                let name = s.metadata.as_ref().map_or("", |m| m.name.as_str());
+                let spec = pod
+                    .pointer("/spec/containers")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .chain(
+                        pod.pointer("/spec/initContainers")
+                            .and_then(Value::as_array)
+                            .into_iter()
+                            .flatten(),
+                    )
+                    .find(|c| c.get("name").and_then(Value::as_str) == Some(name))
+                    .cloned()
+                    .unwrap_or(Value::Null);
+                (s.id.clone(), spec)
+            })
             .collect();
         if !running.is_empty() {
             let now = now_unix();
@@ -1170,36 +1511,16 @@ impl PodReconciler {
                 } else {
                     i64::try_from(deadline.saturating_sub(now)).unwrap_or(0)
                 };
-                for id in running {
+                for (id, spec) in running {
+                    self.execute_pre_stop_hook(&id, &spec).await;
                     self.spawn_stop(id, grace, uid);
                 }
             }
             return Ok(());
         }
         let grouped = attempts_by_name(&statuses);
-        let empty = Vec::new();
-        let views: Vec<ContainerView<'_>> = pod
-            .pointer("/spec/containers")
-            .and_then(Value::as_array)
-            .unwrap_or(&empty)
-            .iter()
-            .map(|container| {
-                let c_name = container
-                    .get("name")
-                    .and_then(Value::as_str)
-                    .unwrap_or("main");
-                let attempts = grouped.get(c_name).map_or(&[][..], Vec::as_slice);
-                ContainerView {
-                    spec: container,
-                    latest: attempts.last().copied(),
-                    previous: None,
-                    ready: false,
-                    backoff: None,
-                    waiting: None,
-                    cpu: None,
-                }
-            })
-            .collect();
+        let views = dead_container_views(pod, "/spec/containers", &grouped);
+        let init_views = dead_container_views(pod, "/spec/initContainers", &grouped);
         let status = pod_status(
             pod,
             self.runtime.provider_name(),
@@ -1207,7 +1528,10 @@ impl PodReconciler {
             None,
             false,
             RestartPolicy::Never,
-            &views,
+            PodViews {
+                containers: &views,
+                init_containers: &init_views,
+            },
         );
         self.patch_status_if_changed(namespace, name, pod, status)
             .await?;
@@ -1299,7 +1623,7 @@ impl PodReconciler {
             })
         } else if let Some(http) = probe.get("httpGet") {
             let Some(port) = resolve_probe_port(container, http.get("port")) else {
-                return Ok(true);
+                return Ok(false);
             };
             let scheme = http
                 .get("scheme")
@@ -1327,7 +1651,7 @@ impl PodReconciler {
             ])
         } else if let Some(tcp) = probe.get("tcpSocket") {
             let Some(port) = resolve_probe_port(container, tcp.get("port")) else {
-                return Ok(true);
+                return Ok(false);
             };
             let host = tcp
                 .get("host")
@@ -1354,8 +1678,8 @@ impl PodReconciler {
         {
             Ok(result) => Ok(result.exit_code == 0),
             Err(e) if exec_probe => Err(e),
-            // HTTP and TCP probes are emulated through exec; treat a missing tool as unknown.
-            Err(_) => Ok(true),
+            // HTTP and TCP probes are emulated through exec; treat execution failure as probe failure.
+            Err(_) => Ok(false),
         }
     }
 
@@ -1563,6 +1887,29 @@ impl PodReconciler {
                 self.stage_projected_source(&vol_dir, namespace, pod, source)
                     .await?;
             }
+        } else if vol.get("emptyDir").is_some() {
+            let vol_dir = self.get_pod_volume_dir(pod_uid, "kubernetes.io~empty-dir", vol_name);
+            std::fs::create_dir_all(&vol_dir).map_err(|e| {
+                KubeletError::PodReconciliationFailed {
+                    pod: pod_name.to_string(),
+                    reason: format!(
+                        "failed to create volume directory {}: {e}",
+                        vol_dir.display()
+                    ),
+                }
+            })?;
+        } else if let Some(path_str) = vol
+            .get("hostPath")
+            .and_then(|hp| hp.get("path"))
+            .and_then(Value::as_str)
+        {
+            let hp_type = vol
+                .pointer("/hostPath/type")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            if hp_type == "DirectoryOrCreate" {
+                let _ = std::fs::create_dir_all(path_str);
+            }
         }
 
         Ok(())
@@ -1621,4 +1968,34 @@ fn resolve_probe_port(container: &Value, port_val: Option<&Value>) -> Option<u16
         }
     }
     None
+}
+
+fn dead_container_views<'a>(
+    pod: &'a Value,
+    pointer: &str,
+    grouped: &BTreeMap<&str, Vec<&'a cri::ContainerStatus>>,
+) -> Vec<ContainerView<'a>> {
+    let containers = pod
+        .pointer(pointer)
+        .and_then(Value::as_array)
+        .map_or(&[][..], Vec::as_slice);
+    containers
+        .iter()
+        .map(|container| {
+            let c_name = container
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("main");
+            let attempts = grouped.get(c_name).map_or(&[][..], Vec::as_slice);
+            ContainerView {
+                spec: container,
+                latest: attempts.last().copied(),
+                previous: None,
+                ready: false,
+                backoff: None,
+                waiting: None,
+                cpu: None,
+            }
+        })
+        .collect()
 }

@@ -398,7 +398,7 @@ async fn test_historical_readiness_regression_detection() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let config = CoreDnsConfig::new().with_readiness_timeout(Duration::from_millis(150));
     let service = CoreDnsService::new(config, Arc::new(client.clone()));
@@ -461,7 +461,7 @@ async fn test_ipv6_reverse_forwarding_omitted_when_ipv6_disabled() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     // Case A: IPv6 is disabled
     let config_no_ipv6 = CoreDnsConfig::new().with_disable_ipv6(true);

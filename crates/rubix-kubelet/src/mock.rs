@@ -42,6 +42,7 @@ struct MockState {
     exec_responses: BTreeMap<String, ExecResult>,
     probe_results: BTreeMap<String, bool>,
     stop_calls: Vec<(String, i64)>,
+    exec_calls: Vec<(String, Vec<String>)>,
 }
 
 /// Simulated runtime provider implementing the CRI subset in memory.
@@ -149,6 +150,11 @@ impl MockRuntimeProvider {
         self.lock().stop_calls.clone()
     }
 
+    /// `(container id, cmd)` of every `exec_sync` call so far.
+    pub fn exec_calls(&self) -> Vec<(String, Vec<String>)> {
+        self.lock().exec_calls.clone()
+    }
+
     /// Number of sandboxes still known for a pod uid, in any state.
     pub fn sandbox_count(&self, pod_uid: &str) -> usize {
         self.lock()
@@ -156,6 +162,35 @@ impl MockRuntimeProvider {
             .values()
             .filter(|s| s.config.labels.get(LABEL_POD_UID).map(String::as_str) == Some(pod_uid))
             .count()
+    }
+
+    /// Pod sandbox configs created for a pod uid.
+    pub fn sandbox_configs(&self, pod_uid: &str) -> Vec<cri::PodSandboxConfig> {
+        self.lock()
+            .sandboxes
+            .values()
+            .filter(|s| s.config.labels.get(LABEL_POD_UID).map(String::as_str) == Some(pod_uid))
+            .map(|s| s.config.clone())
+            .collect()
+    }
+
+    /// Container configs created for a pod uid.
+    pub fn container_configs(&self, pod_uid: &str) -> Vec<cri::ContainerConfig> {
+        let state = self.lock();
+        let sandbox_ids: Vec<String> = state
+            .sandboxes
+            .iter()
+            .filter(|(_, s)| {
+                s.config.labels.get(LABEL_POD_UID).map(String::as_str) == Some(pod_uid)
+            })
+            .map(|(id, _)| id.clone())
+            .collect();
+        state
+            .containers
+            .values()
+            .filter(|c| sandbox_ids.contains(&c.sandbox_id))
+            .map(|c| c.config.clone())
+            .collect()
     }
 
     fn lock(&self) -> MutexGuard<'_, MockState> {
@@ -206,6 +241,40 @@ fn to_container(id: &str, record: &ContainerRecord) -> cri::Container {
 
 fn matches_labels(labels: &BTreeMap<String, String>, selector: &BTreeMap<String, String>) -> bool {
     selector.iter().all(|(k, v)| labels.get(k) == Some(v))
+}
+
+fn resolve_exec_cat(record: &ContainerRecord, target_path: &str) -> Option<ExecResult> {
+    let mount = record
+        .config
+        .mounts
+        .iter()
+        .filter(|m| {
+            target_path == m.container_path
+                || target_path.starts_with(&format!("{}/", m.container_path.trim_end_matches('/')))
+        })
+        .max_by_key(|m| m.container_path.len())?;
+
+    let rel = target_path
+        .strip_prefix(mount.container_path.trim_end_matches('/'))
+        .unwrap_or("")
+        .trim_start_matches('/');
+    let host_file = if rel.is_empty() {
+        std::path::PathBuf::from(&mount.host_path)
+    } else {
+        std::path::Path::new(&mount.host_path).join(rel)
+    };
+    match std::fs::read_to_string(&host_file) {
+        Ok(content) => Some(ExecResult {
+            exit_code: 0,
+            stdout: content,
+            stderr: String::new(),
+        }),
+        Err(err) => Some(ExecResult {
+            exit_code: 1,
+            stdout: String::new(),
+            stderr: format!("{target_path}: {err}\n"),
+        }),
+    }
 }
 
 #[async_trait]
@@ -419,9 +488,14 @@ impl RuntimeProvider for MockRuntimeProvider {
             message: String::new(),
             labels: record.config.labels.clone(),
             annotations: record.config.annotations.clone(),
-            mounts: Vec::new(),
+            mounts: record.config.mounts.clone(),
             log_path: record.config.log_path.clone(),
-            resources: None,
+            resources: record.config.linux.as_ref().and_then(|l| {
+                l.resources.as_ref().map(|res| cri::ContainerResources {
+                    linux: Some(res.clone()),
+                    windows: None,
+                })
+            }),
             image_id: String::new(),
             user: None,
             stop_signal: 0,
@@ -434,7 +508,10 @@ impl RuntimeProvider for MockRuntimeProvider {
         cmd: &[String],
         _timeout_secs: i64,
     ) -> Result<ExecResult, KubeletError> {
-        let state = self.lock();
+        let mut state = self.lock();
+        state
+            .exec_calls
+            .push((container_id.to_string(), cmd.to_vec()));
         let container_name = state
             .containers
             .get(container_id)
@@ -443,9 +520,11 @@ impl RuntimeProvider for MockRuntimeProvider {
             .unwrap_or_default();
         let cmd_str = cmd.join(" ");
         let key_full = format!("{container_name}:{cmd_str}");
+        let key_id_cmd = format!("{container_id}:{cmd_str}");
         if let Some(res) = state
             .exec_responses
             .get(&key_full)
+            .or_else(|| state.exec_responses.get(&key_id_cmd))
             .or_else(|| state.exec_responses.get(&cmd_str))
             .or_else(|| cmd.first().and_then(|c| state.exec_responses.get(c)))
         {
@@ -454,8 +533,10 @@ impl RuntimeProvider for MockRuntimeProvider {
         if let Some(&pass) = state
             .probe_results
             .get(&key_full)
+            .or_else(|| state.probe_results.get(&key_id_cmd))
             .or_else(|| state.probe_results.get(&cmd_str))
             .or_else(|| state.probe_results.get(&container_name))
+            .or_else(|| state.probe_results.get(container_id))
         {
             return Ok(ExecResult {
                 exit_code: i32::from(!pass),
@@ -471,6 +552,14 @@ impl RuntimeProvider for MockRuntimeProvider {
                     "failure\n".to_string()
                 },
             });
+        }
+        if (cmd.first().is_some_and(|c| c == "cat" || c == "/bin/cat")) && cmd.len() >= 2 {
+            let target_path = &cmd[1];
+            if let Some(record) = state.containers.get(container_id)
+                && let Some(res) = resolve_exec_cat(record, target_path)
+            {
+                return Ok(res);
+            }
         }
         if cmd.first().is_some_and(|c| c == "echo") {
             return Ok(ExecResult {

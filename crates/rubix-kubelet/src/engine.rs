@@ -25,6 +25,78 @@ pub const LABEL_SANDBOX_ATTEMPT: &str = "io.rubix.sandbox.attempt";
 pub const LABEL_RESTART_COUNT: &str = ANNOTATION_RESTART_COUNT;
 const STOP_TIMEOUT_SECS: i64 = 5;
 
+/// Volume mount for a container.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MountSpec {
+    pub container_path: String,
+    pub host_path: String,
+    pub readonly: bool,
+}
+
+/// Resource constraints for a container.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ResourceSpec {
+    pub cpu_shares: Option<i64>,
+    pub cpu_quota: Option<i64>,
+    pub cpu_period: Option<i64>,
+    pub cpuset_cpus: Option<String>,
+    pub memory_limit_in_bytes: Option<i64>,
+}
+
+/// Port mapping for a pod sandbox.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PortMappingSpec {
+    pub host_ip: Option<String>,
+    pub host_port: i32,
+    pub container_port: i32,
+    pub protocol: String,
+}
+
+impl PortMappingSpec {
+    #[must_use]
+    pub fn to_argument(&self) -> String {
+        let proto = if self.protocol.is_empty() {
+            "tcp"
+        } else {
+            &self.protocol
+        };
+        let host_prefix = self
+            .host_ip
+            .as_deref()
+            .filter(|ip| !ip.is_empty())
+            .map(|ip| format!("{ip}:"))
+            .unwrap_or_default();
+        if self.host_port > 0 {
+            format!(
+                "{host_prefix}{}:{}/{proto}",
+                self.host_port, self.container_port
+            )
+        } else {
+            format!("{host_prefix}{}/{proto}", self.container_port)
+        }
+    }
+}
+
+impl From<&cri::PortMapping> for PortMappingSpec {
+    fn from(pm: &cri::PortMapping) -> Self {
+        let protocol = match cri::Protocol::try_from(pm.protocol) {
+            Ok(cri::Protocol::Udp) => "udp".to_string(),
+            Ok(cri::Protocol::Sctp) => "sctp".to_string(),
+            _ => "tcp".to_string(),
+        };
+        Self {
+            host_ip: if pm.host_ip.is_empty() {
+                None
+            } else {
+                Some(pm.host_ip.clone())
+            },
+            host_port: pm.host_port,
+            container_port: pm.container_port,
+            protocol,
+        }
+    }
+}
+
 /// Engine-neutral description of one container to create inside a pod.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ContainerSpec {
@@ -39,6 +111,8 @@ pub struct ContainerSpec {
     pub env: Vec<(String, String)>,
     pub working_dir: Option<String>,
     pub labels: BTreeMap<String, String>,
+    pub mounts: Vec<MountSpec>,
+    pub resources: Option<ResourceSpec>,
 }
 
 /// Normalised container state as reported by an engine.
@@ -98,6 +172,7 @@ pub trait ContainerEngine: std::fmt::Debug + Send + Sync {
         &self,
         name: &str,
         labels: &BTreeMap<String, String>,
+        ports: &[PortMappingSpec],
     ) -> Result<String, KubeletError>;
     async fn pod_start(&self, id: &str) -> Result<(), KubeletError>;
     async fn pod_stop(&self, id: &str, timeout_secs: i64) -> Result<(), KubeletError>;
@@ -202,6 +277,39 @@ pub fn container_spec(
     let sandbox_meta = sandbox.metadata.as_ref().unwrap_or(&default_sandbox);
     let mut labels = config.labels.clone();
     labels.insert(LABEL_RESTART_COUNT.to_string(), meta.attempt.to_string());
+    let mounts = config
+        .mounts
+        .iter()
+        .map(|m| MountSpec {
+            container_path: m.container_path.clone(),
+            host_path: m.host_path.clone(),
+            readonly: m.readonly,
+        })
+        .collect();
+    let resources = config
+        .linux
+        .as_ref()
+        .and_then(|l| l.resources.as_ref())
+        .and_then(|r| {
+            let spec = ResourceSpec {
+                cpu_shares: (r.cpu_shares > 0).then_some(r.cpu_shares),
+                cpu_quota: (r.cpu_quota > 0).then_some(r.cpu_quota),
+                cpu_period: (r.cpu_period > 0).then_some(r.cpu_period),
+                cpuset_cpus: (!r.cpuset_cpus.is_empty()).then(|| r.cpuset_cpus.clone()),
+                memory_limit_in_bytes: (r.memory_limit_in_bytes > 0)
+                    .then_some(r.memory_limit_in_bytes),
+            };
+            if spec.cpu_shares.is_none()
+                && spec.cpu_quota.is_none()
+                && spec.cpu_period.is_none()
+                && spec.cpuset_cpus.is_none()
+                && spec.memory_limit_in_bytes.is_none()
+            {
+                None
+            } else {
+                Some(spec)
+            }
+        });
     ContainerSpec {
         name: container_name(meta, sandbox_meta),
         image: config
@@ -224,6 +332,8 @@ pub fn container_spec(
             .collect(),
         working_dir: (!config.working_dir.is_empty()).then(|| config.working_dir.clone()),
         labels,
+        mounts,
+        resources,
     }
 }
 
@@ -353,7 +463,15 @@ impl RuntimeProvider for EngineRuntimeAdapter {
         let meta = config.metadata.as_ref().unwrap_or(&default_meta);
         let mut labels = config.labels.clone();
         labels.insert(LABEL_SANDBOX_ATTEMPT.to_string(), meta.attempt.to_string());
-        let id = self.engine.pod_create(&sandbox_name(meta), &labels).await?;
+        let ports: Vec<PortMappingSpec> = config
+            .port_mappings
+            .iter()
+            .map(PortMappingSpec::from)
+            .collect();
+        let id = self
+            .engine
+            .pod_create(&sandbox_name(meta), &labels, &ports)
+            .await?;
         if let Err(e) = self.engine.pod_start(&id).await {
             let _ = self.engine.pod_remove(&id).await;
             return Err(e);
@@ -591,6 +709,36 @@ mod tests {
             sandbox_name(sandbox_config().metadata.as_ref().unwrap()),
             "k8s_POD_hello_default_uid-1_0"
         );
+
+        let mut cfg = container_config(2);
+        cfg.mounts.push(cri::Mount {
+            container_path: "/mnt/data".to_string(),
+            host_path: "/var/lib/data".to_string(),
+            readonly: true,
+            ..cri::Mount::default()
+        });
+        cfg.linux = Some(cri::LinuxContainerConfig {
+            resources: Some(cri::LinuxContainerResources {
+                cpu_shares: 512,
+                cpu_quota: 25_000,
+                cpu_period: 100_000,
+                cpuset_cpus: "0-1".to_string(),
+                memory_limit_in_bytes: 104_857_600,
+                ..cri::LinuxContainerResources::default()
+            }),
+            ..cri::LinuxContainerConfig::default()
+        });
+        let spec_with_res = container_spec("pod1", &cfg, &sandbox_config());
+        assert_eq!(spec_with_res.mounts.len(), 1);
+        assert_eq!(spec_with_res.mounts[0].container_path, "/mnt/data");
+        assert_eq!(spec_with_res.mounts[0].host_path, "/var/lib/data");
+        assert!(spec_with_res.mounts[0].readonly);
+        let res = spec_with_res.resources.as_ref().unwrap();
+        assert_eq!(res.cpu_shares, Some(512));
+        assert_eq!(res.cpu_quota, Some(25_000));
+        assert_eq!(res.cpu_period, Some(100_000));
+        assert_eq!(res.cpuset_cpus.as_deref(), Some("0-1"));
+        assert_eq!(res.memory_limit_in_bytes, Some(104_857_600));
     }
 
     #[test]
@@ -682,6 +830,7 @@ mod tests {
             &self,
             name: &str,
             labels: &BTreeMap<String, String>,
+            _ports: &[PortMappingSpec],
         ) -> Result<String, KubeletError> {
             let id = self.id("pod");
             self.pods.lock().unwrap().push(PodSummary {

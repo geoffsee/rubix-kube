@@ -213,13 +213,37 @@ async fn handle(
             )
             .await
             {
-                Ok(outcome) => match outcome.body {
-                    Payload::Json(body) => json_response(outcome.status, &body),
-                    Payload::Text(body) => text_response(outcome.status, body),
-                },
+                Ok(outcome) => outcome_to_response(outcome, &path, accept.as_deref()),
                 Err(err) => error_response(&err),
             }
         },
+    }
+}
+
+fn outcome_to_response(
+    outcome: dispatch::Outcome,
+    path: &ResourcePath,
+    accept: Option<&str>,
+) -> Response<Body> {
+    match outcome.body {
+        Payload::Json(body) => {
+            if outcome.status.is_success()
+                && is_table_request(accept)
+                && supports_table(path)
+                && body.get("kind").and_then(Value::as_str) != Some("Status")
+            {
+                let content_type = table_content_type(accept);
+                json_response_with_type(
+                    outcome.status,
+                    content_type,
+                    &resource_to_table(&path.resource, &body),
+                )
+            } else {
+                json_response(outcome.status, &body)
+            }
+        },
+        Payload::Text(body) => text_response(outcome.status, body),
+        Payload::ChunkedText(body) => chunked_text_response(outcome.status, body),
     }
 }
 
@@ -256,7 +280,7 @@ async fn watch_response(
         match dispatch::dispatch(service, client, &Method::GET, path, None, None, &[]).await {
             Ok(outcome) => match outcome.body {
                 Payload::Json(body) => body,
-                Payload::Text(_) => Value::Null,
+                Payload::Text(_) | Payload::ChunkedText(_) => Value::Null,
             },
             Err(err) => return error_response(&err),
         };
@@ -731,8 +755,390 @@ fn status_response(status: StatusCode, reason: &str, message: &str) -> Response<
 }
 
 fn json_response(status: StatusCode, body: &Value) -> Response<Body> {
+    json_response_with_type(status, "application/json", body)
+}
+
+fn json_response_with_type(
+    status: StatusCode,
+    content_type: &'static str,
+    body: &Value,
+) -> Response<Body> {
     let bytes = serde_json::to_vec(body).unwrap_or_else(|_| b"{}".to_vec());
-    response(status, "application/json", Bytes::from(bytes))
+    response(status, content_type, Bytes::from(bytes))
+}
+
+fn chunked_text_response(status: StatusCode, body: String) -> Response<Body> {
+    let (mut sender, channel) = Channel::<Bytes, Infallible>::new(1);
+    tokio::spawn(async move {
+        if !body.is_empty() {
+            let _ = sender.send_data(Bytes::from(body)).await;
+        }
+    });
+    Response::builder()
+        .status(status)
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(channel.boxed())
+        .unwrap_or_else(|_| Response::new(Full::new(Bytes::from_static(b"")).boxed()))
+}
+
+fn format_age(created: u64, now: u64) -> String {
+    let secs = now.saturating_sub(created);
+    if secs < 120 {
+        format!("{secs}s")
+    } else if secs < 7_200 {
+        format!("{}m", secs / 60)
+    } else if secs < 172_800 {
+        format!("{}h", secs / 3_600)
+    } else {
+        format!("{}d", secs / 86_400)
+    }
+}
+
+fn item_age(item: &Value, now: u64) -> String {
+    item.pointer("/metadata/creationTimestamp")
+        .and_then(Value::as_str)
+        .and_then(crate::time::parse_rfc3339_seconds)
+        .map_or_else(
+            || "<unknown>".to_string(),
+            |created| format_age(created, now),
+        )
+}
+
+fn pod_row(pod: &Value, now: u64) -> Value {
+    let name = pod
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let total = pod
+        .pointer("/spec/containers")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    let ready = pod
+        .pointer("/status/containerStatuses")
+        .and_then(Value::as_array)
+        .map_or(0, |statuses| {
+            statuses
+                .iter()
+                .filter(|s| s.get("ready").and_then(Value::as_bool).unwrap_or(false))
+                .count()
+        });
+    let ready_str = format!("{ready}/{total}");
+
+    let phase = pod
+        .pointer("/status/phase")
+        .and_then(Value::as_str)
+        .unwrap_or("Unknown");
+    let mut status_str = phase.to_string();
+    if let Some(statuses) = pod
+        .pointer("/status/containerStatuses")
+        .and_then(Value::as_array)
+    {
+        for cs in statuses {
+            if let Some(reason) = cs.pointer("/state/waiting/reason").and_then(Value::as_str) {
+                status_str = reason.to_string();
+                break;
+            }
+        }
+    }
+
+    let restarts: i64 = pod
+        .pointer("/status/containerStatuses")
+        .and_then(Value::as_array)
+        .map_or(0, |statuses| {
+            statuses
+                .iter()
+                .filter_map(|s| s.get("restartCount").and_then(Value::as_i64))
+                .sum()
+        });
+
+    let age = item_age(pod, now);
+
+    json!({
+        "cells": [name, ready_str, status_str, restarts.to_string(), age],
+        "object": pod
+    })
+}
+
+fn namespace_row(namespace: &Value, now: u64) -> Value {
+    let name = namespace
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let status = namespace
+        .pointer("/status/phase")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Active");
+    let age = item_age(namespace, now);
+
+    json!({
+        "cells": [name, status, age],
+        "object": namespace
+    })
+}
+
+fn service_row(service: &Value, now: u64) -> Value {
+    let name = service
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let svc_type = service
+        .pointer("/spec/type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("ClusterIP");
+    let cluster_ip = service
+        .pointer("/spec/clusterIP")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("<none>");
+    let external_ip = if svc_type == "ExternalName" {
+        service
+            .pointer("/spec/externalName")
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("<none>")
+            .to_string()
+    } else if let Some(ips) = service
+        .pointer("/spec/externalIPs")
+        .and_then(Value::as_array)
+        .filter(|a| !a.is_empty())
+    {
+        let ip_strs: Vec<&str> = ips.iter().filter_map(Value::as_str).collect();
+        if ip_strs.is_empty() {
+            "<none>".to_string()
+        } else {
+            ip_strs.join(",")
+        }
+    } else if let Some(ing) = service
+        .pointer("/status/loadBalancer/ingress")
+        .and_then(Value::as_array)
+        .filter(|a| !a.is_empty())
+    {
+        let list: Vec<&str> = ing
+            .iter()
+            .filter_map(|i| {
+                i.get("ip")
+                    .and_then(Value::as_str)
+                    .or_else(|| i.get("hostname").and_then(Value::as_str))
+            })
+            .collect();
+        if list.is_empty() {
+            "<none>".to_string()
+        } else {
+            list.join(",")
+        }
+    } else {
+        "<none>".to_string()
+    };
+
+    let ports = service
+        .pointer("/spec/ports")
+        .and_then(Value::as_array)
+        .map_or_else(
+            || "<none>".to_string(),
+            |ports| {
+                if ports.is_empty() {
+                    "<none>".to_string()
+                } else {
+                    ports
+                        .iter()
+                        .map(|p| {
+                            let port = p.get("port").and_then(Value::as_i64).unwrap_or(0);
+                            let proto = p.get("protocol").and_then(Value::as_str).unwrap_or("TCP");
+                            if let Some(node_port) = p
+                                .get("nodePort")
+                                .and_then(Value::as_i64)
+                                .filter(|&np| np > 0)
+                            {
+                                format!("{port}:{node_port}/{proto}")
+                            } else {
+                                format!("{port}/{proto}")
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",")
+                }
+            },
+        );
+
+    let age = item_age(service, now);
+
+    json!({
+        "cells": [name, svc_type, cluster_ip, external_ip, ports, age],
+        "object": service
+    })
+}
+
+fn configmap_row(cm: &Value, now: u64) -> Value {
+    let name = cm
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let data_count = cm
+        .get("data")
+        .and_then(Value::as_object)
+        .map_or(0, serde_json::Map::len)
+        + cm.get("binaryData")
+            .and_then(Value::as_object)
+            .map_or(0, serde_json::Map::len);
+    let age = item_age(cm, now);
+
+    json!({
+        "cells": [name, data_count.to_string(), age],
+        "object": cm
+    })
+}
+
+fn secret_row(secret: &Value, now: u64) -> Value {
+    let name = secret
+        .pointer("/metadata/name")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let secret_type = secret
+        .get("type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Opaque");
+    let data_count = secret
+        .get("data")
+        .and_then(Value::as_object)
+        .map_or(0, serde_json::Map::len)
+        + secret
+            .get("stringData")
+            .and_then(Value::as_object)
+            .map_or(0, serde_json::Map::len);
+    let age = item_age(secret, now);
+
+    json!({
+        "cells": [name, secret_type, data_count.to_string(), age],
+        "object": secret
+    })
+}
+
+fn col(
+    name: &'static str,
+    col_type: &'static str,
+    format: &'static str,
+    desc: &'static str,
+) -> Value {
+    json!({
+        "name": name,
+        "type": col_type,
+        "format": format,
+        "description": desc,
+        "priority": 0
+    })
+}
+
+fn resource_column_definitions(resource: &str) -> Vec<Value> {
+    match resource {
+        "namespaces" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Status", "string", "", "Namespace status"),
+            col("Age", "string", "", "Namespace age"),
+        ],
+        "services" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Type", "string", "", "Service type"),
+            col("Cluster-IP", "string", "", "Cluster IP"),
+            col("External-IP", "string", "", "External IP"),
+            col("Port(s)", "string", "", "Service ports"),
+            col("Age", "string", "", "Service age"),
+        ],
+        "configmaps" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Data", "string", "", "ConfigMap data"),
+            col("Age", "string", "", "ConfigMap age"),
+        ],
+        "secrets" => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Type", "string", "", "Secret type"),
+            col("Data", "string", "", "Secret data"),
+            col("Age", "string", "", "Secret age"),
+        ],
+        _ => vec![
+            col("Name", "string", "name", "Resource name"),
+            col("Ready", "string", "", "Readiness of containers"),
+            col("Status", "string", "", "Pod status"),
+            col("Restarts", "string", "", "Number of restarts"),
+            col("Age", "string", "", "Pod age"),
+        ],
+    }
+}
+
+fn resource_row(resource: &str, item: &Value, now: u64) -> Value {
+    match resource {
+        "namespaces" => namespace_row(item, now),
+        "services" => service_row(item, now),
+        "configmaps" => configmap_row(item, now),
+        "secrets" => secret_row(item, now),
+        _ => pod_row(item, now),
+    }
+}
+
+fn extract_table_items(value: &Value) -> (Value, Vec<Value>) {
+    let is_list = value
+        .get("kind")
+        .and_then(Value::as_str)
+        .is_some_and(|k| k.ends_with("List"))
+        || value.get("items").and_then(Value::as_array).is_some();
+    if is_list {
+        (
+            value.get("metadata").cloned().unwrap_or_else(|| json!({})),
+            value
+                .get("items")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default(),
+        )
+    } else {
+        (
+            json!({
+                "resourceVersion": value.pointer("/metadata/resourceVersion").unwrap_or(&Value::Null)
+            }),
+            vec![value.clone()],
+        )
+    }
+}
+
+fn resource_to_table(resource: &str, value: &Value) -> Value {
+    let now = crate::time::now_unix();
+    let (metadata, items) = extract_table_items(value);
+    let rows: Vec<Value> = items
+        .iter()
+        .map(|item| resource_row(resource, item, now))
+        .collect();
+
+    json!({
+        "kind": "Table",
+        "apiVersion": "meta.k8s.io/v1",
+        "metadata": metadata,
+        "columnDefinitions": resource_column_definitions(resource),
+        "rows": rows
+    })
+}
+
+fn is_table_request(accept: Option<&str>) -> bool {
+    accept.is_some_and(|a| a.to_ascii_lowercase().contains("as=table"))
+}
+
+fn table_content_type(accept: Option<&str>) -> &'static str {
+    if let Some(accept) = accept {
+        let lower = accept.to_ascii_lowercase();
+        if lower.contains("g=meta.k8s.io;v=1") || lower.contains("v=1;g=meta.k8s.io") {
+            return "application/json;as=Table;g=meta.k8s.io;v=1";
+        }
+    }
+    "application/json;as=Table;v=v1;g=meta.k8s.io"
+}
+
+fn supports_table(path: &ResourcePath) -> bool {
+    path.subresource.is_none()
+        && matches!(
+            path.resource.as_str(),
+            "pods" | "namespaces" | "services" | "configmaps" | "secrets"
+        )
 }
 
 fn text_response(status: StatusCode, body: String) -> Response<Body> {

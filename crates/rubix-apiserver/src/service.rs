@@ -149,7 +149,7 @@ impl ApiserverService {
 
     pub async fn bootstrap_default_namespaces(&self) -> Result<(), ApiserverError> {
         let admin = self.admin_client();
-        for ns in ["default"] {
+        for ns in ["default", "kube-system", "kube-node-lease"] {
             match admin.get_namespace(ns).await {
                 Ok(_) => {},
                 Err(ApiserverError::NotFound { .. }) => {

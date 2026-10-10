@@ -769,3 +769,695 @@ async fn test_projected_volume_and_persistence_across_kubelet_restart() {
     assert_eq!(pod_after["status"]["phase"], "Running");
     assert_eq!(pod_after["status"]["containerStatuses"][0]["ready"], true);
 }
+
+#[tokio::test]
+async fn test_cri_volume_mounts_and_exec_sync_reading() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, kubelet_options, _engine, _pki_dir) = setup_test_environment(&temp);
+
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+    let apiserver_arc = Arc::new(apiserver);
+
+    let runtime = Arc::new(MockRuntimeProvider::new("managed-containerd"));
+    let kubelet = KubeletService::new(kubelet_options, apiserver_arc.clone(), runtime.clone());
+    kubelet.start().await.unwrap();
+
+    let admin_client = apiserver_arc.admin_client();
+    let client = kubelet.client();
+
+    // 1. Create Secret
+    let mut secret_data = std::collections::BTreeMap::new();
+    secret_data.insert(
+        "password".to_string(),
+        rubix_pki::base64_encode(b"secret-password-xyz"),
+    );
+    admin_client
+        .create_secret("default", "my-secret", secret_data, None)
+        .await
+        .unwrap();
+
+    // 2. Create ConfigMap
+    let mut cm_data = std::collections::BTreeMap::new();
+    cm_data.insert("app.conf".to_string(), "port=8080\nenv=prod\n".to_string());
+    admin_client
+        .create_configmap("default", "my-config", cm_data)
+        .await
+        .unwrap();
+
+    // 3. Create hostPath directory and file
+    let host_dir = temp.path().join("host-test-dir");
+    std::fs::create_dir_all(&host_dir).unwrap();
+    std::fs::write(host_dir.join("host-file.txt"), "hello from hostPath").unwrap();
+
+    // 4. Create Pod with 5 volume types and volumeMounts
+    let pod_spec = serde_json::json!({
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+            "name": "all-mounts-pod",
+            "namespace": "default",
+            "uid": "uid-all-mounts"
+        },
+        "spec": {
+            "nodeName": "test-node",
+            "serviceAccountName": "default",
+            "containers": [
+                {
+                    "name": "worker",
+                    "image": "docker.io/library/busybox:1.36",
+                    "volumeMounts": [
+                        {
+                            "name": "sec-vol",
+                            "mountPath": "/etc/secret",
+                            "readOnly": true
+                        },
+                        {
+                            "name": "cm-vol",
+                            "mountPath": "/etc/config",
+                            "readOnly": false
+                        },
+                        {
+                            "name": "empty-vol",
+                            "mountPath": "/var/scratch"
+                        },
+                        {
+                            "name": "host-vol",
+                            "mountPath": "/mnt/host"
+                        },
+                        {
+                            "name": "proj-vol",
+                            "mountPath": "/var/run/secrets/tokens"
+                        }
+                    ]
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "sec-vol",
+                    "secret": {
+                        "secretName": "my-secret"
+                    }
+                },
+                {
+                    "name": "cm-vol",
+                    "configMap": {
+                        "name": "my-config"
+                    }
+                },
+                {
+                    "name": "empty-vol",
+                    "emptyDir": {}
+                },
+                {
+                    "name": "host-vol",
+                    "hostPath": {
+                        "path": host_dir.to_str().unwrap()
+                    }
+                },
+                {
+                    "name": "proj-vol",
+                    "projected": {
+                        "sources": [
+                            {
+                                "configMap": {
+                                    "name": "my-config",
+                                    "items": [
+                                        {
+                                            "key": "app.conf",
+                                            "path": "proj-app.conf"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    });
+
+    client.create_pod("default", pod_spec).await.unwrap();
+
+    let count = kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+    assert_eq!(count, 1);
+
+    // Verify container configs received CRI Mount specs
+    let c_configs = runtime.container_configs("uid-all-mounts");
+    assert_eq!(c_configs.len(), 1);
+    let mounts = &c_configs[0].mounts;
+    assert!(
+        mounts
+            .iter()
+            .any(|m| m.container_path == "/etc/secret" && m.readonly)
+    );
+    assert!(
+        mounts
+            .iter()
+            .any(|m| m.container_path == "/etc/config" && !m.readonly)
+    );
+    assert!(mounts.iter().any(|m| m.container_path == "/var/scratch"));
+    assert!(mounts.iter().any(|m| m.container_path == "/mnt/host"));
+    assert!(
+        mounts
+            .iter()
+            .any(|m| m.container_path == "/var/run/secrets/tokens")
+    );
+
+    // Write file into emptyDir volume directory on host
+    let empty_dir =
+        kubelet.get_pod_volume_dir("uid-all-mounts", "kubernetes.io~empty-dir", "empty-vol");
+    assert!(empty_dir.exists());
+    std::fs::write(empty_dir.join("test-scratch.txt"), "scratch contents").unwrap();
+
+    // Verify reading mounted files via exec_sync (both cat and /bin/cat)
+    let secret_res = kubelet
+        .exec_in_container(
+            "uid-all-mounts",
+            "worker",
+            &["cat".to_string(), "/etc/secret/password".to_string()],
+        )
+        .await
+        .unwrap();
+    assert_eq!(secret_res.exit_code, 0);
+    assert_eq!(secret_res.stdout, "secret-password-xyz");
+
+    let cm_res = kubelet
+        .exec_in_container(
+            "uid-all-mounts",
+            "worker",
+            &["/bin/cat".to_string(), "/etc/config/app.conf".to_string()],
+        )
+        .await
+        .unwrap();
+    assert_eq!(cm_res.exit_code, 0);
+    assert_eq!(cm_res.stdout, "port=8080\nenv=prod\n");
+
+    let host_res = kubelet
+        .exec_in_container(
+            "uid-all-mounts",
+            "worker",
+            &["cat".to_string(), "/mnt/host/host-file.txt".to_string()],
+        )
+        .await
+        .unwrap();
+    assert_eq!(host_res.exit_code, 0);
+    assert_eq!(host_res.stdout, "hello from hostPath");
+
+    let scratch_res = kubelet
+        .exec_in_container(
+            "uid-all-mounts",
+            "worker",
+            &[
+                "cat".to_string(),
+                "/var/scratch/test-scratch.txt".to_string(),
+            ],
+        )
+        .await
+        .unwrap();
+    assert_eq!(scratch_res.exit_code, 0);
+    assert_eq!(scratch_res.stdout, "scratch contents");
+
+    let proj_res = kubelet
+        .exec_in_container(
+            "uid-all-mounts",
+            "worker",
+            &[
+                "cat".to_string(),
+                "/var/run/secrets/tokens/proj-app.conf".to_string(),
+            ],
+        )
+        .await
+        .unwrap();
+    assert_eq!(proj_res.exit_code, 0);
+    assert_eq!(proj_res.stdout, "port=8080\nenv=prod\n");
+}
+
+#[tokio::test]
+async fn test_init_containers_sequential_execution_and_status() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, kubelet_options, _engine, _pki_dir) = setup_test_environment(&temp);
+
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+    let apiserver_arc = Arc::new(apiserver);
+
+    let runtime = Arc::new(MockRuntimeProvider::new("managed-containerd"));
+    let kubelet = KubeletService::new(kubelet_options, apiserver_arc.clone(), runtime.clone());
+    kubelet.start().await.unwrap();
+
+    let client = kubelet.client();
+
+    let pod_spec = serde_json::json!({
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+            "name": "init-seq-pod",
+            "namespace": "default",
+            "uid": "uid-init-seq"
+        },
+        "spec": {
+            "nodeName": "test-node",
+            "restartPolicy": "Always",
+            "initContainers": [
+                {
+                    "name": "init-step-1",
+                    "image": "docker.io/library/busybox:1.36"
+                },
+                {
+                    "name": "init-step-2",
+                    "image": "docker.io/library/busybox:1.36"
+                }
+            ],
+            "containers": [
+                {
+                    "name": "app-main",
+                    "image": "docker.io/library/nginx:1.27"
+                }
+            ]
+        }
+    });
+
+    client.create_pod("default", pod_spec).await.unwrap();
+
+    // 1st reconcile: init-step-1 starts; init-step-2 and app-main do not start
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod1 = client.get_pod("default", "init-seq-pod").await.unwrap();
+    assert_eq!(pod1["status"]["phase"], "Pending");
+    let init_statuses1 = pod1["status"]["initContainerStatuses"].as_array().unwrap();
+    assert_eq!(init_statuses1.len(), 2);
+    assert_eq!(init_statuses1[0]["name"], "init-step-1");
+    assert!(init_statuses1[0]["state"]["running"].is_object());
+    assert_eq!(init_statuses1[1]["name"], "init-step-2");
+    assert!(init_statuses1[1]["state"]["waiting"].is_object());
+
+    let app_statuses1 = pod1["status"]["containerStatuses"].as_array().unwrap();
+    assert_eq!(app_statuses1.len(), 1);
+    assert_eq!(app_statuses1[0]["name"], "app-main");
+    assert_eq!(
+        app_statuses1[0]["state"]["waiting"]["reason"],
+        "PodInitializing"
+    );
+
+    let conds1 = pod1["status"]["conditions"].as_array().unwrap();
+    let init_cond1 = conds1.iter().find(|c| c["type"] == "Initialized").unwrap();
+    assert_eq!(init_cond1["status"], "False");
+    assert_eq!(init_cond1["reason"], "ContainersNotInitialized");
+
+    // Complete init-step-1 with exit code 0
+    runtime.set_container_exit("uid-init-seq", "init-step-1", 0);
+
+    // 2nd reconcile: init-step-1 is completed; init-step-2 starts; app-main still waiting
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod2 = client.get_pod("default", "init-seq-pod").await.unwrap();
+    assert_eq!(pod2["status"]["phase"], "Pending");
+    let init_statuses2 = pod2["status"]["initContainerStatuses"].as_array().unwrap();
+    assert_eq!(init_statuses2.len(), 2);
+    assert_eq!(init_statuses2[0]["name"], "init-step-1");
+    assert_eq!(init_statuses2[0]["state"]["terminated"]["exitCode"], 0);
+    assert_eq!(init_statuses2[1]["name"], "init-step-2");
+    assert!(init_statuses2[1]["state"]["running"].is_object());
+
+    let app_statuses2 = pod2["status"]["containerStatuses"].as_array().unwrap();
+    assert_eq!(
+        app_statuses2[0]["state"]["waiting"]["reason"],
+        "PodInitializing"
+    );
+
+    // Complete init-step-2 with exit code 0
+    runtime.set_container_exit("uid-init-seq", "init-step-2", 0);
+
+    // 3rd reconcile: all init containers complete; app-main starts and becomes Running
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod3 = client.get_pod("default", "init-seq-pod").await.unwrap();
+    assert_eq!(pod3["status"]["phase"], "Running");
+    let init_statuses3 = pod3["status"]["initContainerStatuses"].as_array().unwrap();
+    assert_eq!(init_statuses3.len(), 2);
+    assert_eq!(init_statuses3[0]["state"]["terminated"]["exitCode"], 0);
+    assert_eq!(init_statuses3[1]["state"]["terminated"]["exitCode"], 0);
+
+    let app_statuses3 = pod3["status"]["containerStatuses"].as_array().unwrap();
+    assert!(app_statuses3[0]["state"]["running"].is_object());
+    assert_eq!(app_statuses3[0]["ready"], true);
+
+    let conds3 = pod3["status"]["conditions"].as_array().unwrap();
+    let init_cond3 = conds3.iter().find(|c| c["type"] == "Initialized").unwrap();
+    assert_eq!(init_cond3["status"], "True");
+}
+
+#[tokio::test]
+async fn test_init_container_failure_with_restart_policy_never() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, kubelet_options, _engine, _pki_dir) = setup_test_environment(&temp);
+
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+    let apiserver_arc = Arc::new(apiserver);
+
+    let runtime = Arc::new(MockRuntimeProvider::new("managed-containerd"));
+    let kubelet = KubeletService::new(kubelet_options, apiserver_arc.clone(), runtime.clone());
+    kubelet.start().await.unwrap();
+
+    let client = kubelet.client();
+
+    let pod_spec = serde_json::json!({
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+            "name": "init-fail-pod",
+            "namespace": "default",
+            "uid": "uid-init-fail"
+        },
+        "spec": {
+            "nodeName": "test-node",
+            "restartPolicy": "Never",
+            "initContainers": [
+                {
+                    "name": "bad-init",
+                    "image": "docker.io/library/busybox:1.36"
+                }
+            ],
+            "containers": [
+                {
+                    "name": "app",
+                    "image": "docker.io/library/nginx:1.27"
+                }
+            ]
+        }
+    });
+
+    client.create_pod("default", pod_spec).await.unwrap();
+
+    // 1st reconcile: bad-init starts
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod1 = client.get_pod("default", "init-fail-pod").await.unwrap();
+    assert_eq!(pod1["status"]["phase"], "Pending");
+
+    // bad-init exits with non-zero exit code
+    runtime.set_container_exit("uid-init-fail", "bad-init", 1);
+
+    // 2nd reconcile: with restartPolicy: Never, pod phase becomes Failed
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod2 = client.get_pod("default", "init-fail-pod").await.unwrap();
+    assert_eq!(pod2["status"]["phase"], "Failed");
+    let init_statuses = pod2["status"]["initContainerStatuses"].as_array().unwrap();
+    assert_eq!(init_statuses[0]["state"]["terminated"]["exitCode"], 1);
+}
+
+#[tokio::test]
+async fn test_http_and_tcp_probes_readiness_and_liveness() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, kubelet_options, _engine, _pki_dir) = setup_test_environment(&temp);
+
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+    let apiserver_arc = Arc::new(apiserver);
+
+    let runtime = Arc::new(MockRuntimeProvider::new("managed-containerd"));
+    let kubelet = KubeletService::new(kubelet_options, apiserver_arc.clone(), runtime.clone());
+    kubelet.start().await.unwrap();
+
+    let client = kubelet.client();
+
+    // Mock probe successes
+    runtime.set_exec_response(
+        "curl -fsk -o /dev/null http://127.0.0.1:8080/ready",
+        ExecResult {
+            exit_code: 0,
+            stdout: "ready\n".to_string(),
+            stderr: String::new(),
+        },
+    );
+    runtime.set_exec_response(
+        "nc -z 127.0.0.1 9000",
+        ExecResult {
+            exit_code: 0,
+            stdout: "live\n".to_string(),
+            stderr: String::new(),
+        },
+    );
+
+    let pod_spec = serde_json::json!({
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+            "name": "http-tcp-pod",
+            "namespace": "default",
+            "uid": "uid-http-tcp"
+        },
+        "spec": {
+            "nodeName": "test-node",
+            "restartPolicy": "Always",
+            "containers": [
+                {
+                    "name": "server",
+                    "image": "docker.io/library/nginx:1.27",
+                    "ports": [
+                        { "containerPort": 8080 },
+                        { "containerPort": 9000 }
+                    ],
+                    "readinessProbe": {
+                        "httpGet": {
+                            "path": "/ready",
+                            "port": 8080
+                        }
+                    },
+                    "livenessProbe": {
+                        "tcpSocket": {
+                            "port": 9000
+                        },
+                        "failureThreshold": 3
+                    }
+                }
+            ]
+        }
+    });
+
+    client.create_pod("default", pod_spec).await.unwrap();
+
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod = client.get_pod("default", "http-tcp-pod").await.unwrap();
+    assert_eq!(pod["status"]["phase"], "Running");
+    assert_eq!(pod["status"]["containerStatuses"][0]["ready"], true);
+    assert_eq!(pod["status"]["containerStatuses"][0]["restartCount"], 0);
+
+    // 1. HTTP readiness probe failure
+    runtime.set_exec_response(
+        "curl -fsk -o /dev/null http://127.0.0.1:8080/ready",
+        ExecResult {
+            exit_code: 1,
+            stdout: String::new(),
+            stderr: "404 Not Found\n".to_string(),
+        },
+    );
+
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod_unready = client.get_pod("default", "http-tcp-pod").await.unwrap();
+    assert_eq!(
+        pod_unready["status"]["containerStatuses"][0]["ready"],
+        false
+    );
+
+    // Recover readiness
+    runtime.set_exec_response(
+        "curl -fsk -o /dev/null http://127.0.0.1:8080/ready",
+        ExecResult {
+            exit_code: 0,
+            stdout: "ready again\n".to_string(),
+            stderr: String::new(),
+        },
+    );
+
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod_recovered = client.get_pod("default", "http-tcp-pod").await.unwrap();
+    assert_eq!(
+        pod_recovered["status"]["containerStatuses"][0]["ready"],
+        true
+    );
+
+    // 2. TCP liveness probe failure trips failure threshold (3 times)
+    runtime.set_exec_response(
+        "nc -z 127.0.0.1 9000",
+        ExecResult {
+            exit_code: 1,
+            stdout: String::new(),
+            stderr: "connection refused\n".to_string(),
+        },
+    );
+
+    // 1st failure
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+    // 2nd failure
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+    // 3rd failure (trips threshold 3 -> restart)
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let pod_restarted = client.get_pod("default", "http-tcp-pod").await.unwrap();
+    assert_eq!(
+        pod_restarted["status"]["containerStatuses"][0]["restartCount"],
+        1
+    );
+}
+
+#[tokio::test]
+async fn test_pre_stop_hook_and_linux_resources_and_port_mappings() {
+    let temp = TempDir::new().unwrap();
+    let (apiserver, kubelet_options, _engine, _pki_dir) = setup_test_environment(&temp);
+
+    apiserver.check_prerequisites().await.unwrap();
+    apiserver.start().unwrap();
+    let apiserver_arc = Arc::new(apiserver);
+
+    let runtime = Arc::new(MockRuntimeProvider::new("managed-containerd"));
+    let kubelet = KubeletService::new(kubelet_options, apiserver_arc.clone(), runtime.clone());
+    kubelet.start().await.unwrap();
+
+    let client = kubelet.client();
+
+    let pod_spec = serde_json::json!({
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+            "name": "resources-hook-pod",
+            "namespace": "default",
+            "uid": "uid-res-hook"
+        },
+        "spec": {
+            "nodeName": "test-node",
+            "restartPolicy": "Always",
+            "containers": [
+                {
+                    "name": "app",
+                    "image": "docker.io/library/nginx:1.27",
+                    "ports": [
+                        {
+                            "containerPort": 80,
+                            "hostPort": 8080,
+                            "protocol": "TCP"
+                        }
+                    ],
+                    "resources": {
+                        "requests": {
+                            "cpu": "500m",
+                            "memory": "64Mi"
+                        },
+                        "limits": {
+                            "cpu": "1",
+                            "memory": "128Mi"
+                        }
+                    },
+                    "lifecycle": {
+                        "preStop": {
+                            "exec": {
+                                "command": ["/bin/sh", "-c", "echo graceful shutdown"]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    });
+
+    client.create_pod("default", pod_spec).await.unwrap();
+
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    // Verify Port Mappings in CRI PodSandboxConfig
+    let sandboxes = runtime.sandbox_configs("uid-res-hook");
+    assert_eq!(sandboxes.len(), 1);
+    assert_eq!(sandboxes[0].port_mappings.len(), 1);
+    assert_eq!(sandboxes[0].port_mappings[0].container_port, 80);
+    assert_eq!(sandboxes[0].port_mappings[0].host_port, 8080);
+
+    // Verify Linux Container Resources in CRI ContainerConfig
+    let containers = runtime.container_configs("uid-res-hook");
+    assert_eq!(containers.len(), 1);
+    let linux = containers[0].linux.as_ref().expect("linux config");
+    let res = linux.resources.as_ref().expect("resources");
+    assert_eq!(res.cpu_quota, 100_000);
+    assert_eq!(res.cpu_period, 100_000);
+    assert_eq!(res.cpu_shares, 512);
+    assert_eq!(res.memory_limit_in_bytes, 134_217_728);
+
+    // Verify PreStop hook execution on pod termination
+    let admin_client = apiserver_arc.admin_client();
+    admin_client
+        .delete_pod("default", "resources-hook-pod")
+        .await
+        .unwrap();
+
+    kubelet
+        .reconciler()
+        .reconcile_namespace("default")
+        .await
+        .unwrap();
+
+    let exec_calls = runtime.exec_calls();
+    let pre_stop_called = exec_calls
+        .iter()
+        .any(|(_, cmd)| cmd.iter().any(|arg| arg.contains("echo graceful shutdown")));
+    assert!(
+        pre_stop_called,
+        "preStop hook must have been executed via exec_sync prior to stop"
+    );
+}

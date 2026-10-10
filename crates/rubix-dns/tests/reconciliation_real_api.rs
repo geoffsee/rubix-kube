@@ -41,7 +41,7 @@ async fn test_cold_startup_reconciliation_real_api() {
     apiserver.check_prerequisites().await.unwrap();
 
     // Ensure namespace exists
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let config = CoreDnsConfig::new()
         .with_container_mode(false)
@@ -128,7 +128,7 @@ async fn test_repeated_startup_preserves_unrelated_configmap_keys_and_metadata()
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let config = CoreDnsConfig::new().with_disable_ipv6(false);
     let reconciler = DnsReconciler::new(&config);
@@ -198,7 +198,7 @@ async fn test_service_recreation_on_cluster_ip_change() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let config = CoreDnsConfig::new();
     let reconciler = DnsReconciler::new(&config);
@@ -240,7 +240,7 @@ async fn test_service_updated_without_recreation_when_cluster_ip_unchanged() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let config = CoreDnsConfig::new();
     let reconciler = DnsReconciler::new(&config);
@@ -295,7 +295,7 @@ async fn test_readiness_timeout_and_healthy_reporting() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let config = CoreDnsConfig::new().with_readiness_timeout(Duration::from_millis(150));
     let service = CoreDnsService::new(config, Arc::new(client.clone()));
@@ -358,7 +358,7 @@ async fn test_supervisor_adapter_lifecycle_and_failure_policy() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     // Scenario 1: Failure without false ready (readiness timeout)
     {
@@ -449,7 +449,7 @@ async fn test_custom_offline_image_and_container_mode() {
     let temp = TempDir::new().unwrap();
     let (apiserver, client) = setup_test_cluster(&temp);
     apiserver.check_prerequisites().await.unwrap();
-    client.create_namespace(COREDNS_NAMESPACE).await.unwrap();
+    let _ = client.create_namespace(COREDNS_NAMESPACE).await;
 
     let custom_image = "registry.local:5000/coredns:1.14.4-offline";
     let config = CoreDnsConfig::new()

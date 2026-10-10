@@ -39,10 +39,16 @@ async fn rbac_bootstrap_roles_and_admin_bypass() {
 
     // 1. Admin client has full cluster-admin access
     let ns = admin
-        .create_namespace("kube-system")
+        .get_namespace("kube-system")
+        .await
+        .expect("admin gets bootstrapped kube-system ns");
+    assert_eq!(ns["metadata"]["name"], "kube-system");
+
+    let custom_ns = admin
+        .create_namespace("custom-admin-ns")
         .await
         .expect("admin creates ns");
-    assert_eq!(ns["metadata"]["name"], "kube-system");
+    assert_eq!(custom_ns["metadata"]["name"], "custom-admin-ns");
 
     let mut cm_data = BTreeMap::new();
     cm_data.insert("leader".to_string(), "node-1".to_string());
